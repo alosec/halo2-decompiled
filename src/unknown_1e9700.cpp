@@ -151,6 +151,15 @@ void function_1ea880(long first_player, long player_index, s_object_values *tabl
 // credit default 421/421/452. Original types, lifetimes and loops restored.
 // Round 149: Shared current tick with rate, earlier code and clock receiver combinations [427, 450, 445,
 // 432, 427, 450, 445, 432]; all restored.
+// Round 381: Victim/selection/victim-selection/threshold/victim-threshold/selection-threshold/all
+// workspace scopes 421/464/464/421/421/464/464; all scopes with unsigned selection ordinal 464.
+// Original lifetimes restored; frame, result homes and rounding calls remain.
+// Round 242: Native statistics-valid/player-record/object-header fields, all
+// seven subsets and complete graph with native history, 421 each. Original
+// body, types, rounding calls and memory observations restored.
+// Round 262: native team/credited-player/victim/secondary-award call summaries,
+// inline and noinline 421/421/421/421/421/421/421/421. Every declaration and complete
+// body restored; frame 0x48 versus 0x50 and result/history/rounding homes remain.
 // @retail 0x1e9fa0
 void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
 {
@@ -617,12 +626,10 @@ const unsigned short g_445580[35] =
 	-1, -1, -1, -1, -1
 };
 
-// score 1 (was 8): the table entry is read as an unsigned 16 bit value and
-// copied into the 32 bit kind, so the copy is a plain register move like
-// retail's; retail still loads the entry with a 16 bit mov ax, this loads it
-// with movzx.
+// Both the incoming row and the alternate table row are 16-bit values;
+// keeping them narrow reproduces retail's partial-register table load.
 // @retail 0x1e9720
-real function_1e9720(long kind, short team)
+real function_1e9720(short kind, short team)
 {
 	short difficulty;
 	if (g_4e6948->state == 1)
@@ -635,7 +642,7 @@ real function_1e9720(long kind, short team)
 	}
 	else if (g_4e6948->state == 1 && !team_is_enemy(1, team))
 	{
-		unsigned long alternate = g_445580[(short)kind];
+		short alternate = g_445580[(short)kind];
 		if ((short)alternate == NONE)
 			difficulty = 1;
 		else

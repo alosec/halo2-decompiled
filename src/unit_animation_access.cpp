@@ -75,6 +75,8 @@ bool unit_animation_control_channel_playing(long unit_index)
 }
 
 /* the name the control's first channel was started with */
+__declspec(noinline) long function_10f8f0(long unit_index);
+
 // @retail 0x10f8f0
 long function_10f8f0(long unit_index)
 {

@@ -124,7 +124,7 @@ bool function_1fee20(long actor_index, s_combat_delay const *delay)
 	return !engaged;
 }
 
-real function_1e9720(long kind, short team);
+real function_1e9720(short kind, short team);
 
 struct s_combat_wait_range
 {

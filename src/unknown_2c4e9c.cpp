@@ -1673,6 +1673,12 @@ c_screen_45d2b8::c_screen_45d2b8(long screen_id, long a, long b, word user_flags
 	memcpy(settings, &g_54e5d0.settings, sizeof(settings));
 }
 
+// score 2 (was 2): the base-call argument push and this-pointer move are
+// reversed; the base handler already matches. Retry, 20 reduced variants:
+// flat/nested ifs and do exits 5; one shared call/return 26; direct returns,
+// this/base casts, event local/reference, initialized bool, guarded parameter
+// switch and saved event fields 2; long result 11; outer switch/early type
+// return 7; copy loop 26; memmove 27; changed-first guard 16. Original kept.
 // @retail 0x2c87fe
 bool c_screen_45d2b8::v10(s_widget_event *event)
 {

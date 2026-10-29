@@ -10,6 +10,9 @@
 
 #define k_real_epsilon 0.0001f
 #define MAXIMUM_POLYGON_POINTS 48
+#define FLAG(bit) (1 << (bit))
+#define TEST_FLAG(flags, bit) (((flags) & FLAG(bit)) != 0)
+#define SET_FLAG(flags, bit, value) ((value) ? ((flags) |= FLAG(bit)) : ((flags) &= ~FLAG(bit)))
 
 struct vector2f { real i, j; };
 
@@ -275,7 +278,12 @@ long function_239d50(long count, point2f const *points, point2f *hull)
 
 /* gift wrapping: the indices of the convex hull of the points, starting from
    the lowest */
-// score 203 (was 203): Frame 0x14 agrees; retail keeps `count` in memory (ebx only as temporaries:
+// score 203 (was 203): Frame 0x14 agrees; count/departure homes, scan bound, equality and compaction differ.
+// Round 27 (lane 9): memmove for the compaction (retail calls the CRT) with a bool flag and the heading set before the scan gives
+// retail's count home +0x10, scan bound EDX and early heading/flag stores, but points takes EBP and the flag lands in points' home
+// (retail: indices in EBP, the flag in its home) 265 (759 B); with the flag declared first 265; long flag 242; memcpy kept 250;
+// `left_start = left_start || !points2d_equal(...)` 273.
+// Frame 0x14 agrees; retail keeps `count` in memory (ebx only as temporaries:
 // the call argument, then the hull count), ours gives `count` ebx for the whole body.
 // Earlier: scan/count registers, equality scheduling and compaction inline boundary differ. Tried direct index output 261; plain lowest scan 250; full current index 299; full candidate counter 256; native completion returns 279; plain scan direct output 250; plain scan append then count 250.
 // Full count tests 274; current-point snapshot 271; byte start state 250; float workspace names 250; still-at-origin state 264; inline classifier declaration 250; forced equality declaration 250.
@@ -309,6 +317,33 @@ long function_239d50(long count, point2f const *points, point2f *hull)
 // plus heading/flag stored before the scan and a done flag in the hull condition (retail's
 // unrotated loop and j-loop registers) 229; best declaration order of those 227; lowest_y
 // declared first 203. One use of `count` fewer moves it to memory (diagnostic only).
+// Round 105: on the done-flag form `count` keeps a callee-saved register whichever single use is
+// removed (outer bound, scan bound, the current index's start, the call argument), so it is not one
+// use over a threshold; renaming count/hull_count/left_start changes nothing. With `current = count`
+// declared before the classifier call: 153 (784 B; done flag, kept only on a match), lowest_y before
+// lowest_x 151; the hull-loop declarations after the index store 155; memcpy for the compaction 215;
+// the increment at the end of the pass 176; the flag as `if (!left_start)` 246; the two final exits
+// as an else-if 151. There points/current/count sit in EBX/ESI/EDI (retail: points ESI, current
+// EDI, count in memory, the hull count cached in EBX).
+// Round 16: count read through its address at the first-scan/hull bounds 203 each; explicit false/true
+// departure branches with Boolean state and early heading, with memmove/memcpy 253/286; existing
+// displacement helper 203; shared start-point pointer 253; read-once start index 265, with memmove 263.
+// Original body restored.
+// Round 239: separate lowest-scan/hull-pass/candidate-scan bound values, all
+// seven combinations 203 each; all bounds with overlapping CRT compaction 230.
+// Original bounds, equality helper, compaction and body restored; caller intact.
+// Round 382: all four coordinate epsilon thresholds in four producer orders,
+// with/without both candidate-angle thresholds, 204/204/204/204/204/204/204/204.
+// Original threshold expressions and complete executable body restored.
+// Round 385: Natural nonterminal continuation pairs with long/bool departure
+// and memcpy 340/340/338/338, with memmove 323/340/307/307. Original terminal tests restored.
+// Round 387: Parameter-derived current index live before classification, with Boolean departure, CRT overlap compaction and constant heading combinations 245/215/236/277/261/247/250/251; no added completion flag. Original body restored.
+// Round 233: Complete current/candidate coordinate carriers at each candidate,
+// squared-distance expression in seven subsets, then overlap CRT compaction:
+// 253/287/278/203/253/287/278/289. All original coordinate reads, arithmetic and body restored.
+// Round 182: native unsigned-word input count, long/bool departure and
+// late/early heading crossed with memcpy/memmove 260/232/258/239/253/259/261/266;
+// matched caller becomes 34 in each reduced trial. Original signature and body restored.
 // @retail 0x239e50
 short function_239e50(short count, point2f const *points, short *indices)
 {
@@ -476,7 +511,11 @@ PRIVATE __forceinline bool clip_points_equal_23a6f0(point2f const *a, point2f co
 	return fabs((double)a->x - b->x) < epsilon && fabs((double)a->y - b->y) < epsilon;
 }
 
-// score 212 (was 212): Retail length and common failure publication agree; count/stride/prior homes remain
+// score 129 (was 129): Retail length and the mask update agree; retail keeps the previous side in memory
+// aligned frame and stride/prior homes agree; prior-side byte and SIMD homes differ.
+// Earlier: Retail length and the mask update agree; retail keeps the previous side in memory
+// (ours CL across the back edge, one instruction short from the side test on), loads count once into ECX
+// for the scaled index and the guard, and keeps zero in XMM2. Earlier: count/stride/prior homes remained
 // (retail keeps the copy size at +0x18, the previous point at +0x1c and both side flags in memory).
 // Earlier: count/stride homes and distance/intersection lifetimes differ. Tried capacity break common result 245; shared mask return 254; existing plane dot 243; plain previous side 265; previous side branches 259; byte side presence 243; named distance products 243; native clipping role homes 243.
 // Native current ordinal 249; long side states 264; prior-point ordinal 288; ordered fraction clamp 243; clear-mask arm first 243; shared normalized count 275; existing point difference 243.
@@ -521,6 +560,27 @@ PRIVATE __forceinline bool clip_points_equal_23a6f0(point2f const *a, point2f co
 // without it: that if/else 250, the current side declared beside the previous one 227, the previous
 // point through a named `count - 1` index 229 (harness: `points + count - 1` and a word-cast index
 // 220/277, unchanged or worse; without the volatile the previous side lives in CL, retail's in memory).
+// Round 105: the mask update as SET_FLAG(mask, result, point_mask ? TEST_FLAG(...) : false) (retail's
+// materialised bit, `neg; sbb; neg`, with the NULL mask threaded to the clear arm; `&&` folds it to `test`)
+// with a signed short index and the previous side's volatile removed 133, plus the previous distance
+// named like the loop's 129 (kept); the bit as `(*point_mask >> i) & 1` alone 177; on 129: the fraction as
+// an if/else 249 (XMM4/XMM5 constants as retail, flag still in CL); side flags byte/char/long/short,
+// function-scope sides, swapped side test or loop-end copies, dot_product2d distances, a named
+// `count - 1` or copy size, the current point after the distance: no gain.
+// Round 17: entry previous-side direct assignment with signed/unsigned ordinal 254/227; entry previous
+// pointer with signed ordinal 254; false-first entry side with signed/unsigned ordinal 272/246;
+// previous-point lexical name 254; shared copy extent 265; output-mask lexical name with that extent
+// 265. Original declarations, qualifier, ordinal, names and body restored.
+// Round 267: On the native mask graph, prior true-first/false-first side results 132/130;
+// current true-first/false-first 284/284; paired true/true, true/false, false/true,
+// false/false results 284 each. Count ECX and prior-side byte home remain; original body restored.
+// Round 366: previous-distance carry 156; two-use intersection pointer 129; both 156; shared 2-D difference 129, with distance/pointer/both 156/129/156; joint point cursor 262. All restored.
+// Round 369: prior/current/both outside values 257/268/325; outside values with test-assigned fraction 253/266/316; both with negative accumulation 344; complementary side presence 134. All restored.
+// Round 109: retail loads count once into ECX after the alias copy (`mov ecx, [count]; movsx edi, cx`,
+// guard `test cx, cx`), so ECX is busy at entry and the previous side spills (+0xd, current +0xc);
+// ours reads count from memory twice and keeps the previous side in CL. The alias test reversed 130;
+// the clipped reset after the alias copy 220; mask declared first 132; plane n.j * dy 129; the
+// previous side as `0 <= distance` 129 (compile-only screens of nine more orders and spellings: none).
 // @retail 0x23a6f0
 short function_23a6f0(point2f *output, short count, point2f const *points,
 	plane2f const *plane, short capacity, dword *point_mask, bool *clipped, real epsilon)
@@ -538,8 +598,9 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 		points = copy;
 	}
 	point2f const *previous = &points[count - 1];
-	volatile bool previous_inside = previous->y * plane->n.j + previous->x * plane->n.i - plane->d >= 0.f;
-	for (unsigned short i = 0; i < count; i++)
+	real previous_distance = previous->y * plane->n.j + previous->x * plane->n.i - plane->d;
+	bool previous_inside = previous_distance >= 0.f;
+	for (short i = 0; i < count; i++)
 	{
 		point2f const *current = &points[i];
 		real distance = current->y * plane->n.j + plane->n.i * current->x - plane->d;
@@ -566,7 +627,7 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 			fraction = fraction < 0.f ? 0.f : fraction > 1.f ? 1.f : fraction;
 			output[result].x = dx * fraction + current->x;
 			output[result].y = dy * fraction + current->y;
-			mask |= 1 << result;
+			mask |= FLAG(result);
 			result++;
 			if (result != 1 && (clip_points_equal_23a6f0(&output[result - 1], output, epsilon) ||
 				clip_points_equal_23a6f0(&output[result - 1], &output[result - 2], epsilon)))
@@ -580,10 +641,7 @@ short function_23a6f0(point2f *output, short count, point2f const *points,
 				break;
 			}
 			output[result] = *current;
-			if (point_mask && (*point_mask & (1 << i)))
-				mask |= 1 << result;
-			else
-				mask &= ~(1 << result);
+			SET_FLAG(mask, result, point_mask ? TEST_FLAG(*point_mask, i) : false);
 			result++;
 			if (result != 1 && (clip_points_equal_23a6f0(&output[result - 1], output, epsilon) ||
 				clip_points_equal_23a6f0(&output[result - 1], &output[result - 2], epsilon)))

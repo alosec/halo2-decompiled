@@ -255,101 +255,116 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 	return false;
 }
 
-// score 185 (was 185): Frame 0x58 agrees; BSP/section, range/plane homes and vertex joins remain.
-// Round 8 (lane 10), not kept: retail never initialises its vertex flag (set only when a vertex exists,
-// tested only after the first vertex); that uninitialised success-only flag with the table pointer
-// chosen by the ternaries gives 165 (163 with other declaration orders), but it reads an uninitialised
-// flag and drops the checks on the second and third vertices, so HEAD's body stays. Other trials:
-// output declarations reordered 185; outputs renamed 185; part index/unknown stores swapped 185; bool
-// result 197; success-only flag 235, with bool result 221; instance index at each use 226/227; vertex
-// loop with a break 287; inverted ternaries 165; surface range index at each use 191; flag initialised
-// false 232; early return without a section 127 (an epilogue retail lacks; realignment only).
-// Earlier: Frame 0x58 agrees; BSP/section, range/plane homes and vertex joins remain.
-// frame 0x58 agrees; BSP/section carriers, range/plane homes and vertex joins remain.
-// Earlier: exact 0x58 frame; BSP/section registers and range/plane homes differ.
-// Frame 0x58 agrees; BSP/section carriers, range/plane homes and vertex joins remain.
-// Frame 0x58 agrees; BSP/section carriers, range/plane homes and vertex joins remain.
-// exact 0x58 frame; BSP/section registers and range/plane homes differ.
-// BSP reads at use 217; conditional section selection 229; direct success returns 243;
-// instance reads at use 213; relative triangle-range counter 206.
-// BSP/section registers and range/plane homes remain;
-// reference table before traversal 221; instance case first 232; byte success result 185;
-// result-controlled traversal 205; reference table and result traversal 216.
-// Earlier 185 (was 185): BSP/section residency, range/plane homes and vertex-result joins remain.
-// Earlier: BSP/section residency, range/plane homes and vertex-result joins remain.
-// BSP/section residency, range/plane homes and vertex-result joins remain.
-// Index-first/output-first fetch contracts 185/185; filled-point return 185; native span inputs 238;
-// actual validity publication 185; triangle query into result 217; validity-byte name 185; read-only section 185.
-// Shared residency 203; first-fetch validity 185; strip-input cursor 221;
-// residency/first 203; residency/cursor 208; first/cursor 221; all three 208;
-// both invariant geometry tables on the byte-result body 241.
-// byte vertex validity 185; range index at use 199; cached range end 183
-// (below gate); later plane 211; native strip start 220.
-// Earlier 185 (was 185): BSP/section carriers and range/plane homes remain;
-// external section source 191; active section reference 185; surface table before walk 205;
-// source and table 244; plane reads at use 225; collision record reference 185; long success/validity 192/185.
-// Earlier 185 (was 185): BSP/section carriers and range/plane homes remain.
-// Earlier: BSP/section carriers and range/plane homes remain;
-// Earlier: BSP/section carriers and range/plane homes remain.
-// BSP/section carriers and range/plane homes remain;
-// BSP/section carriers and range/plane homes remain.
-// Fast: native range 211; native reference 225; native section 216; native BSP 272;
-// native collision 256; range and reference 218; section and range 227; collision and reference 248.
-// BSP/section carriers, range/plane homes and vertex joins remain;
+// score 172 (was 172): Frame 0x58 agrees; BSP/section carriers (ours keeps the section in EBX and
+// the BSP in EBP, retail the BSP in EBX with the section in its stack home), range/plane homes and
+// vertex joins remain. Retail never initialises its vertex flag (set only when a vertex exists,
+// tested only after the first vertex); that uninitialised success-only flag gives 165 (163 with
+// other declaration orders; 119 with an uninitialised definition), but it reads an uninitialised
+// flag and drops the checks on the second and third vertices, so HEAD's body stays.
+// Tried: output declarations reordered 185; outputs renamed 185; part index/unknown stores swapped
+// 185; bool result 197; success-only flag 235, with bool result 221; instance index at each use
+// 226/227/201; vertex loop with a break 287; inverted ternaries 165; surface range index at each use
+// 191; flag initialised false 232; early return without a section 127 (an epilogue retail lacks;
+// realignment only); BSP reads at use 217; conditional section selection 229; direct success returns
+// 243; instance reads at use 213; relative triangle-range counter 206; reference table before
+// traversal 221; instance case first 232; byte success result 185; result-controlled traversal 205;
+// reference table and result traversal 216; index-first/output-first fetch contracts 185/185;
+// filled-point return 185; native span inputs 238; actual validity publication 185; triangle query
+// into result 217; validity-byte name 185; read-only section 185; shared residency 203; first-fetch
+// validity 185; strip-input cursor 221; residency/first 203; residency/cursor 208; first/cursor 221;
+// all three 208; both invariant geometry tables on the byte-result body 241; byte vertex validity 185;
+// range index at use 199; cached range end 183 (below gate); later plane 211; native strip start 220;
+// external section source 191; active section reference 185; surface table before walk 205; source
+// and table 244; plane reads at use 225; collision record reference 185; long success/validity
+// 192/185; native range 211; native reference 225; native section 216; native BSP 272; native
+// collision 256; range and reference 218; section and range 227; collision and reference 248;
 // BSP/range/block references 185/185/185; native block value 330; vertex count/memory copy 185/185;
-// native strip-word input 257; range plus block references 185. Defined vertex failure retained.
-// Earlier 185 (was 185): BSP/section carriers, range/plane homes and vertex joins remain.
-// Failure accumulator bool/byte 185/185; signed byte/word fetch result 185/185;
-// negative-index guard first 211; index test before data 208; failure plus early guard 211;
-// failure accumulator plus signed-byte fetch 185. All defined failures retained.
-// Round 143: joint range/plane, range/instance, plane/instance and all metadata reads
-// at every use 225/217/226/223; with BSP also read at every use 231/221/232/222.
-// All restored; defined vertex failures and protected triangle interfaces unchanged.
-// Earlier: BSP/section carriers, range/plane homes and vertex joins remain.
-// Round 131: private point setter 230; dword index 258; both 256; dword
-// fetch result 185; result with setter/index/both 230/258/256; complete
-// input point captured before the shared setter 319. All defined failures,
-// public declarations, triangle-test arguments and original helper restored.
-// BSP/section carriers, range/plane homes and vertex joins remain.
-// Validity output pointer/reference/byte 185/185/185; predicate-produced bool/byte 185/185;
-// predicate byte with native block 185; Boolean/byte outputs with native block 185/185. Defined
-// failure and geometry homes remain.
-// Final failure bool/byte/short/long with original validity 182/182/192/194;
-// with actual invalid vertex accumulator 182/182/192/194. Best reduction three
-// dropped; original result, defined fetch failures and all call roles restored.
-// Round 324: existing point setter 231; cluster reads at use 216; setter/cluster 245; instance receiver at use
-// 188; setter/instance 228; both receivers 220; setter/both 251; native coordinate initializer 231.
-// Round 168: Separate source/query points, entry/default initialization: byte 233/233, bool
-// 222/222; CRT byte 233/233, bool 222/222. Body, helper, in-place transform and include set
-// restored.
-// Round 333: Eligible source-point return with section/block inputs and aggregate/CRT caller copies 266 each; validity assigned only on failure with those four input/copy forms 192 each. Defined failures, original helper and call tuples restored; BSP/section and range/plane homes remain.
-// Round 153: native-byte geometry, metadata/ordinal, query/triangle workspace and part-output lexical homes 185 each; geometry with metadata, workspaces, outputs and all groups 185 each. Original complete body and defined vertex failures restored.
-// Round 192: two-use collision discriminator, reused reference surface ordinal and readonly
-// BSP/instance inputs, all seven combinations 185 each; combined unsigned discriminator 185.
-// Original observations, helper and all code restored; BSP/section and range/plane homes remain.
-// DL round 156: coherent part/residency/transform provider inline contracts, singles,
-// pairs, all and all with separate noinline declarations 185 each. Original declarations
-// restored; transform forms lose reduced controls 0x31590/0x168d60 (also 0x23d030 without noinline).
-// DH round 189: Native/const fetch source capture with aggregate/library publication 185 each;
-// each with query memmove 207. All one-use captures and copy changes restored; defined failures
-// and protected call roles retained.
-// Round 10 (lane 10): range declared before section 185; BSP declared last 186; range or BSP local
-// renamed 185/185 (spill slots unchanged); instance index read from the record at each use 201.
+// native strip-word input 257; range plus block references 185; failure accumulator bool/byte
+// 185/185; signed byte/word fetch result 185/185; negative-index guard first 211; index test before
+// data 208; failure plus early guard 211; failure accumulator plus signed-byte fetch 185; range/plane,
+// range/instance, plane/instance and all metadata reads at every use 225/217/226/223, with BSP also
+// read at every use 231/221/232/222; private point setter 230; dword index 258; both 256; dword fetch
+// result 185; result with setter/index/both 230/258/256; complete input point captured before the
+// shared setter 319; validity output pointer/reference/byte 185/185/185; predicate-produced bool/byte
+// 185/185; predicate byte with native block 185; Boolean/byte outputs with native block 185/185;
+// final failure bool/byte/short/long 182/182/192/194 (three-point best dropped); existing point setter
+// 231; cluster reads at use 216; setter/cluster 245; instance receiver at use 188; setter/instance 228;
+// both receivers 220; setter/both 251; native coordinate initializer 231; separate source/query points
+// with entry/default initialization byte 233/233, bool 222/222, CRT byte 233/233, bool 222/222;
+// eligible source-point return with section/block inputs and aggregate/CRT caller copies 266 each;
+// validity assigned only on failure with those four forms 192 each; native-byte geometry,
+// metadata/ordinal, query/triangle workspace and part-output lexical homes 185 each, all groups 185;
+// two-use collision discriminator, reused reference surface ordinal and readonly BSP/instance inputs,
+// all seven combinations 185 each; combined unsigned discriminator 185; part/residency/transform
+// provider inline contracts, singles, pairs, all and all with separate noinline declarations 185 each
+// (transform forms lose reduced controls 0x31590/0x168d60, also 0x23d030 without noinline); native/
+// const fetch source capture with aggregate/library publication 185 each, each with query memmove
+// 207; range declared before section 185; BSP declared last 186; range or BSP local renamed 185/185
+// (spill slots unchanged); section local renamed 185 (names move neither slots nor registers);
+// vertex fetches as one && chain with the triangle test 257 (677 bytes); vertex helper taking the
+// block, read once per triangle 238; vertex getter returning the point or NULL 255; nested ifs in
+// place of the continues 185 (same code), with the result in the loop test 221.
+// Round 380: geometry-join byte/signed-byte result with source-owned definition and
+// residency-owned section default subsets 208/172/216/217 each; original entry byte/bool
+// result with source-owned definition 195/207. Branch-owned definition null default
+// and geometry-join byte result 172 (733/726 bytes), plain confirmed; retained.
+// Frame 0x58 agrees; BSP/section residence, range/plane homes and vertex joins remain.
+// Round 384: strip receiver after readonly part lookup with original/readonly
+// strip/reference/both 201/201/201/201; each with the two-use native first-index snapshot
+// 230/230/230/230.
+// Original strip acquisition, native byte result and complete defined-failure body restored;
+// BSP/section and range/plane homes remain.
+// Round 249: Complete pointer/lower/upper eligibility exits in all six orders
+// 185/188/208/210/187/186; native bool/byte bounds predicates 254/254. Original
+// defined-failure helper and complete query restored; BSP/section homes remain.
+// Round 223: Signed/unsigned word masked-plane storage with original/reference-base/surface-base/both table selections 213/188/214/210/215/196/216/224. Original full-width plane, table selectors and defined vertex failures restored.
+// Round 165: actual instance-table predicate shared at both selections, crossed with
+// native byte fetch and the reused surface ordinal, 228 in all four forms; the same
+// four with a canonical Boolean query result 232 each. Predicate shortens the frame;
+// original long instance lifetime, helper, byte result and defined failures restored.
+// Geometry-join Boolean result 182 (726 bytes); native byte fetch 172; both 182;
+// initialized single-exit fetch 172, with Boolean result/byte fetch/both 182/172/182;
+// complete result/fetch graph with readonly section 182. Original helper and result restored.
+// Round 32 on branch-owned definition/result-at-join: all BSP observations 234;
+// all collision metadata observations 228; CRT query snapshot 172; BSP/metadata 231;
+// BSP/copy 234; metadata/copy 228; all 231, instance-first all 222. Original body restored.
+// Round 251: bounded vertex byte/signed-byte/word/unsigned-long ordinals
+// 259/259/259/172; each with a complete post-geometry range-end expression
+// 269/269/269/196. Original ordinal and bounds restored; frame/BSP/section and
+// defined vertex joins remain.
+// Round 387: BSP/section carriers and range/plane homes remain. Native fetch output/section/both
+// references 172 each; remaining index-output-section, output-index-section and section-output-
+// index contracts 172 each; output reference with index-first and both references with output-
+// first 172 each. Original query and complete defined-failure helper restored.
+// Round 387: Three further native fetch reference contracts, index-output-section with section
+// reference, output-index-section with point reference and section-output-index with both
+// references: 172 each. Eight new reference contracts total; three pointer-only order observations
+// are additional. Complete original query and defined-failure helper restored.
+// Round 393: native external cluster/instance/triangle references in seven subsets
+// 172 each; all with native surface reference 172. Original receivers and defined-failure body restored.
+// Round 228 on the branch-owned geometry join: filled-output pointer success with native
+// section/output references and index-first order, all eight contracts 172 each. Original
+// Boolean fetch, defined failures and caller roles restored; BSP/section residence remains.
+// Round 185: Direct collision-point transform input with aggregate/library/overlap-safe/shared-
+// setter copies at entry 199/199/205/243; case-owned copies 251/251/257/296. Original in-place
+// transform, point capture, defined vertex failures, complete body and include set restored.
+// Round 187: Native byte-data/offset versus point-table fetch inputs, long/word count and
+// early/result-first eligibility, all eight 235. Original fetch contract and body restored.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
-	byte result = false;
 	point3f point = collision->point;
 	s_structure_bsp_view *bsp = (s_structure_bsp_view *)g_4e0348;
 	long surface_range_index = collision->surface_range_index;
 	long plane_index = collision->plane_index & 0x7fff;
 	long instance_index = collision->instance_index;
-	s_structure_instanced_geometry_definition *definition = NULL;
+	s_structure_instanced_geometry_definition *definition;
 	s_structure_section *section = NULL;
 	s_structure_surface_range *range;
 
 	if (collision->type == 1)
 	{
+		definition = NULL;
 		range = &bsp->surface_ranges[surface_range_index];
 		s_structure_cluster_view *cluster = &bsp->clusters[range->cluster_index];
 
@@ -375,6 +390,12 @@ bool structure_get_lightmap_triangle(s_structure_collision_result const *collisi
 		}
 	}
 
+	else
+	{
+		definition = NULL;
+	}
+
+	byte result = false;
 	triangle->unknown18 = 0;
 	if (section)
 	{
@@ -499,9 +520,19 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // mesh field observations 214. Original records, observations and protected interfaces restored.
 // DH round 189: Native lookup/extraction-array/node-output work-scope lifetimes, singles, pairs,
 // all and reversed all 181 each; all original producer/read phases restored.
+// Round 215: first transform in place 210; with model/section/both const views
+// 210/210/210; const object/mesh views 181/181; in-place with const mesh/all
+// four const views 210/210. Original input point, views and body restored.
 // Round 62: section groups read right after the surface lookup, as retail does 177 (kept; model
 // and collision swap EBX/EDI); after the node count/count test/nodes/sentinel 182/186/186/186;
 // with the stored section index replaced by the local 206; object lookup before the model 202.
+// Round 150: section test and geometry-block call in one condition 78; lookup pointer for the
+// second call only 78; region index named for its four uses 254; the matched siblings' lookup
+// pointer (`s_lookup *lookup_pointer = &lookup;` for both calls) 77 (retail's ESI reuse), and with
+// the diagnostic bounds read 4: left are only 0x11e800's argument registers (ours second/third/point
+// in esi/edx/ecx, retail edx/ecx/esi), so both forms wait on that contributor body.
+// Round 202: Native mesh node/strip/parts fields, seven combinations, and all with const receiver 78/78/78/78/78/78/78/78 fast.
+// Original executable source restored. Frame 0x58 agrees; model/collision roles, bounds acquisition, lookup-address reuse and triangle-test inputs remain.
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)

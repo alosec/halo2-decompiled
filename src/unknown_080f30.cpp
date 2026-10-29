@@ -269,7 +269,9 @@ struct s_pending_message_storage : s_pending_message_header
  long capacity;
 };
 
-// score 14 (was 14): timestamp slot sharing leaves frame 0x1c rather than 0x18;
+// score 14 (was 14): the frame is 0x1c against retail's 0x18 and the stack-slot offsets
+// differ throughout; retail gives the pump counter and the size the two lowest slots and
+// packs the time stamp's high half into the tick counter's slot, ours gives it its own.
 // unsigned capacity 14; result after both outputs 85; result after pointer output 85; unsigned
 // capacity and late result 85; published field output 14; published field test 14; both
 // published field consumers 14; allocation-result flow 45. _ReadWriteBarrier before the
@@ -277,11 +279,20 @@ struct s_pending_message_storage : s_pending_message_header
 // first counter's slot, ours packs the retry count there); after it 14; before the if 17.
 // Inner external inline 14; outer and both external inline 287 each (out of line);
 // long, byte and const allocation 14 each; nested guards 14; allocation scope 14; role names 14.
+// Round 107: retail gives start's home the first time stamp's slot (as in 0x862e0) and the pump
+// counter its own; ours places start's home last. Unchanged layout (14) with: helper local names
+// (pumps, start, time stamp) renamed; pumps declared at the top, after start, initialised at the top 105;
+// non-volatile time stamp 123 (stores dropped); start as a helper parameter, last or middle 14/14;
+// start assigned after its declaration, unsigned start, unsigned time stamp, named second reading 14
+// each; capacity read from the request at each use 14. The unused &capacity pointer was dropped
+// (identical bytes).
+// Direct capacity field reads 14; storage-first guard 40; full-width unsigned result 92;
+// optimistic result with failure arms 98; request/allocation shared exits 14/14;
+// native int capacity 14; direct capacity with full-width result 92.
 // @retail 0x80e10
 bool function_80e10(s_pending_message_storage *request, void **output, long *size)
 {
  long capacity = request->capacity;
- long const *local_0 = &capacity;
  bool result = false;
  if ((dword)capacity >= 16 && !request->data)
  {

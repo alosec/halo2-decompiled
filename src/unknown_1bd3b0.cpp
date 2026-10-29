@@ -5,6 +5,7 @@
 #include "unknown_26c380.h"
 #include "unit_requests.h"
 #include "unknown_1f4460.h"
+#include "unknown_0259d0.h"
 #include <math.h>
 
 /* slot type 0x5d */
@@ -474,10 +475,6 @@ struct s_1bde80_joint
 
 /* invites the clump members within 10 of the joint's object, the nearest
    first */
-// score 48 (was 59): retail tests the loop condition at the top of the loop
-// and jumps back to
-// that test, ours tests it at the bottom, so the preamble and the register
-// allocation differ.
 // @retail 0x1bde80
 short __stdcall function_1bde80(long actor_index, long joint_index, long a, long b)
 {
@@ -489,24 +486,22 @@ short __stdcall function_1bde80(long actor_index, long joint_index, long a, long
 	function_b9dd0(joint->object_index, &position);
 	if (joint->participant_count > 1)
 	{
-		long index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_element_502420_member_iterator iterator;
+		s_actor_view *other;
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		iterator.index = NONE;
 
-		while (index != NONE)
+		while ((other = element_502420_member_next(&iterator)) != 0)
 		{
-			s_actor_view *other = actor_get(index);
-			long other_index = index;
-
 			if (other != actor)
 			{
-				real i = position.x - other->position.x;
-				real j = position.y - other->position.y;
-				real k = position.z - other->position.z;
-				real distance = (real)sqrt(j * j + (i * i + k * k));
+				vector3f delta;
+				vector3d_from_points3d(&other->position, &position, &delta);
+				real distance = (real)sqrt(delta.j * delta.j + (delta.i * delta.i + delta.k * delta.k));
 
-				if (10.0f > distance && function_26eae0(joint_index, other_index, 3, 1.0f / (distance + 0.1f)))
+				if (10.0f > distance && function_26eae0(joint_index, iterator.index, 3, 1.0f / (distance + 0.1f)))
 					count++;
 			}
-			index = other->next_index;
 		}
 	}
 	return (short)count;

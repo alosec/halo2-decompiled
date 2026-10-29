@@ -136,6 +136,8 @@ long g_4ce390;
 
 bool function_07a9b0(void);
 
+#define FLOOR(n, floor) ((n) < (floor) ? (floor) : (n))
+#define CEILING(n, ceiling) ((n) > (ceiling) ? (ceiling) : (n))
 #define SEARCH_LONG(object, offset) (*(long *)((byte *)(object) + (offset)))
 #define SEARCH_FLAG(object, offset) (*(bool *)((byte *)(object) + (offset)))
 
@@ -197,69 +199,23 @@ bool function_90160(long task_index, s_match_result_data *result)
    score to the loosest as the search widens */
 static inline void session_search_set_minimum_score(s_session_search *search)
 {
-	long loose_score = g_network_configuration.value1ec;
 	if (search->unknown1c != NONE && search->unknown20 > 0)
-		search->minimum_score = (long)((real)g_network_configuration.value1e8 + ((real)search->unknown1c / (real)search->unknown20) * ((real)loose_score - (real)g_network_configuration.value1e8));
+		search->minimum_score = (long)((real)g_network_configuration.value1e8 + ((real)search->unknown1c / (real)search->unknown20) * ((real)g_network_configuration.value1ec - (real)g_network_configuration.value1e8));
 	else
-		search->minimum_score = loose_score;
+		search->minimum_score = g_network_configuration.value1ec;
 }
 
 extern "C" void _ReadWriteBarrier(void);
-// score 36 (was 36): Frame 0x20 and request fill agree; current/bound/score register exchange remains.
-// Earlier: Frame/length and the whole request fill agree; the bound and score section is retail's
-// Frame/length and the whole request fill agree; the bound and score section is retail's
-// with EAX and ECX exchanged (current ECX, clamp temporaries/total EAX, score EAX where retail has EDX).
-// Round 87: request filled x, y, count, maximum pair, minimum pair 36 (screen of all 120 orders after x, y:
-// 36..54); with each-use loose read 50; current as field/local, upper first, flags first, ternary clamps on
-// the new order 36/38/36/36.
-// Earlier at 46 (was 50): current/bound carriers and request field scheduling differed.
-// Earlier helper current/total/both inputs 103/51/51; standard lower/upper/both clamps 50;
-// combined inputs/clamps 51; field current 50; shared bound workspace 50; default score first 98;
-// invalid score inputs first 50.
-// current/bound registers and request scheduling differ; native field layout,
-// typed bound/flag/request groups 0..7: 50, 50, 50, 50, 50, 50, 50, 50.
-// frame 0x20 agrees; ECX/EAX allocation and request clear/fill scheduling differ;
-// tried request count before other fields 48; request assignments in observed order 50;
-// request declared at entry 50; minimum score before bound updates 62;
-// bound result homes declared together 50; task result used for store and test 50;
-// explicit clock selection 53; direct zero initialized request 87;
-// current snapshot inside active guard 50; both bounds declared before current 50. Restored.
-// named progress 50; lower/upper/both output clamps 105/104/98; inactive current first 58.
-// Strict/loose/both endpoints 50/46/46; converted strict alone/with loose 50/46;
-// endpoints with total/current/both progress snapshots 46/46/46; count-first/observed fill 50/48.
-// Kept the loose endpoint for interpolation and fallback; plain check 46 at 336/336 bytes.
-// Returned/result/conditional score helper 99/99/99; enabled/disabled/both chained flags 48/48/50; shared
-// result-buffer size 93; request workspace name 46. Current/bound allocation and request scheduling remain.
-// Upper bound first 50; paired bound production 63; flags before bounds 46; flags from current 104;
-// native bound integers 46; strict/loose/both helper endpoint inputs 46/50/50. Opening body and
-// helper restored; current/bound carriers and request scheduling remain.
-// Shared valid progress predicate with live/current/total/both score inputs 105/105/108/108;
-// shared invalid predicate with those inputs 105/105/108/108. Original helper and body restored.
-// Round 229: Existing score helper pointer output with original/current/total/both scalar inputs
-// 36/36/36/36; reference output with those inputs 36/36/36/36. Original helper/body restored.
-// Current/lower/upper/both names 36/36/36/36; const current/endpoint 36/36; force-inline score 36;
-// score guard reordered 36; lower/upper candidate clamp 37/36.
-// Round 378: lower/upper/both shared clamp limits 36/36/36; limits before
-// candidates 37; upper limit before lower publication 36, with lower limit
-// before its candidate 37; early upper limit with shared helper current 36;
-// upper candidate before lower publication with both limits 62. Original
-// helper and body restored; current/bound/score register exchange remains.
 // @retail 0x90b30
 void function_90b30(s_session_search *search)
 {
 	long current = search->unknown1c;
 	if (current != NONE)
 	{
-		long minimum = SEARCH_LONG(search, 0x68) - current;
-		if (minimum < SEARCH_LONG(search, 0x60))
-			minimum = SEARCH_LONG(search, 0x60);
-		SEARCH_LONG(search, 0x30) = minimum;
-		long maximum = SEARCH_LONG(search, 0x50) + current;
-		if (maximum > SEARCH_LONG(search, 0x64))
-			maximum = SEARCH_LONG(search, 0x64);
+		SEARCH_LONG(search, 0x30) = FLOOR(SEARCH_LONG(search, 0x68) - current, SEARCH_LONG(search, 0x60));
 		SEARCH_FLAG(search, 0x2c) = true;
 		SEARCH_FLAG(search, 0x24) = true;
-		SEARCH_LONG(search, 0x28) = maximum;
+		SEARCH_LONG(search, 0x28) = CEILING(SEARCH_LONG(search, 0x50) + current, SEARCH_LONG(search, 0x64));
 	}
 	else
 	{
@@ -705,7 +661,7 @@ done:
 	return result;
 }
 
-// score 113 (was 113): the details cursor is entry+0x1f8 (retail entry+0x10c), so every field
+// score 111 (was 111): the details cursor is entry+0x1f8 (retail entry+0x10c), so every field
 // offset differs, and the kind/count homes differ. Cursor taken from the results before the
 // end pointer gave retail's results reuse after the compare (128 -> 113). Round 52:
 // single-exit compare 128; typed details block 128; separate details cursor 154, with the typed
@@ -739,6 +695,16 @@ done:
 // Round 54: score/distance/bounded as the struct's named entry fields 204; details pointer
 // declared before the loop 113; details inputs read entry-relative 113; details pointer as
 // the named field's address 113; details pointer as a long array with indices 113.
+// Round 71 (one-file harness, exact for this function): VC re-bases the second cursor on the
+// most-used cursor offset (the score), whatever is first or used as a value; with the score
+// fields entry-relative there is no second cursor at all (161 instructions). Score reset through
+// the entry 111; score/distance/bounded entry-relative 2nd cursor lost; all fields entry-relative
+// the same; typed details pointer 111; kind/value/count as three ternaries 111; kind compare
+// reversed 111. Retail also keeps the search pointer in EDI through the scoring block (both
+// detail-threshold globals CSEd), which needs count in EBP and kind on the stack.
+// Round 221: Single details induction with byte bounds, detail-relative/named scores 166/173;
+// owner-record bounds 186/170; complete conditional input producers give the same four counts.
+// All restored. Unchanged reduced control 113 versus full baseline 111.
 // @retail 0x91000
 void __stdcall session_search_score_and_sort(s_session_search *search)
 {

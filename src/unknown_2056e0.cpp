@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "unknown_1cec30.h"
 #include "unknown_1428b0.h"
+#include "vector_products.h"
 #include <math.h>
 
 struct s_vehicle_physics_state;
@@ -84,10 +85,21 @@ PRIVATE __forceinline void vector_limit_length(vector3f *v, real maximum)
 	real length_squared = v->k * v->k + v->j * v->j + v->i * v->i;
 	if (length_squared > maximum * maximum)
 	{
-		real scale = (real)(maximum / sqrt(length_squared));
-		v->i = (real)(v->i * scale);
-		v->j = (real)(v->j * scale);
-		v->k = (real)(v->k * scale);
+		double scale = maximum / sqrt(length_squared);
+		scale_vector_by_double(v, scale, v);
+	}
+}
+
+/* the same cap with the scale kept in a real, as the linear brake's cap is */
+PRIVATE __forceinline void vector_limit_length_real_scale(vector3f *v, real maximum)
+{
+	real length_squared = v->k * v->k + v->j * v->j + v->i * v->i;
+	if (length_squared > maximum * maximum)
+	{
+		real scale = maximum / sqrt(length_squared);
+		v->i = scale * v->i;
+		v->j = scale * v->j;
+		v->k = scale * v->k;
 	}
 }
 
@@ -110,7 +122,10 @@ PRIVATE __forceinline void motion_inverse_inertia_local(c_vehicle_step_motion *m
 	out->up.k = inertia.m_col2(2);
 }
 
-// score 184 (was 184): frame 0x94 versus 0xc4 and query/rotation, reciprocal/product and brake homes remain.
+// score 0 (was 1): the linear brake's cap keeps its scale in a real, so retail's float zero
+// constant multiplies the scale (fmul dword) where the shared cap's double scale produced a
+// double zero (fmul qword); the angular cap keeps the shared double scale and is unchanged.
+// double 0.0 constant (`fmul qword`), retail by the float 0.0f (`fmul dword`).
 // Earlier: Frame 0x94 versus 0xc4; query/rotation overlap, motion/reciprocal and product/brake allocation remain.
 // Aligned frame remains 0x94 versus retail 0xc4; motion/reciprocal, product and braking scheduling still differ.
 // aligned query/rotation overlap, motion/reciprocal and cap-result allocation remain.
@@ -191,6 +206,11 @@ PRIVATE __forceinline void motion_inverse_inertia_local(c_vehicle_step_motion *m
 // retail's subtraction from the zero register and retail's length (1265) but 221 fast; with function-scope
 // rotation (frame 0xc4, rotation at +0xac) 232; with one integration loop 221; acceleration folded into the
 // angular loop 270; inverse-mass products reversed 221 (no change). Float register allocation then differs.
+// Round 66 (fast): the inverse-mass products follow definition order: with the reciprocal defined before the
+// force block they scale each component in place as retail and every later SSE register then agrees (aligned
+// 105 -> 58) but 170 is not kept (it moves a memory read past a call, and retail divides late, after the motion
+// load); defined at the top 263 (spilled across the state query); before the velocity call 200; before the
+// motion load 184; written at each use 184; `x = x * reciprocal` 184; `+=` force/torque adds 184.
 // Lane 9 r25: rotation declared in a block around the inertia query and assigned after it 221 (frame
 // 0xc4, raw inertia +0x70, rotation +0xac as retail's; first difference +0xfd: retail loads the motion
 // before the reciprocal and scales each component in place, ours copies the scalar); with the
@@ -199,6 +219,22 @@ PRIVATE __forceinline void motion_inverse_inertia_local(c_vehicle_step_motion *m
 // Round 30 (m3 lane 12): inverse-mass products as `x = x * inverse_mass`, reciprocal before the motion pointer,
 // force sum as `+=`, reciprocal written at each use 184 each (identical code: the reciprocal stays the
 // product destination); function-scope rotation 221 (frame 0xc4, rotation +0xac, float registers rename).
+// Lane 4 r106: the force/torque sums and the four velocity integrations through pointer helpers
+// (vector3f_add, vector3f_add_scaled) give retail's division after the motion load and the in-place
+// products (184 -> 123 -> 72 with function-scope rotation and `-(braking / dt)`); the limit's scaling
+// through scale_vector_by_double 1. For the last difference: brake vectors through vector3f_scale, an
+// aggregate initializer or real_point3d_set, `= 0`, zero k first 1/1/1/1/4; double-scale local 7; real
+// scale into the double helper 1; limit inline/no inline keyword 1/1; the existing 0xa75d0 for both/linear
+// only 72/2 (float scale: retail's zero constant but not its reload order); explicit double conversions 7.
+// Round 272: CRT planar/both brake initialization 172/172; complete velocity copy 190;
+// both native vector setters 1; consumed limiter output 146, explicit input/output 146;
+// native k-j-i norm loop 149; CRT planar zero with consumed limiter 183. All restored; zero-product width remains.
+// Existing double-scale force-inline declaration 1
+// complete limiter split pointer/reference outputs 1/1
+// native value input with pointer/reference outputs 325/325
+// complete native returns from value/reference inputs 345/283
+// returned output pointer 1. Zero product remains wide
+// original limiter and shared-helper declaration restored.
 // @retail 0x2056e0
 void __stdcall function_2056e0(long vehicle_index, s_vehicle_physics_state *state, real braking,
 	vector3f const *force, vector3f const *torque)
@@ -212,17 +248,9 @@ void __stdcall function_2056e0(long vehicle_index, s_vehicle_physics_state *stat
 	if (!function_206090(state, &linear_change, &angular_change))
 		braking = 0.0f;
 	if (force)
-	{
-		linear_change.i = force->i + linear_change.i;
-		linear_change.j = force->j + linear_change.j;
-		linear_change.k = force->k + linear_change.k;
-	}
+		vector3f_add(force, &linear_change, &linear_change);
 	if (torque)
-	{
-		angular_change.i = torque->i + angular_change.i;
-		angular_change.j = torque->j + angular_change.j;
-		angular_change.k = torque->k + angular_change.k;
-	}
+		vector3f_add(torque, &angular_change, &angular_change);
 	vector3f linear_velocity;
 	vector3f angular_velocity;
 	function_ba1d0(vehicle_index, &linear_velocity, &angular_velocity);
@@ -233,40 +261,30 @@ void __stdcall function_2056e0(long vehicle_index, s_vehicle_physics_state *stat
 	linear_change.k *= inverse_mass;
 	matrix3x3 inverse_inertia;
 	motion_inverse_inertia_local(motion, &inverse_inertia);
-	{
-		matrix3x3 rotation = step->rotation;
-		function_142eb0(&rotation, &inverse_inertia, &inverse_inertia);
-		function_142eb0(&inverse_inertia, function_142b80(&rotation, &rotation), &inverse_inertia);
-	}
+	matrix3x3 rotation = step->rotation;
+	function_142eb0(&rotation, &inverse_inertia, &inverse_inertia);
+	function_142eb0(&inverse_inertia, function_142b80(&rotation, &rotation), &inverse_inertia);
 	vector3f local_461a4b_2;
 	for (long axis = 0; axis < 3; axis++)
 		local_461a4b_2.n[axis] = inverse_inertia.up.n[axis] * angular_change.k +
 			inverse_inertia.left.n[axis] * angular_change.j + inverse_inertia.forward.n[axis] * angular_change.i;
-	linear_velocity.i += linear_change.i * dt;
-	linear_velocity.j += linear_change.j * dt;
-	linear_velocity.k += linear_change.k * dt;
-	angular_velocity.i += local_461a4b_2.i * dt;
-	angular_velocity.j += local_461a4b_2.j * dt;
-	angular_velocity.k += local_461a4b_2.k * dt;
+	vector3f_add_scaled(&linear_velocity, &linear_change, dt, &linear_velocity);
+	vector3f_add_scaled(&angular_velocity, &local_461a4b_2, dt, &angular_velocity);
 	if (braking > 0.0f)
 	{
-		real scale = 0.0f - braking / dt;
+		real scale = -(braking / dt);
 		vector3f linear_brake;
 		linear_brake.i = linear_velocity.i * scale;
 		linear_brake.j = linear_velocity.j * scale;
 		linear_brake.k = 0.0f;
-		vector_limit_length(&linear_brake, 270.0f);
+		vector_limit_length_real_scale(&linear_brake, 270.0f);
 		vector3f angular_brake;
 		angular_brake.i = angular_velocity.i * scale;
 		angular_brake.j = angular_velocity.j * scale;
 		angular_brake.k = angular_velocity.k * scale;
 		vector_limit_length(&angular_brake, 18.0f);
-		linear_velocity.i += linear_brake.i * dt;
-		linear_velocity.j += linear_brake.j * dt;
-		linear_velocity.k += linear_brake.k * dt;
-		angular_velocity.i += angular_brake.i * dt;
-		angular_velocity.j += angular_brake.j * dt;
-		angular_velocity.k += angular_brake.k * dt;
+		vector3f_add_scaled(&linear_velocity, &linear_brake, dt, &linear_velocity);
+		vector3f_add_scaled(&angular_velocity, &angular_brake, dt, &angular_velocity);
 	}
 	function_b77d0(vehicle_index, &linear_velocity, &angular_velocity);
 	vehicle->contact_flags = 0;

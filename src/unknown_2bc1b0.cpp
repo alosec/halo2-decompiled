@@ -136,7 +136,8 @@ struct s_placement_2bc1
 	byte field_28[0xc4 - 0x28];
 };
 
-// score 16 (was 16): placement argument EAX/ECX transfer and event-store scheduling differ from +0x6d.
+// score 5 (was 5): the placement pointer copied for the creation call uses ECX where retail uses
+// EAX, and the game options pointer read for the mode test uses EDX where retail uses ECX.
 // Existing initializer 89; initializer result 89; initializer before mode 88; paired helpers 88;
 // event before team 63; early event plus sender 63; event before creation 63; returning initializer before creation 90.
 // Unconditional event with options pointer 32; byte mode before event 31; mode against event type 31;
@@ -147,6 +148,11 @@ struct s_placement_2bc1
 // compare after them, 223 bytes); test result as a bool before the fill 76; fill then send helper 32;
 // mode read into a local before the fill 31 (load order right, constant 4 not shared in eax);
 // function-scope event filled before the test 32. The placement copy is ecx here, eax in retail.
+// Round 70: byte-array placement 5; creation assignment in the marker test 5 (on the current
+// body); placement at function scope 5; event without its block scope 32 (fill moves before the
+// test); named marker-test bool 5.
+// Marker-query inline declarations 5; native tag hierarchy 5; creation/announcement/both names 5/5/5;
+// missing-tag return 5; tag field at both uses 50; direct tag receiver 5; native tag with both names 5.
 // @retail 0x2bc1f0
 void function_2bc1f0(long team)
 {
@@ -164,13 +170,11 @@ void function_2bc1f0(long team)
 				if (object_index != NONE)
 				{
 					function_15e050(object_index, (short)team);
-					if (g_4e6948->mode != 4)
 					{
 						s_event event;
 
 						game_engine_event_initialize_inline(&event, 4, 1);
-						function_a7c50(&event);
-						function_19eb30(&event);
+						game_engine_event_send_inline(&event);
 					}
 					function_a7870(object_index);
 				}
@@ -245,6 +249,16 @@ struct s_item_object_2bc1
 // reads the rate, so the rate and its forty-times multiply land in different
 // registers than ours; the countdown is also still decremented in al, while
 // retail keeps the decremented byte in cl.
+// Round 8: MSVC gives al to whichever byte value is compared as a signed byte
+// and moves the other one out of the way, so the countdown can only sit in cl
+// while the timer is the compared value; retail compares the countdown and
+// copies it into al, which no form here reproduces: the countdown compared
+// inside the test 91, before the test 91, as an int expression 67 (a 32-bit
+// test), through an int local 91, the expiry test before the store 91, a
+// redundant timer test as well 100; the rate in its own short local 61 (the
+// same code); the maximum line before the object pointer 70.
+// The expiry tested as `timer <= 1` 61 (the countdown lands in cl as in retail, but
+// retail compares it through a copy in al); not kept, gain under 8.
 // Standard convention (see docs/DECOMPILING.md):
 //   1. Retail keeps it __stdcall: the team argument is read from [esp + 0x3c]
 //      and the function returns with ret 4. Without the marker LTCG moves the
@@ -273,6 +287,10 @@ struct s_item_object_2bc1
 // shared event 97; separate timer values 110; early tally pointer 97; combined 156.
 // Separate entry declaration 97; independent/complete failure guards 97/97; multi-use team value 156;
 // timer field reference 110; published timer result 97; tally reference/array 97/97; signed ceiling 97; scoring-state lifetime 97.
+// Lane 10 r15: retail decrements a copy (`mov cl,al; dec cl; mov al,cl; test al,al`, one jg);
+// `countdown <= 0` 91 (one jg, state moves to ESI); the decremented value stored and the field
+// tested 91; `--field <= 0` 91; `= --timer` then `timer <= 0` 69 (state back in EBX, only the copy
+// and later offsets differ); the decremented value assigned back to the timer 91.
 // @retail 0x2bc990
 void __stdcall function_2bc990(long team)
 {

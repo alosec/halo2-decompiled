@@ -292,6 +292,8 @@ void __stdcall function_44c90(long group, dword selection_mask, long level,
 // 199 (frame 0x10a4: the query no longer shares the bound position's slot), with the long index 200.
 // Round 224: Uniform node-byte observations with branch/broad count, initialized/filled output
 // and original/success-local transform lifetimes 219/199/223/199/219/199/223/199. Original node snapshot and scopes restored.
+// Round 230: native list count/capacity signedness and readonly release-input metadata,
+// four header forms and their readonly-release pairs, all eight 190. Original types restored.
 // Round 28 (m3 lane 12): retail's frame: query +0x20 shared with the loop's position, function-scope center
 // copy +0x30, loop bit mask +0x3c; its marking block is one tail-merged copy of the two sites. Long index
 // used for table and call 191 (index esi/entry edi, retail the other way); indexed entry at each use 271;
@@ -300,6 +302,13 @@ void __stdcall function_44c90(long group, dword selection_mask, long level,
 // Round 30 (m3 lane 12): query declared after entry/geometry 190 (identical); geometry helper taking the
 // index (as the sibling file's) 228, 0x44c90 140; geometry helper with one result exit 188 but 0x44c90 107->132;
 // bound position read at each use 198; transform at function scope 190.
+// Lane 4 r106 (fast): a named visibility-word pointer for the test and both marks 190; with the
+// function-scope center copy and the query in the list branch 199 (frame 0x10a4), with that query
+// unaligned 192; the word pointer with a long index for table and call 191; the existing
+// bit_vector_test/bit_vector_set 222 (890 bytes). Retail still shares one marking block.
+// Round 63: aligned query/position union with separate center 202 (frame 0x10a4); original-name and
+// reversed-declaration forms 202/202, with long index 203; center lexical rename 202; long index with
+// const entry 191; entry/index declarations swapped 191; short index local 190. Original body restored.
 // @retail 0x45560
 void function_45560(short entry_index, point3f const *center, real radius)
 {

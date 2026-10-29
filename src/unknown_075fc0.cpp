@@ -70,7 +70,7 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
     return local_0;
 }
 
-// score 408 (was 443): frame 0x38/0x34; channel/result homes and the counter copy remain.
+// score 408 (was 408): frame 0x3c/0x34; channel/result homes and the counter copy remain.
 // Native channel 434; primary/both counter products 448/419; native products 446/423;
 // native live flag/callback/both 441/439/432; direct counter product 419;
 // both/primary word concatenation 423/431; native both/primary concatenation 415/441.
@@ -91,6 +91,17 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
 // the host test's arm 431; the window factor as if/else 408 at 1369 bytes (retail's byte test and
 // branch; no gain, not kept); with the union snapshot 439 (frame 0x34 as retail), plus the host-flag
 // arm 433.
+// Round 148 (counts, then difflib-aligned differences with the baseline at 427): snapshot as the existing
+// union copy 445/425; plus the reset as a struct copy of the counter through a union member of field_478
+// 459/417; window factor if/else 430/432; channel fields through channels[index] 415/257; index + union
+// snapshot + struct reset 440/241; that plus the window if/else 425/230 (frame 0x34, `this` in EDI and the
+// search's own channel pointer as retail; left: NONE/index/zero registers, the has-host flag set in its
+// test (retail stores false first, 436/226), the 0xe4/0xe8 pick, the 0.0 early exit, the reliable-bytes
+// tail); on that, window as `= 0; if` 440/226; 0xe4/0xe8 as if/else 438/237; the 0.0 exit as its own
+// return 444/334. Body unchanged.
+// Round 222: Persistent configuration/updated counter/both 428/415/432; callback-scale arms 415; configuration-arms/counter-arms/all 424/422/415; all with named window terms 415. All restored; frame 0x3c versus 0x34, channel/result homes and counter composition remain.
+// MiniMax D run 2026-10-29: the two flag stores in the other order and the reliable-pending call's
+// declaration split from its assignment 407 (gain 1, under the keep bar; not kept).
 // @retail 0x75fc0
 bool s_network_observer::connection_v05(long arg_1,
 	bool arg_2, bool arg_3, bool arg_4, bool *arg_5, bool *arg_6,

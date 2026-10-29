@@ -62,38 +62,6 @@ public:
 	REFERENCED_NEW_2D88A0(0x13)
 };
 
-// an output stream's constructor over a writer, which it holds a reference
-// to (unknown_2d9090.cpp); the object is the one stream_holder_2d8e70.h
-// declares (vtable 0x411e2c, destroyed by 0x2d8e70)
-class holder_2d9090
-{
-public:
-	long field_4;
-	referenced_2d88a0 *field_8;
-
-	holder_2d9090(referenced_2d88a0 *object);
-	virtual ~holder_2d9090() {}
-};
-
-// writing one character to an output stream (unknown_2d8ef0.cpp)
-class class_2d8ef0_stream
-{
-public:
-	virtual void slot0() = 0;
-	virtual void slot1() = 0;
-	virtual int write(const void *data, int size) = 0;
-};
-
-class class_2d8ef0
-{
-public:
-	void *vtable;
-	long field_4;
-	class_2d8ef0_stream *stream;
-
-	class_2d8ef0 *append_character(char value);
-};
-
 // flushing an output stream (unknown_2d9070.cpp)
 class class_2d9070_stream
 {
@@ -587,10 +555,9 @@ referenced_2d88a0 *stream_factory::open_writer(char const *name)
 extern stream_factory *g_480180;
 
 // the output stream and the error stream (vtable 0x411d20, 0x20 bytes,
-// g_48017c), each over a console writer. The streams are built in place by
-// holder_2d9090's constructor (0x2d9090) and destroyed by
-// stream_holder_2d8e70's destructor (0x2d8e70): one retail class, which src
-// declares under both names.
+// g_48017c), each over a console writer, built in place by
+// stream_holder_2d8e70's constructor (0x2d9090) and destroyed by its
+// destructor (0x2d8e70).
 class console_streams : public referenced_2d88a0
 {
 public:
@@ -611,8 +578,8 @@ static_assert(sizeof(console_streams) == 0x20, "console streams layout");
 // @retail 0x2d7570
 console_streams::console_streams()
 {
-	new (output_storage) holder_2d9090(g_480180->open_console(1));
-	new (error_storage) holder_2d9090(g_480180->open_console(2));
+	::new (output_storage) stream_holder_2d8e70(g_480180->open_console(1));
+	::new (error_storage) stream_holder_2d8e70(g_480180->open_console(2));
 	havok_reference_remove((c_havok_reference_counted *)output()->stream);
 	havok_reference_remove((c_havok_reference_counted *)error_output()->stream);
 }
@@ -867,7 +834,7 @@ void error_handler::output(long type, char const *title, long id, char const *de
 	char buffer[0x200];
 	stream_holder_2d8e70 stream(buffer, sizeof(buffer), flag_2d8e70(true));
 	stream.function_2d8f10(file);
-	((class_2d8ef0 *)&stream)->append_character('(');
+	stream.append_character('(');
 	stream.function_2d8f60(line)
 		->function_2d8f10("): [")
 		->function_2d8f10(id_text)

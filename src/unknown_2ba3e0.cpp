@@ -325,7 +325,7 @@ void function_2b9a00(s_particle_2b96 const *particle, real distance, vector3f *r
     }
 }
 
-PRIVATE __forceinline void normalize_particle_velocity_2b(vector3f *v)
+PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 {
     real squared = v->i * v->i + v->j * v->j + v->k * v->k;
     if (squared != 0.0f)
@@ -335,11 +335,13 @@ PRIVATE __forceinline void normalize_particle_velocity_2b(vector3f *v)
         v->j *= inverse;
         v->k *= inverse;
     }
+    return v;
 }
 
-// score 196 (was 249): frame 0xb4 and length agree; retail scales the attraction direction's j and k in
-// place where ours computes them into temporaries (three instructions), and its second velocity normalize
-// multiplies j and k from memory with deferred stores; loop-top reload order of the definition/first.
+// score 47 (was 47): frame 0xb4 agrees; 1517/1516 bytes, back-edge reloads and velocity stores differ.
+// Frame 0xb4 agrees; 1517/1516 bytes. Back-edge parameter reloads and velocity
+// blend/normalization stores differ; shared scale return plus addition recovers the attraction's in-place products.
+// Earlier frame-matched body kept attraction j/k products in temporaries and deferred velocity stores.
 // Round 9 (lane 11): steering record replaced by plain locals 291 (frame 0xac); the distance estimate with
 // separate input and result variables (as flexible_surface.cpp) 254 (frame 0xb4); the 0x2b9750 call with
 // retail's argument registers 252; change zeroed i first 250; attraction delta and length through the
@@ -386,6 +388,56 @@ PRIVATE __forceinline void normalize_particle_velocity_2b(vector3f *v)
 // independent delta/previous/both 432/382/406; all vectors 431; all limits 399;
 // maximum-speed/change pair 397; all independent 415. Every form aligns the
 // frame to 16 and loses four matched siblings in preview; original helper/storage restored.
+// Round 84: velocity block through a named velocity pointer 430 (1290 bytes); attraction amount
+// through the existing scale helper 196 (same code); an inline pointer-parameter vector add for both
+// velocity additions 234 (1541 bytes); next declared at the loop 242; attraction normalize through the
+// header's vector3f_scale 213. Restored.
+// Round 27: native scale/direction/scale+direction/velocity input-output contracts
+// 199/196/199/243; scale+velocity/direction+velocity/all 255/243/255; all with
+// shared velocity squared length 255. Direction contracts lose two matched
+// siblings in preview; every original helper contract and body restored.
+// Round 245: shared in-place scale orders ikj/jik/jki/kij/kji 208/209/216/223/222;
+// complete factor-first products in ijk/jik/kji order 196/209/222. Original helper restored.
+// Back-edge reload order, attraction temporaries and serial velocity stores remain.
+// Round 208: loop-entry input-mask acquisition 271; scoped linked induction on the
+// independent-vector graph 242; existing shared addition for
+// attraction/change/attraction+change/previous/attraction+previous/change+previous
+// 196/208/208/212/212/234. All restored. Frame and length agree; back-edge reloads and
+// normalization/velocity stores remain.
+// Round 377: independent caller attraction/change/both-speed normalized outputs 423/387/325;
+// paired attraction+change/attraction+speed/change+speed/all 591/514/490/679;
+// all with shared previous output 629. All restored; frame/reload/store differences remain.
+// Round 211: Complete shared direction/velocity/scale input snapshots 563/327/585;
+// direction+velocity/direction+scale/velocity+scale/all 653/831/677/923; all with read-only
+// scale/velocity snapshots 923. All restored; normalization transfers and velocity stores remain.
+// Round 31: shared attraction scale return consumed by shared addition 159; native change-stage scales 196;
+// both boundaries 158 (only one additional point, not retained); settings/origin/first placeholder names 196,
+// with attraction/change/both contracts 159/196/158; all five placeholder names plus both contracts 158.
+// Original parameter names and both original change-scale stages retained.
+// Round 379: Successor after bounds/attraction/collision/at back edge 310/341/364/247; with separate particle-input mask 300/272/353/223. Original early snapshot and body restored.
+// DH round 215: Distinct velocity-normalizer store orders ikj/jik/jki/kij/kji,
+// existing shared scale at its output, and complete inverse-first products ijk/kji
+// 196 each. Original helper and every caller stage restored; reloads and transfers remain.
+// Round 34: On the retained attraction-return graph, shared change addition 67 (plain);
+// previous-scale/quarter-scale/both returns 171/112/173; those with shared change
+// 178/114/178; scaled previous addition 171; shared previous addition 93, with
+// shared change 112, with both native scales 110. Back-edge reloads and final stores remain.
+// Round 166: shared scaled-add blend boundaries quarter/previous/native-previous/composed
+// 124/117/124/115; each with both final returned-output scales
+// 124/125/124/122. Original blend stages and stores restored.
+// Round 228: Native velocity-normalizer output consumed by both final scales, pointer/reference
+// inputs with existing/shared scales 67/67/47/47; corresponding shared final squared producers
+// 116 each. Keep pointer output into shared scale, plain 47 (1517/1516 bytes); final-store and
+// back-edge reload differences remain. Original magnitude expression and pointer input retained.
+// DH round 230: On the retained normalizer-output graph, shared final addition/reversed inputs 115/119;
+// native normalizer values alone/with those additions 398/386/386; explicit source-output normalization
+// with shared scale alone/with those additions 138/177/183. All restored; final stores, lower tail and reload order remain.
+// Round 394: direct previous-vector scale producer with native/quarter/maximum/maximum+quarter/
+// initial/initial+quarter/initial+maximum/all scales 208/203/208/203/208/203/208/203; restored.
+// DH round 232: On the retained pointer-output graph, quarter-output/final-add composition 117;
+// final component loop 111; scaled-add publication 115; normalizer loop/ordinary inline/inverse
+// lifetime/native slot names 47 each; both publication and normalizer loops 107 at retail length.
+// Every executable form restored; lower-tail stores and back-edge reload order remain.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {
@@ -440,12 +492,7 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
             real squared = particle_direction_squared_2b(&delta);
             real amount = particle_distance_estimate_2b(squared) / attraction_radius * attraction_scale;
             normalize_particle_direction_2b(&delta);
-            delta.i *= amount;
-            delta.j *= amount;
-            delta.k *= amount;
-            change.i += delta.i;
-            change.j += delta.j;
-            change.k += delta.k;
+            vector3f_add(&change, vector3f_scale(&delta, amount, &delta), &change);
         }
         function_2b9a00(particle, function_246cd0(&properties[5].property, cache.values), &change);
         change.i *= scale;
@@ -465,9 +512,7 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
         }
         vector3f previous = particle->velocity;
         scale_particle_vector_2b(0.75f, &previous);
-        particle->velocity.i += change.i;
-        particle->velocity.j += change.j;
-        particle->velocity.k += change.k;
+        vector3f_add(&particle->velocity, &change, &particle->velocity);
         scale_particle_vector_2b(0.25f, &particle->velocity);
         particle->velocity.i += previous.i;
         particle->velocity.j += previous.j;
@@ -475,13 +520,11 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
         squared = particle->velocity.k * particle->velocity.k + particle->velocity.j * particle->velocity.j + particle->velocity.i * particle->velocity.i;
         if (squared > maximum_speed * maximum_speed)
         {
-            normalize_particle_velocity_2b(&particle->velocity);
-            scale_particle_vector_2b(maximum_speed, &particle->velocity);
+            vector3f_scale(normalize_particle_velocity_2b(&particle->velocity), maximum_speed, &particle->velocity);
         }
         else if (minimum_speed * minimum_speed > squared)
         {
-            normalize_particle_velocity_2b(&particle->velocity);
-            scale_particle_vector_2b(minimum_speed, &particle->velocity);
+            vector3f_scale(normalize_particle_velocity_2b(&particle->velocity), minimum_speed, &particle->velocity);
         }
     }
 }

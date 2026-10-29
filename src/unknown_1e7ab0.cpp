@@ -167,7 +167,9 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
  return function_cbd50(unit_index, *(signed char *)(unit + 0x212 + slot));
 }
 
-// score 627 (was 627): Frame 0x54/type EDX agree; state/player/unit homes remain.
+// score 620 (was 620): retail loads the state table into ESI and the state pointer into EDI, then reuses
+// ESI for the player index and the player pointer and keeps the unit pointer in EBX; ours folds the base
+// into the add and keeps the state in ESI, and retail returns from inside each switch case.
 // Round 134: retail's case layout is 10-14, 2, 4, 15, 18, 0, 1, 31, 17, 30, ...: cases 0/1/31 after 18
 // 656; plain blocked flag 645, both 656; with a plain player pointer too, retail's state edi, player esi,
 // spilled unit index and result at entry, but request_weapon stops inlining: 769, case 2 as an if 785,
@@ -227,14 +229,36 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
 // 665 [413] (inlined again); plus cases 0/1/31 after 18 666 [355] (retail's case layout); plus the player
 // index as NONE then an if (retail's or/cmp/je shape) 667 [361]. Register roles (retail: state EDI,
 // player ESI, unit index spilled, unit EBX, headers EBP) still differ in all of them.
+// Round 89 (fast; per-case byte sizes compared through both jump tables): cases 0/1/31
+// after 18 650; plus the existing function_14de70 for the player index (retail's or/cmp/je entry, the
+// state base loaded first) 652; plus a plain player pointer 772 at 2132 B, but structurally closest:
+// retail's case order, 20 of 28 case sizes equal, 40 calls as retail, unit index spilled; left are
+// request_weapon out of line (cases 15/18/16/23/9 short), state/player in ESI/EDI (retail EDI/ESI)
+// and headers/unit in EBX/EBP (retail EBP/EBX); request_weapon forced inline 929 (more callees
+// inline, the 0x1e8eb0 tails unmerge); request_weapon taking the unit index 657 (still out of line).
+// Round 169: Native unit parent/seat/health-and-flags field subsets, all seven 620;
+// complete readonly unit receiver 620. Original types and body restored; state/player/unit
+// allocation remains despite the matching frame, selector and cleanup.
+// Round 220: Entry-getter failure guards, per-use table, both, readonly table,
+// readonly with guards/per-use/both, and conditional nullable result 620 each.
+// Original getter, state/player/unit receivers and complete body restored.
+// Round 393: Existing weapon-accessor role orders, header-first unit accessor and readonly player inputs:
+// 620/620/620/620/620/620/620/620. All helper contracts and complete original case graph restored.
+// Round 395: existing-result completion after reset pairs 10/11, 12/13, 2/16 and all six
+// 630/630/670/670; with ordinary player carrier 792/792/805/805. All original cases restored.
+// Round 395: player pool at use 742; object-table context once 669; both 758;
+// each with ordinary child result 760/643/769; both with case-entry iterator
+// 758, with ordinary child result 769. Original pools, qualifiers and body restored.
 // @retail 0x1e7ab0
 bool function_1e7ab0(long local_index, long type)
 {
  (void)&local_index;
  s_local_player_state_view *state = &((s_local_player_state_view *)g_51e9c0)[local_index];
  byte *data = (byte *)state;
- volatile bool result = false;
- long player_index = local_index == NONE ? NONE : g_4e8c20->entries[local_index];
+ bool result = false;
+ long player_index;
+ if (local_index != NONE) player_index = g_4e8c20->entries[local_index];
+ else player_index = NONE;
  s_entry_420 *entry = entry_420_get(type);
  if (player_index != NONE && entry &&
   (!(*((byte *)entry + 0x10) & 1) || g_4e6948->state != 2))

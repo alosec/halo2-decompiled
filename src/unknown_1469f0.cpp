@@ -5,6 +5,8 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 
+__declspec(noinline) long function_1469f0(real seconds);
+
 // @retail 0x1469f0
 long function_1469f0(real seconds)
 {

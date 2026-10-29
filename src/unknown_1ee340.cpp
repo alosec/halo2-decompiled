@@ -173,7 +173,7 @@ c_vertex_shape::ray_answer c_vertex_shape::ray_test(const s_shape_ray *ray, s_sh
 
 void c_vertex_shape::ray_test_into(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 #else
-// score 192 (was 247): frame 0x84 versus 0x90: retail keeps origin.x/y in xmm6/xmm7 until the
+// score 192 (was 192): frame 0x84 versus 0x90: retail keeps origin.x/y in xmm6/xmm7 until the
 // offset (ours re-reads all three from the shape), so it spills first.i/second.i into homes and puts
 // the found byte at +0x38 and the plane at +4; every later stack offset differs by that. Retail also
 // computes the direction from its start loads (ours from memory operands) and has a dead second
@@ -235,6 +235,43 @@ void c_vertex_shape::ray_test_into(bool *hit, const s_shape_ray *ray, s_shape_ra
 // byte 3, fraction 4, direction 8, ray start 0x14, point 0x20, plane 0x2c, polygon 0x3c). Hit point
 // or direction renamed to change name order 247/247 (same code); fraction as a ternary 249;
 // plane d cleared before normalizing 252; clamp as if/else 250.
+// Round 148: start copy first with the direction from the copy 230 (retail's single start loads,
+// but per-component end loads); start copy first with the direction from ray->start 192; start copy
+// as a point assignment 204; direction as an initializer 223; offset from the first vertex in place
+// of origin 259; origin as a reference to the first vertex 275; ray_start renamed 192 (same code:
+// names do not move these slots).
+// Round 262: entry polygon/projected/hit-point storage, all seven combinations, 192 each;
+// all three with entry fraction storage 192. All computations stayed at their original uses;
+// original declarations restored. Frame 0x84 and origin/edge spills remain.
+// Round 218: Direct ray-start observations, polygon inline/noinline, both direct-ray combinations,
+// direct ray with point-set/cross/normalize forceinline declarations:
+// 282/192/192/282/282/282/282/282 (fast control 192). Original restored.
+// Round 222: dominant-axis long/word/dword/signed byte 192/193/192/193;
+// the same four carriers with immutable native origin construction 192/193/192/193.
+// All restored; origin retention and edge homes still leave frame 0x84 versus 0x90.
+// Round 161: Original-ray difference-helper forceinline alone/with point-set/with cross/with both
+// 192/192/192/192; complete origin/start/both setter components 192/192/192;
+// both component captures with difference forceinline 192. Original captures and boundaries restored.
+// Round 207: existing array-based unit-scaled differences for ray direction, both edges,
+// ray plus edges, offset, edges plus offset, ray plus offset, all differences and second
+// edge alone: 192 each at 1007/1001. All exact-match-only forms restored;
+// frame 0x84 versus 0x90 and origin/edge homes remain.
+// Coupled origin-start/edge-pair/plane-result lexical identities, all seven subsets and complete
+// projection/ray identities: 192/192/192/192/192/192/192/192. Origin retention and edge spills still leave
+// the short frame
+// original identities restored.
+// Round 222: Intrinsic origin/start/both copies 282/204/270; complete vector constructors 192; origin/start/both with constructors 282/204/270; all with normal-output constructor 269. All restored; frame 0x84 versus 0x90 and retained-origin/edge homes remain.
+// Round 163: endpoint float setters, second/first/both/both before edges,
+// 260/251/216/214; with shared ray-start input 260/247/217/215.
+// Paired endpoints recover frame 0x90 but retain entry/edge scheduling differences;
+// every one-use endpoint capture and original ray input restored.
+// Round 72: origin as a pointer to the first vertex 275 (the vertex loads fold into memory operands,
+// none shared); start copy first with the direction from the copy 230 (retail's shared start
+// loads); both 276; that with the first edge before the second 232; count argument without the
+// short cast 192 (same code: a separate word load where retail pushes the loop-bound EDX).
+// Round 87: direction from the value setter 192 (same code); `long count = vertex_count;` for the loop
+// and the call 193 (retail's `push edx` and esi tail-loop temp, but a third exit block), declared
+// before the polygon 193; fraction as if/else 259; edges and cross in an inline triangle helper 192.
 // @retail 0x1edf50
 void c_vertex_shape::ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 #endif

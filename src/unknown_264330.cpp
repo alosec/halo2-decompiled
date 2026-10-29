@@ -24,7 +24,7 @@ bool __stdcall function_265290(long actor_index, long prop_index);
 bool __stdcall function_265550(long actor_index, long prop_index);
 void function_ba1d0(long object_index, vector3f *linear, vector3f *angular);
 void function_cb7e0(long unit_index, vector3f *vector);
-long function_10f8f0(long object_index);
+__declspec(noinline) long function_10f8f0(long object_index);
 struct s_28fb50;
 long function_28fb50(long object_index, s_28fb50 const *context, long target_index);
 __forceinline long real_to_long(real value);
@@ -261,7 +261,7 @@ void function_264940(long actor_index, long prop_ref_index)
 	}
 }
 
-// score 353 (was 358): the frame is still 0x24 against retail's 0x20, ours keeps the
+// score 353 (was 353): the frame is still 0x24 against retail's 0x20, ours keeps the
 // object in EBP where retail keeps it in EDI, and the prop-index field is still read
 // before the object-index field. The body is 1540 bytes against retail's 1538.
 // Frame 0x24 versus 0x20; object/view allocation and cached object index differ.
@@ -286,6 +286,18 @@ void function_264940(long actor_index, long prop_ref_index)
 // Round 337: complete origin point/scalars 419/427; sampled state position 444;
 // origin scalars/point with state position 463/457; const native copies 457;
 // entry origin copy 498; both native inputs with shared difference 457. All restored.
+// Round 358: Shared expiry/buildup/both tick conversions 358/358/358; both with state word/separate
+// current state/both state forms 358/357/357; unit predicate 447; disjoint vectors 358. One-count
+// gains rejected; body restored.
+// Round 205: Complete actor/reference/prop getter receiver masks 1/2/3/4/5/6/7
+// 353/586/586/499/499/778/778; all with current-time observations 748. Original
+// object snapshot and complete body restored; frame and object/view homes remain.
+// Round 241: actual shared direction, category and distance fields in every nonempty
+// subset, then all fields with the existing object getter: 353 each in eight forms.
+// Original shared layout, pointer observations and complete body restored.
+// Round 231: native unit mask byte/char/word/long 440/440/449/439;
+// each with positive-view-first magnitude 431/431/436/437. Byte masks recover frame
+// 0x20 but regress; original optional pointer, observation timing and full body restored.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)
@@ -470,6 +482,29 @@ void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *samp
 // with success at consumption 434/430/438/434. Byte states recover frame 0xa0 and 1616 bytes.
 // Complementary run-wide availability bool/byte/short/long 424/424/422/443;
 // per-node skip/defer/both 429/424/433; all three complements 436 at retail length. All restored.
+// Round 205: Shared planar difference with native state, early planar output and both
+// reused progress-result combinations 424 each in eight forms (control 420); all restored.
+// Round 223: original independent admission flags with a separate query-completion
+// bool/byte/short/long at its consumer 418/418/430/438; at node entry 433/433/449/457.
+// Two-point forms and added phase flags rejected without a match; all restored.
+// Round 226: Consumption scopes for update, tracking and each real view, all seven subsets
+// 420 each; all scopes with run-wide constant initialization before actor lookup 420. All restored.
+// Round 254: complete per-use actor/node/both getters 465/668/705; each on native
+// for traversal 460/664/705; paired getters with long sample/update 720/711.
+// First six recover frame 0xa0 but grow code and retain stacked actor input; all restored.
+// Round 239: original shared actor/reference/prop getter force-inline declarations,
+// all seven subsets and all three with unsigned full next/current handles: 420 each.
+// Original getters, handle domains and body restored.
+// Round 384: retained actor/node/both lookups 441/442/462; unsigned full handles 420;
+// unsigned handles with retained actor/node/both 441/442/462; all on a plain linked-list for 466.
+// All lookup lifetimes, handle domains, traversal and complete original body restored.
+// Round 231: case orders 04231/04321/02341/03241 give 436/441/436/441;
+// 40231/40321/23041/32041 give 436/441/446/433. Last form recovers frame 0xa0
+// and 1616 bytes but keeps stacked actor input; every original case and body restored.
+// Round 389: native double timer/planar pair/both 423/421/424; unsigned bounded
+// decrement 420, with timer/planar/both 423/421/424; complete precision graph with
+// wide decrement 424 (fast control 420). Original precision, domains and body restored;
+// frame 0xa4 and actor/node/flag homes remain. Planar precision forms were exact-only.
 // @retail 0x262ba0
 void function_262ba0(long actor_index)
 {
@@ -782,18 +817,19 @@ void __stdcall function_263210(long actor_index)
 }
 
 long function_baf40(long object_index);
-short __stdcall function_1c8df0(long object_index, point3f const *target, short target_cell, short source_cell,
-	void const *source, long mode, bool narrow, bool attached, bool alternate, long *hit_object);
+short __stdcall function_1c8df0(short target_cell, short source_cell, point3f const *target,
+	long object_index, void const *source, long mode, bool narrow, bool attached, bool alternate,
+	long *hit_object);
 short function_25c9d0(long actor_index, long prop_ref_index, bool player, long sight,
 	void *point, byte *sample, long reported);
 short function_25cb60(long actor_index, long object_index, short type, void *sample,
 	void *point, long location, long sight);
 short function_25cca0(long prop_ref_index);
-long function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range);
+short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range);
 void function_26bfa0(long object_index, long *location_index, s_location_view *location);
 real function_296600(long actor_index, long prop_ref_index);
 
-// score 331 (was 351): the tracking view is cleared before the tracking test, so the
+// score 331 (was 331): the tracking view is cleared before the tracking test, so the
 // pointer is zeroed where retail zeroes it instead of being assigned in an else
 // branch. Retail holds the actor in EBX and spills it at [esp+8] right after the
 // actor[9] test where ours holds it in ESI and spills it at [esp+0x14]; retail keeps
@@ -826,6 +862,36 @@ real function_296600(long actor_index, long prop_ref_index);
 // Ordinary object-type/suppression/current orders 012/021/102/120/201/210
 // 366/366/351/355/369/388; coordinated priority names 341; names with 210 order 388
 // (fast control 341; full baseline 358).
+// Round 203: native squad flag with squad-index, tracking-index and masked actor-slot producer
+// combinations 372 each in all eight fast trials (control 372/1260, full 331/1251).
+// Actor ESI and saved/squad homes remain; all native views, handles and temporary include restored.
+// Round 358: Complete different-target bool/byte/short/long carriers 376/341/376/375; before
+// suppression 376/341/364/366 (preview 341). Exact-length 364 regresses; original current predicate
+// and body restored.
+// Round 205: Special copied-result byte/char/short/long 372 each; with complete ancestry
+// producer scope 372 each (fast control 372, full 331). Original body restored.
+// Round 237: shared initial view lookup 372; actor/reference/prop at uses 414/503/415;
+// actor-reference/actor-prop/reference-prop/all 573/468/570/657 (fast control 372; full 331).
+// All restored; actor ESI and saved/squad/flag homes remain.
+// Round 245: Signed-short three-input priority trees in six candidate orders
+// 352/352/350/351/353/353; two reversed comparison trees 352/351
+// (fast control 356, full 331). Sub-eight gains rejected; original body restored.
+// Round 174 (fast control 372/1262, full 331/1251): existing saved-pointer
+// actor_snapshot/retained_actor/actor_saved/saved_owner identities, each with
+// original/actor_squad receiver identity, 372 each. All restored; full frame 0x20
+// agrees, actor ESI/EBX and saved/squad/flag homes remain.
+// Round 231: positive current/unit bool-byte-short pairs 372/372/372/372/372/365/365/365;
+// short-current priority tree/accumulator/full-width priorities 366/364/368 (fast control 372).
+// Accumulator ordinary 338 versus 331, rejected; original predicates, priorities and body restored.
+// Round 389: suppression byte/short/long 372/363/366; unsigned timestamp 372; native
+// wide timestamp alone/with byte/short/long suppression 377/377/377/376 (fast control
+// 372). Short suppression plain 344 versus 331; all original types and body restored.
+// DL167 (fast control 356, full 331): repeated flag25/flag23/parent observations,
+// entry masks 1..7 348/349/367/353/354/369/359; all byte 367. First-mode flag25,
+// flag25+parent, flag23, both flags and byte flag25 350/355/351/337/357;
+// both flags+parent 333; byte pair/+parent 358/359. Shared mode 371/366/368;
+// shared object getters ordinary/ancestry/all 333 each. Full flag25/pair/pair+parent
+// 354/350/351 versus 331; all restored. Actor ESI/EBX and saved/squad homes remain.
 // @retail 0x264b50
 void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *sample, s_2640c0 *motion)
 {
@@ -904,9 +970,9 @@ void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *
 		bool is_unit = object[0xaa] == 0;
 		long root = function_baf40(is_unit && *(long *)(object + 0x14) != NONE ? *(long *)(object + 0x14) : reference->object_index);
 		long mode = prop[0x25] && prop[0x23] ? 2 : 0;
-		short sight = function_1c8df0(root, &motion->field_0, *(short *)((byte *)motion + 0x28),
-			*(short *)((byte *)sample + 0x28), sample, mode, false,
-			*(long *)(actor + 0x26c) != NONE, !current, current ? (long *)(actor + 0x348) : NULL);
+		short sight = function_1c8df0(*(short *)((byte *)motion + 0x28), *(short *)((byte *)sample + 0x28),
+			&motion->field_0, root, sample, mode, false, *(long *)(actor + 0x26c) != NONE, !current,
+			current ? (long *)(actor + 0x348) : NULL);
 		actor = saved_actor;
 		if (*(long *)(actor + 0x7c) != NONE && prop[0x25] && 25.0f > reference->unknown28 &&
 			(sight == 0 || sight == 1))
@@ -923,9 +989,10 @@ void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *
 				if (!view->unknown88)
 				{
 					long other_mode = prop[0x25] && prop[0x23] ? 2 : 0;
-					short other_sight = function_1c8df0(root, (point3f const *)((byte *)state + 0x30), *(short *)((byte *)state + 0x2c),
-						*(short *)((byte *)sample + 0x28), sample, other_mode, false,
-						*(long *)(actor + 0x26c) != NONE, !current, current ? (long *)(actor + 0x348) : NULL);
+					short other_sight = function_1c8df0(*(short *)((byte *)state + 0x2c),
+						*(short *)((byte *)sample + 0x28), (point3f const *)((byte *)state + 0x30),
+						root, sample, other_mode, false, *(long *)(actor + 0x26c) != NONE, !current,
+						current ? (long *)(actor + 0x348) : NULL);
 					view->unknown8c = (short)other_sight;
 					view->unknown8a = function_263810((point3f const *)sample, actor_index, (point3f const *)((byte *)state + 0x30), NULL, 2, (short)other_sight, true, NULL);
 				}

@@ -13,8 +13,10 @@ files; 0xdc370, at the start of the range, is c_a's destructor
 #include "globals.h"
 #include "data_array.h"
 #include "unknown_0259d0.h"
+#include "vector_products.h"
 #include "unknown_1cec30.h"
 #include "object_markers.h"
+#include "slot_handler.h"
 #include "unknown_11cc90.h"
 #include "unknown_1efac0.h"
 #include "unknown_1eb550.h"
@@ -79,7 +81,15 @@ struct s_biped
 	byte unknown2e8[0x33e - 0x2e8];
 	short unknown33e;
 	byte unknown340[0x348 - 0x340];
-	word flags_348;
+	union
+	{
+		word flags_348;
+		struct
+		{
+			word : 15;
+			word flag_348_15 : 1;
+		};
+	};
 	byte unknown34a;
 	byte unknown34b;
 	short unknown34c;
@@ -347,6 +357,11 @@ void havok_component_rigid_body_position_get(long rigid_body_index, s_havok_comp
 
 /* fills the biped's character physics input for its current physics mode
    (+0x3dc): its node matrix, facing, controls and Havok body */
+// score 134 (was 134): frame 0x4c versus 0x44, Boolean argument staging and mode dispatch remain.
+// Long airborne/landing/both 162/161/135; native-short body ordinal 135, with long
+// airborne/landing/both 152/152/128; paired word results and short ordinal 128.
+// The 128 forms recover frame 0x44 but are below the keep margin. Consistent biped
+// flag word with animation-word/native-result/native-ordinal subsets: 148/183/155/174/147/171/147/173. All restored.
 // @retail 0xdd0d0
 void __stdcall function_dd0d0(long arg_159e6d, s_biped_physics_input *input, bool flag)
 {
@@ -417,6 +432,19 @@ void function_de080(vector3f const *forward, vector3f const *up, vector2f *forwa
 
 /* moves the biped's camera offset (+0x3cc) toward its head marker,
    relative to its root node, a little each tick */
+// score 7 (was 7): frame 0x9c, native entry and length agree; cross-component
+// add/store scheduling remains. Existing node query 34; point difference 129;
+// both 48; coherent vector homes 127/34/129/48; outputs first 48. Clamped steps 34;
+// destination pointer 24; both 34; delta-first 34, with steps/pointer/both 34/24/34;
+// plain component loop 24 (kept, plain); raw differences 24; current components 87;
+// current components and differences 87; point setter 34.
+// Native low/high loop clamp 7 plain (kept); upper/lower clamp 12; low/high with
+// current-component reuse 83; full clamped correction macro/branches 61/54; shared
+// smoothing difference with macro/low-high/high-low 63/62/62. Cross-store scheduling remains.
+// Round 281: component reference 27; named updated value 7; both 27; short ordinal 141;
+// ordinary while 7; component pointer 27; point-pointer traversal 258; sequential bounds 7.
+// All restored; frame and length agree, cross-store scheduling remains.
+// Round 171: Projected correction 7; staged subtraction 49; conditional clamp 7, staged 49, in-place 34; direct clamp outcomes 179; unsigned ordinal 7, projected 7. Cross-store scheduling remains; original body restored.
 // @retail 0xde190
 void function_de190(long arg_159e6d)
 {
@@ -424,7 +452,7 @@ void function_de190(long arg_159e6d)
 
 	if (biped->unknown13c != NONE && !function_10f820(arg_159e6d))
 	{
-		transform4x3f const *nodes = (transform4x3f const *)((byte *)biped + biped->node_matrices_offset);
+		transform4x3f const *nodes = object_node_matrix(object_get(arg_159e6d), 0);
 		s_object_marker marker;
 		vector3f offset;
 		vector3f aim;
@@ -447,9 +475,15 @@ void function_de190(long arg_159e6d)
 		local.z = offset.k;
 		if (biped->unknown3c8)
 		{
-			biped->unknown3cc.x += PIN(local.x - biped->unknown3cc.x, -0.01f, 0.01f);
-			biped->unknown3cc.y += PIN(local.y - biped->unknown3cc.y, -0.01f, 0.01f);
-			biped->unknown3cc.z += PIN(local.z - biped->unknown3cc.z, -0.01f, 0.01f);
+			for (long component = 0; component < 3; ++component)
+			{
+				real difference = local.n[component] - biped->unknown3cc.n[component];
+				if (difference < -0.01f)
+					difference = -0.01f;
+				else if (difference > 0.01f)
+					difference = 0.01f;
+				biped->unknown3cc.n[component] += difference;
+			}
 		}
 		else
 		{
@@ -464,6 +498,12 @@ void function_e5930(long unit_index);
 
 /* resets the biped's state: its flags, landing and melee timers, its ground
    contact and its physics mode */
+// flag-store scheduling and the final helper's unwanted expansion remain.
+// Boolean predicate 121; native word flags 114; reset zero/NONE/both chains 118;
+// chains with Boolean predicate 121; counter/index/initial block library clear or fill
+// 129/138/127; second receiver scope 118; native tag dword or bit member 121;
+// native word stores with the tag in a named flag 113 (MiniMax B run 14; under the keep bar, restored).
+// either tag form with native word stores 113 (subthreshold, restored).
 // @retail 0xde4c0
 void __stdcall function_de4c0(long arg_159e6d)
 {
@@ -519,33 +559,40 @@ void function_1e54d0(void *state, long a);
 
 /* starts the biped toward an object to grab (+0x390), switching its
    physics to mode 6; NONE clears it */
+// score 40 (was 57): target/physics registers, visibility-call target convention and facing/flag store order still differ.
+// Positive target 62; positive eligibility 57; both 62; Boolean flag 58; word flags 67; vector helper 70; memcpy 57; positive/Boolean 65;
+// one target-address read 61; that read with positive flow and native flags 33 (exact-match-only, rejected); natural positive flow/native flags 40, kept.
 // @retail 0xdee60
 void function_dee60(long arg_159e6d, long target_index, bool flag)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
 
-	if (target_index == NONE)
+	if (target_index != NONE)
+	{
+		if (biped->physics_mode != 6)
+		{
+			biped->flags_348 &= ~0x2000;
+			biped->unknown3aa = 0;
+			if (flag || biped->unknown13c == NONE || function_de9d0(arg_159e6d, target_index))
+			{
+				biped->unknown390 = target_index;
+				function_1e54d0(&biped->physics_mode, 6);
+				biped->unknown444 = biped->unknown168;
+				biped->unknown3f8 = flag;
+				if (flag && !TEST_FIELD_BIT((biped->flags_134 >> 23) & 1))
+				{
+					biped->flags_348 |= 0x2000;
+				}
+			}
+			else
+			{
+				biped->unknown390 = NONE;
+			}
+		}
+	}
+	else
 	{
 		biped->unknown390 = NONE;
-		return;
-	}
-	if (biped->physics_mode != 6)
-	{
-		*((byte *)&biped->flags_348 + 1) &= ~0x20;
-		biped->unknown3aa = 0;
-		if (!flag && biped->unknown13c != NONE && !function_de9d0(arg_159e6d, target_index))
-		{
-			biped->unknown390 = NONE;
-			return;
-		}
-		biped->unknown390 = target_index;
-		function_1e54d0(&biped->physics_mode, 6);
-		biped->unknown444 = biped->unknown168;
-		biped->unknown3f8 = flag;
-		if (flag && !((biped->flags_134 >> 23) & 1))
-		{
-			*((byte *)&biped->flags_348 + 1) |= 0x20;
-		}
 	}
 }
 
@@ -587,6 +634,16 @@ extern vector3f *g_4687a4;
 /* the biped object type's update (+0x40): riding in a vehicle or biped,
    else its controls, its physics mode's movement, its animation, its
    camera and the unit update */
+// score 281 (was 305): flag 2 of +0x10a through the word bitfield view and the definition flag as a field bit; the rest still differs.
+/* the byte at +0x10a as bits */
+struct s_biped_flags_10a_view
+{
+	word bit0 : 1;
+	word bit1 : 1;
+	word bit2 : 1;
+	word unknown3 : 5;
+};
+
 // @retail 0xdd360
 bool __stdcall function_dd360(long arg_159e6d)
 {
@@ -650,8 +707,8 @@ bool __stdcall function_dd360(long arg_159e6d)
 	{
 		s_biped_physics_output output;
 
-		if (((biped->flags_10a >> 2) & 1) ||
-			(biped->physics_mode != 2 && !((*(dword *)(definition + 0x264) >> 3) & 1)))
+		if (TEST_FIELD_BIT(((s_biped_flags_10a_view *)&biped->flags_10a)->bit2) ||
+			(biped->physics_mode != 2 && !(TEST_FIELD_BIT((*(dword *)(definition + 0x264) >> 3) & 1))))
 		{
 			biped->facing_goal.k = 0.0f;
 			if (function_30bf0(&biped->facing_goal) == 0.0f)
@@ -800,6 +857,11 @@ extern long *g_51e9cc;
 /* the biped's physics callback: its crouch, kill volumes, its character
    physics move, and the ground (structure, instanced geometry or object)
    its contact rests on */
+// score 350 (was 383): Frame 0xb8 and length 1481 agree; component/index carriers, native homes,
+// the first call boundary and later contact/store scheduling differ. Native workspace names 383;
+// word flags 377, with names 377; shared velocity norm 383; unsigned key 383; full-width physics
+// result 361; object case first 383; flags/norm/key 377; clamp admission 392, with flags 386;
+// owned crouch 383, with clamp/flags 386; wide physics/flags 371; wide physics/clamp 350 (kept).
 // @retail 0xdd990
 void __stdcall function_dd990(long arg_159e6d)
 {
@@ -811,7 +873,7 @@ void __stdcall function_dd990(long arg_159e6d)
 		s_biped *root = BIPED_GET(function_baf80(arg_159e6d));
 		real crouch_change = function_dd7d0(arg_159e6d);
 		real height_change;
-		bool physics;
+		long physics;
 
 		function_e30c0(arg_159e6d);
 		if (!(*((byte *)root + 0xc1) & 1) && function_1ec500(arg_159e6d))
@@ -870,7 +932,7 @@ void __stdcall function_dd990(long arg_159e6d)
 				function_1e5a60(&result, &input, &biped->physics_mode);
 				contact = result.contact_index;
 				if (!(*((byte *)biped + 0xc1) & 1) && contact != NONE &&
-					contact >= 0 && contact <= component->unknown88.size)
+					contact == PIN(contact, 0, component->unknown88.size))
 				{
 					byte *entry = (byte *)component->unknown88.data + contact * 0x48;
 					long key = *(long *)(entry + 4);
@@ -1083,7 +1145,7 @@ PRIVATE inline void biped_eye_raise(long arg_159e6d, real crouch, point3f *eye)
 	}
 }
 
-PRIVATE inline void biped_grab_eye(long arg_159e6d, point3f *eye)
+PRIVATE __forceinline void biped_grab_eye(long arg_159e6d, point3f *eye)
 {
 	function_b9dd0(arg_159e6d, eye);
 	biped_eye_raise(arg_159e6d, function_e0dc0(arg_159e6d) ? 0.0f : BIPED_GET(arg_159e6d)->crouch, eye);
@@ -1091,6 +1153,12 @@ PRIVATE inline void biped_grab_eye(long arg_159e6d, point3f *eye)
 
 /* fills the biped's character physics input for its physics mode: walking
    (1), flying (2), dead (3), animation driven (4, 5) or grabbing (6) */
+// score 1497 (was 1638): Frame 0x7c versus retail 0xfc; the inner eye helper, flag homes and argument scheduling still differ.
+// Outer-only inline control 1566; native case order 1562; full vector setter 1555;
+// use-site animation flags 1578; consistent ground observations 1502; default boost 1563;
+// conditional material 1566; workspace names 1566; case/setter/boost/names 1552.
+// Ground observations with case order 1497, setter 1510, default boost 1535, case/setter 1509.
+// Case order alone is below the eight-point gate; retain it only with the native ground observation cause, plain 1497.
 // @retail 0xdc5c0
 void __stdcall function_dc5c0(long arg_159e6d, s_biped_physics_output *output)
 {
@@ -1106,12 +1174,11 @@ void __stdcall function_dc5c0(long arg_159e6d, s_biped_physics_output *output)
 	point3f position;
 	vector3f ground_velocity;
 	vector3f facing;
-	byte *ground = *(byte **)(*(byte **)((byte *)component + 0x70) + 0x40);
 
 	function_b9dd0(arg_159e6d, &position);
-	if (!ground[0x40])
+	if (!(*(byte **)(*(byte **)((byte *)component + 0x70) + 0x40))[0x40])
 	{
-		ground_velocity = *(vector3f *)(*(byte **)(ground + 0x3c) + 0x40);
+		ground_velocity = *(vector3f *)(*(byte **)((*(byte **)(*(byte **)((byte *)component + 0x70) + 0x40)) + 0x3c) + 0x40);
 	}
 	else
 	{
@@ -1191,21 +1258,6 @@ void __stdcall function_dc5c0(long arg_159e6d, s_biped_physics_output *output)
 		function_1e67a0((s_character_physics_component *)&biped->physics_mode,
 			(s_type_94656b *)output, 1, biped->unknown34b != 0);
 		break;
-	case 4:
-	case 5:
-	{
-		vector3f velocity;
-		point3f body;
-		c_type_709360 current;
-		long animation_id;
-
-		function_e59e0(arg_159e6d, &velocity, &position);
-		havok_component_rigid_body_position_get(0, component, &body);
-		animation_id = *(long *)((s_animation_state *)state)->current_animation_get(&current);
-		function_1e67f0((s_type_94656b *)output,
-			(s_character_physics_component *)&velocity, animation_id, &position, &body, &body);
-		break;
-	}
 	case 6:
 	{
 		point3f target_position = position;
@@ -1276,6 +1328,22 @@ void __stdcall function_dc5c0(long arg_159e6d, s_biped_physics_output *output)
 			&target_position, distance);
 		break;
 	}
+	case 4:
+	case 5:
+	{
+		vector3f velocity;
+		point3f body;
+		c_type_709360 current;
+		long animation_id;
+
+		function_e59e0(arg_159e6d, &velocity, &position);
+		havok_component_rigid_body_position_get(0, component, &body);
+		animation_id = *(long *)((s_animation_state *)state)->current_animation_get(&current);
+		function_1e67f0((s_type_94656b *)output,
+			(s_character_physics_component *)&velocity, animation_id, &position, &body, &body);
+		break;
+	}
+
 	}
 }
 
@@ -1291,6 +1359,13 @@ void function_b75a0(long object_index, point3f const *point, vector3f const *for
 /* a biped's response to a damage impulse: it starts flinching or falling,
    a hard one knocks it over (and a ragdoll gets a random spin), and on
    the ground it turns to face away from the hit */
+// score 223 (was 246): Frame 0x28 and entry saves agree; tag/flag carriers,
+// strong-result home, spin scaling and late call/output scheduling still differ.
+// Direct up reads 245; test-produced strong 246, both 245; shared vector producers 241;
+// complete away copy with direct up 247; linear result with direct up 223 (plain), all forms 253;
+// workspace identities 245; linear result alone 241; long strong/spin/both 221/251/245;
+// mode-overridden linear result 231; shared real random 223; linear plus vector helpers 218.
+// The last five-point increment and long-strong two-point increment are not retained.
 // @retail 0xde620
 void __stdcall function_de620(long arg_159e6d, vector3f const *impulse)
 {
@@ -1303,7 +1378,6 @@ void __stdcall function_de620(long arg_159e6d, vector3f const *impulse)
 		bool spinning = false;
 		vector3f velocity = *impulse;
 		vector3f spin = *g_4687a4;
-		vector3f const *up = g_4687b0;
 
 		if (!(TEST_FIELD_BIT((biped->flags_10a >> 2) & 1)))
 		{
@@ -1318,9 +1392,9 @@ void __stdcall function_de620(long arg_159e6d, vector3f const *impulse)
 			real magnitude;
 			real angle;
 
-			axis.i = up->j * velocity.k - up->k * velocity.j;
-			axis.j = up->k * velocity.i - up->i * velocity.k;
-			axis.k = up->i * velocity.j - up->j * velocity.i;
+			axis.i = g_4687b0->j * velocity.k - g_4687b0->k * velocity.j;
+			axis.j = g_4687b0->k * velocity.i - g_4687b0->i * velocity.k;
+			axis.k = g_4687b0->i * velocity.j - g_4687b0->j * velocity.i;
 			function_30bf0(&axis);
 			magnitude = (real)sqrt(velocity.j * velocity.j + velocity.k * velocity.k + velocity.i * velocity.i);
 			angle = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f * magnitude * 1.5707964f;
@@ -1345,10 +1419,10 @@ void __stdcall function_de620(long arg_159e6d, vector3f const *impulse)
 			}
 		}
 apply:
-		if (biped->physics_mode != 3 || strong || spinning)
+		bool linear = biped->physics_mode != 3 || strong;
+		if (linear || spinning)
 		{
 			point3f position;
-			bool linear = biped->physics_mode != 3 || strong;
 
 			function_b9dd0(arg_159e6d, &position);
 			function_b7880(arg_159e6d, NONE, &position, linear ? &velocity : NULL, spinning ? &spin : NULL);
@@ -1364,7 +1438,7 @@ apply:
 			away.k = 0.0f;
 			if (function_30bf0(&away) > 0.0f)
 			{
-				function_b75a0(arg_159e6d, NULL, &away, up, NULL, false);
+				function_b75a0(arg_159e6d, NULL, &away, g_4687b0, NULL, false);
 			}
 		}
 	}
@@ -1373,6 +1447,11 @@ apply:
 /* whether the biped can see a biped it would grab: a ray from its eye to
    the target's center (or to three points up the target's height) gets
    through */
+// score 932 (was 1031): Frame 0x8c versus retail 0xac; the outer eye call expands, but the inner call and incoming self index still differ.
+// Outer-only inline 952; entry result 1038; scan result 1020; shared displacement 1031;
+// scan collision workspace 1031; role names 1031; native while scan 1031; combined entry result 1038.
+// Outer-only inline with scan/entry result 932/950; shared workspaces 952; all scan forms 932.
+// Retain outer-only inline and scan result, plain 932; the inner helper remains ordinary.
 // @retail 0xde9d0
 bool __stdcall function_de9d0(long arg_159e6d, long target_index)
 {
@@ -1404,6 +1483,8 @@ bool __stdcall function_de9d0(long arg_159e6d, long target_index)
 			count = 3;
 		}
 		biped_grab_eye(arg_159e6d, &eye);
+		bool result = false;
+
 		for (i = 0; i < count; i++)
 		{
 			s_biped_collision collision;
@@ -1416,14 +1497,15 @@ bool __stdcall function_de9d0(long arg_159e6d, long target_index)
 			if (!function_1697c0(0x84000d, &eye, &vector, arg_159e6d, target_index,
 				(s_collision_result_1697c0 *)&collision))
 			{
-				return true;
+				result = true;
+				break;
 			}
 			if (count > 1)
 			{
 				center.z += height / (real)(count - 1);
 			}
 		}
-		return false;
+		return result;
 	}
 	return true;
 }
@@ -1518,6 +1600,12 @@ void function_dfd70(long arg_159e6d)
 /* a point on a biped: its eye (mode 0 at its origin, 1 standing, 2
    crouching, raised to its head marker unless something is in the way), or
    an offset from a point along a forward vector (mode 3) */
+// score 995 (was 995): Native 0x8c eye workspace remains out of line; incoming roles and object acquisition differ.
+// Existing helper forced inline 287 but loses a matched caller; forced zero/default/reverse/if-else/
+// origin-join/name/zero-default forms 292/287/287/282/287/287/292 on that rejected boundary.
+// Both existing helpers forced 287; late force-inline declaration 287: both lose the same caller.
+// Original helper boundary with zero/default/reverse/if-else/origin-join/name/zero-default forms
+// 1003/995/995/989/995/995/1003; the six-point if-else gain is dropped. Original body restored.
 // @retail 0xdef60
 void __stdcall function_def60(point3f *point, long arg_159e6d, short mode, point3f const *origin,
 	vector3f const *forward, real const *offsets)
@@ -1560,19 +1648,23 @@ void __stdcall function_def60(point3f *point, long arg_159e6d, short mode, point
 
 /* a biped's collision capsule: its bottom point, the vector to its top and
    its radius, from its two capsule nodes when its definition names them */
+// score 105 (was 134): one-dword frame, stack object index and retail length now agree;
+// pool/definition and output-register roles remain. Existing node queries 105;
+// vector difference and fallback names 134 each, node combinations and entry locals 105.
+// Direct definition producer removes the one-use object alias at 105 (kept, plain);
+// cached object/shared entry 126 each; direct shared entry 105; those four with
+// vector difference 105/126/126/105. Header getter at entry/nodes/both and vector pair 105 each.
 // @retail 0xdf6c0
 void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long arg_159e6d, real *radius)
 {
-	s_biped *biped = BIPED_GET(arg_159e6d);
-	byte *definition = BIPED_DEFINITION_GET(biped);
+	byte *definition = BIPED_DEFINITION_GET(BIPED_GET(arg_159e6d));
 	short node_a = *(short *)(definition + 0x254);
 	short node_b = *(short *)(definition + 0x256);
 
 	if (node_a != NONE && node_b != NONE)
 	{
-		transform4x3f const *nodes = (transform4x3f const *)((byte *)biped + biped->node_matrices_offset);
-		point3f const *a = &nodes[node_a].position;
-		point3f const *b = &nodes[node_b].position;
+		point3f const *a = &object_node_matrix(object_get(arg_159e6d), node_a)->position;
+		point3f const *b = &object_node_matrix(object_get(arg_159e6d), node_b)->position;
 
 		if (TEST_FIELD_BIT((*(dword *)(definition + 0x264) >> 1) & 1))
 		{
@@ -1780,10 +1872,10 @@ void function_dfdb0(long arg_159e6d, long *surface, long *location, point3f *poi
 	{
 		if (biped->unknown354 != NONE && !function_ddf60(arg_159e6d))
 		{
-			if (biped->unknown360 != NONE && !function_badc0(biped->unknown360, NONE))
-			{
-				function_dfd70(arg_159e6d);
-			}
+			bool object_valid = true;
+			if (biped->unknown360 != NONE)
+				object_valid = function_badc0(biped->unknown360, NONE) != NULL;
+			if (!object_valid) function_dfd70(arg_159e6d);
 		}
 		else if (g_510c54->game_time > biped->unknown350)
 		{
@@ -1842,6 +1934,19 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 
 /* drops the biped out of a vehicle: level and upright, at a clear spot
    by the vehicle (or anywhere clear) */
+// score 76 (was 76): frame 0x1c versus 0x20 and input/ignore ESI/EDI homes are exchanged.
+// Complete bool retry result 134; iteration-local result 76; long result 109; capsule/fallback
+// role names 76; names with bool result 134; fallback-only point scope 76; function-scoped
+// workspaces 76; those workspaces with bool result 134. Original body restored.
+// Fallback radius reuse 74 (350 bytes); retry result started at the loop boundary 73
+// (350 bytes); both 86 (356 bytes). Two/three-point gains and one-use field copies restored.
+// Multi-use forward subobject 77; native ignore assignment branches 76; separate
+// selected vehicle 76; forward/ignore and forward/selected vehicle 77 each; ignore with
+// selected vehicle 76; all three 77; all three with fallback point setter 80. Frame/input homes remain.
+// Round 281: signed-byte/short/word/dword retry ordinals with separate/shared successive
+// point output 81/81, 73/73, 73/73, 76/76 (all 348 bytes). Three-point gains restored.
+// Short/word result-controlled completion 90/90; short with shared point 90 (360 bytes).
+// All original code restored; frame 0x1c/0x20 and input homes remain.
 // @retail 0xe0070
 void function_e0070(long arg_159e6d, long vehicle_index)
 {
@@ -1888,32 +1993,47 @@ bool function_1d5120(s_havok_component *component, long rigid_body_index, long a
 void __stdcall function_1c3770(long object_index, dword flags);
 
 /* steps a dead biped's ragdoll settling (+0x3aa) toward rest */
+// score 63 (was 63): EBX input agrees; the extra EBP save, body-index selection and flag-store scheduling remain.
+// Native index 108; word flags 87; both 82; signed two-use count with word flags 73;
+// native index plus signed count 67, promoted body input 63 kept. Shared short/long getter
+// 118/122; explicit short 118; output scope, separate admissions and read-only tag 117;
+// shared getter with word flags 89/99; common exit 97; unsigned/native count 87;
+// word bitfields 87; named byte 117; byte/count forms 121/115/118; alternative result
+// 83; component-first and handle name 67; byte-bitfield forms 103/117/115.
+// Settling field at both uses 82; tag receiver at use 64; both 81; settling reads
+// with shared promoted/native-short getter 99/89; both reads with those getters 102/100;
+// both reads with direct valid-body admission 72. Entry count/convention and flag stores remain.
+// Round 281: shared entry/query input-output count 68/73; entry with short body/getter
+// 72/87; query with short body/getter 77/105; tag at use on entry/query graphs 69/79.
+// All restored; extra EBP and body/flag scheduling remain.
+// Round 171: Paired flag field with retained/native body and retained/fresh count: word 63/73/82/87, byte 103/115/105/117. Extra EBP, validated-index transport and flag scheduling remain; original body and object declaration restored.
 // @retail 0xe0c70
 void function_e0c70(long arg_159e6d)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
 	byte *definition = BIPED_DEFINITION_GET(biped);
 
-	if (biped->unknown3aa && biped->havok_component_index != NONE)
+	long steps = (char)biped->unknown3aa;
+	if (steps && biped->havok_component_index != NONE)
 	{
 		s_havok_component *component = havok_component_get(biped->havok_component_index);
-		char body = *((char *)component + 0x18);
-		short rigid_body = body >= 0 && body < component->rigid_bodies.size ? body : NONE;
+		long body = component->unknown18;
+		long rigid_body = body >= 0 && body < component->rigid_bodies.size ? body : NONE;
 		long settled;
 
 		if (rigid_body != NONE &&
 			function_1d5120(component, rigid_body, 9, *(long *)(definition + 0x290) + 0x20, g_510c54->rate * 0.15f,
-				&settled, (long)(char)biped->unknown3aa))
+				&settled, steps))
 		{
 			biped->unknown3aa = settled;
-			*((byte *)&biped->flags_348 + 1) &= 0x9f;
+			biped->flags_348 &= ~0x6000;
 			function_1c3770(arg_159e6d, 0);
-			*((byte *)&biped->flags_348 + 1) &= 0x9f;
+			biped->flags_348 &= ~0x6000;
 			return;
 		}
 	}
 	biped->flags_134 |= 0x800000;
-	*((byte *)&biped->flags_348 + 1) &= 0x9f;
+	biped->flags_348 &= ~0x6000;
 }
 
 /* retail calls this out of line from 0x1d43d0 */
@@ -1987,6 +2107,14 @@ real function_1d1230(long rigid_body_index, s_havok_component *component);
 bool __stdcall function_e1b60(long arg_159e6d, point3f const *point, real value);
 
 /* starts a fallen biped's ragdoll from its main rigid body */
+// score 2 (was 2): only argument preparation before the extent call differs: mov ecx,esi precedes mov eax,ebx.
+// Shared main-index helper with short 34, with long 31; long ternary 76; shared point setter 52; long helper/setter 24;
+// typed body getter 61; short helper/setter 27; both typed body helpers/setter 24; typed three-use point source 2, kept; earlier uninitialized index declaration 2.
+// Setter result as point argument 2; returned pointer 2; returned reference 2; split extent declaration 2;
+// point storage first 2; source pointer declared first 2; initialized point-first declarations 2; const extent result 2.
+// Extent formal order reversed 0 but loses its matched callee (1, address base/index); separate noinline and inline
+// extent declarations original/reversed 2/0 with the same callee loss; outer early exit, split inner guard, both early exits 2/2/2;
+// explicit cdecl and stdcall original/reversed 2/0 with the same callee loss; signed int extent index original/reversed 2/0, same loss.
 // @retail 0xe1a80
 void function_e1a80(long arg_159e6d)
 {
@@ -1995,15 +2123,14 @@ void function_e1a80(long arg_159e6d)
 	if (biped->unknown34b == 1 && biped->havok_component_index != NONE)
 	{
 		s_havok_component *component = havok_component_get(biped->havok_component_index);
-		char body = *((char *)component + 0x18);
-		short rigid_body = body >= 0 && body < component->rigid_bodies.size ? body : NONE;
+		long rigid_body = havok_component_main_rigid_body_index_get(component);
 
 		if ((TEST_FIELD_BIT((component->unknown04 >> 11) & 1)) && rigid_body != NONE)
 		{
 			real value = function_1d1230(rigid_body, component);
-			byte *motion = *(byte **)(*(byte **)((byte *)component->rigid_bodies.data + rigid_body * 0x60 + 0x40) +
-				0x3c);
-			point3f point = *(point3f *)(motion + 0x70);
+			point3f const *position = (point3f const *)((byte *)havok_component_rigid_body_get(rigid_body, component)->m_motion + 0x70);
+			point3f point;
+			real_point3d_set(&point, position->x, position->y, position->z);
 
 			function_e1b60(arg_159e6d, &point, value);
 		}
@@ -2024,31 +2151,41 @@ bool __stdcall function_e23e0(long arg_159e6d, point3f const *point, real value,
 	long rigid_body_index, bool started);
 
 /* places the biped's ragdoll bodies, from its root rigid body outward */
+// score 70 (was 91): frame 0x114 versus 0x110; entry saves and result/visited homes differ.
+// Native one-word visited mask 91 kept; root clamp 143, with native mask 100; common result 123;
+// declaration-time zero 100, with common result 123; result first 100, with common result 123.
+// Lookup/output scope 86 (five-point incremental gain, 11 extra bytes; restored); with root clamp 101;
+// mask initialized after admission 96; output-only Boolean 103; result after first placement 122;
+// output-only after placement 103. Native mask body retained.
+// Round 282: mask before admission, array/scalar with range/clamp and initialized/output-only
+// result [89,85,91,70,86,82,80,84]; ending lookup scope on this graph [86,88,83,85].
+// One-word mask before admission, root clamp and output-only result 70 plain, kept;
+// output receiver is never read by its matched consumer. All original call roles retained.
 // @retail 0xe1b60
 bool __stdcall function_e1b60(long arg_159e6d, point3f const *point, real value)
 {
 	s_list_rigid_bodies list;
 	long count;
-	bool result = false;
+	dword visited[1];
 
 	function_181bd0(arg_159e6d, &list);
 	count = havok_component_get(BIPED_GET(arg_159e6d)->havok_component_index)->rigid_bodies.size;
+	memset(visited, 0, sizeof(visited));
 	if (PIN(count, 1, 32) == count && list.count > 0)
 	{
 		long root = list.lists[0];
 
-		if (root >= 0 && root <= count - 1)
+		if (PIN(root, 0, count - 1) == root)
 		{
-			dword visited[8];
+			bool result;
 			bool started;
 
-			memset(visited, 0, sizeof(visited));
 			started = function_e1c40(arg_159e6d, point, value, root, NONE, NONE, 0);
 			visited[root >> 5] |= 1 << (root & 0x1f);
 			return function_e23e0(arg_159e6d, point, value, &result, visited, root, started);
 		}
 	}
-	return result;
+	return false;
 }
 
 void function_b8840(long unit_index);
@@ -2056,6 +2193,9 @@ void function_1d1540(s_havok_component *component);
 
 /* turns the biped into a ragdoll: lifted a little when it fell through
    something, its nodes placed from its Havok bodies */
+// score 125 (was 125): frame 0x18 agrees; header-offset, biped/component roles and packed result homes differ.
+// Boolean word conditions 154; result first 125; both 154; ragdoll/reach names 125;
+// conditions/names 154; result/names 125; all three 154; all with indexed nodes 292.
 // @retail 0xe16b0
 bool __stdcall function_e16b0(long arg_159e6d)
 {
@@ -2207,6 +2347,10 @@ void __stdcall function_b77d0(long object_index, vector3f const *linear_velocity
 /* the dead biped's ragdoll: when it falls over (+0x34b 0 to 1) its bodies
    get a push along the killing blow, spread from the hit body; a fallen
    one settles and goes to sleep (2); one that gets up again stands */
+// score 774 (was 774): Frame 0x4c agrees; incoming index/result homes, flag widths and unrolled distance scan differ.
+// Single result exit 861, entry result plus exit 861; native Boolean flag bits 801, with result exit 879;
+// position after mass query 796; complete reciprocal 774; complete vector producers 774; workspace role names 774;
+// body count at every use 773; separate scan ordinals 774, with count fields 773; complete offset vectors 776. All restored.
 // @retail 0xe0ef0
 bool __stdcall function_e0ef0(long arg_159e6d)
 {
@@ -2437,11 +2581,14 @@ PRIVATE inline void biped_rotate(vector3f *v, vector3f const *axis, real sine, r
 /* turns the biped toward its desired facing: flying ones by their flight
    controls, walking ones at the definition's turn rate (or by a turning
    animation when they stand), and a grabbing one toward its target */
+// score 654 (was 679): Frame 0x80 versus 0x78; entry/result and spatial-rotation scheduling remain.
+// Entry result 682; complete shared cross products 678; unified planar workspace 674; both 672;
+// workspace role names 682; one result exit 682; consistent definition reads 667; full-width predicates 720;
+// definition reads with complete projections/planar workspace 670, with planar workspace alone 658 fast / 654 plain (kept).
 // @retail 0xe01d0
 bool __stdcall function_e01d0(long arg_159e6d, long *names)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
-	byte *definition = BIPED_DEFINITION_GET(biped);
 	byte *state = (byte *)biped + *(short *)((byte *)biped + 0x12a);
 	bool changed = false;
 
@@ -2452,9 +2599,9 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 		{
 			if (*(long *)((byte *)biped + 0x3ec) <= 0)
 			{
-				real rate = (biped->control_flags & 8) ? 0.99f : *(real *)(definition + 0x24c);
+				real rate = (biped->control_flags & 8) ? 0.99f : *(real *)(BIPED_DEFINITION_GET(biped) + 0x24c);
 
-				function_1faf80(&biped->facing_goal, arg_159e6d, definition + 0x2cc, &biped->control, rate,
+				function_1faf80(&biped->facing_goal, arg_159e6d, BIPED_DEFINITION_GET(biped) + 0x2cc, &biped->control, rate,
 					&biped->unknown3a0);
 			}
 			else
@@ -2465,7 +2612,7 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 		else if (biped->physics_mode != 5 && *(long *)(state + 0x70) != 0x6000084)
 		{
 			bool special = *(long *)(state + 0x70) == 0x7000039;
-			bool wall = TEST_FIELD_BIT((*(dword *)(definition + 0x264) >> 3) & 1);
+			bool wall = TEST_FIELD_BIT((*(dword *)(BIPED_DEFINITION_GET(biped) + 0x264) >> 3) & 1);
 			vector3f facing;
 			real sine;
 			real cosine;
@@ -2493,20 +2640,16 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 			}
 			else
 			{
-				point2f flat;
-
-				flat.x = biped->facing_goal.i;
-				flat.y = biped->facing_goal.j;
-				if (normalize2d(&flat) == 0.0f)
-				{
-					flat.x = biped->forward.i;
-					flat.y = biped->forward.j;
-				}
-				facing.i = flat.x;
-				facing.j = flat.y;
+				facing.i = biped->facing_goal.i;
+				facing.j = biped->facing_goal.j;
 				facing.k = 0.0f;
-				sine = biped->forward.j * flat.x - biped->forward.i * flat.y;
-				cosine = biped->forward.j * flat.y + biped->forward.i * flat.x;
+				if (normalize2d((point2f *)&facing) == 0.0f)
+				{
+					facing.i = biped->forward.i;
+					facing.j = biped->forward.j;
+				}
+				sine = biped->forward.j * facing.i - biped->forward.i * facing.j;
+				cosine = biped->forward.j * facing.j + biped->forward.i * facing.i;
 			}
 			clockwise = sine > 0.0f;
 			if (-0.9f > cosine)
@@ -2520,9 +2663,9 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 					clockwise = false;
 				}
 			}
-			if (biped->unknown34a == 1 || (*(dword *)(definition + 0x1f0) & 1))
+			if (biped->unknown34a == 1 || (*(dword *)(BIPED_DEFINITION_GET(biped) + 0x1f0) & 1))
 			{
-				real angle = g_510c54->rate * *(real *)(definition + 0x1ec);
+				real angle = g_510c54->rate * *(real *)(BIPED_DEFINITION_GET(biped) + 0x1ec);
 				real turn_cosine = (real)cos(angle);
 				real turn_sine = (real)sin(angle);
 				vector3f turned;
@@ -2594,9 +2737,9 @@ bool __stdcall function_e01d0(long arg_159e6d, long *names)
 			}
 			else if (!biped->unknown34a && !special && !(TEST_FIELD_BIT((biped->flags_134 >> 11) & 1)))
 			{
-				real limit = (biped->control_flags & 8) ? 0.99f : *(real *)(definition + 0x24c) + 0.0001f;
+				real limit = (biped->control_flags & 8) ? 0.99f : *(real *)(BIPED_DEFINITION_GET(biped) + 0x24c) + 0.0001f;
 
-				if (limit >= cosine && !(TEST_FIELD_BIT((*(dword *)(definition + 0xbc) >> 20) & 1)))
+				if (limit >= cosine && !(TEST_FIELD_BIT((*(dword *)(BIPED_DEFINITION_GET(biped) + 0xbc) >> 20) & 1)))
 				{
 					names[1] = clockwise ? 0xa00000f : 0x900000e;
 				}
@@ -2681,6 +2824,15 @@ PRIVATE inline point3f *biped_rigid_body_position(s_havok_component *component, 
 /* places one of the ragdoll's bodies: hanging from its constraint's pivot on
    the body placed before it (kept within reach of the ragdoll's center and
    out of the world, turned to follow), or the first body at the point */
+// score 488 (was 488): Frame 0xfc versus 0x12c; origin/index carriers, pivot-transform
+// expansion, native homes and final rotation/translation scheduling differ. Early collision material
+// initialization/lifetime 499; with entry false result 499, point setter 504, workspace names 499;
+// origin setter alone 486; existing point-transform calls 1108; guarded single result 514;
+// limited-scope material initialization 500; full point-difference producers 504;
+// late parameter-only travel limit 482 (frame 0x12c, below keep margin).
+// Native origin source view 512, with guarded result 527; named limit result 507;
+// native origin/limit result/differences 527; explicit existing-helper inline 488,
+// with late limit 482; late limit/native origin 496; late limit/native origin/result 512.
 // @retail 0xe1c40
 bool __stdcall function_e1c40(long arg_159e6d, point3f const *point, real value, long rigid_body_index,
 	long contact_index, long parent_body_index, bool started)
@@ -2834,9 +2986,10 @@ bool __stdcall function_e2d80(long arg_159e6d)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
 	byte *definition = BIPED_DEFINITION_GET(biped);
+	bool result = false;
 
 	if (biped->unknown39d > 0 && biped->physics_mode == 3 && (TEST_FIELD_BIT((*(dword *)(definition + 0x1f0) >> 10) & 1)) &&
-		!(TEST_FIELD_BIT((biped->flags_10a >> 2) & 1)) && biped->unknown39d == 1)
+		!TEST_FIELD_BIT(((s_biped_flags_10a_view *)&biped->flags_10a)->bit2) && biped->unknown39d == 1)
 	{
 		function_e5930(arg_159e6d);
 		function_10f430(arg_159e6d, 0x7000001, 0x7000101, 0x7000101, 0x7000001, 0.0f, false, 2);
@@ -2861,9 +3014,9 @@ bool __stdcall function_e2d80(long arg_159e6d)
 	if (biped->unknown39d > 0)
 	{
 		biped->unknown39d--;
-		return true;
+		result = true;
 	}
-	return false;
+	return result;
 }
 
 /* the biped's movement animation names: hovering, swimming, and for an
@@ -2936,7 +3089,23 @@ void __stdcall function_e2e90(long arg_159e6d, long *field_7c, long *state_name,
 
 /* starts the biped's landing: its landing time, and for one that can
    collapse, a ragdoll for a random part of it */
-// score 27 (was 39): retail widens the halved landing time to 16 bits (`movzx cx, al`) before the seed step and sign-extends it at the multiply, ours folds both into `movzx edx, al` (seed then in ecx, not eax); tried: `(short)half` as the argument 27, a named seed pointer 28, `x = x + random_index(...)` 27, a one-use `short` range local 27, a file-local `__forceinline` short-parameter copy of the helper 27.
+// matches retail: the halved landing time is tested as a byte (AL) and widened to 16
+// bits (CX) only inside the branch, so retail's seed pointer load comes between the
+// test and the widening.
+// Earlier (score 4): the range was widened in CX and the test ran on CL, before the
+// seed pointer load. A signed range also deriving the byte
+// score 4 (was 4): the range is widened in CX, but ours tests CL before the seed pointer; retail
+// tests AL, then loads the seed pointer before widening CX. A signed range also deriving the byte
+// test 4; an independent byte 8; an unsigned range 4; explicit byte narrowing 4; a two-view union 4;
+// range assigned inside/before the byte test 27/27; long/dword range 16/16; a low-byte mask 4.
+// Earlier: retail widens the halved landing time to 16 bits (`movzx cx, al`) before the seed step and sign-extends it at the multiply, ours folds both into `movzx edx, al` (seed then in ecx, not eax); tried: `(short)half` as the argument 27, a named seed pointer 28, `x = x + random_index(...)` 27, a one-use `short` range local 27, a file-local `__forceinline` short-parameter copy of the helper 27.
+// Shared bounded-range helper short/byte 60/59; consistent inline/forceinline short 60/4, forceinline byte 27;
+// range divided by two 4; short read then halved 4; signed-byte test 4; short positive/nonzero tests 10/10;
+// shared bounded-range helper with a short positive test 59.
+// Mode receiver owned at guard/entry 77/77, in native admission scope 4;
+// final-store narrowing 4, with mode receiver 77; early completion guards 4; staged guards 4;
+// consistent object observations 129; role names 4; entry-scope ranges 4.
+// One serial 600-second search: twelve attempts, eight scored, none below 4. Original body restored.
 // @retail 0xe3f00
 void function_e3f00(long arg_159e6d)
 {
@@ -2947,11 +3116,11 @@ void function_e3f00(long arg_159e6d)
 	function_114b60(NONE, 0x14, arg_159e6d, 0xd, 0);
 	if (biped->unknown39d > 1 && TEST_FIELD_BIT((*(dword *)(definition + 0x1f0) >> 10) & 1) && biped->physics_mode != 3)
 	{
-		byte half = biped->unknown39d >> 1;
-
-		if (half > 0)
+		if ((biped->unknown39d >> 1) > 0)
 		{
-			biped->unknown39d += (byte)random_index(&g_4e7408->unknown0, half);
+			short range = biped->unknown39d >> 1;
+
+			biped->unknown39d += (byte)random_index(&g_4e7408->unknown0, range);
 		}
 		function_b9b90(arg_159e6d, false);
 		function_1e54d0(&biped->physics_mode, 3);
@@ -2977,6 +3146,13 @@ void function_e4300(long arg_159e6d)
 }
 
 /* gets the biped up and puts its Havok to sleep, unless it already sleeps */
+// score 91 (was 91): reset-mode dispatch expands instead of retail calling it out of line (113/61 bytes).
+// Separate reset noinline declaration 91; Boolean flag test 98; both 98; noinline with
+// field-use object lookup 94; Boolean lookup with/without noinline 101/101; both call-boundary
+// declarations with Boolean test 98, with field-use lookup 101. Original body/declarations restored.
+// Round 282: physical low-byte mask/Boolean/named/early guards 91/91/91/91;
+// native word bitfield with Boolean/early guards 98/98; native byte bitfield 91/91.
+// Original physical word declaration and caller body restored.
 // @retail 0xe4bd0
 void function_e4bd0(long arg_159e6d)
 {
@@ -3057,6 +3233,10 @@ void __stdcall function_e2fa0(long arg_159e6d, long object_index, void *unused)
 
 /* counts the ticks an actor's biped has been falling too far to jump back
    (+0x3ab), and reports it once a second */
+// score 154 (was 208): Frame 0xa0 recovered; incoming index, native flag tests and probe/energy homes differ.
+// Caller-only noinline declaration 208, with collision arms 206 (two-point gain dropped).
+// Native conversion boundary 166; collision arms 162; Boolean bits 183; both 181;
+// actual count clamp 154 kept; workspace names 166; complete energy parts 166; all 177.
 // @retail 0xe30c0
 void function_e30c0(long arg_159e6d)
 {
@@ -3113,7 +3293,11 @@ void function_e30c0(long arg_159e6d)
 		}
 		if (stuck)
 		{
-			count = MIN(biped->unknown3ab + 1, 0xfe);
+			count = biped->unknown3ab + 1;
+			if (count > 0xfe)
+			{
+				count = 0xfe;
+			}
 		}
 	}
 	biped->unknown3ab = (byte)count;
@@ -3133,12 +3317,16 @@ bool function_109e00(long object_index, vector3f *velocity, bool definition_flag
 void function_155b60(long unit_index);
 bool function_a7670(long object_index);
 void __stdcall function_b8540(long a);
-long function_10f8f0(long object_index);
+__declspec(noinline) long function_10f8f0(long object_index);
 void function_e3910(long arg_159e6d);
 
 /* a walking biped falling faster than the globals' falling speed takes
    falling damage, unless it rides a vehicle that protects it; a falling
    object leaves its cluster */
+// score 98 (was 130): frame 0x9c and length 518 agree; high-byte immunity test, load order and damage-result roles differ.
+// Native byte high/lower/both bitfield tests 130 each; native high word bitfield store 98;
+// with high/lower/both byte tests 98 each; all fields with immunity set from tests 134.
+// The native high word bitfield store is kept; all input/call expressions retain their original roles.
 // @retail 0xe3700
 void function_e3700(long arg_159e6d)
 {
@@ -3185,7 +3373,7 @@ void function_e3700(long arg_159e6d)
 		{
 			s_type_1e6529 data;
 
-			*((byte *)&biped->flags_348 + 1) |= 0x80;
+			biped->flag_348_15 = true;
 			if (biped->unknown13c != NONE)
 			{
 				function_155b60(arg_159e6d);
@@ -3207,6 +3395,23 @@ void function_e3700(long arg_159e6d)
 
 /* the airborne biped: falling damage, a random spin for one that tumbles,
    and its airborne animation */
+// score 6 (was 8): the cross product's three components are computed in named locals,
+// which recovers retail's product order. Left: the scaled add's first product (the shared
+// helper computes component * scale, retail scale * component), the call to the unmatched
+// 0xe3910 and the branch displacements that follow from it.
+// Getter declaration at caller only 177; bounded-random helper 194 (range rounding differs);
+// shared cross 177; both helpers 194; unit-random/both helpers 177/177; entry axis 194;
+// role names and branch stores 190. Separate out-of-line getter declaration 90, plain confirmed.
+// On the out-of-line graph: cross/unit-random/both 90/90/90; branch stores alone,
+// with cross/unit-random/both, and all with entry axis 94/94/94/94/94. Original body retained.
+// On named normalized draws, shared cross/update and branch/default stores [11, 35, 8, 32, 13, 37, 12, 34];
+// computed tick spin, native up copy and both [11, 122, 120]. Best plain 8.
+// Earlier named/staged normalized draws with scalar/shared updates and spin/tick lifetimes
+// 30/32/27/29/29/31/28/30. Named fractions preserve both random products; branch stores recover the tail.
+// Round 282: negative cross-factor orders in all seven row subsets 8 each; entry axis on k-order 8.
+// Existing scale/add helpers, in-place/distinct increment 56/56; with shared cross 58/53. Restored.
+// This round: the third product's operands the other way 8; the second term in a local 8; the negated
+// component 84 (570 bytes); the three products in named locals 6 (kept).
 // @retail 0xe40d0
 void __stdcall function_e40d0(long arg_159e6d, long *names)
 {
@@ -3225,34 +3430,41 @@ void __stdcall function_e40d0(long arg_159e6d, long *names)
 
 		if (current == 0xe000038 || current == 0xa000040)
 		{
-			real spin = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f * 1.0471976f + 1.5707964f;
+			real spin_fraction = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f;
+			real spin = spin_fraction * 1.0471976f + 1.5707964f;
 			vector3f axis;
 			bool found = false;
 
 			if (0.8f > biped->up.k)
 			{
-				axis.i = biped->up.j * g_4687b0->k - g_4687b0->j * biped->up.k;
-				axis.j = g_4687b0->i * biped->up.k - biped->up.i * g_4687b0->k;
-				axis.k = g_4687b0->j * biped->up.i - biped->up.j * g_4687b0->i;
+				real cross_i = biped->up.j * g_4687b0->k - g_4687b0->j * biped->up.k;
+				real cross_j = g_4687b0->i * biped->up.k - biped->up.i * g_4687b0->k;
+				real cross_k = g_4687b0->j * biped->up.i - biped->up.j * g_4687b0->i;
+
+				axis.i = cross_i;
+				axis.j = cross_j;
+				axis.k = cross_k;
 				found = function_30bf0(&axis) > 0.0f;
 			}
 			if (!found)
 			{
-				real angle = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f * 6.2831855f;
+				real angle_fraction = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f;
+				real angle = angle_fraction * 6.2831855f;
 
 				axis.i = (real)cos(angle);
 				axis.j = (real)sin(angle);
 				axis.k = 0.0f;
 			}
 			spin *= g_510c54->rate;
-			biped->angular_velocity.i += spin * axis.i;
-			biped->angular_velocity.j += axis.j * spin;
-			biped->angular_velocity.k += axis.k * spin;
+			vector3f_add_scaled(&biped->angular_velocity, &axis, spin, &biped->angular_velocity);
 		}
 		function_e3910(arg_159e6d);
 	}
 	name = *(long *)(state + 0x7c);
-	names[1] = name == 0xa00003e || name == 0xd00003f ? 0xd00003f : 0x800001e;
+	if (name == 0xa00003e || name == 0xd00003f)
+		names[1] = 0xd00003f;
+	else
+		names[1] = 0x800001e;
 }
 
 /* turns a vector about a unit axis (Rodrigues) */
@@ -3260,19 +3472,22 @@ PRIVATE inline void biped_rotate_about(vector3f *v, vector3f const *axis, real s
 {
 	real dot = (v->i * axis->i + v->k * axis->k + v->j * axis->j) * (1.0f - cosine);
 	vector3f cross;
-	vector3f result;
 
-	cross.i = axis->j * v->k - axis->k * v->j;
-	cross.j = axis->k * v->i - axis->i * v->k;
-	cross.k = axis->i * v->j - axis->j * v->i;
-	result.i = v->i * cosine + axis->i * dot + cross.i * sine;
-	result.j = v->j * cosine + axis->j * dot + cross.j * sine;
-	result.k = v->k * cosine + axis->k * dot + cross.k * sine;
-	*v = result;
+	cross3f(axis, v, &cross);
+	v->i = v->i * cosine + axis->i * dot + cross.i * sine;
+	v->j = v->j * cosine + axis->j * dot + cross.j * sine;
+	v->k = v->k * cosine + axis->k * dot + cross.k * sine;
 }
 
 /* turns a tumbling biped by its angular velocity over a tick, keeping its
    facing and up square */
+// score 184 (was 355): Frame 0x24 and entry saves agree; axis copy/norm order,
+// early normalization loads and rotation/basis SSE carriers still differ.
+// Direct rotation output 235; scalar cross terms 246; all shared cross producers 184 (plain);
+// shared normalizer 240 (restored grouping); explicit rotation output 251; weighted producers 265;
+// scaled-first normalization 234; native axis value 288; vector identities 235;
+// opposite cross/subtraction 235 (restored); on shared crosses: norm squares 210,
+// scaled-first 184, shared normalization scale 213, all three 208, sine first 220, complement 209.
 // @retail 0xe3910
 void function_e3910(long arg_159e6d)
 {
@@ -3304,12 +3519,8 @@ void function_e3910(long arg_159e6d)
 	function_30bf0(&biped->forward);
 	up = biped->up;
 	biped_rotate_about(&up, &axis, sine, cosine);
-	side.i = up.j * biped->forward.k - up.k * biped->forward.j;
-	side.j = up.k * biped->forward.i - up.i * biped->forward.k;
-	side.k = up.i * biped->forward.j - up.j * biped->forward.i;
-	biped->up.i = biped->forward.j * side.k - biped->forward.k * side.j;
-	biped->up.j = biped->forward.k * side.i - biped->forward.i * side.k;
-	biped->up.k = biped->forward.i * side.j - biped->forward.j * side.i;
+	cross3f(&up, &biped->forward, &side);
+	cross3f(&biped->forward, &side, &biped->up);
 	if (function_30bf0(&biped->up) == 0.0f)
 	{
 		biped->forward = *g_4687a8;
@@ -3325,6 +3536,10 @@ real magnitude3d(vector3f const *v);
 /* an actor riding a fast vehicle that is about to leave the ground (no
    ground under it, or none along its flight) says so, at most once every
    half second: falling (0x54), flipping over (0x56) or a jump (0x55) */
+// score 105 (was 169): Frame 0x84 agrees; byte/word read, float scheduling and normal-copy homes differ.
+// First/second/both branch-selected collision calls 215/225/105 fast; both retained.
+// On both calls: state at test 105; shared vector/point/both setters 107/110/111; carrier name 105.
+// Complete branch-selected calls 105 plain; original operands and helper roles preserved.
 // @retail 0xe3380
 void __stdcall function_e3380(long arg_159e6d)
 {
@@ -3355,8 +3570,11 @@ void __stdcall function_e3380(long arg_159e6d)
 			vector.j = g_4687bc->j * 8.0f;
 			vector.k = g_4687bc->k * 8.0f;
 			collision.unknown24 = NONE;
-			if (!function_1697c0(function_ddf60(arg_159e6d) ? 0x800001 : 0x84000d, &start, &vector, NONE, NONE,
-				(s_collision_result_1697c0 *)&collision))
+			if (!(function_ddf60(arg_159e6d) ?
+				function_1697c0(0x800001, &start, &vector, NONE, NONE,
+					(s_collision_result_1697c0 *)&collision) :
+				function_1697c0(0x84000d, &start, &vector, NONE, NONE,
+					(s_collision_result_1697c0 *)&collision)))
 			{
 				vector3f flight;
 
@@ -3374,8 +3592,11 @@ void __stdcall function_e3380(long arg_159e6d)
 					vector.j = flight.j * 8.0f;
 					vector.k = flight.k * 8.0f;
 					collision.unknown24 = NONE;
-					if (function_1697c0(function_ddf60(arg_159e6d) ? 0x800001 : 0x84000d, &start, &vector, NONE, NONE,
-						(s_collision_result_1697c0 *)&collision) && collision.normal.k > 0.3f)
+					if ((function_ddf60(arg_159e6d) ?
+						function_1697c0(0x800001, &start, &vector, NONE, NONE,
+							(s_collision_result_1697c0 *)&collision) :
+						function_1697c0(0x84000d, &start, &vector, NONE, NONE,
+							(s_collision_result_1697c0 *)&collision)) && collision.normal.k > 0.3f)
 					{
 						falling = false;
 					}
@@ -3405,6 +3626,10 @@ void __stdcall function_e3380(long arg_159e6d)
 
 /* the dead biped's animation: its getting-up animation once it can stand,
    the ragdoll's pose while it lies, or its landing */
+// score 171 (was 171): Frame 0xc agrees; receiver/index operand order, repeated flag test and result/SSE homes differ.
+// Result first 174; explicit status exits 173; current/primary/tag receivers at uses 182/177/206;
+// initial success joined to result 201; current observations/status exits 185; result first too 186.
+// Original body and every callee contract restored.
 // @retail 0xe3c90
 bool __stdcall function_e3c90(long arg_159e6d, long *names, s_biped_physics_output *output)
 {
@@ -3659,6 +3884,10 @@ bool function_1f5560(long actor_index, vector3f *facing);
 /* jumps: an upward kick to the definition's jump speed (less for a tired
    player), relative to what the biped stands on; an actor may refuse.
    Retail keeps the biped on the stack (ret 4): its address is taken */
+// score 224 (was 224): frame 0x24 versus 0x28; ground/result homes, entry saves and state observations differ.
+// Natural parameter 239; late success 221 (subthreshold), shared vector producers 224; CRT relative
+// copy 224; common result exit 222 (subthreshold); all velocity names 224; late/shared 221;
+// natural parameter/common result/shared/CRT 234. All executable forms restored.
 // @retail 0xe4770
 bool __stdcall function_e4770(long arg_159e6d)
 {
@@ -3735,6 +3964,12 @@ void function_e5790(long arg_159e6d);
 /* lands or is knocked to the ground: a crouching biped standing up into a
    ceiling is lifted clear, the hit is remembered (+0x44c..), and a flag
    plays the knocked-down animation */
+// score 124 (was 124): frame 0xc agrees; point/index input registers, upward-sum scheduling and cap loading remain.
+// Native word flags, entry point/velocity workspaces, explicit lift arms, separate contact
+// admissions, contact-index name, state scope, library point copy and immutable receiver
+// all 124; lift initialized from room 121 (subthreshold, restored). Complete upward sum
+// and its first pair 124; native overlapping contact fields, native state offset, both,
+// both with the upward pair and both with word flags 124. All executable forms restored.
 // @retail 0xe4a20
 void __stdcall function_e4a20(point3f const *point, long arg_159e6d, long object_index, bool knocked)
 {
@@ -3835,7 +4070,8 @@ void function_e4c50(long arg_159e6d)
 
 		if (timed)
 		{
-			scale = PIN((char)biped->unknown39f * 0.007874016f, 0.0f, 1.0f);
+			scale = (char)biped->unknown39f * 0.007874016f;
+			scale = PIN(scale, 0.0f, 1.0f);
 		}
 		function_e4d90(arg_159e6d, 3, scale, 2);
 		biped->unknown39f = 0;
@@ -3849,6 +4085,10 @@ void function_188180(point3f const *point, vector3f const *forward, long tag_ind
 
 /* a walking biped's footstep effect: at its foot marker (or its origin),
    with the material it stands on */
+// score 168 (was 183): frame 0xec versus 0x94; material homes, model-count test and effect-call transport remain.
+// Marker scope/direct location/full-width material combinations 190/168/177/183/189/169/178;
+// early collision initialization with all three 169. Query-branch location pointer 168 plain;
+// with marker scope/full-width material/both 177/169/178. Keep only query-branch location ownership.
 // @retail 0xe4d90
 void __stdcall function_e4d90(long arg_159e6d, long type, real scale, long marker)
 {
@@ -3858,7 +4098,6 @@ void __stdcall function_e4d90(long arg_159e6d, long type, real scale, long marke
 	if (biped->physics_mode == 1 && *(long *)(definition + 0x58) != NONE)
 	{
 		point3f point;
-		s_location *location = (s_location *)((byte *)biped + 0x28);
 		s_object_marker foot;
 
 		if (marker < *(long *)(definition + 0x2f8) &&
@@ -3878,6 +4117,7 @@ void __stdcall function_e4d90(long arg_159e6d, long type, real scale, long marke
 
 			function_b9dd0(arg_159e6d, &probe);
 			probe.z += 0.0328f;
+			s_location *location = (s_location *)((byte *)biped + 0x28);
 			if (function_11c120(location, &probe, &zone))
 			{
 				material = zone;
@@ -3911,7 +4151,7 @@ void __stdcall function_e4d90(long arg_159e6d, long type, real scale, long marke
 				if (function_1697c0(0x84000d, &point, &down, NONE, NONE, (s_collision_result_1697c0 *)&collision))
 				{
 					function_188180(&point, g_4687b0, *(long *)(definition + 0x58), arg_159e6d, type,
-						*((byte *)definition + 0x1a), collision.unknown24, (long)g_4687bc, location, scale);
+						*((byte *)definition + 0x1a), collision.unknown24, (long)g_4687bc, (s_location *)((byte *)biped + 0x28), scale);
 				}
 			}
 		}
@@ -3949,6 +4189,10 @@ void __stdcall function_b8600(long object_index, long unknown);
 /* applies the biped's character physics move: its facing and up, its
    animation names, its movement animation's rate, crouching and grabbing,
    and its new velocity (or, asleep, its new position) */
+// score 742 (was 793): Frame 0xd0 agrees; definition/state/motion homes, early exit, flag widths and vector schedules differ.
+// Default completion fallthrough 776; direct still-result ownership 773; both 749 fast/742 plain kept.
+// Common final result with fallthrough 789; coherent workspace names 800; declared flag stores 781;
+// entry still Boolean 800; definition at every use 864 (fast control 800, ordinary opening 793).
 // @retail 0xe24f0
 bool __stdcall function_e24f0(long arg_159e6d, long *names, s_biped_physics_output *output)
 {
@@ -3958,14 +4202,14 @@ bool __stdcall function_e24f0(long arg_159e6d, long *names, s_biped_physics_outp
 	word const *animation_flags = (word const *)((byte *)biped + biped->unknown33e);
 	s_biped_physics_move move;
 	vector3f velocity;
-	bool still = false;
+	bool still;
 	bool grabbing;
 	real change;
 
 	*(byte *)&biped->flags_348 &= ~0x10;
-	if (function_ddfb0(arg_159e6d))
+	still = function_ddfb0(arg_159e6d);
+	if (still)
 	{
-		still = true;
 		if (*((byte *)biped + 0xc1) & 1)
 		{
 			function_b9b90(arg_159e6d, false);
@@ -4046,6 +4290,7 @@ bool __stdcall function_e24f0(long arg_159e6d, long *names, s_biped_physics_outp
 		{
 		case 4:
 			function_e6f90(arg_159e6d);
+		default:
 			function_e5930(arg_159e6d);
 			break;
 		case 6:
@@ -4063,9 +4308,6 @@ bool __stdcall function_e24f0(long arg_159e6d, long *names, s_biped_physics_outp
 			function_e5930(arg_159e6d);
 			break;
 		}
-		default:
-			function_e5930(arg_159e6d);
-			break;
 		}
 	}
 	if (biped->unknown3aa && !function_e0dc0(arg_159e6d))

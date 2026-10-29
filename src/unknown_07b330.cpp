@@ -147,7 +147,9 @@ bool __stdcall function_07b140(void *object, long destination, long type, long s
 	return result;
 }
 
-// score 3 (was 3): only the argument setup of the handler call differs, BLOCKED-BY 0x938e0's
+// score 3 (was 3): only the handler call's argument setup differs: retail passes the message
+// type in eax, the message in ecx, the receiver in edx and the address on the stack, ours
+// passes the address in eax and the message on the stack (0x938e0's declaration, another file).
 // convention (retail: message type EAX, message ECX, receiver EDX, address on the stack; ours
 // address EAX, message on the stack). Tried: explicit message cast 3; function-scope type 3;
 // storage declared first 3; size declared before type 5; receiver local 3.

@@ -293,6 +293,34 @@ struct s_index_table
 
 extern s_index_table *g_4e8c20;
 
+/* the next active local player after index (the first for NONE), as
+   function_14de10 finds it; a copy for the callers retail inlines it into
+   (function_14de10 itself stays out of line: retail calls it from 0x1391ed,
+   0x219ed0 and 0x240820) */
+static inline long local_player_next_inline(long index)
+{
+	long result = NONE;
+
+	if (index == NONE)
+	{
+		index = 0;
+	}
+	else
+	{
+		index++;
+	}
+
+	for (long i = index; i < 4; i++)
+	{
+		if (g_4e8c20->entries[i] != NONE)
+		{
+			result = i;
+			break;
+		}
+	}
+	return result;
+}
+
 /* g_4701ec: a sequence the scripts step through (unknown_29f5b0 starts
    its stages and reads it; 03d380 and 225f80 reset it): the current stage,
    the time it started at +8, and two fields cleared on each new stage.

@@ -7,6 +7,7 @@
 #include "unknown_11c920.h"
 #include <xtl.h>
 #include <string.h>
+#include "map_file_path.h"
 
 char *csprintf_256(char *buffer, const char *format, ...);
 int function_11c920(char const *s1, char const *s2);
@@ -175,26 +176,15 @@ void cache_copy_forget(char const *map_name)
 	}
 }
 
-// score 6 (was 6): post-path EBX reuse remains. selected index 76; oldest timestamp 40;
-// selected-record arms 6; age operands 9; entry selection 6; short index 45;
-// whole-path destination 6; no-selection exit 6.
-// post-normalization lookup reuses EBX; retail forms the path address again.
-// Fast: empty path value 59; normalizer-owned path 49; record-pointer iterator 56;
-// signed record index 56; older record before empty 14; retained-record continue 6;
-// state reset before copy 8; guaranteed selected record 37.
-// Path helper with an inline definition, with and without a noinline declaration, 6/6; path
-// helpers defined after their callers 6; path helper alone in an /Ob1 file 6; print helper
-// inline with a noinline declaration 6. Retail also forms 0x2141f0's EDI constant again after
-// the call: retail callers act as if they had no register summary for the path helper.
 // @retail 0x214100
 void __stdcall cache_copy_record_use(char const *map_name)
 {
-	char path[256];
+	s_map_file_path path;
 	s_cache_copy *copy;
 
-	path[0] = 0;
-	map_file_path_get(map_name, path);
-	copy = cache_copy_find(path);
+	path.text[0] = 0;
+	path.get(map_name);
+	copy = cache_copy_find(path.text);
 	if (!copy)
 	{
 		dword index;
@@ -215,7 +205,7 @@ void __stdcall cache_copy_record_use(char const *map_name)
 		}
 		if (copy)
 		{
-			memcpy(copy->path, path, sizeof(path));
+			memcpy(copy->path, path.text, sizeof(path.text));
 			copy->state = 0;
 		}
 	}
@@ -299,61 +289,36 @@ void cache_copy_buffer_resize(long size)
 	}
 }
 
-// score 5 (was 5): second buffer address reused after call;
-// buffer home names 5; result declared last 5; comparison array initialized 56; equality inputs reversed 14;
-// mismatch early return 24; inline comparison declaration 5; noinline comparison declaration 5; noinline
-// path declaration 5.
-// the second buffer address is reused instead of recomputed after the call.
-// Inline declaration 5; noinline declaration 5; byte memset 5; both clears first 25; selected result 24;
-// later result 13; both buffers initialized 81; priority-first result 31.
-// 0x214db0 forms (callee still matching): returning the printed buffer 5; drive-path test in a bool 5;
-// file name from a separator ternary 5; one shared print call 19; path-first parameter order 9; the
-// helper in its own file sorted after or before this one 5/5.
-// two-buffer record 5; result between buffers 5; result initialized between calls 10;
-// unsigned result 5; named equality 5; combined noinline declarations 5;
-// combined inline declarations 5; force-inline comparison declaration 5.
 // @retail 0x213e30
 long cache_copy_current_priority(char const *map_name)
 {
 	long result = NONE;
-	char path[256];
-	char current_path[256];
+	s_map_file_path path;
+	s_map_file_path current_path;
 
-	path[0] = 0;
-	map_file_path_get(map_name, path);
-	current_path[0] = 0;
-	map_file_path_get(g_55bd21, current_path);
-	if (!function_11c920(path, current_path))
+	path.text[0] = 0;
+	path.get(map_name);
+	current_path.text[0] = 0;
+	current_path.get(g_55bd21);
+	if (!function_11c920(path.text, current_path.text))
 	{
 		result = g_55be24[0].priority;
 	}
 	return result;
 }
 
-// score 5 (was 5): second buffer address reused after call;
-// buffer home names 5; result declared last 5; comparison array initialized 56; equality inputs reversed 14;
-// mismatch early return 24; inline comparison declaration 5; noinline comparison declaration 5; noinline
-// path declaration 5; reversed buffer name order 5.
-// the second buffer address is reused instead of recomputed after the call.
-// Inline declaration 5; noinline declaration 5; byte memset 5; both clears first 25;
-// selected result 24; later result 13; both buffers initialized 81; priority-first result 31.
-// 0x214db0 forms (callee still matching): returning the printed buffer 5; drive-path test in a bool 5;
-// file name from a separator ternary 5; one shared print call 19; path-first parameter order 9; the
-// helper in its own file sorted after or before this one 5/5.
-// Queued record pointer 5; delayed/scoped comparison buffer 5/5; interleaved result 5;
-// path matrix 15; two-arm result 24; named comparison 5; unsigned result 5.
 // @retail 0x213e90
 long cache_copy_queued_priority(char const *map_name)
 {
 	long result = NONE;
-	char path[256];
-	char queued_path[256];
+	s_map_file_path path;
+	s_map_file_path queued_path;
 
-	path[0] = 0;
-	map_file_path_get(map_name, path);
-	queued_path[0] = 0;
-	map_file_path_get(g_55be24[1].map_name, queued_path);
-	if (!function_11c920(path, queued_path))
+	path.text[0] = 0;
+	path.get(map_name);
+	queued_path.text[0] = 0;
+	queued_path.get(g_55be24[1].map_name);
+	if (!function_11c920(path.text, queued_path.text))
 	{
 		result = g_55be24[1].priority;
 	}
@@ -375,17 +340,6 @@ long cache_copy_priority(char const *map_name)
 	return result;
 }
 
-// score 7 (was 7): post-path EBX reuse remains. shared completion 7; state value 7;
-// entry-result single exit 57; short result 55; inline query 7;
-// outlined inline query 7; inline completion 7; open success last 37.
-// post-normalization open lookup reuses EBX; retail forms the path address again.
-// Fast: empty path value 67; normalizer-owned path 47; open-path scope 7; nested copy state 7;
-// copy at first use 7; queued result domain 21; open-index observation 7;
-// active-priority observation 7.
-// Path helper with an inline definition, with and without a noinline declaration, 7/7; path
-// helpers defined after their callers 7; path helper alone in an /Ob1 file 7; print helper
-// inline with a noinline declaration 7. Retail also forms 0x2141f0's EDI constant again after
-// the call: retail callers act as if they had no register summary for the path helper.
 // @retail 0x213f10
 long map_location_get(char const *map_name)
 {
@@ -394,12 +348,12 @@ long map_location_get(char const *map_name)
 	 * drive or asynchronous copy queue. Report only that exact ownership. */
 	return cache_file_find(map_name) != NONE ? _map_location_open : _map_location_none;
 #else
-	char path[256];
+	s_map_file_path path;
 	s_cache_copy *copy;
 
-	path[0] = 0;
-	map_file_path_get(map_name, path);
-	if (cache_file_find(path) != NONE)
+	path.text[0] = 0;
+	path.get(map_name);
+	if (cache_file_find(path.text) != NONE)
 	{
 		return _map_location_open;
 	}
@@ -416,32 +370,18 @@ long map_location_get(char const *map_name)
 #endif
 }
 
-// score 3 (was 3): Frame agrees; the second path address reuses EBX instead of being formed again from ESP
-// (retail keeps EDI, the map name, across 0x214db0 but treats its EBX buffer argument as clobbered).
-// Tried buffer declarations 3; first buffer name 3; second buffer name 3; result lifetime 3; second clear
-// lifetime 7; test result 36; two result paths 36; integral result 52; path helper reverse 5; path helper
-// cdecl 5; path helper stdcall 3; noinline declaration 3; inline declaration 3; first buffer initialized
-// 65; second initialized 68; byte memset 3; empty strncpy 81; both buffers initialized 94; shared byte
-// clear 5; symmetric comparison 39; named comparison 3; named symmetric comparison 39; path array loop
-// with per-path clear 48, preclear 59; path pointer loop with per-path clear 69, preclear 102; path array
-// while traversal 48; later element address 3; whole-array pointer 3; two-dimensional paths 3; call
-// element address 3; call-output pointer 3; later comparison pointer 3; later whole-array comparison
-// pointer 3; one-member buffer structs (object address to the call, field to the compare) 3.
-// 0x214db0 forms (callee still matching): returning the printed buffer 3; drive-path test in a bool 3;
-// file name from a separator ternary 3; one shared print call 45 (callee 39); path-first parameter
-// order 5; the helper in its own file sorted after or before this one 3/3.
 // @retail 0x214e40
 bool map_names_equal(char const *map_name, char const *other_map_name)
 {
 	bool result = false;
-	char path[256];
-	char other_path[256];
+	s_map_file_path path;
+	s_map_file_path other_path;
 
-	path[0] = 0;
-	other_path[0] = 0;
-	map_file_path_get(map_name, path);
-	map_file_path_get(other_map_name, other_path);
-	if (!strcmp(path, other_path))
+	path.text[0] = 0;
+	other_path.text[0] = 0;
+	path.get(map_name);
+	other_path.get(other_map_name);
+	if (!strcmp(path.text, other_path.text))
 	{
 		result = true;
 	}

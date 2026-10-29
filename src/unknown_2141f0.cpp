@@ -80,6 +80,13 @@ bool map_copy_request(char const *map_name, long priority);
 void __stdcall cache_copy_record_use(char const *map_name);
 
 // score 367 (was 367): Aligned frame 0x110 agrees; request-source reuse, dependency bound and write-option scheduling remain.
+// Round 85: retail keeps states 8 and 15 as separate cases (`state = 9;` / `state = 16;`); with them split, the
+// writes' flags as `s_file_write_flags(0)` temporaries, state 6's first test through a named `size_known` bool
+// and the dependency time indexed (`&g_55b4f0.dependency_times[type]`, retail's pointer exit test) the body is
+// retail's length and order (aligned differences 111 -> 53), but the score is 461/434/432/430: the one
+// remaining shift is `mov esi, edi` after the 0x214db0 call where retail re-forms the constant (3 bytes), which
+// adds a loop pad and misaligns every later line. BLOCKED-BY 0x214db0 (callers act as if it had no register
+// summary). The three local forms on the merged-case body 453.
 // Request library copies 471/471; state increments 471; shared flush states 472; shared write-completion
 // states 433.
 // Signed-word dependency index 446; unsigned index 446; explicit existing write flags 453;
@@ -138,6 +145,15 @@ void __stdcall cache_copy_record_use(char const *map_name);
 // handle+write/size+write 464/479/354; all three/four 462/461. The 354 conditional flag
 // form is match-only and rejected. Complete size+write/size/write/nested value producers
 // 426/426/367/426; original completion producers and all observations restored.
+// Round 217: Header-validator inline/noinline/inline-out-of-line declarations 367/367/367;
+// with cursor-end bounds 375/375/375; with repeated completed-count value 362/362
+// fast. Five-point exact-length forms are below the retention threshold; all declarations and body restored.
+// Round 240: One shared full-width priority ordinal, signed/unsigned, with state
+// first and/or constant true result first: eight forms 367. Request source,
+// dependency bound and write options remain; all original input reads restored.
+// Round 162: State-arm success results bool/byte/short/long 531/559/627/637; the same declarations
+// first 531/559/627/637. All shrink the aligned frame to 0x108 versus 0x110. Original success
+// lifetime, all state arms and observations restored.
 // @retail 0x2141f0
 bool function_2141f0(void)
 {

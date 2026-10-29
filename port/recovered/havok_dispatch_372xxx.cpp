@@ -12,7 +12,6 @@
 //   0x372200  grouping_3720a0::function_372200 (each body alone, then join
 //             the pairs)
 //   0x372390  grouping_3720a0::function_372390 (lists the groups)
-//   0x3728b0  helper_3728b0 dtor (the empty handler back to its base vtable)
 //   0x3728c0  dispatcher_3728c0::function_3728c0 (pairs begun and ended
 //             handed to the handler their two objects' types pick)
 //   0x372a40  slot_table_372a40 ctor
@@ -299,30 +298,7 @@ void dispatcher_3728c0::function_3728c0(pair_30d870 const *added, long added_cou
 // ---------------------------------------------------------------------------
 // the table's empty handler, and the table
 
-class helper_3728b0
-{
-public:
-	~helper_3728b0();
-};
-
-// the empty handler at 0x100 given its base's vtable back
-// @retail 0x3728b0
-helper_3728b0::~helper_3728b0()
-{
-	*(unsigned *)((char *)this + 0x100) = 0x41387c;
-}
-
-// every slot pointing at the empty handler after them (vtable 0x43e534,
-// whose slots 1 and 2 do nothing)
-// @retail 0x372a40
-slot_table_372a40::slot_table_372a40()
-{
-	*(unsigned *)&empty = 0x43e534;
-	for (int i = 0; i < 64; i++)
-	{
-		slots[i] = &empty;
-	}
-}
+// 0x3728b0 and 0x372a40 are recovered in src/unknown_3728b0.cpp
 
 // ---------------------------------------------------------------------------
 // the pairs' sort: by the first object's id, then the second's

@@ -93,10 +93,15 @@ static __forceinline long weapon_get_zoom_out_sound(long weapon_index)
 	return result;
 }
 
-// score 107 (was 122): entry saves, fresh unit reload and sentinel carriers still differ.
+// score 107 (was 131): frameless entry saves, unit reload and sentinel carriers differ.
+// entry saves, fresh unit reload and sentinel carriers still differ.
+// frameless entry saves, unit reload and sentinel carriers differ.
+// Native player-table stride and byte eligibility/prior-state combinations 131
+// each (seven forms); full-width eligibility 127 (four-point gain rejected).
+// Original record view, result types, observations and body restored.
+// entry saves, fresh unit reload and sentinel carriers still differ.
 // BLOCKED-BY 0xbadc0: retail re-fetches the unit after its two calls, ours reuses the entry
 // fetch (our link knows the callee writes no memory).
-// entry saves, fresh unit reload and sentinel carriers still differ.
 // shared weapon producer 131; user-result arms 125; both 125; signed-word user 128;
 // shared producer/word 128; word/result arms 122; all three 122; guarded weapon
 // result 135. Retain signed-word user/result arms; the six-count arm-only gain is rejected.
@@ -117,6 +122,12 @@ static __forceinline long weapon_get_zoom_out_sound(long weapon_index)
 // On the 107 body: long user index 111; reset entry in full 109; weapon flag as if/else 111; zoom
 // test as !(keep && zoomed) 107; sound index as one ternary 107.
 // BLOCKED-BY 0xbadc0 (the re-fetch after its calls).
+// Round 57: force-inline current-weapon helper 107; both helpers force-inline 107; user ordinal
+// before the zoom flag 107; zoom flag after the entry unit 107; after the player queries 120;
+// after the weapon lookup 120; weapon index declared early 107; sound index declared early 107.
+// Round 202: Prior-state long/short/byte storage, eligibility long/short/byte storage, and both long/both short 106/105/107/103/97/107/102/96 fast.
+// Short eligibility 97/376 plain; both short 96/376 fast add word tests and padding; aligned instructions worsen.
+// Original executable source restored. Entry register saves, the fresh unit lookup and sentinel/result homes remain.
 // @retail 0xc86e0
 void function_c86e0(long unit_index, bool keep_weapon_zoom)
 {

@@ -757,6 +757,29 @@ static __forceinline void rotation_from_axis_1546f0(transform4x3f *matrix, vecto
     matrix->position.x = 0.0f;
 }
 
+/* a flag field read as word bits: retail reads these flags with a load, a
+   shift and a test of the low bit */
+struct s_flag_word_bits
+{
+	word bit0 : 1;
+	word bit1 : 1;
+	word bit2 : 1;
+	word bit3 : 1;
+	word bit4 : 1;
+	word bit5 : 1;
+	word bit6 : 1;
+	word bit7 : 1;
+	word bit8 : 1;
+	word bit9 : 1;
+	word bit10 : 1;
+	word bit11 : 1;
+	word bit12 : 1;
+	word bit13 : 1;
+	word bit14 : 1;
+	word bit15 : 1;
+};
+
+// score 484 (was 521): flags 5 and others read through a word bitfield view give retail's load-and-shift; the rest still differs.
 // @retail 0x1546f0
 void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
 {
@@ -769,7 +792,7 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
         transform4x3f transform = *g_4687d0;
         if (speed->timer24 > 0)
         {
-            if (speed->flags & 2)
+            if (TEST_FIELD_BIT(((s_flag_word_bits *)&speed->flags)->bit1))
                 amount *= (real)speed->timer24 / (real)speed->timer26;
             else
                 amount *= 1.0f - (real)speed->timer24 / (real)speed->timer26;
@@ -794,10 +817,10 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
     else
     {
         s_speed_slot *slot = &speed->slots[local_index];
-        if (slot->timer80 > 0 || (slot->flags & 2))
+        if (slot->timer80 > 0 || TEST_FIELD_BIT(((s_flag_word_bits *)&slot->flags)->bit1))
         {
             real amount;
-            if (slot->flags & 2)
+            if (TEST_FIELD_BIT(((s_flag_word_bits *)&slot->flags)->bit1))
                 amount = 1.0f;
             else
             {
@@ -820,12 +843,12 @@ void __stdcall function_1546f0(long local_index, transform4x3f *matrix)
             transform.position.z = slot->vector.k * amount + offset.k;
             function_142a60(matrix, &transform, matrix);
         }
-        if (slot->timer82 > 0 || (slot->flags & 4))
+        if (slot->timer82 > 0 || TEST_FIELD_BIT(((s_flag_word_bits *)&slot->flags)->bit2))
         {
             transform4x3f transform = *g_4687d0;
             s_game_time_globals *time = g_510c54;
             real amount;
-            if (slot->flags & 4)
+            if (TEST_FIELD_BIT(((s_flag_word_bits *)&slot->flags)->bit2))
                 amount = 1.0f;
             else
             {

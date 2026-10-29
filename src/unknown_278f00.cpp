@@ -47,7 +47,7 @@ void __stdcall function_b8890(long arg_0);
 
 bool function_a7670(long object_index);
 
-// score 181 (was 212): frame 0x424 and retail's length agree; left are the scratch-register phase at entry
+// score 181 (was 181): frame 0x424 and retail's length agree; left are the scratch-register phase at entry
 // (retail xor eax), the homes of the list/island/index/count slots and the inner-loop induction, the
 // admission flag (retail BL, ours a stack byte) and the cursor cleanup loop (retail indexed).
 // list reference 212; island reference 212.
@@ -102,6 +102,58 @@ bool function_a7670(long object_index);
 // descriptive names for the outer locals 212; second scan with its own found flag 269 (flag materialized,
 // not threaded); index comparison before the first-scan flag 213. Diagnostics, not kept: the predicted-copy
 // test as a one-line inline bool helper 212, as a single-exit helper 281 (gives the setne/test).
+// Round 14 (lane 10): the second scan setting the same found flag (`if (!found)` then jump-threads to the
+// iteration end, and the admission flag takes BL, both as retail) 260; with the inner bound read from
+// local_5->field_40 (no count local; the retry head becomes retail's) 231; plus the plain indexed cleanup
+// loop 233 (957 bytes). Lockstep counts rise, but aligned differences fall from 133 to 60; what remains is
+// spill-slot order (retail: cursor, second count, counter, list, body, selector, index upward), the outer
+// index stored at each definition (retail keeps it in ECX on the skip path), the record address sunk below
+// the `local_9 > 0` branch and loop padding. On that base: body in an if-block 233; index declared outside
+// the loop 233; the category as two comparisons 235.
+// Round 104: retail tests the second scan's hit first (threaded straight past the insert), then the first
+// found flag (CL), then the admission flag (BL). Index compare first 244; a second-scan found flag tested
+// first 260 (retail's scan shape and BL/CL exactly, 83 aligned differences against 93, but the header address
+// is folded after the `local_9 > 0` branch where retail computes it before, so the lockstep count rises);
+// with the header from object_header_get 260 (identical); with the type compared to 0 and 7 249 (address now
+// before the branch, but no bit test); the type comparisons alone 255. Slot order ignores local names.
+// Round 55: swapped count declarations 181; counts before the body-count snapshot 181;
+// retry before that snapshot 181; a fresh indexed cleanup counter 196; outer selector declared
+// after the arrays 181; scan-wide body pointer 181; existing header getter 181; const body count 181.
+// Retry-head body-count snapshot before/after the local resets, with original/first/second/both
+// list-count declarations at function scope: eight at 181. Original snapshot and scopes restored.
+// Round 262: function-entry selector/index/island storage, all seven combinations, 181 each;
+// all three with entry body-count storage 181. Every initializer stayed at its original use;
+// original declarations restored. Scratch phase, scalar homes and indexed cleanup remain.
+// Round 218: First/second scratch arrays at island/function, function/island, island/island,
+// list/function, function/list, list/list, island/list and list/island scopes:
+// 181/181/181/181/181/181/181/181 (fast control 181). Original restored.
+// Round 368: first/second scratch counts long/short, long/word, short/long, short/short, short/word,
+// word/long, word/short, word/word 245/245/280/272/272/280/272/272. Original count domains and executable
+// body restored.
+// Round 24: shared processing ordinal 183; island membership ordinal 181; both at function
+// scope 183; eager second scan 181; eager first/both scans 259/259; staged category 259;
+// direct body-pointer countdown 237. Original restored.
+// Round 244: twice-used pending-field pointer, with original/immutable-count/early-count/
+// found-first lifetimes 181/181/181/274; field-reference counterparts
+// 181/181/181/274. Original field observations, count and flag order restored.
+// Round 218: Indexed 0x81 membership with bool/byte/short/long admission 182/182/182/260;
+// with fresh body bound 249/249/246/245. Original classification and body restored.
+// Frame 0x424 agrees; scratch phase, scalar homes, admission BL and cleanup induction remain.
+// Round 206: Chained initial list-count/list-and-retry resets, with separate/chained retry resets
+// [181, 273, 181, 273]; flat entry rejection on the same four graphs [181, 273, 181, 273]. All restored.
+// Round 378: Existing component-index getter with ordinary/inline/forced/noinline
+// caller declarations 299 each; each with indexed cleanup 294. Query remains out
+// of line; original property scan, cleanup cursor, declarations and body restored.
+// Round 383: saved release-state truth byte/signed-byte/word/long with consumed cleanup
+// cursor 181/181/242/207; with cursor advanced after release 263/263/233/273.
+// Original saved truth, cursor timing and complete body restored.
+// Round 170: Recursive inline/forced-inline/noinline/inline-noinline declarations, then each with indexed
+// cleanup 181/181/181/181/196/196/196/196. Original recursive declaration and cursor restored.
+// Round 33: Complementary first membership result bool/byte/short/long with cursor cleanup,
+// then indexed cleanup: 181/181/182/260/196/196/197/264. Original result, both eager scans and body restored.
+// Round 176: Real pending field at +0xae as byte/signed-byte, each with Boolean/byte admission and
+// first-membership carriers, eight at 181. Native record offsets and all truth values preserved;
+// original pending field, flag carriers, signed bounds, both eager scans, retry and cleanup restored.
 // @retail 0x278f00
 void function_278f00()
 {

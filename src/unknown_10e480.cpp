@@ -144,7 +144,15 @@ void function_10ec00(long object_index, s_animation_state *state, long unused, d
 extern real g_547648;
 void c_animation_channel_data_get(c_animation_channel const *channel, s_animation_data *data);
 
-// score 215 (was 221): Frame 0x30 versus 0x2c, destination/ordinal homes and getter expansion remain.
+// score 207 (was 207): Frame 0x30 versus 0x2c, destination/ordinal homes and getter expansion remain.
+// Round 87: the cause is our inlining of 0x1c6440 in the weighted arm (retail calls it there and in the
+// third arm). With the getter out of line (noinline in its header, diagnostic only) the entry and the first
+// arm match retail (edi is the zero register, transforms is read from the stack): 174 at 940 bytes. Its
+// inlining here did not move with an extra getter use in the first arm, a shrunken third arm or the third
+// arm alone (which calls everything out of line even by itself). Tried: data write through a forceinline
+// wrapper 207; early return when the weighted play fails 207; unused reference dropped 212 (ret 0x14);
+// weight products global-first/grouped/frame-first 207/263/207; long sample frame used for the compare
+// and the conversion 257 (aligned 99/91 against 109/110).
 // Lane 8 r64: countdown weight with the `>= 3` case first (retail's fall-through) 215, kept; frame
 // byte in a long local 260 (32-bit compare as retail, aligned 119, 969 bytes); char/word loop index
 // 215 (identical: the loop stays a pointer plus spilled countdown); sampled flag declared before
@@ -193,6 +201,56 @@ void c_animation_channel_data_get(c_animation_channel const *channel, s_animatio
 // the second arm's data/publish calls into the first arm's (retail keeps both). Weight product
 // reordered, short and int index 221 each (identical); weighted id copied into the id local or its
 // own local 301/301 (the tail un-merges as retail but the state pointer leaves EBP).
+// Round 195: Native channel copy initialization and default-assigned identifier subsets [215, 215, 215,
+// 215, 215, 215, 215]; joint construction with sample zero before getter 285. Original independent
+// constructors restored; frame, destination/ordinal homes and weighted getter expansion remain.
+// Round 201: A single frame/weight-array cursor with paired index and char frame gives 248 each
+// with either end test; long frames give 227 each, recovering frame 0x2c but growing to 966 bytes.
+// On that recovered-frame graph, shared/separate weighted identifiers, each with either countdown
+// arm order, give 244/244/244/244. Original index loop, identifiers and constructors restored.
+// Round 360: independent data constructors before base/weighted/countdown admission,
+// pairs and all three 263/207/231/290/278/223/281; all with a long sample frame 279.
+// Weighted output after admission/getter/result-zero/loop 213/213/261/215;
+// before admission at its natural positive-phase scope 207 (950 bytes), selected.
+// Frame 0x30, getter expansion and pointer/countdown induction remain.
+// Round 239: fixed frames/weights/both array bases 250/250/287; channel lookup at each
+// frame-count test 284, with frames/weights/both bases 262/262/319; both bases and
+// lookup with full-width sample frame 300. Array bases recover frame 0x2c but regress;
+// original body, weighted-output lifetime and all separate constructors restored.
+// Round 225: bounded ordinal stepped at its input read with char/short/long sample frames
+// 256/251/250; with actual sample count 264/260/259; full-width frame before weight 250,
+// with count 259. Weighted output construction remains before admission; original loop restored.
+// Round 364: independent data outputs at entry, base/weighted/countdown and
+// pairs/all 295/304/304/294/283/304/290; all with long sample frame 312.
+// Original separate construction points restored; frame and getter expansion remain.
+// Native frame-array references, mutable/const with extent bounds, 250 each at 940 bytes; with
+// twice-used full-width frames 222 each at 964 bytes. Frame 0x2c recovered, original loop and
+// observations restored.
+// Round 241: Sample occupancy dword/word at weighted scope 301/299; before getter 301/299; with a
+// twice-used full-width frame 273/274; at positive entry 331/329. All masks and original body restored.
+// Round 207: distinct weighted channel with native copy/default-assignment/member copy
+// 308/308/380; each with twice-used long sample frame 332/332/375;
+// copy/member copy with native sample-result enum 316/390. All exact-match-only
+// storage forms restored; frame 0x30, getter expansion and ordinal spill remain.
+// Round 222: Native datum accessor/direct object/both 207/207/207; record at each use, with accessor 411/411; direct object and record, with accessor 674/674; all with promoted sample frame 648. All restored; frame 0x30 versus 0x2c, weighted getter and ordinal spill remain.
+// Round 212: complete native weight-array identity, mutable/const, with original/complete
+// frame-array identity and literal/native bounds [250, 250, 287, 287, 250, 250, 287, 287].
+// Original array observations restored; getter, destination and frame remain.
+// Round 246: signed-char frame/weight/both fields 207/207/207; each with a twice-used long
+// frame 257/257/257; both with short frame/immutable frame-count snapshot 258/254. Original
+// field identities, observations and body restored.
+// Native complete weighted input value, mutable/const before/after the getter,
+// 346 each; each with a twice-used full-width sample frame 344. Original record
+// observations, arithmetic, separate constructors and full body restored.
+// Round 72: weight byte * scale named, then * frame 207 (retail's multiply order); frame byte in a
+// long local for compare and conversion 257 (retail's 32-bit compare, 967 bytes); both 257;
+// reversed frame-count compare 207; weight from the entry frame local 309.
+// DH round 230: Post-getter countdown snapshot in byte/short/long/word domains 207/216/280/215;
+// the same complete if/else weight producers 207/216/280/215. Original observations and body restored;
+// frame 0x30/0x2c, destination/ordinal homes and weighted getter expansion remain.
+// Round 398: actual eligibility retained for sampling and loop-result accumulation,
+// bitwise bool/byte/short/long 306/306/303/304; logical
+// accumulation with those carriers 324/324/314/310. Original result and body restored.
 // @retail 0x10e530
 void function_10e530(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)
@@ -214,6 +272,7 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 			c_animation_channel_data_get(&channel, &data);
 			function_20adf0((s_anim_data *)&data, dest);
 		}
+		s_animation_data data;
 		if (vibration->weighted_animation.index != NONE && state->channel_play(&channel, vibration->weighted_animation, 0))
 		{
 			s_animation *animation = channel.function_1c6440();
@@ -230,7 +289,6 @@ void function_10e530(long object_index, s_animation_state *state, long unused, d
 			}
 			if (sampled)
 			{
-				s_animation_data data;
 				c_animation_channel_data_get(&channel, &data);
 				function_20adf0((s_anim_data *)&data, dest);
 			}

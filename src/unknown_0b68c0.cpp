@@ -271,6 +271,28 @@ void __stdcall function_b83b0(long object_index, bool flag);
 void __stdcall function_b8460(long object_index, bool flag);
 void function_bf380();
 
+/* a flag field read as word bits: retail reads these flags with a load, a
+   shift and a test of the low bit */
+struct s_flag_word_bits
+{
+	word bit0 : 1;
+	word bit1 : 1;
+	word bit2 : 1;
+	word bit3 : 1;
+	word bit4 : 1;
+	word bit5 : 1;
+	word bit6 : 1;
+	word bit7 : 1;
+	word bit8 : 1;
+	word bit9 : 1;
+	word bit10 : 1;
+	word bit11 : 1;
+	word bit12 : 1;
+	word bit13 : 1;
+	word bit14 : 1;
+	word bit15 : 1;
+};
+
 // score 78 (was 78): ours is ten bytes shorter: the mask is applied to a copy in ECX, retail clears
 // the high bits in place and masks it there.
 // score 78 (was 78): the only real differences are the inlined iterator's exits: retail gives the
@@ -280,6 +302,7 @@ void function_bf380();
 // doesn't add (it aligns at 9 or fewer, as in 0xb7150 and 0xb6df0). Nested flag tests 78; one header
 // for both passes 78; the iterator declared at the top 78; a named object index 78; one combined
 // condition 78; the datum iterator helper isn't inlined here (89 instructions).
+// score 66 (was 78): flag 3 read through a word bitfield view gives retail's load-and-shift; the rest still differs.
 // @retail 0xb6f10
 void function_b6f10()
 {
@@ -304,7 +327,7 @@ void function_b6f10()
     s_object_visibility_header_ab *header;
     while ((header = (s_object_visibility_header_ab *)data_iterator_next_inlined(&iterator)) != 0)
     {
-        if ((header->flags & 1) && (header->flags & 2) && !(header->flags & 8))
+        if ((header->flags & 1) && (header->flags & 2) && !TEST_FIELD_BIT(((s_flag_word_bits *)&header->flags)->bit3))
         {
             s_object_tick_flags_ab *object = (s_object_tick_flags_ab *)((s_object_visibility_header_ab *)g_4e0300->data)[iterator.datum_index & 0xffff].object;
             if (!TEST_FIELD_BIT(object->in_list))

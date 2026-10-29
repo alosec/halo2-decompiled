@@ -426,11 +426,15 @@ s_scenario_cluster_reference *cluster_reference_upper_bound(s_scenario_cluster_r
 
 /* whether an object is in one of the clusters a pair of structure bsps
    share (true when the scenario lists none) */
+// score 59 (was 71, full build; the reduced image disagrees): result as a byte. Retail walks the
+// references through a pointer to their cluster field and aligns the loop; the loop as while with
+// a break after the increment 75, a break at the end 81, the result test last 80, a do-while 78;
+// a volatile cluster read, the flags in the other order or the call in a nested if no change.
 // @retail 0xd5390
 bool function_d5390(long object_index, long key)
 {
 	s_scenario_block *references = (s_scenario_block *)((byte *)g_4e0350 + 0x380);
-	bool result = false;
+	byte result = false;
 	bool listed = false;
 
 	if (references->count > 0)
@@ -522,12 +526,22 @@ __forceinline void object_placement_unhide(long object_index)
 }
 
 /* hides an object that isn't on the current structure bsp, or deletes it */
+// score 70 (was 89): retail stores the flag word twice (hidden, then hidden_by_bsp from the same
+// register) where ours computes hidden_by_bsp from hidden with shl/xor, and it materializes the
+// placed test with setne before testing it. Retail re-reads the object array after the first
+// test; ours keeps it. The persistent test as a bool local gives retail's block order, and
+// hidden_by_bsp copied from hidden helps too. The second lookup read through a volatile pool
+// gives 17, but that cast isn't kept without a byte match. No effect: the flags as dword ors in either order or both, the value
+// stored twice by hand, a volatile first store, a fresh lookup for the second store (40); the
+// placed test as a bool, byte, long or 0/1 local, negated, as == false, != true or !(&&).
 // @retail 0xd52b0
 void function_d52b0(long object_index)
 {
 	s_placement_object *object = PLACEMENT_OBJECT(object_index);
 
-	if (object->unknownac != NONE || function_d5990(object->type, object->tag_index))
+	bool persistent = object->unknownac != NONE || function_d5990(object->type, object->tag_index);
+
+	if (persistent)
 	{
 		s_placement_object *current = PLACEMENT_OBJECT(object_index);
 
@@ -535,7 +549,7 @@ void function_d52b0(long object_index)
 		if (TEST_FIELD_BIT(current->flags.unknown8))
 			function_b87b0(object_index);
 		current->flags.hidden = true;
-		current->flags.hidden_by_bsp = true;
+		current->flags.hidden_by_bsp = current->flags.hidden;
 	}
 	else if (g_4e6948->mode != 4 || object->unknownd4 == NONE)
 	{
@@ -607,6 +621,13 @@ void function_d4e60(short bsp_index)
 }
 
 /* fills in the data a scenario object is made from */
+// score 135 (was 184): the volatile on type stays: without it this scores 63, and the same
+// length as retail, but LTCG then passes the caller 0xbf0f0's arguments in other slots and that
+// matched caller drops to 2 (also with type read once through a volatile local). With it, case 1
+// reading the datum's byte again (retail's mov al, [edi + 0x5a]) and the palette entry kept as a
+// pointer, as retail does, give 135. Without the volatile, retail keeps type in ebp and the palette
+// in ebx (ours the reverse), and sets or clears flag 8 at the end through a register in two exits;
+// the flag test as a shift, a bitfield view or an explicit read and write left that at 63.
 // @retail 0xd5060
 bool function_d5060(s_scenario_block *palette, volatile long type, long unknown10,
 	s_type_4f0dcc const *datum, bool unknown, s_object_placement_data *data)
@@ -624,7 +645,7 @@ bool function_d5060(s_scenario_block *palette, volatile long type, long unknown1
 			switch (*(long *)((byte *)g_4e6948 + 0x180))
 			{
 			case 1:
-				create = (byte)multiplayer_flags & 1;
+				create = (byte)datum->multiplayer_flags & 1;
 				break;
 			case 2:
 				create = ((byte)multiplayer_flags >> 1) & 1;
@@ -653,11 +674,12 @@ bool function_d5060(s_scenario_block *palette, volatile long type, long unknown1
 	if (PIN(datum->palette_index, 0, palette->count - 1) != datum->palette_index)
 		return result;
 
-	long tag_index = ((s_scenario_palette_entry *)palette->elements)[datum->palette_index].tag_index;
+	s_scenario_palette_entry *entry = &((s_scenario_palette_entry *)palette->elements)[datum->palette_index];
+	long tag_index = entry->tag_index;
 
 	if (tag_index != NONE)
 	{
-		function_b7930(data, tag_index, NONE, NULL);
+		function_b7930(data, entry->tag_index, NONE, NULL);
 		data->position = datum->position;
 		data->scale = datum->scale > 0.0f ? datum->scale : 1.0f;
 		function_11df60(&datum->rotation, &data->forward, &data->up);

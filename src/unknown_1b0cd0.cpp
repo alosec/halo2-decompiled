@@ -399,7 +399,9 @@ bool function_1b1970(long actor_index, short mode, vector2f const *forward,
 	return result;
 }
 
-// score 19 (was 19): the 0x1b0e40 call sets the origin first (retail last), and in
+// score 12 (was 19): the index is read zero-extended and tested as a short, as retail's
+// xor/mov ax/cmp ax,0xffff does, and it keeps the list reloaded into EBX. Before that:
+// the 0x1b0e40 call sets the origin first (retail last), and in
 // the >= 7 block retail reads the index as a word (xor widening) and the mode late
 // through the list in ebx; index and mode read in the call 66; short index with the
 // mode in the call 66; short index before the mode local 79, after it 79; short index
@@ -469,9 +471,9 @@ void __stdcall function_1b1a90(long actor_index, s_slot *slot, s_slot_target_lis
 		if (actor->unknown086 >= 7)
 		{
 			short mode = list->mode;
-			long index = state->position_index;
+			long index = (word)state->position_index;
 
-			if (index != NONE)
+			if ((short)index != NONE)
 				actor->unknown488 = function_1b1970(actor_index, mode, &forward, &left, index);
 			else
 				actor->unknown488 = false;

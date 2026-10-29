@@ -1,10 +1,6 @@
 #ifndef LANE_B_CONSTRAINT_DEPENDENCIES_H
 #define LANE_B_CONSTRAINT_DEPENDENCIES_H
 #include "lane_b_constraint_leaves.h"
-struct lane_b_rigid_constraint_description : lane_b_constraint_description
-{
-	lane_b_rigid_constraint_description();
-};
 // The six pointer/count arguments are independently visible in 31bdf0 and
 // consumed by 31f620; opaque until the solver structures are reconstructed.
 void __cdecl lane_b_contact_build(const void *points, long count,

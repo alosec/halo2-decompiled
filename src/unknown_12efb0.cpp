@@ -221,6 +221,31 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 // the source-index store 683 (fast; retail's movsx position); with a named cluster index 683; lookup through
 // the existing entry_at_index getter 612 plain (aligned rows 497 -> 803, ebx/edi/esi roles move), with the
 // long index 612. Retail assigns the NULL record before the table's own NULL test.
+// Round 107: NULL record assigned in the else arm 616 (identical); with char/long palette 705/713;
+// a copy of 0x12eb00's entry_at_index after a g_4e0350 test 677, with char/long palette 707/698;
+// a lookup helper that also tests g_4e0350 (NULL result, then the global, bounds, entry) 614, 3830
+// bytes: it gives retail's lookup control flow (every failure through the `test record` join),
+// leaving register choice; the same with a char test and a long index at the top 753.
+// Round 235: query-table/tag-input/falloff-radius consumption scopes, all seven combinations 616 each; source-selection consumption scope 616.
+// Round 172: complete native accumulated results in scalar/merge/both/color/scalar-color/merge-color/all
+// 1015/1012/1288/1144/1416/1459/1671; all with signed-byte palette 1671.
+// Original field publication, input captures and helpers restored; palette/record and SSE carriers remain.
+// Round 166: Existing shared scaled-add for scalar/merge/color RGB updates, all seven subsets 616;
+// all three plus shared native color scaling at normalization 616. Original free helpers, source-
+// weight capture, body and includes restored. Palette/selected-record and zero/accumulator
+// carriers remain.
+// Round 253: multi-use scenario receiver with short/char/long palette 616/705/713;
+// each with plain cluster cursor 616/705/713; readonly selected record alone/with cursor
+// 616/616. Original source acquisition, loop and executable body restored.
+// Round 387: Existing scalar accumulator takes all three RGB channels as values; destination order, four-channel color inputs and uniform palette-byte combinations 751/751/809/809/753/753/797/797. All original helpers restored.
+// Round 221: native destination-return contracts in scalar/merge/both/color/scalar-color/
+// merge-color/all helpers, then all with normalized publication, 616 each. All eight restored;
+// original free-helper contracts and source-weight capture retained.
+// Round 174: bounded contribution contracts without repeated scalar/merge/color
+// clamps in seven subsets 733/692/768/695/775/735/812; all with upper-first common
+// clamp 812. Color-only reaches retail length but regresses; original helpers restored.
+// Round 390: Source-radius input snapshot with per-cluster default-range, color-alpha and
+// signed-byte palette combinations 694/770/710/670/702/728/629/728. Original helpers and body restored.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {

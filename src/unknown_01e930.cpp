@@ -34,6 +34,7 @@ void __stdcall function_18f1c0(long a);
 void function_12d520(long a);
 bool function_12b3c0(void);
 bool function_23e400(long button);
+void function_156960(void);
 void __stdcall function_35b90(void *material);
 void __stdcall function_363a0(void *vertices);
 void __stdcall function_1e930(long a);
@@ -42,56 +43,7 @@ int __stdcall function_3e2870(void *movie);
 void __stdcall function_3e2e50(void *movie);
 int __stdcall function_3e2830(void *movie, void *destination, long pitch, long height, long x, long y, dword flags);
 
-/* the screen rectangles (unknown_0167a0.cpp) */
-struct short_rect
-{
-	short v0, v1, v2, v3;
-};
-
-struct short_rect_pair
-{
-	short_rect a, b;
-};
-
-struct s_unknown_485a88
-{
-    byte flag;
-    short_rect_pair rects;
-};
-extern s_unknown_485a88 g_unknown_485a88;
-#define g_485a8a (g_unknown_485a88.rects)
 byte g_4c1a18;
-
-/* the head of a Bink movie (HBINK) */
-struct s_bink_movie
-{
-	dword width;
-	dword height;
-	dword frames;
-	dword frame_number;
-	dword last_frame_number;
-	dword frame_rate;
-	dword frame_rate_divisor;
-};
-
-struct s_bink_vertex
-{
-	real x;
-	real y;
-	real u;
-	real v;
-	dword color;
-};
-
-/* per-track sound settings for the Bink sound callback */
-struct s_bink_sound_track
-{
-	dword unknown00;
-	real volume;
-	byte unknown08[0x18];
-};
-
-s_bink_sound_track g_4e9300[8];
 
 /* the texture cache's physical memory (unknown_12c0d0.cpp) */
 extern s_physical_object *g_4e6464;
@@ -239,20 +191,32 @@ void function_155ed0(void)
 	}
 }
 
-// score 53 (was 53): capacity/mask homes and aligned-exit reloads still differ;
+// score 9 (was 9): in the padding path retail computes the alignment difference
+// before pushing ebx and reloads the capacity global into ecx after the mask, ours
+// pushes ebx first and reloads the capacity global into edi earlier.
 // remaining-first expression 53; shared completion 75; named padding 53;
 // named mask 53; shared completion and mask 75; recomputed start 47;
 // named allocation extent 53; remaining extent with shared completion 86.
+// Round 22: explicit capacity store in the padding path/all paths 9/9; named alignment
+// difference 19; explicit size/result assignments 9/9; integer-address result 9;
+// const remaining/mask 9; reversed result-mask operands 9.
+// Further forms: unsigned-mask zero-alignment guard 28; aligned guard 20; flat guards 28;
+// named padding test 9. Signed-mask counterparts 36/45/36/40. Original body restored.
+// Initial base/capacity address ownership also differs. One captured capacity with
+// delta/shared-mask/early-publication combinations: 45/44/54/54/44/44/54/54; restored.
 // @retail 0x156620
 void *__stdcall function_156620(long size, long alignment)
 {
-	byte *result = g_4e9188.permanent_memory + g_4e9188.permanent_memory_size - size;
+	long remaining = g_4e9188.permanent_memory_size - size;
+	byte *result = g_4e9188.permanent_memory + remaining;
 
 	if (alignment)
 	{
-		if ((long)result & (alignment - 1))
+		unsigned long mask = (unsigned long)alignment - 1;
+
+		if ((long)result & mask)
 		{
-			size += (alignment - (long)result) & (alignment - 1);
+			size += (alignment - (long)result) & mask;
 			result -= (alignment - 1) & (alignment - (long)result);
 			g_4e9188.permanent_memory_size -= size;
 			return result;
@@ -320,38 +284,6 @@ void __stdcall function_156810(void *block)
 	bink_update_memory_available();
 }
 
-// score 32 (was 47): SSE arithmetic, entry scheduling and conversion homes still differ;
-// split products 32; branch result 42; branch result and split products 39;
-// explicit division bound 47; frame fields at each use 44; total-time numerator 47;
-// null exit 32; conversion local names 39; null exit and split products 39;
-// split products with result first 32; named seconds and ticks 32.
-// @retail 0x1564e0
-long bink_playback_ticks_remaining(void)
-{
-	s_bink_movie *movie = (s_bink_movie *)g_4e9188.movie;
-	long result = 0;
-
-	if (movie)
-	{
-		dword frames = movie->frames;
-		dword remaining = frames - movie->frame_number;
-		dword milliseconds = movie->frame_rate_divisor * frames * 1000 / movie->frame_rate;
-		real seconds;
-		real ticks;
-
-		milliseconds = milliseconds * remaining / (frames > 1 ? frames : 1);
-		seconds = (long)milliseconds * 0.001f;
-		ticks = seconds * 30.0f;
-		__asm
-		{
-			fld ticks
-			fistp result
-		}
-		result = result > 0 ? result : 0;
-	}
-	return result;
-}
-
 // @retail 0x156ab0
 bool function_156ab0(void)
 {
@@ -369,20 +301,6 @@ bool function_156ab0(void)
 	return result;
 }
 
-/* the Bink sound callback: a track's volume */
-// score 19 (was 19): retail uses a float stack slot with SSE stores and an x87 return;
-// conditional float 19; early returns 19; double result 19; double conditional 19;
-// SSE zero store 30; selected store 38; both stores 43; native SSE result 35; SSE code-generation diagnostic 0 (restored).
-// @retail 0x156b30
-real __stdcall function_156b30(long track, long type)
-{
-	real result = 0.0f;
-
-	if (type == 0x3000577)
-		result = g_4e9300[track].volume;
-	return result;
-}
-
 // @retail 0x1568d0
 void function_1568d0(void)
 {
@@ -393,51 +311,6 @@ void function_1568d0(void)
 	g_4e9188.texture->LockRect(0, &locked, NULL, 0);
 	if (locked.pBits)
 		function_3e2830(g_4e9188.movie, locked.pBits, locked.Pitch, g_4e9188.height, 0, 0, g_4e9188.copy_flags | 0x80000000);
-}
-
-// @retail 0x156960
-void function_156960(void)
-{
-	short_rect screen = g_485a8a.a;
-	short left, right, top, bottom;
-	s_bink_vertex vertices[4];
-
-	if (g_4e9188.flags & 0x10)
-	{
-		right = screen.v3;
-		left = screen.v1;
-		bottom = screen.v2;
-		top = screen.v0;
-	}
-	else
-	{
-		short screen_width = screen.v3 - screen.v1;
-		short screen_height = screen.v2 - screen.v0;
-
-		left = (screen_width - g_4e9188.width) / 2;
-		right = (screen_width + g_4e9188.width) / 2;
-		top = (screen_height - g_4e9188.height) / 2;
-		bottom = (screen_height + g_4e9188.height) / 2;
-	}
-
-	for (short i = 0; i < 4; i++)
-	{
-		long corner = i + 1;
-
-		vertices[i].x = (corner & 2) ? right : left;
-		vertices[i].y = i > 1 ? bottom : top;
-		vertices[i].u = (corner & 2) ? g_4e9188.width : 0.0f;
-		vertices[i].v = i > 1 ? g_4e9188.height : 0.0f;
-		vertices[i].color = 0xffffffff;
-	}
-
-	function_35b90(g_4e9188.material);
-	function_363a0(vertices);
-	if (g_4c1a18)
-	{
-		function_1e930(1);
-		g_4c1a18 = 0;
-	}
 }
 
 // @retail 0x155f80
@@ -489,10 +362,53 @@ PRIVATE inline __int64 bink_read_tsc(void)
 	volatile __int64 t = 0;
 	__asm rdtsc
 }
-
+// score 244 (was 244): frame 0x3c versus 0x40, allocation homes and SSE scheduling differ.
+// the retry ordinal as a function-scope local 239 (MiniMax E run 12; under the keep bar, restored).
+// Round 231: shared retry helper/native byte block/both/shared audio arrays/helper-arrays/byte-
+// arrays/all/Boolean large-block selection 313/287/313/339/364/339/364/347; separate noinline
+// format-size query declaration 287. Original body and declaration restored.
+// Frame 0x3c versus 0x40, timestamp and output homes,
+// retry expansion, float comparison and material scheduling still differ.
+// Earlier retry/native block/shared audio forms 313/287/313/339/364/339/364/347;
+// format-size noinline 287. Native Boolean allocation choice 256 (plain).
+// Round 219: early texture outputs, output names, timestamp names and both names
+// 287 each; earlier large decision 286 (rejected); earlier size plus decision 295;
+// common void exit 287; SSE ownership original/Boolean 287/266, restored.
+// Round 212: allocation result first 244 (plain kept); retry ordinal/clock declaration
+// first 256/256; result+ordinal/result+clock/ordinal+clock/all 260/244/256/260;
+// direct skip result 286; full-width mask/Boolean decisions 289/290, with result
+// first 273/274. The frame remains 0x3c versus 0x40.
+// Round 223: two-use sound-interface value 274; allocation-size branches 256;
+// both 274; consistent movie-global reads 256; sound/movie 274; size/movie 256;
+// all three 274; per-branch volume arrays before channel arrays 256. All restored.
+// Round 165: Skip-result byte/short/long/dword at original scope 244/274/274/274; entry true
+// initialization 258/287/287/287. SSE policy diagnostic 250, restored. Frame 0x3c versus 0x40
+// and clock/output homes remain; original body, helpers and flags restored.
+// Round 246: complementary small-allocation bool/byte/short/long 270/270/289/289; the same
+// parameter-derived decision at entry 306/306/305/298. Original large decision restored.
+// Round 225: native long/dword allocation result, with ordinary/role-named audio arrays,
+// early/late zero lifetime: 244/244/256/256/244/244/256/256. Original body restored;
+// frame 0x3c, clock/output homes and instruction policy remain.
+// Round 251: bounded retry short/word/byte/dword carriers 263/263/259/245;
+// the same four with a scoped timeout else phase 263/263/259/245. Frame stays
+// 0x3c; original ordinal, continue graph and full executable body restored.
+// Round 212: native status zero/length aggregate initialization, original/entry texture outputs
+// and bins/volumes declaration orders [286, 286, 286, 286, 285, 285, 285, 285]. Original shared
+// producer and body restored; frame and clock/output homes remain.
+// Round 217: initialized texture size/data/both at native phase 246/246/249;
+// the same private output defaults at entry 284/284/295; both outputs in reverse
+// declaration order at native/entry phase 249/295. Original body restored.
+// Round 269: Successful allocation/movie/texture phase nesting, seven subsets,
+// and all with post-protection acceptance nested: 245 each at 1104 bytes.
+// Original early cleanup returns, helpers and full body restored; frame stays 0x3c.
+// Timestamp producer original with inclusive/selected clamp 245/244; forced
+// with original/inclusive/selected clamp 244/245/244; outlined with all three
+// clamps 310 each. Original helper contract, clamp and full body restored.
 // @retail 0x156090
 void function_156090(char const *name, dword flags)
 {
+	void *block = NULL;
+
 	bink_update_memory_available();
 
 	if (!g_4e9188.initialized)
@@ -514,9 +430,8 @@ void function_156090(char const *name, dword flags)
 		g_4e9188.unknown03 = skippable;
 	}
 
-	long large = flags & 0x100;
-	long size = (large | 0x40) << 16;
-	void *block = NULL;
+	bool large = (flags & 0x100) != 0;
+	long size = large ? 0x1400000 : 0x400000;
 
 	g_4e9188.permanent_memory_size = size;
 	g_4e9188.permanent_memory_used = 0;

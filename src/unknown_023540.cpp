@@ -2407,7 +2407,14 @@ void function_0224f0(dword stage, D3DTEXTURESTAGESTATETYPE type, dword value);
 dword function_1cc30(long index);
 dword __cdecl function_131fc0(real alpha);
 
-// score 331 (was 331): Frame 0x28 agrees; inverse entry save, dimension homes and bitmap-call setup remain.
+// score 251 (was 251): frame 0x28 agrees; zero/sampler homes, bitmap transport and late fallback selection remain.
+// Earlier: 251 fast (was 252 fast): the pixel-shader RGB output mask is selected before the shift
+// ((inverse ? 8 : 0) << 8), which gives retail's and/shl pair instead of a single 0x800 mask.
+// Earlier: 252 fast (was 335 fast): the standard marker gives retail's stack convention (ret 0x34,
+// inverse at E+36) and width/height default to 1.0f before the bitmap test. Still differs: the
+// 0/1/2 constants land in different registers than retail (EBP against EDI), and the call to
+// 0x144f0 uses our callee's convention.
+// Earlier: 331 (was 331): Frame 0x28 agrees; inverse entry save, dimension homes and bitmap-call setup remain.
 // frame 0x28 agrees; inverse entry save, dimension homes and bitmap-call setup remain.
 // Frame 0x28 agrees; inverse AL entry save, dimension homes and bitmap-call setup remain.
 // fast control 427; direct inverse 427; selected destination/source pointer 427/427;
@@ -2447,7 +2454,24 @@ dword __cdecl function_131fc0(real alpha);
 // Round 60: BLOCKED-BY 0x289e0 (the only caller, under #if 0, so LTCG gives inverse AL). Own-address
 // inverse read at entry/first use 348/348 (ret 0x34 as retail, load hoisted, frame 0x24); early
 // dimension defaults 349; with the own-address read 316 (exact-only); unconditional rectangles 439.
-// @retail 0x2a8d0
+// Round 204: Tag/bitmap producer, late fallback/draw arrays and paired shader-alpha workspace
+// scopes, masks 1-7: 251/251/251/255/255/255/255; all with coherent dimension/reciprocal names
+// 255. Full-stack transport retained; original scopes, observations, arrays and equations restored.
+// Round 235: Direct enum-range address/filter/disabled-state loops, seven subsets and complete while form
+// [926, 883, 685, 1104, 1159, 1089, 1240, 681] fast. Runtime SDK setter specialization grows the body; all
+// original ordered direct calls, arrays, fields, directives and body restored.
+// Round 253: bounded native pixel short/long/word/dword producers 427/410/427/448;
+// native pixel lifetime across bitmap guard 438/439/438/433. Original float dimensions,
+// full-stack marker, state calls and complete body restored.
+// Round 169: native fallback source/destination/both records, native source/destination/both
+// input fields, and both records plus source/both input fields: eight forms 251 each.
+// Parallel reciprocal-first UV products with original/native/native-field rectangles 251
+// each; native source-before-target frame names 251. Complete native fallback production,
+// with native input fields/frame names/both plus reciprocal-first products: 257 each.
+// Original arrays, fallback order, products and complete body restored.
+// Round 261: actual four-corner vertex table, byte/word/long/dword with long ordinal
+// 337/337/353/353; with short ordinal 339/339/343/343. Original unrolled draws restored.
+// @retail 0x2a8d0 standard
 void __stdcall function_2a8d0(long tag, long bitmap_index, real const *source,
     real const *destination, long arg_af5a49, color3f const *color,
     real strength, bool blend, bool inverse, bool alternate_target,
@@ -2459,8 +2483,8 @@ void __stdcall function_2a8d0(long tag, long bitmap_index, real const *source,
     if (!g_4b99b0[1] && alternate_target) return;
     real default_source[4];
     real default_destination[4];
-    real width;
-    real height;
+    real width = 1.0f;
+    real height = 1.0f;
     byte *definition = tag != NONE ? g_4e3b44[tag & 0xffff].bytes : NULL;
     if (tag != NONE && bitmap_index >= 0 && bitmap_index < *(long *)(definition + 0x44))
     {
@@ -2470,7 +2494,6 @@ void __stdcall function_2a8d0(long tag, long bitmap_index, real const *source,
         real h = (real)*(short *)(bitmap + 6);
         height = 1.0f > h ? 1.0f : h;
     }
-    else width = height = 1.0f;
     if (alternate_target) function_14bc0(*(short *)(g_4b99b0 + 0x38), 0, false);
     else if (screen_target) function_14bc0(0, 0, false);
     else function_14bc0(*(short *)(g_4b99b0 + 0x34), 0, false);
@@ -2511,7 +2534,7 @@ void __stdcall function_2a8d0(long tag, long bitmap_index, real const *source,
 #pragma inline_depth(255)
         g_484f68.PSConstant1[0] = 0xff;
         g_484f68.PSRGBInputs[0] = 0x8200211;
-        g_484f68.PSRGBOutputs[0] = inverse ? 0x800 : 0;
+        g_484f68.PSRGBOutputs[0] = (inverse ? 8 : 0) << 8;
         g_484f68.PSConstant0[1] = function_131f40(strength, color);
         g_484f68.PSRGBInputs[1] = 0x8011811;
         g_484f68.PSRGBOutputs[1] = 0xcd;
@@ -2740,7 +2763,8 @@ static __forceinline void texture_corner_rotate(real x, real y, real cosine, rea
     coordinates[1] = ((x * sine + y * cosine) * scale + 1.0f) * 0.5f;
 }
 
-// score 334 (was 334): Frame 0x58 and extent agree; sampler constants, bitmap call and scale/trig homes remain.
+// score 282 (was 282): Frame 0x58 agrees; six excess bytes, sampler constants,
+// bitmap-call transport and scale/trig homes remain.
 // Round 139: the first difference (+0x194, the stage loop's constants 2/3 in EBP/EDI where retail
 // has EDI/EBP and 0 in EBX) follows from the 0x144f0 call: retail passes the fallback in EBX, so
 // its 0 lives there. 0x144f0 sits in a contributor file this round; no new form tried.
@@ -2788,6 +2812,33 @@ static __forceinline void texture_corner_rotate(real x, real y, real cosine, rea
 // complete tag/bitmap observations at use: eight forms 334 each. Original receivers restored.
 // Complete alpha parameter results, ternary/else-if/independent clamps 353 each; native rectangle
 // field/aggregate producers 334/334; each clamp with native rectangle 353. Original body restored.
+// Round 219: Normalized first/second/maximum scalar role-name masks 1-7 and all plus both trig
+// names: 334/334/334/334/334/334/334/334. Original body restored.
+// Round 201: split flag/tag rejection, positive flag-first admission, nested flag-first admission and
+// nested flag rejection 334 each; tag-first split/positive/nested/mixed admission 370 each (2023 bytes).
+// Original guard and all sampler, packing, scale, rotation and vertex operations restored.
+// Round 204: Complete dimension/tag, sampler-loop and scale/bounds/trig producer workspace
+// endings, masks 1-7, and all with immutable maximum/reciprocal: 334 each. Original
+// scalar/output lifetimes, helper calls, state order and arithmetic trees restored.
+// Signed integral corner inputs char/short/int/long in the existing rotation helper
+// 334/334/334/334; each with native coordinate outputs
+// 334/334/334/334. Original helper and all eight calls restored.
+// Round 378: Paired scaled pixel diameters 282; complete half extents 334;
+// native rectangle 282/334; independent second trig 280/338; rectangle plus trig
+// 280/338. Keep only paired diameters 282 (plain), 2028 bytes; the extra two-point
+// trig step is rejected. Original trig storage, arrays, helpers and calls retained.
+// Round 383: paired diameter products before normalization 356; full bounds before normalization 354;
+// complete horizontal/vertical product-and-bound phases 336/340; native rectangle counterparts
+// 356/354/336/340. Original reciprocal, product overlap and body restored.
+// Round 166: paired corner production with both angle pairs live, explicit/first-corner-first/
+// table-loop/table-loop after first corner 407/368/358/361; native point outputs
+// 407/368/358/361. Original separate UV producers and trig lifetimes restored.
+// Round 169: reciprocal-first normalization 282; branch-owned outputs 340, with reciprocal-first
+// 340; incoming scale results 343, with reciprocal-first/exclusive maximum 343/343;
+// branch-owned outputs with exclusive maximum 340; paired dimension-first products plus
+// reciprocal-first normalization 282. Original paired diameters, scale and trig homes retained.
+// Round 180: Entry declarations of first/second/bounds output buffers, masks 1-7, then all with
+// entry trig declarations: 282/282/282/282/282/282/282/282. Original executable body restored.
 // @retail 0x29b00
 void __stdcall function_29b00(long tag, short first_bitmap, real first_alpha,
     real first_angle, real first_scale, long second_bitmap, real second_alpha,
@@ -2857,11 +2908,13 @@ void __stdcall function_29b00(long tag, short first_bitmap, real first_alpha,
         first_texture_scale *= inverse_scale;
         second_texture_scale *= inverse_scale;
     }
+    real scaled_width = scale * width;
+    real scaled_height = scale * height;
     real bounds[4];
-    bounds[0] = 320.0f - scale * width * 0.5f;
-    bounds[1] = 320.0f + scale * width * 0.5f;
-    bounds[2] = 240.0f - scale * height * 0.5f;
-    bounds[3] = 240.0f + scale * height * 0.5f;
+    bounds[0] = 320.0f - scaled_width * 0.5f;
+    bounds[1] = 320.0f + scaled_width * 0.5f;
+    bounds[2] = 240.0f - scaled_height * 0.5f;
+    bounds[3] = 240.0f + scaled_height * 0.5f;
     if (first_texture_scale == 0.0f) first_texture_scale = 1.0f;
     if (second_texture_scale == 0.0f) second_texture_scale = 1.0f;
     real first_coordinates[8], second_coordinates[8];
@@ -3102,7 +3155,8 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
     D3DDevice_SetRenderState(D3DRS_ZBIAS, 0);
 }
 
-// score 971 (was 971): Frame 0x2c agrees; capability/save roles and state expansion remain.
+// score 853 (was 853): frame 0x2c agrees; capability/save roles, state expansion and scalar homes differ.
+// Earlier: Frame 0x2c agrees; capability/save roles and state expansion remain.
 // frame 0x2c agrees; saved registers, mode flags and state-call expansion differ.
 // Short capability flags 1195; short rescale state 1204; color homes renamed 978;
 // eligibility-first bound 1212; earlier input selectors 979; blending helper depth one 1393.
@@ -3129,6 +3183,37 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // quantizer scope 971; native long success 1194.
 // Mode assignment orders MNS/SMN/SNM/NMS/NSM 973/971/971/973/973; NSM in cases
 // 0/1, 2/3, 0/2 971/973/971 (fast; M=maximum, S=allow_small, N=allow_negative).
+// Round 364: input byte/alpha byte/both 1185/934/980; signed input/alpha/both
+// 1185/934/980; short-input with byte-alpha 935; unsigned-input with byte-alpha 934.
+// Byte alpha selector alone kept plain at 934; its only values remain 4 and 24.
+// Round 366: blend/depth/both indexed state tables 1395/1417/1484; shared sampler 1223; sampler with blend/depth/both tables 1413/1410/1550; all with Boolean capabilities 1448. All restored.
+// Test-defined rescale state, canonical permission-width pairs and negative-
+// permission failure-first combinations 1216, 1205, 1208, 933, 1186, 1184, 1180, 1183 fast.
+// Round 159: Upper/lower/both byte channels 1119/1202/1178; upper/lower/both word channels
+// 1161/1202/1231; rounded result read once 1375; read once with byte channels 1325. All restored.
+// Round 232: native mode-one/two/three input layouts, all seven subsets 934;
+// complete premultiplied-color production with all layouts 935. All restored.
+// Round 164: bounded byte exponent alone/with reused threshold predicates 1182/1165;
+// signed byte 1013/1207; word 1200/1246; reused thresholds alone 1204; shared shifted
+// color-input word 934. All restored; original values, calls and directives retained.
+// Round 166: negative permission as bool 853 (plain), both permissions remain 0/1;
+// original long small-permission retained. Other values, operations and calls unchanged.
+// Round 166: Permissions small/negative: bool/bool and signed/signed 1088; short/byte 854;
+// byte/short 931; short/bool 854; bool/short 931; signed/byte and byte/signed 1088. Direct first-
+// alpha fields: long/long 942; bool/bool and signed/signed 1093; short/bool and short/byte 859;
+// long/bool 858. Carrier ablations: short/long 936; long/bool 853 plain, kept; word/bool,
+// word/byte and short/signed 854. On the recovered long/bool graph, redundant case 1/2/3/all false
+// stores removed 1167/855/1186/1195; shared mode tail alone/with case-one cleanup 1186/1190;
+// complete case results 1219; maximum result 1210. Restore all other carriers, memory
+// observations, cases and result lifetimes. Frame 0x2c agrees; mode bound ESI/EDI, full-width
+// small-permission test and state expansion remain.
+// Round 282: complete encoded output words, ternary/descending/result/ascending forms,
+// each with original/complete first-output word [1128,1131,1128,1131,1121,1121,1129,1130].
+// Original output helpers and complete body restored; capability/save roles remain.
+// Round 393: complementary small/negative/return-state subsets
+// 932/858/933/934/1212/935/1213; all with Boolean small-denial 1210. Original carriers restored.
+// Round 261: shared quantizer byte/word/dword results 985/1007/853; quantizer/output/both
+// formal orders 853 each; byte/word results with both orders 985/1007. Original helpers restored.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
@@ -3137,7 +3222,7 @@ bool __stdcall function_3a5c0(byte const *configuration, real low, real high, lo
     real offset = 0.0f;
     bool small = false;
     long allow_small = false;
-    long allow_negative = false;
+    bool allow_negative = false;
     real maximum = 1.0f;
     real inverse_distance = 1.0f / g_48565c;
     low *= inverse_distance;
@@ -3210,7 +3295,7 @@ bool __stdcall function_3a5c0(byte const *configuration, real low, real high, lo
     long whole = fixed >> 8;
     long fraction = fixed & 0xff;
     long input = small ? 5 : 4;
-    long alpha_input = small ? 4 : 24;
+    byte alpha_input = small ? 4 : 24;
     if (whole > 255) whole = fraction = 255;
     memset(&g_484f68, 0, sizeof(g_484f68));
     g_484f68.PSTextureModes = 1;

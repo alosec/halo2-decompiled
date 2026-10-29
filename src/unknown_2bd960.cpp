@@ -460,8 +460,10 @@ void function_2bdd70(s_spline_2bd *spline, point3f *points, long n, point3f *out
 // before the table 5/5 (439 bytes); after the table 99/99. Native row/direct table, immutable
 // powers, coefficient-slot accumulation and component initialization: eight forms 5 each.
 // The helper recovers the row base and first two terms but not the folded multiply; all restored.
+// The parameters are listed as time, control points and output point so that the caller's
+// arguments are written in the order retail evaluates them.
 // @retail 0x2bde90
-void function_2bde90(real t, point3f *out, point3f *points)
+void function_2bde90(real t, point3f *points, point3f *out)
 {
 	real t3 = t * t * t;
 	real t2 = t * t;
@@ -566,6 +568,9 @@ void function_2bde90(real t, point3f *out, point3f *points)
 // Round 144: sampling output/fraction/points order 67f; inline original and five
 // coordinated orders 219f each; separate noinline declaration 67f. Reduced control
 // 67f versus full 18; first sampling input XMM3/XMM2 and final marker roles remain.
+// The marker loop reads its marker id through a local, and the sampling call takes
+// the control points before the output point, which puts the two address
+// computations in retail's order.
 // @retail 0x2be050
 void hill_build_polygon(s_polygon_2be *hill, long index)
 {
@@ -588,7 +593,7 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 		function_2bdd70((s_spline_2bd *)hill, points, i, control);
 		for (long j = 0; j < steps; j++)
 		{
-			function_2bde90((real)j / (real)steps, &point, control);
+			function_2bde90((real)j / (real)steps, control, &point);
 			hill->vertices[vertex].x = point.x;
 			hill->vertices[vertex].y = point.y;
 			vertex++;
@@ -651,12 +656,13 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 		}
 	}
 	count = function_19ec40(0, 0.0f, (short)(index + 11), NONE, 1, 8, marker_ids, 0.0f);
+	i = 0;
 	if (count > 0)
 	{
-		i = 0;
 		do
 		{
-			point3f position = g_4e0350->marker_entries[marker_ids[i]].position;
+			long marker_id = marker_ids[i];
+			point3f position = g_4e0350->marker_entries[marker_id].position;
 
 			hill->z_min = hill->z_min > position.z ? position.z : hill->z_min;
 			hill->z_max = hill->z_max > position.z ? hill->z_max : position.z;
@@ -1224,13 +1230,22 @@ void c_game_engine_45c948::v12()
 }
 
 // score 14 (was 14): retail loads the engine global g_4e6948 into edx at the
+// top of the function, ours loads it into ecx just before the mode test (as retail
+// compiles the identical matched 0x2bd260), so the load and the compare come in the
+// other order. Direct final-field initialization 6.
 // top of the function, ours loads it just before the mode test, so the load
 // and the compare come in the other order.
-// score 14 (was 14): the early global and compare schedule remains; direct final-field initialization 6.
+// The early global and compare schedule remains; direct final-field initialization 6.
 // Split sentinel/mode guard 17; middle/early predicates and direct options tests 13;
 // payload between zero stores 8; both zeros first 13; partial aggregate 56/119;
 // type before payload 6; middle predicate with that order 6; subtype readback 6;
 // parameter address 6; shared send 6; void-return send 6; force-inline send 6.
+// Round 107: options pointer read first, mode test read first, parameter read first: 14 each with
+// identical code (statement order does not move the allocation); dword parameter 14; definition
+// placed after the class 14.
+// Marked initializer/returned receiver/dispatcher/both/receiver plus dispatcher 49/53/47/73/77;
+// early mode exit 27; marked initializer/returned receiver in mode scope 40/45;
+// visible initializer/dispatcher/both forced inline 14/14/14. Frame 0x24 still agrees.
 // @retail 0x2bf480
 void c_game_engine_45c948::v6(long a)
 {

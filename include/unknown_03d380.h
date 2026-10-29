@@ -24,7 +24,7 @@ void function_162420(void);
 void __stdcall function_162060(void *p);
 void __stdcall function_83370(void *a, dword b);
 void __stdcall function_6a770(void *a);
-void __stdcall function_127320(long datum, long count);
+__declspec(noinline) void __stdcall function_127320(long datum, long count);
 void function_21d4d0(void);
 void function_21f290(void);
 void function_125d60(void);

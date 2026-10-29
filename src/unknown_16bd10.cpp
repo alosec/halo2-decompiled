@@ -778,7 +778,9 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 }
 
 /* the camera director of scripted cameras: fills the observer's command */
-// score 245 (was 245): frame 72 agrees; direction preload, length/zero XMM roles and flag stores differ.
+// score 236 (was 245): frame 72 agrees; the camera mode and the object index are read into
+// named locals before the switch and the test; direction preload, length/zero XMM roles and
+// flag stores still differ.
 // frame 0x48 agrees; direction preload, length/zero
 // registers and memory flag updates remain.
 // Earlier 241 (from 241): frame 72 agrees; direction preload, length/zero XMM roles and flag stores differ.
@@ -846,6 +848,18 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 // 247 (retail's d.j preload, but the normal's i/k registers swapped and the i term still copies the
 // normal); both 247; j-first with direction-first operands in every product 247, with the swapped
 // declarations 247. Original body restored.
+// Round 82: length as dot3f(direction, &plane.n) 375 (retail's d.j preload, normal i/j/k in xmm3/4/5
+// and offset products, but the sum stays i-first and the rest shifts); dot3f(&plane.n, direction) 375;
+// t as a ternary 245; ternary with dot3f 375; dot3f with direction declared first 375. Body restored.
+// Round 60: length_sq3f(direction) 464; length_sq3f(&plane.n) 265;
+// dot length with prezero 463; copied-normal helper with reversed plane dot 265;
+// reversed plane dot alone 245; direction-j pointer 400; early copied-normal helper 272;
+// early dot length in either input order 256/256. Original body restored.
+// Round 84 (lane 5): VC reassociates the timer to (rate / scale) * ticks where retail keeps
+// (ticks * rate) / scale; a named seconds local in the tick helper restores retail's order 388,
+// a named seconds local at the use 384 (lockstep shift); field-of-view fields read at each use 259,
+// with a named start 264, target local with fields elsewhere 254; seconds local plus those fields
+// 380 (retail's instruction count, 462, but zero/value XMM roles swap throughout). Restored.
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
 {
@@ -865,7 +879,8 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 	}
 
 	camera = camera_scripting_state;
-	switch (camera->mode)
+	short mode_kind = camera->mode;
+	switch (mode_kind)
 	{
 	case _camera_scripting_mode_point:
 		{
@@ -920,7 +935,8 @@ void __stdcall function_16c840(long user_index, long unused, s_observer_command 
 			command->timer = time_scale != 0.0f ? game_ticks_to_seconds(camera->ticks) / time_scale : 0.0f;
 			command->forward = camera->forward;
 			command->up = camera->up;
-			if (camera->object_index != NONE)
+			dword camera_object_index = camera->object_index;
+			if (camera_object_index != NONE)
 			{
 				real yaw = (real)atan2(command->forward.j, command->forward.i);
 				real distance = dot3f(&command->forward, (vector3f *)&camera->position);

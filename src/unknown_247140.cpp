@@ -108,9 +108,9 @@ struct s_247146
 };
 
 // @retail 0x247140
-void function_247140(s_247143 const *arg_0, s_247141 *arg_1,
+void function_247140(s_247141 *arg_1,
     s_particle_system_datum *arg_2, byte *arg_3,
-    s_effect_particle_system_definition const *arg_4, real arg_5, s_247144 *arg_6)
+    s_effect_particle_system_definition const *arg_4, real arg_5, s_247144 *arg_6, s_247143 const *arg_0)
 {
     s_247145 const *local_20 = (s_247145 const *)((byte const *)arg_2 + 0xc);
     s_247146 const *local_21 = (s_247146 const *)((byte const *)arg_2 + 0xc);
@@ -233,78 +233,6 @@ public:
     void function_248750(s_particle_system_datum *arg_2, real arg_3, byte *arg_1);
 };
 
-// score 92 (was 92): left: at the 0x247140 call ours loads the system pointer into eax before the
-// pushes where retail loads the emitter array base into eax and the system into ecx after the bounds
-// push; the later scratch registers rotate (ecx/dl for edx/al, one byte longer) and the second loop
-// takes a 12-byte alignment pad. Round 56 (kept): s_function_data::get_range_maximum for the range and
-// the inline particle_object_for_tag lookup at the end (retail inlines that copy) give retail's frame
-// 0x20, location in ebx and `ret 8`; caller 0x174a30 308 -> 306, sibling exact. Then: element pointer
-// before the range test 148; non-const element in the call 92; element named before the call 92;
-// limit comparison reversed 92; emitter lookup after the range block 156. Earlier rounds (frame 0x1c/0x28 against 0x20, input registers):
-// frame 0x1c versus 0x20, input registers and final
-// selector expansion differ. Per-iteration definition 196; conditional
-// accumulation 194; flag-first cleanup 196; lower-first bounds 202;
-// upper range first 194.
-// the range field (a function-data member at +0x50 with a get_range_maximum reader) scores
-// 177 but moves the unmatched caller 0x174a30 from 338 to 370, so it is held.
-// Frame 0x1c versus 0x20 and final selector call still differ. Shared squared length 194;
-// full bounds aggregate 202; entry displacement workspace 194; scoped emitter counter 194;
-// successor while traversal 194.
-// Selector inline declaration 170 (matched sibling becomes 292); displacement aggregate,
-// squared distance before/after selector, retained center and branched range maximum 194 each.
-// Round 108: frame 0x1c/0x20 and location/receiver homes remain.
-// Late range accumulator 201; outer range endpoints 194; shared center setter 198;
-// scoped successor for traversal 194; nested age/cleanup guards 194.
-// Lower-reader ordinary inline 194; both readers ordinary inline 194; native origin 170
-// (held: unmatched caller 0x174a30 308 -> 369); direct selector result 194; reversed center stores 194.
-// Origin-field pointer 194; reused native center 170; shared point setter 197; native origin/direct receiver 170.
-// Persistent definition cursor 213; closed bounds lifetime 194; scalar displacement 194;
-// output center subobject 194; shared traversal handle 194.
-// Shared definition base 200; selector input snapshot 182 (match-only);
-// definition base with selector input 185 (match-only); count snapshot 179 (match-only);
-// Y/Z-first input intervals 194/194; origin fields at consumers 201; unsigned cleanup handle 194.
-// Origin memcpy 170 (same held code); two-use origin scalars 205; shared magnitude 194;
-// expansion product 194; unsigned first handle 194.
-// Bounds-after-displacement name 194; displacement-before-bounds name 194; head-before-ordinal 194; outer cleanup handle 194; complete magnitude before selector 194 (exact-only).
-// Independent range/ordinal/bounds homes 194 each; shared emitter cursor 194; shared cursor with
-// range/ordinal homes 194 each; native upper-point difference helper 198, with shared emitter
-// 198.
-// Native range field/reader receivers/headers/full native view 194 each; lower/both
-// conditional reader results 194/194; native reader defaults 198; header fields at uses
-// 174 (507/541, plain). Range field remains at +0x50; sibling exact and caller unchanged.
-// Per-use upper reader ordinary inline 174; early lower/upper/both 174/174/192;
-// per-use default lower/upper/both 174/174/192; complete reader results 174.
-// Lower/upper/both native range references 174 each; one shared pool pointer 183; lower/upper/both references plus pool 183 each; three endpoint/result role names 174.
-// Shared classification through existing range readers byte/long/dword/bool 201/189/189/189;
-// shared header plus classification byte/long/dword/bool 202/201/201/190. All restored.
-// Native location position/direct receiver/center 174/174/174, with const receiver
-// 174/174/174; native typed origin 154 (541 bytes), with const receiver 154, both held
-// for caller 308 -> 369 and frame 0x2c. Native origin component/member producers
-// 182/182; coherent location front/middle on component producer 182/182. All restored.
-// Round 186: Method inline current/direct 174/174, shared range/both 177/177 (caller 369); method force-inline current/direct 174/174, shared range/both 177/177 (caller 960). All declarations and bodies restored.
-// Lower-preserving, upper-preserving and explicit two-arm range results, both reader orders, 174 each;
-// single shared accumulated-maximum conditionals, both reader orders, 174 each. Direct selected-branch
-// updates 169/169 rejected for duplicate update code. Original shared reduction restored.
-// Round 140: native range values lower/upper/both 166/182/178; native header values lower/upper/both
-// 163/177/152; both range/header inputs with ordinary inline 178/152. Both-header 152 forms reject for caller
-// 308 to 369; lower-header-only kept, plain 163 with caller 308.
-// Round 143: lower scalar/type-first and endpoint-first 174/174; upper scalar 165;
-// both scalar/type-first, endpoint-first, native types and mixed order 198 each; lower native type 174.
-// All original reader contracts restored; frame 0x28/0x20 and input/selector expansion remain.
-// Const method original/direct 174/174; separate noinline original/direct 174/174; const plus noinline original/direct 174/174;
-// noinline native origin with/without const 154/154, both held: caller 308 to 369 and frame 0x2c/0x20. All declarations restored.
-// Round 206: On lower header-value ownership, lower rejection/default/complete/endpoint results 163 each;
-// upper complete result and both rejection/default/complete results 163 each. Caller stays 308; sibling exact.
-// Round 136: one native header shared by lower-value/upper-reference, both-reference, both-pointer,
-// both-value readers 151,176,176,152; upper-first 152,176,176,152.
-// All common-header forms move the caller 308 to 369; the 151/152 forms use frame 0x38.
-// Round 169: Lower/upper/both pointer outputs 163 each, reference outputs 163 each;
-// output-first lower/both 163 each. Original readers restored; frame/input/selector causes remain.
-// Round 342: Persistent lower/upper/both endpoints, maximum, lower+maximum, upper+maximum and all three 163 each;
-// all three with role-based scalar homes 163. Frame 0x28 and first difference +2 remain; original scoped declarations restored.
-// Round 77: the second loop as a while 92; its guard as nested ifs 92; the first loop as a for 92;
-// the count test reversed 92; the element as pointer plus index 92; the call through `this` 94. The
-// 12-byte pad before the second loop (retail none) and the call-setup registers remain.
 // @retail 0x248750
 void c_248767::function_248750(s_particle_system_datum *arg_2, real arg_3, byte *arg_1)
 {
@@ -326,7 +254,7 @@ void c_248767::function_248750(s_particle_system_datum *arg_2, real arg_3, byte 
             if (local_10 > local_0)
                 local_0 = local_10;
         }
-        function_247140(&(*(s_247143 const **)arg_0->unknown34)[local_2], local_4, arg_2, arg_1, arg_0, arg_3, &local_1);
+        function_247140(local_4, arg_2, arg_1, arg_0, arg_3, &local_1, &(*(s_247143 const **)arg_0->unknown34)[local_2]);
         local_3 = local_4->field_8;
         ++local_2;
     }

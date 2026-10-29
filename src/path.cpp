@@ -10,9 +10,8 @@
 
 real function_30bf0(vector3f *v);
 
-bool function_26c4e0(s_type_c3b527 const *start, s_type_c3b527 const *end,
-	s_path_trace_result *result, s_pathfinding_data *pathfinding,
-	long start_node_index, long end_node_index, long flags);
+bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start, long start_node_index,
+	s_type_c3b527 const *end, long end_node_index, long flags, s_path_trace_result *result);
 
 /* Local views of fields not yet named in path.h. */
 struct s_path_input_view
@@ -231,16 +230,23 @@ void function_2705c0(s_path_source *source, point3f const *point,
 	input->unknown44 = unknown;
 }
 
-// score 28 (was 28): retail takes the location in edx and the node in ebx and has one exit (`xor al, al` at entry, `mov al, 1`); the one-exit
-// form (`result = true; break;`) matches, but unmatched 0x26c590 then takes its origin in ecx and its eight matched callers stop matching
+// score 28 (was 28): BLOCKED-BY 0x26c590. Retail takes the location in edx and the node in ebx and has one exit (`xor al, al` at entry, `mov al, 1`); the one-exit
+// form (`bool result = false;` ... `result = true; break;` ... `return result;`) matches, but unmatched 0x26c590 then takes its origin in
+// ecx and its eight matched callers (0x1ab770, 0x1bd400, 0x1f5110, 0x26c4e0, 0x26cbe0, 0x26ccb0, 0x26d290, 0x2c39f0) stop matching
 // (BLOCKED-BY 0x26c590). Tried in 0x26c590 with that form: `bool success` 553, line_normal as one dword copy 445, point1/distance1 at
-// function scope 420, the edge iterator at function scope 420; none keeps its convention.
-// BLOCKED-BY 0x26c590. Retail keeps result false in al from
-// entry, so the location comes in edx and the node index in ebx. `bool result =
-// false;` with `result = true; break;` in the loop and one `return result;` matches,
-// but 0x26c590 (unmatched) then changes its own conventions and its eight matched
-// callers (0x1ab770, 0x1bd400, 0x1f5110, 0x26c4e0, 0x26cbe0, 0x26ccb0, 0x26d290,
-// 0x2c39f0) stop matching.
+// function scope 420, the edge iterator at function scope 420; hit at function scope 419; long count 424; line_normal as one struct
+// copy 444 (retail's 0x64 frame), the same with the old exits 478, with bool success 507; none keeps origin on the stack.
+// Separate noinline with complete/original exits 0/28; scan-position result 29; direct view with complete result 0; shifted bit 37; entry-pointer
+// walk 27; walk plus result 39; word index plus result 21. Both matching forms and the word-index form lose the protected caller chain. Ordinary
+// noinline/result confirmation matches here but loses all eight listed callers; all body/declaration trials restored. The pointer walk gains only
+// one and is restored.
+// Inline with original exits 28; inline plus single result MATCH fast, but seven matched reduced-image callers lose
+// their match (the eighth already differs in that image); shared byte/short result 40/45; native index with original/
+// shared exits 32/37; nested tests 28; active-bit-first tests 28 (same caller losses). All restored.
+// Round 70: a one-file LTCG harness of 0x26c590 + this file reproduces the move (origin in ecx, ret 0x14). Retail keeps
+// NONE in edx from entry to the loop test, so the axis pointer takes edi and origin stays on the stack. In 0x26c590 with
+// the one-exit form: next index at function scope 430, it set to NONE there 419, bool success cleared at the count exit
+// 544, first at function scope 419, nested location/flag tests 419; origin stays in ecx in all, the callers still lost.
 // @retail 0x270600
 PRIVATE bool function_270600(s_path_location const *location, long node_index)
 {
@@ -256,10 +262,6 @@ PRIVATE bool function_270600(s_path_location const *location, long node_index)
 	return false;
 }
 
-// score 31 (was 31): at the call to 0x26c4e0 retail computes the end point (`lea ecx, [eax+0x18]`) right after pushing the parent's node
-// index and loads the next two arguments through eax; ours loads them through ecx and computes the end point last, and from there on our
-// eax/ecx/edx choices are one step off retail's. Tried: a named parent point for the compare and the call 65; the two break tests as one
-// `||` condition 31; trace at function scope 31; no parent local 85; the output arms swapped 34; the permuter (86 tries) found nothing below 31.
 // @retail 0x270640
 PRIVATE bool function_270640(s_type_f17a25 *state, s_type_c3b527 const *point,
 	long node_index, bool *arg_c793c4, s_type_c3b527 *out)
@@ -278,8 +280,8 @@ PRIVATE bool function_270640(s_type_f17a25 *state, s_type_c3b527 const *point,
 				break;
 			}
 			s_path_trace_result trace;
-			if (function_26c4e0(point, &parent->entry_point, &trace,
-				(s_pathfinding_data *)state->pathfinding, node_index, parent->node_index, 0))
+			if (function_26c4e0((s_pathfinding_data *)state->pathfinding, point, node_index,
+				&parent->entry_point, parent->node_index, 0, &trace))
 			{
 				break;
 			}
@@ -300,6 +302,26 @@ PRIVATE bool function_270640(s_type_f17a25 *state, s_type_c3b527 const *point,
 	return result;
 }
 
+// score 121 (was 121): Frame 0x30 agrees; entry EBP save, target stack transport, x87 carriers/order and loop
+// alignment remain. Fast control 143; shared distance helper 143; result first 143; point homes 143; phase
+// node lifetimes 143; result from lookup 149; long child 142; branch-produced distance 105 fast/121 plain;
+// helper with phase nodes 143.
+// Round 268 (fast control 105 at 472 bytes): all three square terms 105; result in
+// both lookup arms 102; missing-key-first 145; squares with arm result 102; squares
+// with missing-key-first 145; missing-key-first with arm result 145; all three 145;
+// that with entry square declarations 145. The three-point fast gain is not retained.
+// Round 270 (fast control 105): shared attractor receiver 137; separate sqrt result
+// 105; entry point workspaces 105; entry distance outputs 105; attractor with point/
+// distance entry declarations 137/137; failure CRT vector copy 105; all groups 137.
+// All restored; full score 121, frame 0x30 and incoming target/EBP differences remain.
+// Round 273 (fast control 105): direct optional-output parameters 105; full lookup
+// result 117, full traversal cursor 126, lookup/direct outputs 117; double offset names
+// 105; full success carrier 140; complete squared-sum local 105, accumulated z-x-y sum
+// 101; natural tested parent walk 105, with lookup/direct outputs 138. All restored.
+// Round 275 (fast control 105): minimum from tests 107; minimum plus full child 104;
+// direct selected end 105, with minimum 107; independent direction node 105; readonly
+// source view 105; minimum/direct end/direction node 107; complete distance names on
+// minimum/direction graph 107. All restored; the one-point 104 form is dropped.
 // @retail 0x270750
 bool function_270750(byte *buffer, long unknown, s_actor_point_target const *target,
 	real *distance, long a, long b)
@@ -315,7 +337,7 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 	{
 		s_path_node_key_view *node = &lookup->nodes[index];
 		real path_distance = function_210970(&node->entry_point, target) + node->path_distance;
-		real closest_distance = 0.0f;
+		real closest_distance;
 		if (input->attractor_valid)
 		{
 			point3f start_point, end_point, closest;
@@ -327,6 +349,10 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 			double dz = (double)closest.z - input->attractor_point.z;
 			real value = (real)sqrt(dz * dz + dx * dx + dy * dy);
 			closest_distance = value > node->attractor_distance ? node->attractor_distance : value;
+		}
+		else
+		{
+			closest_distance = 0.0f;
 		}
 		if (attractor_distance)
 		{
@@ -374,6 +400,28 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 	return result;
 }
 
+// score 349 (was 349): Frame 0xe4 agrees; maximum/node acquisition order, clearing, flags and vector scheduling differ.
+// Earlier: the 0xe4 frame and state register now agree; initial load order, clearing, flag width and vector scheduling differ.
+// Tried: pathfinding field at each use 459; bounded short initialization count 406; both 451; edge memset 408;
+// all three 434; field reads plus memset 436; all three plus point-difference helpers 443; traversal state first 396;
+// point-difference helpers alone/everywhere 398/398; depth-indexed step fields 385; direct data and step fields 372 (kept);
+// that with a short initialization count 402; separate clearing loops 394; both 384.
+// Signed/unsigned Boolean bit 380/372; capped word on unsigned/signed graphs 401/398; signed word/CRT
+// clear 376; signed/CRT clear 393; entry counts 376; origin/target names 380; promoted cap 398, with CRT
+// clear 377. All restored.
+// Round 274: full-width initialization/link/path/scan carriers 400/363/378/414; initialization+link 401;
+// link+path 441 (parent 282); path+scan 422; all four 407; previous-node presence 409, with initialization 433.
+// Only the actual bounded full-width link count is retained: 363 plain, 1390/1388 bytes; parent stays 155.
+// Round 248: real signed flag byte 370; signed/unsigned native flag-seven fields 363/363;
+// signed flag field with link/complete entry initializers 360 (three-point gain restored), all
+// constant traversal initializers 384, guarded edge memset 393, native capped word 372, all 412.
+// Complete body and edge declarations restored; initial acquisition, clearing and vector homes remain.
+// Round 250: actual advancing initialization receiver, short/long ordinal 349/401;
+// safely capped word 374/374; separate edge memset 384/353, with word 384/386.
+// Keep only the receiver with the original short ordinal: 349 plain, 1395/1388 bytes.
+// Round 187: Shared initial/traversal node receiver with capped-word/CRT-edge-fill/early-constant
+// masks 0-7 350/374/384/384/372/343/396/411. Original advancing step receiver, link count and
+// complete body restored.
 // @retail 0x270d90
 PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_result_view const *result, short node_index, short maximum_steps,
@@ -382,29 +430,30 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 {
 	s_path_lookup_view *lookup = (s_path_lookup_view *)state;
 	s_path_input_view const *input = (s_path_input_view *)&state->source;
-	s_path_links_data_view const *data = (s_path_links_data_view *)state->pathfinding;
 	long edge_indices[40];
 	long initialize_count = lookup->nodes[node_index].depth + 1;
 	if (initialize_count > maximum_steps)
 		initialize_count = maximum_steps;
+	s_path_step_view *initialize_step = steps;
 	for (short i = 0; i < initialize_count; i++)
 	{
 		edge_indices[i] = NONE;
-		steps[i].type = NONE;
-		steps[i].link_index = NONE;
-		steps[i].unknown02 = 0;
+		initialize_step->type = NONE;
+		initialize_step->link_index = NONE;
+		initialize_step->unknown02 = 0;
+		initialize_step++;
 	}
 	short previous_index = NONE;
 	s_path_node_key_view *previous = NULL;
 	short count = 0;
-	short link_count = 0;
+	long link_count = 0;
 	bool complete = true;
 	while (node_index != NONE)
 	{
 		s_path_node_key_view *node = &lookup->nodes[node_index];
 		if (link_count < maximum_links && (node->unknown10 != NONE ||
-			(node->unknown14 >= 0 && node->unknown14 < data->edge_count &&
-			(data->edges[node->unknown14].flags & 0x80))))
+			(node->unknown14 >= 0 && node->unknown14 < ((s_path_links_data_view const *)state->pathfinding)->edge_count &&
+			(((s_path_links_data_view const *)state->pathfinding)->edges[node->unknown14].flags & 0x80))))
 		{
 			memcpy(&links[link_count++], &node->unknown10, sizeof(*links));
 		}
@@ -416,33 +465,32 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 		{
 			if (count == 0)
 				count = node->depth + 1;
-			s_path_step_view *step = &steps[node->depth];
-			step->node_index = node->node_index;
+			steps[node->depth].node_index = node->node_index;
 			if (previous_index == NONE)
-				step->point = result->destination;
+				steps[node->depth].point = result->destination;
 			else
 			{
-				step->point = previous->entry_point;
+				steps[node->depth].point = previous->entry_point;
 				if (previous->unknown10 == NONE)
 					edge_indices[node->depth] = previous->unknown14;
 			}
 			bool special = node->unknown10 == 2 &&
-				data->surfaces[node->unknown14].unknown0a == 0;
+				((s_path_links_data_view const *)state->pathfinding)->surfaces[node->unknown14].unknown0a == 0;
 			if (node->unknown10 == 1 || node->unknown10 == 6 ||
 				node->unknown10 == 5 || special)
 			{
-				step[-1].type = node->unknown10;
-				step[-1].link_index = (short)node->unknown14;
+				steps[node->depth - 1].type = node->unknown10;
+				steps[node->depth - 1].link_index = (short)node->unknown14;
 				s_path_node_key_view *parent = &lookup->nodes[node->parent];
 				function_26f3f0((s_pathfinding_data *)state->pathfinding,
 					node->unknown14, &node->entry_point, actor_index, state,
 					&parent->entry_point, parent->node_index, &parent->node_index,
-					&step[-1].point, &step[-1].node_index);
+					&steps[node->depth - 1].point, &steps[node->depth - 1].node_index);
 			}
 			else if (node->unknown10 == 2)
 			{
-				step[-1].type = node->unknown10;
-				step[-1].link_index = (short)node->unknown14;
+				steps[node->depth - 1].type = node->unknown10;
+				steps[node->depth - 1].link_index = (short)node->unknown14;
 			}
 		}
 		previous_index = node_index;
@@ -453,16 +501,16 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	for (short j = 0; j < count; j++)
 	{
 		long edge_index = edge_indices[j];
-		if (edge_index >= 0 && edge_index < data->edge_count && edge_index != 0xffff)
+		if (edge_index >= 0 && edge_index < ((s_path_links_data_view const *)state->pathfinding)->edge_count && edge_index != 0xffff)
 		{
 			s_type_c3b527 const *previous_point = j > 0 ? &steps[j - 1].point : &input->start;
-			s_path_edge_view const *edge = &data->edges[edge_index];
+			s_path_edge_view const *edge = &((s_path_links_data_view const *)state->pathfinding)->edges[edge_index];
 			s_type_c3b527 *point = &steps[j].point;
 			/* Retail widens these unsigned words before comparing against NONE. */
 			if ((long)edge->vertices[0] != NONE && (long)edge->vertices[1] != NONE)
 			{
-				point3f const *a = &data->vertices[edge->vertices[0]];
-				point3f const *b = &data->vertices[edge->vertices[1]];
+				point3f const *a = &((s_path_links_data_view const *)state->pathfinding)->vertices[edge->vertices[0]];
+				point3f const *b = &((s_path_links_data_view const *)state->pathfinding)->vertices[edge->vertices[1]];
 				vector3f edge_vector = { b->x - a->x, b->y - a->y, b->z - a->z };
 				vector3f offset = { previous_point->point.x - a->x,
 					previous_point->point.y - a->y, previous_point->point.z - a->z };
@@ -514,10 +562,35 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	return count;
 }
 
+// score 98 (was 98): Frame 0x5ac and distance-return tails agree; avoidance materialization and retry-word residency differ.
+// Earlier: frame 0x5ac, actor lookup and direct avoidance-byte copy agree; retry-mask reload and tail layout differ.
+// Tried: one result exit 308; stage array names 356; both 308; reversed arrays 356; named destination fields 360;
+// direct reconstruction count 357; full avoidance if/else 354; success first 362; shared rounding helper 363; helper plus one exit 314.
+// With direct data/step fields in the callee: original parent 353; original with actor NULL before the index test 350;
+// one exit plus actor NULL before the index test 239 (kept). The callee form alone moved the earlier parent from 308 to 349.
+// Boolean field alone 239; byte local with Boolean/original field 200/200; separate retry increment 239;
+// byte/increment 200; complete final-count selection 239; direct Boolean field 168 (kept, plain), with
+// separate increment 168.
+// Round 274: output defaults before avoidance 165; complete short-circuit avoidance 159; full-width
+// lookup 339, success 216; defaults/avoidance 155 (plain, kept), defaults/lookup 339,
+// defaults/success 216; complete avoidance with both wide result carriers 326.
+// Complete-result return 98; separate avoidance update 165; both 137; failed-finalization first 202;
+// failure-first/avoidance 165, failure-first/return 202, all 165; nested avoidance/return 137.
+// Round 250: signed retry-word ownership before/after output defaults, short/long
+// 103/207/103/207; with separate final retry publication 103/207/103/207.
+// All restored; avoidance materialization and retry-word residency remain.
+// Round 252: flags-first compound/nested avoidance gates 147/147; nonzero remainder
+// with original/compound/nested production 198/203/203 (original: 1116 bytes, first +0x1b1);
+// low-bit parity with original/compound/nested production 214/224/224. Positive-word
+// quotient bounds preserve these predicates; all bodies restored at 98.
+// Round 187: Named long/short quotient and long/byte remainder with avoidance-first guards
+// 137/209/137/147; flags-first guards 147/217/147/155.
 // @retail 0x270930
 bool function_270930(long actor_index, s_type_f17a25 *state, s_path_result_view *result)
 {
-	byte *actor = actor_index == NONE ? NULL : g_4f55f0->data + (actor_index & 0xffff) * 0x888;
+	byte *actor = NULL;
+	if (actor_index != NONE)
+		actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
 	s_path_input_view const *input = (s_path_input_view *)&state->source;
 	s_path_destination_view const *destination = (s_path_destination_view *)state;
 	s_path_closest_view const *closest = (s_path_closest_view *)state;
@@ -525,100 +598,99 @@ bool function_270930(long actor_index, s_type_f17a25 *state, s_path_result_view 
 	result->valid = false;
 	result->location = *(s_path_location_view *)&state->location;
 	result->unknowna6 = false;
-	if (!destination->destination_valid)
-		return result->valid;
-	short index = function_272700(state, destination->destination_node_index);
-	if (index != NONE)
+	if (destination->destination_valid)
 	{
-		memcpy(&result->destination, &destination->destination, 24);
-		result->destination_distance = 0.0f;
-	}
-	else
-	{
-		if (!(destination->destination_radius > closest->distance))
-			return result->valid;
-		index = closest->node_index;
-		result->destination = closest->point;
-		result->destination_node_index = lookup->nodes[index].node_index;
-		result->destination_distance = closest->distance;
-	}
-	if (index == NONE)
-		return result->valid;
-
-	s_path_step_view local_0af630[40], name_b343c4[4], final_steps[4];
-	s_path_location_entry_view links[10];
-	short smoothed_count = 0, final_count = 0, link_count = 0;
-	bool complete = true, success = true;
-	short raw_count = function_270d90(actor_index, state, result, index, 40,
-		local_0af630, &complete, &link_count, links, 10);
-	function_2c2060(state, raw_count, local_0af630, &smoothed_count, name_b343c4, &complete);
-	if (actor && actor[0x478])
-	{
-		final_count = smoothed_count > 4 ? 4 : smoothed_count;
-		memcpy(final_steps, name_b343c4, final_count * sizeof(*final_steps));
-	}
-	else
-	{
-		bool avoid = state->unknownac != 0;
-		long object_index = NONE, type = NONE;
-		if (!avoid && result->location.flags > 0)
-			avoid = (result->location.flags / (1 << (byte)result->location.count)) % 2 == 1;
-		success = function_2c41b0(actor_index, state, smoothed_count, name_b343c4, avoid,
-			&final_count, final_steps, &complete, &object_index, &type, &result->unknowna6);
-		if (success)
+		short index = function_272700(state, destination->destination_node_index);
+		if (index != NONE)
 		{
-			result->object_index = object_index;
-			result->type = (short)type;
-			if (object_index != NONE && actor_index != NONE && (short)type == 6)
-			{
-				real duration = (real)g_510c54->field_2_3 * 0.2f;
-				long ticks;
-				__asm { fld duration }
-				__asm { fistp ticks }
-				function_1a8220(actor_index, 9, (short)ticks, 3, 1, 42, 3);
-			}
+			memcpy(&result->destination, &destination->destination, 24);
+			result->destination_distance = 0.0f;
 		}
-		else
+		else if (destination->destination_radius > closest->distance)
 		{
-			result->object_index = NONE;
-			result->type = NONE;
+			index = closest->node_index;
+			result->destination = closest->point;
+			result->destination_node_index = lookup->nodes[index].node_index;
+			result->destination_distance = closest->distance;
 		}
-	}
-	if (result->location.flags == 0)
-	{
-		if (link_count > 0)
-			result->location.entries[0] = links[0];
-		if (link_count > 1)
-			result->location.entries[1] = links[link_count - 1];
-		if (link_count > 2)
-			result->location.entries[2] = links[link_count / 2];
-		result->location.count = link_count < 0 ? 0 : link_count > 3 ? 3 : link_count;
-	}
-	if (success)
-	{
-		result->complete = complete;
-		result->step_count = (signed char)final_count;
-		result->valid = true;
-		result->step_index = 0;
-		result->start = input->start;
-		memcpy(result->steps, final_steps, final_count * sizeof(*final_steps));
-		if (result->complete)
+		if (index != NONE)
 		{
-			if (result->step_count > 0)
+			s_path_step_view local_0af630[40], name_b343c4[4], final_steps[4];
+			s_path_location_entry_view links[10];
+			short smoothed_count = 0, final_count = 0, link_count = 0;
+			bool complete = true, success = true;
+			short raw_count = function_270d90(actor_index, state, result, index, 40,
+				local_0af630, &complete, &link_count, links, 10);
+			function_2c2060(state, raw_count, local_0af630, &smoothed_count, name_b343c4, &complete);
+			if (actor && actor[0x478])
 			{
-				result->destination = result->steps[result->step_count - 1].point;
-				result->destination_node_index = result->steps[result->step_count - 1].node_index;
+				final_count = smoothed_count > 4 ? 4 : smoothed_count;
+				memcpy(final_steps, name_b343c4, final_count * sizeof(*final_steps));
 			}
 			else
 			{
-				result->destination = input->start;
-				result->destination_node_index = input->start_node_index;
+				long object_index = NONE, type = NONE;
+				bool avoid = state->unknownac || (result->location.flags > 0 &&
+					(result->location.flags / (1 << (byte)result->location.count)) % 2 == 1);
+				success = function_2c41b0(actor_index, state, smoothed_count, name_b343c4, avoid,
+					&final_count, final_steps, &complete, &object_index, &type, &result->unknowna6);
+				if (success)
+				{
+					result->object_index = object_index;
+					result->type = (short)type;
+					if (object_index != NONE && actor_index != NONE && (short)type == 6)
+					{
+						real duration = (real)g_510c54->field_2_3 * 0.2f;
+						long ticks;
+						__asm { fld duration }
+						__asm { fistp ticks }
+						function_1a8220(actor_index, 9, (short)ticks, 3, 1, 42, 3);
+					}
+				}
+				else
+				{
+					result->object_index = NONE;
+					result->type = NONE;
+				}
 			}
-			result->destination_distance = function_210970(&result->destination, &destination->destination);
+			if (result->location.flags == 0)
+			{
+				if (link_count > 0)
+					result->location.entries[0] = links[0];
+				if (link_count > 1)
+					result->location.entries[1] = links[link_count - 1];
+				if (link_count > 2)
+					result->location.entries[2] = links[link_count / 2];
+				result->location.count = link_count < 0 ? 0 : link_count > 3 ? 3 : link_count;
+			}
+			if (success)
+			{
+				result->complete = complete;
+				result->step_count = (signed char)final_count;
+				result->valid = true;
+				result->step_index = 0;
+				result->start = input->start;
+				memcpy(result->steps, final_steps, final_count * sizeof(*final_steps));
+				if (result->complete)
+				{
+					if (result->step_count > 0)
+					{
+						result->destination = result->steps[result->step_count - 1].point;
+						result->destination_node_index = result->steps[result->step_count - 1].node_index;
+					}
+					else
+					{
+						result->destination = input->start;
+						result->destination_node_index = input->start_node_index;
+					}
+					result->destination_distance = function_210970(&result->destination, &destination->destination);
+					return result->valid;
+				}
+			}
+			else if (++result->location.flags > 32)
+				result->location.flags = 0;
 		}
 	}
-	else if (++result->location.flags > 32)
-		result->location.flags = 0;
 	return result->valid;
 }
 
@@ -638,58 +710,62 @@ PRIVATE bool function_2713f0(s_type_f17a25 *state)
 {
 	s_path_input_view *input = (s_path_input_view *)&state->source;
 	s_path_destination_view *destination = (s_path_destination_view *)state;
-	real distance = 0.0f;
-	long quantized = 0;
+	bool result = false;
 	if (!state->pathfinding)
 	{
 		return false;
 	}
 	long node_count = *(long *)state->pathfinding;
-	if (input->start_node_index < 0 || input->start_node_index >= node_count ||
-		!(input->start.point.z > -1000.0f))
+	if (input->start_node_index >= 0 && input->start_node_index < node_count &&
+		input->start.point.z > -1000.0f)
 	{
-		return false;
-	}
-	if (destination->destination_valid)
-	{
-		real length = function_210970(&input->start, &destination->destination);
-		distance = length;
-		quantized = (long)(length * 10.0f);
-		if (quantized >= 32767)
+		real distance;
+		long quantized;
+		if (destination->destination_valid)
 		{
-			return false;
+			distance = function_210970(&input->start, &destination->destination);
+			quantized = (long)(distance * 10.0f);
+		}
+		else
+		{
+			distance = 0.0f;
+			quantized = 0;
+		}
+		if (quantized < 32767)
+		{
+			s_pathfinding_node *sector = &((s_pathfinding_data *)state->pathfinding)->nodes[input->start_node_index];
+			short index = state->unknownae++;
+			s_path_lookup_view *lookup = (s_path_lookup_view *)state;
+			s_path_node_key_view *node = &lookup->nodes[index];
+			node->parent = NONE;
+			node->unknown04 = NONE;
+			node->node_index = input->start_node_index;
+			node->entry_point = input->start;
+			node->entry_distance = 0.0f;
+			node->path_distance = 0.0f;
+			node->attractor_distance = FLT_MAX;
+			node->cost = 0.0f;
+			node->estimated_distance = distance;
+			node->quantized_cost = (short)quantized;
+			node->depth = 0;
+			node->flag0c = (sector->flags >> 12) & 1;
+			node->flag0d = (sector->flags & 0x3c0) != 0;
+			node->flag0e = false;
+			node->unknown10 = NONE;
+			node->unknown14 = NONE;
+			if (destination->destination_valid)
+			{
+				state->unknown90 = index;
+				*(real *)((byte *)state + 0x94) = distance;
+				*(s_type_c3b527 *)((byte *)state + 0x9c) = input->start;
+				*(real *)((byte *)state + 0x98) = distance;
+			}
+			lookup->hash_table[(node->node_index & 511) * 8] = index;
+			function_271fd0(state, index, (short)quantized);
+			result = true;
 		}
 	}
-	s_pathfinding_node *sector = &((s_pathfinding_data *)state->pathfinding)->nodes[input->start_node_index];
-	short index = state->unknownae++;
-	s_path_lookup_view *lookup = (s_path_lookup_view *)state;
-	s_path_node_key_view *node = &lookup->nodes[index];
-	node->parent = NONE;
-	node->unknown04 = NONE;
-	node->node_index = input->start_node_index;
-	node->entry_point = input->start;
-	node->entry_distance = 0.0f;
-	node->path_distance = 0.0f;
-	node->attractor_distance = FLT_MAX;
-	node->cost = 0.0f;
-	node->estimated_distance = distance;
-	node->quantized_cost = (short)quantized;
-	node->depth = 0;
-	node->flag0c = (sector->flags >> 12) & 1;
-	node->flag0d = (sector->flags & 0x3c0) != 0;
-	node->flag0e = false;
-	node->unknown10 = NONE;
-	node->unknown14 = NONE;
-	if (destination->destination_valid)
-	{
-		state->unknown90 = index;
-		*(real *)((byte *)state + 0x94) = distance;
-		*(real *)((byte *)state + 0x98) = distance;
-		*(s_type_c3b527 *)((byte *)state + 0x9c) = input->start;
-	}
-	lookup->hash_table[(node->node_index & 511) * 8] = index;
-	function_271fd0(state, index, (short)quantized);
-	return true;
+	return result;
 }
 
 // @retail 0x2715a0
@@ -727,6 +803,7 @@ bool function_2715a0(byte *buffer)
 	return result;
 }
 
+// score 501 (was 533): two mask tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // @retail 0x271630
 PRIVATE bool function_271630(s_type_f17a25 *state)
 {
@@ -776,7 +853,7 @@ PRIVATE bool function_271630(s_type_f17a25 *state)
 			{
 				continue;
 			}
-			if (!(link->flags & 1) || (node->flag0c && (link->flags & 0x1000)))
+			if (!(link->flags & 1) || (node->flag0c && TEST_FIELD_BIT((link->flags >> 12) & 1)))
 			{
 				continue;
 			}
@@ -794,7 +871,7 @@ PRIVATE bool function_271630(s_type_f17a25 *state)
 					}
 				}
 			}
-			if (blocked || (!input->unknown04 && (link->flags & 2) &&
+			if (blocked || (!input->unknown04 && TEST_FIELD_BIT((link->flags >> 1) & 1) &&
 				function_1fa6b0(&((s_pathfinding_data *)state->pathfinding)->nodes[link->node_index],
 					(s_pathfinding_data *)state->pathfinding)))
 			{
@@ -994,10 +1071,33 @@ PRIVATE void function_271fd0(s_type_f17a25 *state, short node_index, short cost)
 	}
 }
 
+/* a flag field read as word bits: retail reads these flags with a load, a
+   shift and a test of the low bit */
+struct s_flag_word_bits
+{
+	word bit0 : 1;
+	word bit1 : 1;
+	word bit2 : 1;
+	word bit3 : 1;
+	word bit4 : 1;
+	word bit5 : 1;
+	word bit6 : 1;
+	word bit7 : 1;
+	word bit8 : 1;
+	word bit9 : 1;
+	word bit10 : 1;
+	word bit11 : 1;
+	word bit12 : 1;
+	word bit13 : 1;
+	word bit14 : 1;
+	word bit15 : 1;
+};
+
 /* Surface records interpret their payload differently by type. Retail's
    vertex indices are unsigned words: its comparisons with long NONE do not
    reject 0xffff. Only destination sector words have an effective NONE test.
    Link type stores write the low short; the upper short stays untouched. */
+// score 452 (was 475): flag 1 of the surface read through a word bitfield view gives retail's load-and-shift; the rest still differs.
 // @retail 0x272020
 PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 	s_path_node_key_view const *node, s_path_link_view *links, s_type_f17a25 const *state)
@@ -1158,7 +1258,7 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					}
 					long flags = state->settings.unknown04;
 					if (!(((flags & 0x400) && (surface->unknown0c & 1)) ||
-						((flags & 0x800) && (surface->unknown0c & 2)) ||
+						((flags & 0x800) && TEST_FIELD_BIT(((s_flag_word_bits *)&surface->unknown0c)->bit1)) ||
 						((flags & 0x1000) && (surface->unknown0c & 4))))
 					{
 						break;
@@ -1236,6 +1336,11 @@ short function_272700(s_type_f17a25 *state, long node_index)
 }
 
 // score 16 (was 67): retail computes the segment i, j, k and sums (i + j) + k for the length and (j + k) + i for the projection, ours j, k, i and (k + j) + i for both; tried: `dot3f(&delta, &delta)` for the length 16, `dot3f(&delta, &offset)` 16, the projection written out in y, z, x order 36, all three written out 67, parameters reordered (start, end, attractor, out) 16; compile-only harness: every written-out sum order and grouping 27-64, all 24 parameter orders and the offset computed at the top no better.
+// Complete output object/early admissions/uninitialized offset scope/role names/indexed interpolation/native output aggregate/parallel projection
+// products/combined indexed projection 111/49/16/16/21/99/85/85; all restored.
+// Indexed unit-scale segment/offset differences 16; all three named squares 62; native point publication 31;
+// complete start/end values 139/131; named projection 16; indexed segment plus all named squares 62;
+// all named squares plus named projection 62. Original complete body and noinline declaration retained.
 // @retail 0x272740
 PRIVATE void function_272740(point3f const *attractor,
 	point3f const *start, point3f const *end, point3f *out)
@@ -1265,26 +1370,36 @@ PRIVATE void function_272740(point3f const *attractor,
 	}
 }
 
+// score 8 (was 97): retail computes the segment i, k, j and sums its square as (k + i) + j; ours computes j, k, i and sums
+// (k + j) + i. Tried: the weight in float (no double local) 88 -> 82; weight declared first 81; written-out sums in every order
+// 79-94; the segment, offset and both lengths through vector3d_from_points3d/length_sq3f/dot3f 21; the length test against g_45dbd8
+// (retail reads 0x45dbd8; weight's zero is then not shared) 8; dot3f for either length and the swapped projection 8; separate
+// segment/delta vectors 8; a `0.0` double test 102; the permuter (86 tries) found nothing below 8; distance_sq3f for the segment
+// 132 fast/100 plain; vector3f_assign 8; offset or t at function scope 8 each; delta renamed segment 8; closest declared first 8;
+// input declared later 8; length declaration split 8; aggregate segment initialization 83.
+// Indexed unit-scale difference helper for the segment or all differences 8/8; all three named segment squares 83;
+// all three named component differences plus the native setter 8; complete start-point value 117; named projection 8;
+// complete native point publication 30; complete start-point value plus named projection 117. All restored.
 // @retail 0x272810
 PRIVATE real function_272810(s_type_f17a25 const *state, s_type_c3b527 const *start,
 	point3f const *end, real *distance_out)
 {
 	s_path_input_view const *input = (s_path_input_view const *)&state->source;
-	real distance = FLT_MAX;
 	real weight = 0.0f;
+	real distance = FLT_MAX;
 	point3f local_end;
 	point3f local_attractor;
 	function_210690(start->output_index, end, &local_end);
 	function_210690(start->output_index, &input->attractor_point, &local_attractor);
 	vector3f delta;
 	vector3d_from_points3d(&start->point, &local_end, &delta);
-	real length_squared = delta.k * delta.k + delta.i * delta.i + delta.j * delta.j;
+	real length_squared = length_sq3f(&delta);
 	point3f closest;
-	if (length_squared > 0.0f)
+	if (length_squared > g_45dbd8)
 	{
-		real t = ((start->point.z - local_attractor.z) * delta.k +
-			(start->point.y - local_attractor.y) * delta.j +
-			(start->point.x - local_attractor.x) * delta.i) / length_squared;
+		vector3f offset;
+		vector3d_from_points3d(&local_attractor, &start->point, &offset);
+		real t = dot3f(&offset, &delta) / length_squared;
 		if (t < 0.0f || t > 1.0f)
 		{
 			closest = local_end;
@@ -1301,12 +1416,11 @@ PRIVATE real function_272810(s_type_f17a25 const *state, s_type_c3b527 const *st
 		closest = start->point;
 	}
 	vector3d_from_points3d(&local_attractor, &closest, &delta);
-	real distance_squared = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i;
+	real distance_squared = length_sq3f(&delta);
 	if (input->attractor_radius * input->attractor_radius > distance_squared)
 	{
-		double length = sqrt(distance_squared);
-		distance = (real)length;
-		weight = (real)((1.0 - length / input->attractor_radius) * input->field_40);
+		distance = (real)sqrt(distance_squared);
+		weight = (1.0f - distance / input->attractor_radius) * input->field_40;
 	}
 	*distance_out = distance;
 	return weight;

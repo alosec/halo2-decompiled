@@ -70,6 +70,12 @@ bool function_2161d0(long file_index, void *buffer, long size)
 // Unsigned copy size 10; profile pointer local 10; result between the task stores 10; index before the
 // cache pointer 10; done flag stored last 13. Retail 0x121570 keeps esi across 0x122810, so the reload
 // after it here is not a property of the callee.
+// Round 85: retail 0x216da0/0x216e50 also recompute the buffer address after an ESI-argument callee
+// (0x217a80); a `do {} while (false)` join after the append 10; path built in an inline helper
+// returning the path 10; result set inside `if (read)` 34; chained done/success assignment 11;
+// a volatile done store (diagnostic only, reverted) 10.
+// Short/long/byte/signed-char completion 96/93/110/110; done/success result chains 19/10;
+// bounded-index statements 10, with long completion 93; size guard first 75; shared upper bound 104.
 // @retail 0x2162b0
 bool function_2162b0(long file_index, void *buffer, long size, s_saved_game_file_task *task)
 {

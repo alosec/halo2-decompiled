@@ -88,7 +88,7 @@ struct s_type_f17a25
 	void *pathfinding;
 	short unknown90;
 	byte unknown92[0xac - 0x92];
-	byte unknownac;
+	bool unknownac;
 	byte unknownad;
 	short unknownae;
 	byte unknownb0[0xf0 - 0xb0];

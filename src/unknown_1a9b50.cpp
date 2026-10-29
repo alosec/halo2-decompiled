@@ -250,11 +250,24 @@ bool __stdcall function_1aa990(long actor_index, s_slot *slot)
 	return result;
 }
 
-// score 17 (was 17): retail loads the prop pool pointer into EAX, one byte
-// shorter than our ECX, and passes entry->unknown24 in ECX where we pass it in
-// EDX; the one-byte difference moves every later jump target.
+// score 11 (was 11): extent now agrees at 352 bytes; the pool pointer still uses ECX
+// instead of EAX, the fraction uses EDX instead of ECX, and the shared range-value
+// load/compare schedule differs.
 // Tried (r35): prop_ref_get and the real record types 17; the state assigned after declaration 17;
 // prop_node_state 17; the reversed probability comparison 35; const entry, state, or actor/unit 17.
+// Guarded state/value/both observations 59/11/57; probability result conditional 105;
+// three-first rejection 42; four-first selection 97; both observations with the
+// conditional/four-first result 91/94. Keep the twice-used range value after the prop guard.
+// Round 268 on the two-use range graph: long result 11; entry range declaration 11;
+// entry prop/state declarations 11; unsigned result 11; long result plus entry range 11;
+// entry range/receivers 11; unsigned result plus entry receivers 11; split entry acquisition
+// with unsigned result 11. Loads and call tuples stayed at their original boundaries.
+// Upper-first range with original/full role names 14/14; complete role names 11;
+// byte selection alone/upper-first/names/both 41/44/41/44; signed-byte selection 41
+// (fast control 11). Pool/fraction carriers and conditional range loads remain; all restored.
+// Round 33: lower-only scalar, split result predicates, range-field pointer and nested upper
+// scalar 17 each; guarded state value 59; noinline state/actor/fraction/admission helpers 11 each;
+// entry prop index with state wrapper/direct range 63; block prop index with them 17.
 // @retail 0x1aa9f0
 short __stdcall function_1aa9f0(long actor_index)
 {
@@ -270,12 +283,17 @@ short __stdcall function_1aa9f0(long actor_index)
 	{
 		s_prop_datum_view *prop = (s_prop_datum_view *)prop_node_get(actor->prop_index);
 		s_prop_state_64 *state = (s_prop_state_64 *)function_25d690((s_prop_datum *)prop);
-		if (prop->unknown27 >= 1 && (state->unknown64 || prop->unknown28 > entry->unknown1c) && entry->unknown20 > prop->unknown28)
+		if (prop->unknown27 >= 1)
 		{
-			if (state->unknown64 && !function_1e2030(actor_index))
-				result = 4;
-			else if (function_1c9ee0(entry->unknown24) > function_259a0(&g_4e7408->unknown0))
-				result = 3;
+			real prop_value = prop->unknown28;
+
+			if ((state->unknown64 || prop_value > entry->unknown1c) && entry->unknown20 > prop_value)
+			{
+				if (state->unknown64 && !function_1e2030(actor_index))
+					result = 4;
+				else if (function_1c9ee0(entry->unknown24) > function_259a0(&g_4e7408->unknown0))
+					result = 3;
+			}
 		}
 	}
 	return result;
@@ -409,6 +427,12 @@ real normalize2d(point2f *arg_0);
 extern point2f *g_468778;
 
 // score 375 (was 375): Frame 0x40 agrees; early actor/settings/prop carriers and prediction homes remain.
+// Lane 6 r85: retail returns constants (`mov al, 1` / `xor al, al`, every push at entry, the early tests
+// jumping to the false exit); `if (...) return true; ... return false;` without the result byte gives that
+// 440 (frame 0x3c); with the actor looked up before the settings call 413 (retail's 0x40 frame and hoisted
+// actor-table load; retail then keeps arg_0/actor/slot/prop in edi/ebp/esi/ebx and the settings pointer at
+// [esp+0x10] only, ours keeps the settings pointer in esi and the prop in arg_1's home); prop pointer at
+// function scope 417; slot pointer declared first 413; early `if (!settings) return false;` 424.
 // Earlier at 375 (was 375): frame 0x40 agrees; early actor/settings/prop carriers and prediction scalar homes differ.
 // frame 0x40 agrees; actor/settings/prop carriers and prediction homes remain.
 // Earlier: frame 0x40 agrees; early actor/settings/prop carriers and prediction scalar homes differ.
@@ -484,6 +508,12 @@ extern point2f *g_468778;
 // Boolean fields, output-pointer contracts and request discriminator restored.
 // Round 226: complete settings native/memcpy values with bool/byte result, original/actor-first
 // acquisition 441, 441, 413, 413, 422, 422, 394, 394. All restored; frame and early carrier homes remain.
+// Round 217: Prop-state inline/noinline, prop-view inline/noinline, both inline/noinline
+// boundaries 375/375/375/375/375/375; state/both inline with actor-first acquisition 413/413
+// fast. Original declarations, acquisitions, pointer homes and complete body restored.
+// Round 205: Complete settings/state/direction getter receiver masks 1/2/3/4/5/6/7
+// 433/487/516/506/574/663/657; all with constant return exits 660. Every original
+// receiver, early distance, request transfer, expression tree and body restored.
 // @retail 0x1aa0d0
 bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 {
@@ -651,7 +681,12 @@ struct s_1aab51
 
 static __forceinline long real_to_long(real value);
 
-// score 386 (was 386): Frame 0x58 and length agree; early rejection, object/magnitude and query scalar homes remain.
+// score 384 (was 384): Frame 0x58 and length agree; early rejection, object/magnitude and query scalar homes remain.
+// Lane 6 r85: retail lays the early false exit (`xor al, al; pop ebp; add esp, 0x58; ret 8`) right after the
+// `goto local_7` jump; ours puts it last. `bool local_2 = !f13 && !f14 && !f2d; if (local_2) {...} return
+// local_2;` (and the same with an if/else setting the flag) lands it where retail does, but arg_0 then takes
+// edi from the settings pointer and the frame drops to 0x54: 517. Inverted test with the false arm first 386
+// (identical code); early `return false` then `bool local_2 = true;` 511; named admission bool 517.
 // Earlier: frame 0x58 and length agree; early rejection and query scalar/object homes remain.
 // Frame 0x58 and 1904-byte length agree; early rejection and query scalar homes remain.
 // frame 0x58 and length agree; early rejection and query scalar/object homes remain.
@@ -714,6 +749,10 @@ static __forceinline long real_to_long(real value);
 // with every-use object producer 506; all three 430; all with wide eligibility 493. Original restored.
 // Round 193: Existing metadata providers ordinary-inline singly, all pairs and all,
 // then separate noinline declarations on all three: 386/386/386/386/386/386/386/386. Original restored.
+// Round 227: Prediction/facing/query fallback vector setters, all subsets, then early distance default 382/466/467/484/485/491/492/494.
+// Original body and all helpers restored.
+// Round 392: Entry result from each individual flag and each flag pair, then the first pair in byte/long
+// storage: 476/476/476/393/395/396/438/454. Complete original entry/result and body restored.
 // @retail 0x1aab50
 bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 {

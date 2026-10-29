@@ -8,6 +8,7 @@
 #include "data_array.h"
 #include "unknown_0259d0.h"
 #include "slot_handler.h"
+#include "unknown_293070.h"
 static __forceinline long real_to_long(real value);
 
 /* a flock (g_51ecb4, ai.cpp): the index of its scenario definition at +2 */
@@ -77,39 +78,6 @@ long flock_new(short definition_index)
 	return flock_index;
 }
 #endif
-
-/* an object's flock membership: its flock and the next member */
-struct s_flock_member
-{
-	long flock_index;
-	byte unknown04[4];
-	long next_object_index;
-};
-
-/* the object fields a flock member has (+0x134 is 1 for a creature) */
-struct s_flock_object
-{
-	byte unknown000[0x134];
-	long type134;
-	byte unknown138[2];
-	short flock_member_offset;
-};
-
-struct s_flock_object_header
-{
-	byte unknown00[8];
-	s_flock_object *object;
-};
-
-inline s_flock_member *flock_object_get_member(s_flock_object *object)
-{
-	s_flock_member *member;
-	if (object->type134 == 1)
-		member = (s_flock_member *)((byte *)object + object->flock_member_offset);
-	else
-		member = NULL;
-	return member;
-}
 
 /* adds an object at the head of a flock's member list */
 // @retail 0x2936b0
@@ -196,12 +164,6 @@ void function_2952e0(long object_index)
 		function_293710(member->flock_index, object_index);
 }
 
-struct s_flock_member_iterator
-{
-	long next_object_index;
-	long object_index;
-};
-
 /* advances an iterator while retaining the current object's index */
 // @retail 0x2955b0
 s_flock_object *function_2955b0(s_flock_member_iterator *iterator)
@@ -222,20 +184,6 @@ s_flock_object *function_2955b0(s_flock_member_iterator *iterator)
 }
 
 void __stdcall function_b8540(long object_index);
-
-PRIVATE __forceinline s_flock_object *function_2937a1(s_flock_member_iterator *arg_0)
-{
-	long local_0 = arg_0->next_object_index;
-	s_flock_object *local_1 = NULL;
-	arg_0->object_index = local_0;
-	if (local_0 != NONE)
-	{
-		local_1 = ((s_flock_object_header *)g_4e0300->data)[local_0 & 0xffff].object;
-		s_flock_member *local_2 = flock_object_get_member(local_1);
-		arg_0->next_object_index = local_2 ? local_2->next_object_index : NONE;
-	}
-	return local_1;
-}
 
 /* deletes a flock and every object of it */
 // @retail 0x2937a0

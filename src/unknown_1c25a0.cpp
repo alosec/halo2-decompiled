@@ -660,8 +660,23 @@ PRIVATE __forceinline void function_1c2891(short *arg_0, c_havok_reference_count
 	}
 }
 
-// score 45 (was 45): ours loads the havok reference from a different global
+// score 45 (was 45): ours keeps both objects in ESI with EDI as the zero; retail
+// keeps the second object in EDI with a separate count pointer (lea esi, [edi + 6])
+// live across the call, EBX as the zero, and no null test before the second delete.
+// Plain havok_reference_remove for the second object 48 (null test gone, still no
+// count pointer); through a local 48; a `delete this` member on the class 48; first
+// object through a local 45, with the plain second release 48.
+// retail zeroes EBX and keeps three callee-saved registers, holds
+// g_47f048 in EDI and &reference_count in ESI; ours zeroes EDI, holds g_47f048 in
+// ESI, folds the count address into the object pointer and tests it before the delete.
 // and clears it in EDI, retail loads it into ESI and clears it in EBX.
+// Round 378: Prefix-result zero arm, postfix old-count arm, nonzero completion
+// after decrement/reload and prefix-result completion, normal range arms [45, 55, 45, 45],
+// delete-first arms [45, 56, 45, 45]. Original helper and body restored.
+// Round 279: actual decrement value owns store and zero test; short arithmetic with
+// count/object-reference parameter combinations 47/47/47/47 (129 bytes), long arithmetic
+// 43/43/43/43 (125 bytes). Two-point gain rejected; original helper and body restored.
+// Separate count address, third saved register and delete-null test remain.
 // @retail 0x1c2890
 void function_1c2890(void)
 {
@@ -847,6 +862,15 @@ void function_1c54b0(char const *variants, long object_index)
 // island index before the world pointer and retail reloads the world pointer first;
 // ours stores the removed flag before the discard call and retail stores it after the
 // call (moving that store after the call always swaps ebx/ebp in the entity loop).
+// Further trials: local names count to flagged_entities 4; local names island_index to
+// group_index 4; local names entity_count to total_entities 4; local names i to
+// entity_index 4; local names count to flagged_entities, island_index to group_index 4;
+// local names island_index to island_ordinal, entity_count to entity_total, count to
+// accepted_count, i to entity_index 4; all named loop state with flag after discard 18;
+// named loop state, flag after discard, native int entity counts 18. Round 87, all with the flag
+// after the discard call: entity_count renamed total/size/a_count, i renamed entity_index/j, count
+// renamed matched, island renamed group, removed renamed discarded: 18 each (names never move the
+// ebx/ebp swap).
 // @retail 0x1c50c0
 void function_1c50c0(void)
 {
@@ -915,6 +939,18 @@ bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_un
 // score 1 (was 1): the only difference is the force flag handed to function_1c4040:
 // ours goes in dl and retail passes it in al. That register belongs to
 // function_1c4040's own convention (see the note there).
+// Further trials: byte force, long attempt 24; signed char force, long attempt 24; int
+// force, long attempt 31; bool force, unsigned long attempt 2; bool force, short attempt
+// 11; bool force, unsigned short attempt 12; byte force, unsigned short attempt 26; int
+// force, unsigned long attempt 31.
+// Round 213: for-owned long retry 1; for-owned force 3; terminal equality 8; nonterminal
+// equality 2; for-owned int retry 1; for-owned signed-byte retry 40; signed-byte terminal
+// equality 40; for-owned long terminal equality with reset-first publication 8. Force argument
+// convention remains.
+// Round 88: defined after function_1c4040 1; the disabled 0xb8540 body enabled 1 (25 matched lost);
+// the call-cycle entry moved through declaration order (function_146bf0 declared first in
+// src/unknown_278f00.cpp, function_146da0 before function_1c4040 in src/unknown_146a20.cpp) 2, with
+// function_1c4040 then in a custom convention (attempt EAX, active CL) and 15 matched lost.
 // @retail 0x1c51c0
 void function_1c51c0(long component_index)
 {
@@ -1066,18 +1102,36 @@ local_3:
 struct s_1c4040
 {
 	byte field_0[3];
-	volatile bool field_3;
+	bool field_3;
 	volatile long field_4;
 	long field_8;
 	s_simulation_island_array *field_c;
 	long field_10;
 };
 
-// score 90 (was 90): retail's prologue pushes ebp second and keeps the island-array
-// pointer in edx, so the active flag arrives in al; ours pushes ebp after the first
-// stores, keeps that pointer in eax and takes the flag in dl. The register assignment
-// is settled by the call-cycle order with 0x146bf0 (src/unknown_146a20.cpp), which
-// this lane may not edit, and it also fixes the register the caller uses.
+// score 8 (was 8): only the convention differs: ours takes the active flag in DL
+// (the default /Gr register: our LTCG reaches this function through 0x1c39c0 ->
+// 0x1c51c0 before 0x146bf0 on their call cycle), retail takes it in AL with attempt
+// in ECX. Kept: the existing function_a7670 for the mode test 66; the result field
+// without volatile 8. Tried: plain locals 180; an island-scan helper 180; the priority
+// field without volatile 172; the island-array store without its volatile cast 17;
+// the effect read after the mode test 100; a separate result local 119; an else arm
+// for the mode case 8. With 0x1c51c0's call removed (diagnostic) LTCG gives this
+// function a custom convention, but attempt in EAX and active in CL (30), and the
+// same with the parameters reordered (active, attempt).
+// Round 378: Scan-owned success result with shared/fixed/dynamic/both entity ordinals,
+// original/structured dispatch, all eight 111 at 537 bytes. Original result and body restored.
+// Round 279: selected index separate through both scans; island cursor/entity ordinals/entry initialization
+// combinations 35/36/35/36/35/36/35/36, all at 537 bytes. Original body restored;
+// active DL versus AL and its array/count allocation remain.
+// Round 88: our default convention comes from the call-cycle entry, which follows declaration order:
+// function_146bf0 declared first in src/unknown_278f00.cpp plus function_146da0 declared before this
+// function in src/unknown_146a20.cpp gives a custom convention, but attempt EAX and active CL (30; the
+// first half loses 15 matched); with (active, attempt) reordered 30; with g_51e9a4 read at each use 32;
+// 0xb8540's disabled body enabled 25 (25 matched lost). The custom regime still swaps EAX/ECX and AL/CL.
+// Round 163: coordinated cdecl/stdcall with bool, byte, signed-char active and
+// unsigned-long attempt transport 187/193 in every pair. All original declarations
+// and bodies restored; frame 0x14 agrees, but active remains DL rather than AL.
 // @retail 0x1c4040
 bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_unknown, long excluded_component_index)
 {
@@ -1137,7 +1191,7 @@ bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_un
 		s_physics_object *object;
 		bool unknown;
 
-		if (g_4e6948->mode == 4 && ((s_physics_object_detach_view *)physics_object_get(local_0.field_8))->unknownd4 != NONE)
+		if (function_a7670(local_0.field_8))
 		{
 			physics_object_get(local_0.field_8)->flags |= 0x20;
 			function_1c3770(local_0.field_8, 0);
@@ -1395,9 +1449,27 @@ public:
   c_contact_shape_container *container, long key);
 };
 
-// score 24 (was 24): retail keeps the contact shape in EAX where the two
-// branches meet and copies it into ESI there, ours keeps it in ESI; retail
-// also computes the metadata flag in CL, ours in EAX.
+/* the flag bit of a contact shape's material data; retail's dead stack byte
+   is this helper's returned hkBool */
+PRIVATE __forceinline hkBool contact_metadata_flag(long metadata)
+{
+ hkBool result;
+ result.m_bool = *(byte *)(metadata + 0x1f) & 1;
+ return result;
+}
+
+// score 4 (was 4): retail joins the two child-shape arms in EAX and copies the
+// shape into ESI there, ours assigns ESI in each arm. Kept: the flag through an
+// hkBool helper 14 (it replaced a volatile byte copy), the root's rigid body as
+// `type == 1 ? entity : NULL` 4. Shape join tried: if/else 14 (before the rigid
+// body form), inverted if/else 19, default shape then child 80, inline shape helper
+// 4, inline unwrap helper 4, child copy 13, inverted ternary 9.
+// Round 166: Native full-width key/filter-child/readonly receiver contracts, all seven subsets 4;
+// one hidden result on the recovered flag/rigid-body graph 65. Original contracts and body
+// restored.
+// Round 213: native aligned scratch
+// vector/renamed-vector/real/renamed-real/long/renamed-long/renamed-byte/renamed-SIMD [4, 4, 4,
+// 4, 4, 4, 4, 4]. Child-result join remains.
 // @retail 0x1c32d0
 hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view const *a, s_contact_body_view const *b,
  c_contact_shape_container *container, long key)
@@ -1418,14 +1490,13 @@ hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view con
    long metadata = shape->metadata;
    if (metadata && contact_metadata_pin(shape->metadata, 1, 16) != metadata)
    {
-    dword flag = *(byte *)(metadata + 0x1f) & 1;
-    volatile byte saved_flag = flag;
-    if (flag)
+    if (contact_metadata_flag(metadata).m_bool)
     {
      root = a;
      while (root->parent)
       root = root->parent;
-     if (root->type == 1 && root->entity && ((hkRigidBody *)root->entity)->m_motion->kind_code() == 7)
+     hkRigidBody *rigid_body = root->type == 1 ? (hkRigidBody *)root->entity : NULL;
+     if (rigid_body && rigid_body->m_motion->kind_code() == 7)
      {
       hkBool result;
       result.m_bool = 0;
@@ -1473,6 +1544,16 @@ PRIVATE inline void contact_motion_vector(vector3f *out, hkVector4 const *value)
 // ours compares it with the index register; retail sets up the register arguments of
 // the 0x1d10b0 call with ecx first and ours with edx first, an order that follows
 // the callee's declared parameter order in src/unknown_1cec30.cpp (not editable here).
+// Further trials: shared scale helper for both vectors 3; shared scale and output
+// assignment helpers 65; shared scale plus named progress and body count 3; native int
+// selected count 3; named saved iteration index 3; named selected and available counts 3;
+// shared scale plus all named loop state 3; available count read at every use 3.
+// Round 213: positive-guard exact-count long/int/short/word [4, 4, 132, 132]; positive-guard
+// last-index long/int/short/word [156, 156, 164, 164]. Count test and matched-callee setup
+// remain.
+// Round 88: while loop 3; index shared with the fill loop 3; mirror initialised from the index 3;
+// `count > i` 5; count initialised 3. This is 0x1d10b0's only caller, so its parameters can be
+// reordered to (component, index, change) in src/unknown_1cec30.cpp for the register-argument order.
 // @retail 0x1c4c50
 bool __stdcall function_1c4c50(long object_index, long node_index, point3f const *point,
  vector3f const *change_a, vector3f const *change_b, long *result_object, vector3f *linear, vector3f *angular)

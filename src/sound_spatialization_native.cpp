@@ -75,12 +75,6 @@ static_assert(offsetof(s_sound_playback, listener_index) == 0xa1,
 static_assert(offsetof(s_sound_system_spatial_view, listeners) == 0x88,
 	"sound listener array offset");
 
-long decibels_add(long a, long b)
-{
-	real const result = *reinterpret_cast<real *>(&a) +
-		*reinterpret_cast<real *>(&b);
-	return *reinterpret_cast<long const *>(&result);
-}
 }
 
 extern s_sound_voice *g_4e6378;

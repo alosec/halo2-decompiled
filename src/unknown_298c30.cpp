@@ -93,6 +93,8 @@ __forceinline void function_2992ba(short arg_0, bool arg_1, real arg_2, point2f 
 }
 
 // score 408 (was 408): Frame 0x64 agrees; entry loads, normalization homes and 0x18 versus 0x1c cleanup differ.
+// The pointer-to-parameter trick for arg_3 is gone and the score is unchanged; the parameter's own use
+// still differs from retail's stack home.
 // frame 0x64 agrees; entry loads, parameter cleanup and normalization/trig homes differ.
 // Earlier frame 0x68 forms: shared normalizer 433, unsigned count 437, unsigned endpoint 433, both 437, angle end pointer 457.
 // Frame 0x64 agrees; entry loads, normalization homes and 0x18 versus 0x1c cleanup differ.
@@ -127,6 +129,19 @@ __forceinline void function_2992ba(short arg_0, bool arg_1, real arg_2, point2f 
 // (frame 0x6c); existing outlined normalizer at both 549. One-point forms rejected;
 // original helpers, calls and includes restored. Entry/XY homes and cleanup remain.
 // Sum/direction/evaluation point-name order, eight combinations 408.
+// Round 240: Shared normalizer factor-first, early uninitialized factor and role names,
+// all seven combinations 408; native epsilon-rejection return 408. Internal magnitude/
+// reciprocal lifetime forms do not recover entry/XY homes or cleanup; helper restored.
+// Round 153 (fast): nullable point through its address (diagnostic) 427; short counters 471, with the point
+// through its address 471 (the facing argument moves to EBX); point and facing through their addresses 427
+// (ret 0x1c), with short counters 433.
+// Round 68: split center around the object lookup with the unused carrier removed 409;
+// shared displacement helper 438; direction declared first 409; component direction copy 450;
+// entry/both magnitude captures 409/409; object-index address at entry 409 and at all uses 405
+// (three-point gain rejected); unused input moved behind the stack inputs at definition/caller 444.
+// DH round 234: complete cosine products/all sine products, with reused/separate second
+// trig producers 442/408/442/408; those graphs with native word ordinals 471/471/471/472.
+// All restored; entry/normalized homes and cleanup differ on the retail-size frame.
 // @retail 0x298d90
 void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f const *arg_3,
 	point2f const *arg_4, point2f const *arg_5, real arg_6, point2f const *arg_7, point2f const *arg_8)
@@ -134,7 +149,6 @@ void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f cons
 	long const *const local_28 = &arg_0;
 	long local_29 = *local_28;
 	(void)local_29;
-	point2f const *const *local_26 = &arg_3;
 	s_slot_object_view *local_0 = object_get(arg_1);
 	point2f local_1 = { arg_7->x + arg_8->x, arg_7->y + arg_8->y };
 	point2f local_2 = *arg_8;
@@ -146,9 +160,9 @@ void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f cons
 	local_3[0].y = arg_4->y * local_30 + arg_7->y;
 	local_3[1].x = arg_4->x * arg_6 + arg_7->x;
 	local_3[1].y = arg_4->y * arg_6 + arg_7->y;
-	bool local_4 = local_2.x * (*local_26)->x + local_2.y * (*local_26)->y >= 0.0;
+	bool local_4 = local_2.x * arg_3->x + local_2.y * arg_3->y >= 0.0;
 	point2f const *local_31 = (point2f const *)((byte *)local_0 + 0x88);
-	real local_5 = local_31->y * (*local_26)->y + (*local_26)->x * local_31->x;
+	real local_5 = local_31->y * arg_3->y + arg_3->x * local_31->x;
 	byte local_6 = 0;
 	for (byte local_7 = 0; local_7 < 2; local_7++)
 	{
@@ -160,8 +174,8 @@ void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f cons
 			real local_11 = (real)cos(1.5707963705062866);
 			real local_12 = (real)sin(local_7 == 0 ? -1.5707963705062866 : 1.5707963705062866);
 			g_5047f8[local_6].field_4 = 1.5707963705062866f;
-			g_5047f8[local_6].field_c.x = local_11 * (*local_26)->x - local_12 * (*local_26)->y;
-			g_5047f8[local_6].field_c.y = (*local_26)->y * local_11 + (*local_26)->x * local_12;
+			g_5047f8[local_6].field_c.x = local_11 * arg_3->x - local_12 * arg_3->y;
+			g_5047f8[local_6].field_c.y = arg_3->y * local_11 + arg_3->x * local_12;
 			g_5047f8[local_6].field_0 = local_10;
 			g_5047f8[local_6].field_1 = false;
 			g_5047f8[local_6].field_8 = 1.0f;
@@ -170,8 +184,8 @@ void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f cons
 			local_11 = (real)cos(-1.5707963705062866);
 			local_12 = (real)sin(local_7 == 0 ? 1.5707963705062866 : -1.5707963705062866);
 			g_5047f8[local_6].field_4 = -1.5707963705062866f;
-			g_5047f8[local_6].field_c.x = local_11 * (*local_26)->x - local_12 * (*local_26)->y;
-			g_5047f8[local_6].field_c.y = (*local_26)->y * local_11 + (*local_26)->x * local_12;
+			g_5047f8[local_6].field_c.x = local_11 * arg_3->x - local_12 * arg_3->y;
+			g_5047f8[local_6].field_c.y = arg_3->y * local_11 + arg_3->x * local_12;
 			g_5047f8[local_6].field_0 = local_10;
 			g_5047f8[local_6].field_1 = false;
 			g_5047f8[local_6].field_8 = 1.0f;
@@ -210,8 +224,8 @@ void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f cons
 				real local_22 = local_21 < 0.0f ? local_21 + 6.2831854820251465f : local_21 - 6.2831854820251465f;
 				real local_23 = (real)sin(local_7 == 0 ? -local_22 : local_22);
 				real local_24 = (real)cos(local_22);
-				local_15.x = local_24 * (*local_26)->x - local_23 * (*local_26)->y;
-				local_15.y = local_24 * (*local_26)->y + local_23 * (*local_26)->x;
+				local_15.x = local_24 * arg_3->x - local_23 * arg_3->y;
+				local_15.y = local_24 * arg_3->y + local_23 * arg_3->x;
 				function_2992ba(local_6, local_10, local_21, &local_15, &local_2, arg_1, arg_2, local_13, local_5, arg_5, &local_27);
 				local_6++;
 				function_2992ba(local_6, local_10, local_22, &local_15, &local_2, arg_1, arg_2, local_13, local_5, arg_5, &local_27);
@@ -341,6 +355,21 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 // 803/798/858; center-first/reverse-first initial points 836/802; reverse-first with late forward 792;
 // center-first with late reverse 797. Original geometry production restored; frame 0x11c/0x114,
 // eager radius and trace/pivot/point homes remain.
+// Split-output planar frame with native trace/sample-point/state role-name groups,
+// their pairs/all and reversed trace declarations: 755 each (fast control 749). All restored.
+// Separate transform/planar pivot plus all sweep-rotation products, with complete
+// normalizer-square/distance-square/obstacle-rotation product phases: all eight 755
+// (3351 bytes, frame 0x114, first +0x14). Eager radius remains; all restored.
+// Unsigned-word edge pair/center/both/facing/edge-facing/center-facing/all results
+// 776/779/776/775/775/790/756; all four native-dword results 752 (fast control 749).
+// Frame/radius and trace/pivot homes remain; original result widths and body restored.
+// Round 382: maximum-selection presence/absence states as bool/byte/short/long
+// 783/783/783/783/778/753/778/770; no exact match. Original ordinal and full body restored.
+// Round 175: native state/settings/source-point reference formals, all seven subsets,
+// 749 each; all five nonnull object/vector input formals 749. Original pointer
+// definition, external declaration and both real calls restored.
+// Round 393: Native planar pivot with eight coherent existing rotation-producer role orders:
+// 755/755/755/755/755/755/755/755. Original pivot, helper contracts and both transform outputs restored.
 // @retail 0x299460
 bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,
@@ -562,14 +591,25 @@ __forceinline void function_29a20e(vector3f *arg_0)
 	}
 }
 
-// score 550 (was 551): frame 0x580 agrees; retail duplicates the epilogue into both arms of the final
+// score 445 (was 493): the callee's pointer-to-parameter trick is gone, so the call site and the entry
+// schedule agree with retail; the frame homes still differ (our s_298c30 pointer at esp+0x14 and our
+// float at esp+0x10 against retail's esp+0x10 and esp+0x18), and retail keeps the flattened forward
+// vector's length on the x87 stack with fst/fabs/fcompi where ours stores and reloads it.
+// frame 0x580 agrees; retail duplicates the epilogue into both arms of the final
 // clamp and places the failure exit last (ours 82 bytes shorter), keeps the flattened forward vector's
 // length on the x87 stack and loads the reference vector's fields before multiplying. Tried: the
 // flattened length summed j first 551; the flag cleared before the forward copy 550; the flatten helper
 // returning the length 551; the existing normalize3d after clearing k 676 (retail's fst/fabs, but the
 // angle dot is one instruction short and every later line shifts); angle dot products local-first 676;
 // the failure test after the loop 550; the final clamp as if/else 547; one exit for the final heading
-// store 550; the velocity dot with the k term first 550.
+// store 550; the velocity dot with the k term first 550. Round 67: also retail lays the 12-byte
+// locals out in declaration order (position 0x3c, the 0x1f9760 output 0x48, the object pointer 0x54,
+// the perpendicular 0x58; ours puts the perpendicular first at 0x3c), and keeps each angle-update arm's
+// store and the clamp's reloads (ours hoists the angle load above the branch and sinks both stores into
+// the clamp). Descriptive names for the four vectors 550 (no slot moved); the perpendicular assigned
+// field by field 550; the angle arms as explicit `a = a - d` / `a = d + a` 550; the dead success test
+// as break-first 550; the failure statements written at each of the three gotos 583 (2622 bytes, not
+// merged).
 // @retail 0x29a190
 void function_29a190(long arg_0, long arg_1, vector3f const *arg_2, vector3f *arg_3,
 	short *arg_4, real *arg_5, bool *arg_6, bool *arg_7, short arg_8)
@@ -768,7 +808,22 @@ void function_29a190(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 			*(real *)((byte const *)local_2 + 0x50) :
 			(-*(real *)((byte const *)local_2 + 0x50) > *arg_5 ?
 				-*(real *)((byte const *)local_2 + 0x50) : *arg_5);
-		*arg_5 = *arg_5 > 1.0f ? 1.0f : (-1.0f > *arg_5 ? -1.0f : *arg_5);
+		if (*arg_5 > 1.0f)
+		{
+			*arg_5 = 1.0f;
+			*arg_6 = false;
+			*arg_4 = 0;
+			*(real *)(local_0 + 0x668) = local_6;
+			return;
+		}
+		if (-1.0f > *arg_5)
+		{
+			*arg_5 = -1.0f;
+			*arg_6 = false;
+			*arg_4 = 0;
+			*(real *)(local_0 + 0x668) = local_6;
+			return;
+		}
 		*arg_6 = false;
 		*arg_4 = 0;
 		*(real *)(local_0 + 0x668) = local_6;

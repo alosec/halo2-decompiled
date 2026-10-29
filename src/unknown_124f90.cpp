@@ -109,14 +109,6 @@ static inline s_sound_class *function_xaa8231(short class_index)
 	return &((s_sound_globals_classes_view *)g_51ebd4)->classes[class_index];
 }
 
-/* gains in decibels are kept as real bits in longs */
-static inline long decibels_add(long a, long b)
-{
-	real result = *(real *)&a + *(real *)&b;
-
-	return *(long *)&result;
-}
-
 static inline long decibels_interpolate(long a, long b, real t)
 {
 	real result = (*(real *)&b - *(real *)&a) * t + *(real *)&a;
@@ -152,8 +144,10 @@ real sound_get_minimum_distance(s_sound const *sound, long definition_index)
 	return function_xaa8231(definition->class_index)->minimum_distance;
 }
 
+/* inline: callers that keep it out of line (0x21d060) then save their scratch
+   registers around it, as retail does */
 // @retail 0x125010
-real sound_get_maximum_distance(s_sound const *sound, long definition_index)
+inline real sound_get_maximum_distance(s_sound const *sound, long definition_index)
 {
 	s_sound_definition *definition;
 
@@ -1466,6 +1460,11 @@ void looping_sound_controller_release(long index);
 // pool local 43 (stack convention); effect index local 5; byte count local 5; count pointer 5;
 // nested decrement tests 5; harness: char field, cast, `--`/`&=`, `+ 0x7f`, long/short/dword
 // temporaries, mask first, bitfield, release without the depth pragma all keep EBP or worsen.
+// Round 107: a dword decrement moves the pool to EBX (diagnostic); tests swapped 40; index parameter
+// read through its address 46; `(word)` controller index 31; `(count + 0xff) & 0x7f` 5; controller
+// pool local 5; decrement helper (kept out of line by the pragma) 29, forced inline 29.
+// Final pool-release inline/noinline declarations 5/5; controller/playback/both direct lookups
+// 58/59/81; unsigned cyclic remainder 5; shared cleanup exit 5; controller-first predicate 40.
 // @retail 0x127390
 void sound_playback_delete(long sound_index)
 {
@@ -1483,6 +1482,7 @@ void sound_playback_delete(long sound_index)
 
 /* stops a playing sound: frees its voice, lets go of its chunk, tells its
    source why it stopped and deletes it */
+__declspec(noinline) void __stdcall function_127320(long sound_index, long reason);
 // @retail 0x127320
 void __stdcall function_127320(long sound_index, long reason)
 {
@@ -2072,6 +2072,12 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 /* moves the sound system's two environments toward the two requested:
    each request takes the slot already holding it or a faded-out one and
    fades it in over its transition time; slots no request takes fade out */
+// score 17 (was 17): retail adds the clamped unknown18 step through a copy
+// register and adds the clamped unknown14 step in place; ours does the
+// opposite, so the two sites trade xmm1 and xmm2.
+// Round 29: target-first helper on the first three/four clamps 33/33; forceinline 33;
+// third clamp only 130; symmetric bounds 106; value-first 122; both fades 96;
+// clamp-first addition 33; named delta 104; target pointer 99. Original restored.
 // @retail 0x126660
 void sound_environments_update(s_sound_environment const *requests)
 {
@@ -3408,7 +3414,7 @@ struct s_128ca0
 	byte field_468[0x10];
 };
 
-// score 234 (was 234): Frame 0x49c versus 0x494; initial gain argument homes and joined integer clamp stores remain.
+// score 215 (was 215): Frame 0x49c versus 0x494; initial gain argument homes and joined integer clamp stores remain.
 // Aggregate packet 314; later packet lifetime 288; role names 241; real gain field 294; full memset 321.
 // Existing shared bit clamp 234; unsigned gain carrier 241; shared branch gain workspace 241;
 // long next-chunk candidate 254; completed-chunk early exit 241.
@@ -3438,6 +3444,26 @@ struct s_128ca0
 // Round 195: Processed-gain producer ordinary/noinline/combined declarations 234 each;
 // forceinline 373. With raw gain before pitch 268/268/268/374; the 268 forms use frame
 // 0x494. Both declaring files and original body restored; gain homes and clamp joins remain.
+// Lane 10 r13: the extra frame words are decibels_add's copies of the gain and location fields
+// (retail reads both in place and copies only the gain argument). With the file's decibels_sum:
+// outer and inner 279 (frame 0x494; a field bound through the dword type still gets a copy);
+// inner only 279; outer only 234 (identical); both with the location field cast to long 315;
+// outer (cast) with decibels_add inside 272; both, with the gain argument a dword (so only it is
+// copied, retail's loads and copies) 279: frame 0x494, but retail adds location + inner with the
+// location loaded first and shares one scale load between the pitch and the 0x1251e0 argument,
+// so ours is one instruction short and every later line shifts; that with a scale local shared by
+// the pitch and the call 258 (retail's shared scale load; the location add and the pitch/argument
+// temporaries' slots remain); with decibels_add outside 260. All restored.
+// Round 219: readonly conditional next chunk 239; complete countdown arms 215 (plain, kept); both
+// 227; word countdown 229; conditional/word 234; complete arms/word 224; all 217, with role names
+// 217. Sub-eight gains 227/229 restored; all other forms restored.
+// Round 168: Native processed real gain with original/early declaration and signed/unsigned raw bits 215 each; all four with shared scale 287. Original body restored; gain homes and clamp joins remain.
+// Round 247: sequential inner/outer/both reference-input gain sums 269/215/269; both with shared
+// scale 242, before pitch 276, before pitch with scale 256, role names 269 and entry declaration
+// with scale 242. Reference-input sequences recover frame 0x494 but regress; original body restored.
+// Round 224: Live definition/permutation/playback, definition-permutation/definition-playback/
+// permutation-playback/all/all-pitch-parameters 307/364/681/385/709/864/878/878. Definition-only
+// recovers frame 0x494 but regresses; original receivers, gain homes and complete countdown arms restored.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
@@ -3485,12 +3511,14 @@ void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization c
 		if (local_1->effect_index != NONE)
 		{
 			s_sound_controller_view *local_13 = (s_sound_controller_view *)((s_record_pool *)g_51ebd8)->data + (local_1->effect_index & 0xffff);
-			byte local_14 = 0xff;
+			byte local_14;
 			if (local_13->unknown04 != NONE)
 			{
 				local_14 = local_13->playing_count & 0x7f;
 				local_13->playing_count = (local_13->playing_count - 1) & 0x7f;
 			}
+			else
+				local_14 = 0xff;
 			local_1->unknown03 = local_14;
 		}
 		local_1->flags |= 0x200;
@@ -3651,6 +3679,22 @@ PRIVATE inline void function_1275d8(quaternionf const *arg_0, vector3f const *ar
 // fallback in both arms 583 (frame 0xe0, 2243 bytes, aligned 650 -> 621; 0x16f3a0 stays out of
 // line and the first 0x155760 call sinks); plus an `inline` redeclaration of 0x16f3a0 583;
 // g_44a2a0 with only the helper loop head 637; the helper loop head alone 597. All restored.
+// Native rotation return, pointer/quaternion-value/vector-value/both-value inputs 1009/948/965/912;
+// those native returns with the existing fallback constant 1217/1162/1176/1126. All restored.
+// Round 364: raw cross parts at each row/before outputs/before coefficients
+// 535/1050/1050; named dot parts 544; with those raw-cross boundaries
+// 542/1050/1050; joint entry coefficient declarations 1050. Original helper restored.
+// Round 219: native rotation/left/rotation+left setters 1050/647/986; velocity setter 543;
+// rotation+velocity 1045; left+velocity 646; all 986; with interpolated point setter 986. Original
+// restored.
+// Round 221: original native fallback copied from the existing immutable object by aggregate/library,
+// each with aggregate/library occlusion and field/aggregate publication: 739 each, 2085 bytes.
+// All eight restored; original helper and stack fallback retained; temporary declaration removed.
+// Round 389: query directly into the final point 563; first/second/both rotations in place
+// with complete vector snapshots 1030/1035/1008; query reuse with those graphs 1042/1047/1020;
+// complete reuse with native output-pointer return 1020. Original distinct workspaces restored.
+// Round 259: existing rotation output pointer/reference results, pointer/reference output
+// formals and ordinary/forced expansion: eight forms 535 each. Original helper restored.
 // @retail 0x127400
 void function_127400(bool arg_0)
 {

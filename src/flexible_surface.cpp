@@ -6,6 +6,8 @@
 #include "data_array.h"
 #include "object_markers.h"
 #include "effects.h"
+#include "vector_products.h"
+#include "normalize3d.h"
 #include <math.h>
 #include <xtl.h>
 
@@ -63,17 +65,6 @@ static inline bool surface_pinned(s_surface_record *record, long i)
 {
 	return (record->pinned[i >> 5] & (1 << (i & 31))) != 0;
 }
-static inline real surface_normalize(vector3f *v)
-{
-	real length = (real)sqrt(v->i*v->i + v->j*v->j + v->k*v->k);
-	if (!(fabs(length) < 0.0001f))
-	{
-		real inverse = 1.0f / length;
-		v->i *= inverse; v->j *= inverse; v->k *= inverse;
-		return length;
-	}
-	return 0.0f;
-}
 
 static inline real surface_normalize_horizontal(vector3f *v)
 {
@@ -109,11 +100,25 @@ void function_118140(long);
 void __stdcall function_118430(long);
 void function_117080(long);
 
-// score 50 (was 54): retail adds the pool data to the record offset before the store (`add eax, edx`),
+// score 50 (was 50): retail adds the pool data to the record offset before the store (`add eax, edx`),
 // reloads the pool after the `lea` of the next index, and gives the inlined next-index search other
 // registers (result edx, count edi, bitmap esi). Pool read directly at each use as in 0x1160c0 54 (reload
 // now after the `lea` as retail); with typed record arithmetic 54; with no slot local 54; with record and
 // definition locals 54; the for-loop next-index helper 50 (identical code).
+// Round 57: no slot with next before the reload 64; no slot alone 50; next with slot 54;
+// slot at function scope 50; typed record-array base 50; outer for-loop 50; alternate next
+// helper with next 54; record pointer on the pool-local body 50.
+// Round 268: explicit search result 50; unsigned slot 50; word slot 51; unsigned
+// datum handle 50; explicit search result with those three carriers 50/51/50;
+// shared out-of-line datum conversion 102. All original helper and field reads restored.
+// Round 270: native iterator called/inline 89, with CRT scalar clear 89; called/called
+// 124, with CRT 121; inline/inline 89, with CRT 89; original traversal with CRT
+// scalar clear 76, unsigned slot 76. All restored; record-address and search homes remain.
+// Coupled pool/datum/absolute-slot identities, seven subsets and entry-slot lifetime
+// on the complete role-name graph: 50/50/50/50/50/50/50/50. Original body restored.
+// Round 71: pool global read at each use 54 (retail's reload after the `lea`; aligned 16 against 18), with a
+// record local/surface_record/no slot/no slot plus surface_record 54/54/54/54; the record address stays
+// folded (`[eax + ecx + 0xc]`, retail `add eax, edx`) in every form whose store precedes the first call.
 // @retail 0x1168a0
 void __stdcall function_1168a0(real elapsed)
 {
@@ -190,10 +195,6 @@ bool function_117100(long index)
 	return result;
 }
 
-// score 23 (was 137): the prologue schedule; retail adds the pool base before reading the tag index and
-// loads the object index first, then the marker name after clearing the order tail. A one-use marker-name
-// local before the call 7 (not a match); order declared after the call 99, first 28, between record and
-// definition 24; arrays before the record 28.
 // @retail 0x1171a0
 bool function_1171a0(long index)
 {
@@ -201,7 +202,9 @@ bool function_1171a0(long index)
 	s_surface_definition *definition = surface_definition(record);
 	s_object_marker markers[6];
 	long order[6] = {0, 1, 2, 3};
-	record->attachment_count = function_b8d30(record->object_index, definition->marker_name, markers, 6, false);
+	long marker_name = definition->marker_name;
+	long object_index = record->object_index;
+	record->attachment_count = function_b8d30(object_index, marker_name, markers, 6, false);
 	long axis = 2;
 	if (definition->flags & 2) axis = 0;
 	for (long i = 0; i < record->attachment_count; ++i)
@@ -256,28 +259,67 @@ bool function_1173e0(long object_index, long index)
 	return result;
 }
 
+// score 4 (was 4): only the a/b normal.i addition schedules differ; frame and length agree.
+// Shared point differences 169; differences and cross product 108 (dropped, full); shared
+// scale normalization 166, with differences/cross 130 (dropped, full); normalize_inline 123; reversed edge
+// production 132 (dropped, full); named edges/readonly definition 130/130; cross only 165; normal-first
+// accumulation 108; out-of-line normalization 305.
+// Shared difference/cross revisit 108; triangle cursor 164; vertex base 99, both 169.
+// Plain component accumulation 109; with triangle cursor 176, vertex base 96, both 173.
+// Selected ordinary check 99/621.
+// Component-loop addition 96/633 discarded: only three points beyond the vertex-base form.
+// Shared add 99/633; with shared normalize 40/637; all normal-first 63; final vertex cursor 4/633;
+// only a normal-first 4; only b 7; only c 4; normal declared first 4; reused accumulation 260;
+// normal-field pointers 86; normalized contribution 223. Selected ordinary check 4/633.
+// Corner-pointer order acb/bac/bca/cab/cba 27/84/80/28/96; vector workspace before
+// corners 4; edge-only scope 4; loop-wide normal workspace 4. Original body restored.
+// Round 163: all triangle-index snapshots short forward/reverse and long forward/reverse
+// 7/7/7/7; corner references 4, with short indices 7; complete edge/normal role names 4;
+// complete position snapshots 274; contribution-first corner pairs ab/ac/bc 7/4/7.
+// All restored. Remaining addition pairs are normal.i, not normal.k: offsets +0x18.
 // @retail 0x117510
 void function_117510(long index)
 {
 	s_surface_record *record = surface_record(index);
 	s_surface_definition *definition = surface_definition(record);
+	s_surface_vertex *vertices = record->vertices;
 	for (long i = 0; i < definition->triangle_index_count; i += 3)
 	{
-		s_surface_vertex *a = &record->vertices[definition->triangle_indices[i]];
-		s_surface_vertex *b = &record->vertices[definition->triangle_indices[i+1]];
-		s_surface_vertex *c = &record->vertices[definition->triangle_indices[i+2]];
-		vector3f v = {b->position.x-a->position.x, b->position.y-a->position.y, b->position.z-a->position.z};
-		vector3f u = {c->position.x-a->position.x, c->position.y-a->position.y, c->position.z-a->position.z};
-		vector3f normal = {u.k*v.j-u.j*v.k, u.i*v.k-u.k*v.i, u.j*v.i-u.i*v.j};
-		surface_normalize(&normal);
-		a->normal.i += normal.i; a->normal.j += normal.j; a->normal.k += normal.k;
-		b->normal.i += normal.i; b->normal.j += normal.j; b->normal.k += normal.k;
-		c->normal.i += normal.i; c->normal.j += normal.j; c->normal.k += normal.k;
+		s_surface_vertex *a = &vertices[definition->triangle_indices[i]];
+		s_surface_vertex *b = &vertices[definition->triangle_indices[i+1]];
+		s_surface_vertex *c = &vertices[definition->triangle_indices[i+2]];
+		vector3f v, u, normal;
+		vector3d_from_points3d(&a->position, &b->position, &v);
+		vector3d_from_points3d(&a->position, &c->position, &u);
+		cross3f(&v, &u, &normal);
+		normalize3d(&normal);
+		vector3f_add(&a->normal, &normal, &a->normal);
+		vector3f_add(&b->normal, &normal, &b->normal);
+		vector3f_add(&c->normal, &normal, &c->normal);
 	}
-	for (long i = 0; i < definition->vertex_count; ++i)
-		if (surface_normalize(&record->vertices[i].normal) == 0.0f) record->vertices[i].normal = *g_4687a8;
+	s_surface_vertex *vertex = vertices;
+	for (long i = 0; i < definition->vertex_count; ++i, ++vertex)
+		if (normalize3d(&vertex->normal) == 0.0f) vertex->normal = *g_4687a8;
 }
 
+// score 139 (was 139): frame 0x1c agrees; link-base/endpoint carriers, pinned-word test and correction staging differ.
+// Shared difference 154; vertex base 155; distinct correction 161, with shared difference 161;
+// both shared scales 154, with difference 154; early rest square 155; all producers/lifetimes 162.
+// All executable forms restored.
+// frame 0x1c agrees; link/endpoint carriers, split pin test and correction scheduling differ.
+// Shared difference/scales 154; vertex base 155; distinct correction 161, with difference 161;
+// early rest square 155; all producer/correction forms 162. Endpoint short snapshots forward 176,
+// reverse 139; extended long 183 in either order; shared pin helper ties each form.
+// Reverse short snapshot ordinary check 139/741.
+// Native endpoint vertices with rest square/correction/shared-scale subsets:
+// 139/138/151/150/139/138/151/150. The one-point leads are dropped; original body restored.
+// Round 163: both pin decisions shared after/before correction, bool 201/201,
+// byte 201/201, word 189/189, long 195/195; with uniform live endpoint fields
+// bool/byte/word/long 212/212/200/206. All restored; 0x1c frame, entry/link homes
+// and correction/pin-word scheduling remain.
+// Round 264: live record/definition/both/link/record-link/definition-link/all receivers
+// 309/232/379/147/309/254/377; definition acquired before record 149. All restored;
+// frame 0x1c, entry pool/record carriers and correction/pin scheduling remain.
 // @retail 0x117790
 void __stdcall function_117790(long index)
 {
@@ -292,8 +334,10 @@ void __stdcall function_117790(long index)
 		for (long i = 0; i < definition->link_count; ++i)
 		{
 			s_surface_link *link = &definition->links[i];
-			point3f *a = &record->vertices[link->a].position;
-			point3f *b = &record->vertices[link->b].position;
+			short second_index = link->b;
+			short first_index = link->a;
+			point3f *a = &record->vertices[first_index].position;
+			point3f *b = &record->vertices[second_index].position;
 			real rest_length = link->length;
 			vector3f delta = {b->x-a->x, b->y-a->y, b->z-a->z};
 			real squared = delta.k*delta.k + delta.j*delta.j + delta.i*delta.i;
@@ -305,15 +349,15 @@ void __stdcall function_117790(long index)
 			real rest_squared = rest_length * rest_length;
 			length = (rest_squared / (length*length + rest_squared) - 0.5f) * length;
 			delta.i *= length; delta.j *= length; delta.k *= length;
-			if (!surface_pinned(record, link->a))
+			if (!surface_pinned(record, first_index))
 			{
 				a->x -= delta.i; a->y -= delta.j; a->z -= delta.k;
-				if (surface_pinned(record, link->b)) { a->x -= delta.i; a->y -= delta.j; a->z -= delta.k; }
+				if (surface_pinned(record, second_index)) { a->x -= delta.i; a->y -= delta.j; a->z -= delta.k; }
 			}
-			if (!surface_pinned(record, link->b))
+			if (!surface_pinned(record, second_index))
 			{
 				b->x += delta.i; b->y += delta.j; b->z += delta.k;
-				if (surface_pinned(record, link->a)) { b->x += delta.i; b->y += delta.j; b->z += delta.k; }
+				if (surface_pinned(record, first_index)) { b->x += delta.i; b->y += delta.j; b->z += delta.k; }
 			}
 			if (fabs(length) > 2.0f) { function_118430(index); --iteration; }
 		}
@@ -321,29 +365,50 @@ void __stdcall function_117790(long index)
 	}
 }
 
-// score 81 (was 81): the pool data base sits in ebp where retail has ebx, and retail loads origin.y before
-// forming the record pointer; the first loop is entered by a jump (padding) where retail falls through. In the
-// attachment loop retail walks a pointer at the attachment, reads the marker, then the vertex again after the
-// copy, and still ORs the pinned word in place. Attachment element pointer 103 (retail's walk and reloads, but
+// score 67 (was 67): the pool data base sits in ebp where retail has ebx; the shared difference helper gives
+// another origin/delta schedule, and the attachment walk and copy registers still differ. Earlier: the first loop
+// entered by a jump where retail falls through. Attachment element pointer 103 (retail's walk and reloads, but
 // the copy's registers rotate and the pinned OR splits into load/or/store, 521 bytes); with a vertex local for
 // the pin 103; with the existing bit_vector_set 103; fields in full with bit_vector_set 103 (identical code);
 // the definition read after the origin delta 80; between the origin copy and the delta 80.
+// Round 58: shared length-squared helper 81; shared point-difference helper 72; typed record lookup 72;
+// vertex-array base 67 kept; loop-lifetime attachment cursor 90; attachment array base 75; aggregate delta
+// with the array base 83; length helper on the best form 83; correction-only difference helper 83;
+// direct vertex reads through the attachment base 91; entry velocity declaration 67.
+// Round 209: Intrinsic attachment copy 74; with direct attachment fields 85; all three intrinsic copies 67;
+// shared unit-scale differences initial/both/both plus origin copy 67/67/67; function-scope markers 67,
+// plus direct-field intrinsic copy 85. Restored; pool base, displacement schedule and attachment
+// copy/reload remain.
+// Complete squared displacement terms 81; point/vector/marker role identities 67; both 81;
+// native word attachment ordinal 96; with squares/roles/both 105/96/105; complete graph
+// with displacement declared before point acquisition 105. Original executable body restored.
+// Round 221: Origin pointer observed at use 148; definition at every use 168; both 171;
+// record at every use 270; with origin/definition/both 252/321/303; all plus shared correction
+// difference helper 303. Original captures restored; pool-base and copy carriers remain.
+// Round 71: the squared distance as i*i + j*j + k*k (or length_sq3f) gives retail's z, y, x schedule
+// (aligned 39 -> 25) but scores 83: the data base stays in EBP (retail EBX), so the `add esi` comes one
+// load early, the code before the first loop is a byte short and a jump over the loop pad appears. On that
+// form: attachment fields read in full 106 (retail's walk from the vertex field and the second vertex
+// read, but the pin OR splits into load/or/store, 522 bytes), with bit_vector_set 106; definition read
+// after the origin copy 73 (aligned 48).
 // @retail 0x117a80
 void function_117a80(long index)
 {
 	s_surface_record *record = surface_record(index);
 	s_surface_definition *definition = surface_definition(record);
 	point3f origin = *(point3f *)(surface_object_header(record->object_index)->object + 0x30);
-	vector3f delta = {record->origin.x-origin.x, record->origin.y-origin.y, record->origin.z-origin.z};
+	vector3f delta;
+	vector3d_from_points3d(&origin, &record->origin, &delta);
 	if (delta.k*delta.k + delta.j*delta.j + delta.i*delta.i > 0.1600000113248825f)
 	{
 		delta.i = origin.x-record->origin.x; delta.j = origin.y-record->origin.y; delta.k = origin.z-record->origin.z;
+		s_surface_vertex *vertices = record->vertices;
 		for (long i = 0; i < definition->vertex_count; ++i)
 		{
-			record->vertices[i].position.x += delta.i;
-			record->vertices[i].position.y += delta.j;
-			record->vertices[i].position.z += delta.k;
-			record->vertices[i].previous = record->vertices[i].position;
+			vertices[i].position.x += delta.i;
+			vertices[i].position.y += delta.j;
+			vertices[i].position.z += delta.k;
+			vertices[i].previous = vertices[i].position;
 		}
 	}
 	vector3f velocity;
@@ -385,14 +450,33 @@ static inline dword surface_random()
 	return g_4e7408->seed >> 16;
 }
 
-// score 195 (was 209): frame 0x24 against 0x20 and the random-seed/oscillation schedule. Reading the frame
+// score 160 (was 160): frame 0x28 against 0x20 and random/time/oscillation staging remain; shared cross product reaches retail length.
+// Earlier frame 0x24 against 0x20 and the random-seed/oscillation schedule. Reading the frame
 // count again after the 0x117c80 call (as retail does) gives retail's convention: wind in EBX, definition in EDI.
+// Complete output staging 201; old before axis 199, before trigonometry 199; vector names 195;
+// three named cross terms 195; named variation 195; scalar declarations first 195;
+// projection before shared cross 182. Shared cross product 168 fast/plain, 880/880 bytes.
+// Round 219: immutable axis pointer 210; shared final double scale 168; both 210; native rotation
+// setter 168; axis/setter 210; scale/setter 168; all 210; readonly old with axis pointer 210.
+// Restored.
+// Round 381: RNG before time 199; oscillation before RNG 203; axis before/between trigs 168/168;
+// RNG-first/axis-between 199; oscillation-first/axis-first 203; rotation-scoped angle 201,
+// with shared final scale 201. Late angle reaches frame 0x20 but loses wind register; all restored.
+// Round 238: live direction inputs 209; complete output 199, with live inputs 188;
+// all three cosine products 188, with live inputs 183; sine/cosine role names 168/168;
+// separate trigonometric declarations with live inputs 209. Original snapshots and output order restored.
+// Round 32: shared initial RNG 160; shared table-index draws 160; both 160;
+// complete axis/direction CRT captures 168, with initial/table/both 160/160/160;
+// all with alternate shared RNG contract 160. Initial shared RNG retained, plain 160; frame 0x28 remains.
+// Round 264: all six lexical orders of the three rotation objects on the shared
+// cross/RNG graph 160 each; vector declarations at entry/after angle 160/160.
+// Original names and scopes restored; frame 0x28 and time/rotation staging remain.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {
 	s_surface_definition *definition = surface_definition(surface_record(index));
 	real time = (real)(g_510c54->game_time * (double)g_510c54->field_2_3);
-	dword random = surface_random();
+	dword random = random_next(&g_4e7408->seed);
 	double oscillation = cos(time * 0.005f);
 	real angle = (real)(random * (double)(1.0f/65535.0f) * oscillation * oscillation * 0.15f);
 	if (!g_55e714)
@@ -405,10 +489,12 @@ void function_117dd0(long index, vector3f *wind)
 		real sine = (real)sin(angle), cosine = (real)cos(angle);
 		vector3f axis = g_4417f0[(short)((surface_random() * 1026) >> 16)];
 		vector3f old = g_55ecd4;
+		vector3f cross;
+		cross3f(&old, &axis, &cross);
 		real projection = (axis.k*old.k + axis.j*old.j + axis.i*old.i) * (1.0f-cosine);
-		g_55ecd4.i = old.i*cosine + axis.i*projection - (axis.k*old.j-axis.j*old.k)*sine;
-		g_55ecd4.j = old.j*cosine + axis.j*projection - (axis.i*old.k-axis.k*old.i)*sine;
-		g_55ecd4.k = old.k*cosine + axis.k*projection - (axis.j*old.i-axis.i*old.j)*sine;
+		g_55ecd4.i = old.i*cosine + axis.i*projection - cross.i*sine;
+		g_55ecd4.j = old.j*cosine + axis.j*projection - cross.j*sine;
+		g_55ecd4.k = old.k*cosine + axis.k*projection - cross.k*sine;
 		function_117c80(&g_55ecd4, &g_55ecd4, 0.34906584f);
 		/* retail reloads the frame count after the call, as for an address-taken global (0x4a7c0, 0x248620) */
 		g_55e710 = *(dword const *)&g_4ba034;
@@ -419,13 +505,31 @@ void function_117dd0(long index, vector3f *wind)
 	double strength = (fabs(g_55ecd0) + 0.0075f) * definition->wind_scale * 0.08000000566244125f;
 	wind->i = (real)(g_55ecd4.i * strength); wind->j = (real)(g_55ecd4.j * strength); wind->k = (real)(g_55ecd4.k * strength);
 }
-
-// score 109 (was 152): the loop's vertex cursor points at the normal's j (retail: k), so the dot product,
+// score 109 (was 109): the loop's vertex cursor points at the normal's j (retail: k), so the dot product,
+// frame 0x48 agrees; normal.j versus normal.k cursor and weight/vector scheduling differ.
 // tangent and position sums load and schedule in another order; retail adds the acceleration and the force
 // as first operands. Weights stored after the acceleration (retail stores them first, with the current
 // weight above the previous). Tried: dot sums i,j,k / k,i,j / j,k,i 109 each; dot3f either argument order
 // 117 (744 bytes); weights before the acceleration 109; previous weight declared first 113, before the
 // acceleration 113; current weight renamed 109; acceleration and force as first addends 116 (744 bytes).
+// Shared tangent scale 109; previous point first 122; outer vertex declaration 109; native scaling loop
+// 120; scale helper/previous first 122; native additions 116; scaling/additions 154, with helper 151.
+// All restored.
+// Complete late normal snapshot 189; with symmetric displacement 226, direct drag field 194, both 186;
+// early normal snapshot 192, with displacement 225, direct drag 194, both 186. Snapshots grow the frame.
+// Round 221: Shared point-setter boundaries for both weights/both sums/both 108/108/108;
+// complete tangent/force assignment boundaries alone/with either/both point phases 195 each;
+// all with intrinsic fast-history copy 194. One-point gains rejected; all original source restored.
+// Round 216: native projected-normal scale/vertex cursor/both 103/205/187; overlap-safe
+// point-history transfers alone/projection/cursor/all 212/213/207/199; in-place projection 153.
+// On projected normal, early weights/acceleration first/force first/both/all 102/113/103/113/110;
+// weight point setters 104, with all 112. Normal.k cursor recovered at 103/102; sub-eight gains restored.
+// Round 71: the else loop through a vertex pointer (`vertex->previous = vertex->position`) gives retail's
+// else loop and its pad exactly and retail's 744 bytes (aligned 85 -> 66) but scores 116 (the main loop's
+// shifts); with acceleration and force as first addends 113 (aligned 59); with the tangent through
+// vector3f_add_scaled(..., -dot, ...) 196 (normal.k cursor, 712 bytes), plus dot3f 195; with the projection
+// through scale_vector_by_double 150 (normal.k cursor, frame changes). Retail loads acceleration.i/j into
+// a register before adding (ours folds the memory operand).
 // @retail 0x118140
 void function_118140(long index)
 {
@@ -488,10 +592,11 @@ void __stdcall function_118430(long index)
 extern s_record_pool *g_509434;
 long __stdcall function_3ddd0(long);
 void function_1cf50();
+void function_1ccb0(long);
+void function_1cd90();
 byte *g_485a80;
 // Render-state storage read by the two external state helpers.
 // Attribute pairs terminated by 255, as consumed by the retail state helper.
-byte g_43f8df[] = {59, 0, 2, 4, 2, 6, 2, 5, 2, 3, 1, 255};
 
 class c_surface_reference_view
 {
@@ -507,6 +612,29 @@ public:
 static inline byte *surface_tag(long index) { return g_4e3b44[index & 0xffff].bytes; }
 static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)(base + offset); }
 
+// score 473 (was 473): frame 0x44 versus 0x2c; attribute scans and D3D call expansion differ.
+// Integer orientation 529; null-first lighting 522; per-scan results 530; real type
+// cursors 574; existing format/state helpers 473 (kept, full); cursors/orientation
+// 573; helpers/orientation 471 (two-point addition dropped); all three 516.
+// Round 209: Fresh type-field reads/cursors 498/497; with per-scan results 482/498; existing oriented
+// tangent setter 473, tangent and normal setters 472 (one-point lead dropped); both setters with fresh
+// cursors/results 497/482. All restored; frame 0x44/0x2c, descriptor scans and outer D3D expansion remain.
+// Round 280: paired first-match scans normal/tangent and binormal/uv 514;
+// normal/binormal and tangent/uv 514; normal/uv and tangent/binormal 504;
+// triple normal/tangent/binormal 481, normal/tangent/uv 495, normal/binormal/uv 495;
+// all four 491; triple tangent/binormal/uv 487. All original scans restored.
+// Round 238: application inline/force-inline 485/485; format inline/force-inline 526/526;
+// both helpers inline or force-inline, all four combinations 528. Application-inline forms also
+// lose the 0x22a664 reduced control; all original helper declarations and calls restored.
+// Native attribute descriptor with uniform type/count observations and complete
+// result-role identities: 473/498/473/498/473/498/473/498. All original fields and scans restored.
+// Round 163: shared independent-search ordinal, original/per-search defaults
+// 473/475; with uniform descriptor-base observations 498/482; native exit-owned
+// results 510/510, with descriptor observations 533/533. All original searches
+// and APIs restored; 0x44/0x2c frame and outer vertex API expansion remain.
+// Round 264: existing 4f/2f API ordinary-inline-noinline declaration pairs, all
+// eight non-original combinations 473 each. Original declarations and body restored;
+// frame 0x44/0x2c and selective outer vertex API expansion remain.
 // @retail 0x116b00
 void __stdcall function_116b00(long tag_index, long unused, long group, long variant, long pass, long index, void *context)
 {
@@ -544,11 +672,8 @@ void __stdcall function_116b00(long tag_index, long unused, long group, long var
 	for (long i = 0; i < count; ++i) if (types[i] == 3) { uv = i; break; }
 	DWORD old_cull;
 	D3DDevice_GetRenderState(D3DRS_CULLMODE, &old_cull);
-	function_1c6b0(g_51f0f0);
-	*(byte **)(g_51f0f0 + 0x8c) = g_43f8df;
-	if (*(byte **)(g_51f0f0 + 0xcc) != g_43f8df) g_51f0f0[0x20c] = 1;
-	function_1c710(g_51f0f0);
-	function_1c710(g_51f0f0);
+	function_1ccb0(59);
+	function_1cd90();
 	function_1cf50();
 	for (long side = 0; side < 2; ++side)
 	{

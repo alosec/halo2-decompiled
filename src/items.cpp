@@ -982,7 +982,7 @@ struct s_item_flags_view_10b850
     byte flag6 : 1;
     byte flag7 : 1;
 };
-// score 813 (was 813): Frame 0x154 versus 0x12c, entry Boolean bytes and carrier/collision/rotation homes remain.
+// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
 
 // Earlier: Frame 0x154 versus 0x12c, entry Boolean bytes and collision/carrier/rotation homes still differ.
 // Earlier: Frame 0x154 versus 0x12c and Boolean/vector homes remain.
@@ -1034,6 +1034,37 @@ struct s_item_flags_view_10b850
 // Rotation cross-term declaration orders ikj/jik/jki/kij/kji 814/813/813/814/814;
 // cross-first orders jki/kij/kji 814/815/815. Frame 0x154/0x12c and Boolean/native
 // rotation homes remain. Original complete body and all helpers restored.
+// Record-returning cross pointer/reference inputs 813/813/813; first/second native
+// values 894/863, with opposite pointer 894/863; both native values 927. Original
+// result publication, helpers and complete body restored.
+// Round 219: Independent motion-copy/gravity-update/floor-speed observation order masks 1-7; all
+// with projection role names; existing direct-output side cross helper:
+// 812/813/812/863/862/863/862/862/921. Original body restored.
+// Round 373: Reused scalar axis components in ijk order, with sine/cosine/both
+// snapshots 850/894/879/909; kji axis input order with the same four forms
+// 864/845/879/909. Frame remains 0x154; all original helpers and body restored.
+// Round 159: Native attachment fields 813; step field at each use and with attachment fields 893/893;
+// named bounce coefficient and with attachment fields 887/887; step/coefficient and all three 893/893;
+// direct bound selection 813. Native collision location/object-node/material/all layouts 887/863/859/894.
+// All restored. Coefficient and collision layouts reach frame 0x148 without an eligible gain.
+// Round 281: existing record-returning cross for all four orientation outputs 1084
+// (4298 bytes, frame 0x148). Complete cosine products before projection, all six
+// computation orders 825 each; kji before crosses/stores 824/824 (4103 bytes).
+// All original helpers and body restored; frame and native Boolean/vector homes remain.
+// Round 378: Existing shared scaled-add at all four sites, with carrier/settled/position
+// polarity masks 0-7: 813/896/814/896/874/899/874/899. Original accumulation,
+// result carriers, full body and helpers restored; frame 0x154/0x12c remains.
+// Round 161: Native item flag8/flag29/state0/flag8-29/flag8-state/flag29-state/all-three 813 each;
+// late flag14 view 846. Original actual item declaration and whole body restored.
+// Round 176: Library input captures in rotation/dot/both/cross/rotation-cross/dot-cross/all
+// 931/1229/1381/1400/1517/1736/1829; all with library matrix copy 1829.
+// Original producers, scalar input captures, in-place behavior and flow operands restored.
+// Round 33: Rotation source-component, turn-term and projection scalar role-name subsets,
+// then complete cosine-product roles: 813/813/813/813/813/813/813/813. Original body and all helpers restored.
+// Round 388: Native item receiver reference, with pointer/reference vector outputs and
+// both complete formal orders, 813 each; reversed original pointer contract 813;
+// reversed private dot formals on the latter and two new native receiver contracts 813 each.
+// Original rotation helper, all four callers and every dot tuple restored; frame remains 0x154.
 // @retail 0x10b850
 void __stdcall function_10b850(long object_index)
 {
@@ -1331,6 +1362,9 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // 183/183; native/const/library paired values 190/190/190. All one-use snapshots restored; matrix
 // gain only three, despite retail length. Original helper, contact/event code and includes
 // retained.
+// Round 259: Complete contact/event/owner/impulse workspace-name families, eight
+// lexical home orders 154 each. Original helper and all workspaces restored; release
+// byte RMW/tail and event-point homes remain.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {

@@ -142,7 +142,21 @@ union s_185be7
 };
 
 #pragma inline_depth(1)
-// score 790 (was 875): Frame 0xe0 and state/output carriers agree; the flag bits are now set with retail's branches. Left: settings/zero homes, clamp-arm placement and unthreaded repeated flag tests.
+// score 780 (was 780): Frame 0xe0 and state/output carriers agree; control-root EBX versus NONE, settings/zero homes and flag joins remain.
+// Earlier 780 (was 780): Frame 0xe0 and state/output carriers agree; the flag bits are now set with retail's branches. Left: settings/zero homes, clamp-arm placement and unthreaded repeated flag tests.
+// Round 86 (fast, aligned counts in brackets, 383 at the start): turn rates assigned in both arms (retail loads
+// the stored rates on the else path) 788 [367] and the attachment index NONE per path (retail sets it on each
+// failure path) 780 [356], both kept; on 780: selected input as long (retail movzx/test edx/setg) 779 [348];
+// both selector bytes in byte locals identical; SET_FLAG(flags, bit, value) as 0x187b30 uses, in place of the
+// mask helper 922 at 3740 bytes [310: the repeated tests thread as retail, flag section now retail's length,
+// homes shifted 4]; PIN on the two settings clamps 934/951 (retail's field re-reads, lockstep worse); named
+// clamped rates 789 [401]; magnitude sum terms swapped identical.
+// Frame 0xe0 and state/output carriers agree; the flag bits are now set with retail's branches. Left: settings/zero homes, clamp-arm placement and unthreaded repeated flag tests.
+// Retail gives EBX to NONE for its seven early uses (the input test, the three clears, the two index tests and
+// the short `cmp dx, bx`) because it re-reads the control global at the flag test; ours keeps the global
+// there from entry. Round 30 (fast): the flag read through a file-local forceinline accessor 790 (still
+// held); powf 790; settings pointer read after the clears 799; the global named in a local before its test
+// 790; magnitude3d (0x24590) defined inline in its file 821 (still held; 0x24590 matches either way).
 // Round 9 (lane 10): retail clamps the range fraction in place (division result and clamp share its slot)
 // and threads every repeated flag test (one test, both stores per arm), testing the selected input as a
 // dword. Fraction computed then clamped into itself 790 (same code); fraction declared before its bounds
@@ -215,6 +229,44 @@ union s_185be7
 // between bound and range 793; clamp helper as a ternary 970; byte input with raw values 790; action
 // input in a byte local 790. Retail tests a repeated condition once for consecutive flags; ours
 // re-tests it, and retail places the clamp's upper arms after the hot path.
+// Round 66 (fast): input record copied before the two turn rates (stores after the copy as retail) 789;
+// a re-evaluating PIN macro on the two settings-field clamps (retail re-reads those fields in each arm)
+// 934, on every clamp but the magnitude one 971; the selected input byte as a long (retail's movzx edx /
+// test edx / setg / jle) 790, aligned 289 -> 281, the repeated test still not threaded; long input plus
+// early copy 789. Retail also reads the two selector bytes as one dword (EBX, then BL/BH).
+// Round 209: Caller-local inline declarations for magnitude/curve/response, all seven nonempty subsets, and
+// all three with separate noinline declarations: 780 each. All restored; frame/state/output agree, but
+// control-root reload, NONE/settings/zero homes and repeated flag tests remain.
+// Round 241: Shared clamp formal orders (0,2,1)/(1,0,2)/(1,2,0)/(2,0,1)/(2,1,0): 780/780/780/780/780;
+// independent result with orders (0,2,1)/(1,0,2)/(2,0,1): 926/926/926. Original helper, calls and body
+// restored.
+// Round 243: Native latch fields 88/8e/8f/90/93, paired 8e+8f/88+90 and all five:
+// 780/780/780/780/777/780/780/777. Three-point nonmatch gains rejected; original byte fields restored.
+// Round 164: shared retained-response weight 926; paired bounded contributions staged
+// before blending 932; both 932; paired interpolated rates 780; rates with weight/
+// contributions/both 926/932/934; existing native forward-vector setter 920. All restored.
+// Round 235: Native output flag dword/analog field/trailing bytes, paired and complete layouts
+// 780/780/778/780/778/778/778; complete trailing dword 812. Two-point leads rejected; original output layout
+// and body restored.
+// Round 379: Packed word/dword selectors 820/778; word with selected-input promotion/conditional flags/both 821/820/821; dword with promotion/conditional flags/both 777/778/777. Gains at most three rejected; original layout, helper and body restored.
+// DH round 215: Pointer-output flag-helper formal orders (0,2,1)/(1,0,2)/(1,2,0)/
+// (2,0,1)/(2,1,0) 780 each; canonical byte/long predicate inputs 780/778; actual
+// destination reference 780. Two-point lead rejected; original contracts and body restored.
+// DH round 218: whole input snapshot aggregate with native/byte/word/both scratch initialization
+// 1046/1077/1046/1072; same four with readonly settings 1046/1077/1046/1072.
+// All grow to 3817 or 3837 bytes versus retail 3777; complete original body restored.
+// Round 184: Separate current/previous angle outputs and carried direction, masks 1-7, then all
+// three with entry output declarations: [780, 780, 780, 969, 975, 969, 975, 975]. Angle splits tie;
+// direction copies grow the frame and regress. Original unions, vector reuse, helpers, values and
+// complete body restored.
+// Round 265: adjacent selected-input/input-five/input-four shared-mask groups, all
+// seven subsets and complete grouping with full-width selection 813/895/1033/954/990/990/1031/1030.
+// Original individual masks, selected byte and complete body restored.
+// Round 186: Native input memcpy with byte/word scratch aggregate masks 0-3 780/979/942/979; memmove
+// with the same masks 1109/1104/1111/1102. Complete original body and helpers restored.
+// Round 188: existing reset whole-output void/result/subobject-reference/whole-output-reference
+// contracts, forced then ordinary inline: 961/961/780/961/961/961/780/961.
+// Complete output contracts grow the frame; original reset and whole body restored.
 // @retail 0x185be0
 void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s_186ab4 *arg_4, s_186ab3 *arg_5)
 {
@@ -307,8 +359,8 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
             vector3f local_15;
             function_1a4900(arg_1, &arg_5->field_28, &local_15);
             local_1->field_68 = local_15.k > 0.0f;
-            real local_16 = local_13.field_0[0];
-            real local_17 = local_13.field_0[1];
+            real local_16;
+            real local_17;
             if (local_1->field_68 && arg_2 > 0.0f && (fabs(local_13.field_0[0]) > 0.0001f || fabs(local_13.field_0[1]) > 0.0001f ||
                 fabs(arg_5->field_0) > 0.0001f || fabs(arg_5->field_4) > 0.0001f))
             {
@@ -317,6 +369,11 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
                 real local_20 = function_185be1(*(real *)(local_0 + 4), 0.0f, 1.0f) * local_15.k;
                 local_16 = function_185be1(local_15.i * local_18, -3.1415927410125732f, 3.1415927410125732f) * local_20 + (1.0f - local_19) * local_13.field_0[0];
                 local_17 = function_185be1(local_15.j * local_18, -1.5707963705062866f, 1.5707963705062866f) * local_20 + (1.0f - local_19) * local_13.field_0[1];
+            }
+            else
+            {
+                local_16 = local_13.field_0[0];
+                local_17 = local_13.field_0[1];
             }
             arg_5->field_10 = local_16 * arg_2;
             arg_5->field_14 = local_17 * arg_2;
@@ -381,13 +438,14 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
         bool local_10 = local_3[11] == 1;
         if (local_10 && local_1->field_2e == NONE && arg_4->field_0)
         {
-            long local_11 = NONE;
+            long local_11;
             if (local_1->field_0 != NONE)
             {
                 byte *local_12 = function_185be2(local_1->field_0);
                 short local_13 = *(char *)(local_12 + 0x212);
-                if (local_13 != NONE) local_11 = *(long *)(local_12 + local_13 * 4 + 0x218);
+                local_11 = local_13 != NONE ? *(long *)(local_12 + local_13 * 4 + 0x218) : NONE;
             }
+            else local_11 = NONE;
             if (((byte *)arg_4->field_0)[6] > 0x7f || ((byte *)arg_4->field_0)[7] > 0x7f) local_10 = false;
             if (local_11 != NONE && !function_100f70(local_11) && local_2.field_44 * local_2.field_44 + local_2.field_40 * local_2.field_40 > 0.64000004529953f) local_10 = false;
         }

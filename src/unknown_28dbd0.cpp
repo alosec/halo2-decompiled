@@ -131,8 +131,24 @@ __forceinline s_object_ai_data *function_28dbd5(s_handler_object_view *arg_0)
 // DL round 156: per-component add/sub 233; two vector passes 225; native sums with
 // loop/aggregate input and loop/scalar output 225/229/229/225; parallel scalar sums
 // mutable/const 227/227. All increase the frame to 0x120; original helper restored.
+// Round 194: aggregate/zero-initialized/CRT-zeroed direction inputs 186/245/263;
+// each with delayed sine after direction scale 180/239/258; aggregate/CRT-zeroed
+// inputs with cross before projection 209/246. Six-point 180 form restored.
 // Round 210: Native heading aggregate/zero-first with forward publication after draws,
 // before draws, between draws and after axis: 186/256/251/196 each. Original restored.
+// Lane 4 r106 (fast): retail's arms read like pointer helpers (the random arm adds an {r1, r2, 0} offset:
+// z is stored back unchanged), but launch through vector3f_scale 186, both offsets through a point
+// add-scaled helper 192, both 192, the random offset as a vector added to the point 236 (1220 bytes),
+// all three 253, the rotation sum through vector3f_add then the cross subtraction 224.
+// Round 241: complete heading through the existing vector setter 228; with delayed sine
+// 220, early cross 236, both offset helpers 237, delayed sine/offsets 225, velocity scale
+// 228, delayed sine/velocity 220, and all three 219. Original body/helpers restored.
+// Round 63: delayed first cross scale 228; scalar crosses on delayed-sine schedules 180/209;
+// typed request field 186; own-address zero read 247; direct sums on delayed-sine schedules 216/224;
+// inline library forward copy 186. Original helper and body restored.
+// Round 262: complete fixed-axis/constructed-point/both values 234/324/352;
+// each with two-use source index 234/324/352; readonly axis/point-setter
+// publication on the full graph 352/368. Original values, helpers and body restored.
 // @retail 0x28dbd0
 long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, bool arg_4)
 {

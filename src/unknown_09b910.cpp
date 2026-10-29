@@ -1221,8 +1221,8 @@ void function_107840(long device_index, long unit_index);
 bool __stdcall function_cd4e0(long unit_index, short hand, bool flag);
 __declspec(noinline) void *function_122c10(long group_tag, long tag_index);
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
-    point3f const *point, vector3f const *normal, long index, bool attached, long object_index,
-    short node_index, bool alternate);
+    point3f const *point, vector3f const *normal, word index, bool attached, long object_index,
+    long node_index, bool alternate);
 struct s_location;
 void function_fd560(long projectile_index, long object_index, short node_index,
     point3f const *point, struct s_location const *location);

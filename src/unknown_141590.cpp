@@ -134,6 +134,11 @@ static inline void cross_product3d_1417b0(vector3f const *a, vector3f const *b, 
 
 /* the rotation that takes one unit vector to another */
 // score 237 (was 237): Frame 0x1c versus 0x24 and quaternion/cross spill overlap remain.
+// Lane 6 r85: helper with `s` computed first 302 (s and the doubled scalar hoisted above the matrix copy,
+// the doubled scalar spilled twice as retail, frame 0x20, constants one xmm lower); with vector-first
+// products 302 (identical code); with plain half-angle locals 291; doubled scalar after the cross 301;
+// scalar cross terms 281 (retail's 0x24 frame and first difference +0x71, doubled scalar in the parameter
+// home and [esp+0x10] as retail; quaternion registers permuted); scalar cross with `s` first 306.
 // frame 0x1c versus 0x24 and quaternion/cross-term spill reuse differ;
 // quaternion scale loop 302; shared axis scale loop 294.
 // shared rotation cross 241; shared cross scale loop 294.
@@ -189,6 +194,16 @@ static inline void cross_product3d_1417b0(vector3f const *a, vector3f const *b, 
 // lower than retail's from entry: 1.0 in xmm6 not xmm7); with the axis scaled at construction 342;
 // with `0.f > cosine` 272; with rotation.w assigned before the axis 257 (1317 bytes). Original body
 // and helpers restored.
+// Round 82: sine-branch axis k/j/i 327; transform scalars s/w2/dot 289, s/dot/w2 302; w assigned
+// before the axis 302; scale computed before the axis 301. Original body and helpers restored.
+// Round 259: Complete native cross-vector initializer with all six coefficient
+// schedules 237/285/240/240/302/289; immutable cross with dot/w2/s and s/w2/dot
+// 237/289. Original helper/body restored; frame and quaternion/cross spill reuse remain.
+// Round 25: paired native point storage 237; independent scalar crosses on it 281;
+// shared axis construction with scalar crosses 237 (frame 0x24, first +0x7d);
+// pre-copy doubled scalar/quadratic scalar 302/347; scalar-first construction 272;
+// shared input dot and shared repair crosses on the shared-axis base 237 each.
+// Original body and both helpers restored.
 // @retail 0x1417b0
 void matrix4x3_rotation_between_vectors(
 	transform4x3f *matrix,
@@ -795,7 +810,8 @@ void function_143250(
 	}
 }
 
-// score 2265 (was 2265): Frame 0x300 agrees; rotation input and basis/matrix homes remain.
+// score 2039 (was 2039): Full frame 0x300 agrees; rotation input and basis/matrix homes remain.
+// Full frame 0x300 agrees; rotation input and basis/matrix homes remain.
 // Frame pointer 3182; separate adjacent basis pairs [0,1] 2278, [2,3] 2320,
 // [4,5] 2286, [6,7] 2329.
 // Round 310: second-band product trees 2265; second-band full trees 2265; third-band
@@ -811,6 +827,34 @@ void function_143250(
 // Round 349: Independent basis pairs [1,2] 2323; [2,6] 2355; [0,7] 2287; [3,7] 2290; [5,6] 2317 (fast; control 2266).
 // Round 357: Separate first/second/third band tables 2268/2268/2266; independent
 // basis pairs [0,2] 2314, [1,4] 2288 (fast; control 2266). Opening body restored.
+// Band-exclusive scalar workspaces scoped across each actual 3/5/7 matrix producer,
+// all seven subsets and earlier shared declarations: 2266 each (fast control 2266; full 2265).
+// Round 224: complete input matrix copy with retained workspace, library/value/aggregate
+// 2275/2275/2289; direct matrix library/const/aggregate 2371/2367/2364; direct input table
+// library/const 2371/2366 (fast control 2266). Original workspace and expressions restored.
+// All four initial negatives at stores/early 2266/2266; shared matrix receiver
+// at entry/publication 2163/2163; receiver with inlined negatives 2169/2169;
+// receiver with early negatives 2149/2149 (fast control 2266). Last form 2148
+// plain, 10390/10773 bytes; receiver used throughout the genuine shared matrix.
+// Round 385: Current shared-matrix receiver graph: independent native rows, all seven subsets
+// 2240/2237/2348/2191/2294/2286/2397; all with component-order names 2397 (fast control 2149; full
+// 2148). Original workspace and complete body restored; input and basis/matrix homes remain.
+// Round 259: complete matrix publication after its scalar producer, band masks
+// 2/4/6/1/3/5/7 in row order and all in original order: fast
+// 2067/2156/2236/2145/2051/2156/2263/2263 (control 2149). First and second
+// matrices in row order kept: 2050 plain, 10488/10773 bytes; every scalar
+// computation, input, precision boundary, order guard and helper tuple unchanged.
+// Round 263: complete column publication of band masks 1/2/3/4/5/6/7 and all reversed columns
+// 2051/2040/2040/2199/2199/2210/2210/2291 (fast control 2051). Five-by-five columns kept: 2039 plain,
+// 10500/10773 bytes; every scalar producer and helper tuple unchanged.
+// Round 268: native two-dimensional band rows, masks 1/2/3/4/5/6/7,
+// 2055/2088/2107/2123/2146/2179/2279; all arrays at entry 2279
+// (fast control 2040, full 2039). Original shared matrix and publication orders restored;
+// full frame 0x300, rotation admission and basis/matrix homes remain.
+// Round 271: exact first/second/both native retail matrix store orders after complete
+// producers, 2040/2051/2051; separate shared 49-element array alone/first/second/both
+// 2279/2279/2294/2294; complete graph with basis identity 2294 (fast control 2040).
+// Original shared workspace, publications and complete polynomial body restored.
 // @retail 0x143600
 real *function_143600(real const *rotation, unsigned long order, real const *coefficients, real *result)
 {
@@ -2174,23 +2218,24 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	workspace.term_5 = rotation[0];
 	workspace.term_6 = rotation[2];
 	workspace.term_7 = rotation[3];
-	workspace.matrix[2] = workspace.term_1;
-	workspace.matrix[0] = workspace.term_0;
-	term_8 = 0.0f - workspace.term_2;
+	real *matrix = workspace.matrix;
 	term_9 = rotation[7];
-	workspace.matrix[3] = term_8;
-	term_10 = workspace.term_4;
-	workspace.matrix[4] = term_10;
+	term_8 = 0.0f - workspace.term_2;
 	term_11 = 0.0f - workspace.term_3;
-	result[0] = coefficients[0];
 	term_12 = 0.0f - term_9;
 	term_13 = 0.0f - workspace.term_6;
-	workspace.matrix[1] = term_12;
-	workspace.matrix[5] = term_13;
-	workspace.matrix[6] = workspace.term_7;
-	workspace.matrix[7] = term_11;
-	workspace.matrix[8] = workspace.term_5;
-	function_143250(result + 1, 3, &workspace.matrix[0], coefficients + 1);
+	term_10 = workspace.term_4;
+	result[0] = coefficients[0];
+	matrix[0] = workspace.term_0;
+	matrix[1] = term_12;
+	matrix[2] = workspace.term_1;
+	matrix[3] = term_8;
+	matrix[4] = term_10;
+	matrix[5] = term_13;
+	matrix[6] = workspace.term_7;
+	matrix[7] = term_11;
+	matrix[8] = workspace.term_5;
+	function_143250(result + 1, 3, &matrix[0], coefficients + 1);
 	if (order <= 2) return result;
 	term_14 = workspace.term_7;
 	term_15 = sqrt(5.0);
@@ -2215,11 +2260,9 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_34 = term_14 * term_18;
 	term_35 = term_33 + term_34;
 	term_36 = term_19 * term_17;
-	workspace.matrix[0] = term_35;
 	term_37 = term_20 * term_14;
 	term_38 = 0.0f - term_37;
 	term_39 = term_38 - term_36;
-	workspace.matrix[1] = term_39;
 	term_40 = sqrt(15.0);
 	term_41 = term_15 * term_40;
 	term_42 = (real)term_41;
@@ -2227,42 +2270,34 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_44 = term_43 * term_20;
 	term_45 = term_44 * term_19;
 	term_46 = term_45 * 0.200000003f;
-	workspace.matrix[2] = term_46;
 	term_47 = term_19 * term_18;
 	term_48 = term_20 * term_16;
 	term_49 = 0.0f - term_48;
 	term_50 = term_49 - term_47;
-	workspace.matrix[3] = term_50;
 	term_51 = term_17 * term_14;
 	term_52 = term_18 * term_16;
 	term_53 = term_52 - term_51;
 	term_54 = workspace.term_2;
 	term_55 = term_54 * term_18;
-	workspace.matrix[4] = term_53;
 	term_56 = workspace.term_6;
 	term_57 = term_17 * term_56;
 	term_58 = 0.0f - term_57;
 	term_59 = term_58 - term_55;
-	workspace.matrix[5] = term_59;
 	term_60 = workspace.term_4;
 	term_61 = term_60 * term_17;
 	term_62 = term_20 * workspace.term_2;
 	term_63 = term_62 + term_61;
-	workspace.matrix[6] = term_63;
 	term_64 = term_43 * workspace.term_4;
 	term_65 = term_64 * term_20;
 	term_66 = term_65 * -0.200000003f;
 	term_67 = term_20 * term_56;
-	workspace.matrix[7] = term_66;
 	term_68 = workspace.term_4;
 	term_69 = term_68 * term_18;
 	term_70 = term_67 + term_69;
 	term_71 = workspace.term_2;
-	workspace.matrix[8] = term_70;
 	term_72 = term_71 * term_17;
 	term_73 = term_56 * term_18;
 	term_74 = term_72 - term_73;
-	workspace.matrix[9] = term_74;
 	term_75 = term_21;
 	term_76 = term_71 * term_56;
 	term_77 = term_76 * 0.13333334f;
@@ -2274,7 +2309,6 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_83 = term_81 * term_43;
 	term_84 = term_83 * term_78;
 	term_85 = term_82 - term_84;
-	workspace.matrix[10] = term_85;
 	term_86 = term_23;
 	term_87 = term_86 * term_43;
 	term_88 = term_64 * term_71;
@@ -2288,14 +2322,12 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_96 = term_91 + term_95;
 	term_97 = 0.5f;
 	term_98 = term_93 * term_97;
-	workspace.matrix[11] = term_96;
 	term_99 = workspace.term_4;
 	term_100 = term_99 * term_99;
 	term_101 = term_100 - term_98;
 	term_102 = term_26;
 	term_103 = term_102 * term_97;
 	term_104 = term_101 - term_103;
-	workspace.matrix[12] = term_104;
 	term_105 = term_27;
 	term_106 = term_29;
 	term_107 = term_105 * term_43;
@@ -2308,7 +2340,6 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_114 = term_113 * term_78;
 	term_115 = term_111 + term_114;
 	term_116 = workspace.term_2;
-	workspace.matrix[13] = term_115;
 	term_117 = term_116 * term_116;
 	term_118 = term_117 * term_78;
 	term_119 = term_56 * term_56;
@@ -2330,12 +2361,10 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_135 = term_134 * 0.0333333351f;
 	term_136 = term_132 + term_135;
 	term_137 = workspace.term_2;
-	workspace.matrix[14] = term_136;
 	term_138 = term_125 * term_56;
 	term_139 = term_137 * term_16;
 	term_140 = 0.0f - term_139;
 	term_141 = term_140 - term_138;
-	workspace.matrix[15] = term_141;
 	term_142 = workspace.term_3;
 	term_143 = term_142 * workspace.term_2;
 	term_144 = workspace.term_4;
@@ -2345,10 +2374,8 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_148 = workspace.term_3;
 	term_149 = term_64 * term_148;
 	term_150 = term_149 * -0.200000003f;
-	workspace.matrix[17] = term_150;
 	term_151 = workspace.term_4;
 	term_152 = term_148 * term_56;
-	workspace.matrix[16] = term_147;
 	term_153 = term_151 * term_16;
 	term_154 = term_131 + term_29;
 	term_155 = term_153 + term_152;
@@ -2357,13 +2384,10 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_158 = term_56 * term_16;
 	term_159 = term_26;
 	term_160 = term_157 - term_158;
-	workspace.matrix[19] = term_160;
 	term_161 = term_21;
 	term_162 = term_161 - term_22;
-	workspace.matrix[20] = term_162;
 	term_163 = term_24;
 	term_164 = term_163 - term_23;
-	workspace.matrix[21] = term_164;
 	term_165 = term_25;
 	term_166 = term_165 * term_43;
 	term_167 = term_159 * term_43;
@@ -2373,9 +2397,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_171 = term_166 * term_170;
 	term_172 = term_167 * term_170;
 	term_173 = term_171 - term_172;
-	workspace.matrix[22] = term_173;
 	term_174 = term_30;
-	workspace.matrix[23] = term_169;
 	term_175 = 0.5f;
 	term_176 = term_174 * term_175;
 	term_177 = term_154 * term_175;
@@ -2383,9 +2405,32 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_179 = term_31;
 	term_180 = term_179 * term_175;
 	term_181 = term_178 - term_180;
-	workspace.matrix[18] = term_155;
-	workspace.matrix[24] = term_181;
-	function_143250(result + 4, 5, &workspace.matrix[0], coefficients + 4);
+	matrix[0] = term_35;
+	matrix[5] = term_59;
+	matrix[10] = term_85;
+	matrix[15] = term_141;
+	matrix[20] = term_162;
+	matrix[1] = term_39;
+	matrix[6] = term_63;
+	matrix[11] = term_96;
+	matrix[16] = term_147;
+	matrix[21] = term_164;
+	matrix[2] = term_46;
+	matrix[7] = term_66;
+	matrix[12] = term_104;
+	matrix[17] = term_150;
+	matrix[22] = term_173;
+	matrix[3] = term_50;
+	matrix[8] = term_70;
+	matrix[13] = term_115;
+	matrix[18] = term_155;
+	matrix[23] = term_169;
+	matrix[4] = term_53;
+	matrix[9] = term_74;
+	matrix[14] = term_136;
+	matrix[19] = term_160;
+	matrix[24] = term_181;
+	function_143250(result + 4, 5, &matrix[0], coefficients + 4);
 	if (order <= 3) return result;
 	term_182 = workspace.term_0;
 	term_183 = sqrt(2.0);
@@ -2648,7 +2693,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_440 = term_209;
 	term_441 = term_439 + term_438;
 	term_442 = 0.0142857144f;
-	workspace.matrix[0] = term_441;
+	matrix[0] = term_441;
 	term_443 = term_211;
 	term_444 = term_443 * term_442;
 	term_445 = term_440 * term_442;
@@ -2666,7 +2711,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_457 = term_222;
 	term_458 = term_427 * term_457;
 	term_459 = term_449 * term_457;
-	workspace.matrix[1] = term_456;
+	matrix[1] = term_456;
 	term_460 = 0.0357142873f;
 	term_461 = term_458 * term_460;
 	term_462 = term_459 * term_460;
@@ -2677,13 +2722,13 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_467 = term_463 + term_466;
 	term_468 = term_227;
 	term_469 = term_468 * 0.107142858f;
-	workspace.matrix[2] = term_467;
+	matrix[2] = term_467;
 	term_470 = term_231;
 	term_471 = term_470 * term_460;
 	term_472 = term_471 - term_469;
 	term_473 = term_472 * term_202;
 	term_474 = term_233;
-	workspace.matrix[3] = term_473;
+	matrix[3] = term_473;
 	term_475 = term_235;
 	term_476 = term_474 * term_464;
 	term_477 = term_236;
@@ -2696,7 +2741,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_484 = term_483 - term_480;
 	term_485 = term_243;
 	term_486 = term_485 + term_241;
-	workspace.matrix[4] = term_484;
+	matrix[4] = term_484;
 	term_487 = term_202;
 	term_488 = term_486 * term_487;
 	term_489 = term_238;
@@ -2721,7 +2766,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_508 = term_252;
 	term_509 = term_508 * 1.5f;
 	term_510 = term_237;
-	workspace.matrix[5] = term_507;
+	matrix[5] = term_507;
 	term_511 = term_251;
 	term_512 = term_511 * 0.25f;
 	term_513 = term_509 + term_512;
@@ -2737,7 +2782,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_523 = term_522 * workspace.term_2;
 	term_524 = term_518 - term_520;
 	term_525 = workspace.term_6;
-	workspace.matrix[6] = term_524;
+	matrix[6] = term_524;
 	term_526 = term_212;
 	term_527 = term_526 * term_521;
 	term_528 = term_207;
@@ -2761,7 +2806,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_546 = term_545 * term_543;
 	term_547 = term_55;
 	term_548 = term_547 * term_539;
-	workspace.matrix[7] = term_544;
+	matrix[7] = term_544;
 	term_549 = term_546;
 	term_550 = term_549 + term_548;
 	term_551 = term_139;
@@ -2782,7 +2827,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_566 = term_565 * term_266;
 	term_567 = term_566 * term_558;
 	term_568 = term_567 * -0.0238095243f;
-	workspace.matrix[8] = term_564;
+	matrix[8] = term_564;
 	term_569 = term_266 * term_558;
 	term_570 = 0.0238095243f;
 	term_571 = term_569 * term_543;
@@ -2795,13 +2840,13 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_578 = term_577 * term_570;
 	term_579 = term_574 - term_578;
 	term_580 = workspace.term_4;
-	workspace.matrix[9] = term_579;
+	matrix[9] = term_579;
 	term_581 = term_264;
 	term_582 = term_581 * term_580;
 	term_583 = term_582 * term_543;
 	term_584 = term_583 * workspace.term_3;
 	term_585 = term_584 * 0.142857149f;
-	workspace.matrix[10] = term_585;
+	matrix[10] = term_585;
 	term_586 = term_265;
 	term_587 = term_586 * term_266;
 	term_588 = term_587 * term_580;
@@ -2816,7 +2861,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_597 = term_596 * term_570;
 	term_598 = term_593 - term_597;
 	term_599 = term_268;
-	workspace.matrix[11] = term_598;
+	matrix[11] = term_598;
 	term_600 = term_269;
 	term_601 = term_600 * workspace.term_3;
 	term_602 = term_260;
@@ -2839,7 +2884,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_619 = term_618 * workspace.term_2;
 	term_620 = term_603 + term_619;
 	term_621 = term_244;
-	workspace.matrix[12] = term_617;
+	matrix[12] = term_617;
 	term_622 = term_206;
 	term_623 = term_621 * term_622;
 	term_624 = term_623 * workspace.term_6;
@@ -2854,7 +2899,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_633 = term_629 + term_632;
 	term_634 = term_117;
 	term_635 = term_634 * term_457;
-	workspace.matrix[13] = term_633;
+	matrix[13] = term_633;
 	term_636 = term_627 * workspace.term_0;
 	term_637 = term_636 * 0.0285714287f;
 	term_638 = term_192;
@@ -2885,7 +2930,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_663 = term_273;
 	term_664 = term_663 * term_266;
 	term_665 = term_55;
-	workspace.matrix[14] = term_662;
+	matrix[14] = term_662;
 	term_666 = term_266 * term_665;
 	term_667 = term_666 * workspace.term_4;
 	term_668 = term_664;
@@ -2908,7 +2953,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_685 = term_679 + term_684;
 	term_686 = term_217;
 	term_687 = term_686 * 0.75f;
-	workspace.matrix[15] = term_685;
+	matrix[15] = term_685;
 	term_688 = term_274;
 	term_689 = term_688 * workspace.term_0;
 	term_690 = term_689 - term_687;
@@ -2925,7 +2970,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_701 = term_227;
 	term_702 = term_701 * 0.0357142873f;
 	term_703 = term_702 + term_471;
-	workspace.matrix[16] = term_700;
+	matrix[16] = term_700;
 	term_704 = term_276;
 	term_705 = term_703 * term_704;
 	term_706 = term_704 * term_274;
@@ -2934,7 +2979,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_709 = term_705 - term_708;
 	term_710 = term_235;
 	term_711 = term_710 * term_675;
-	workspace.matrix[17] = term_709;
+	matrix[17] = term_709;
 	term_712 = term_320;
 	term_713 = term_712 * workspace.term_6;
 	term_714 = term_713 * 2.0f;
@@ -2949,7 +2994,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_723 = term_722 * 0.5f;
 	term_724 = term_721 - term_723;
 	term_725 = term_276;
-	workspace.matrix[18] = term_724;
+	matrix[18] = term_724;
 	term_726 = term_281;
 	term_727 = term_726 * term_725;
 	term_728 = term_270;
@@ -2993,7 +3038,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_766 = term_259;
 	term_767 = term_766 * workspace.term_2;
 	term_768 = term_767 * 0.0571428575f;
-	workspace.matrix[19] = term_765;
+	matrix[19] = term_765;
 	term_769 = term_258;
 	term_770 = term_769 * term_481;
 	term_771 = term_770 - term_768;
@@ -3026,7 +3071,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_798 = term_797 * term_481;
 	term_799 = term_792 - term_798;
 	term_800 = term_283;
-	workspace.matrix[20] = term_799;
+	matrix[20] = term_799;
 	term_801 = term_287;
 	term_802 = term_801 * term_800;
 	term_803 = term_802 * term_784;
@@ -3061,7 +3106,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_832 = 0.0285714287f;
 	term_833 = term_825 + term_831;
 	term_834 = term_264;
-	workspace.matrix[21] = term_833;
+	matrix[21] = term_833;
 	term_835 = term_303;
 	term_836 = term_835 * term_834;
 	term_837 = term_836 * term_832;
@@ -3092,7 +3137,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_862 = term_317;
 	term_863 = term_862 * term_315;
 	term_864 = term_863 * 0.0714285746f;
-	workspace.matrix[22] = term_861;
+	matrix[22] = term_861;
 	term_865 = term_318;
 	term_866 = term_865 * term_283;
 	term_867 = term_866 * term_274;
@@ -3111,11 +3156,11 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_880 = term_327;
 	term_881 = term_880 + term_325;
 	term_882 = term_881 * 1.5f;
-	workspace.matrix[23] = term_879;
+	matrix[23] = term_879;
 	term_883 = term_274;
 	term_884 = term_883 * workspace.term_4;
 	term_885 = term_884 - term_882;
-	workspace.matrix[24] = term_885;
+	matrix[24] = term_885;
 	term_886 = term_331;
 	term_887 = term_886 * term_315;
 	term_888 = term_887 * term_875;
@@ -3139,7 +3184,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_906 = term_901 - term_905;
 	term_907 = 0.0285714287f;
 	term_908 = term_900 * term_442;
-	workspace.matrix[25] = term_906;
+	matrix[25] = term_906;
 	term_909 = term_342;
 	term_910 = term_909 * term_907;
 	term_911 = term_910 + term_908;
@@ -3182,7 +3227,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_948 = term_944 * term_938;
 	term_949 = term_948 * 0.042857144f;
 	term_950 = 0.021428572f;
-	workspace.matrix[26] = term_942;
+	matrix[26] = term_942;
 	term_951 = term_366;
 	term_952 = term_951 * term_950;
 	term_953 = term_947 * term_442;
@@ -3209,7 +3254,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_974 = term_973 * 0.042857144f;
 	term_975 = term_971 - term_974;
 	term_976 = term_371;
-	workspace.matrix[27] = term_975;
+	matrix[27] = term_975;
 	term_977 = term_635;
 	term_978 = term_977 * workspace.term_7;
 	term_979 = term_978 * 0.0285714287f;
@@ -3242,7 +3287,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1006 = term_1003 - term_1005;
 	term_1007 = term_664;
 	term_1008 = term_1007 * workspace.term_3;
-	workspace.matrix[28] = term_1006;
+	matrix[28] = term_1006;
 	term_1009 = term_378;
 	term_1010 = term_1009 * term_266;
 	term_1011 = term_1010 * term_442;
@@ -3281,11 +3326,11 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1044 = term_1041 - term_1043;
 	term_1045 = term_274;
 	term_1046 = term_393;
-	workspace.matrix[29] = term_1032;
+	matrix[29] = term_1032;
 	term_1047 = term_1045 * workspace.term_7;
 	term_1048 = term_1044 + term_1047;
 	term_1049 = 0.0357142873f;
-	workspace.matrix[30] = term_1048;
+	matrix[30] = term_1048;
 	term_1050 = term_396;
 	term_1051 = term_1050 * term_1049;
 	term_1052 = term_1046 * term_1049;
@@ -3308,14 +3353,14 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1069 = term_1068 * 0.25f;
 	term_1070 = term_1067 - term_1069;
 	term_1071 = term_267;
-	workspace.matrix[31] = term_1061;
+	matrix[31] = term_1061;
 	term_1072 = workspace.term_4;
 	term_1073 = term_1071 * term_1072;
 	term_1074 = term_1073 * 2.0f;
 	term_1075 = term_1070 + term_1074;
 	term_1076 = term_727;
 	term_1077 = term_1076 * workspace.term_3;
-	workspace.matrix[32] = term_1075;
+	matrix[32] = term_1075;
 	term_1078 = term_271;
 	term_1079 = term_1078 * term_266;
 	term_1080 = term_1079 * term_1072;
@@ -3358,7 +3403,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1117 = term_1116 * 0.00476190494f;
 	term_1118 = term_1114 + term_1117;
 	term_1119 = term_414;
-	workspace.matrix[33] = term_1118;
+	matrix[33] = term_1118;
 	term_1120 = term_635;
 	term_1121 = term_1120 * workspace.term_5;
 	term_1122 = term_1121 * 0.0285714287f;
@@ -3389,7 +3434,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1147 = term_1146 * 0.0571428575f;
 	term_1148 = term_1143 - term_1147;
 	term_1149 = term_287;
-	workspace.matrix[34] = term_1148;
+	matrix[34] = term_1148;
 	term_1150 = term_262;
 	term_1151 = term_1149 * term_1150;
 	term_1152 = term_1137 * term_1150;
@@ -3419,10 +3464,10 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1176 = term_1175 - term_309;
 	term_1177 = term_1176 - term_313;
 	term_1178 = term_1177 - term_311;
-	workspace.matrix[36] = term_1178;
+	matrix[36] = term_1178;
 	term_1179 = term_324;
 	term_1180 = term_1179 * term_1150;
-	workspace.matrix[35] = term_1172;
+	matrix[35] = term_1172;
 	term_1181 = 0.0119047621f;
 	term_1182 = term_1180 * term_1181;
 	term_1183 = term_319;
@@ -3444,11 +3489,11 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1199 = term_325;
 	term_1200 = term_1199 * term_264;
 	term_1201 = term_1200 * 0.0714285746f;
-	workspace.matrix[37] = term_1195;
+	matrix[37] = term_1195;
 	term_1202 = term_1198;
 	term_1203 = term_1202 - term_1201;
 	term_1204 = 0.0238095243f;
-	workspace.matrix[38] = term_1203;
+	matrix[38] = term_1203;
 	term_1205 = term_329;
 	term_1206 = term_1205 * term_1204;
 	term_1207 = term_331;
@@ -3467,7 +3512,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1220 = term_348;
 	term_1221 = term_1216 + term_1219;
 	term_1222 = term_346;
-	workspace.matrix[39] = term_1221;
+	matrix[39] = term_1221;
 	term_1223 = 0.5f;
 	term_1224 = term_1220 * term_1223;
 	term_1225 = term_1222 * term_1223;
@@ -3482,7 +3527,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1234 = term_1233 - term_338;
 	term_1235 = term_1234 + term_352;
 	term_1236 = term_1235 + term_350;
-	workspace.matrix[40] = term_1236;
+	matrix[40] = term_1236;
 	term_1237 = term_363;
 	term_1238 = term_360;
 	term_1239 = term_1237 * term_481;
@@ -3507,7 +3552,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1258 = term_1257 - term_1255;
 	term_1259 = 0.75f;
 	term_1260 = term_376;
-	workspace.matrix[41] = term_1258;
+	matrix[41] = term_1258;
 	term_1261 = term_373;
 	term_1262 = term_1261 * term_1259;
 	term_1263 = term_1260 * term_1259;
@@ -3523,7 +3568,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1273 = term_1270 - term_1272;
 	term_1274 = term_378;
 	term_1275 = 0.0357142873f;
-	workspace.matrix[42] = term_1273;
+	matrix[42] = term_1273;
 	term_1276 = term_382;
 	term_1277 = term_1276 + term_380;
 	term_1278 = term_1277 * term_1247;
@@ -3537,7 +3582,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1286 = term_1282 + term_1285;
 	term_1287 = term_387;
 	term_1288 = term_1287 * 0.0714285746f;
-	workspace.matrix[43] = term_1286;
+	matrix[43] = term_1286;
 	term_1289 = term_385;
 	term_1290 = term_1289 * 0.0357142873f;
 	term_1291 = term_1290 - term_1288;
@@ -3547,12 +3592,12 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1295 = term_1294 * term_1275;
 	term_1296 = term_1293 - term_1295;
 	term_1297 = term_416;
-	workspace.matrix[44] = term_1296;
+	matrix[44] = term_1296;
 	term_1298 = term_393;
 	term_1299 = term_1298 * 0.107142858f;
 	term_1300 = term_1299 - term_1051;
 	term_1301 = term_1300 * term_202;
-	workspace.matrix[45] = term_1301;
+	matrix[45] = term_1301;
 	term_1302 = term_400;
 	term_1303 = term_1302 * term_457;
 	term_1304 = term_1303 * term_1275;
@@ -3563,7 +3608,7 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1309 = term_1308 * term_457;
 	term_1310 = term_202;
 	term_1311 = term_1304 - term_1309;
-	workspace.matrix[46] = term_1311;
+	matrix[46] = term_1311;
 	term_1312 = term_404;
 	term_1313 = term_1312 * term_1310;
 	term_1314 = term_1313 * term_481;
@@ -3601,8 +3646,8 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1346 = term_414;
 	term_1347 = term_1346 * 1.5f;
 	term_1348 = term_1345 + term_1347;
-	workspace.matrix[47] = term_1335;
-	workspace.matrix[48] = term_1348;
-	function_143250(result + 9, 7, &workspace.matrix[0], coefficients + 9);
+	matrix[47] = term_1335;
+	matrix[48] = term_1348;
+	function_143250(result + 9, 7, &matrix[0], coefficients + 9);
 	return result;
 }

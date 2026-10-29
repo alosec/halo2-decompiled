@@ -615,6 +615,7 @@ static __forceinline void index_state_flags_update_31660(s_index_state_31660 *st
 // edi); short flags in the second-group pass only 62 (that pass then matches; not kept, the two
 // passes would differ in type). A short flag word gives retail's group-loop code but widens the
 // constant 0x20000 pass's mask (retail 0xdfff), so the constant and runtime passes may not share code.
+// score 77 (was 98): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)
@@ -634,7 +635,7 @@ void function_31660(long index, long tag, s_index_state_31660 *state,
         byte flag13 = (flag12_source | flag13_source) & 1;
         index_state_flags_update_31660(state, true, first_group, second_group, false, flag13 != 0, flag12 != 0);
     }
-    if (state->first->count > 0 && (*definition & 4) && state->first->count > 1)
+    if (state->first->count > 0 && TEST_FIELD_BIT((*definition >> 2) & 1) && state->first->count > 1)
     {
         *(real *)((byte *)entry + 0xf8) = 1.0f;
         // Retail's final store is reached only with a null output argument.

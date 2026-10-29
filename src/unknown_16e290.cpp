@@ -565,7 +565,7 @@ struct s_16e290_bitmap_group
 
 bool texture_cache_bitmap_request(s_bitmap_data *bitmap);
 
-static inline s_bitmap_data *bitmap_group_get_bitmap(s_16e290_bitmap_group *group, short bitmap_index)
+static inline s_bitmap_data *bitmap_group_bitmap(s_16e290_bitmap_group *group, long bitmap_index)
 {
 	return (s_bitmap_data *)(group->bitmaps + bitmap_index * 0x74);
 }
@@ -587,9 +587,7 @@ bool function_16e7b0(long index)
 			{
 				s_16e290_bitmap_group *group = (s_16e290_bitmap_group *)g_4e3b44[bsp->unknown1c & 0xffff].bytes;
 
-				s_bitmap_data *bitmap = bitmap_group_get_bitmap(group, (short)bitmap_index);
-
-				result = texture_cache_bitmap_request(bitmap);
+				result = texture_cache_bitmap_request(bitmap_group_bitmap(group, bitmap_index));
 			}
 		}
 	}
@@ -613,9 +611,7 @@ bool function_16e820(long index)
 			{
 				s_16e290_bitmap_group *group = (s_16e290_bitmap_group *)g_4e3b44[bsp->unknown1c & 0xffff].bytes;
 
-				s_bitmap_data *bitmap = bitmap_group_get_bitmap(group, (short)bitmap_index);
-
-				result = texture_cache_bitmap_request(bitmap);
+				result = texture_cache_bitmap_request(bitmap_group_bitmap(group, bitmap_index));
 			}
 		}
 	}
@@ -1413,7 +1409,9 @@ void function_170630(long player_index);
 // (EDX), first (EAX), then second (ECX), so retail declares it (second, first, out); an
 // inline forwarder with that order changes nothing. Round 52: forwarder 7; address from
 // the array element at each argument 7; shifted flag test 7; state pointer inside the guard 7;
-// state before the array pointer 36. Earlier:
+// state before the array pointer 36. This round: forwarder with the (second, first, out)
+// order 7; the three channel addresses as named locals in five orders 7 each; the observer
+// element through a local 28; the command test before the state pointer 18. Earlier:
 // three channel-pointer orders 7/7/7; delta pointer early/late 7/7;
 // command pointer 7; guard return 7; motion-channel view 7.
 // scalar channel addresses 7; timer cursor after delta 11; countdown for 7;
@@ -1422,6 +1420,17 @@ void function_170630(long player_index);
 // Single current/previous/delta pointers 7/7/7; direct observer array 36;
 // scoped state/time 18; command flags snapshot 7; countdown entry/before delta/split 7/7/7;
 // fixed base pointers 7.
+// This round: the three channel addresses as named locals in four orders (out/first/second
+// and three others) 7 each and byte-identical to the inline form, the command pointer as a
+// local 7, the state pointer from the observer element 7: the compiler always prepares the
+// three addresses in the argument-register order, while retail prepares out, first, second.
+// Native observer timer/channel fields 7/7/7; full typed receiver 7; timer end pointer
+// with byte/typed receiver 23/23; word/byte countdown 7/7.
+// Round 70: the observer base takes the register of the last-evaluated argument (the leftmost,
+// out in EDX); out from the timer cursor instead 3 (base then in ECX, all else as retail;
+// diagnostic only), so the fix is the callee's consistent (second, first, out) reorder.
+// Real-element receiver 7; forceinline (second, first, out) forwarder 7; timer cursor from the
+// element with state inside the guard 7; named delta 7; state-taking inline call helper 7.
 // @retail 0x16fe90
 void function_16fe90(long user_index)
 {
@@ -1460,7 +1469,48 @@ struct s_camera_clip_reference_16ebf0
 	byte field_14[4];
 };
 
-// score 209 (was 209): Frame 0x98 agrees; saved-state/input-output direction homes and clipping convention remain.
+// score 209 (was 209): frame 0x98 agrees. Left: retail passes the narrow flag to 0x171d00 in DL (its
+// fraction pointer in EAX, the slot shared with the early state spill at 0x34), BLOCKED-BY 0x171d00
+// (src/unknown_170d70.cpp is held: it takes the flag on the stack and the end point in EDX here, ESI in
+// retail); retail struct-copies the state's forward/up/position through pointers it keeps (forward in
+// EBX, up spilled at 0x3c, position in EBP) and reads the cross-product inputs back from the copied
+// locals; the saved-state/direction homes follow.
+// Round 67 (fast): forward/up struct copies and the matrix position copy through three state pointers
+// (each also used for the store-back) 212 (964 bytes; copy pattern as retail, forward local 0x24 for
+// retail 0x1c); that without the volatile saved state 212 (state spilled at 0x1c for retail 0x34); the
+// pointers set up in retail's order 213; with the position set from scalars 230; with the fraction
+// declared at function scope 212.
+// MiniMax R run 2026-10-29: forward/up declared at the top and struct-copied from the state, the matrix
+// position struct-copied, cross products with the operands swapped 204 (gain 5, under the keep bar; not kept).
+// Earlier forms on frame 0x9c: shared cross product 234, scoped matrix 234, working-vector matrix copies
+// 232, aggregate copies with shared cross product 249, role names 249, combined scope 249; direct view
+// call 235; entry point workspace 234; direct narrow predicate 229; entry probe workspaces 234; mode
+// branch 240; state first 253; early native declarations 229; split input/output vectors 229; scalar
+// position 223; full-width narrow 231 (frame 0x98); point setter 223; setter with wide predicate 253;
+// combined native copies 287; scalar-workspace role names 229; scale assigned after copies 229; later
+// position pointer 226; no inner position alias 229; directions published first 229; scalar vector
+// aggregates 229; later position pointer with native direction copies 237; complete direction memcpy
+// 237; direct input cross with late workspaces 244; later up pointer 253; native point carried through
+// composition 229; matrix-axis cross with late workspaces 241; adjustment memcpy 223; native directions
+// with point setter 251; fraction-only scope 223; location-only scope 223; geometry fields at each use
+// 223; interpolation setter 223; transformation scope 223; branch-assigned narrow 220; transformation
+// names 223; direction fields at use 213; native copies with branch-assigned narrow 240; direction
+// fields with branch-assigned narrow 209 (plain).
+// Round 215: signed-byte narrow 218; signed/unsigned-word narrow 208/208; function-scope narrow 209;
+// missing-location-first 209; recovered-frame saved-state name 209; composition output memcpy 209;
+// consistent direction/position role names 209; native byte predicate 218; invalid-reference-first 209;
+// recovered-frame forward-only/up-only copy 217/217; shared cross product 209; saved-state alias
+// removed 254; split high-bit predicate 209. Native player receiver 209; input/basis/composition/
+// publication component loops 1165/1161/1157/265; native receiver with input/composition loops
+// 1165/1157; all native copy phases 1210. Existing matrix constructor: scalar inputs 290; direct fields
+// 379; native/library direction inputs 330/330; native point 299; direct fields/library point 388;
+// native/library complete copies 332/332. Input/axis/output/all order 209 each; point/point-axis order
+// 209/209; cross ji/kj 209/209; input-axis order 209. On frame 0x98, split input/output direction
+// values: scalar 209; native 222; library copies 222; scalar values with native basis inputs 246; native
+// values with native basis inputs 222; library copies with native basis inputs 222; native values with
+// entry output declarations 222; scalar values with entry output declarations 209. Individual direction,
+// matrix, adjustment, point, fraction, location and position local names 209 each.
+// Frame 0x98 agrees; saved-state/input-output direction homes and clipping convention remain.
 // Earlier: Frame 0x98 agrees; saved-state and native direction/point homes plus the held narrow/fraction convention remain.
 // Earlier 209 (was 209): Frame 0x98 now agrees; saved-state/direction homes and narrow/fraction convention differ.
 // Frame 0x98 agrees; saved-state/direction homes and clipping convention remain.
@@ -1503,6 +1553,28 @@ struct s_camera_clip_reference_16ebf0
 // 222; split scalar values with entry output declarations 209. All restored.
 // Individual direction, matrix, adjustment, point, fraction, location and position local names
 // 209/209/209/209/209/209/209/209.
+// Round P208: distinct native composition output, scalar/native inputs and native/library
+// output copies 257/276/257/276; the same four with entry output declaration 257/276/257/276.
+// All frames 0xcc versus 0x98; original alias-safe composition and native homes restored.
+// Original-position pointer before view queries: scalar/native directions, word truth, both
+// 252/260/248/271; those four with entry matrix declaration 252/260/248/271. All restored.
+// Round 227: Shared vector setters at input/basis/composition transfers, all subsets, then publication 209/216/219/226/229/237/240/289.
+// Original body and all helpers restored.
+// Round 202: Existing saved-state lifetime after view/basis/composition/output-copy/validation
+// phases 239/239/239/239/256; view/composition/validation with entry fraction 239/239/256.
+// Original saved-state initialization, qualifier and fraction lifetime restored.
+// Typed state/saved-state/both field receivers 209/209/209; each with native
+// directions 221/221/221; both with native position 232, with complete native
+// direction/position copies 204 (five-point gain dropped). Original types and body restored.
+// Round 383: complete retained/adjusted/both interpolation contributions 209 each;
+// complete conditional plane products alone/with either/both interpolation producers 209 each;
+// all products with word truth 208 (one-point gain dropped). Original products and body restored.
+// Round 170: Plain two-attempt validation loop, byte/short/long/dword ordinal, then native input copies
+// on the same loop graph 657/658/656/656/695/706/704/704. Original validation, copies and qualifier restored.
+// Round 34: Complete wide-truth producer, bool/byte/short/long 218/218/208/208; with
+// native forward/up inputs 210/210/214/213. Original narrow truth, copies and body restored.
+// Round 261: separate out-of-line validation/mode/location declaration subsets, all seven
+// 209; separate composition declaration 209. Original declarations and complete body restored.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {

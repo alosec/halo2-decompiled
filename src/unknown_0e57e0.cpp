@@ -52,6 +52,8 @@ void __stdcall function_e57e0(long object_index)
 
 /* in an animation-driven mode (4 or 5), moves the biped by the offset, or
    keeps the offset at +0x3f8 for later */
+// Reading the x position through a raw cast, rather than through the position pointer, gives
+// retail's operand order for the x sum (offset first); the y and z sums keep the position first.
 // @retail 0xe5840
 void function_e5840(long object_index, vector3f const *offset, bool move)
 {
@@ -65,7 +67,7 @@ void function_e5840(long object_index, vector3f const *offset, bool move)
 			point3f const *position = (point3f const *)(biped + 0x64);
 			point3f point;
 
-			point.x = position->x + offset->i;
+			point.x = *(real const *)(biped + 0x64) + offset->i;
 			point.y = position->y + offset->j;
 			point.z = position->z + offset->k;
 			function_b75a0(object_index, &point, NULL, NULL, NULL, false);

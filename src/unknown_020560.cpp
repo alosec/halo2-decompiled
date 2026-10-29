@@ -64,6 +64,12 @@ PRIVATE __forceinline long texture_floor(real value)
 // existing bit setter 132; callee inline declarations 4; ternary bitmap 104; one-expression level
 // 202; one conditional bias 115; bitmap set on both arms 90; named frame time 108. Compile-only
 // screens: only removing the whole bitmap block gives EAX; ~450 forms of that block keep EDX.
+// Round 206: update noinline contract 4; level clamp arms 4; adjusted clamp arms 4; both clamps 4;
+// real remainder 4; double remainder 4; integral bias floor 4; both floor boundaries 4.
+// Explicit floor result 85; native SSE floor helper 124. Original helper restored.
+// Round 69: bitmap/bias at function scope 4/4; reversed level compare 4; `>=` magnitude test 90;
+// tag local for the NONE test 4. Harness: EAX only when the bitmap is a constant zero; a constant
+// bitmap in the arm, an unconditional bitmap or a call without it keep EDX.
 // @retail 0x1b0a0
 void __stdcall function_1b0a0(byte *state)
 {

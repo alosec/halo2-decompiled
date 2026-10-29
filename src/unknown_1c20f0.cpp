@@ -16,6 +16,15 @@ struct s_slot_81
 	byte unknown11[0x40 - 0x11];
 };
 
+struct s_slot_81_data
+{
+	long flags;
+	bool unknown04;
+	byte unknown05[0x34 - 5];
+};
+
+typedef char assert_slot_81_data_size[(sizeof(s_slot_81_data) == 0x34) ? 1 : -1];
+
 /* the prop state as these callbacks read it: the position at +4 */
 struct s_prop_state_point_81
 {
@@ -31,6 +40,14 @@ struct s_structure_bsp_pathfinding_view
 	s_pathfinding_data *pathfinding;
 };
 
+/* function_1697c0 fills 0x5c bytes; the shared result type covers the first
+   0x4c (as path_transitions.cpp's transition buffer) */
+struct s_collision_result_buffer_1697c0
+{
+	s_collision_result_1697c0 result;
+	byte unknown4c[0x5c - 0x4c];
+};
+
 /* the priority this handler always reports */
 short g_47ffa8 = 3;
 
@@ -40,9 +57,39 @@ void __stdcall actor_behavior_81_update48(long object_index, long unused);
 
 static __forceinline long real_to_long(real value);
 
-// score 81 (was 81): our stack frame is 16 bytes smaller than retail's, so
-// every local
-// offset is shifted and the loop is laid out differently.
+/* the point t along vector from point */
+static inline void point_along_vector_1c19b0(point3f const *point, vector3f const *vector, real t, point3f *result)
+{
+	result->x = vector->i * t + point->x;
+	result->y = vector->j * t + point->y;
+	result->z = vector->k * t + point->z;
+}
+
+// score 23 (was 23): frame 0xd4 and registers agree; the end point sits at 0x40 below the second
+// rounded tick count (0x4c) and the actor-position temp (0x50), where retail has 0x48 above 0x40/0x44,
+// and its stores are scheduled before the call pushes. Round 152: full 0x5c collision buffer 69;
+// point-along-vector steps in place 163, through an `ahead` point 54; single exit 23; end/ahead
+// declarations swapped 23; tick locals at loop scope 23; end or delta at function scope 23/30.
+// Final call after the loop behind a found flag 337; function-scope ticks,
+// endpoint lexical names and location/node declarations 23.
+// A compile-only frame probe puts both 4-byte slots below end only with the final call after the
+// loop (a found flag); that real form changes the convention and scores 337.
+// Earlier: frame 0xc4 versus 0xd4; direction/counter roles and endpoint scheduling differ.
+// The collision workspace remains 16 bytes smaller; local offsets and loop layout differ.
+// Reused step scale 228; with shared delta 228, endpoint setter 220, both 220;
+// with start setter 228, start/delta 228, both setters 227, all three 227.
+// Reused actor-position pointer, first-use lifetime, origin/start declarations
+// and common-exit combinations 114, 82, 114, 82, 190, 154, 190, 154.
+// Round 219: Complete per-step direction snapshot with short/char/byte/long induction
+// 240/240/240/226; direct char/byte/long/word induction 210/210/164/81. All restored; frame
+// 0xc4/0xd4 and direction/counter roles remain.
+// Round 266: existing point producer point/vector/both inputs by value 310/310/453;
+// output-pointer return 23; with point/vector/both values 310/310/453;
+// complete point-value result 316. Original helper and every producer restored.
+// Round 31: force-inlined point helper, delta/end and function-scope tick declarations,
+// sample_end/contact_end names, location/node and start/origin declaration orders 23 each.
+// Round 393: origin input/trace/collision library copies in seven subsets 23 each;
+// native initial origin with both output copies 215. Original producers and complete body restored.
 // @retail 0x1c19b0
 bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_type_f17a25 *path)
 {
@@ -55,14 +102,15 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 	real distance;
 	point3f start;
 	short i;
-	s_collision_result_1697c0 collision;
+	s_collision_result_buffer_1697c0 collision;
+	bool result = false;
 
 	if (bsp->pathfinding_count > 0)
 	{
 		pathfinding = bsp->pathfinding;
 	}
 	height = actor->position.z;
-	collision.unknown24 = NONE;
+	collision.result.unknown24 = NONE;
 	distance = 0.0f;
 	origin = actor->position;
 	if (actor->unknown27c.unknown10 != NONE)
@@ -72,34 +120,30 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 		function_26c590(pathfinding, &actor->position, actor->unknown27c.unknown10, NONE, *direction_slot, 5.0f, NULL, &trace);
 		origin = trace.point;
 		distance = trace.distance;
-		if (function_1697c0(0x1808c2d, &origin, g_4687bc, actor->unknown018, NONE, &collision))
+		if (function_1697c0(0x1808c2d, &origin, g_4687bc, actor->unknown018, NONE, &collision.result))
 		{
-			origin = collision.point;
+			origin = collision.result.point;
 		}
 	}
-	start.x = g_4687b0->i * 0.2f + origin.x;
-	start.y = g_4687b0->j * 0.2f + origin.y;
-	start.z = g_4687b0->k * 0.2f + origin.z;
+	point_along_vector_1c19b0(&origin, g_4687b0, 0.2f, &start);
 	for (i = 0; i < 4; i++)
 	{
 		real scale = (i + 1) * 0.25f;
+		point3f ahead;
 		point3f end;
 		vector3f delta;
 		long node_index;
 		s_type_c3b527 location;
 
-		end.x = g_4687b0->i * 0.4f + (direction->i * scale + origin.x);
-		end.y = g_4687b0->j * 0.4f + (direction->j * scale + origin.y);
-		end.z = g_4687b0->k * 0.4f + (direction->k * scale + origin.z);
-		delta.i = end.x - start.x;
-		delta.j = end.y - start.y;
-		delta.k = end.z - start.z;
-		if (function_1697c0(0x1808c2d, &start, &delta, actor->unknown018, NONE, &collision))
+		point_along_vector_1c19b0(&origin, direction, scale, &ahead);
+		point_along_vector_1c19b0(&ahead, g_4687b0, 0.4f, &end);
+		vector3d_from_points3d(&start, &end, &delta);
+		if (function_1697c0(0x1808c2d, &start, &delta, actor->unknown018, NONE, &collision.result))
 		{
 			break;
 		}
-		node_index = function_26d100(g_4687b0, (long *)&location, &collision, &end);
-		if (!(height + 0.1f > collision.point.z) || !(2.0f > origin.z - collision.point.z))
+		node_index = function_26d100(g_4687b0, (long *)&location, &collision.result, &end);
+		if (!(height + 0.1f > collision.result.point.z) || !(2.0f > origin.z - collision.result.point.z))
 		{
 			break;
 		}
@@ -109,26 +153,29 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 
 			if ((node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, pathfinding)))
 			{
-				long ticks;
-				long ticks_extra;
-				real seconds = g_510c54->field_2_3;
-				real seconds_extra;
+				long ticks = real_to_long(g_510c54->field_2_3);
+				long ticks_extra = real_to_long(g_510c54->field_2_3 * 1.5f);
 
-				ticks = real_to_long(seconds);
-				seconds_extra = g_510c54->field_2_3 * 1.5f;
-				ticks_extra = real_to_long(seconds_extra);
-				return function_1f34b0(actor_index, &actor->position, direction,
+				result = function_1f34b0(actor_index, &actor->position, direction,
 					(i + 1) * 0.25f + distance + 0.5f, (short)((real)ticks * distance + (real)ticks_extra));
+				break;
 			}
 		}
-		height = collision.point.z;
+		height = collision.result.point.z;
 	}
-	return false;
+	return result;
 }
 
-// score 80 (was 80): the actor index is taken from the stack into EDX in
-// retail and from a
-// global into ESI here, so the whole prologue is a different length.
+// score 80 (was 80): actor/sentinel allocation and rotated prop walk differ at the 0x0c frame.
+// Actor is held in ESI after the global lookup; retail masks its stack index first and uses EBX.
+// Tail advance after selection 96; shared direction setter 96; selected-result gate 97,
+// with setter 97; actor read at every use 85, with setter 84; both 85, with setter 84.
+// Round 86: the walk through function_26be00/function_26be30 gives retail's unrotated loop and
+// index-first actor lookup, but NONE stays an immediate (retail keeps it in EAX, the actor in
+// EBX): 97, with separate true/false returns 95, + position pointer 94, three declaration
+// orders 95/94/95; a private copy of the prop iterator 99, with separate returns 96.
+// Current index before lookup/next cursor, rejection guards, reused post-scan
+// decision and closest-first combinations 80, 80, 85, 85, 80, 80, 85, 85.
 // @retail 0x1c1d50
 bool __stdcall function_1c1d50(long actor_index, s_type_f17a25 *path)
 {
@@ -247,13 +294,15 @@ bool __stdcall function_1c2120(long actor_index, s_slot *slot)
 	return true;
 }
 
-// score 64 (was 64): the object pointer is kept in ESI here and reloaded from
+// The post-header slot state and output-before-clear initialization match retail.
+// score 0 (was 64): the object pointer is kept in ESI here and reloaded from
 // the stack
-// there, and the flag byte is written as a constant 0 here.
+// there, and the flag byte is written from AL here and as a constant 0 in
+// retail.
 // @retail 0x1c2130
 bool __stdcall function_1c2130(long actor_index, s_slot *slot)
 {
-	s_slot_81 *state = (s_slot_81 *)slot;
+	s_slot_81_data *state = (s_slot_81_data *)slot->unknownc;
 	s_actor_view *actor = actor_get(actor_index);
 
 	if (!actor->unknown605 && !actor->unknown264 && actor->unknown040)
@@ -265,17 +314,17 @@ bool __stdcall function_1c2130(long actor_index, s_slot *slot)
 
 		actor->unknown5e8 = 1;
 		buffer = ai_scratch_buffer_get();
+		flag = false;
 		memset(&request, 0, sizeof(request));
 		request.unknown015 = true;
-		flag = false;
 		request.type = 4;
 		function_2605d0(actor_index, &request, 0, (long)&unknown, buffer, &flag);
 		if (actor->unknown5e8 == 0)
 		{
-			state->unknown10 = true;
+			state->unknown04 = true;
 		}
 		ai_scratch_buffer_release(buffer);
-		if (!state->unknown10)
+		if (!state->unknown04)
 		{
 			s_path_settings settings;
 			s_path_source source;

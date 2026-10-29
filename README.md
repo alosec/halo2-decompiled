@@ -65,13 +65,13 @@ Analysis, documentation and review do not need it.
 
 ## Status
 
-Decompilation is under way, and 9824 retail functions now match byte for
+Decompilation is under way, and 9926 retail functions now match byte for
 byte. The checker reports:
 
 ```
-matched 9824 of 11326 game functions (1612805 of 2786206 bytes, 57.89%)
-matched 1181 of 1436 Havok functions (159264 of 290362 bytes, 54.85%)
-matched 11008 of 17654 functions in scope (1772107 of 3904218 bytes, 45.39%)
+matched 9926 of 11326 game functions (1642455 of 2786206 bytes, 58.95%)
+matched 1248 of 1436 Havok functions (164141 of 290362 bytes, 56.53%)
+matched 11189 of 17654 functions in scope (1807483 of 3904218 bytes, 46.30%)
 ```
 
 Matched code so far includes:
@@ -237,17 +237,28 @@ Thank you to everyone who has contributed to this project so far:
   Python tests on every pull request, and disc-image tests.
 - [@mrv777](https://github.com/mrv777): an analysis of the capture the flag and
   assault objects.
-- [@RWayne93](https://github.com/RWayne93): online messages, and a documented
-  near miss.
-- [@andrewnakas](https://github.com/andrewnakas): the inventory fix that took
-  WMADEC's data tables out of the function list.
+- [@RWayne93](https://github.com/RWayne93): online messages, a documented
+  near miss, and the match of 0x119280, the creature death timer.
+- [@andrewnakas](https://github.com/andrewnakas): the inventory fixes that
+  took WMADEC's data tables and the DSOUND, XNET and D3D section tails out of
+  the function list, and dozens of fixes checked against retail in the render
+  state, sound, AI and camera code, including disabled drafts brought to
+  compile and behave as retail.
 - [@Roasted-Codes](https://github.com/Roasted-Codes): the first contributor
   matches in Havok, the physics library: its collision-pair dispatch and
   child-agent code.
 - [@ccgman123](https://github.com/ccgman123): a careful diagnosis of seven
-  near misses, and the cleanup that removed an in-body pragma from 0x9d1c0.
-- [@marioag0412](https://github.com/marioag0412): the match of 0x1e3480,
-  an object's actor index.
+  near misses, the cleanup that removed an in-body pragma from 0x9d1c0, the
+  match of 0x1f3230, and the tools that keep disabled drafts out of the ready
+  and open-work lists.
+- [@marioag0412](https://github.com/marioag0412): matches across the game,
+  starting with 0x1e3480 (an object's actor index) and taking in the global
+  preferences, network voice, online tasks and AI code, big score cuts in
+  render and tag-function code, and notes on what still differs in a dozen
+  near misses.
+- [@averycpawelek](https://github.com/averycpawelek): matches in the unit
+  code and nearby (0xc7100, 0xe5840, 0xe2d80 and four more), and 32 near
+  misses brought closer.
 
 [@kirklandsig](https://github.com/kirklandsig) maintains the project: runs the
 build, reviews and merges every pull request, and keeps the

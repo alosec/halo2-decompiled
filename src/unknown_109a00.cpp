@@ -3,6 +3,7 @@
 #include "unknown_1cec30.h"
 #include "object_list.h"
 #include "unknown_1428b0.h"
+#include "vector_products.h"
 
 // @flags /O2 /arch:SSE /Gr
 
@@ -64,12 +65,6 @@ int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, t
 void function_b75a0(long object_index, point3f const *point, vector3f const *forward,
 	vector3f const *up, s_location const *location, bool unknown);
 
-PRIVATE inline void carrier_add_vectors(vector3f const *a, vector3f const *b, vector3f *result)
-{
-	result->i = a->i + b->i;
-	result->j = a->j + b->j;
-	result->k = a->k + b->k;
-}
 
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity);
 
@@ -129,7 +124,7 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 							};
 							function_b75a0(object_index, &moved, NULL, NULL, NULL, false);
 							*velocity = object->velocity;
-							carrier_add_vectors(&object->velocity, &change, &object->velocity);
+							vector3f_add(&object->velocity, &change, &object->velocity);
 							delta->i = change.i * -1.0f;
 							delta->j = change.j * -1.0f;
 							delta->k = change.k * -1.0f;

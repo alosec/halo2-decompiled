@@ -87,18 +87,35 @@ void function_1bbc00(long player_index, long vehicle_index)
 
 static __forceinline long real_to_long(real value);
 
-// score 42 (was 57): the game clock is kept in a local so that the player
-// index stays in EBX as in retail, but the clock is loaded before the child
-// loop instead of after it, and the child iterator is passed on the stack
-// instead of in EBX.
+// score 2 (was 8): the child object is kept in a local, so retail's object
+// pointer stays in EAX and the tick count is converted through ECX/DX like
+// retail; only the 0xd0620 call setup still differs, ours forms the iterator
+// address in EBX before it moves the vehicle index into EAX.
+// Tried: the iterator started from the stored
+// the iterator address in EBX for the first child call, and in the child loop
+// keeps the object pointer in EAX and converts the tick count through ECX/DX
+// where ours uses ECX and EDX/CX. Tried: the iterator started from the stored
+// player vehicle 77; the actor looked up at each store 45; separate conversion
+// locals in the loop 15; the loop product passed straight to the conversion
+// 8; the block locals in two other orders 8; the player and vehicle parameters
+// swapped 12; the child object in a local with the index read from it 8.
+// 8; the block locals in two other orders 8.
+// Earlier 8 from 44.
+// Existing slot-query long/short 61/8; guarded long/short 70/38;
+// query-first long/short 77/46; shared-query rounding names/separate loop carriers 61/61.
+// 8; the block locals in two other orders 8. Separately, from the 44 form: the clock
+// local moved into the player block with the slot local declared first, 8 (the same
+// lines); pointer, type, scope, direct-store and helper forms on it give the same bytes.
+// Earlier 44 -> 8 came from clock/player lifetimes.
+// Round 220: Bounded slot-scan short/word/char/byte induction 84/84/85/85;
+// first-match result termination with those widths 97/97/97/97. Original body restored.
 // @retail 0x1bbcc0
 void function_1bbcc0(long player_index, long vehicle_index, long seat_index)
 {
 	if (g_4f55d0->active)
 	{
-		s_game_time_globals *game_clock = g_510c54;
-		long player_slot = NONE;
 		s_ai_player *player = ai_player_get(player_index);
+		long player_slot = NONE;
 
 		for (long i = 0; i < MAXIMUM_AI_PLAYERS; i++)
 		{
@@ -116,21 +133,21 @@ void function_1bbcc0(long player_index, long vehicle_index, long seat_index)
 
 			player->unit_index = vehicle_index;
 			player->unknown08 = (short)seat_index;
-			time = (real)game_clock->field_2_3 * 10.0f;
+			time = (real)g_510c54->field_2_3 * 10.0f;
 			ticks = real_to_long(time);
 			player->unknown0a = (short)ticks;
 
 			function_d0620(vehicle_index, &iterator);
 			while (function_d0690(&iterator))
 			{
-				long actor_index = object_get(iterator.child_index)->actor_index;
+				s_slot_object_view *child = object_get(iterator.child_index);
 
-				if (actor_index != NONE)
+				if (child->actor_index != NONE)
 				{
-					s_actor_view *actor = actor_get(actor_index);
+					s_actor_view *actor = actor_get(child->actor_index);
 
 					actor->unknown31c = (short)player_slot;
-					time = (real)game_clock->field_2_3 * 2.0f;
+					time = (real)g_510c54->field_2_3 * 2.0f;
 					ticks = real_to_long(time);
 					actor->unknown31e = (short)ticks;
 					*(short *)actor->unknown320 = 0;
@@ -146,10 +163,27 @@ real function_204950(long actor_index, long squad_index, short mode);
 void function_26def0(long actor_index, long owner_index);
 __declspec(noinline) bool function_f5dc0(long object_index);
 
-// score 67 (was 72): retail compares the squad field against -1 in memory and
-// reads it back as a word, ours loads the field into EAX first and narrows it
-// to a word; the arguments of the distance call are also set up in the other
-// order.
+// score 49 (was 49): BLOCKED-BY 0x1e3400: retail loads the squad for both
+// 0x1e3400 calls as a 16-bit value (`xor eax, eax; mov ax, [esi + 0x28]` and
+// `xor ecx, ecx; mov cx, ax`, pushed unextended, as in 0x1bb570), so 0x1e3400's
+// squad parameter is a short; ours (long) zero-extends with movzx. One-file
+// harness with that parameter as short and the second call through the saved
+// actor (no second actor lookup): 1 difference, the 0x204950 call's EAX/ECX
+// setup order (0x204950's first two parameters swapped 5; squad local at
+// function scope 1; named squad distance 1). Earlier: the first squad test
+// still reuses its full-width load; the second call reloads the actor where
+// retail uses its saved pointer, and the distance-call argument order differs. Split entry branch 67; first fresh
+// actor 90; second fresh actor 49 (kept); both fresh actors 81; first field
+// pointer 49; second field pointer 67; typed vehicle 67; no final refresh 123.
+// Native tag field 49; squad-first admission 74; squad before entry flag 77;
+// distance-first admission 70; entry declaration lifetime/constant pointer/role names/unsigned tag handle 49.
+// Tag field and all body forms restored; the full/low-word reuse and later schedules remain.
+// Native squad full/low-word fields alone/with timer/with flag/with both 49/49/49/49;
+// the same native field forms with a saved second actor read 67/67/67/67.
+// Round 273: one tick-rate short/long carrier 129/129; multiplier-first
+// products 49; explicit transition/distance call boundaries 49/49;
+// short rate/transition boundary 129; failed-entry-first 49, with short rate 129;
+// actor observed at every field use 199. All restored; full/low-word reuse remains.
 // @retail 0x1bba70
 void function_1bba70(long actor_index, long vehicle_index, long seat_index)
 {
@@ -170,7 +204,7 @@ void function_1bba70(long actor_index, long vehicle_index, long seat_index)
                 if (*(long *)((byte *)actor + 0x28) != NONE)
                     distance = function_204950(actor_index, *(long *)((byte *)actor + 0x28), 0);
                 if (*(long *)((byte *)actor + 0x28) != NONE && distance < 3.0f)
-                    function_1e3400(actor_index, *(word *)((byte *)actor + 0x28));
+                    function_1e3400(actor_index, *(word *)((byte *)actor_get(actor_index) + 0x28));
                 else
                 {
                     long squad_index = *(long *)(vehicle + 0x3a0);

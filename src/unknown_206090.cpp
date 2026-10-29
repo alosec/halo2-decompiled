@@ -96,7 +96,7 @@ PRIVATE __forceinline void function_206092(vector3f const *arg_0, vector3f const
 PRIVATE __forceinline real function_206093(vector3f const *arg_0)
 {
     vector3f magnitude_input = *arg_0;
-    return (real)sqrt((double)magnitude_input.k * magnitude_input.k + (double)magnitude_input.j * magnitude_input.j + (double)magnitude_input.i * magnitude_input.i);
+    return (real)sqrt(magnitude_input.k * magnitude_input.k + magnitude_input.j * magnitude_input.j + magnitude_input.i * magnitude_input.i);
 }
 
 PRIVATE __forceinline real function_206094(vector3f *arg_0)
@@ -113,9 +113,9 @@ PRIVATE __forceinline real function_206094(vector3f *arg_0)
 
 PRIVATE __forceinline real function_206097(vector3f *arg_0)
 {
-    double local_2 = (double)arg_0->i * arg_0->i;
-    local_2 += (double)arg_0->k * arg_0->k;
-    local_2 += (double)arg_0->j * arg_0->j;
+    double local_2 = arg_0->i * arg_0->i;
+    local_2 += arg_0->k * arg_0->k;
+    local_2 += arg_0->j * arg_0->j;
     real local_0 = (real)sqrt(local_2);
     if (fabs(local_0) < 0.0001f)
         return 0.0f;
@@ -141,7 +141,8 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 
 #pragma inline_depth(1)
 #include "vector_products.h"
-// score 1402 (was 1402): Frame 0x5cc versus 0x58c; component/velocity homes, contact induction and scheduling remain.
+// score 1364 (was 1364): frame 0x5d0 versus 0x58c, component/velocity homes and indexed contact induction remain.
+// Frame 0x5d0 versus 0x58c; component/velocity homes, contact induction and scheduling remain.
 // Earlier 1585 (was 1596): Frame 0x590 versus 0x58c; component/velocity homes and contact induction remain.
 // Earlier 1600 from 1600: frame 0x580 versus 0x58c; velocity homes and contact induction differ;
 // frame pointer 2092; inline depth zero 3049, eight 1600; point/contact row tables 1600/1600;
@@ -190,6 +191,48 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 // the pointer 1570 (frame 0x590) [1449]; normalizer only through the pointer 1480 (0x5b4)
 // [1460]; cross product without the scalar captures 1423 [1463]; both pointer forms 1585
 // (0x590) [1442]; contact arrays declared at function scope 1402 [1470].
+// Round P208: complete magnitude/cross/second-normalizer product terms 1471/1429/1410;
+// magnitude-cross/magnitude-normalizer/cross-normalizer/all terms 1452/1435/1404/1461;
+// library copy of repeated magnitude input 1402. All original producer bodies restored.
+// Shared point/contact/both scales 1446/1467/1455; shared remaining crosses 1422; crosses with point/contact/both
+// scales 1432/1478/1497; two output library copies 1402. Contact-scale frames 0x5c8, others 0x5cc; all restored.
+// Round 159: Fast control 1402 versus full 1435. Direct
+// arm/velocity/both/normal/arm-normal/velocity-normal/all/forward fields
+// 1470/1462/1414/1434/1407/1475/1431/1484; direct velocity with no/arm/velocity/both field changes
+// 1489/1476/1453/1460. Entry/completion/named/test-produced results 1428/1408/1404/1413 fast; completion
+// result 1414 plain kept, named predicate 1433 plain restored. Result/field combinations
+// 1412/1403/1408/1411 fast; completion result with direct arm/velocity fields 1405 plain kept. On that
+// graph normal/forward/direct velocity/byte flags 1436/1517/1470/1403 fast, all restored.
+// Round 237: Contact-counter entry constants individually/paired/joint
+// 1444/1444/1493/1422/1463/1463/1492; all with entry moving-surface result 1484 fast (control 1403
+// versus full 1405). Complete original counter/result lifetimes restored.
+// Earlier 1405 from 1435.
+// Round 161: Native point storage with direct record/arm/velocity/record-arm/record-velocity/arm-velocity/all
+// observations 1445/1402/1428/1416/1415/1506/1429; complete native point members 1429.
+// Fast control 1403 versus full 1405; one-point direct-arm gain rejected. Original storage and body restored.
+// Round 219: Shared vector sums, point/contact/both/output/point-output/contact-output/all
+// 1440/1441/1405/1405/1440/1441/1405; all with native output copies 1405. Single-phase local sums
+// reach retail length but regress; combined sums restore frame 0x5d0. Original body and every
+// private producer restored.
+// Round 153: float products in the magnitude helper and the normalizer give retail's fld/fmul-mem x87 shape, 1364
+// kept (plain). Without the snapshot copy 1606 (5990 bytes); buffered cross 1431/1445; float third-block magnitude
+// 1402; float time-phase expression 1386 plain (retail's exact x87 block); single-exit normalizer through
+// vector3f_scale 1581 and tangent vector from the contact field 1624 (both without the snapshot); contact pointer 1644.
+// Round 108 (fast control 1403): the first loop's element pointer starts at +0x50 in retail, +0x54
+// here; retail reads +0x88 once, keeps the first velocity's components in xmm2-4 from the loop top
+// and computes the cross k, j, i (stores j, k, i). First-loop cross through function_206092 1472;
+// +0x88 named once 1451 (read once, as retail); operands of the steering product swapped 1403
+// (same code); retail's cross operand form written out 1439 (diagnostic); ray record at function
+// scope 1403 (frame 0x5cc). All restored.
+// Round 175: Native reference cross-formal subsets and magnitude input contract all 1364;
+// canonical object calls, no address cancellations. On the current float-product graph, ordinary
+// magnitude components/first-cross components/both/second-normalizer components/magnitude-normalizer/
+// cross-normalizer/all/all with scalar cross outputs 1606/1394/1555/1400/1587/1440/1554/1554.
+// Magnitude components recover frame 0x590 but shorten the body to 5990; all original input captures,
+// private helper bodies, interfaces and complete force body restored. Frame and indexed homes remain.
+// Round 253: Native component cursors scale/add/paired normalizers/scale-add/
+// scale-normalizers/add-normalizers/all/all with ordered end tests
+// 1638/1877/1557/1671/1535/1809/1633/3684. Original complete kernels, captures and body restored.
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {
@@ -283,29 +326,27 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
             byte *local_40 = *(byte **)(local_1 + 0x48) + local_38 * 0x4c;
             bool local_41 = (bool)((*(dword *)(local_40 + 4) >> 1) & 1);
             vector3f local_42 = *g_4687a4;
-            vector3f *local_43 = &local_0->field_b10[local_38].field_40;
-            vector3f *local_44 = &local_0->field_b10[local_38].field_4c;
-            local_43->i = local_0->field_b10[local_38].field_34.x - local_0->field_60.i;
-            local_43->j = local_0->field_b10[local_38].field_34.y - local_0->field_60.j;
-            local_43->k = local_0->field_b10[local_38].field_34.z - local_0->field_60.k;
+            local_0->field_b10[local_38].field_40.i = local_0->field_b10[local_38].field_34.x - local_0->field_60.i;
+            local_0->field_b10[local_38].field_40.j = local_0->field_b10[local_38].field_34.y - local_0->field_60.j;
+            local_0->field_b10[local_38].field_40.k = local_0->field_b10[local_38].field_34.z - local_0->field_60.k;
             vector3f contact_velocity;
-            function_206092(&local_5, local_43, &contact_velocity);
+            function_206092(&local_5, &local_0->field_b10[local_38].field_40, &contact_velocity);
             function_206095(&contact_velocity, &local_4);
-            *local_44 = contact_velocity;
+            local_0->field_b10[local_38].field_4c = contact_velocity;
             local_32++;
             byte *local_45 = local_36 + local_38 * 0x3c;
             function_207ab0(local_38, arg_0, (s_vehicle_contact_result *)local_45);
             if (local_0->field_b10[local_38].field_70)
             {
-                local_44->i -= local_0->field_b10[local_38].field_74.i;
-                local_44->j -= local_0->field_b10[local_38].field_74.j;
-                local_44->k -= local_0->field_b10[local_38].field_74.k;
+                local_0->field_b10[local_38].field_4c.i -= local_0->field_b10[local_38].field_74.i;
+                local_0->field_b10[local_38].field_4c.j -= local_0->field_b10[local_38].field_74.j;
+                local_0->field_b10[local_38].field_4c.k -= local_0->field_b10[local_38].field_74.k;
                 local_34 = true;
             }
             if (local_0->field_b10[local_38].field_84 > 0.0001f)
             {
                 vector3f *local_46 = &local_0->field_b10[local_38].field_a0;
-                real local_47 = function_206091(local_44, local_46);
+                real local_47 = function_206091(&local_0->field_b10[local_38].field_4c, local_46);
                 local_0->field_b10[local_38].field_88 = local_0->field_6c * (*(real *)g_51e9c4 / *(real *)(local_1 + 8) * local_0->field_b10[local_38].field_84 - *(real *)(local_1 + 0xc) * local_47);
                 function_206096(local_46, local_0->field_b10[local_38].field_88, &local_0->field_b10[local_38].field_94);
                 vector3f local_48 = *g_4687b0;
@@ -333,8 +374,8 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                 local_56.k -= local_46->k * local_57;
                 if (function_206094(&local_56) != 0.0f)
                 {
-                    vector3f local_58 = *local_44;
-                    real local_59 = function_206091(local_44, local_46);
+                    vector3f local_58 = local_0->field_b10[local_38].field_4c;
+                    real local_59 = function_206091(&local_0->field_b10[local_38].field_4c, local_46);
                     local_58.i -= local_46->i * local_59;
                     local_58.j -= local_46->j * local_59;
                     local_58.k -= local_46->k * local_59;
@@ -424,7 +465,7 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                 function_2079f0(&local_0->field_0, local_38, false);
             function_206095(&local_0->field_b10[local_38].field_58, &local_0->field_b10[local_38].field_94);
             function_206095(&local_0->field_b10[local_38].field_58, &local_42);
-            function_206092(local_43, &local_0->field_b10[local_38].field_58, &local_0->field_b10[local_38].field_64);
+            function_206092(&local_0->field_b10[local_38].field_40, &local_0->field_b10[local_38].field_58, &local_0->field_b10[local_38].field_64);
             function_206095(arg_1, &local_0->field_b10[local_38].field_58);
             function_206095(arg_2, &local_0->field_b10[local_38].field_64);
             if (local_41 && local_0->field_b10[local_38].field_80)
@@ -500,6 +541,9 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
         else
             impact_set_contact_from_component((s_impact *)local_84);
     }
-    return !local_34 && *(long *)(local_1 + 0x44) && local_31 > (local_32 >> 1) && local_0->field_8.up.k > *(real *)(local_1 + 0x18);
+    bool result = false;
+    if (!local_34 && *(long *)(local_1 + 0x44) && local_31 > (local_32 >> 1) && local_0->field_8.up.k > *(real *)(local_1 + 0x18))
+        result = true;
+    return result;
 }
 #pragma inline_depth(255)

@@ -1,4 +1,4 @@
-/* VECTOR_PRODUCTS.H: inline vector products shared by several files */
+/* VECTOR_PRODUCTS.H: inline vector products and sums shared by several files */
 
 #ifndef VECTOR_PRODUCTS_H
 #define VECTOR_PRODUCTS_H
@@ -21,6 +21,22 @@ static inline vector3f *scale_vector_by_double(vector3f const *input, double sca
 	output->j = scale * input->j;
 	output->k = scale * input->k;
 	return output;
+}
+
+/* the sum a + b; result may be either input */
+static __forceinline void vector3f_add(vector3f const *a, vector3f const *b, vector3f *result)
+{
+	result->i = a->i + b->i;
+	result->j = a->j + b->j;
+	result->k = a->k + b->k;
+}
+
+/* a + b * scale, for a position or velocity moved along b; result may be either input */
+static __forceinline void vector3f_add_scaled(vector3f const *a, vector3f const *b, real scale, vector3f *result)
+{
+	result->i = a->i + b->i * scale;
+	result->j = a->j + b->j * scale;
+	result->k = a->k + b->k * scale;
 }
 
 

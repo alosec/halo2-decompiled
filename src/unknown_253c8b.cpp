@@ -170,7 +170,8 @@ s_button_block *function_253cc8(c_class_19b8b1 *button)
 	return result;
 }
 
-// score 37 (was 37): height conversion and independent-axis SIMD homes still differ.
+// score 33 (was 37): the source width is stored after the target bounds are read, as retail
+// orders it. Before that: height conversion and independent-axis SIMD homes still differ.
 // height word move and independent-axis SIMD residency still differ.
 // Native short height retained at retail length. Real screen offsets
 // x/y/both/early 103/103/102/114; short width/height/both 40/37/119;
@@ -233,9 +234,9 @@ void c_class_19b8b1::v4(long screen_rect_address)
         real width = element->width;
         short height = element->height;
         from.x0 = from.y0 = 0.0f;
-        from.x1 = width;
         from.y1 = height;
         get_real_bounds((box2f *)&to);
+        from.x1 = width;
         real px = *(short *)definition->unknown2c + to.x0;
         to.x0 = x + px;
         to.x1 = x + (width + px);

@@ -437,8 +437,31 @@ bool function_22acb4(long player_index);
 // Round 347: complete second result as unsigned byte on retained/first-enum/second-enum/both
 // producer graphs 269/204/250/280; signed byte repeats 269/204/250/280.
 // The second-enum byte form recovers the one-slot prologue, but later operations regress; body restored.
+// Round 257: Plain four-entry source/destination mapping loops, original/source-bit order,
+// byte fields 304/304; word fields 286/286; dword fields 292/292; int fields 292/292.
+// Original scalar masks restored; extra second-mask spill and persistent constants remain.
 // Round 210: First-mask high-byte orders 2134/1324/1243/4123/4321/3412/2341/3142
 // all 165; original producers restored, extra second-mask spill remains.
+// Round 60, on the 232 ordered control: long/short first 290/290;
+// long first with short/long second 268/299; long third/fourth 229/229;
+// fourth before second 261; third before second 265. Original 165 body restored.
+// Round 205: Second/third/fourth domains short-word-word, word-long-word, short-long-word,
+// word-word-long, short-word-long, word-long-long, short-long-long, short-short-long
+// 202/270/270/295/300/285/297/297. On short-long-word, first enum reordered 296;
+// plus independent second 287; plus third 123 292; plus native fourth 269. All restored.
+// Round 86 (fast, aligned counts in brackets): retail's block order rebuilt 232 [37]; with a short second 283
+// [20: 1 in EDI as retail; only the second mask in ECX with its own slot, from 0xFFFD taking EBX, remains, and
+// that extra slot shifts every lockstep line]; on it the second as (short)(char)/(char)(x & 1)/(signed char)/
+// & (short)1/1 & (char) 283 [20] each, without the char cast 287 [19]; word second stored then masked 232
+// (as the rebuilt order; retail's `and ebx, 0xfffd` says word). Original body restored.
+// Round 381: User-query bit update before enum tests/after first 8/2/4 updates 272/239/285/284; after
+// 16/32/second-enum/first high 1024 updates 165 each. Original query placement restored; second-mask
+// spill and constants remain.
+// Round 242: Complete result phase orders 2134/3124/4123/2314/3214/2341/3421/4231
+// 280/290/274/289/228/269/272/268. Original phase order, query and aliased output order restored.
+// Round 388: One existing source-flags snapshot after first-mask checkpoints
+// 8/2/4/16/32/256/512/1024: 281/281/278/275/271/268/268/266.
+// Original late snapshot and every mask producer restored; second-mask spill remains.
 // @retail 0x13a050
 void function_13a050(byte const *status, long user_index, long type, s_13ad48_item const **item_out,
 	word *first_out, word *second_out, word *third_out, word *fourth_out)

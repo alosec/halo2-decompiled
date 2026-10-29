@@ -14,8 +14,8 @@
 
 #include "vector_products.h"
 #include "normalize3d.h"
-// score 594 (was 594): the frame is 0x64 against retail's 0x60 and the body is
-// nine bytes longer; retail keeps the primary shape in the stack slot at [esp+0x14]
+// score 581 (was 581): the frame is 0x58 against retail's 0x60 (ret 0x20 agrees) and the body is
+// thirteen bytes longer; retail keeps the primary shape in the stack slot at [esp+0x14]
 // and the secondary shape in EDI, ours keeps the inverse at [esp+0x14] and the
 // secondary shape at [esp+0x10].
 // Round 134: retail reads the wave's sine arguments from the global point: that form 701 (frame 0x60,
@@ -78,6 +78,48 @@
 // frame 0x64/0x60 and shape/basis/wave homes remain.
 // Camera-shift homes, alternate shift homes, wave-result homes, wave-scale homes,
 // and four paired combinations all 594; frame and initial shape homes unchanged.
+// Round 201: basis/camera/input-copy consumer scopes, all seven nonempty combinations,
+// and the independent wave-scratch end scope 594 each (2631/2622). Original scopes and values restored.
+// Round 206: shared vector-add first/second/both wave stages 690/581/690; paired camera
+// add-scaled 702, with first/second/both waves 708/703/709; all with shared default scale 708.
+// Second-wave vector-add kept at plain 581 (2635 bytes); frame 0x64 and shape/basis homes remain.
+// Round 88 (frame now 0x58): both shape pointers NULL then one if/else at entry 622 at retail
+// length (retail's entry exactly; the 8-byte frame shift costs every slot); declarations swapped
+// 622; test inverted 627; inv after the shapes 621; both ternaries at entry 708.
+// Round 275: complete clamp operands 581; named lower/upper-first bounded values
+// 747/755; in-place lower/upper-first fields 727/790; explicit result arms 890;
+// independent lower-upper/upper-lower bounds 747/755. All restored; current frame
+// 0x58 versus 0x60, thirteen excess bytes and native shape/basis/wave homes remain.
+// Round 209: Intrinsic copies at history/publication/all outputs 581/581/581; conditional origin 726;
+// origin and basis 825; basis 817; ordinary and late input snapshots 581; all boundaries 825. Restored;
+// actual frame 0x58/0x60, shape/basis/wave homes remain; original sixth-component conversion unchanged.
+// Round 385: Current 0x58-frame basis/wave-vector/wave-scalar homes, all seven subsets, and all with
+// the reciprocal home 581 each. Original names and complete body restored; frame 0x58/0x60,
+// shape/basis homes and thirteen excess bytes remain.
+// Round 227: Complete projected add-scaled values in existing/separate cross outputs 721/721;
+// with shared final scales 797/797; second cross at its consumer 699/699,
+// with shared final scales 825/825. Original projection graph restored;
+// frame 0x58/0x60 and shape/basis/wave homes remain.
+// Round 177: Existing vector setters for source-zero/source-other/both/depth/zero+depth/
+// other+depth/all 580/700/700/702/700/700/700; all plus native point setters 740.
+// One-point gain dropped; original body restored; frame 0x58 versus 0x60 remains.
+// Round 180: Separate second displacement, entry projection cross outputs and entry
+// uninitialized primary shape, masks 1-7, then all with entry special cross output:
+// 656/581/656/581/656/581/656/656. Original executable body restored.
+// Round 110: retail has no integer truncation of the sixth input product (scale * d.k): written
+// as a plain real product 648 (2629 bytes); with both shape pointers set at entry 620 (2622 bytes);
+// plus the wave's sine arguments read from the global point, frame 0x60 agrees: 600 (2636 bytes);
+// plus the first wave through vector3f_add_scaled 575 (2622 bytes, frame 0x60; v2/v4 homes,
+// shape0's slot and the sine evaluation order still differ: not kept, the sines then read the
+// global while the waves add to its local copy); that form with the sines reading the copy 660;
+// both waves/second wave through vector3f_add_scaled 646/627 (frame 0x54); s1 before the cross
+// product or after s0 575/575. The truncation is a behaviour difference retail does not have.
+// Round 184: Native source/mode/flag snapshots, masks 1-7, then all plus low-word shape selector:
+// [704, 691, 715, 700, 721, 695, 710, 711]. Original selector observations, shape pointers, wave
+// helpers, scalar trees and sixth-component integer conversion restored.
+// Round 186: Selected native basis receivers, seven subsets and the shared selected source
+// 713/680/777/698/755/767/754/800. Original copies, helpers, floating trees and sixth-component
+// integer conversion restored.
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -115,9 +157,7 @@ void function_0497a0(
 		v1.z = v1.z + (wave_shift.k);
 		real k = s1 * 0.025f;
 		vector3f_scale(&c, k, &wave_shift);
-		v1.x = (wave_shift.i) + v1.x;
-		v1.y += wave_shift.j;
-		v1.z = (wave_shift.k) + v1.z;
+		vector3f_add((vector3f const *)&v1, &wave_shift, (vector3f *)&v1);
 		cross3f(&v2, &v4, &w);
 	}
 	else
@@ -436,8 +476,8 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // position copied from first 629; byte state flags 615; true result and one exit 647.
 // Paired displacement loop 615; side scaling loop 615; normal scaling loops 615; RGB tint loop 615; planar geometry cases first 615.
 // Width-path result 626; scale override 622; unsigned point handle 615; final endpoint base 634; two-use packed pixel 615.
-// Earlier score 615 (was 615): round 106: Frame 0xac agrees; definition/vertex carriers, endpoint placement and color/vector homes remain. Indexed vertex output 697; clamp branches 622; color pointer walks 615; geometry case four first 626; scales before coordinates 615.
-// Earlier score 615 (was 615): round 108: definition/output carriers, endpoint placement and color/vector homes remain.
+// Earlier form: round 106: Frame 0xac agrees; definition/vertex carriers, endpoint placement and color/vector homes remain. Indexed vertex output 697; clamp branches 622; color pointer walks 615; geometry case four first 626; scales before coordinates 615.
+// Earlier form: round 108: definition/output carriers, endpoint placement and color/vector homes remain.
 // Persistent workspaces 620; fused color-component loop 643; shared geometry neighbor 620;
 // half-width before tint 620; valid-state-first arms 616.
 // Current position field pointer with read-only point/state/source contracts,
@@ -451,6 +491,24 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Native upper bound/point scale/both 615/626/626; state-array receiver/with upper bound 615/615; scale
 // plus array/all inputs/all role homes 626/626/626. All restored.
 // U/V entry ordering, seven combinations 615; definition then source 615.
+// Round 201: state/geometry/both consumer-end scopes 615/615/615; per-point scratch end,
+// with state/geometry/both endings, and combined scopes with library tint copy 624 each (2604 bytes).
+// Original scratch scopes, tint initialization, helper calls and endpoint masks restored.
+// Round 206: Whole camera-facing normal/side normalization through the existing two inline helpers,
+// all eight nonoriginal combinations [615, 615, 620, 620, 620, 620, 620, 620]. Grouping changes require an exact match; all restored.
+// Round 385: Final vertex extent/endpoint flags/both 618/622/626; native opacity alone/with
+// extent/flags/both 624/625/630/628; consistent next handle 634. All restored; frame/carrier, endpoint
+// placement and color/vector homes remain.
+// Round 227: Geometry point producers: camera plus scaled-add/minus setter/both
+// 615/615/615; planar setters alone/with plus/with minus/with both
+// 615/615/615/615; all with paired displacement values 630.
+// Original point producers restored; definition/output carriers and color/vector homes remain.
+// Round 177: Existing x87 conversion with C++ integer expression/accumulator/parallel terms/
+// unsigned channels/channel declaration order/late packed result/combined forms 624 each;
+// existing complete packer call 728. All restored; definition/output carriers and endpoint layout remain.
+// Round 180: First/transition/both short channel indices, first/transition/both word indices,
+// both byte and both dword indices: 638/657/739/638/657/739/739/615. Original executable body
+// restored.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {

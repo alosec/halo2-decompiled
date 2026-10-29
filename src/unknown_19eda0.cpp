@@ -406,6 +406,16 @@ PRIVATE inline long polygon_round_19f(real value)
 // Round 226: ordinary variant/body pointer advance with native material/group/shader records,
 // every pair/all three, and all plus native context byte 432 each at 1480/1518 bytes.
 // Both matched callers become 2; every record, input observation and original body restored.
+// Round 32: BLOCKED-BY 0x4b2d0 (in a contributor's file): retail passes it the variant in EAX, the
+// group in ECX and the tag in EDX with two pushes; ours pushes three. Retail also parks the fade
+// denominator and alpha in dead argument slots (0x5c/0x58), which frees 0x14 for the colour
+// temporaries (frame 0x30). The fade bound as two products 402 (retail's fst and two mulss, but
+// xmm numbering rotates); a plain address read of the variant 423 and one volatile read 422 (both
+// frame 0x30, but the two matched callers lose); a named fade width before the loop 374 (our
+// compiler then multiplies by a reciprocal where retail divides; not kept); a vertex pointer 397.
+// Round 66: existing double-input distance helper at entry, entry+vertex and all three sites
+// 379/379/399; pre-loop counter, entry counter, entry wrapped index, entry predecessor and
+// a plain while loop 379 each. Both callers stayed matched; all executable forms restored.
 // @retail 0x19f680
 void function_19f680(long tag, long group, long pass, long variant, void *context,
     point2f const *vertices, long count, point3f const *center, real radius,

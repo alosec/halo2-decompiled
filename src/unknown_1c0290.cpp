@@ -192,9 +192,24 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
-// score 143 (was 143): retail inlines function_1f4460, which lives in a file
-// that is not mine,
-// so our frame is 16 bytes smaller and the call is still there.
+// score 143 (was 143): frame 0xa0 versus 0xb0 (the 0x1697c0 output is 0x5c bytes here; the shared
+// header type is 0x4c), then scratch registers rotated by one from the 0x110ab0 argument on
+// (eax/ecx/edx), which also moves the request/collision arguments, the target copy and the
+// inlined 0x1f4460 head. The movement helper already expands.
+// Tried: native slot-data block 143; full 0x5c collision output (frame 0xb0) 140, with native
+// slot-data 140; complete point setter/vector setter/position-add/both vector producers 140 each;
+// destination, request, destination/request, hit/probe, both point names, target/request/probe
+// names and all workspace names 140 each; full output with shared scaled target, whole-point
+// initialization or shared distance difference, alone and with native slot-data: eight forms 140;
+// material initialized at declaration 138, aggregate target/early material 138; partial unit copy
+// 104 and with aggregate target or CRT point copy 104 (restored); CRT point copy/aggregate target
+// alone 140/140; uniform unit copy at entry 234, after position 161, with early material/slot data
+// 161/161. The three-point frame correction is kept.
+// Round 108: collision NONE store before the vector math 141 (138 with the 0x5c output: gives
+// retail's store order); with the 0x5c output, stamp through the existing 0x146650 getter 138,
+// stamp stores swapped 141, slot pointer declared after the lookups 138, `== false` test 138,
+// height declared at its definition 138. Deleting the whole stamp block (diagnostic) leaves 10
+// aligned differences: everything after it then takes retail's registers.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {
@@ -262,9 +277,15 @@ bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 }
 
 // score 26 (was 26): the slot pointer and the actor index are loaded into the
-// opposite
-// registers here, and the shared actor_reset_state helper stores its fields in
-// another order.
+// opposite registers here (index ECX, slot EAX; retail EAX/ECX, so retail scales the
+// index before the actor-table load and its `and` is one byte shorter), and the reset
+// stores are scheduled in another order (retail keeps the two NONE stores between the
+// zero stores). 0x1b3ee0 has the same entry difference.
+// Round 272: native slot-data block 26; with one clock 34, chained false stores 26,
+// readonly actor 26, late actor 36, actor at use 36; existing reset with data/full slot 85/85.
+// Round 70: array-index actor lookup 26; slot declared first 26; reset stores in retail's
+// order 26 (identical code: the order is the scheduler's); existing reset function through a
+// forceinline declaration 85 (stays a call: its file is /Ob1); prop copy first 37.
 // @retail 0x1c0430
 bool __stdcall function_1c0430(long actor_index, s_slot *slot)
 {

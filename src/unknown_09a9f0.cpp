@@ -749,8 +749,8 @@ void function_a3fd0(long index, bool immediate, bool set_position, real position
 
 __declspec(noinline) void *function_122c10(long group_tag, long tag_index);
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
- point3f const *point, vector3f const *normal, long index, bool attached, long object_index,
- short node_index, bool alternate);
+ point3f const *point, vector3f const *normal, word index, bool attached, long object_index,
+ long node_index, bool alternate);
 
 // score 28 (was 28): the effect call's arguments are pushed in the other order
 // and the field is loaded into the low half of a cleared register instead of

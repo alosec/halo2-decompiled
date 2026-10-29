@@ -505,6 +505,24 @@ long function_243b10(long key_b, bool team_only, long *second)
 // Round 8 (plain, on the function_2417a1 copy): the distance through magnitude2d 172; the other
 // position read at each use 223 (666 B); the table local at the loop top 169 / 180 (the slot moves to
 // the stack, caller 0x240160 lost); the marker select as if/else 188; the index declared first 172.
+// Round 87 (plain): the entry as `marker_entries + results[j]` 173, the sum as dy * dy + dx * dx 173,
+// a flags local for the three clauses 173, rejected markers `continue` 173 (all four identical code);
+// the squared distance accumulated (`d = dx * dx; d += dy * dy;` as 0x1b0cd0's file does) then sqrt
+// 173: that gives retail's exact x87 sequence, so keep it in any later fix. Left: retail spills the
+// inner index (the frame's extra dword) and keeps the table in EBP through the inner loop; ours keeps
+// the index in EAX and folds the entry flags load to `[ecx + ebp + 0x16]`, borrowing EBP.
+// Round 89 (plain, each with the accumulated distance): 0x243b10's `if (count > 0) do ... while`
+// loop 186; an options local as 0x243b10 has 171 (clause code identical, only the key's registers
+// move); the select through the global with the table local after it 169 at 717 B (the slot moves
+// to the stack, caller 0x240160 lost); the index renamed 171 (identical); ctf_options() in the key
+// and the marker test 173; the position through marker_position() 173; the table at each use 200.
+// Retail loads the team mode into EBP while EAX still holds the options pointer (ours coalesces both
+// in EBP), so EAX looks busy in retail's clause 1 too; the index spill is the cause to find.
+// Round 71 (plain, each on the accumulated distance, which alone stays 173): the select's else arm
+// through the global 200; both select arms through the global 200; the inner index and count
+// declared at function scope 173; the table local assigned at the outer loop top 169 (the slot
+// parameter moves to the stack and caller 0x240160 is lost). Retail also keeps count in memory
+// from its definition (stored straight from EAX) and stores j = 0 at once.
 // @retail 0x243c00
 void function_243c00(long slot)
 {
@@ -1080,7 +1098,7 @@ void c_game_engine_markers::v21(long object_index)
 	function_243a20(object_index);
 }
 
-// score 40 (was 80): the entry swaps the object-header registers (retail: header in EAX, index in ECX),
+// score 40 (was 40): the entry swaps the object-header registers (retail: header in EAX, index in ECX),
 // and retail materializes the player pointer before the flag test (memory-operand test) and loads the
 // team after the engine-type compare, hoisted from both arms. Kept: retail's long slot and both bits
 // through byte_flags_set (retail stores the flag byte twice), 80 -> 50; the slot table read through
@@ -1095,7 +1113,13 @@ void c_game_engine_markers::v21(long object_index)
 // second player index read directly 40. Round 63: the team read at each call gives retail's middle
 // (memory-operand flag test, player pointer before it, team after the type compare) but keeps the
 // options pointer in EDX from entry; on it: the slot table in a local 119, arms swapped 119, unit
-// first 119, player from the absolute index 82; the mode and type tests joined 40.
+// first 119, player from the absolute index 82; the mode and type tests joined 40. Round 103: the
+// player getter as typed pointer arithmetic 40; the team per arm as in the matched v30 (unfolded
+// player data in v30, folded here) 119, with a const player 119, the player before the absolute
+// index 119, the mode and type tests joined 119, an early return on the mode 119 or on either test 119.
+// Round 149: the absolute index inside the flag test 93; the team read before the flag test 89; the
+// flag in a named bool 40; the slot read before the type test 117 (428 bytes); the type test written
+// in this function instead of the inlined 0x101280 40 (the entry swap is not from that inlining).
 // @retail 0x240ff0
 void c_game_engine_markers::v23(long object_index, long unit_index)
 {
@@ -1641,7 +1665,7 @@ void function_15e360(point3f const *point, long object_index);
 byte *record_pool_lookup(s_record_pool *data, long datum_index);
 void function_242e00(long player_index, long team);
 
-// score 64 (was 79): the root-location call passes the object in EAX and the location in ESI
+// score 64 (was 64): the root-location call passes the object in EAX and the location in ESI
 // (retail: location in EAX, object in ECX, BLOCKED-BY 0xba300); in the tail retail keeps the marker
 // index in ESI and reloads the engine globals pointer after each call, ours keeps that pointer in ESI
 // and spills the index. Kept: 0x176b60's parameters in retail's argument-setup order 83 -> 79; the
@@ -1655,7 +1679,11 @@ void function_242e00(long player_index, long team);
 // point read before the flag clears 44 (a read moved above a call). Found: the
 // tail's marker entry through an element pointer (`entry = &...marker_entries[marker_index]; point =
 // entry->position;`) gives 2 on the kept order, only the 0xba300 call differing; it needs a match, so
-// apply it together with the held 0xba300 change.
+// apply it together with the held 0xba300 change. Round 103: 0xba300 is still contributor code (DIFF 24).
+// Round 87: unchanged; 0xba300 still contributor code (DIFF 24) and every caller of it is todo.
+// Round 71: unchanged; 0xba300 still contributor code (todo). Retail never takes the engine
+// globals pointer's address (only loads and its allocation store), so its reload after each
+// 0xb58c0 call is the register choice the element-pointer form above reproduces.
 // @retail 0x242660
 void function_242660(long object_index, bool arg_1)
 {
@@ -2621,6 +2649,13 @@ PRIVATE __forceinline void function_2417a1(s_marker_entry const *arg_0, long arg
 // players' data or the cause pointer read before the last change call 63/122 (before the flag store
 // 63/140), a named cause team stored after the effect team 14, the cause team before the cause index
 // 145, a word-cast index 156. Permuter (600 s, 15 tries): nothing below 12.
+// The existing cause setter / initializer / sender forced inline 178/181/107; the player getter forced
+// inline 12; the file-local player accessor 12; an event pointer 12; post-initializer player pointers
+// through either accessor 12/12.
+// 145, a word-cast index 156. Permuter (600 s, 15 tries): nothing below 12. Also tried on 12: an inline
+// cause-player setter 12, the existing out-of-line setter called 178 (565 B, not inlined), a chained
+// inline initializer returning the event with the inline setter 12, the event at function scope 12,
+// typed player-array indexing for the cause team 12.
 // @retail 0x242ba0
 void function_242ba0(long marker_index, long object_index, long player_index)
 {

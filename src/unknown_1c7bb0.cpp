@@ -148,11 +148,17 @@ PRIVATE __forceinline bool function_1c7bb1(s_squad_iterator_1c7bb0 *arg_0)
 // Round 204: Actual state-owner input to the existing step, owner last/first with
 // bool/byte/short/long completion, 164 each. Original helper and both traversals restored;
 // separate pool/iterator homes, early null and successor EBP remain.
+// Round 257: Real shared squad fields at declared offsets, existing getter/direct indexing,
+// each with native iterator datum/second-pass actor/both: all eight 164. Shared header, private
+// iterator and body restored; separate pool/iterator, early null and successor homes remain.
 // Round 206: Actual second-pass source-squad/pending-flag field receivers as pointer/reference,
 // individually and all four pairs, 164 each. Both acquisitions and pre-call successor retained.
 // Round 197: Coherent defining-unit/caller final-phase inline and inline/noinline
 // declarations, each with bool/byte/short/long private completion, 164 each. Original
 // provider declarations, private step and both traversals restored.
+// Round 56: Caller pool plus result-published step 200; const pool 200; negative-or-equal predicate 163;
+// reversed comparison 164; direct datum with that predicate 163; nonnegative continue 164;
+// existing squad accessor in the first traversal 164 and in both traversals 164. Original restored.
 // @retail 0x1c7bb0
 void function_1c7bb0()
 {

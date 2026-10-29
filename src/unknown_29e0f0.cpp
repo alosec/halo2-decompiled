@@ -77,8 +77,8 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
     real local_2 = arg_0->z - arg_1->z;
     return (real)sqrt(local_2 * local_2 + local_1 * local_1 + local_0 * local_0);
 }
-
-// score 416 (was 416): Frame 0x6c/0x64, table-pointer roles and bound spill remain.
+// score 406 (was 406): frame 0x68/0x64, induction/endpoint homes and x87 scheduling differ.
+// Earlier: table-pointer roles now agree; frame 0x68/0x64, outer-loop reload placement, inner-loop registers and x87 square order remain.
 // Complete initial guard exits 458; CRT output point copy 416; distance second point by value 569;
 // squared-distance second point by value 430; conditional table pointer initialization 416.
 // Group-table field at each use 457; native long overall result 445; bounded output for 420; same-group pretested while 416; positive nearest-point scope 416.
@@ -89,13 +89,54 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
 // Round 341: One short direction counter, point payload and long record-index graphs 425/454/431/459; long direction counter 479/453/477/453. Original loops and values restored.
 // Round 350: real outer/inner/both link-element receivers 416/416/416; with read-only
 // link/group/both/point/all views 416 each. Frame 0x6c/0x64, table roles and bound spill remain.
+// Round 146: short group index/pass counter/best indices (kept) 406; the three alone 409/416/512;
+// distance index at top of the inner while 416; long search result 415, on the kept form 428;
+// long point bounds 456; long last point 424; long nearest point 396 (word compares in retail, not kept).
+// Round 86 (fast; aligned counts in brackets, 378 at the start): long group index 513 [313, retail's first-loop
+// registers]; separate output cursor (retail compares the end index with the original start) 416 [357]; both 490
+// [278]; bit_vector_test/bit_vector_set instead of the open-coded bits, identical; else-false result 459 [238];
+// record index set before the pass loop and after each step 446 [189, frame 0x64]; memset group bitmap 437 [185];
+// bit test on the field read ahead of the group-index local 197 [65], with the (point, record) output-helper order
+// 199 [57], x*x + (y*y + z*z) squared sum 190 [48] and the found flag declared first 188 [46] (not kept: a field read
+// beside a local copy needs a match; the same body without it 437). Left on 188: x87 square orders (retail rotates
+// them per call; a vector-local distance with j, k, i terms gives d1/d2 175), arg_0 in EDX with arg_3 kept in ESI
+// at the 0x29de20 call, AL reused for the found flag, the pass latch's lea, the output loop's entry jump.
+// Round 148: the visited bits through the existing bit_vector_test/bit_vector_set (include/bit_vector.h)
+// 416 at 1577 bytes, but difflib-aligned 378 -> 338: retail's separate test and set (word address and
+// mask recomputed, load/or/store) and its unpadded outer loop; the same on the group bits only 416; with a
+// long group index 513 (the set CSEs again); the length helper's sum written y, x, z 416 (406 without the
+// bit helpers; same code).
+// Round 267: complete parallel square terms in squared-distance/length/both helpers
+// 406/406/406; selected-index role names 406; those names with squared-distance/length/
+// both terms 406/406/406; complete graph with helper-axis names 406. Frame/index and
+// square-input homes remain; original helpers, names, loops and body restored.
+// Round 366: overwritten endpoint initializer removed 417; early group receiver 432; both 440; complete two-leg distance sum 406; with endpoint/receiver/both 417/432/440; all with scoped best-distance default 474. All restored.
+// Round 232: direct-step pretested inner for, alone and with all seven complete
+// link/directional/selected short-workspace identity subsets, 406 each. All restored.
+// Round 234: complete-search link count/base/both 459/438/478; with promoted group
+// domain 452/494/465; count/base with shared bits 462, plus promoted group 465. All restored.
+// Round 368: test-produced final result 440; complementary pass admission 406; search-scoped best distance
+// 457; result/admission 440; result/distance 478; admission/distance 457; all and named result 478/478.
+// Original executable body restored.
+// Round 370: shared point-array base with long group index, captured point count and shared
+// bitmap operations 429/428/410/432/515/515/464/464; body, helpers and original includes restored.
+// Round 214: Function-owned short outer/grouped-link/pass induction declarations, all seven
+// nonempty subsets, 406 each; all three plus the record-search induction declaration 406.
+// Every original initialization/pretest/increment and executable body restored; frame/index spill remains.
+// Round 163: selected-index chain/per-group index chain/explicit native bitmap
+// defaults, all seven subsets and complete graph with separate bitmap stores:
+// 406 each at 1596 bytes. Frame 0x68/0x64 and bound/endpoint homes remain;
+// original default initializers and every helper restored.
+// Round 380: Native point bitmap unsigned/signed 456/456; unsigned group bitmap with array/unsigned/signed point bitmap 426/434/434; signed group bitmap 426/434/434. Original arrays restored.
+// Round 239: coherent validator/reference-provider ordinary, inline and noinline
+// declaration pairs (eight non-original combinations) 406 each. All restored.
 // @retail 0x29e0f0
 bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg_2,
     s_29de21 *arg_3, s_29e0f9 *arg_4)
 {
-    long local_0 = NONE;
-    long local_1 = NONE;
-    long local_2 = NONE;
+    short local_0 = NONE;
+    short local_1 = NONE;
+    short local_2 = NONE;
     real best_distance = 3.402823466e38f;
     bool local_4 = false;
     s_29e0f3 *local_5 = (s_29e0f3 *)g_4e0348;
@@ -119,7 +160,7 @@ bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg
                     dword visited_groups[2] = {0, 0};
                     for (short local_14 = 0; local_14 < local_10->field_80; ++local_14)
                     {
-                        long local_15;
+                        short local_15;
                         local_15 = local_10->field_84[local_14].field_0;
                         if ((visited_groups[local_15 >> 5] & (1 << (local_15 & 31))) || local_15 < 0 || local_15 >= local_11->field_40) continue;
                         visited_groups[local_15 >> 5] |= 1 << (local_15 & 31);
@@ -145,7 +186,7 @@ bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg
                             if (arg_3->field_0[local_25].field_0 == local_15) { local_20 = local_25; break; }
                         short local_26 = 1;
                         short local_28 = local_19;
-                        for (long local_27 = 0; local_27 < 2; ++local_27)
+                        for (short local_27 = 0; local_27 < 2; ++local_27)
                         {
                             short local_29 = local_19;
                             point3f *local_30 = &local_22->field_4[local_19];
@@ -168,7 +209,7 @@ bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg
                                     if (best_distance > local_35 && function_29de20(local_33, arg_3, arg_0, arg_1) == 1)
                                     {
                                         best_distance = local_35;
-                                        local_0 = (short)local_15;
+                                        local_0 = local_15;
                                         local_1 = local_28;
                                         local_2 = local_29;
                                         local_32 = true;
@@ -180,16 +221,16 @@ bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg
                             local_28 = local_19 + local_26;
                         }
                     }
-                    if ((short)local_0 != NONE && (short)local_1 != NONE && (short)local_2 != NONE)
+                    if (local_0 != NONE && local_1 != NONE && local_2 != NONE)
                     {
-                        s_29e0f0 *local_36 = &local_11->field_44[(short)local_0];
+                        s_29e0f0 *local_36 = &local_11->field_44[local_0];
                         short local_37 = 0;
                         do
                         {
-                            function_29e64d(&arg_4->field_30[local_37], &local_36->field_4[(short)local_1]);
+                            function_29e64d(&arg_4->field_30[local_37], &local_36->field_4[local_1]);
                             ++local_37;
-                            if ((short)local_1 == (short)local_2) break;
-                            local_1 += (short)local_2 > (short)local_1 ? 1 : -1;
+                            if (local_1 == local_2) break;
+                            local_1 += local_2 > local_1 ? 1 : -1;
                         } while (local_37 < 4);
                         if (local_37 < 4)
                         {

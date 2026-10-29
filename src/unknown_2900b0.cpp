@@ -260,14 +260,12 @@ __forceinline void function_28f9e1(point3f *arg_0, real const &arg_1)
 
 PRIVATE __forceinline void copy_point_28f8d0(point3f const *source, point3f *destination)
 {
-	struct words { dword x, y, z; };
-	*(words *)destination = *(words const *)source;
+	*destination = *source;
 }
 
-/* the perception's centre: the origin plus every creature's position, averaged */
+/* the perception's centre: every creature's position added to the origin */
 PRIVATE __forceinline void center_update_28f8d0(s_28f8d0 *arg_0)
 {
-	copy_point_28f8d0(g_468788, &arg_0->field_8);
 	arg_0->field_14 = 0;
 	long local_2 = arg_0->field_18;
 	while (local_2 != NONE)
@@ -290,7 +288,12 @@ PRIVATE __forceinline void center_update_28f8d0(s_28f8d0 *arg_0)
 	}
 }
 
-// score 38 (was 38): only the entry differs: retail tests the actor index
+// score 28 (was 38): the entry now tests the actor index against an
+// immediate -1 and the origin copy takes ebp as its temporary, as retail
+// does. What is left is the order of the first loads: ours reads the origin
+// pointer (g_468788) before the actor pool, retail reads the pool, the
+// pool's data and then the origin, and retail's index multiply sits before
+// the copy's first component instead of after it.
 // against an immediate -1 and sets ebp to NONE at the loop head; ours sets
 // ebp to NONE before that first test and reuses it, so the origin copy and
 // the actor pointer take other registers. Check it with its caller 0x1e3b60
@@ -304,14 +307,23 @@ PRIVATE __forceinline void center_update_28f8d0(s_28f8d0 *arg_0)
 // so NONE only reaches ebp at the loop; ours finishes the actor pointer first.
 // Origin copy ahead of actor_get 99; memcpy for the copy 38; a named centre
 // pointer in the centre update 42; the copy field by field 116; field_14
-// cleared before the copy 39.
+// cleared before the copy 39. Round 148: the three actor NONE stores as one
+// chained assignment 40; the creature pointer through an if/else getter 38;
+// the actor's sample reset (memset, stores, call) as an inline helper 108;
+// the count in a local 38; the copy helper taking the destination first 38.
+// (With the three NONE stores made 0 as a diagnostic the entry compares with
+// an immediate, but the copy still takes eax/esi/ecx, so the copy registers
+// are a separate cause.) The copy helper's plain point assignment gives the
+// same code as the dword-struct copy it replaced.
 // @retail 0x28f8d0
 void function_28f8d0(long arg_0)
 {
 	s_28f8d0 *local_0 = (s_28f8d0 *)perception_get(arg_0);
 	if (local_0->field_4 != NONE)
 	{
-		byte *local_1 = (byte *)actor_get(local_0->field_4);
+		byte *base = (byte *)g_4f55f0->data;
+		copy_point_28f8d0(g_468788, &local_0->field_8);
+		byte *local_1 = base + (local_0->field_4 & 0xffff) * sizeof(s_actor_view);
 		center_update_28f8d0(local_0);
 		memset(local_1 + 0x22c, 0, 0xbc);
 		*(long *)(local_1 + 0x26c) = NONE;

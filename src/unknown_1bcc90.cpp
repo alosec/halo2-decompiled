@@ -33,8 +33,13 @@ short __stdcall function_1bcc90(long actor_index)
 }
 
 // score 35 (was 35): retail tests the value at 0x328 before it clears the
-// block, ours clears
-// the block first and tests it afterwards, so the setle lands in another place.
+// block, ours clears the block first and tests it afterwards, so the setle
+// lands in another place; retail also keeps the returned reference in EAX
+// through its test and copies it to EDI only at the second call. A compile-only
+// test moves the 0x328 compare above the clear only when the cleared block's
+// address is never taken. Tried: the test in a bool before the clear 102; the
+// 0x69c store first 36; the second result named 35; the reference declared at
+// function scope 35; the clear as `= {}` 35.
 // @retail 0x1bcd00
 bool __stdcall function_1bcd00(long actor_index, s_slot *slot)
 {

@@ -708,101 +708,18 @@ PRIVATE inline void seat_direction_from_yaw_187510(vector3f *direction, real yaw
 }
 
 /* moves the value toward the target by at most one step */
-PRIVATE inline void seat_pitch_approach_187510(real *value, real target)
+PRIVATE inline void seat_pitch_approach_187510(real target, real *value)
 {
 	*value += control_pitch_pin(target - *value, -0.012271847f, 0.012271847f);
 }
 
-// score 52 (was 172): only the frame (0xac versus 0xa8) and the order of two join stubs differ. Retail
-// packs the atan2 temp and range into the direction vector's first dword and puts settings above the
-// vector; ours gives range and settings their own dwords below it (a spilled scalar never shares a vector's
-// home in VC7.1, so retail's yaw/range home may be a memory local of some kind).
-// Round 141: retail packs the yaw block's spilled turn differences into the direction vector's slots
-// (range with direction.i) and keeps maximum/minimum at 0x10/0x14 (ours: to_upper, maximum, minimum,
-// range, settings, then direction). Direction declared in the camera block / at the top 172/172;
-// camera after marker 172; range after the two turn differences 289. The movement length now calls
-// the existing 0x24590 (inlined, identical code).
-// Earlier at 213: Frame 0xa8 agrees; upper-bound, range and pin input homes differ.
-// settings/direction/turn-difference homes and step-clamp scheduling
-// differ within frame 0xa8; the initial minimum home now agrees; retail keeps the
-// full turn in xmm3 and spills the range; the step pins get other registers.
-// Tried: interleaved settings/camera declarations 272/272; delay upper/lower alone 280/280;
-// isolated range scope 272; maximum declared first 243 (shifts the prologue); direction,
-// target or marker-before-camera at the top 244; upper/lower declared apart from assignment.
-// forced turn difference 244; forced direction 244.
-// forced pitch pin 244; forced bound approach 244.
-// all four forced expansions 244; immutable wrapped range 244.
-// read-only settings 244; native pitch trig input 248.
-// Constant bounds before entry lookup 244; shared clamp early returns/default result/upper result
-// 261/314/285; each with earlier bounds 261/314/285; exhaustively assigned result 313.
-// Shared yaw/pitch minimum 296; shared maximum 297; both 311; readonly seat/camera/unit
-// views 244/244/244, together 244; both shared bounds with readonly views 311.
-// Settings at use 335; settings after camera 262; native pitch interval aggregate/assignments
-// 267/267; native yaw interval 267; pitch/yaw interval with settings at use 335/335; both
-// intervals with settings at use 339.
-// One movement-vector observation 213/1330 (kept); yaw observation 243; pitch observation 267;
-// yaw/pitch 264; yaw/movement 253; pitch/movement 280; all three 285; all plus current-bound
-// observation 277. Frame 0xa8 agrees; lower-bound home recovered, settings/direction/range and
-// step-clamp scheduling remain.
-// Pitch approach value-result/target-first/reference/pointer-result 268/267/244/244;
-// each with the actual periodic-difference input gives 268/267/244/244.
-// Coordinated camera inline/inline-plus-noinline declarations 244/244.
-// All original helpers and declarations restored; scalar/frame homes remain.
-// Per-helper half-turn/full-turn/both observations 311/291/339; early
-// positive-range sum 270; with half-turn/full-turn/both 319/323/374;
-// both observed limits passed through the existing helper 261. Original helpers restored.
-// Round 171: Shared square 213; self-dot 227; velocity before amount/delta 263/213; earlier vector
-// with square/dot 263/261; immutable square 213; coherent vector/pitch homes 213. Original body
-// restored. Frame 0xa8 agrees; upper-bound, wrapped-range and step-clamp homes remain.
-// Round 173: Periodic output pointer first/last 308/308; output reference first/last 308/308;
-// output-pointer result 308; computed difference plus output 313; in-place pointer/reference
-// 308/308. Frame 0xa8 agrees; upper-bound slot, wrapped-range spill and step-clamp scheduling
-// remain. Original periodic helper and body restored.
-// Round 175: Shared final pin 241; shared final pin with scalar input orders
-// value/maximum/minimum 256, minimum/value/maximum 273, minimum/maximum/value 273,
-// maximum/value/minimum 266, maximum/minimum/value 273; original final clamp
-// with first/last reordered pin inputs 227/259. Original helper and calls restored.
-// Round 177: Complete positive yaw membership bool/byte/short/long 327/327/330/326;
-// complete exclusion bool/byte/short/long 327/327/330/326. Upper-bound/range homes persist;
-// original expressions and body restored.
-// Round 144: in-place positive span 184f/plain; native pitch/yaw/both names 213f;
-// span with pitch/yaw/both/all scalar names 184f each. Original names retained.
-// Direct movement fields/shared square/external vector reference on the normalized
-// span graph 172f each; first plain confirms 172. Either delayed bound form 327f;
-// separate positive result with fields/shared square/reference 284f each. Fields kept.
-// Five remaining scalar-pin input orders 172f each; earlier pitch error, explicit
-// rate branches and both 172f each. All helper inputs and scalar lifetimes restored.
-// Round 183: Direction reference/pointer-result/output-last 213/213/213; native vector result
-// 270; shared cosine 271, with reference/vector result 271/270; reversed scalar formals 227.
-// Original direction helper and body restored; upper-bound/range and pin homes remain.
-// Round 205: Native facing/minimum/maximum field receivers 171/182/176; both bounds 195;
-// facing with minimum/maximum/both 182/177/193; all reference receivers at use 177.
-// Original body restored; extra frame dword and scalar homes remain.
-// Angle/pin/both input-formal reuse 176/257/257; each with a shared
-// double pitch cosine 226/285/285; both with inner marker scope 257,
-// with the shared terminal pin 272. Original scalar helpers and body restored.
-// Round 249: promoted yaw/pitch/both trig formals 181/222/174; native promoted
-// yaw/pitch/both inputs 181/226/172; both formals with shared pitch cosine 176,
-// yaw formal with shared pitch cosine 172. Original helper/body restored.
-// Round 143 (plain; --fast now builds it differently): the yaw unnamed (atan2 written in both bounds)
-// 183; from_lower computed before to_upper 191; the range wrap before the two differences 307 (frame
-// 0xa8, but ebx saved in the prologue); the marker scoped to the seat block 176; to_upper renamed to
-// sort after minimum 172 (homes unchanged: names do not order these spill slots).
-// Round 252: Role names inside periodic/pin/direction/periodic+pin/periodic+direction/pin+direction/all
-// three/all plus approach inline expansions 172 each. Original helper names restored; extra frame dword
-// and scalar homes remain.
-// Round 64: the one-use difference local dropped 172 -> 122 and the pitch update written in both rate
-// arms (the shared difference is hoisted into target's register) 122 -> 52, both kept; direction in a
-// forceinline angle helper 176; seat clamp helper 180; difference named before amount/before rate
-// 172/172; named target test 153; atan2 at both uses 87; settings between the bounds (retail's store
-// order) 52; in-place positive-range helper 52.
 // @retail 0x187510
 void __stdcall function_187510(long player_index, real yaw_delta, real pitch_delta)
 {
 	s_player_control_entry *entry = function_x523cb6(player_index);
 	real minimum = -1.4922565f;
-	real maximum = 1.4922565f;
 	byte *settings = *(byte **)((byte *)g_4e034c + 0xf4);
+	real maximum = 1.4922565f;
 	s_player_control_camera camera;
 	s_object_marker marker;
 	player_control_get_camera(player_index, &camera);
@@ -814,15 +731,19 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 		if (seat->minimum != 0.0f || seat->maximum != 0.0f)
 		{
 			function_b8d30(camera.unit_index, seat->field_8, &marker, 1, false);
-			real yaw = (real)atan2(marker.matrix.forward.j, marker.matrix.forward.i);
-			real lower = seat->minimum + yaw;
-			real upper = seat->maximum + yaw;
+			yaw_pitch2f angles;
+			function_x9a60c1(&angles, &marker.matrix.forward);
+			real lower = seat->minimum + angles.yaw;
+			real upper = seat->maximum + angles.yaw;
 			real range = control_turn_difference(upper, lower);
 			real to_upper = control_turn_difference(upper, entry->facing.yaw);
 			real from_lower = control_turn_difference(entry->facing.yaw, lower);
 			if (range < 0.0f) range += 6.2831855f;
-			if (!(to_upper >= 0.0f && range > to_upper) &&
-				!(from_lower >= 0.0f && range > from_lower))
+			if ((to_upper >= 0.0f && range > to_upper) ||
+				(from_lower >= 0.0f && range > from_lower))
+			{
+			}
+			else
 			{
 				if (fabs(from_lower) < fabs(to_upper))
 					entry->facing.yaw = lower;
@@ -870,8 +791,8 @@ void __stdcall function_187510(long player_index, real yaw_delta, real pitch_del
 			}
 		}
 	}
-	seat_pitch_approach_187510(&entry->minimum_pitch, minimum);
-	seat_pitch_approach_187510(&entry->maximum_pitch, maximum);
+	seat_pitch_approach_187510(minimum, &entry->minimum_pitch);
+	seat_pitch_approach_187510(maximum, &entry->maximum_pitch);
 	entry->facing.pitch += pitch_delta;
 	entry->facing.pitch = entry->minimum_pitch > entry->facing.pitch ? entry->minimum_pitch :
 		(entry->facing.pitch > entry->maximum_pitch ? entry->maximum_pitch : entry->facing.pitch);

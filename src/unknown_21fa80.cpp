@@ -74,6 +74,8 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 }
 
 // score 545 (was 545): frame 0x22c versus 0x224; stream/gain homes and mixed math remain.
+// the level-energy block summed in double (the gain converter returning double) 528, but the
+// shared converter costs the matched 0x21f8a0 (0 -> 67): restored (MiniMax E run 12).
 // frame 0x22c versus 0x224; stream/gain homes and math expansion differ.
 // native input direct bit 541; all native input bits 548; captured direct use 540;
 // shared gain converter 629; inline depth one 541; native output bits with captured direct 544.
@@ -110,6 +112,21 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 // existing helpers: eight forms all 532 on the reduced control. Helpers restored.
 // Round 227: Double energy/sample, named complete square, their pairs/all,
 // all plus rounded root input 530/532/538/576/531/560/561/566 (precision exact-only). Restored.
+// Existing mixbin/final-update inline-noinline declaration contracts, all seven subsets,
+// and the complete inline-only graph 532 each (reduced control 532; full baseline 545).
+// Every declaration and source body restored; frame and math expansion remain.
+// Round 367: Native real exponential/root/logarithm APIs, all seven subsets and the full graph with a
+// native gain value: eight forms all 532 (fast control 532; full baseline 545). Original body and helpers
+// restored.
+// Round 237: one driver/at-use channel/one effects receiver 567/641/539;
+// driver-channel/driver-effects/channel-effects/all 567/555/623/555; all with mode interval 556
+// (fast control 532; full 545). All helpers and body restored; frame and stream/gain homes remain.
+// Round 381: Native integer-bit linear inputs, signed/unsigned and ordinary/forced expansion, copied
+// speakers 542 each; original input-array speakers 551 each (fast control 532, full 545). All
+// input/helper forms restored; frame and gain homes remain.
+// Round 242: Native double absolute-value API across gain/routing/voice gates,
+// seven complete subsets and all with real gain value [547, 534, 532, 539, 543, 535, 537, 537].
+// Reduced control 532, full 545; all width forms and original helpers restored.
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)

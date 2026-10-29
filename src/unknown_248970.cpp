@@ -3,6 +3,8 @@
 
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 struct s_247fd0;
 struct s_object_2470e0;
 struct s_unknown_13bf00;
@@ -49,26 +51,37 @@ public:
 		s_247fd0 *arg_3, transform4x3f const *arg_4, dword arg_5);
 };
 
-// score 215 (was 215): Frame 0x10 versus 0x14 and stacked activation versus AL remain (ours passes the location pointer
-// in ebx instead); metadata/viewer/child homes differ.
-// Frame 0x10 versus 0x14 and stacked activation versus AL remain; metadata/viewer/child homes differ;
-// ours passes the location in EBX (LTCG's choice from this body) where retail leaves it on the stack.
-// Round 9 (lane 11, fast): location read once through its address with retail's entry order (head read,
-// metadata call, position copy, then the flag store) 232 (location stacked, flag still stacked); flag-first
-// parameter order through a temporary forwarder (diagnostic; the caller's file is held) 251, with the
-// location address read 232 (the flag never reaches AL); retail entry order alone 251 (caller 0x175270
-// 21 -> 100); head read before the metadata call 216.
-// Earlier: Frame 0x10/0x14 and activation, metadata/viewer/child homes remain.
-// Frame 0x10/0x14, stacked activation versus AL and metadata/viewer/child homes remain.
-// Earlier 221 (was 221): Frame 0x10/0x14 and activation, metadata/viewer/child homes remain.
-// Frame 0x10 versus 0x14 and stacked activation versus AL remain; metadata, viewer and child homes differ.
+// score 227 (was 227): activation AL and stacked location agree; frame 0x10/0x14,
+// metadata/head/count homes and x87 cleanup differ.
+// Earlier: retail's convention since round 67 (flag in AL, location stacked, 0x175270
+// retail's convention since round 67 (flag in AL, location stacked, 0x175270
+// the child loop advances a 0xb8-stride cursor over the child table instead
+// of recomputing field_34 + i * 0xb8, as retail does; field_4 is now read before the metadata
+// call and the flag is stored after the position copy, as retail does.
+// Still differs: our frame is 0x10 against retail's 0x14, we keep the metadata pointer and the
+// child count in stack slots of our own, and the position copy uses EDX/ECX where retail uses
+// ESI/EDX.
+// Round 67: a position pointer for the copy and the three viewer reads, with field_4
+// then matches). Left: frame 0x10 versus 0x14 (our position pointer folds into [edi+0x10] where
+// retail keeps it in ECX and spills field_4 to a fifth slot), the inactive (viewer-loop) arm laid
+// out first in retail, the x87 pops before the radius multiply, and the child link (retail inlines
+// 0x2483f0). Round 67: a position pointer for the copy and the three viewer reads, with field_4
+// read before the getter and the flag stored after the copy, 277 (692 bytes; 0x175270 100 ->
+// match); plus the nested MAX fade combine 243; pointer and MAX in the original entry order 239
+// (kept, 0x175270 still matches); MAX alone on the old body 230 (0x175270 100).
+// Lane 10 round 13: MAX with the flag stored after the position copy 196, but the location stays
+// in EBX and 0x175270 stays 100.
+// Round 9 (lane 11, fast): location read once through its address with retail's entry order (head
+// read, metadata call, position copy, then the flag store) 232 (location stacked, flag still
+// stacked); flag-first parameter order through a temporary forwarder (diagnostic) 251, with the
+// location address read 232; retail entry order alone 251 (caller 0x175270 21 -> 100); head read
+// before the metadata call 216.
 // Prior shared position base 256; child byte stride 258; direct input 265; radius expression 256;
 // selected influence 259; active first 253; stored gate 256; activation default 284.
 // Early activation 246 with inherited address read rejected; scalar homes 256; short viewer 299;
 // allocation failure first 256; maximum branches 257; direct input/early activation 253;
 // delayed child handle 252 kept; one initialized/link record pointer 300.
-// frame, boolean convention and child-loop homes differ. Tried shared position field base 256; child record byte stride 258; direct location input 265; distance through radius 256; reuse selected influence 259; active branch first 253; stored activation gate 256; activation influence default 284.
-// Earlier 221 (was 252): round 108: frame 0x10/0x14, activation and viewer/child homes remain.
+// Round 108 (221, was 252): frame 0x10/0x14, activation and viewer/child homes remain.
 // Scan influence accumulator 285; closed double scope 252; shared salted index 228;
 // explicit zero falloff 245; allocation-failure return 252; combined 221;
 // shared child pointer 228; direct allocated handle 336; complete falloff arms 221.
@@ -153,16 +166,44 @@ public:
 // 0.70). Left: our frame stays 0x10 because the position pointer folds into [edi+0x10] (retail keeps
 // it in ecx and spills field_4 to a fifth slot); then the child link (retail inlines 0x2483f0) and
 // the x87 cleanup after the square root.
+// Round 250: complete native location layout 239; early head 240;
+// inactive-first 243; both 244; those four with a closed coordinate
+// phase 239/240/243/244. Original input type, header and body restored.
+// Round 72: the child table read each pass (field_34 + i * 0xb8; retail re-reads [ebp+0x34]) 243;
+// existing distance3d 241; vector3d_from_points3d + magnitude3d (retail's x87 pops before the
+// radius multiply) 242, alone on this body 227; allocation result in its own local assigned at
+// the join (retail tests it twice) 230, with magnitude3d 229; existing 0x249bb0 for the fade with
+// an inline/forceinline declaration here 294/294 (not inlined); with `inline` on its definition
+// 166 (retail inlines it: its zero default is the early `movaps xmm0, xmm3`), but 0x174420
+// inlines it too (213 -> 337, retail calls it); inactive arm first on that 248; the existing
+// forceinline link body (retail inlines 0x2483f0, salt read first) gives retail's ECX position and
+// spilled head but moves the location into EBX, 253.
+// Round 386: isolated metadata/head/count lexical homes in all seven subsets 227 each;
+// all three with an earlier uninitialized count declaration 227. Original body restored.
+// Round 173: existing falloff helper with ordinary/inline/forceinline/noinline contracts
+// 307/226/226/307; each with the complete coordinate-double phase closed 307/226/226/307.
+// One-count inline gain restored, including all provider declarations; input delivery
+// agrees, frame 0x10/0x14 and metadata/x87/child allocation remain.
+// Round 397: pool retained across the child loop 234; direct remaining count 226;
+// both 231; pool/count/both with read-only metadata 234/226/231;
+// pool/count with plain while, mutable/read-only metadata 231/231.
+// Original body restored; frame, metadata/head homes and coordinate cleanup remain.
+// Round 251: actual metadata/allocated/linked/updated external object references
+// singly 227 each; metadata with each child 227 each; all four 227. Original
+// distinct pointer receivers restored; metadata/head/frame and x87 homes remain.
+// Round 187: Complete squared-distance with scaled-double/coordinate-scope/early-falloff masks 0-7
+// 227/227/227/227/227/227/227/227. Original arithmetic and full body restored.
 // @retail 0x248970
 void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s_particle_system_datum *arg_2,
 	real *arg_3, transform4x3f const *arg_4)
 {
 	s_248970 *local_20 = (s_248970 *)arg_0;
-	local_20->field_2 = arg_5;
-	s_248971 *local_1 = (s_248971 *)arg_2->function_1751d0();
 	long local_0 = local_20->field_4;
+	s_248971 *local_1 = (s_248971 *)arg_2->function_1751d0();
 	long local_2 = local_1->field_30;
-	local_20->field_10 = arg_4->position;
+	point3f *position = &local_20->field_10;
+	*position = arg_4->position;
+	local_20->field_2 = arg_5;
 	if (arg_5)
 		local_20->field_1c = 1.f;
 	else
@@ -173,9 +214,9 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 			s_player_state const *local_6 = 0;
 			if (local_3 != NONE && g_4686c4 != NONE)
 				local_6 = (s_player_state const *)((byte const *)(g_4e9bd4 + local_3) + 0xb8);
-			double local_7 = (double)local_20->field_10.x - local_6->position.x;
-			double local_8 = (double)local_20->field_10.y - local_6->position.y;
-			double local_9 = (double)local_20->field_10.z - local_6->position.z;
+			double local_7 = (double)position->x - local_6->position.x;
+			double local_8 = (double)position->y - local_6->position.y;
+			double local_9 = (double)position->z - local_6->position.z;
 			double local_4 = sqrt(local_9 * local_9 + local_8 * local_8 + local_7 * local_7);
 			real local_10 = (real)(local_4 * local_6->radius);
 			real local_11;
@@ -192,12 +233,11 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 				else
 					local_11 = 1.f;
 			}
-			real local_12 = TEST_FIELD_BIT(arg_2->flag10) ? 1.f : 0.f;
-			real local_13 = local_11 > local_12 ? local_11 : local_12;
-			local_20->field_1c = local_20->field_1c > local_13 ? local_20->field_1c : local_11 > local_12 ? local_11 : local_12;
+			local_20->field_1c = MAX(local_20->field_1c, MAX(local_11, TEST_FIELD_BIT(arg_2->flag10) ? 1.f : 0.f));
 		}
 	}
 	*(real *)((byte *)arg_3 + 0x1c) = local_20->field_1c;
+	byte *local_cursor = local_1->field_34;
 	for (long local_14 = 0; local_14 < local_2; ++local_14)
 	{
 		s_record_pool *local_15 = g_51ec88;
@@ -224,7 +264,8 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 			local_20->field_8 = local_18;
 		}
 		c_247470 *local_19 = DATUM(local_15, c_247470, local_0);
-		local_19->function_247470(arg_1, arg_2, (s_object_2470e0 *)(local_1->field_34 + local_14 * 0xb8), (s_247fd0 *)arg_3, arg_4, arg_2->color);
+		local_19->function_247470(arg_1, arg_2, (s_object_2470e0 *)local_cursor, (s_247fd0 *)arg_3, arg_4, arg_2->color);
+		local_cursor += 0xb8;
 		local_0 = local_19->field_8;
 	}
 }

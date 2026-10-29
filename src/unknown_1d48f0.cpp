@@ -1,6 +1,7 @@
 #include "unknown_11c920.h"
 #include "unknown_1d5120.h"
 #include "object_queries.h"
+#include "unknown_11cc90.h"
 #include <float.h>
 #include <math.h>
 // @flags /O2 /arch:SSE /Gr
@@ -42,7 +43,33 @@ const dword g_455978[81] = {
  0x0, 0x3f3504f3, 0xbf3504f3, 0x0, 0xbf3504f3, 0xbf3504f3, 0x3f13cd3a, 0x3f13cd3a, 0xbf13cd3a,
  0x3f13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0x3f13cd3a, 0xbf13cd3a
 };
-// score 321 (was 321): Aligned frame 0x1d4 agrees; the sample count now matches (retail's
+// score 306 (was 306): aligned frame 0x1d4 agrees; first +0x21 is bounds/exclusion homes.
+// Round 87: the sample end as `point3f p = *arg_11;` plus in-place adds (retail's three dword copies and
+// `movss x, [home]; addss x, [vector]`) gives retail's homes for the bounds/exclusion locals and the loop
+// spills, 341 (2106 bytes; the entry esi/edi roles swap back while 0x11bed0 stays inlined). With that form
+// and a noinline 0x11bed0 (diagnostic) the entry matches through +0x54 and aligned falls to 80/96 (from
+// 129/130), but 0x14a280's bsp moves to the stack (0x14a280 14, 0x11bed0 19). Also tried: renamed
+// bounds/exclusion locals 306 (names do not move them); upper bound set first 323; vector-first sums
+// 341; existing vector3f_add on the copy 341; 0x11bed0 through 0x11be90 (still matched, still inlined).
+// Earlier: the sample count matches (retail's
+// setne/dec/and/sub is `27 - (flag ? 0 : 9)`, which keeps the flag on the stack). Structural cause of
+// the register differences: our LTCG inlines 0x11bed0 here (retail calls it, esi = location), and the
+// aligned frame 0x1d4 and incoming registers agree; small stack homes
+// and selective location/range expansion remain. Count is `27 - (flag ? 0 : 9)`. Earlier graph:
+// The register differences came from our LTCG inlining 0x11bed0 here (retail calls it, esi = location), and the
+// inlined copy takes esi, which swaps the optional inputs (esi/edi) and evicts the table cursor from esi
+// in the loop; retail also inlines 0x279740's range check at the first release only, ours calls it twice.
+// A separate noinline declaration of 0x11bed0 in its own file keeps the call (entry registers then match
+// retail through +0x54, 337; with the first release's range check written inline 291 at 2064 bytes), but
+// it moves 0x14a280's bsp parameter from ecx to the stack and loses its 18 matched callers (0x21a100,
+// which also inlines 0x11bed0 in our build, then matches). Round 83: description shape stored before its
+// transform 317 kept; then (re-tested on this graph) length terms swapped 316 and translation as three
+// statements 339; success flag declared first 407; upper bound set before lower 334; filter stored
+// first 317.
+// Earlier forms: optional-input registers, scalar homes and selective helper expansion: retail calls
+// 0x11bed0 out of line and inlines the cache-range check of the first reference release (the form of
+// 0x1d01c0), while ours does the opposite.
+// Aligned frame 0x1d4 agrees; the sample count now matches (retail's
 // setne/dec/and/sub is `27 - (flag ? 0 : 9)`, which keeps the flag on the stack); optional input
 // registers (esi/edi swapped), scalar homes and selective helper expansion remain.
 // Round 8 (lane 10): noinline redeclaration of 0x11bed0 here 321 (ignored); a separate noinline
@@ -67,6 +94,14 @@ const dword g_455978[81] = {
 // bounds filter 430; early transform filter 361; both early filters 423; reset at query 361; direct ray rejection
 // 393; per query callback 376; callback and direct ray 376; early filters and reset 423.
 // Native callback context: conditional count 389; earlier conditional 495; earlier arithmetic count 354 kept (plain).
+// Lane 6 r85: ray endpoint and translation copy through `real_point3d_set` kept (317 -> 308: entry esi/edi
+// roles and the movss translation copy now retail's); planar length through `magnitude2d` in place of the
+// volatile casts kept (306). Translation alone 339; sample end through `real_point3d_set` 424, with the
+// kept forms 308; direction locals renamed to flip their name order 308; `normalize3d` with k cleared 323
+// (the short-vector exit is no longer threaded straight to the loop end); shape pointer declared before
+// the body 306; radius scale and unit scale through `vector3f_scale` 306/308; scale factor first 306.
+// With 0x11bed0 built /Ob1 (diagnostic) it is called as in retail but 0x14a280's bsp moves to the stack;
+// with 0x279740 inlinable (diagnostic) 0x11bed0 is called here but both releases inline.
 // Exact sample end 361; transform slot names 361; native ray endpoint 394; expanded radius name 361; unsigned sample ordinal 361.
 // Candidate/endpoint/ray component loops 382/354/354; basis loop 524;
 // translation loop 350 kept (plain); radial scaling/blend loops 354/354; combined producers 492.
@@ -107,6 +142,50 @@ const dword g_455978[81] = {
 // factor with radius scale 331; factor with blend setter 331.
 // all three producers 331; complete normalized-vector setter 321.
 // All executable forms restored.
+// Round 222: scan-lifetime transform description, original/late construction with set/native
+// copies 320/320/330/330; description-owned pose on the same four graphs 382/382/391/391.
+// Original description scope, standalone pose and copies restored; scalar homes and selective expansion remain.
+// Current query/radial/all scalar identities 306; shared planar normalization and its
+// three identity combinations 307; presence object identity 306. Coordinated range-helper
+// inline 419, plus shared planar normalization 416; both lose matched controls and are
+// restored. Original executable body and every external declaration retained.
+// CRT input samples/ray origin/both 306/306/306; native body pose 374, with samples/origin/both
+// 374/374/374; all inputs plus query pose 422. All restored.
+// Shared setters for all three native basis rows, with early/late scale publication, entry/local
+// input-output matrix declarations and native/library point publication: all eight 306. All restored.
+// Round 161: Transform opaque/reference ownership, then optional opaque with
+// derived/opaque/reference transform, then optional reference with derived/opaque/reference transform:
+// 306/306/306/306/306/306/306/306. Original persistent pointer types and all casts restored.
+// Round 206: Optional bounds/exclusion initialization after control-word setup [315, 315, 315];
+// after SSE setup [315, 315, 315]; early presence construction alone/with late optional state [467, 458]. All restored.
+// Round 228: optional-state/descriptor/receiver storage identity subsets 306 each;
+// all three plus immutable body binding 306. First +0x21 optional-state homes remain; all restored.
+// Round 232: shared affine candidate alone/radius/blend/both 306 each;
+// with planar normalization on the same four graphs 307/307/307/304.
+// Two-point gain rejected; original producers and all helper contracts restored.
+// Round 214: Endpoint home alone/with sample/with radial/with both direction names 306 each;
+// immutable named count alone/with endpoint/with all three/with full ray-query name 306 each.
+// All restored; optional-state, sample/ray homes and selective helper expansion remain.
+// Round 163: shared endpoint sum into point/native copy/float-set copy/vector
+// 306/341/314/306; each with shared optional-ray difference 306/341/314/306.
+// Native copies lengthen the body; optional-state homes and selective
+// location/range expansion remain. All endpoint producers and helpers restored.
+// Round 387: Optional-state homes and selective location/range expansion remain. Actual in-place
+// transform with input/output native home, aggregate/CRT point publication and complete basis
+// setter combinations: eight forms 352 each at 2070/2083 bytes. Original separate input/output
+// matrices and every existing producer restored.
+// Round 389: native missing-location result bool/byte/short/long 477/477/487/486;
+// each with entry constant initialization 477/477/487/486. Original positive result and
+// lifetime restored; aligned frame agrees, optional-state homes and helper expansion remain.
+// Round 392: selected-cluster outcome in short at current/entry/control/SSE boundaries
+// 314/474/472/472; long 314/477/475/475. Current lifetime reaches retail length,
+// but homes and selective helper expansion remain. Original Boolean outcome restored.
+// Round 257: inflated-bound scalar before descriptor construction 461, const 461;
+// both with six-use center 496/496; early filter 459/459; center and filter 497/497.
+// Original scalar lifetime, field observations and descriptor stores restored.
+// Round 250: native lower/upper/translation vector producers, subsets 1..7
+// 494/490/547/365/508/521/562; all with complete endpoint copy 601.
+// All restored; optional-state homes and selective helper expansion remain.
 // @retail 0x1d48f0
 bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long arg_2, point3f const *arg_3,
  vector3f const *arg_4, s_location *arg_5, real arg_6, real arg_7, bool arg_8,
@@ -144,8 +223,8 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   c_contact_shape_view *local_11 = *(c_contact_shape_view **)((byte *)local_10 + 0xc);
   if (local_11->type() == 0x17) local_11 = *(c_contact_shape_view **)((byte *)local_11 + 0x30);
   local_7.set(local_10->m_motion->m_transform);
-  local_9.transform.set(local_7);
   local_9.shape = local_11;
+  local_9.transform.set(local_7);
   local_9.filter = ((arg_0->object_index + 1) << 16) | arg_2;
   local_8 = new c_contact_query_transform_volume(&local_9);
  }
@@ -157,8 +236,7 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   if (arg_6 > 0.0f)
   {
    vector3f local_15 = ((vector3f const *)g_455978)[local_13];
-   real local_16 = (real)sqrt((double)*(real const volatile *)&local_15.i * local_15.i +
-    (double)*(real const volatile *)&local_15.j * local_15.j);
+   real local_16 = magnitude2d((vector2f const *)&local_15);
    if (fabs(local_16) < 0.0001f) continue;
    real local_17 = 1.0f / local_16;
    local_15.i *= local_17;
@@ -181,10 +259,8 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   ((hkRigidBody *)local_8)->pose_write(local_7);
   ((c_contact_query_dispatch *)local_8)->query(&local_12);
   if (local_12.found) continue;
-  point3f local_19 = *arg_11;
-  local_19.x += arg_4->i;
-  local_19.y += arg_4->j;
-  local_19.z += arg_4->k;
+  point3f local_19;
+  real_point3d_set(&local_19, arg_11->x + arg_4->i, arg_11->y + arg_4->j, arg_11->z + arg_4->k);
   if (function_168f40(0x1480040d, (s_vehicle_ray const *)&local_19, arg_0->object_index, NONE)) continue;
   if (local_1)
   {
@@ -207,8 +283,7 @@ bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long
   local_21.up.i = local_7.m_rotation.m_col2(0);
   local_21.up.j = local_7.m_rotation.m_col2(1);
   local_21.up.k = local_7.m_rotation.m_col2(2);
-  for (long component = 0; component < 3; ++component)
-   local_21.position.n[component] = local_7.m_translation(component);
+  real_point3d_set(&local_21.position, local_7.m_translation(0), local_7.m_translation(1), local_7.m_translation(2));
   function_1d43d0(arg_0, &local_21, &local_22);
   *arg_11 = local_22.position;
   function_11bed0(arg_5, arg_11);

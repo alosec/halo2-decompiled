@@ -120,14 +120,42 @@ long __stdcall function_1bead0(long actor_index, s_slot *slot)
 /* invites the actor's clump members near enough, the nearest first */
 static __forceinline long real_to_long(real value);
 
-// score 88 (was 88): retail loads the pool pointer first and keeps the record
-// count in ECX,
-// ours reads a different global before the pool.
+// score 24 (was 24): retail keeps the count test's g_46fbe4 return as its own
+// tail after it and puts the shared g_46fbe8 return last, where ours jumps back
+// to the countdown's g_46fbe4 return and falls into g_46fbe8 (445 bytes against
+// 457). Round 371: typed slot payload and short counters 88; payload/single
+// exit 88; payload/entry counters 111, with single exit 111. Round 86: early
+// return for the missing prop 109 (EBP saved late, its exit laid out inline);
+// prop index through the getter 138, nested again 133, with a return at each
+// level 96; accepted counter declared before the actor 75 (entry exact); the
+// countdown and count tests returning g_46fbe4 with one g_46fbe8 return after
+// them 37; the 16-bit participant sum 24 (kept); returned ternaries 91 (cmov);
+// ready flag 98 (setg); count test as >= with both returns 24; final return
+// only 81; the two branches swapped 102; short counters 24 (same code, kept as
+// they need no casts). Round 68: count in an else 24; countdown success return 90;
+// countdown arms reversed 87 (retail length); accepted arms reversed 57; earlier
+// participant-sum declaration 24; direct accepted return 67; count result 90;
+// node-level return removed on the narrow-sum graph 81.
+// they need no casts).
+// Round 165: explicit negative eligibility exits, original/full-width retry snapshot,
+// status-three-first and both 24/27/43/46; positive nested eligibility with the same
+// three alternatives 24/27/43/46. Narrow sum, early counter and original body restored.
+// Countdown-local short/long branch result 90/116; one eligible-branch
+// short/long result 90/94; each with a separate decrement 90/116/90/94.
+// Original status tails and decrement expression restored.
+// Round 110: a second `return g_46fbe8;` after the count test keeps the count
+// test's g_46fbe4 return separate (retail's blocks) but VC lays the shared
+// g_46fbe8 return right after the countdown's: 90 (461 bytes); with nested
+// else returns 90; early node-test return with explicit inner returns 87/90;
+// flat early returns 143; one final return for the count failure 131;
+// count result by if/else 90; else-return nesting alone 24; count test
+// `>= 2` first on the explicit-return graph 24.
 // @retail 0x1beb70
 short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 {
 	s_slot_36 *state = (s_slot_36 *)slot;
 	s_joint_36 *joint = (s_joint_36 *)element_502424_get(state->element_index);
+	short accepted = 0;
 	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->prop_index != NONE)
@@ -139,13 +167,12 @@ short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 		{
 			if (state->unknown1c > 0)
 			{
-				if (--state->unknown1c > 0)
-					return g_46fbe8;
+				if (--state->unknown1c <= 0)
+					return g_46fbe4;
 			}
 			else
 			{
-				long accepted = 0;
-				long declined = 0;
+				short declined = 0;
 				short i;
 
 				for (i = 0; i < 10; i++)
@@ -168,7 +195,7 @@ short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 					}
 				}
 
-				if ((short)accepted == 0)
+				if (accepted == 0)
 				{
 					short result = g_46fbe8;
 					real seconds = g_510c54->field_2_3 * 1.5f;
@@ -176,44 +203,43 @@ short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 
 					ticks = real_to_long(seconds);
 					state->unknown1c = (short)ticks;
-					if ((short)declined > 1)
+					if (declined > 1)
 						function_1fb7e0(0x86, actor_index, NULL, NONE, NONE);
 					return result;
 				}
-				if (joint->participant_count + (short)accepted >= 2)
-					return g_46fbe8;
+
+				short participants = joint->participant_count + accepted;
+
+				if (participants < 2)
+					return g_46fbe4;
 			}
+			return g_46fbe8;
 		}
+		return g_46fbe4;
 	}
 	return g_46fbe4;
 }
 
-// score 70 (was 70): the record count is loaded into EDX before the index is
-// masked here and
-// into EDI after it in retail, so the two blocks are out of step.
 // @retail 0x1bee40
 short __stdcall function_1bee40(long actor_index, long leader_index, long a, long b)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	long count = 0;
 
-	if (actor->unknown07c == NONE)
-		return 0;
-
-	long index = element_502420_get(actor->unknown07c)->first_actor_index;
-
-	while (index != NONE)
+	if (actor->unknown07c != NONE)
 	{
-		s_actor_view *other = actor_get(index);
-		long other_index = index;
-		real distance;
-		short ticks;
-
-		index = other->next_index;
-		if (other != actor && function_1be9e0(actor_index, other_index, &distance, &ticks) &&
-			function_26eae0(leader_index, other_index, 3, 1.0f / (distance * 10.0f + (real)ticks)))
+		s_element_502420_member_iterator iterator;
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_actor_view *other;
+		while ((other = element_502420_member_next(&iterator)) != NULL)
 		{
-			count++;
+			real distance;
+			short ticks;
+			if (other != actor && function_1be9e0(actor_index, iterator.index, &distance, &ticks) &&
+				function_26eae0(leader_index, iterator.index, 3, 1.0f / (distance * 10.0f + (real)ticks)))
+			{
+				count++;
+			}
 		}
 	}
 	return (short)count;

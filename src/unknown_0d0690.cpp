@@ -51,10 +51,14 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 93 (was 150): at retail's length; frame, sky/count homes, trig temporaries, blend registers
+// score 93 (was 93): at retail's length; frame, sky/count homes, trig temporaries, blend registers
 // and the color0 store now match. Left: the three x87 direction adds load the direction first
 // (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
 // (retail ecx, then edi), and the collision test's sete.
+// Round 69: `direction.i = contribution.i + direction.i` written out, or contribution declared
+// before direction, 93/93 (identical code: the add operands are reordered); the collision test as
+// an inline/forceinline bool helper (call && no-object) 93/93 (folded); the per-light count test as
+// an early `continue` 93.
 // Lane 8 r64 (93 form = count read at each use, lights pointer in the loop, a contribution vector
 // with double products cast once, the blend through the returning clamp, color0 first): three scalar
 // terms 179/184 (sunk into the adds); terms written into the adds 186; contribution renamed/array/
@@ -100,6 +104,15 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // Round 193: Scenario/data/both/value/data+value/scenario+value/all source pointers
 // read at each use, then all plus light table: 213/192/192/213/231/213/231/247.
 // Data-only plain 192 adds reloads and has a farther aligned sequence; original restored.
+// Round 202: Native direction accumulation with long/dword/short/byte ordinals, direction/contribution/paired cursors, contribution-first indexed adds, complete updated-direction publication and the shared vector setter 106/106/192/192/205/195/171/106/182/93 fast.
+// Original executable source restored. Frame 0x8c agrees; x87 accumulator operand order, blend-address reuse and collision predicate remain.
+// Round 215: native light cursor 224; cursor with const light/value views 224;
+// cursor with positive-light strength lifetime, mutable/const views 223/223;
+// plain count with cursor, const views, scoped strength or both 233 each.
+// Original indexed traversal, strength lifetime and inherited count qualifier restored.
+// Round 360: Complete trig factors, existing contribution setter, returning color-result copy,
+// all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
+// in double scalar carriers 186. Original contribution and color ownership restored.
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {
@@ -1210,7 +1223,7 @@ PRIVATE __forceinline real lighting_normalize_ordered(vector3f *v, real square)
     return 0.0f;
 }
 
-// score 529 (was 529): Frame 0x2c versus 0x28, stored selection result and block/query carriers remain.
+// score 529 (was 529): Frame 0x2c versus 0x28, selection-result spill and block/query homes remain.
 // Selected ordinal 587; combined admission mask 570; unsigned scan 529; shared bias local 559
 // (caller lost); common blend weight 533.
 // frame 0x2c versus 0x28, stored result and block/query registers differ.
@@ -1235,6 +1248,39 @@ PRIVATE __forceinline real lighting_normalize_ordered(vector3f *v, real square)
 // Incoming lightmap value before normal: native/component/library copy 551/546/551;
 // after length: native/component/library copy 556/554/556;
 // reused channel scalars 555; native adjusted-value construction 551. All restored.
+// Curve helper per-use header/bounds/both 534/545/529; clamp in mapping expression 529;
+// with per-use header/bounds/both 534/576/564; header guard return 529. All restored.
+// Round 161: Native clamp/rotation/negation results 716/568/611; clamp-rotation/clamp-
+// negation/rotation-negation/all 728/808/649/831; all with ordinary clamp inline 831. Negation
+// result forms lose the matched caller; original helpers and body restored.
+// Paired scalar-output recovery: numeric/vector results 578/578; helper guard 574;
+// parallel products 577; early numeric returns/input copy 577/586; entry/root defaults
+// 570/573; captured length/default plus capture 577/560; coordinated order/order plus capture 577/577.
+// Every paired helper, input observation, signature and call restored.
+// Round 165: Positive selection result byte/word/long/dword at original declaration
+// 531/561/559/559; entry declarations 531/561/559/559. Original bool result and every
+// vector/color/rotation operation restored; frame 0x2c versus 0x28 and block/query/result homes
+// remain. Both caller levels preserve their original measurements.
+// Round 245: Ordinary normalization/clamp/curve inline availability, each and all
+// seven combinations, 529 each; all three plus ordinary negation 529. All restored.
+// Round 384: channel-local sample/lower/upper/sample-lower/sample-upper/lower-upper/all
+// clamp captures 591/582/569/581/566/562/569; plain clamp branch stores 572.
+// All eight lose the matched caller; original complete clamp and target body restored.
+// Round 220: Indexed entry-base snapshot 563; repeated flag snapshot 530; both 563;
+// default-first with base/flags/both 562/531/562; live count with base/base-flags 564/563.
+// Base snapshots recover frame 0x28 but regress; original scan and complete body restored.
+// Round 390: conditional last-selection publication with native entry pointer,
+// combined admission mask and live-count masks 0-7: 529/565/570/567/567/561/574/570.
+// Original scan, positive result, complete math body and all helper/caller contracts restored.
+// Round 392: dead first-clamp workspace reused for either later clamp, native/CRT
+// normal copies before/after intrinsic length: 567/581/566/588 for each workspace.
+// CRT forms lose a matched caller; original distinct color objects and body restored.
+// Round 247: current-frame normal/color/both role names, entry declarations and their
+// three naming combinations, bounded-color consumption scope with both names: 529 each.
+// Original vector/color homes, declaration phases, selection and complete body restored.
+// Round 253: Native RGB bias/reflected/scales/bias-reflected/bias-scales/
+// reflected-scales/all/all-short component loops 541/537/530/532/578/530/577/572.
+// Original selection, all private helpers, complete body and shared color type restored.
 // @retail 0xd37f0
 bool function_d37f0(s_lighting_parameter_block *block, long type, s_effect_color_query const *query,
 	s_lighting_record *record, color3f const *base, color3f const *lightmap)
@@ -1346,6 +1392,25 @@ real function_30bf0(vector3f *vector);
 // Round 184: direct-field normal initializer 473; early normal snapshot/native initializer
 // 488/507; native query vector view 364; view with shared snapshot/direct reads/library copy
 // 488/364/364; early normal plus direct magnitude reads 517. Original observations restored.
+// Round 217: Repeated primary direction/secondary direction/both/reflected color/secondary+color/
+// both+color/primary+color/secondary+all-colors views 367/468/468/368/471/471/370/471 fast.
+// In-place direction views recover frame 0x40 but regress; original fields, scratch and helpers restored.
+// Round 161: Optional magnitude output with void/numeric/vector result 411/411/411; guard 493;
+// native clamp/rotation/input graph 555/454/999; all normalizer products 321 (callee 577,
+// rejected). Original numeric returns/input copy 469/467; entry/root default 489/471; captured
+// length/default plus capture 439/476; coordinated block-query order/order plus capture 455/439.
+// All original helper contracts and bodies restored.
+// Round 245: Rotation trig/axis/cross/projection schedules ACXSP/AXCPS/AXSCP/CAXPS/
+// SAXCP/ASXCP/ACSXP/AXCSP 364/364/430/364/430/430/364/364.
+// Cosine after cross with sine first recovers frame 0x40 and length 1870 at 430; all restored.
+// Round 385: Plain negate/rotate/normalize component loops and pairs/all,
+// long ordinals 422/486/426/505/404/503/485; all with short ordinals 509. Original helpers restored.
+// Round 395: decoded-base/query/blend phase with one final pin exit, limited/
+// turned scopes and normal declaration priority in all eight combinations: 364 each.
+// Original phase graph, native lifetimes, helpers and inherited homes restored.
+// Round 253: Plain native RGB loops limited/reflected-blend/scales/limited-reflected/
+// limited-scales/reflected-scales/all/all-short 431/436/419/450/419/438/447/660.
+// Several recover frame 0x40 but regress; original complete body and color type restored.
 // @retail 0xd4080
 void function_d4080(long type, s_effect_color_query const *query, s_lighting_record *record, long flag)
 {
@@ -1700,7 +1765,7 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
     point->weight[3] = dequantize16(source[4]);
 }
 
-// score 790 (was 790): Frame 0x90 agrees; status/mesh/sample homes and material/magnitude expansion remain.
+// score 782 (was 782): Frame 0x90 agrees; status/mesh/sample homes and material/magnitude expansion remain.
 // Earlier: Frame 0x90 agrees; result +0x3c versus +0x24, mesh +0x2c versus +0x20, and helper expansion
 // remain. Existing scalar clamp output pointer 811; weight loop 819; native sample table 819;
 // block-success samples 831; parallel running luminance 818; clamp plus narrow samples 799; with
@@ -1740,6 +1805,31 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // with material noinline, plus magnitude noinline/material inline: all seven 790f;
 // requested magnitude boundary with all shared vector scales 824f (3069 bytes).
 // Caller-local contracts do not resolve the expansion; all declarations and scales restored.
+// Cross-path shared mesh/texture coordinates/material/mesh-texture/mesh-material/texture-material/all
+// 790/787/790/787/790/787/787; all with result first 787. Shared texture coordinates with
+// short/word/signed-byte/byte status 790/790/820/820. Three-point gain rejected; all restored.
+// Round 251: separate per-path long/dword/short/word status lifetimes
+// 809/809/812/812; the same lifetimes after admission 809/809/812/812. All use
+// frame 0x8c; original shared status, frame 0x90 and complete body restored.
+// Round 255: native short component counters base/dynamic/output 784/789/782;
+// base-dynamic/base-output/dynamic-output/all 784/797/784/804; all byte 804 (fast).
+// Only the final rescale counter is short, range 0..3; ordinary 782 at 3133/3130.
+// Round 391: Existing color-sum, special default-vector setter and weighted-vector
+// scale/add helpers in seven subsets 782/782/782/828/828/828/828;
+// all three with chained default colors 827. Frame 0x90 and displaced status/mesh homes
+// remain; original body, all loops, sample lifetimes and helper bodies restored.
+// Round 395: Nested/failure-first luminance decisions 782/810; dynamic-first
+// validity with original/nested/failure-first luminance 782/782/786; base-first
+// validity with those decisions 783/783/797. Original native output graph restored.
+// Round 177: Native vector setters base/dynamic/output/weighted 784/781/790/782;
+// base+dynamic/all scales/weighted+output/all four 795/824/790/824. One-point gain
+// rejected; original loops and outputs restored; status/mesh homes remain in frame 0x90.
+// Round 268: native existing vertex-buffer, actual model-input record and native three-word
+// triangle views in all seven subsets 782 each; all with read-only buffer/data 782.
+// Original views restored; frame 0x90, displaced status/mesh homes and external expansion remain.
+// Round 253: Direct component-array cursor loops base/dynamic/output/base-dynamic/
+// base-output/dynamic-output/all/all with ordered end tests 856/841/785/809/840/819/810/911.
+// Original ordinal loops, short final counter, frame and complete body restored.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {
@@ -1888,7 +1978,7 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
                 out->k = dynamic_normal.k * dynamic_weight + normal.k * base_weight;
                 function_30bf0(out);
                 real length = dynamic_length > base_length ? dynamic_length : base_length;
-                for (long component = 0; component < 3; ++component)
+                for (short component = 0; component < 3; ++component)
                     out->n[component] *= length;
             }
             else if (dynamic_weight > 0.0001f)

@@ -1382,7 +1382,11 @@ struct s_batch_cache_4b5d0
 
 struct s_133f70;
 
-// score 213 (was 213): Full frame 0x33f8 agrees; distance staging, nullable entry and cache/result homes remain.
+// score 175 (was 175): frame 0x33f8 agrees; distance staging, nullable-entry/cache adds and result homes remain.
+// Round 15: split entry-count declaration 213; cache levels base with 0xbc at the index 197; native entry
+// arithmetic 197; full second-cache record 325; two-step second cache 197; Boolean builder with wide previous 177;
+// signed-byte previous 319; direct cache publication 348. Levels offset and Boolean builder with wide previous kept.
+// Full frame 0x33f8 agrees; distance staging, nullable entry and cache/result homes remain.
 // Round 8 (lane 10, all plain; the reduced image builds this frame differently): bool built 325 (after
 // the 0x4c190 call the code is retail's, shifted one instruction by the unfolded record addresses);
 // with an inline record getter for g_509434 325 (still folds to one lea); drawn object reused for
@@ -1458,6 +1462,46 @@ struct s_133f70;
 // record + offset adds (`add eax, ecx; lea ebx, [eax + 0xbc]`) and the dead entry lea stay unreproduced.
 // Round 224: Signed-short query count/failure count/derived-slot domains, seven combinations,
 // then all with short entry ordinal 368/216/367/229/364/229/364/354 fast. Original count/compaction widths restored.
+// Round 202: Consistent pooled-index/byte-offset expressions at all three acquisitions: long index, long/dword offset, word index, word+offset, dword+offset, split mask, split multiply 175/175/175/356/356/175/175/175 fast.
+// Original executable source restored. Frame 0x33f8 agrees; distance staging, nullable-entry address, cache-member adds and result homes remain.
+// Round 14 (lane 10, plain): signed-char previous with signed-char levels 319 (gives retail's byte store,
+// byte level load, `cmp byte` test and `movsx ax` publication, but ours folds the cache-slot address into one
+// lea where retail adds the record first, so the code after it runs one instruction ahead); with the levels
+// pointer at record + 0xbc as 0x4c450 writes it 325 (then both sites fold); stamp compared on the left 319,
+// on this body 175; the reuse test through the cache local 320.
+// Complete defaults predicate bool/byte/short/long snapshots 291/311/365/368;
+// on that predicate lifetime with signed-byte previous level 295/336/337/357.
+// Expanded unchanged control 175; original observations and previous level restored.
+// Round 262: saved-level short at original/pre-query/function scope 194/195/194;
+// signed-byte at pre-query/function/output scope 321/319/321; long at pre-query/function
+// scope 176/175. All restored; distance staging and cache/result scheduling remain.
+// Round 218: Count/writer/projection/coefficient inline and noinline declarations:
+// 175/175/175/175/175/175/175/175 (fast control 175). Original restored.
+// Round 237: Actual object type/cache-link/tag receiver fields, all seven combinations, then all with readonly header: eight calibrated scores 175. Original views and complete executable source restored.
+// Round 87 (plain; fast now gives 353): the tail from the 0x23690 call on (about 80 of the 175) follows
+// that callee's convention: ours passes the level in AX, retail pushes all seven arguments (`ret 0x1c`,
+// `movsx ecx` of the level), BLOCKED-BY 0x23690. Head forms: the 0x4ed284 test nested with an entry
+// pointer 175, nested without it 175; a cached-flag pointer at every access 175; the header as table
+// pointer + masked index 175; entries declared before the failure count 175.
+// Round 153 (plain): success declared first 173; inline active-entry getter (retail's dead entry lea) 177; with
+// success first 175; plus signed-char previous through a levels pointer 309 (byte forms right, both pool sites fold
+// record + offset where retail adds first); 0x23690's order read through its address 182 (ret 0x1c).
+// Round 108 (plain control 175, aligned 76; fast control 353): header pointer formed before the
+// count store 176; retail's two-step `add eax, ecx; lea ebx, [eax + 0x44]` (and +0xbc) comes back
+// when the record address and the member address sit in separate blocks under the same NONE test
+// (record set in one `if (index != NONE)`, member in a second; diagnostic, not a kept form): cache
+// site 239f, both sites 239f, both with a signed-char previous level 266 plain (aligned 75, retail's
+// 382 instructions); cache slot as a ternary 304f (folds, adds a jmp). The tail remains
+// BLOCKED-BY 0x23690. All restored.
+// Round 184: Native object/tag, handle/count and cache/sections pointer-home names, masks 1-7, then
+// all six in a second coherent lexical order: eight calibrated scores 175. Original names, all
+// executable statements, native records, flags, query/allocator inputs and call tuples restored.
+// Round 265: six lexical orders of entry/failure/compacted-slot long values and
+// both uninitialized entry/slot storage orders before the query, 175 each on the expanded control.
+// Original declarations, names, compaction, cache observations and complete body restored.
+// Round 398: complete once-read query object/tag/both 357/352/335; each with
+// allocation-scoped projection workspace 357/352/335; immutable joint inputs
+// with either workspace 335/335. All original field observations and body restored.
 // @retail 0x4b5d0
 void function_4b5d0(bool force, long override, long object_index, real distance, real priority,
     s_133f70 *record, point3f const *unused, bool project_nodes)
@@ -1492,14 +1536,14 @@ void function_4b5d0(bool force, long override, long object_index, real distance,
             tag, &nodes, &node_count, object_index);
         /* the level the object's cache entry was last drawn at (-1 without a mode) */
         long drawn_object = *source_object;
-        signed char previous = -1;
+        long previous = -1;
         if (g_4ba050 >= 0 && g_4ba050 < 4)
         {
             byte *levels = NULL;
             long cache_index = function_3ddd0(drawn_object);
             if (cache_index != NONE)
-                levels = g_509434->data + (cache_index & 0xffff) * 0x100 + 0xbc;
-            previous = (signed char)levels[g_4ba050];
+                levels = g_509434->data + (cache_index & 0xffff) * 0x100;
+            previous = (signed char)levels[g_4ba050 + 0xbc];
         }
         function_3d430(*source_object);
         s_batch_cache_4b5d0 *cache = NULL;
@@ -1514,7 +1558,7 @@ void function_4b5d0(bool force, long override, long object_index, real distance,
             *(short *)(output + 0x164) = previous;
         bool fallback;
         signed char *sections = (signed char *)(output + 0x71 + slot * 16);
-        long built = function_4c190(count, object_index, *(bool *)(output + 0x168), *tag,
+        bool built = function_4c190(count, object_index, *(bool *)(output + 0x168), *tag,
             (short *)(output + 0x164), previous, sections, &fallback);
         reuse &= !fallback;
         bool level_changed = *(short *)(output + 0x164) != initial_level;

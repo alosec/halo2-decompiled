@@ -1,4 +1,6 @@
 #include "unknown_11c920.h"
+#include "matrix_transform.h"
+#include "normalize3d.h"
 #include "unknown_0259d0.h"
 #include <math.h>
 #include "vector_products.h"
@@ -274,7 +276,7 @@ void function_245400(s_source_245400 const *source, long index,
 	function_244ca0(height, radius, list, field_00, field_04, surface->field_08,
 		material->field_04, material->field_05, point, material->field_06);
 }
-// score 204 (was 204): frame 0x24 versus 0x2c; source receiver and side-byte homes remain.
+// score 203 (was 203): frame 0x24 versus 0x2c; source receiver and side-byte homes remain.
 // Earlier: Frame 0x24 versus 0x2c, source receiver and independent side homes remain;
 // frame 0x24 versus 0x2c. Retail receives the source in ecx and keeps it in esi
 // until the plane-table read (scheduled after the edge vector), computes both side flags eagerly (one
@@ -318,7 +320,6 @@ void function_245400(s_source_245400 const *source, long index,
 // a separate rotation output vector copied into the direction scores 193 but adds 19 bytes (one-use
 // staging copy, not kept).
 
-// score 204 (was 238): Frame 0x24 versus 0x2c, source receiver and independent side homes remain.
 // Round 74: plane table declared as a source field and read at each use 204; plane codes declared
 // before the edge vector 203; source parameter declared last (definition, declaration and the one
 // call) 204, still edx; material pointer for the final call (as 0x245400) 204; transformed point
@@ -377,6 +378,60 @@ void function_245400(s_source_245400 const *source, long index,
 // second material record pointer 204 (folded, same code); table and second material ahead of the
 // first index 205 (+0xa read first, material registers exchanged); that order with the first
 // material declared ahead and assigned later 205 (same code).
+// Emitter inline / inline-noinline 204/204; with early narrow sides 207; uniform
+// material-table / primary-index / both observations 207/208/217; native material
+// low word 204; branch-owned planes 223. Original emitter declaration and body restored.
+// Round 16: outer transformed-point workspace 204; native material codes without their later copies 211;
+// second-first 210; first/second alone 211/210; native codes with inner workspace 211; one matrix-address
+// read on that graph 235; signed-byte side carriers on it 211. Native codes move the matrix to ECX, not
+// the source, and give frame 0x28. Original body restored.
+// Lane 4 r106 (fast): ours loads the transform into ebp at entry and packs the plane table into its dead
+// stack slot (frame 0x24); retail reads it at its test. The edge vector's transform through the existing
+// vector3f_scale and matrix_transform_vector 203 (kept: it was those helpers' bodies by hand); uniform rows
+// 204; a vector sibling of 0x245400's point transform, either row order 204/204; on 203, second material
+// read first 206.
+// Round 207: complete mutable/const source values before/after surface-index acquisition
+// 218/218/225/225; with reused complete first-material value 220/220/224/224.
+// Native source plane-pointer declaration included throughout; all restored.
+// Frame 0x24 versus 0x2c, source receiver, matrix and side homes remain.
+// Coupled source-index/material-side/geometry lexical identities, all seven subsets and complete
+// endpoint/transform identities: 203/203/203/203/203/203/203/203. Source receiver, side homes and frame gap
+// remain
+// original identities restored.
+// Round 212: native material-index pair traversal, long/short/dword/word counters, narrow/full
+// decoded pairs [222, 233, 222, 233, 235, 229, 235, 229]; exact-match-only grouped storage
+// restored. Frame, source receiver and side homes remain.
+// Round 246: first/second/both complementary bool sides 207/207/222; both complementary
+// byte/short/long sides 222/222/222; first/second complementary short with the other original bool
+// 207/207. Original producers, equality and all body operations restored.
+// Full native transform values, mutable/const with native plane field and point workspace
+// subsets: 223 each; source enters ECX but frame grows to 0x58 and length 796. Original restored.
+// Nonnull source-reference formal in original/first positions 203/203; each with native plane
+// ordinals 222, uniform material-table reads 210, both 231. Sole caller 3/3/107/107 in each order.
+// Original pointer definition, declaration and call restored; source/frame/side homes remain.
+// Round 380: two-use masked plane ordinals as word/short, original/signed-code
+// side tests and production after/before the edge: 222/222/203/203/207/207/209/209.
+// Original full-width masked expressions and complete executable body restored.
+// Round 382: signed facing-projection result, conditional/if-else producers with
+// bool/byte/word/long side carriers 204/204/204/204/204/204/224/224.
+// Original independent ordered facing tests and full executable body restored.
+// Round 223: Complete orientation eligibility in bool/byte/short/long storage, exhaustive/default-true producers 202/202/202/202/202/202/202/202. Exact-match-only result forms restored; original early returns and in-place transforms retained.
+// Round 72: source-first parameter order as 0x245400 declares it (with the 0x245aa0 call) 203, still
+// EDX; second-material record pointer 203; transformed-point call in the transform arm 246 (the
+// transform becomes a register argument, 0x245aa0 46); widened codes before the edge 203; side
+// bytes before the plane pointers 203.
+// Round 175: native const source member, original/native plane field and bool/byte sides
+// 203/203/203/203; each with uniform material-table reads 210/210/210/210.
+// Original free-function interface, source declaration and every call restored.
+// Complete first/second/both native vertex inputs 245/215/270;
+// with a complete surface 287/272/318; both with material/surface+material 261/304.
+// Original endpoint receivers, source records and complete body restored.
+// Round 264: existing difference/cross/rotation force-inline declaration subsets,
+// all seven 203; all with the actual point-transform boundary 203. Original
+// declarations and body restored; frame 0x24/0x2c, source and side homes remain.
+// Round 398: signed-code side producers with original masks and independent facing exits,
+// bool/byte/word/long 223/223/219/220; direct native material words on those graphs
+// 222/222/216/217. Complete original body and side producers restored.
 // @retail 0x245540
 void function_245540(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
@@ -416,18 +471,9 @@ void function_245540(long arg_0, s_source_245400 const *arg_1,
 		point3f local_14;
 		if (arg_2)
 		{
-			real local_15 = local_6.i;
-			real local_16 = local_6.j;
-			real local_17 = local_6.k;
 			if (arg_2->scale != 1.f)
-			{
-				local_15 = arg_2->scale * local_15;
-				local_16 = arg_2->scale * local_16;
-				local_17 = arg_2->scale * local_17;
-			}
-			local_6.i = arg_2->forward.i * local_15 + arg_2->left.i * local_16 + arg_2->up.i * local_17;
-			local_6.j = arg_2->up.j * local_17 + local_15 * arg_2->forward.j + arg_2->left.j * local_16;
-			local_6.k = arg_2->forward.k * local_15 + arg_2->left.k * local_16 + arg_2->up.k * local_17;
+				vector3f_scale(&local_6, arg_2->scale, &local_6);
+			matrix_transform_vector(arg_2, &local_6, &local_6);
 			local_4 = function_245400_transform(arg_2, local_4, &local_14);
 		}
 		function_244de0(local_4, &local_6, arg_3, arg_4, arg_5, arg_6, local_1,

@@ -104,7 +104,17 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
  arg_3->k = local_0.k - arg_2->k * local_1;
  return function_30bf0(arg_3);
 }
-// score 920 (was 920): Frame 0x1f0 versus 0x1d4; entry EAX/ECX, delayed EBX and record/vector homes remain.
+// score 920 (was 920): Frame 0x1f0 versus 0x1d4; entry EAX/ECX, delayed EBX, second activity byte and record/vector homes differ.
+// Round 105: retail has 23 more mulss, 22 more movss and 15 more movaps, ours ~10 extra counted loops
+// (xor/dec/jne/add): retail's scale helper is unrolled. The helper as three statements gives retail's frame
+// 0x1d4 and the same 32 calls with matching instruction counts between calls in all but four segments, but
+// 4008 bytes and 1199: our build keeps the scaled/residual vectors (local_37, local_40, local_50, local_52) in
+// XMM registers where retail keeps them in memory (it loads and stores each component). On that base: the
+// residual subtract written in both arms 1181/1161 (retail's layout, frame 0x1d0), the add/subtract helpers as
+// loops 1074-1192 (frame grows), all three last-block loops unrolled 1233, plain external helpers 1199. On the
+// loop base: locals renamed in either order 920 (identical code), local_1 declared after local_2/local_3
+// 1010, local_3 before local_2 920, the record pointer as `data + index` 920, a shared simulating-state
+// helper for both body tests 939, a word scale counter 920 (not unrolled).
 // Round 97: offset vector built in place (no copy) 1019 (frame 0x1e4, 4167 bytes); body position
 // through its pointer 1046 (0x1e4, 4153 bytes): retail is longer, so it has more copies, not fewer;
 // marker, accumulated velocity and response output at function scope 920 each (no frame change).
@@ -159,6 +169,30 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
 // Record value fixes entry registers, point setter fixes the second byte home; all restored.
 // Record memmove, center/input/initial-vector library copies and combinations
 // 999/920/920/920/999/999/920/999; record copy recovers entry registers but frame grows to 0x1f4. All restored.
+// Round 227: Direct array/entry/tag bases, each pair/all, all with descriptor 966/968/1135/997/1153/1160/1193/1405.
+// Original body and all helpers restored.
+// Round 202: Linear workspace ending 920; rotation/quaternion endings, their pairs with linear,
+// both endings, all three and all with tag-chain ending 938 each. Original lifetimes restored.
+// Round 364: second activity word/admission byte/both/first activity word
+// 997/920/997/993; first-second/first-admission/all/all words
+// 988/993/988/987. Word activity can recover entry registers but not frame; all restored.
+// Entry predicate long/bool, bool/long, long/long, short/long carriers
+// 996/1012/953/1003; complemented step/admission/both 1013/920/1013;
+// long/short entry carriers 981. Original entry predicates and full body restored.
+// Round 172: native actual-vector reference formals in scale/add/subtract, seven nonempty
+// subsets and all with native planar inputs/output, all eight 920. Original pointer contracts,
+// helpers and body restored; entry carriers, frame 0x1f0/0x1d4 and record/vector homes remain.
+// Round 161: Native external option dword/word/byte units 1007/965/1006; read-only selected record
+// with those units 1007/965/1006; native twelve-byte descriptor 920; descriptor plus dword options
+// 1007. All declarations, flag observations and original body restored.
+// Round 176: Library source captures in scale/add-subtract/both/planar/scale-planar/
+// add-subtract-planar/all 1310/1130/1552/1072/1500/1341/1762; all with projected output copy 1796.
+// Original helpers, short scale loop, response sharing and coefficient pair restored.
+// Round 33: Ordinary inline scale/add/subtract subsets, then all with planar producer: 920/920/920/920/920/920/920/920. Original forced producers, body and response sharing restored.
+// Round 388: Shared complete linear/angular change accumulator 1007; with intermediate
+// change pairs 37-50/37-58/50-58 or all linear changes 1003/1008/1008/1027;
+// with linear residual/axis reuse 1024/1018; all three reuse families 1064.
+// Original separate accumulators and all intermediate vectors restored; entry/frame homes remain.
 // @retail 0x1d24a0
 void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
 {

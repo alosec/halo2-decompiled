@@ -7,6 +7,7 @@
 #include <xtl.h>
 #include "unknown_122870.h"
 #include <string.h>
+#include "map_file_path.h"
 
 /* the open cache files (0x804 bytes each) and the current one */
 struct s_cache_file
@@ -85,33 +86,16 @@ long function_213760(dword location, long size, void *buffer, dword *bytes_read,
 	return function_1a0f10(handle, buffer, size, location & 0x3fffffff, type, priority, bytes_read, done);
 }
 
-void map_file_path_get(char const *map_name, char *path);
 bool cache_header_verify(s_cache_header const *header);
 
-// score 4 (was 4): Frame agrees; the file path address reuses EBX instead of being formed again from ESP.
-// Tried result addressability 4; read count first 4; read count outer 4; result after path 70; result after
-// open 72; test derived result 44; nested read tests 4; invalid handle exit 33.
-// post-normalization path address reuses EBX; retail forms it again.
-// Fast: empty path value 82; normalizer-owned path 54; initialized read count 33;
-// success before read 16; result in each outcome 60; immutable handle 4;
-// file-path observation 4; native read result 4.
-// Post-call path address still reuses EBX. Library empty string/buffer address/both fast 4/4/4;
-// verification result 38; staged read/transfer results 25/36; verification-failure exit 26;
-// native transfer result with verification assignment 38; all new scores reduced.
-// Path helper inline, noinline and both 4/4/4; scoped path value 4; open sequencing 4;
-// open-condition assignment 4; handle before the call and before the path 4/4;
-// header-first parameters 4; without the result address-take 4 (identical code, dropped);
-// header-size transfer counts 4; scoped handle 4; result as the read condition 44;
-// this body ahead of the path helper in the helper's file 4; inline printf helper 4.
-// Every retail caller of 0x214db0 forms its ebx argument again after the call.
 // @retail 0x213800
 bool function_213800(char const *map_name, s_cache_header *header)
 {
-	char path[256];
-	path[0] = 0;
+	s_map_file_path path;
+	path.text[0] = 0;
 	bool result = false;
-	map_file_path_get(map_name, path);
-	HANDLE file = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+	path.get(map_name);
+	HANDLE file = CreateFile(path.text, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		DWORD bytes_read;

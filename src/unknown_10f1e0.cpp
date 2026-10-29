@@ -1274,6 +1274,9 @@ long function_cbd50(long unit_index, short weapon_index);
 // overlay read at its switch 331; with cached-unit slot arguments 345; with short slot locals 345.
 // Retail's unit reload at each query (`mov ecx, ebp; mov ecx, [ecx + edx + 8]`) occurs in only one
 // other retail function (0x100130, unmatched). Original body restored.
+// Round 162: pool/data receivers 378/345; shared word unit slot 368; pool/data plus word
+// slot 400/368; data plus dword slot 350; pool plus long slot 390; data with native result
+// 329. Original lookup observations, status graph and argument handling restored.
 // @retail 0x110ab0
 bool __stdcall function_110ab0(long unit_index)
 {
@@ -1429,6 +1432,26 @@ bool __stdcall function_110ab0(long unit_index)
 // Round 241: Complete complementary permission bool/byte/short/long 572/572/616/609;
 // with complementary base interruptibility 593/593/632/619. Original body restored;
 // frame eight versus twelve and requested/state/result homes remain.
+// Round 220: Shared eleven-request overlay membership bool/byte/short/long through logical OR
+// 641/641/633/637; conditional-result counterparts 627/627/619/623. Original body restored.
+// Round 30: Complete depletion complement bool/byte/short/long 450/450/466/477; with late overlay
+// complement 458/458/445/477. The short pair recovers frame twelve but gains only five (dropped).
+// On that frame: true result here/at entry 445/445; entry byte/signed byte 548/548; live entry true
+// default bool/byte/short/long 511/563/559/548. All statuses, defaults and lifetimes restored.
+// Round 168: Complete unsigned key/controlling/held-handle domains in seven subsets
+// 451/450/450/451/451/450/451; all with unsigned unit 451. Original signed domains restored.
+// Round 34: Native mutable/readonly object-header bases, with repeated/retained unit-slot
+// lookup inputs 487/487/487/487; the same four with complete short depletion/overlay
+// complements 504/504/504/504. Original pool observations, statuses and body restored.
+// Native pool bases recover frame twelve at 487; the paired short graph reserves sixteen.
+// On the native pool graph, default success bool/entry-bool/byte/entry-byte
+// 474/474/514/514. Original result defaults and lifetimes restored.
+// Round 169: whole primary result groups 0x400076c/0x500000a/0x50000c3/0x600008c/
+// 0x600008d/0x60000cc/0x700005c moved first, and the false group after the first
+// interruptibility group: eight forms 450 each. Original dispatch order and body restored.
+// Round 389: Plain two-held-slot traversal with long/short/word/byte indices, slot-first
+// validity joins 470/494/494/523; shared validity-first joins 470/494/494/491 (fast control
+// 450). Original paired queries and complete body restored; frame eight and state homes remain.
 // @retail 0x1103a0
 bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 {
@@ -1648,12 +1671,18 @@ PRIVATE __forceinline void project_112070(vector3f const *v, vector3f const *for
 	result->k = up->k * input_direction.k + up->j * input_direction.j + up->i * input_direction.i;
 }
 
-// score 805 (was 810): frame 0xcc versus 0xd4 and first angle expansion remain. At entry retail also
+// score 790 (was 790): frame 0xcc versus 0xd4 and first angle expansion remain. At entry retail also
+// frame 0xcc/0xd4 and first angle/overlay inline allocation remain.
+// Earlier: frame 0xcc versus 0xd4 and first angle expansion remain. At entry retail also
+// frame 0xcc versus 0xd4 and first angle expansion remain. At entry retail also
+// frame 0xcc versus 0xd4 and first angle/overlay inline allocation remain.
+// frame 0xcc versus 0xd4 and first angle expansion remain. At entry retail also
+// frame 0xcc versus 0xd4 and first angle expansion remain.
 // computes the graph of the definition's +0x38 tag (+4) into a frame slot that is overwritten before any
 // read (about 30 bytes ours lacks); retail keeps `active` in a stack byte cleared by a conditional store,
 // computes the centred test once with x87 fabs before the blend block, copies the default angles as a
-// struct and duplicates the seat-weight call setup in both arms. 0x1c6470's convention (graph in ECX in
-// retail) still differs: BLOCKED-BY 0x1c6470 at its four call sites.
+// struct and duplicates the seat-weight call setup in both arms. 0x1c6470 takes graph in ECX in
+// both builds; its save placement and store scheduling still differ at the four calls.
 // Tried: depth zero 1428, depth one 833, projection inline 833, bounds inline 1055, native centered 834,
 // separate secondary activity 833; two inline levels 833, sequential channel construction 833, activity
 // byte 833, short overlay counter 833, channels before curve weights 833; seat-weight branches 874,
@@ -1694,6 +1723,41 @@ PRIVATE __forceinline void project_112070(vector3f const *v, vector3f const *for
 // 805 each (all compile to (x + 1) * 0.5; retail multiplies first); overlay loop as a for 875 (3338
 // bytes: the first 0x11df30 is then inlined as in retail, 0x1cb490 still inlined in the loop);
 // `++i < 3` / short index 805/805; `active` declared at the top of the aiming block 805.
+// Round 237: Native real bound fields/array-reference/screen-reference 805/805/805; screen
+// value/native copy/typed copy/const copy 1003 each; native remote box fields 805. Original
+// fields, helper inputs and outputs restored.
+// Complementary activity across both aim stages, bool/byte/signed-byte/short at the
+// original declaration 850/850/850/824; constant entry initialization 850/850/850/836.
+// Original activity, input snapshots, helper boundaries and all smoothing values restored.
+// Round 210: Animation-ID fields at every use: overlay/primary pair/secondary 867/863/833;
+// overlay-primary/overlay-secondary/primary-secondary/all 879/857/856/874;
+// graph at every use 873. Original ID ownership and all executable source restored.
+// Round 380: on the complete-direction/early-graph body, Boolean definition bit 11/10/both
+// 835/838/830; early two-use centered bool alone/with bit 11/with bit 10/both
+// 858/854/859/790; combined byte predicate 790. Keep the Boolean combined form,
+// plain confirmed at 790 (3386/3403); original floating grouping and all call roles retained.
+// Round 258: Eight consistent basis/output formal orders at the existing projection boundary all
+// 790. Original helper contract and both calls restored; frame 0xcc versus 0xd4 and first
+// conversion expansion remain.
+// Round 386: shared projected-vector setter/direction memcpy/both 790/790/790;
+// default-angle memcpy alone/with setter/with direction/all 856/856/856/856;
+// all with ordinary projection inline 1165. Original bodies and copies restored.
+// Round 168: Native unit direction/ratio/weight fields in seven subsets and all with side bytes
+// 790 each; on the newer flag/center graph, plain overlay for 882, with native default angles
+// 911, with conditional activity clear 901, with both 897. Original body and records restored.
+// Round 184: Complete aiming flag word/native tag value/encoded byte/separate predicates at entry
+// 855/836/877/857; after persistent samples 848/880/867/850. Original live flags, native direction
+// copy, helpers, arithmetic and call roles restored.
+// Round 393: native external sample-channel references in seven subsets
+// 793/793/839/790/793/793/839; all with scratch construction at first use 841. Original body restored.
+// Round 172: complete bounds value return, field construction with pointer/reference/value
+// screen inputs 1027/1027/1123; aggregate construction 1027/1027/1123;
+// ordinary inline field/aggregate returns 1010/1010. Frame 0xcc remains;
+// original bounds helper, direction snapshot and all consumers restored.
+// Round 269: Existing projection boundary includes the angle-conversion call,
+// caller pointer/reference, private vector and native angle value: forced
+// 928/928/961/933; ordinary inline 1180/1180/1184/1230. Original two helpers,
+// separate conversion calls, direction snapshot and complete body restored.
 // @retail 0x112070
 void __stdcall function_112070(long unit_index, dword const *node_mask, long node_count,
 	real_quaternion_transform *transforms)
@@ -1723,7 +1787,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 		channel.set(state->graph_tag_index, 0x800, control->animation_108, NONE, NONE, NONE, NONE))
 		channel.sample(1.0f, node_mask, node_count, transforms);
 	control->flags &= ~0x60;
-	if (!(definition->flags & 0x800) && state->graph_tag_index != NONE)
+	if (!(bool)((definition->flags >> 11) & 1) && state->graph_tag_index != NONE)
 	{
 		if (*(real *)((byte *)unit + 0x208) > 0.0f &&
 			*(short *)((byte *)UNIT_ANIMATION_CONTROL(UNIT_ANIMATION_OBJECT(unit_index)) + 0x36) == NONE)
@@ -1751,7 +1815,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 					i++;
 				} while (i < 3);
 			}
-			if (!(definition->flags & 0x400))
+			if (!(bool)((definition->flags >> 10) & 1))
 			{
 				vector2f angles;
 				angles.i = g_4687c4->x;
@@ -1781,6 +1845,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 						else if (screen_b) bounds_112070(screen_b, (real *)control->unknown04);
 						active = function_111590(unit_index, 4);
 						active &= !((state->unknown7c == 0x700005c || state->unknown7c == 0x700005d) && !unit_animation_state_finished(state));
+						bool angles_centered = fabs(angles.j) < 0.0001f && fabs(angles.i) < 0.0001f;
 						if (control->slots[4].unknown1)
 						{
 							real weight = function_1d9370((s_1d9240 *)&control->slots[4]);
@@ -1798,7 +1863,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 									else
 									{
 										if (0.0001f > wb) { wa = 1.0f; wb = 0.0f; }
-										if (wa > 0.0001f && (wa < 0.9999f || !(fabs(angles.j) < 0.0001f && fabs(angles.i) < 0.0001f)))
+										if (wa > 0.0001f && (wa < 0.9999f || !(angles_centered)))
 											a.sample_aiming(angles.i, angles.j, wa, node_mask, node_count, transforms);
 									}
 									if (wb > 0.0001f)
@@ -1806,7 +1871,7 @@ void __stdcall function_112070(long unit_index, dword const *node_mask, long nod
 								}
 								else if (screen_a)
 								{
-									if (weight < 0.9999f || !(fabs(angles.j) < 0.0001f && fabs(angles.i) < 0.0001f))
+									if (weight < 0.9999f || !(angles_centered))
 										a.sample_aiming(angles.i, angles.j, weight, node_mask, node_count, transforms);
 								}
 								else if (screen_b)
@@ -2374,6 +2439,27 @@ PRIVATE inline bool function_111651(c_animation_channel const *arg_0)
 // input/branch 727; branch/original 713; branch/input 690; branch/branch 690.
 // On the secondary input-first form (ret 8): tag second 694; state before control 694;
 // Boolean transition 702; tag second with Boolean transition 702. Original body restored.
+// Round 220: Control/state/both/tag/control-tag/state-tag/all receiver fields at every use
+// 719/928/977/674/693/956/960; all with object-pool observations 1946. Original body restored.
+// DH round 215: Eager native field comparisons with Boolean/byte/short/long
+// results, ordinary inline 717/717/807/766; forced inline 726/726/872/829. Original
+// short-circuit helper, interface, request values and complete body restored.
+// Round 30: Complete transition complement bool/byte/short/long 727/727/668/667; coupled with
+// permission-override complement 727/727/668/667. Original flags, helper and body restored;
+// request/control homes and ret 4 versus ret 8 remain.
+// Round 258: Complete native channel-value validity input, ordinary bool/byte/short/long results
+// 994/994/1001/993; forced 1000/1000/1013/1004. Original pointer helper and twelve calls
+// restored; request/control homes and validity expansion remain.
+// Round 386: existing native pair-validity helper by primary/case/both/tail/primary-tail/
+// case-tail/all phases 701/666/701/745/751/747/753; native triple state guard 762.
+// Original private validity helper, request/control homes and body restored.
+// Round 169: native incoming record, mutable/readonly byte flags 666/666; word flags
+// 675/675; dword flags 666/666; unsigned keys with byte/word flags 666/675. Original
+// flat input accesses, external signature, request homes and complete body restored.
+// Round 172: shared point-difference producer on the corrected frame 699;
+// with actual transform/point/both/direction/transform-direction/point-direction/
+// all workspaces uninitialized at entry, 699 each. Frame 0x80 and ret 4
+// remain; original displacement statements and every lifetime restored.
 // @retail 0x111650
 bool __stdcall function_111650(long arg_0, long *arg_1)
 {
@@ -2669,9 +2755,15 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
     return elapsed;
 }
 
-// score 147 (was 147): BLOCKED-BY 0xe70b0 (retail passes the unit in ecx and the action pointer
-// in eax and compares through the pointer it returns); frame 0x3c versus 0x38: retail packs the
-// address-taken action short at +2 beside the two flag bytes, ours gives it a 4-byte slot.
+// score 122 (was 122): frame 0x3c versus 0x38, action/decision and input homes remain.
+// Returned action comparison plus a separate existing channel-copy statement recover
+// native query/play ordering at retail length; the shared result exit is retained.
+// frame 0x3c versus 0x38; the escaped action short has its own
+// aligned slot. The action and seat queries match; returned action-pointer comparison
+// and channel-copy/play argument scheduling still differ.
+// frame 0x3c versus 0x38; action/decision packing and copy schedule differ.
+// Retail packs the address-taken action short at +2 beside the two flag bytes;
+// ours gives it a 4-byte slot. The action query now matches and returns its output pointer.
 // Tried: native channel workspace 139; copy return to play 152; accumulated channel failure 177;
 // unsigned word result 173; short table index 188; dword channel backing 152; direct copy chain 152;
 // mode at use 196 (frame 56); repeated table index 152; mode after animation 157; direct action
@@ -2686,6 +2778,44 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // lookup/animation/mode 147 each; action-result assignment/positive completion 161/161; direct
 // success return 154; copy statement before the play call 162 (aligned diff 71 -> 65); copy with
 // direct success return 165; bool result 152, with the copy 162, with copy and return 162.
+// Returned action query with Boolean-result/copy-boundary/direct-return combinations
+// 196/207/198/209/200/200/202/202; three-field decision records 198/212/220 (exact-only, discarded);
+// returned query with entry result/result-and-force/result-and-action homes 200/200/200.
+// Complementary success/overlay decisions, individually and together with native widths
+// and constant entry initialization: 207/198/207/207/207/207/215/207; restored.
+// Unchanged reduced control 198/684 differs from full 155/668; original code retained.
+// Round 210: State/control/tag reads at every use 196/202/222; state-control/state-tag/control-tag/all
+// 205/216/202/217; unit at every use 188, plain 195. Reduced unchanged control 198;
+// all restored against full baseline 155. Action query now matches; its return-use forms
+// previously grew the frame and remain excluded.
+// DH round 215: Mutually exclusive base/overlay eligibility join with signed-byte/Boolean/
+// byte/short success storage 172/165/172/159; paired true publication chained
+// 172/166/172/159. Original decisions, copy expression and complete body restored.
+// Round 30: Immutable set/mode/lookup results at entry in seven subsets, then all with the constant
+// animation default at entry: 173/173/167/194/189/199/189/173 (expanded control 155).
+// Original table observations and all lifetimes restored; frame 0x3c versus 0x38 remains.
+// Round 258: Immutable mode at every use on the repaired query graph, plus lookup/query/native-
+// channel subsets 191/191/192/192/182/182/181/181. Frame 0x38 forms regress; original
+// observations, action test, copy chain and body restored.
+// Round 386: action/set-decision/channel-backing lifetimes in seven subsets
+// 155/156/156/155/155/156/156; all with native constructed channel 157.
+// Fixed caller/request roots reproduce full 155; original body restored.
+// Round 168: Native paired timing fields/header status/parent slot in seven subsets and all
+// with a shared absolute object index 155 each. Original records, copy chain and body restored.
+// Round 169: returned query with action/force/both/backing/action-backing/force-backing/
+// all scopes 149/150/150/149/149/150/150; all plus native channel 265. Scoped query
+// plus direct true exit 148, Boolean result 151, separate copy 129, actual flag value 149;
+// separate copy with original shared exit 122, also with original action home 122 (plain, kept).
+// Local action comparison on copy graph 132; Boolean result on query/copy graph 127.
+// Round 172: consistent inline copy/indexed-play/both/base-play/copy-base/
+// indexed-base/all summaries 155 each; all with the actual returned-action word
+// test 149. The six-count gain fails the eight-count gate; every declaration,
+// provider contract and the complete caller restored. Frame 0x3c remains.
+// Round 172 DL: Escaped action-role name 122; complete query/play/overlay role names 122;
+// Boolean aggregate with completed-success exit 127, also with those names 127.
+// Whole availability decision on returned-query/separate-copy graph, signed/Boolean
+// aggregate and shared/direct success exit 156/158/163/158. All restored;
+// frame 0x3c versus 0x38 and small-home packing remain.
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)
@@ -2714,8 +2844,7 @@ bool function_10ff40(long unit_index, long type, short side, short value,
                 force_overlay = true;
             else
             {
-                function_e70b0(unit_index, &action);
-                if (action != 0 ||
+                if (*function_e70b0(unit_index, &action) != 0 ||
                     (*((byte *)g_4e0300->data + (unit_index & 0xffff) * 12 + 3) == 0 && function_e4050(unit_index)))
                     force_overlay = true;
             }
@@ -2724,7 +2853,8 @@ bool function_10ff40(long unit_index, long type, short side, short value,
         {
             byte channel_storage[sizeof(c_animation_channel)];
             c_animation_channel *channel = (c_animation_channel *)channel_storage;
-            if (!state->channel_play_indexed(channel->copy_from(&state->channels[0]), animation, side, value, 0, 0))
+            channel->copy_from(&state->channels[0]);
+            if (!state->channel_play_indexed(channel, animation, side, value, 0, 0))
                 force_overlay = true;
         }
         if (force_overlay)

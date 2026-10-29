@@ -419,7 +419,7 @@ bool function_d74b0(byte const *owner);
 void __stdcall function_184250(s_type_1e6529 const *data);
 
 long function_d5b60(long object_index);
-real function_1e9720(long kind, short team);
+real function_1e9720(short kind, short team);
 bool function_108fd0(long object_index);
 void function_b58c0(long index, dword mask);
 

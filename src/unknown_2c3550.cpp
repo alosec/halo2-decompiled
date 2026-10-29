@@ -606,7 +606,9 @@ void obstacle_list_group(s_obstacle_list *obstacles, real radius);
 
 bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center, long object_index, real radius);
 
-// score 711 (was 711): frame 0x1f88 agrees; result/path pointer and obstacle/search/step homes differ.
+// score 675 (was 675): the frame 0x1f88 and the length agree, but retail keeps the success result
+// in a stack byte where ours keeps a dword, loads the source radius before the 0.2f constant, and
+// the path pointer and the obstacle, search and step homes differ.
 // Round 134: retail's result is a stack byte (ebx = pathfinding, then NONE): bool result 757; radius as
 // one ternary (retail's load order, one store) 744, with bool result 773, with the pathfinding read after
 // the radius 740, all three 775.
@@ -641,6 +643,12 @@ bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center,
 // Round 354 recovered-frame graph: shared 3D/2D/both difference producers 711/711/711;
 // native signed-word frame alone/with 3D/with 2D/with both 709/709/709/709 (two-count gains dropped);
 // complete producer graph with Boolean success 750. Original complete body restored.
+// Earlier native retry Boolean 675 from 705. Round 282: goal insertion helper, original/short
+// forward indices and long/Boolean success [712,795,748,812]; flag-count before count
+// publication with the same storage combinations [675,754,737,777]. Original complete body restored.
+// Round 171: actual first/retry searches produce the returned result; bool/byte/short/long
+// with long retry 773/751/753/727, with bool retry 761/752/748/722.
+// Shared slot-enabled predicate on the native forward-index frame 777. Original complete body restored.
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,
@@ -770,14 +778,19 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
    obstacle_list_group(obstacles, radius);
    cache = *(byte **)((byte *)state + 0x50);
    if (cache && !cache[0x147b0]) ++*(short *)(cache + 0x147b2);
-   if (obstacles->count > 0)
+   if (!(obstacles->count > 0))
+   {
+    out[(*out_count)++] = *input;
+    previous_point = input->point.point;
+   }
+   else
    {
     bool found = avoidance_search(pathfinding, search, (s_avoidance_limits const *)state, state->source.unknown04,
      obstacles, radius, (point2f const *)start, start_node, (point2f const *)&input->point.point,
      input->node_index, last, false);
     if (!found)
     {
-     long retry = obstacles->flag0_count > 0;
+     bool retry = obstacles->flag0_count > 0;
      if (avoid)
      {
       retry = retry || (obstacles->flag3_count > 0 && search->result != NONE);
@@ -836,11 +849,6 @@ bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short cou
      out[(*out_count)++] = inserted[i];
     }
     if (truncated) { *complete = false; goto done; }
-   }
-   else
-   {
-    out[(*out_count)++] = *input;
-    previous_point = input->point.point;
    }
    if (object_index && *object_index == NONE && (blocking.count > 0 || ignored != NONE))
    {

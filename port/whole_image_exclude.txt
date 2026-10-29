@@ -18,6 +18,11 @@ src/unknown_2d7f00.cpp
 src/unknown_2d8030.cpp
 src/unknown_2d8280.cpp
 src/unknown_2d8cc0.cpp
+# Added by the 2026-10-29 merge, the same functions again:
+src/debug_writer_2d7c00.cpp
+src/report_display_2d8080.cpp
+src/service_lifecycle_2d6fe0.cpp
+src/unknown_372680.cpp
 
 # A placeholder from before the first-person weapon code was recovered: its
 # first_person_weapon_get_markers_internal reports no markers, and as a

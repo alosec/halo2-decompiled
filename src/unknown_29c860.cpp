@@ -134,18 +134,31 @@ bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,
 	real arg_6, s_29946c const *arg_7);
 
+void function_1e4260(long arg_0);
+void function_1e4290(long arg_0, bool arg_1);
+
 __forceinline real function_29cc7e(vector3f *arg_0)
 {
 	arg_0->k = 0.0f;
 	return normalize3d(arg_0);
 }
 
-// score 360 (was 517): frame 0x5b4 and the stack slots now agree. Left: the steering block's two dot
-// sums and the velocity dot load their terms in another order (ours k, j, i reassociated), the
-// angle flag reads the left vector from its home after the call, the actor index is kept in EBX
-// where retail reloads it from its slot, and the 1f9e70 setup order. Tried: the dot sums swapped
-// 360; the velocity dot written i/j/k, j/k/i and through dot3f either way 360 each; the projection
-// test's terms swapped 360; the flags written through the actor struct field 365.
+// score 300 (was 360): the actor flag updates are the existing setters 0x1e4290 (clear 0x800)
+// and 0x1e4260 (set 2), which retail inlines here (they are `inline` at their definitions), and the
+// side test reads the left vector, which is initialised from local_8 as sibling 0x29a190 writes it
+// (retail reads the left vector's home there and the scalar's home in the two direction sums).
+// Left: the left vector and the avoidance vector (local_14) swap their 12-byte slots (ours 0x78/0x84,
+// retail 0x84/0x78): VC orders them by reference count and they tie here (one avoidance store more,
+// or one left-vector store fewer, gives retail's slots as a diagnostic); the steering block's sums,
+// the second normalize's j product, the 0x5d0 flag store and the local_16 dot's x87 order and early
+// field_44 load still differ. Tried: the dot sums swapped 360; the velocity dot written i/j/k, j/k/i
+// and through dot3f either way 360 each; the projection test's terms swapped 360; the flags written
+// through the actor struct field 365. Round 148: the left vector stored before the local_11 copy 297
+// (retail's store order); also before local_12 297; left_i after the vector 300; the local_16 dot in
+// three other operand orders 300 each; direction.i/direction.j operands reordered 300-322 (canonical);
+// the side test as the full 2-D dot with the left vector 328; the left vector through vector3f_assign
+// 321; declared in the steering block 377; the avoidance vector at function scope 322; a separate
+// velocity temporary for the early vehicle block 415.
 // @retail 0x29cbb0
 void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *arg_3,
 	short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)
@@ -203,7 +216,7 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 	vector3f local_12 = *g_4687a4;
 	vector3f local_11 = local_8;
 	real left_i = -local_8.j;
-	vector3f local_13 = {left_i, local_8.i, 0.0f};
+	vector3f local_13 = {-local_8.j, local_8.i, 0.0f};
 	if (!local_2)
 		*(real *)(local_0 + 0x660) = 0.0f;
 	else if (!*(bool *)(local_0 + 0x5d0) || *(bool *)(local_0 + 0x5d2))
@@ -287,7 +300,7 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 			{
 				local_24.field_4 = function_11cd20((vector2f *)&local_8, (vector2f *)&local_9);
 				real local_25 = local_9.j * local_8.i;
-				local_24.field_0 = local_9.i * left_i + local_25 > 0.0f;
+				local_24.field_0 = local_9.i * local_13.i + local_25 > 0.0f;
 				local_24.field_1 = false;
 				local_24.field_8 = 1.0f;
 				local_24.field_1a[10] = true;
@@ -300,7 +313,7 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 					direction.k = 0.0f;
 					local_17 = 0;
 					function_30bf0(&direction);
-					*(long *)((byte *)actor_get(arg_0) + 0x810) &= ~0x800;
+					function_1e4290(arg_0, false);
 				}
 			}
 		}
@@ -356,7 +369,7 @@ local_15:
 	*arg_3 = local_11;
 	*arg_5 = local_12;
 	if (*arg_6 || !*(bool *)(local_0 + 0x5d0))
-		*(long *)((byte *)actor_get(arg_0) + 0x810) &= ~0x800;
+		function_1e4290(arg_0, false);
 	if (local_3)
-		*(long *)((byte *)actor_get(arg_0) + 0x810) |= 2;
+		function_1e4260(arg_0);
 }

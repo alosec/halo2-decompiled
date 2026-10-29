@@ -976,7 +976,7 @@ PRIVATE inline void light_projection_point_ab(transform4x3f const *matrix, vecto
     result->y = scale * y;
 }
 
-// score 513 (was 539): the entry pointer's base (+0x4c), the direction cursor and the table stores
+// score 513 (was 513): the entry pointer's base (+0x4c), the direction cursor and the table stores
 // now agree; retail stores the +radius vertex group first (so 1.0 lands in XMM2, not XMM1) and
 // computes each projection's forward row first. Kept: the file's cross helper for both crosses
 // (it sets the +0x4c base; the shared cross3f for the forward one gives +0x50), normalize3d for
@@ -992,6 +992,19 @@ PRIVATE inline void light_projection_point_ab(transform4x3f const *matrix, vecto
 // with the local vector; the shared cross3f for the left vector 570, 528 with the local vector; the
 // other table orders 549-568. Next: the local vector plus retail's cross-product loads (up loaded into
 // registers, up.i twice) and the normalize's i, k, j product order.
+// Round 109: VC re-sorts each projection row (retail x = (forward.j vj + forward.i vi) + forward.k vk,
+// z = (up.k vk + up.i vi) + up.j vj; ours x = (k + i) + j, z = (i + j) + k). A local vector with the
+// rows through dot3f/dot_product_c1a80/dot3f(v first) 587/587/588; the scale through vector3f_scale
+// 714; the up row computed first 513 (identical).
+// Round 88: projection through a local vector of the three rows 619; depth stored first and the
+// radius read back from it 611; the entry pointer before the bounds copy 511 (retail's store order
+// there, two points: not kept); point3f vertex table 513 (identical); named 0 - radius 587.
+// Round 73: the projection through the existing 0x1427f0 transform 1211 (kept out of line, also with a
+// __forceinline declaration); cross-product operand orders 513 (identical: canonicalised); the
+// cross product stored straight to the result 581 (0xc1a80 stops matching); the local-vector projection
+// again 511: then the tables agree and the first cross product's loads (retail loads up.i, up.j and the
+// reference into registers) and normalize3d's product order are next. Vertex forms with 0 - radius, a
+// negative-radius local before or after radius, const radius: our -radius group stays first (harness).
 // @retail 0xc1d90
 void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab const *shape, s_light_projection_ab *entries, short *count)
 {
@@ -1136,7 +1149,9 @@ void function_c0110()
 // declared before the object 6. Round 95: the loop leaving through `!remaining` in its condition 6;
 // the object read as `*(byte **)(g_4e0300->data + i * 12 + 8)` (the file's form) 6, with `remaining`
 // declared before it 8; a set-or-clear ternary on the field 68; the light index read directly instead
-// of through a reference local 6 (kept).
+// of through a reference local 6 (kept). Round 52: explicit per-arm stores, direct per-arm stores,
+// and direct stores with an index reference 87/87/87; a direct store ternary 6; the object or flags
+// live at entry 6/6; flags declared before the object 6; separate original and updated flag values 6.
 // @retail 0xc3260
 void __stdcall function_c3260(long light_index, bool clear_object_flag)
 {
@@ -1198,6 +1213,10 @@ point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *p
 // forward product reversed and sums the second one up + forward + left. Diagnostics on the shared
 // header (restored): vector-first products 70 (identical), components read at each use 153; const
 // vector arguments 70; a file-private up-first normal transform returning its output (the form other
+// files keep) 70 (identical); the parameter alias dropped 158. Round 147: whichever rotation comes
+// second gets the other order (diagnostics: the two swapped, or a call between them); the arm's locals
+// declared at the top 70 (identical); a named object pointer 72; a named node index 72; the axes as
+// two-element vector arrays 86; a `__forceinline` redeclaration of the rotation helper 70 (identical).
 // files keep) 70 (identical); the parameter alias dropped 158. Round 81: the marker local scoped to
 // its arm 78; the overflow flag declared first 70 (same code); forward/up output pointer locals 86;
 // the location pointer taken at the top 155; the marker flag tested as a byte 70 (same code);
@@ -1424,7 +1443,13 @@ extern s_object_list *g_4de2f4;
 // before the pushes; the colour struct given an rgb member (shared header, restored) 49 (same code);
 // the pointer declared at the function top 93 (it then takes edi and the late store moves as
 // retail's); the pointer also for the second call and/or the blend 49/49/49 (same code);
-// `&light->fraction` passed with no pointer 214.
+// `&light->fraction` passed with no pointer 214. Round 14 (lane 10): a typed definition struct for
+// every offset 49 (identical code); alphas after each copy 50; pair copies after the second/first alphas
+// 49; second/first alphas between the copies 49; the fraction pointer before the alphas / after the tint
+// / between the alphas 49/75/49 (retail keeps it in EBX across both calls; ours rematerialises it).
+// Round 62: a point3f tint 49; alpha-only aggregate initializers 438; the last pair colour copied as
+// a whole color4f 365; a reused input pointer 357; a reused output pointer, chained alphas, a const
+// fraction handle, separate declarations, function-scope colours and const copy sources 49 each.
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {

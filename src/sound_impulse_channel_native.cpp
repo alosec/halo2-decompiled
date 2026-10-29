@@ -122,12 +122,6 @@ static_assert(sizeof(s_sound_controller_view) == 0x18, "controller view size");
 static_assert(sizeof(s_driver_stream) == 0x34, "driver stream stride");
 static_assert(sizeof(s_spatial_view) == 0x38, "spatialization size");
 
-long decibels_add(long a, long b)
-{
-	real const value = *reinterpret_cast<real *>(&a) +
-		*reinterpret_cast<real *>(&b);
-	return *reinterpret_cast<long const *>(&value);
-}
 }
 
 extern s_sound_voice *g_4e6378;

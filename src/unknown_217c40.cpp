@@ -101,7 +101,8 @@ PRIVATE __forceinline void function_217c42(real *arg_0, real *arg_1, real arg_2,
    self-aligning functions showed this). Retail holds no reference to its
    address, and its caller 0x12b450 is LTCG code. With the marker 0x12b450 and
    0x12b690 match; without it they don't. The body itself doesn't match yet. */
-// score 501 (was 541): Frame 0x38 versus 0x40; angle homes and snap-work lifetimes still differ.
+// score 501 (was 501): Frame 0x38 versus 0x40; angle homes and snap-work lifetimes still differ.
+// Earlier 501 from 541.
 // Role names 564; four-controller bound 541; ordinary snap inline 1438; short quadrant 564; shared default 548; combined 562.
 // Iteration-wide axes 541; direct double-angle helper 541; offset before magnitude 556;
 // shared axis signs 735; reverse layout-case order 541.
@@ -113,6 +114,30 @@ PRIVATE __forceinline void function_217c42(real *arg_0, real *arg_1, real arg_2,
 // Separate rounded-angle double formal 541; paired clamps before stores 548;
 // reversed final axis stores 541 at retail length; double/paired, double/reversed,
 // paired/reversed, all three and native quadrant on all three 548/541/548/548/548.
+// Round 197: Eight snap-helper pointer/real-angle/double-angle/threshold formal orders 501 each. Frame 0x38, helper and complete original body restored; both callers remain matched.
+// Shared prepare/apply stages, each called twice: immediate 501; both prepared 564; magnitude
+// first 561; original double-angle preparation 559 (retail frame 0x40); absolute offset 531;
+// absolute/magnitude-first 531; native quadrant 564; value-input application 564. All restored.
+// Round 368: complete four-axis scaled/normalized/both products 501/501/501; shared snap attenuation alone
+// or with each/all product forms and angle role names 566 each. Original body and helpers restored.
+// Raw coordinates reused as first/second/both normalized component locals 501/501/501;
+// vertical normalized components first on original/first/second/both reuse 551/551/551/551;
+// both coordinate reuses with shared trig magnitudes 501. All restored; frame 0x38 remains.
+// Round 161: First/second/both double coordinate carriers 564/553/586;
+// native double trig magnitudes alone/first/second/both coordinates 557/588/576/580;
+// actual input axes with all carriers 580; early first/second/both real angles 562/543/566.
+// All original carriers, observations, casts and arithmetic restored.
+// Round 208: existing shared controller successor 515 at 2024/2012 bytes; independent
+// raw/angle/trig/normalization phase schedules 546/537/537/536/536/543/560/508. Both exact callers
+// preserved in all nine comparisons. All restored; frame 0x38/0x40, rounded angle homes and
+// simultaneous snap work remain.
+// Round 370: double threshold, rounded absolute-angle carrier and rounded-angle formal
+// domains, then all with short quadrant 501/508/508/501/501/508/508/508; helpers and body restored.
+// Round 254: native short copy/first-inverse/both/second-inverse/copy-second/both-inverse/all
+// mapping induction 625/538/626/535/646/544/648; all byte 648. Original long loops restored.
+// Round 220: Selected trig magnitude in shared/separate native phase scalars, with long/word/byte/char
+// controller induction, 501/548/539/539 each. Byte/char recover frame 0x40 and first +0x1b but regress;
+// every form retains 2012 bytes and both matched callers. Original body restored.
 // @retail 0x217c40 standard
 void function_217c40(void)
 {

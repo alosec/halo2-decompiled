@@ -73,7 +73,6 @@ void function_225700(void)
 }
 
 long players_first_active_local_player(void);
-long function_14de10(long index);
 long function_14de70(long local_player_index);
 
 /* lowers both levels once their intervals have passed, for the first active
@@ -83,7 +82,7 @@ void function_225730(void)
 {
 	dword time = GetTickCount();
 
-	for (long local_player = players_first_active_local_player(); local_player != NONE; local_player = function_14de10(local_player))
+	for (long local_player = players_first_active_local_player(); local_player != NONE; local_player = local_player_next_inline(local_player))
 	{
 		long player_index = function_14de70(local_player);
 		s_unknown_225700_player *player = unknown_225700_player_get(player_index);

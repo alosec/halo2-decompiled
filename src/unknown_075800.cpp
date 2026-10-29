@@ -963,7 +963,58 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 
 /* the out-of-band messages: those that arrive from an address rather than on
    an established channel */
-// score 193 (was 193): selector/message/address convention and dispatch root remain. Round 76: with the
+// score 193 (was 193): retail takes the type in EAX, the message in ECX (kept in EBX), this in EDX and
+// the address on the stack (loaded into EDI, which 0x94220 takes it in); ours the type in ECX, the
+// address in EAX and the message on the stack, in every declared order. Retail lays the case bodies out
+// in one switch's order 0,2,3,4,8,9,10,12,13,14,22,23,24,18,11,5,6,7; with the unified switch and the
+// address read once through its address only type/message stay swapped (ECX/EAX for retail EAX/ECX), and
+// the 24 missing bytes are retail's EDI copy of the address and its three-pop exits. --fast builds this
+// function differently (control 191 against plain 193), so the "fast" scores below are previews only.
+// Round 67 (all plain): unified retail-order switch 217 (420 bytes, same convention); declared
+// (type, address, message) with the call site 193 (convention unchanged); free function (type, address,
+// handler, message) on the two-switch body 193 (unchanged); the address read once through its address
+// 195 (address stacked, type ECX, message EAX); that with (address, message, type) declared 195.
+// Round 9 (lane 10, fast control 191): free function (type, address, handler, message) on the two-switch
+// body 191 (type still ECX, message on the stack); case-scoped connection index 191; direct cases
+// 0,2,3,4 196; residual cases in numeric order 191; first switch without its default 191.
+// Round 76 (fast, control 191): unified retail-order switch 218 (aligned 252 -> 83); plus the address read
+// through its address 220 (aligned 104); five parameter orders on it and the message/address/type order
+// 219-220; free function in type/address/handler/message and handler-first orders 220/220; cases 2/4/8/5
+// first 220/216/219/216; message-typed local first 190 (444 bytes, one lower, not kept); link pointer
+// first 242 (this moves to ECX); explicit default/scoped lookups/returns 220 each; message test first
+// 212 (diagnostic). Case-subset bisect: one-case bodies take the type in EAX, any full body keeps ECX. An
+// unused fourth size parameter is dropped by LTCG and leaves the registers as they are, 220.
+// Round 28 (lane 12): single retail-order switch 218 fast; with type/message/address declared 218; one
+// read of the address through its address 220; that with type/message/address 219 (message also on the
+// stack, 0x7afd0 3 -> 35), with type/address/message 220. Lane 4 r98: one numeric-order switch with
+// returns, as 0x93aa0, 208 (432 bytes, same convention); an unused message size parameter after the type
+// 191; formals (type, message, address) 191; direct cases 0,2,3,4 196; connection cases after 11 205.
+// Earlier plain checks (full 198 then): isolated endpoint/leave/query cases 195/198/206; separate
+// connection phase 258; two session cases first 199; connection order reversed 198; direct lookup guard
+// 198; residual phase reversed 207; lookup/direct refusal/query/information inline and noinline 198 each;
+// combined session handler declarations 198; peer-first partition 195; direct order 2,4,0,3 193 (kept).
+// Single-root/one-root/complete-root family orders (query, connection, session, peer in every tried
+// permutation) 202-222; unified switch 208; retail-order switch with lookup exits 218; missing-connection
+// exits 196; inline depth one 196; size preference 243; direct/full if ladders 278/241; link snapshot
+// 215; unsigned connection handle 196; typed session payload 196; session cases before lookup cases 210;
+// reversed direct cases 195; adjacent lookup range after the direct phase 205; instance/standalone/lookup/
+// query/connection/peer/acknowledgment/reconnect cases first 227/250/239/209/277/190/211/233 (fast).
+// Direct-case orders (all 24) 191-196 fast; lookup orders 7,5,6 / 6,7,5 / 6,5,7 / 5,7,6 196/195/191/191;
+// acknowledgment first in the residual phase 196; residual session/peer/numeric/reverse/24-first/
+// 23-first orders 189/189/191/191/189/191; session-ordinal order 193 plain; second-phase lookup/session,
+// connection/peer, connection/query and connection/free-case interleaves 192-195 fast.
+// Round 364: shared lookup inside the connection cases 261; unified direct/numeric/observed orders
+// 272/272/271; residual group last 252; failure break 261; observed failure/scoped result 271/271.
+// Round 366: common direct exit/residual returns/failure breaks/case-local results 216 each; common-exit
+// nested defaults last/first 191/191; complete common-exit switch retained/observed orders 208/218.
+// Round 245: single classifier with internal connection orders 5,7,6 / 6,5,7 / 6,7,5 / 7,5,6 / 7,6,5
+// 208/208/207/208/208; reverse connections with direct orders 0,2,4,3 / 0,3,4,2 / 0,4,2,3 208/208/207.
+// Full-root internal direct orders 207-208; early-phase connection cases 5/6/7 216/224/230, pairs
+// 5+6/5+7/6+7 241/249/253, 5+8 and 6+8 229/231; five coherent formal orders on the two-phase body 191
+// each; unsigned selector in three orders 191 each (all fast). Inline/noinline/forceinline declarations
+// on the dispatcher, the lookup, every direct, connection, leave, acknowledgment, abort, query, update and
+// reconnect handler, singly, grouped and combined, all 191-196 fast (198 plain where checked).
+// selector/message/address convention and dispatch root remain. Round 76: with the
 // Round 9 (lane 10, fast control 191): free function in retail's register order (type, address, handler,
 // message) on the two-switch body, call site updated, 191 (type still ECX, message on the stack);
 // case-scoped connection index 191; direct cases 0,2,3,4 196; residual cases in numeric order 191;
@@ -1010,13 +1061,10 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // keep 2,4,0,3 at plain 193, retail length. Lookup orders 7,5,6 / 6,7,5 give 196/195;
 // acknowledgment first in residual phase 196; unified observed order 218. All call inputs preserved.
 
-// selector/message/address allocation and dispatch root remain.
 // Direct orders 0,4,2,3 / 0,4,3,2 / 2,0,4,3 / 2,3,0,4 give 193/196/193/195 fast;
 // 2,3,4,0 / 3,0,2,4 / 4,0,2,3 / 4,2,0,3 give 194/193/193/191 fast.
 // Last order is 193 plain, tying baseline; fast control 191. All rejected.
-// incoming selector/message/address allocation remains.
 // Earlier: selector/message/address convention still differs; executable rows 155 to 150.
-// Earlier: selector/message/address allocation and dispatch root remain.
 // Earlier: incoming selector/message/address allocation remains.
 // Connection refusal/establishment/closure inline and noinline declarations,
 // individually and as a group, all 191 fast, tying preview. All restored.
@@ -1087,6 +1135,14 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // type/message/address declared 218 (identical); one read of the address through its address 220 (address
 // on the stack as retail, type ecx/message eax, retail eax/ecx); that with type/message/address 219 (message
 // also on the stack, 0x7afd0 3 -> 35), with type/address/message 220. Declared order does not move type to eax.
+// Round 50: unified retail-order slot reads 220/220; sender reference 218; full sender value 242
+// (484 bytes, ret 0x14, caller 76); pointer reference 221. Four-byte aggregate with const,
+// register, declaration-swapped or per-case-result pointer forms 242 each (484 bytes, caller MATCH).
+// All restored; selector/message/address convention and repeated sender loads remain.
+// Round 217: Reversed-peer/connection residual orders 24,5,23,6,22,7 / 5,24,6,23,7,22 /
+// 24,23,5,22,6,7 / 5,24,23,6,22,7 / 24,5,6,23,7,22 / 24,5,23,22,6,7 /
+// 5,24,6,7,23,22 / 24,23,22,5,6,7 give 192/193/190/193/192/192/192/189 fast;
+// reduced control 191, full 193. Original phases and every case/call restored.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {

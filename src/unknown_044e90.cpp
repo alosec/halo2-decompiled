@@ -1,30 +1,25 @@
 // @flags /O2 /Gr /arch:SSE
 #include "unknown_044e90.h"
 #include "normalize3d.h"
-// score 434 (was 434): aligned frame and retail length agree; entry/table ownership and plane/list homes remain.
 
-// Earlier: entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
-// Earlier 434 (was 434): Entry/tag-table registers and plane/list homes remain.
-// Earlier: aligned frame 0x74a4 agrees; entry/table registers and plane/list homes remain.
-// Earlier: entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
-// entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
-// Entry/tag-table registers and plane/list homes remain.
-// Earlier score 434 (was 438): entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
-// entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
-// Aligned frame 0x74a4 agrees; entry/table registers and plane/list homes remain.
-// Aligned frame 0x74a4 and retail length agree; entry/table ownership and plane/list homes remain.
-// aligned frame 0x74a4 agrees; entry/table registers and plane/list homes remain.
-// Earlier: entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
-// Entry/tag-table registers and plane/list homes remain.
-// Earlier score 434 (was 438): entry/table saved registers and plane/list homes still differ; the six-plane for unrolls, and earlier field/copy forms do not improve.
+// score 421 (was 434): frame length and instruction count agree with retail.
+// Still differs: the header workspace is 16 bytes smaller than retail's, so the
+// visibility list slots sit lower in the frame (0xb0/0x10bc/0x20c8/0x40d4 against
+// retail's 0xb0/0x10c0/0x20d0/0x40e0) and the frame is 0x7494 against 0x74a4; the
+// globals and the visibility calls name different addresses in this build; in the
+// plane loop retail holds the source plane at 0x34/0x38/0x3c/0x40 with the normals
+// in xmm4/xmm5/xmm6 and one 1.0f in xmm3, ours holds them at 0x2c/0x30/0x34/0x38
+// with xmm3/xmm4/xmm5 and reloads 1.0f, and retail divides the distance in a
+// register while ours reloads it from the stack; retail zeroes the plane distance
+// when the transform scale is 0.0f and ours leaves it unchanged; retail hoists the
+// four list capacities before the first release test while ours tests them in
+// turn; after the visibility query ours reloads the view table once more than
+// retail, which shifts the rest of the tail.
 // plain plane for 2649; native view ranges 438; plane copy blocks 438; center point setter 438; views read
 // before entry 442; entry bitfield 441
 // Round 310: long bound index 438; explicit plane query 438; visibility-word pointer 438;
 // capacity snapshot 438; guarded native input records 445 (plain). Entry/table and plane/list homes remain.
-// Earlier: entry/table registers and plane/list homes differ; plane ordinal word 438;
-// Earlier score 434 (was 438): entry/table registers and plane/list homes differ; plane ordinal word 438;
-// entry/table registers and plane/list homes differ; plane ordinal word 438;
-// view ordinal word 438; frustum ordinal word 437; byte parts predicate 438; early containment byte
+// Plane ordinal word 438; view ordinal word 438; frustum ordinal word 437; byte parts predicate 438; early containment byte
 // 436 (plain).
 // Entry-data cursor 438; selection flags 434; query count 438; inverse per frustum 525;
 // captured frustum/view bounds 481/483; entry data plus inverse 525; complete matrix value 527.
@@ -47,9 +42,6 @@
 // entry/output planes 449; entry/live transform 472; planes/live transform 459; all three boundaries 449;
 // entry/live selection flags 575.
 // Round 317: Native rotation result 472; native center initializer 434; both 472; member alignment 435; aligned rotation/center/both 473/435/473; aligned rotation with shared normal scale 473. Header fully restored.
-// Round 166: query data result/conditional/negative-first 438/463/455; shared normal products
-// 436; query result with products 440; const query 434; query result/products with const query
-// 438/436. All product regroupings restored.
 // Round 142: native tag/table/both observations 434/444/444; on the latter graph,
 // workspace after selection/branch scope, signed flags, query count and entry-data receiver
 // all 444; uniform selection-flag reads with tag-table/tag/tag-table-data 447/438/447.
@@ -64,7 +56,18 @@
 // with input/output end do 486/451; input/output end for 473/451; input/output
 // end while 473/451. Original fixed-six ordinal loop and all plane observations restored.
 // Round 150: Native first/second, third/fourth and transform-array handles, seven subsets 434 each; all descriptor lifetimes beginning at first use 434. All handles restored.
-// Aligned frame 0x74a4 and retail length agree; entry/table ownership and plane/list homes remain.
+// Round 146 (retail reads the flags inside each branch and the table into ESI before the tag test): entry flags
+// at each use 438; table read once at the top 444; both 447 (the table lands in EDX); flags local per branch 441;
+// entry declared before the workspace 434.
+// Native stride-0x108 frustum source with raw/native count/native ranges/both 434 each;
+// the same four forms with native six-plane array reference 434 each. Original source
+// ownership, real record declarations and fixed-six loop restored.
+// Round 240: Complete whole-query decision bool/byte/short/long 437/437/443/436;
+// equivalent ordered alternatives 437/437/443/436. Entry/table and list/plane
+// homes remain; all original selection observations and body restored.
+// Round 162: Native selection fields alone/table/aligned/aligned-table 438/447/439/448; the same
+// four with the existing normal scaler 438/447/439/448. Entry/table and plane/list homes remain;
+// original external fields, storage alignment and all arithmetic restored.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {
@@ -80,15 +83,14 @@ void __stdcall function_44e90(short entry_index, short section_index)
     }
     else
     {
-        byte *structure = (byte *)g_4e0348;
         byte *section;
         if (!((entry->unknown00 >> 12) & 1))
-            section = *(byte **)(structure + 0xa0) + ((flags >> 9) & 0x1ff) * 0xb0;
+            section = *(byte **)((byte *)g_4e0348 + 0xa0) + ((flags >> 9) & 0x1ff) * 0xb0;
         else
         {
-            byte *instances = *(byte **)(structure + 0x144);
+            byte *instances = *(byte **)((byte *)g_4e0348 + 0x144);
             short index = *(short *)(instances + ((flags >> 18) & 0x7ff) * 0x58 + 0x34);
-            section = *(byte **)(structure + 0x13c) + index * 0xc8;
+            section = *(byte **)((byte *)g_4e0348 + 0x13c) + index * 0xc8;
         }
         geometry = *(byte **)(section + 0x50);
     }
@@ -124,28 +126,35 @@ void __stdcall function_44e90(short entry_index, short section_index)
                 long j = 0;
                 do
                 {
-                    plane3f p = source[j];
+                    plane3f p = *source;
                     if (transform)
                     {
-                        if (transform->scale != 0.0f)
+                        real n_i = p.i, n_k = p.k, n_j = p.j;
+                        if (0.0f != transform->scale)
                         {
-                            p.d -= transform->position.y * p.j + transform->position.z * p.k + transform->position.x * p.i;
+                            p.d -= transform->position.x * n_i + transform->position.z * n_k + transform->position.y * n_j;
                             if (transform->scale != 1.0f)
                                 p.d /= transform->scale;
                         }
-                        vector3f n = p.n;
                         if (transform->scale != 1.0f)
                         {
                             real inverse = 1.0f / transform->scale;
-                            n.i *= inverse; n.j *= inverse; n.k *= inverse;
+                            n_i *= inverse; n_j *= inverse; n_k *= inverse;
                         }
-                        p.i = transform->forward.k * n.k + transform->forward.j * n.j + transform->forward.i * n.i;
-                        p.j = transform->left.k * n.k + transform->left.j * n.j + transform->left.i * n.i;
-                        p.k = transform->up.k * n.k + transform->up.j * n.j + transform->up.i * n.i;
+                        planes[j].i = transform->forward.k * n_k + transform->forward.j * n_j + transform->forward.i * n_i;
+                        planes[j].j = transform->left.k * n_k + transform->left.j * n_j + transform->left.i * n_i;
+                        planes[j].k = transform->up.k * n_k + transform->up.j * n_j + transform->up.i * n_i;
+                    }
+                    else
+                    {
+                        planes[j].i = p.i;
+                        planes[j].j = p.j;
+                        planes[j].k = p.k;
                     }
                     p.d = -p.d;
-                    planes[j] = p;
+                    planes[j].d = p.d;
 
+                    ++source;
                     ++j;
                 } while (j < 6);
                 function_2dd930(query_data, &query, &workspace.first.list, &workspace.second.list);
@@ -188,9 +197,9 @@ void __stdcall function_44e90(short entry_index, short section_index)
                     vector3f_scale((vector3f const *)&local, transform->scale, (vector3f *)&local);
                 }
                 point3f center;
-                center.x = transform->up.i * local.z + transform->left.i * local.y + transform->forward.i * local.x + transform->position.x;
-                center.y = transform->up.j * local.z + transform->left.j * local.y + transform->forward.j * local.x + transform->position.y;
-                center.z = transform->up.k * local.z + transform->left.k * local.y + transform->forward.k * local.x + transform->position.z;
+                center.x = transform->forward.i * local.x + transform->left.i * local.y + transform->up.i * local.z + transform->position.x;
+                center.y = transform->forward.j * local.x + transform->left.j * local.y + transform->up.j * local.z + transform->position.y;
+                center.z = transform->forward.k * local.x + transform->left.k * local.y + transform->up.k * local.z + transform->position.z;
                 bool contained = false;
                 if (function_165010((s_frustum_set_view *)views, section_index, &center, *(real *)(bound + 0xc), &contained))
                 {

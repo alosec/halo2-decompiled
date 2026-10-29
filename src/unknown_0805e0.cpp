@@ -764,7 +764,7 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 }
 #pragma inline_depth(8)
 
-// score 66 (was 181): frame 0xc agrees; admission prefix, removed-index EDX/ESI and upper ECX/EAX remain.
+// score 66 (was 66): frame 0xc agrees; admission prefix, removed-index EDX/ESI and upper ECX/EAX remain.
 // Frame 0xc agrees; removed-index EDX/ESI, upper-bound ECX and copy/repair induction remain.
 // Paired range arms 373;
 // frame 0x0c agrees; removed-index registers, upper
@@ -807,6 +807,17 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // forward memmove 380; sentinel-first links 157; early view/bound declaration swap/
 // const admission with the 64-point lower 64/64/64; default insertion range 388;
 // three current-graph cases 386. The two-point lower gain was not kept; original body restored.
+// Round 149: plain entry (removed = NONE, set inside the full test) 370; with lower/upper as
+// `removed > position ? ...` and an explicit `>` arm 355; plus the flag cleared in the count path
+// (retail tail-merges that arm with it) 74 at 1171 bytes, with the flag set before the decrements and
+// upper assigned first there 71: entry, min/max and three-way test then match, but upper takes EAX
+// (retail ECX, copied from the count) and the forward index EBP (retail EAX). On 71: one shared shift
+// index 74; range locals in three orders 74; named count 71; entry-pointer forward copy 71, copy from
+// lower 364; upper before lower 75; bounds zeroed in an else arm 71. Original body restored.
+// Round 215: native timestamp dword member 66; closed bounds workspace 66;
+// entry time workspace 66; pre-copy long adjustment 382; indexed destination 168;
+// mutable removal with upper-first declarations 66; shared range-direction relation 381;
+// indexed destination with native timestamp member 168. Original body restored.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {

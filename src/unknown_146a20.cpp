@@ -264,42 +264,39 @@ void function_146de0(void)
 	}
 }
 
-// score 143 (was 143): timestamp high-word home and update expansion still differ.
-// Global analysis off 120 (0x50 frame); frame pointer 161; size/speed 281/143;
-// local analysis with frame/size 120/158; frame with size/speed 281/161; policies restored.
-// frame 0x18 versus 0x14 and shared update expansion remain.
-// Constructed allocator result 164; conditional usable capacity 140/frame 0x14 (three-point gain dropped);
-// conditional padding 141; block/padding outer scopes 143; current block-first homes 143;
-// construction scope 143; zero-first padding 143 at 377 bytes.
-// score 139 (was 143): frame 0x14 now agrees; update expansion and saved registers differ.
-// Per-attempt padding after/before publication 149/149; consumed padding 139/151;
-// guarded consumption 145; rounded padding/consumption 163/162; bounded search 149.
-// score 139 (was 139): selective update expansion and request/timestamp homes remain.
-// Update defining-source inline/force-inline declarations 139/139; separate request/usable capacity 139;
-// per-attempt request 139; split capacity plus inline/force-inline update 139/139; request plus inline 139; native handle plus split capacity 139.
-// j93: Frame 0x18/0x14 and update expansion remain; word padding 140 gains only three and is dropped.
-// byte alignment padding 150; word alignment padding 140; allocation success result 143; explicit placement
-// guard 143; post retry capacity 143.
-// score 129 (was 139): capacity/timestamp homes and update expansion remain.
-// Constructor mask 139; repaired native construction result with/without mask 164/164;
-// entry capacity plus mask 141; native buffer/address/padding-scope plus mask 139/139/139;
-// actual masked-capacity local 138 (one-point gain dropped).
-// capacity/timestamp homes and selective update expansion remain.
-// Final rounded/low-bit/conditional/word padding 149/152/143/145; signed-word
-// per-attempt padding 129 plain kept; capacity/allocation/joint home names 139/139/139.
-// score 129 (was 129): capacity/timestamp homes and selective update expansion remain.
-// Signed-short delta 139; attempt/final short scope 129/129; short remainder consumption 136;
-// entry capacity 131; unsigned capacity/native handle/separate usable with short padding 129/129/129.
-// Capacity/timestamp homes and update expansion remain; wrapped/full boundary
-// distances 164/149; direct consumption 164; counted distance 153; remainder update 140; byte padding
-// 144; unsigned capacity/native allocation 139/139.
-// score 129 (was 129): frame 0x14 agrees; update expansion and capacity/timestamp homes remain.
-// Short-padding failure/body, counted and capacity loops 129/131/129; zero-default/select padding
-// 134/129; allocator result 129; full short distance 135; success-only padding consumption
-// 120 (held: the guard repeats the loop's own test).
-// score 129 (was 129): capacity/timestamp homes and update expansion remain;
-// separate byte/char/word/dword/short/long remainders with short padding
-// 134/134/136/146/136/146; byte/word conditional padding 134/136.
+// score 120 (was 143): BLOCKED-BY 0x12c600: retail inlines the texture cache update (0x12c600)
+// at this one call site only (its other 13 callers call it), ours calls it; the padding is consumed
+// only when the allocation succeeds and the handle is published inside the retry loop.
+// Lane 10 r15: `inline` on 0x12c600 inlines it at every caller (all 14 worse, matched 0x8c790,
+// 0x1241b0, 0x194260 lost; reverted). Retail computes the padding after the loop:
+// `long padding = (((dword)block + 0xf) & ~0xf) - (dword)block;` then `c_havok_fixed_memory(block,
+// size - padding)` gives retail's prologue, frame entry, registers (size EBP, block EDI) and tail
+// instruction for instruction, 151 here only because the missing inline leaves it 55 bytes short;
+// the same as `size -= ...` 149, as a pointer difference in the argument 163, as `-(long)block & 0xf`
+// 152. A local forceinline copy of the update (diagnostic) also inlines its callees 207.
+// Earlier: global analysis off 120 (0x50 frame); frame pointer 161; size/speed 281/143; local
+// analysis with frame/size 120/158; frame with size/speed 281/161.
+// Constructed allocator result 164; conditional usable capacity 140 (frame 0x14); conditional
+// padding 141; block/padding outer scopes 143; current block-first homes 143; construction scope
+// 143; zero-first padding 143 at 377 bytes. Per-attempt padding after/before publication 149/149;
+// consumed padding 139/151; guarded consumption 145; rounded padding/consumption 163/162; bounded
+// search 149. Update defining-source inline/force-inline declarations 139/139; separate
+// request/usable capacity 139; per-attempt request 139; split capacity plus inline/force-inline
+// update 139/139; request plus inline 139; native handle plus split capacity 139. Byte/word
+// alignment padding 150/140; allocation success result 143; explicit placement guard 143; post
+// retry capacity 143. Constructor mask 139; repaired native construction result with/without mask
+// 164/164; entry capacity plus mask 141; native buffer/address/padding-scope plus mask 139/139/139;
+// actual masked-capacity local 138. Final rounded/low-bit/conditional/word padding (inside the
+// loop's structure) 149/152/143/145; signed-word per-attempt padding 129 (kept then);
+// capacity/allocation/joint home names 139/139/139. Signed-short delta 139; attempt/final short
+// scope 129/129; short remainder consumption 136; entry capacity 131; unsigned capacity/native
+// handle/separate usable with short padding 129/129/129. Wrapped/full boundary distances 164/149;
+// direct consumption 164; counted distance 153; remainder update 140; byte padding 144; unsigned
+// capacity/native allocation 139/139. Short-padding failure/body, counted and capacity loops
+// 129/131/129; zero-default/select padding 134/129; allocator result 129; full short distance 135;
+// success-only padding consumption 120 (held: the guard repeats the loop's own test). Separate
+// byte/char/word/dword/short/long remainders with short padding 134/134/136/146/136/146; byte/word
+// conditional padding 134/136.
 // @retail 0x146e30
 c_havok_abstract_allocator *function_146e30(void)
 {
@@ -313,10 +310,13 @@ c_havok_abstract_allocator *function_146e30(void)
 		{
 			block = (byte *)function_80e14(size, 0, 0, 0, 90, 1.0f);
 			g_47988c = (long)block;
-			adjustment = (dword)block & 0xf;
-			if (adjustment)
-				adjustment = 0x10 - adjustment;
-			size -= adjustment;
+			if (block)
+			{
+				adjustment = (dword)block & 0xf;
+				if (adjustment)
+					adjustment = 0x10 - adjustment;
+				size -= adjustment;
+			}
 		}
 		while (!block && ((size >>= 1) >= 0x100000));
 

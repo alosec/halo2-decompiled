@@ -24,6 +24,23 @@ struct s_slot_82
 	byte unknown3a[0x40 - 0x3a];
 };
 
+/* the same slot's data block after the header (s_slot's unknownc), as
+   function_1c1160 reads it */
+struct s_slot_82_data
+{
+	bool unknown00;
+	byte unknown01[3];
+	long unknown04;
+	point3f unknown08;
+	bool unknown14;
+	bool unknown15;
+	byte unknown16[2];
+	long unknown18;
+	long unknown1c[4];
+	short unknown2c;
+	byte unknown2e[0x34 - 0x2e];
+};
+
 /* the prop state as these callbacks read it: the position at +4 */
 struct s_prop_state_point
 {
@@ -221,6 +238,21 @@ short __stdcall function_1c10a0(long actor_index)
 
 // score 2 (was 2): the pool pointer is loaded into ECX here and into EDX in
 // retail, the rest of the function matches.
+// This round: plain slot read 28; plain index read 4; plain index with
+// const pool/data/slot/actor, swapped local names or early mask 4 each;
+// original with const pool/data/actor/slot or swapped local names 2 each.
+// An ordinary pool read puts the
+// pointer in EDX but lets the data load fold into the final add, and a
+// volatile data read keeps the load apart but moves the pointer to ECX.
+// Typed actor-array base 2; direct typed slot snapshot 2; actor-zero chain 6;
+// missing-index chain 4; both chains 8; mutable pool with byte/actor base 2/2;
+// typed actor base with direct index parameter 4. Original body restored.
+// Single typed/byte actor cursors advanced after the slot snapshot 17/2. Restored.
+// Round 71 (no volatile): slot data block `(s_slot_82_data *)slot->unknownc` with
+// actor_reset_state 20 (retail's slot load, EDX pool and zero; only the data load folds
+// into `add eax, [edx + 0x44]`); with a data local / typed base / actor argument inside
+// the reset 20/20/20; extra lookup first 20; result first 20; index or slot read through
+// its address 20/20; slot read after the reset 28 (unfolded, but pool ECX as 0x1b09b0).
 // @retail 0x1c10f0
 bool __stdcall function_1c10f0(long actor_index, s_slot *slot)
 {
@@ -245,59 +277,75 @@ bool __stdcall function_1c10f0(long actor_index, s_slot *slot)
 	return true;
 }
 
-// score 63 (was 63): g_46fbe8 and g_46fbe4 are read as bytes here but as
-// dwords in retail - they are declared short in include/globals.h, which is not
-// mine to change - and the actor is fetched in a different order.
 // @retail 0x1c1160
 short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 {
-	s_slot_82 *state = (s_slot_82 *)slot;
 	short result = g_46fbe8;
-	s_actor_view *actor = actor_get(actor_index);
+	s_slot_82_data *state = (s_slot_82_data *)slot->unknownc;
 
-	if (actor->unknown504 == 2)
+	if (actor_get(actor_index)->unknown504 == 2)
 	{
-		s_unit_request action;
-		long unit_index = actor->unknown018;
+		s_actor_view *actor = actor_get(actor_index);
+		long unit_index;
 
-		if (actor->unknown22a)
+		if (bool vector_request = actor->unknown22a)
 		{
-			if (!function_110ab0(unit_index) &&
-				(!state->unknown20 || dot3f((vector3f *)&state->unknown14, &actor->unknown290) > 0.9f))
+			unit_index = actor->unknown018;
+			if (!function_110ab0(unit_index))
 			{
-				action.type = 0x35;
-				action.type35.has_vector = state->unknown20;
-				if (state->unknown20)
+				real alignment = 1.0f;
+
+				if (state->unknown14)
 				{
-					action.type35.vector = *(vector3f *)&state->unknown14;
+					alignment = dot3f((vector3f *)&state->unknown08, &actor->unknown290);
 				}
-				state->unknown0c = function_e6900(actor->unknown018, &action);
+				if (alignment > 0.9f)
+				{
+					s_unit_request request;
+
+					request.type = 0x35;
+					request.type35.has_vector = state->unknown14;
+					if (state->unknown14)
+					{
+						request.type35.vector = *(vector3f *)&state->unknown08;
+					}
+					state->unknown00 = function_e6900(actor->unknown018, &request);
+				}
 			}
 		}
-		else if (!function_110ab0(unit_index))
+		else
 		{
-			long vehicle_index = state->unknown10;
-
-			result = g_46fbe4;
-			if (vehicle_index != NONE)
+			unit_index = actor->unknown018;
+			if (!function_110ab0(unit_index))
 			{
-				s_vehicle_tag_view *tag = vehicle_tag_get(vehicle_index);
-				short seat_index;
+				long vehicle_index = state->unknown04;
 
-				for (seat_index = 0; seat_index < tag->seat_count; seat_index++)
+				result = g_46fbe4;
+				if (vehicle_index != NONE)
 				{
-					if (TEST_FIELD_BIT(tag->seats[seat_index].flags.bit3))
+					s_vehicle_tag_view *tag = vehicle_tag_get(vehicle_index);
+					short seat_index;
+
+					for (seat_index = 0; seat_index < tag->seat_count; seat_index++)
 					{
-						if (seat_index != NONE && function_c8f60(vehicle_index, seat_index) == NONE)
+						s_vehicle_seat_view *seat = &tag->seats[seat_index];
+
+						if (TEST_FIELD_BIT(seat->flags.bit3))
 						{
-							action.type = 0x1c;
-							action.type1c.object_index = vehicle_index;
-							action.type1c.seat_index = seat_index;
-							action.type1c.unknowna = false;
-							action.type1c.unknownb = false;
-							function_e6900(actor->unknown018, &action);
+							if (seat_index != NONE && function_c8f60(vehicle_index, seat_index) == NONE)
+							{
+								long request_unit = actor->unknown018;
+								s_unit_request action;
+
+								action.type1c.object_index = vehicle_index;
+								action.type = 0x1c;
+								action.type1c.seat_index = seat_index;
+								action.type1c.unknowna = false;
+								action.type1c.unknownb = false;
+								function_e6900(request_unit, &action);
+							}
+							break;
 						}
-						break;
 					}
 				}
 			}
@@ -306,54 +354,52 @@ short __stdcall function_1c1160(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
-// score 17 (was 17): our stack frame is 4 bytes bigger than retail's, so one
-// of the two longs lands in the frame here and in a dead argument slot there.
 // @retail 0x1c1320
 bool __stdcall function_1c1320(long actor_index, s_slot *slot)
 {
-	s_slot_82 *state = (s_slot_82 *)slot;
 	bool result = true;
 
 	if (actor_get(actor_index)->unknown040 &&
 		!(actor_get(actor_index)->unknown50c && actor_get(actor_index)->unknown504 == 1) &&
 		actor_get(actor_index)->unknown504 != 2)
 	{
+		s_slot_82_data *state = (s_slot_82_data *)slot->unknownc;
 		s_actor_point_target target;
-		long reference = NONE;
-		long unknown = NONE;
+		long target_index = NONE;
+		long position_reference = NONE;
 
-		if (state->unknown21)
+		if (state->unknown15)
 		{
 			s_firing_position *position;
 
-			reference = state->unknown24;
-			position = firing_position_get(reference);
+			position_reference = state->unknown18;
+			position = firing_position_get(position_reference);
 			target = position->target;
-			unknown = position->unknown30;
+			target_index = position->unknown30;
 		}
 		else
 		{
-			function_1c0b80(actor_index, state->unknown28, state->unknown38, &target, &unknown, &reference);
+			function_1c0b80(actor_index, state->unknown1c, state->unknown2c, &target, &target_index, &position_reference);
 		}
-		if (reference == NONE)
+		if (position_reference == NONE)
 		{
 			result = false;
 			goto done;
 		}
-		if (function_1f4460(actor_index, &target, unknown, NONE, false))
+		if (function_1f4460(actor_index, &target, target_index, NONE, false))
 		{
-			s_firing_position *position = firing_position_get(reference);
+			s_firing_position *position = firing_position_get(position_reference);
 
-			state->unknown14.x = (real)cos(position->facing);
-			state->unknown14.y = (real)sin(position->facing);
-			state->unknown14.z = 0.0f;
-			state->unknown20 = true;
+			state->unknown08.x = (real)cos(position->facing);
+			state->unknown08.y = (real)sin(position->facing);
+			state->unknown08.z = 0.0f;
+			state->unknown14 = true;
 			result = true;
 			goto done;
 		}
-		if (state->unknown38 < 4)
+		if (state->unknown2c < 4)
 		{
-			state->unknown28[state->unknown38++] = reference;
+			state->unknown1c[state->unknown2c++] = position_reference;
 		}
 		else
 		{

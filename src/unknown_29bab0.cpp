@@ -98,6 +98,22 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 // 815/748/766/816/815/748/804/821; complete normalizer inputs/sum/all products and one-result exit on the new
 // default-two graph 814/814/814/814/814/814/750/814. Best default 748 gains only two; original body, parameter
 // access, helpers and mode assignments restored.
+// Round 367: Returned position receiver/shared two-dimensional difference/both 838/750/838; immutable pre-
+// blend snapshot 804; snapshot with position/difference/both 838/750/838; all with native position
+// workspace name 838. Direct input in every form; all restored.
+// Round 224: direct input plus shared cross/speed/publication 748/750/881; cross+speed 748;
+// cross+publication, speed+publication, all, all+native normalizer setter 886 each. Two-point
+// cross gains rejected; original input access, helpers and outputs restored.
+// Round 267: Isolated response/position/normalized-input home identities on direct input,
+// all seven subsets and jointly with the magnitude identity, 804 each. Frame 0x8c versus
+// retail 0x88; original body, input access and helpers restored.
+// Round 392: Native scalar/flag/heading actor fields, scalar+flag/scalar+heading/flag+heading/all,
+// then all with object-first acquisition: 804/804/804/804/804/804/804/829. All direct-input forms restored.
+// Round 394: Direct-input shared addition/scalers/both/projection/addition-projection/scalers-
+// projection/all/all with shared normalizer 747/804/747/804/747/804/747/785. Three-point gains rejected; all restored.
+// DH round 234: direct input/live lateral-radius field with last/scale/direction query
+// output defaults, eight combinations 835/835/808/808/832/832/805/805. All restored;
+// early input/heading and normalizer memory-product homes remain on frame 0x88.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

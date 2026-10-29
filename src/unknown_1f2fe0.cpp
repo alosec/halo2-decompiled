@@ -193,9 +193,8 @@ bool function_1f3430(long actor_index)
 }
 
 /* keeps the actor on the near side of a plane for some ticks */
-// score 2 (was 2): the last product's operands come out the other way round:
-// ours loads the plane's i component and multiplies it by the point's x,
-// retail loads the point's x and multiplies it by the plane's i.
+// The final product reads the point's x before multiplying by the plane's i,
+// preserving retail's scalar SSE operand order.
 // @retail 0x1f34b0
 bool function_1f34b0(long actor_index, point3f const *point, vector3f const *normal, real distance, short ticks)
 {
@@ -203,7 +202,7 @@ bool function_1f34b0(long actor_index, point3f const *point, vector3f const *nor
 	plane3f *plane = &actor->unknown608;
 
 	plane->n = *normal;
-	plane->d = plane->k * point->z + plane->j * point->y + point->x * plane->i;
+	plane->d = plane->k * point->z + plane->j * point->y + *(real const volatile *)&point->x * plane->i;
 	actor->unknown618 = distance;
 	actor->unknown61c = ticks;
 	actor->unknown605 = true;

@@ -274,6 +274,12 @@ void function_402b0(long cache_index, long mode)
 // a forceinline declaration here 607 (ignored); passes written as the folded inline 231 (frame 0x88
 // and the stack byte agree, 0x496f0 inlines, 980 bytes); 0x402b0 with its block indexed at each use
 // takes the cache index in EDX as retail's call does, 182 (0x402b0 itself 144).
+// Lane 9 r29 (plain): SET_FLAG ternary for the geometry bit 155 (same code); byte selection 220
+// (973 bytes, frame 0x88 and the stack byte as retail, 0x496f0 still inlined); SDK class
+// SetDepthClipPlanes 155 (same); byte selection with a noinline 0x496f0 declaration 287 (890 bytes).
+// Diagnostic: the passes as an inlined copy of 0x44370 with a const mode table 282 (895 bytes: stack
+// byte, pass-11 re-store and the 0x496f0 call as retail; only the dead g_485898 loads and frame
+// 0x88 missing); the same copy on the real writable table 782 (1389 bytes).
 // @retail 0x404b0
 bool function_404b0(long mode)
 {
@@ -412,10 +418,20 @@ bool function_404b0(long mode)
 // cull mode; `cond ? 0 : cull_mode`; modes 3/16 re-marked enabled) 203 (1198 B; the re-store and
 // the word argument then as retail, the stipple arms swapped), the cull arm written first 203, with
 // 0x44370's mask-gated enable 203. Original body restored.
+// Lane 9 r29 (fast): entry byte `<= 0` 192 again (one point, not kept); stipple as
+// `g_485898 >= 4 && g_485898 <= 7 ? 0 : 1` 226; pass-8 `g_4ba022 != 0` 193; material as a
+// ternary 269; `(void)&single_pass` removed 193 (identical code, plain; kept). 0x14b60 written
+// from the disabled draft with a noinline declaration (plain): 255, and matched 0x14ac0 drops to 2.
+// Round 12 (lane 10, fast): the real 0x14b60 body in this file (stub removed) breaks matched 0x14ac0
+// (2), builds 93 bytes against 91 and takes this to 245, as the disabled contributor copy warns;
+// culling argument as `g >= 4 && g <= 7 ? 0 : 1` 226 (1181 B), the call written in both arms in either
+// condition sense 226/226 (two call sites as retail, but our 0 arm falls through where retail's 1 arm
+// does: that arm was still the table's cull-mode load when retail laid the blocks out); pass 8 as
+// `selected = bit; if (selected) selected = g_4ba022 != 0;` 176 (1196 B; a flag set inside a test,
+// match-only; retail stores the raw byte, so the global is a bool in retail). All restored.
 // @retail 0x3fdf0
 bool function_3fdf0(long mode, bool single_pass)
 {
-    (void)&single_pass;
     g_4b6280.unknown04 = g_4b6280.count;
     dword selection = !mode ? ~0UL : mode == 2 ? 0x10 : 0x20;
     g_4c1a48[0].unknown10 = g_4c1a48[0].flags;

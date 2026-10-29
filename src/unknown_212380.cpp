@@ -37,6 +37,19 @@ bool function_212ec0(s_game_variant *arg_0, long arg_1);
 // bit 0 through its bitfield, the mask split in two, bits 2-14 as single bitfields 386 each; the
 // existing engine-to-type mapping call 1391; flags right after the name copy in the shared
 // initializer 373 (0x19d220 then stops matching).
+// Round 32: the flags store is what differs per case: retail computes and stores flags48 right
+// after the name copy, before the copy's `add esp, 0xc`, so each case keeps its own store; ours
+// schedules it after the stack adjustment, where it is identical in every case and is merged
+// into the shared tail (each case one instruction shorter, the tail one longer, and the register
+// rotation that follows). Variant declared at function scope 386; the failure path returning
+// NONE directly 371 (only the length and table line up; the tail moves further from retail; not
+// kept); the initializer's returned pointer used afterwards 386; an early NONE return 446.
+// Round 66: output pointer throughout/init-only/tail-only/assigned from returns, output reference
+// throughout/tail-only, shared source-name pointer and entry output with a pointer 386 each.
+// The matched callees stayed exact; all executable forms restored.
+// Round 388: Complete tail-family orders 1572489/1572849/1752489/1752849/
+// 1248579/1284579/1248759/1284759: 385/386/386/387/385/387/383/384.
+// Gains below the retention gate; original switch and shared initializer retained.
 // @retail 0x212380
 long function_212380(long arg_0, long arg_1, byte *arg_2)
 {

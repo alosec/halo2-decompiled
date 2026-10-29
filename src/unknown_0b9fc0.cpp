@@ -25,16 +25,20 @@ and closes, and keyframes the machine's Havok bodies to its nodes. */
 struct s_machine
 {
 	long definition_index;
-	struct
+	union
 	{
-		dword unknown0 : 11;
-		dword dynamic_lighting : 1;
-		dword static_lighting : 1;
-		dword static_lighting_sideways : 1;
-		dword unknown14 : 8;
-		dword unknown22 : 1;
-		dword unknown23 : 1;
-		dword : 8;
+		dword value;
+		struct
+		{
+			dword unknown0 : 11;
+			dword dynamic_lighting : 1;
+			dword static_lighting : 1;
+			dword static_lighting_sideways : 1;
+			dword unknown14 : 8;
+			dword unknown22 : 1;
+			dword unknown23 : 1;
+			dword : 8;
+		};
 	} object_flags;
 	byte unknown008[0xc];
 	long parent_object_index;
@@ -113,7 +117,7 @@ struct s_type_181dea
 	byte unknown00[0x3c];
 	dword flags;
 	long portal_count;
-	struct
+	struct s_portal_entry
 	{
 		short unknown0;
 		short portal_index;
@@ -218,6 +222,15 @@ __forceinline short machine_round(real value)
 	return (short)result;
 }
 
+/* sets or clears one bit of a flags word */
+static inline void flags_set_bit(dword *flags, long bit, bool value)
+{
+	if (value)
+		*flags |= 1 << bit;
+	else
+		*flags &= ~(1 << bit);
+}
+
 PRIVATE void machine_keyframe_rigid_bodies(long machine_index, bool keyframed);
 PRIVATE void machine_release_rigid_bodies(long machine_index);
 
@@ -239,16 +252,12 @@ void __stdcall machine_place(long machine_index, s_type_181dea *scenario_machine
 	if (scenario_machine->flags & 8)
 		machine->flags |= 0x20;
 	machine->placement_index = NONE;
-	machine->object_flags.unknown22 = false;
-	machine->object_flags.unknown23 = false;
+	flags_set_bit(&machine->object_flags.value, 22, false);
+	flags_set_bit(&machine->object_flags.value, 23, false);
 
-	short policy;
+	short policy = 3;
 
-	if (machine->definition_index == NONE)
-	{
-		policy = 3;
-	}
-	else
+	if (machine->definition_index != NONE)
 	{
 		switch (MACHINE_DEFINITION_GET(machine->definition_index)->pathfinding_policy)
 		{
@@ -272,18 +281,18 @@ void __stdcall machine_place(long machine_index, s_type_181dea *scenario_machine
 	case 1:
 		if (g_4686c4 >= 0 && g_4686c4 < scenario_machine->portal_count)
 		{
-			short const *portal_index = &scenario_machine->portals[g_4686c4].portal_index;
+			s_type_181dea::s_portal_entry const *portal = &scenario_machine->portals[g_4686c4];
 
-			machine->placement_index = *portal_index;
-			if (*portal_index != NONE)
+			machine->placement_index = portal->portal_index;
+			if (portal->portal_index != NONE)
 			{
-				machine->object_flags.unknown22 = true;
+				flags_set_bit(&machine->object_flags.value, 22, true);
 
 				long table = function_1fa7f0();
 
 				if (table)
 				{
-					short index = *portal_index;
+					short index = portal->portal_index;
 
 					if (index >= 0 && index < *(long *)(table + 0x30) &&
 						(*(byte *)(*(long *)(table + 0x34) + index * 0x1c) & 1))
@@ -296,13 +305,12 @@ void __stdcall machine_place(long machine_index, s_type_181dea *scenario_machine
 		// fall through
 	case 0:
 	case 3:
-		machine->object_flags.unknown23 = true;
-		function_b8b70(machine_index);
+		flags_set_bit(&machine->object_flags.value, 23, true);
 		break;
 	default:
-		function_b8b70(machine_index);
 		break;
 	}
+	function_b8b70(machine_index);
 }
 
 struct s_115191
@@ -363,6 +371,7 @@ void __stdcall function_115220(long machine_index)
 	}
 }
 
+// score 368 (was 473): its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
@@ -373,11 +382,11 @@ bool __stdcall function_1152e0(long machine_index)
 	bool changed = false;
 	word object_flags = machine->flags_c0;
 
-	if (((object_flags >> 12) & 1) && (!(0.0001f > (real)fabs(machine->position)) || ((object_flags >> 10) & 1)) &&
+	if ((TEST_FIELD_BIT((object_flags >> 12) & 1)) && (!(0.0001f > (real)fabs(machine->position)) || (TEST_FIELD_BIT((object_flags >> 10) & 1))) &&
 		machine->havok_component_index != NONE)
 	{
 		s_havok_component *component = havok_component_get(machine->havok_component_index);
-		real position = ((object_flags >> 10) & 1) ? 1.0f : 0.0f;
+		real position = (TEST_FIELD_BIT((object_flags >> 10) & 1)) ? 1.0f : 0.0f;
 
 		if (machine->position > position)
 			position = machine->position;
@@ -447,11 +456,11 @@ bool __stdcall function_1152e0(long machine_index)
 					(s_machine_unit_definition_view *)g_4e3b44[unit->definition_index & 0xffff].bytes;
 				bool can_open = true;
 
-				if (((1 << header->type) & 2) && !((local_98b918->unit_flags >> 20) & 1))
+				if (TEST_FIELD_BIT(((1 << header->type) >> 1) & 1) && !(TEST_FIELD_BIT((local_98b918->unit_flags >> 20) & 1)))
 					can_open = false;
-				else if ((unit->flags_10a >> 2) & 1)
+				else if (TEST_FIELD_BIT((unit->flags_10a >> 2) & 1))
 					continue;
-				if (((local_98b918->object_flags >> 14) & 1) || !can_open)
+				if ((TEST_FIELD_BIT((local_98b918->object_flags >> 14) & 1)) || !can_open)
 					continue;
 				if ((machine->flags & 4) || (machine->flags & 8) && *(long *)((byte *)unit + 0x13c) != NONE)
 				{
@@ -526,7 +535,7 @@ bool __stdcall function_1152e0(long machine_index)
 		}
 	}
 
-	bool moved = (machine->device_flags >> 2) & 1;
+	bool moved = TEST_FIELD_BIT((machine->device_flags >> 2) & 1);
 
 	if (moved)
 	{
@@ -561,17 +570,18 @@ bool __stdcall function_1152e0(long machine_index)
 // @retail 0x115a40
 bool __stdcall function_115a40(long machine_index, dword const *cluster_bits, bool *found)
 {
-	s_machine *machine = MACHINE_GET(machine_index);
 	bool result = false;
+	s_machine *machine = MACHINE_GET(machine_index);
 
 	if (machine->portal_reference_count > 0)
 	{
+		s_machine_structure_bsp_view *bsp = MACHINE_STRUCTURE_BSP;
+		long i = machine->first_portal_reference;
 		long end = machine->first_portal_reference + machine->portal_reference_count;
 
-		for (long i = machine->first_portal_reference; i < end; i++)
+		for (; i < end; i++)
 		{
-			s_machine_portal *portal =
-				&MACHINE_STRUCTURE_BSP->portals[MACHINE_STRUCTURE_BSP->portal_references->portal_indices[(word)i]];
+			s_machine_portal *portal = &bsp->portals[bsp->portal_references->portal_indices[(word)i]];
 
 			if (cluster_bits[portal->front_cluster_index >> 5] & (1 << (portal->front_cluster_index & 0x1f)) ||
 				cluster_bits[portal->back_cluster_index >> 5] & (1 << (portal->back_cluster_index & 0x1f)))
@@ -604,27 +614,29 @@ PRIVATE void machine_keyframe_rigid_bodies(long machine_index, bool keyframed)
 			component->rigid_bodies[i].node_count > 0)
 		{
 			byte *physics = (byte *)matrices.node_indices;
-			short const *node_index =
+			short const *node_mapping =
 				(short const *)(*(byte **)(physics + 0x3c) + component->rigid_bodies[i].nodes[0] * 0x90);
 
 			if (keyframed)
 			{
 				havok_component_rigid_body_linear_velocity_set(i, component, g_4687a4);
 				havok_component_rigid_body_angular_velocity_set(i, component, g_4687a4);
+				long node_index = *node_mapping;
 				havok_component_rigid_body_matrix_set(i, component,
-					*node_index == NONE ? &matrices.root_matrix : &matrices.field_50[*node_index]);
+					node_index == NONE ? &matrices.root_matrix : &matrices.field_50[node_index]);
 			}
 			else
 			{
+				long node_index = *node_mapping;
 				function_1d0ee0(i, component,
-					*node_index == NONE ? &matrices.root_matrix : &matrices.field_50[*node_index]);
+					node_index == NONE ? &matrices.root_matrix : &matrices.field_50[node_index]);
 			}
 		}
 	}
-	if (keyframed)
-		machine->flags &= ~0x40;
-	else
+	if (!keyframed)
 		machine->flags |= 0x40;
+	else
+		machine->flags &= ~0x40;
 }
 
 /* stops a machine's keyframed Havok bodies once it stops moving */

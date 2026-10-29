@@ -51,6 +51,25 @@ static __forceinline long real_to_long(real value);
 // External record layouts restored; raw actor receiver and original values retained.
 // Round 226: native point-state value / memcpy with bool, byte, short and long
 // adjustment carriers 459, 459, 459, 459, 472, 472, 477, 477. All restored; frame/input ownership remain.
+// Round 32: retail holds the third input in ESI from entry (so its stack slot is free for the
+// float scratch after its last use: frame 0x48), keeps the random seed in EAX across the sign test
+// and the three draws (two stores), and loads the random state into ECX before the 0x1fe410 test.
+// Timer draw without the named timer locals 373; flag declared at its block 395; random state
+// read before the 0x1fe410 test 428; first/third draws through slot_random_range 395; sign
+// test through _random 417. All restored.
+// Round 381: Shared angular caps with joined/terminal/conditional/nested results 465/431/431/465;
+// force-inline repeats 465/431/431/465. Original independent caps restored; frame/input ownership
+// remain.
+// Round 170: Common adjusted-timer float/conversion, timer-scope and entry reuse, direct initial conversion,
+// integer/store join, direct final conversion, shared entry results and entry scratch
+// 450/450/458/450/443/450/458/450. Original three conversions and all arithmetic groups restored.
+// Round 244: Existing final vector sum with original/normalization/timed/both real scale boundaries
+// 376/378/376/376 at 1854 bytes; final point setter with the same four scale graphs 384 each at 1861 bytes.
+// Frame 0x4c and third-input/random-state homes remain; original vector operations and published-field
+// observations restored.
+// Round 388: Shared sign-state receiver at later range subsets 1-7
+// 423/377/439/373/423/400/438; complete receiver graph with native upper-word step 438.
+// Original independent receiver observations restored; frame and early input ownership remain.
 // @retail 0x1fe620
 void function_1fe620(long arg_0, byte const *arg_1, byte const *arg_2)
 {

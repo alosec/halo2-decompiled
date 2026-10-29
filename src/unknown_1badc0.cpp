@@ -55,12 +55,53 @@ real normalize2d(point2f *arg_0);
 // Round 345: Native original/center/both CRT copies 220/220/220; entry point
 // storage alone/with original/center/both copies 218/218/218/218; both copies
 // and entry storage with radius before center 213 (seven-point gain below gate). All restored.
+// Round 194: original-mode common bool/byte/long completion 248/274/262;
+// native query-test completion 274; Boolean/query-test forms with radius first
+// 243/274; common Boolean with entry points 248; query-test completion
+// with entry points and radius first 274. Original result graph restored.
 // Round 254: entry collision-sentinel initialization with original/first-point/center/both
 // entry storage 269/269/269/269; with radius-before-center 269/269/269/269.
 // Original late collision initialization, point storage and executable body restored.
 // Round 195: Normalizer inline/noinline/combined/forceinline declarations 220 each;
 // with radius before center 215 each. Five-point best restored; original output access,
 // scalar spill, radius lifetime and body retained, output/vector homes unresolved.
+// Round 23: direct const/nonconst parameter reads 279 each; separate output pointer 279;
+// nonconst output reference and actor-first order 220 each; far/near/both output point
+// setters 226/262/262; actor-first with near setter 262. Original body restored.
+// Round 259: Collision-branch-only completion results false-first bool/byte/short/long
+// 269/247/275/276; true-first 262/258/258/260. Direct-output exits unchanged.
+// Original result graph and entire body restored; output EBP and vector homes remain.
+// Round 240: Complete final offset through the existing shared scaler 258; with
+// radius first/copied point inputs/both 258/259/259; entry point storage alone/
+// with radius/with copied inputs/all 256/256/259/259. Original body restored.
+// Round 249: Native object receiver retaining output access with original/early radius
+// and aggregate/CRT center copies 220/215/220/215; all four with read-only actor
+// 220/215/220/215. Five-point radius lead below gate; original body restored.
+// Round 251: Multi-use actor-position receiver with original/entry point storage and
+// radius-order combinations 299/299/299/299; consistent current actor-position lookups
+// with those combinations 307/307/306/306. Original receiver and full body restored.
+// Round 253: successive squared sums/projection/both side sums/both squared-projection/
+// squared-side/projection-side/all/all plus radius first 264/220/220/264/264/220/264/264.
+// Original complete expressions and executable body restored.
+// Round 256: shared final scaled add/far sum/planar center-then-displace subsets
+// 220 each; full producers with radius first 215 (five-point form restored).
+// Output EBX/EBP and point/vector homes remain; frame 0x90 agrees.
+// Round 258: Native planar initial first/second/both directions 220/225/225; with radius first
+// 215/220/220; both with entry point storage 223, with radius 218. Five-point best restored;
+// output EBP and original 0x90 frame/direction homes remain.
+// Round 260: distinct first/second/both perpendicular storage declared at entry or geometry
+// scope 220 each; both at entry with radius first 215; all direction/perpendicular storage
+// at entry 220. Five-point radius gain below gate; original declarations and body restored.
+// Round 263: existing state carrier conditional/branch-owned initialization, crossed with
+// entry point storage and early radius, 266/266/264/264/260/260/258/258. Original stores, homes and body restored.
+// Round 265: clean output with bool/long common completion, entry-point storage and
+// radius-order combinations 279/279/279/279/285/285/285/285. Original complete body restored.
+// Round 268: plain component loops far/adjusted/both with long ordinals 220/220/220;
+// short ordinals 246/286/284; both byte/dword 284/220. Original scalar stores restored;
+// output EBX/EBP, vector homes and return tails remain.
+// Round 271: full collision output with the shared native head as member/base, late/entry
+// storage, 220 each; all four with radius before center 215 each (five-point gain restored).
+// Original opaque full output, output access, scalar spill and complete body restored.
 // @retail 0x1badc0
 bool __stdcall function_1badc0(long arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 *arg_3, long *arg_4, bool arg_5, bool *arg_6)

@@ -2,6 +2,7 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
+#include "local_players.h"
 #include <string.h>
 #include <math.h>
 
@@ -74,7 +75,19 @@ void function_2232a0(void)
 	function_2c8a0((byte const *)function_2232a1(&g_47f0f8[0]));
 }
 
-// score 151 (was 151): One-dword frame agrees; common count/layout join, slot predicate and terminal/tail transport remain.
+// score 109 (was 109): one-dword frame agrees; the count block, the count/layout join and the layout
+// arms now have retail's code: the clamp is the ternary the other player-count clamps use, and the
+// loop counter's zero assigned before the layout test keeps the join from being jump-threaded (with
+// it anywhere later every count-one path threads straight to the layout stores); the slot scan uses
+// the shared local-player predicate (retail's setne/test). Still differs: retail's outer loop has a
+// pretest (`cmp ebp, edi; jle`) and keeps count + 1 in EDX for the tail call, but a while loop
+// (160/123 with a named view count) moves our EBX save after the pretest, since our tail call
+// (BLOCKED-BY 0x2b5d0, below) needs no extra register. Round 83: layout default before the test 167,
+// with a for loop 173, with the ternary clamp 162; ternary clamp + early loop-counter zero 133 kept;
+// with a while loop 152, named view count 139, both 184; shared slot predicate 124 kept; then while
+// loop 160, named view count 137, both 123, slot data as a ternary 122, slot data declared after the
+// scan 133. Compile-only screens: count helpers taking the table pointer, the short, both pointers or
+// a flag helper, a count defaulted to one at entry, MIN/MAX macros: all thread the count-one edges.
 // The tail call is BLOCKED-BY 0x2b5d0: its body is disabled and a /Gr stub takes the count in ECX and the
 // mode in EDX, where retail passes the count in EAX and the mode in ECX. Round 73: sibling clamp ternary
 // 182; pretested for loop 161; both 183; callee formals mode-first 151 (mode reaches ECX, count EDX).
@@ -83,7 +96,7 @@ void function_2232a0(void)
 // test 187 (543 bytes); count and layout declared before the scan index 151.
 // One-dword frame agrees; count/layout join, slot predicate and terminal/tail allocation still differ.
 // Earlier: One-dword frame agrees; common count/layout join, terminal registers and tail convention remain.
-// Earlier 151 (was 151): count-one paths still bypass the common count/layout join; tail call differs.
+// Earlier: count-one paths still bypass the common count/layout join; tail call differs.
 // Signed-byte count alone/with player value 169; signed-word layout alone/with normalized selection 174;
 // native selected-player value, normalized selection and their combination 151; redundant scan test removed 154.
 // count-one join, slot predicate and terminal/callee registers differ;
@@ -93,7 +106,7 @@ void function_2232a0(void)
 // slot-predicate materialization and final initializer residences differ.
 // Mode/options receivers, mode result, external count/slot references, typed selected
 // record, terminal record reference and both record receivers each 151 (575 bytes).
-// Earlier 151 (was 151): common count/layout join, slot predicate and terminal registers remain.
+// Earlier: common count/layout join, slot predicate and terminal registers remain.
 // common count/layout join, slot predicate and terminal registers remain.
 // Total before layout/scan 172/152; total scan bound 162; two-use mode 151;
 // conditional slot result 157; separate scan/result 158; mode/total 162; scan-result/total 156.
@@ -105,7 +118,7 @@ void function_2232a0(void)
 // allocation gaps. unsigned selected slot 151; word selected slot 157; word view ordinal 201; byte
 // view ordinal 167; exact scan bound 175; existing initializer inline 151; completed search result
 // 180; word scan and ordinal 157; byte selected slot 164.
-// Earlier 151 (was 151): count/layout join still threads. First/second/both native
+// Earlier: count/layout join still threads. First/second/both native
 // countdown scalars 151/151/151; prefix countdown publication 151/151/151;
 // paired countdowns with int count or int ordinals 151/151. Original body retained.
 // chained sentinels 151; native rectangle pair 150; rectangle library copies 150; direct source argument 152; live count field 151; search in for test 151; sentinel chain with rectangle value 150; live count with direct source 152 (fast). Gains of one are rejected.
@@ -161,6 +174,27 @@ void function_2232a0(void)
 // short min/max with equality join 181; long min/max with equality join 176.
 // short max/min with equality join 181; long max/min with equality join 176.
 // All executable forms restored.
+// Round 67: the slot data assigned in every arm (no initializer; NULL before the NONE store on the
+// empty scan) 109 kept: the found arm is now inline as in retail; NULL after the NONE store 117;
+// arms inverted 118; NULL arm + ternary found arm 117/109; initializer + ternary 122; found arm as
+// NULL then test 124; a default-NULL inline getter 124; with a pretested while loop 138; the
+// pointer declared before the outer loop 109. Activating
+// 0x2b5d0's disabled body 127 (it takes the mode in EAX and the count on the stack; retail count
+// EAX, mode ECX; its frame does not self-align as retail's `and esp, -8`), with formals
+// players/layout/source/count/mode 123; reverted.
+// Round 213: byte-source exact do/for/while and last-ordinal do [109, 138, 138, 91];
+// native-record-source counterparts [109, 138, 138, 91]. Last-ordinal 91 adds an unmatched
+// bound calculation and worsens aligned instructions; restored. Pretest, optional-source and
+// tail transport remain.
+// Round 87 (fast): slot data NULL at the loop top with no else arms 124 (gives retail's loop-top zero,
+// in EDX, but not the found arm's second zero); the NONE store then one ternary 117, one if/else 117;
+// the first with a pretested for loop 179, the second 166. 0x2b5d0's file is held by another lane.
+// Round 152: slot data NULL at the loop top + default-last ternary in the found arm 122 (NULL lands in
+// ECX, retail EAX); NULL then an `index != NONE && g_4686c4 != NONE` guard after the scan 121 (the
+// NONE test is not threaded); that ternary form with the pretested for loop 158 (EBX save sinks past
+// the pretest: our tail needs no EBX because the stub takes count + 1 in ECX); NULL first in both arms
+// 124. The one-use record pointer for the initializer dropped (identical code, kept).
+// Round 223: Complete shared successor with staged/direct optional source in do/for traversal 319/168/319/168; with twice-used terminal count 268/113/268/113. Original scan, source, traversal and terminal restored.
 // @retail 0x2234e0
 void function_2234e0(void)
 {
@@ -176,14 +210,9 @@ void function_2234e0(void)
 	else
 	{
 		short local_4 = *(short const *)((byte const *)g_4e8c20 + 8);
-		local_2 = 1;
-		if (local_4 >= 1)
-		{
-			local_2 = 4;
-			if (local_4 <= 4)
-				local_2 = local_4;
-		}
+		local_2 = local_4 < 1 ? 1 : local_4 > 4 ? 4 : local_4;
 	}
+	long local_0 = 0;
 	if (local_2 > 1)
 	{
 		if (!(g_4e6948 && g_4e6948->flag && g_4e6948->index != NONE &&
@@ -194,25 +223,28 @@ void function_2234e0(void)
 	}
 	else
 		local_3 = 0;
-	long local_0 = 0;
 	do
 	{
-		byte const *local_5 = 0;
+		byte const *local_5;
 		for (++local_1; local_1 < 4; ++local_1)
 		{
-			if (local_1 != NONE && g_4e8c20->entries[local_1] != NONE)
+			if (local_player_exists(local_1))
 				break;
 		}
 		if (local_1 >= 4)
+		{
+			local_5 = 0;
 			local_1 = NONE;
+		}
 		else if (g_4686c4 != NONE)
 			local_5 = g_4e9c8c[local_1].field_0;
+		else
+			local_5 = 0;
 		function_223080(0, local_0, local_1, (s_223080 *)&g_47f0f8[local_0 + 1],
 			local_2, local_3, (s_223081 const *)local_5);
 		++local_0;
 	} while (local_0 < local_2);
-	s_223240 *local_6 = &g_47f0f8[local_2 + 1];
-	function_2232a1(local_6);
+	function_2232a1(&g_47f0f8[local_2 + 1]);
 	function_2b5d0(local_2 + 1, 3, local_2, local_3, &g_47f0f8[1]);
 }
 

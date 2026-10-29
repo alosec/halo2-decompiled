@@ -64,7 +64,7 @@ void function_1e4220(long actor_index, bool enabled)
 }
 
 // @retail 0x1e4260
-void function_1e4260(long actor_index)
+inline void function_1e4260(long actor_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	dword flags = actor->flags810;
@@ -72,7 +72,7 @@ void function_1e4260(long actor_index)
 }
 
 // @retail 0x1e4290
-void function_1e4290(long actor_index, bool value)
+inline void function_1e4290(long actor_index, bool value)
 {
 	bool *enable = &value;
 	s_actor_view *actor = actor_get(actor_index);

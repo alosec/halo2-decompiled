@@ -102,4 +102,12 @@ static inline s_sound_rate_limit *sound_rate_limit_get(char index)
 	return &SOUND_GLOBALS_DEFINITIONS->rate_limits[index];
 }
 
+/* gains in decibels are kept as real bits in longs */
+static inline long decibels_add(long a, long b)
+{
+	real result = *(real *)&a + *(real *)&b;
+
+	return *(long *)&result;
+}
+
 #endif

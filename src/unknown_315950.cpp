@@ -8,6 +8,8 @@
 // Long count with null branch and decrement variants 9/9/9/9; 64-bit count variants 92/92/92/92.
 // For body decrement with int/long and if/continue 9/9/9/9; while bottom
 // decrement with local/direct reads 14/57; element pointer int/long 50/50.
+// Outer/condition/constant receiver with count 9/9/9, bounded index 61/61/61;
+// array-element reference with count/bounded index 50/65.
 // @retail 0x315950
 class_315950::~class_315950()
 {

@@ -942,6 +942,12 @@ bool __stdcall game_variants_received(s_pending_message_header *header)
 // condition-declared buffer 3; assignment condition 3; immutable buffer 3;
 // split buffer assignment 3; nested buffer scope 3; cleanup goto 3;
 // buffer-guarded return 56; named write result 3; byte result 99.
+// Complemented result at bool/byte/short/long widths 102/102/106/100;
+// true entry result with explicit failures at those widths 100/80/84/87.
+// Round 69: shared header allocator (90 pumps, 1.0 s) 3; with the barrier after the result 4
+// (stores in order, `xor ebx` after the pushes); shared header tick helper 3; force-inline tick
+// helper with a separate zero assignment 3; plain inline allocator 297 (kept out of line).
+// Every spelling hoists the first zero store above the last push, as in 0x223b60.
 // @retail 0x194160
 bool __stdcall game_variants_retry(s_pending_message_header *header)
 {

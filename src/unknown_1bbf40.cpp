@@ -27,6 +27,8 @@ struct s_slot_5a
 
 void function_1f86a0(long index);
 
+static __forceinline long real_to_long(real value);
+
 short __stdcall function_1bbf40(long actor_index, s_slot *slot);
 short __stdcall function_1bc2a0(long actor_index, s_slot *slot);
 short __stdcall function_1bc6d0(long actor_index);
@@ -101,7 +103,7 @@ inline real distance3d_fast(point3f const *a, point3f const *b)
 	real j = a->y - b->y;
 	real k = a->z - b->z;
 
-	return (real)sqrt(i * i + j * j + k * k);
+	return (real)sqrt(j * j + (i * i + k * k));
 }
 
 void function_26c180(long actor_index);
@@ -162,9 +164,6 @@ short __stdcall function_1bc580(long actor_index, s_slot *slot, bool active)
 }
 
 /* the nearest actor of the actor's group not in a vehicle */
-// score 51 (was 51): retail loads the pool before it masks the index and
-// stores the float
-// at a different stack offset, ours does the two the other way round.
 // @retail 0x1bc5d0
 long function_1bc5d0(long actor_index, long ignore_index)
 {
@@ -174,14 +173,13 @@ long function_1bc5d0(long actor_index, long ignore_index)
 	if (actor->unknown07c != NONE)
 	{
 		real best_distance = 3.4028235e38f;
-		long index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_element_502420_member_iterator iterator;
+		iterator.next_index = element_502420_get(actor->unknown07c)->first_actor_index;
+		s_actor_view *other;
 
-		while (index != NONE)
+		while ((other = element_502420_member_next(&iterator)) != NULL)
 		{
-			long other_index = index;
-			s_actor_view *other = actor_get(other_index);
-
-			index = other->next_index;
+			long other_index = iterator.index;
 			if (other_index != actor_index && other_index != ignore_index && other->unknown26c == NONE)
 			{
 				real distance = distance3d_fast(&actor->position, &other->position);
@@ -199,13 +197,10 @@ long function_1bc5d0(long actor_index, long ignore_index)
 
 /* whether the clump's vehicle (+0x26c) still has seats free that the actor
    cannot take while none of those it wants is taken */
-// score 2 (was 2): the counter is stored before the seat array is addressed
-// here, retail
-// addresses the array first and stores the counter after it.
 // @retail 0x1bc6d0
 short __stdcall function_1bc6d0(long actor_index)
 {
-	long result = 0;
+	short result = 0;
 	s_actor_view *actor = actor_get(actor_index);
 
 	if (actor->unknown07c == NONE)
@@ -214,44 +209,38 @@ short __stdcall function_1bc6d0(long actor_index)
 	if (element_502420_get(actor->unknown07c)->member_count > 1)
 	{
 		s_object_seat seats[0x40];
-		struct s_1bc6d1 { union { short field_0; long field_c; }; long field_4; long field_8; } local_1;
-		local_1.field_8 = 0;
-		local_1.field_4 = 0;
-		local_1.field_c = 0;
-
-		function_c8a40(actor->unknown26c, seats, &local_1.field_0, 0x40);
-		s_object_seat *seat = seats;
-		short count = local_1.field_0;
-		if (count > 0)
+		short occupied = 0;
+		short refused = 0;
+		short seat_count;
 		{
-			local_1.field_c = (word)count;
-			do
-			{
+			short seats_listed = 0;
 
-				s_unit_seat_definition *local_0 = seat->definition;
-				if (!TEST_FIELD_BIT(local_0->flags.bit11))
-				{
-					bool wanted = TEST_FIELD_BIT(local_0->flags.bit3);
-
-					if (function_c8f60(seat->object_index, seat->seat_index) != NONE)
-					{
-						if (wanted)
-							local_1.field_8++;
-					}
-					else if (!function_1b8d80(actor_index, seat->object_index, seat->seat_index, false) && wanted)
-					{
-						local_1.field_4++;
-					}
-				}
-				seat++;
-				local_1.field_c--;
-			}
-			while (local_1.field_c != 0);
-			if ((short)local_1.field_8 == 0 && (short)local_1.field_4 > 0)
-				result = 3;
+			function_c8a40(actor->unknown26c, seats, &seats_listed, 0x40);
+			seat_count = seats_listed;
 		}
+		for (short i = 0; i < seat_count; i++)
+		{
+			s_unit_seat_definition *definition = seats[i].definition;
+
+			if (!TEST_FIELD_BIT(definition->flags.bit11))
+			{
+				bool wanted = TEST_FIELD_BIT(definition->flags.bit3);
+
+				if (function_c8f60(seats[i].object_index, seats[i].seat_index) != NONE)
+				{
+					if (wanted)
+						occupied++;
+				}
+				else if (!function_1b8d80(actor_index, seats[i].object_index, seats[i].seat_index, false) && wanted)
+				{
+					refused++;
+				}
+			}
+		}
+		if (occupied == 0 && refused > 0)
+			result = 3;
 	}
-	return (short)result;
+	return result;
 }
 // @retail 0x1bc810
 bool __stdcall function_1bc810(long actor_index, s_slot *slot)
@@ -339,9 +328,17 @@ bool function_1f8660(long actor_index);
 real function_1f8940(long actor_index);
 real function_1e3920(long actor_index);
 
-// score 46 (was 46): ours copies the argument into EBX before comparing it
-// with the global
-// and reads a different global, retail compares the argument itself.
+// score 46 (was 46): aligned 0x764 frame agrees; actor-index and search-result carriers differ after scratch allocation.
+// Retail reloads the actor index into EBX for the search and keeps the result in EAX until the success
+// branch (then ESI); ours reloads the index into EDX and copies the result to EBX at once.
+// Earlier result-first 53; output/reference and failure-cleanup forms did not close the carrier gap.
+// Per-use actor receiver with nested failure-first and output-home names 117/117; early admission 140/140;
+// success-first 116/116; success-first/early admission 138/138. All forms grow to 368 or 372 bytes.
+// Typed request reference fields 46; complete request Boolean 89; named movement kind 46;
+// typed fields/kind 46; Boolean with fields/kind/both 89/89/89; aggregate zero with fields/Boolean 99.
+// Round 110: selection compared inside the else-if 46; reference declared before the scratch call 46;
+// success branch first 46; flag store before the result 46; out locals swapped 46; the reference
+// compared as a long value 46; the search part as an inline helper 223 (its callee inlined).
 // @retail 0x1bcab0
 bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 {
@@ -442,9 +439,22 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
-// score 189 (was 189): the boolean result is kept in EAX here and in CL
-// there, so the branch
-// that follows it and the whole chain of branches are laid out differently.
+// score 166 (was 166): retail keeps the special-vehicle flag in CL at the shared tail (the
+// special path does `mov cl, 1; jmp tail`, the scan's exits reload it from the dead actor
+// argument slot) and lays the tail out after the passenger scan; ours reloads the flag from
+// memory there and places the tail right after the special test, so the lockstep compare is
+// shifted through the scan. Round 70: the rounding inlined through a forceinline declaration
+// of real_to_long (as unknown_1bba20.cpp does) 189 -> 166. With it: bool flag 198 (every
+// stack slot as retail, aligned 61); flag set in an if/else around the scan 198; flag set in
+// an if 200; flag at function scope 198; proximity deltas declared x, y, z (retail squares z
+// first) 166 (198 with the bool); sum written x + y + z 198 (with the bool).
+// Round 270: reused vehicle identity 202; guarded reused prop identity 166; both 202;
+// native player-seat fields 166; vehicle/prop/both with those fields 202/166/202;
+// all native owners with bool special 221 at 861 bytes. Original restored.
+// Round 252: native actor/timer/both 166/167/167; normalized conditional 208/208,
+// with actor/timer/short both 208/208/206; actual bool field 166, conditional 174,
+// bool carrier with conjunction/conditional 198/175. Raw-byte conditional 146/146/147
+// changed the integer carrier and was excluded. Complete body and field restored.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

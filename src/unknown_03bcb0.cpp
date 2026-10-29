@@ -1176,6 +1176,7 @@ void function_41040(short index, long part_index, long group, byte weight,
     }
 }
 
+// score 352 (was 365): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
 // @retail 0x4cbf0
 bool __stdcall function_4cbf0(long tag, long context, long pass, long stage,
     long entry_index, long handle, void *record)
@@ -1232,7 +1233,7 @@ bool __stdcall function_4cbf0(long tag, long context, long pass, long stage,
     case 16:
     {
         bool enabled = g_4ba004 && !g_485a75 && !g_485a76;
-        if (!(source->unknown00 & 0x80)) mode = NONE;
+        if (!TEST_FIELD_BIT((source->unknown00 >> 7) & 1)) mode = NONE;
         else if (source->unknown00 & 0x100) mode = enabled ? NONE : 1;
         else mode = enabled ? 2 : 0;
         break;
@@ -1636,6 +1637,7 @@ void function_4d720(short, long);
 extern long g_485a60;
 
 
+// score 499 (was 520): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
 // @retail 0x4d0b0
 void __stdcall function_4d0b0(long tag, long first, long second, long mode,
     long fourth, long packed, void *record_address)
@@ -1658,7 +1660,7 @@ void __stdcall function_4d0b0(long tag, long first, long second, long mode,
     byte *geometry;
     if (entry->tag != NONE)
         geometry = *(byte **)(*(byte **)(g_4e3b44[entry->tag & 0xffff].bytes + 0x28) + section * 0x5c + 0x34);
-    else if (!(entry->unknown00 & 0x1000))
+    else if (!TEST_FIELD_BIT((entry->unknown00 >> 12) & 1))
         geometry = *(byte **)(*(byte **)((byte *)g_4e0348 + 0xa0) + section * 0xb0 + 0x50);
     else
     {

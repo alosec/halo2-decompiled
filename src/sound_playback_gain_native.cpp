@@ -103,12 +103,6 @@ extern s_4e6380 *g_4e6380;
 real function_2195f0(real decibels);
 long function_2197f0(real gain);
 
-static inline long decibels_add(long a, long b)
-{
-	real result = *reinterpret_cast<real *>(&a) +
-		*reinterpret_cast<real *>(&b);
-	return *reinterpret_cast<long *>(&result);
-}
 
 static inline long decibels_interpolate(long a, long b, real t)
 {

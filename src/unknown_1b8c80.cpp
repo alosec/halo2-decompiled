@@ -45,6 +45,7 @@ bool __stdcall function_1ba5c0(long actor_index, s_slot *slot, long index);
 short __stdcall function_1bb3a0(long actor_index, long joint_index, long a, long b);
 short __stdcall function_1b2ff0(long actor_index);
 void *function_1e5240(long actor_index);
+short __stdcall function_c8b80(long object_index, s_object_seat *seats, short maximum_count);
 
 /* how the actor's character uses its weapon (unknown_1e1f20.h) */
 struct s_character_weapon_1b9
@@ -64,6 +65,14 @@ struct s_vehicle_seat_definition
 	byte unknown90[0xb0 - 0x90];
 };
 
+/* the vehicle tag's flags at +0x1ec */
+struct s_vehicle_tag_flags
+{
+	dword unknown0 : 11;
+	dword bit11 : 1;
+	dword unknown12 : 20;
+};
+
 struct s_vehicle_tag_view
 {
 	byte unknown000[0xbc];
@@ -71,7 +80,8 @@ struct s_vehicle_tag_view
 	byte unknownbd[0x1c8 - 0xbd];
 	long seat_count;
 	s_vehicle_seat_definition *seats;
-	byte unknown1d0[0x1f0 - 0x1d0];
+	byte unknown1d0[0x1ec - 0x1d0];
+	s_vehicle_tag_flags flags1ec;
 	short unknown1f0;
 };
 
@@ -213,19 +223,27 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 	return result;
 }
 
-// score 109 (was 117): the loop body matches, but retail pushes ebp and esi
-// after the loop's entry check while ours saves them in the prologue, and
-// retail reads the second argument before the pushes.
+// score 3 (was 3): at the 0xc8200 call retail loads the seat index and the object before the
+// unit index (ecx last), ours loads the unit index first. Round 70: one result with `break` for
+// the two rejections, bool result and the seat count from 0xc8b80 (retail inlines it) gave the
+// shrink-wrapped ebp/esi saves (109 -> 3); 0xc8b80 alone 109, bool alone 117, without 0xc8b80 7
+// (harness), long result 48 (harness); every 0xc8200 parameter order 4-27 (harness); nested
+// c8200 test 3; actor declared after result 3; unit index local 122; named seat index 78; seat
+// pointer 71; named seat object 71 and occupant test inverted 46 (harness).
+// Round 270: complete seat snapshot 121; reused object/seat/both snapshots 75/104/137;
+// named hostile/reservation/both decisions 3/3/3; native tag receiver 3. Restored.
+// Round 252: eligibility accumulated with logical OR 43, bitwise OR 31, conditional 3;
+// named eligibility 3; actor at every use 116 (matched caller lost); read-only actor,
+// read-only flags, both 3/3/3. Original complete body restored.
 // @retail 0x1b8f30
 bool function_1b8f30(long actor_index, long object_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	short count = 0;
-	byte result = 0;
+	bool result = false;
 	long last_object_index = NONE;
 	s_object_seat seats[0x40];
+	short count = function_c8b80(object_index, seats, 0x40);
 
-	function_c8a40(object_index, seats, &count, 0x40);
 	for (short i = 0; i < count; i++)
 	{
 		s_seat_definition_flags *definition = &seats[i].definition->flags;
@@ -235,7 +253,10 @@ bool function_1b8f30(long actor_index, long object_index)
 			s_slot_object_view *object = object_get(seats[i].object_index);
 
 			if (object->type == 1 && object->unknown3b4)
-				return false;
+			{
+				result = false;
+				break;
+			}
 			last_object_index = seats[i].object_index;
 		}
 		if (!TEST_FIELD_BIT(definition->bit11))
@@ -247,7 +268,10 @@ bool function_1b8f30(long actor_index, long object_index)
 				short team = object_get(occupant)->team;
 
 				if (team != actor->unknown024 && function_1df560(team, actor->unknown024))
-					return false;
+				{
+					result = false;
+					break;
+				}
 			}
 			else if (!function_1b8d80(actor_index, seats[i].object_index, seats[i].seat_index, false) &&
 				function_c8200(seats[i].object_index, seats[i].seat_index, actor->unknown018))
@@ -324,7 +348,11 @@ PRIVATE __forceinline void function_1b9201(long arg_0, vector3f *arg_1)
 
 // score 11 (was 11): the seat loop keeps the seat count in EBP and the index
 // in ESI here, retail keeps the count in ESI and the index in EBP, so the loop
-// preamble is laid out differently.
+// preamble is laid out differently. The rest of the function matches.
+// The shared forward helper 302; state after or between the vector declarations
+// 11; split or function-scope state 11; const seat or state 11; result between
+// the lookups 11; split seat initialization 11; index-first with state after the
+// vectors 11; a positive-count guard 135.
 // @retail 0x1b9200
 bool function_1b9200(long object_index, long prop_index)
 {
@@ -374,9 +402,6 @@ bool function_1b9200(long object_index, long prop_index)
 	return result;
 }
 
-// score 32 (was 32): retail passes the child iterator in EBX, the register
-// argument of function_d0620 under LTCG, ours passes it on the stack; the
-// declaration in include/unknown_0d0690.h is not mine to change.
 // @retail 0x1b9420
 bool function_1b9420(long actor_index)
 {
@@ -389,13 +414,15 @@ bool function_1b9420(long actor_index)
 	s_object_child_iterator iterator;
 
 	function_d0620(actor->unknown26c, &iterator);
-	if (!function_d0690(&iterator))
-		return result;
-	do
+	if (function_d0690(&iterator))
 	{
-		if (object_get(iterator.child_value)->player_index != NONE)
-			return true;
-	} while (function_d0690(&iterator));
+		do
+		{
+			if (object_get(iterator.child_index)->player_index != NONE)
+				return true;
+		} while (function_d0690(&iterator));
+		return result;
+	}
 	return result;
 }
 
@@ -538,6 +565,9 @@ extern "C" void _ReadWriteBarrier(void);
 // score 6 (was 6): retail loads the slot pointer into ECX before the actor
 // index is masked, ours loads it after the actor lookup and after the branch
 // that tests the actor, so the two builds are one instruction out of step.
+// This round: slot data block 29, without barrier 50, actor-first 31;
+// const actor 6; const state without barrier 44; data block/const actor
+// without barrier 50; const data state 29; actor object reference 6.
 // @retail 0x1ba8c0
 void __stdcall function_1ba8c0(long actor_index, s_slot *slot, s_slot_target_list *list)
 {
@@ -678,6 +708,11 @@ void function_270590(s_path_source *source, s_type_c3b527 const *point, long nod
 // score 225 (was 225): ours sign extends g_46fbe4, which is declared short in
 // include/globals.h, where retail reads the same global as a dword; the frame
 // offsets differ as well.
+// Unsigned-word/dword result 306/225; byte preparation with long/word/dword result 225/306/225;
+// long preparation with long/word/dword result 311/309/311. Default observation and arithmetic restored.
+// Native ownership/type/state producer orders O/S/T, T/O/S, T/S/O, S/O/T, S/T/O
+// 286/287/286/285/284; explicit state fallback at first/middle/last 287/289/289
+// (reduced control 289, full 225). Original producers and arithmetic restored.
 // @retail 0x1b99d0
 short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 {
@@ -902,7 +937,8 @@ short __stdcall function_1b9890(long actor_index, s_slot *slot)
    object has more than one seat to take */
 // score 17 (was 17): retail loads the element pool data into EDX before the
 // actor is fetched and keeps the element record in ECX, ours loads the data
-// later into ESI and the record in EAX.
+// later into ESI and the record in EAX. Both read the actor pool global
+// first, so the difference is the order of the two data loads.
 // @retail 0x1bb3a0
 short __stdcall function_1bb3a0(long actor_index, long joint_index, long a, long b)
 {
@@ -1004,9 +1040,16 @@ s_slot_handler_2x g_47e9d0 =
 	1, 10, 1.5f, 0x5b
 };
 
-// score 47 (was 47): g_46fbe4 and g_46fbe8 are read as bytes here but as
-// dwords in retail; they are declared short in include/globals.h, which is not
-// mine to change.
+// score 47 (was 47): pool/status carriers and return scheduling differ; conversion homes agree at 216/212 bytes.
+// Prior narrow status 60 at 212 bytes; retail uses wide status loads while only low words are returned.
+// Slot data block: actor-first long/short status with nested or rejection guards 47/47 and 60/60;
+// block-first long 63/63; block-first short 45/45 at 214/212, a two-point gain restored.
+// g_46fbe4 and g_46fbe8 have signed-word loads here versus
+// dword loads in retail; their shared declarations remain short.
+// Single-observation continuation selected by complementary tests, slot-data
+// view with long if/ternary result 86/86 and short result 77/77;
+// whole-slot receiver with the same choices 86/86/77/77.
+// Native pool/status carriers and the shared status load width remain.
 // @retail 0x1ba4e0
 short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 {
@@ -1051,6 +1094,16 @@ long __stdcall function_c7160(long unit_index, short seat_index, long marker_pos
 bool function_cc750(long unit_index, short seat_index);
 bool function_cc7b0(long unit_index, short seat_index);
 real normalize2d(point2f *vector);
+real distance3d_fast(point3f const *a, point3f const *b); /* unknown_1bbf40.cpp */
+
+/* the distance between two points on the ground plane */
+static inline real distance2d(point2f const *a, point2f const *b)
+{
+	point2f offset;
+
+	vector2d_from_points2d(b, a, &offset);
+	return magnitude2d((vector2f const *)&offset);
+}
 
 struct s_seat_approach_result
 {
@@ -1062,9 +1115,26 @@ struct s_seat_approach_result
 	bool approaching;
 };
 
-// score 176 (was 176): retail computes the seat differences in x87 and keeps
-// them unrounded, ours computes them in single precision, and our stack frame
-// is 4 bytes smaller than retail's, so every local offset is shifted.
+// score 147 (was 176): the vertical x87 square operands and the final delta pop differ;
+// retail pops before the arm's jump, ours shares that pop at the distance join, shifting
+// the following comparison. Round 70: the existing 3D distance
+// the vertical square operands and x87 cleanup differ. Retail pops
+// the vertical arm's last delta before its jump; ours shares that pop at the distance join.
+// Round 70: the existing 3D distance
+// (0x1bbf40's) for the vertical case, a 2D point distance through the existing vector
+// helpers for the nearest seat point (retail recomputes the nearer distance in two arms), the
+// vehicle tag flag as a bitfield and bonus declared before the direction gave retail's x87
+// code, frame 0x2c and slots (176 -> 143). Harness: the 2D distance with scalar locals 163
+// (frame 0x24), selected-pointer form 148, compare reversed 171, if/else or full ternary or
+// arms swapped 152/152/168, vertical deltas written out or as a vector or 0x3ea30's own body
+// 152; out-of-line 0x3ea30 not inlined, even with __forceinline. Real: one ternary 143,
+// else-if chain 143, distance at function scope 143, arms swapped 178, (actor, point) helper 143.
+// Round 270: eligibility/marker rejection guards and direct success exits, seven
+// subsets 198/189/223/216/216/216/223; full guards with null-output exit 223.
+// Existing helpers and complete floating trees restored.
+// Round 252: inline/forceinline 3D helper declarations 147/147; whole actor point 273;
+// shared planar direction helper 147; branch-owned bonus alone/with direction 194/194;
+// external position reference with both 218; whole point with both 274. All restored.
 // @retail 0x1baae0
 bool function_1baae0(long actor_index, long object_index, short seat_index, bool ignore_bonus,
 	bool ignore_reserved, bool vertical, s_seat_approach_result *out)
@@ -1077,33 +1147,26 @@ bool function_1baae0(long actor_index, long object_index, short seat_index, bool
 		point3f position;
 		if (function_c7160(actor->unknown018, seat_index, (long)&marker, object_index, (long)&position) != NONE)
 		{
+			real bonus = 0.0f;
 			vector3f direction;
 			direction.i = marker.x - position.x;
 			direction.j = marker.y - position.y;
 			direction.k = 0.0f;
-			real bonus = 0.0f;
 			if (normalize2d((point2f *)&direction) == 0.0f)
 				direction = actor->unknown290;
 			real distance;
-			real dx = position.x - actor->position.x;
-			real dy = position.y - actor->position.y;
 			if (vertical)
-			{
-				real dz = position.z - actor->position.z;
-				distance = (real)sqrt(dx * dx + dy * dy + dz * dz);
-			}
+				distance = distance3d_fast(&position, &actor->position);
 			else
 			{
-				real mx = marker.x - actor->position.x;
-				real my = marker.y - actor->position.y;
-				point3f const *nearest = sqrt(dx * dx + dy * dy) > sqrt(mx * mx + my * my) ? &marker : &position;
-				real nx = nearest->x - actor->position.x;
-				real ny = nearest->y - actor->position.y;
-				distance = (real)sqrt(nx * nx + ny * ny);
+				distance = distance2d((point2f const *)&position, (point2f const *)&actor->position) >
+					distance2d((point2f const *)&marker, (point2f const *)&actor->position) ?
+					distance2d((point2f const *)&marker, (point2f const *)&actor->position) :
+					distance2d((point2f const *)&position, (point2f const *)&actor->position);
 			}
 			s_slot_object_view *object = object_get(object_index);
 			if (object->type == 1 && !ignore_bonus && function_cc750(object_index, seat_index) &&
-					((*(long *)(g_4e3b44[object->tag_index & 0xffff].bytes + 0x1ec) >> 11) & 1))
+					TEST_FIELD_BIT(((s_vehicle_tag_view *)g_4e3b44[object->tag_index & 0xffff].bytes)->flags1ec.bit11))
 				bonus = 50.0f;
 			real dot = actor->unknown290.i * direction.i + actor->unknown290.j * direction.j;
 			bool close = distance < 0.4f;
@@ -1253,9 +1316,28 @@ struct s_1ba091
     s_slot_entry_iterator field_4;
 };
 
-// score 198 (was 198): retail keeps the actor record count in ESI, loaded from
-// the pool at 0x4e0300 before the slot state is touched, ours reloads it from
-// the stack; the frame offsets differ as well.
+// score 198 (was 198): frame 0x14 agrees; incoming actor ECX/EDX, early object-header
+// acquisition, selection-mask storage and iterator/result homes differ.
+// Earlier slot-data form 198; raw-mask and independent iterator variants 202/207;
+// Result-first 190; explicit same-object result 230; cleanup result 258.
+// Complete byte flags with/without slot data 249/249; raw word/dword mask 257/252;
+// branch-assigned decline with byte/word/dword 249/257/252, with slot data 249.
+// Original body restored.
+// frame 0x14 agrees; early object-header acquisition,
+// selection-mask, entry/result and reusable frame homes still differ.
+// Round 172: data-member with header/actor/both observations 198/263/263;
+// actor/header observations alone 263/198; single cleanup-result join 258;
+// full-width same result 201; full-width specified with data/actor 288.
+// Original body, iterator record and every type restored.
+// the 0x14 frame agrees; retail acquires object-header data before
+// scaling the actor, ours loads it later. The eligibility mask, entry/result
+// carriers and reusable stack homes still differ.
+// Typed slot payload 198; payload/native parent field 198; payload/raw mask 207, with parent 207;
+// payload/separate entry and iterator 202, with parent 202; separate entry/raw mask 212, all 212.
+// Round 270: positive admission with bool/long/byte carriers 194/194/194;
+// slot data member plus positive admission 194; long request code 198;
+// default-owned request code 215; positive admission with long code 194;
+// positive admission, data member and default-owned code 211. Original restored.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {
@@ -1361,9 +1443,13 @@ s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
 void function_1e3400(long actor_index, long squad_index);
 void function_201ad0(long squad_index, long object_index);
 
-// score 218 (was 218): ours spills the cleared flag byte to a stack temporary
-// and branches around it, retail writes the byte straight into the actor, so
-// the whole chain of branches in this function is laid out differently.
+// score 218 (was 218): frame 0x32c and length agree; the driver byte spills
+// where retail retains BL, the squad pointer uses EBX instead of EDI, and the
+// seat walk and conversion homes differ.
+// Current-vehicle/root-index and seat-count/total-seats home names, each with
+// driver or complementary passenger ownership: eight forms, all 218.
+// Native byte/signed-byte driver state, mutable/const 218/218 each;
+// native short/word driver state, mutable/const 318/318 each. Original Boolean restored.
 // @retail 0x1bb570
 void __stdcall function_1bb570(long vehicle_index, long actor_index)
 {

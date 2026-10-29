@@ -114,6 +114,11 @@ PRIVATE __forceinline void draw_rotation(vector3f const *axis, real sine, real c
 // Round 76 rotation helper forms: products in i,j,k order with a named complement 429; forward/left/up row
 // stores with a named complement 1293 (frame 0x6c, cases expanded); sine products named first 921; named
 // complement alone 429; axis cases grouped 0,1,3 / 2,4 435 (aligned listing 374 -> 323).
+// Round 162: Shared row setters in FLU/FUL/LFU/LUF/UFL/ULF order 1041/1550/704/715/985/706;
+// complete complement 398, with all sine products 983. Other complemented row orders
+// 828/414/701/1561/764; complemented scalar/native axis inputs 1111/1357. The 398 form has frame
+// 0x68 versus 0x6c but still regresses. Original helper bodies, fields, arithmetic and calls
+// restored.
 // @retail 0x224fd0
 void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache *values,
 	point3f const *position, vector3f const *direction, real scale, color4f const *color,

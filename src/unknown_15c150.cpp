@@ -47,7 +47,6 @@ bool function_15eb20(long player_index);
 bool function_15eaf0();
 long function_146650(void);
 long players_first_active_local_player(void);
-long function_14de10(long index);
 long function_14de70(long local_player_index);
 void function_15b270(long player_index);
 void __stdcall function_15bb20(long player_index);
@@ -125,7 +124,7 @@ void function_15c150()
 			(g_4e6948->mode == 4 || globals->lc04 == 1))
 			*(short *)((byte *)globals + 0xfa) = 0;
 		else ++*(short *)((byte *)globals + 0xfa);
-		for (long local = players_first_active_local_player(); local != NONE; local = function_14de10(local))
+		for (long local = players_first_active_local_player(); local != NONE; local = local_player_next_inline(local))
 		{
 			long index = function_14de70(local);
 			if (index != NONE)

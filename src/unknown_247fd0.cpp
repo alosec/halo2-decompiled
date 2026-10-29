@@ -1,5 +1,6 @@
 #include "unknown_11c920.h"
 #include "effects.h"
+#include "vector_products.h"
 
 // @flags /O2 /arch:SSE /Gr
 
@@ -295,7 +296,7 @@ vector3f *function_143070(matrix3x3 const *arg_1, vector3f const *arg_0, vector3
 void placement_set(s_placement *arg_0, vector3f const *arg_1, point3f const *arg_2, vector3f const *arg_3, short arg_4);
 void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_object_246eb0 const *arg_3, long arg_4);
 
-// score 368 (was 368): frame 0xb0, 1643 bytes against 1652. Left: retail saves EBP at entry and
+// score 356 (was 356): frame 0xb0, 1643 bytes against 1652. Left: retail saves EBP at entry and
 // shares one epilogue (ours saves it after the early exits); retail keeps the blend in XMM2-4
 // across the first 0x143070 call (here it goes through the grouped local's memory); retail's
 // frame holds probe point f0x14, probe direction f0x20, collision result f0x2c, 16 unreferenced
@@ -396,6 +397,48 @@ void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_
 // spawn+placement/matrix+placement/all 368/369/368/369/368/369/369; spawn noinline 368.
 // Round 226: native signed particle header, unsigned effect/child handles, every pair/all
 // three, and all with unsigned allocated handle 368 each. Frame 0xb0 and late EBP save remain.
+// Round 32: plain locals for the grouped one 466 (frame 0xa0, the blend has no home); blend through
+// an inline interpolation helper 466; a 0x5c-byte collision result (the size 0x0b8ca0 and 0x26bfa0
+// give it) 369 alone, 463 with plain locals (frame 0xb0, but collision above the placement);
+// placement renamed 463; trace locals in the trace block 466. All restored.
+// Round 244: direct existing real producer assigned at original draws 1/2/3/4/last-three/
+// all/first-third/second-fourth 368/368/368/368/368/368/368/368. Original output assignments
+// and reference helper restored; late EBP save, first-sample store and geometry homes remain.
+// Round 218: Shared vector sums blend/velocity/both/motion/blend-motion/velocity-motion/all
+// 368/368/368/356/356/363/363; all plus trace-vector setter 366. Motion helper alone
+// 356 kept plain; frame 0xb0 and 1643/1652 bytes remain, with late EBP save and random/blend/getter homes.
+// Round 255: returned position/direction receivers 379/374; contact add-scale 356; both
+// receivers 380; position/contact 378, direction/contact 371, both/contact 380;
+// all plus shared blend addition 380. Original receivers and collision arithmetic restored.
+// Round 222: Native initial-position/both-blend-source/both/normal/initial-normal/blend-normal/all inputs 396/420/478/372/412/432/478; all with point constructors 396. Every input snapshot and constructor restored; late EBP save and random/blend/getter homes remain.
+// Round 224: Probe/normal/both memcpy, collision scaled sum, probe+sum/normal+sum/all 356 each;
+// both memmove with the sum 390. Original copies, helper graph and complete body restored.
+// Round 224 continuation: Existing allocator/placement ordinary-inline-noinline declaration pairs, eight non-original forms
+// 356/356/409/409/409/356/356/356. Original defining and forward declarations, shared header and
+// whole body restored; early EBP save and random/geometry/getter homes remain.
+// Round 71: the 9 missing bytes are four forms retail keeps unfolded (effect record `add eax, edx`,
+// the cache-flag and/store, `mov ax; test ax, ax` on the definition short, `add eax, edx; add eax,
+// 0x30`). Cache test as `local_2 != arg_0->field_50` 355; field_50 stored before the field_44 clear
+// 368 (retail's load/and/store), both 367 (both exact, later registers move); flag bit 4 through a
+// word read 374 (retail's `shr al, 4; test al, 1`, but the definition is reloaded from the stack);
+// all three 364 (1659 bytes). /G5, /G6 and /G7 compile-only all fold as ours does.
+// System-getter/cache ordinary-inline-noinline declaration pairs, eight non-original
+// forms, 356 each; getter-inline pairs lose a reduced matched caller. All declarations restored.
+// Round 383: coherent live particle/live descriptor/retained allocation pool 709/367/359;
+// particle+descriptor/particle+pool/descriptor+pool/all/all with live settings
+// 731/752/367/755/807. Original record observations, helper graph and complete body restored.
+// Existing cache update method 356; with initial shared scale/blend sum/loop lookup
+// 376/356/376; scale+lookup/scale+blend/lookup+blend/all 397/376/376/398. All restored.
+// Round 264: collision/terminal-dispatch ordinary-inline-noinline caller declaration
+// pairs, eight combinations 356 each; consistent dispatcher inline/noinline in its
+// defining unit and every forward declaration 423/356. Every declaration and body
+// restored; late EBP preservation, random/blend/getter homes remain.
+// Round 186: Independent native blend/probe/placement consumer-scope masks 0-7 on the retained
+// motion graph 465/465/466/466/465/465/466/466. Original grouped workspace, native collision, source
+// velocity and complete body restored.
+// Round 188: joint reciprocal result stages, ternary/explicit/default-update pairs
+// (1,0)/(2,0)/(0,1)/(0,2)/(1,1)/(1,2)/(2,1)/(2,2):
+// 356/357/356/351/356/351/357/353. Five-point nonmatch leads rejected; original results restored.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)
@@ -493,9 +536,7 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 		else
 		{
 			real local_11 = (1.f - arg_5) * arg_6;
-			local_2->field_1c.x = local_2->field_28.i * local_11 + local_2->field_1c.x;
-			local_2->field_1c.y = local_2->field_28.j * local_11 + local_2->field_1c.y;
-			local_2->field_1c.z = local_2->field_28.k * local_11 + local_2->field_1c.z;
+			vector3f_add_scaled((vector3f const *)&local_2->field_1c, &local_2->field_28, local_11, (vector3f *)&local_2->field_1c);
 		}
 		local_2->field_3c = arg_4;
 		++arg_1->field_2;

@@ -232,18 +232,65 @@ void __stdcall function_1160c0(real dt)
 	}
 }
 
-// score 190 (was 194): attachment/previous/axis homes and rotation scheduling differ;
+// score 179 (was 179): previous/axis homes, segment ownership and rotation scheduling differ;
 // seven local-name sets, declaration reversals and entry/loop scopes 194;
 // shared cross 207, both point differences 286, both helpers 280;
 // scaled difference 212, all vector helpers 285.
-// frame 0xa4 agrees; three pairs of same-size stack homes are exchanged (retail:
-// origin below forward, offset below previous, the scalar temporaries below the axis), the segment
+// frame 0xa4 agrees; attachment homes now agree. Retail keeps the rest offset
+// below previous and the scalar temporaries below the axis; those still differ. The segment
 // pointer lives in edx (ours edi) and the rotation's products are scheduled in another order.
 // Round 62: the existing normalize3d for the axis and dot3f for the projection give the same code (194)
 // but cost 0x73360 its match (this file links ahead of unknown_058dd0.cpp), so not kept; forward
 // declared before origin 194; the three rotation cross terms as one vector 275; previous/predicted at
 // function scope 194. Earlier: origin/forward, previous/offset and axis/length/scale names, singly and
 // combined, 194 each.
+// Round 371: first-node position copied before direction 179, kept; previous-first
+// publication, complete scalar cross/axial terms and their combinations 179 each.
+// Round 249: Complete rest-offset/recurrent-previous/working-position CRT copies,
+// all seven nonempty combinations 179 each; all overlap-safe copies 419 (frame
+// 0xa0, 1266 bytes). Original native copies, homes and arithmetic restored.
+// Complete previous-position scalars, with complete axis/rest-offset/prediction
+// coordinate sets 345, 335, 332, 323, 345, 335, 332, 323.
+// Native segment index before lookup, explicit last-segment arm, uniform
+// rest-offset fields and invariant reciprocal combinations 179, 179, 336, 336, 189, 189, 338, 338.
+// Round 219: Exhaustive segment-pointer result, inner/outer invariant vertical and sine/cosine
+// order 297/297/309/309; default-pointer counterparts 281/281/309/309. All restored;
+// segment/previous/axis homes and rotation schedule remain.
+// Round 380: matched symmetric angle, segment-first, tick-before-stiffness and delayed
+// rest-offset combinations 177/276/181/279/213/271/216/273; two-point best dropped.
+// Original angle arguments, producers and complete executable body restored.
+// Round 382: complete delta/axis squared-product phases, three-use free blend weight,
+// all combinations and full projection products 179/179/179/179/179/179/179/179.
+// Original product phases and complete executable body restored.
+// Round 384: native node/segment element references, readonly segment, their combinations and
+// two-use physics-index capture 179 each (eight forms).
+// Original complete body and all provider interfaces restored; frame 0xa4, segment/previous/axis
+// homes and rotation schedule remain.
+// Round 223: Existing target/interpolation/prediction point constructors, seven subsets 179/179/179/179/179/179/179; all with complete direction/velocity setters 183. Original producers and body restored.
+// Round 386: preserve native previous aggregate; independent complete rest-offset,
+// axis and prediction coordinate domains in all seven subsets, then native role names
+// 280/197/289/216/273/193/293/293; original native domains and complete body restored.
+// Round 387: Complete delta/axis squared sums 179/179/179; native double distance-root alone and with those sums 249/249/249/249, both named roots 249. All expression stages restored.
+// Round 32: existing in-place axis scale 179; original-angle segment-first 276;
+// tiny-axis-owned fallback 294; scale/segment 276; scale/fallback 294; segment/fallback 247;
+// all 247, cosine-first all 247. Original producers, fallback and include set restored.
+// Round 251: interpolation-owned stiffness 315; velocity-owned reciprocal 294;
+// both 320; rest offset after readonly angle/trigonometry 229; with stiffness/
+// reciprocal/both 299/288/310; all with the native prediction constructor 310.
+// Original producer points and complete body restored; segment/previous/axis homes remain.
+// Round 393: published-node previous, three-use old-position snapshot and native velocity
+// publication subsets 179/263/263/262/262/390/390; all with immutable snapshot 390. Body restored.
+// Round 262: complete segment/node/both receivers at uses 350/193/359;
+// repeated stiffness alone/segment/node/both 301/475/309/480 (restored);
+// separate segment base 278. Original receivers and computed stiffness restored.
+// Round 226: complete rotation base sums, sine-scaled transverse terms and rotated components,
+// all seven combinations and full graph with existing point publication 179 each.
+// Original body restored; segment/previous/axis homes and rotation scheduling remain.
+// Round 395: native node cursor 329; with readonly segment 329, invariant reciprocal 327, both 327;
+// invariant vertical on those four graphs 338/338/326/326. All original induction and scopes restored.
+// Round 185: Plain target/interpolation/velocity coordinate-loop subsets
+// 188/194/200/639/194/200/634; all with complete direction loop 615. Original native arithmetic
+// statements, copies, segment loop, homes and every call tuple restored.
 // @retail 0x1161f0
 void __stdcall function_1161f0(s_chain_record *record, s_chain_definition *definition, real dt)
 {
@@ -265,8 +312,8 @@ void __stdcall function_1161f0(s_chain_record *record, s_chain_definition *defin
 			vector3f direction;
 			if (i == 0)
 			{
-				direction = forward;
 				position = origin;
+				direction = forward;
 			}
 			else
 			{

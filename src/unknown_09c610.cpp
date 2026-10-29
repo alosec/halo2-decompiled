@@ -262,6 +262,9 @@ struct s_input_9c610
 // pool index 112; unsigned salt word 24.
 // Byte notification read 46; byte tail read 23; both byte reads 46; word notification read 46.
 // Word tail read 23; both word reads 46; signed-byte tail read 23; byte notification/signed tail 46.
+// score 13 (was 23): flag 7 of +0x20 as TEST_FIELD_BIT((x >> 7) & 1) 13 (retail tests it as a
+// signed byte, mov al / test al, al / jns; a char < 0 test, a byte mask or a byte shift 23; flag 1
+// rewritten the same way 56, both 63).
 // @retail 0x9c610
 bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
@@ -314,7 +317,7 @@ bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, lon
             if (input->field_20 & 2)
                 function_d6a70(local_1);
             function_d9640((s_damage_report const *)&local_10, local_1);
-            if (g_4e0300->data[(local_1 & 0xffff) * 12 + 3] == 0 && (input->field_20 & 0x80))
+            if (g_4e0300->data[(local_1 & 0xffff) * 12 + 3] == 0 && TEST_FIELD_BIT((input->field_20 >> 7) & 1))
                 function_e4a20((point3f const *)&input->field_c, input->field_2e, local_1, false);
         }
         local_0 = true;

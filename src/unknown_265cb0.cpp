@@ -363,7 +363,7 @@ short __stdcall function_c8b80(long object_index, s_object_seat *seats, short ma
 bool function_26d370(point3f const *point, vector3f const *direction, plane3f const *plane, real *distance);
 real function_30bf0(vector3f *vector);
 
-// score 184 (was 184): result/range homes, inverse SIMD groups and seat-threshold reloads remain.
+// score 152 (was 152): result/range homes and inverse SIMD groups remain; seat thresholds now stay in memory.
 // result/range homes, inverse SIMD groups and seat-threshold reloads remain.
 // Round 57: retail's result stores are a spill of a long result (dword store, `mov ax, word` reload at
 // each tail-duplicated exit). Plain long result 241 (result home +0xc); short return type with every
@@ -450,15 +450,41 @@ real function_30bf0(vector3f *vector);
 // motion vector; ours the other way), and range comes in xmm0 with delta in xmm5-7 (ours delta xmm2-4, range
 // xmm5). Range renamed to sort after result 184 (identical); range declared at function scope before/after
 // result 184/184; range read after the delta 184; delta declared before range 184.
+// Round 84: retail's `mov ax, word ptr` exits need a short return, and 0x264b50's declaration sits in
+// a file another lane holds this round; in the seat loop retail compares and stores secondary/primary
+// in memory (`comiss xmm0, [mem]`) where ours copies them through xmm1/xmm2. a/b at the seat-loop top
+// 184; secondary/primary at function scope 184; delta at function scope 184; indexed seats instead of
+// the cursor 211; seat array at the facing-block scope 184.
+// Lane 4 r106 (fast): the six parameter reference locals had no effect (removed: 184, one product's
+// operands swap); without the `volatile` result 241 (the result still lives in memory as a spilled long,
+// so retail's `mov ax, word ptr` exits need only the short return: BLOCKED-BY the 0x25c9d0 declaration in
+// src/unknown_25d690.cpp); the clipped delta as point + motion * amount through a point helper and
+// vector3d_from_points3d 254, with the first delta and motion through vector3d_from_points3d too 255.
+// Round 28 (m3 KIMI2): short return/early exits 255; ordinary result 325; facing locals with early exits 180;
+// reversed publication 180; short/facing/single select 197; short/facing/explicit 3-or-2 stores 152 (plain, kept);
+// mode/settings failure exits 188/202; publication order, ordinary result, distance declaration, projected order,
+// facing and outer declaration orders 152 each; direct count-down 197; direct accumulators 245.
+// Round 166: existing complete vector assignment for delta/motion/both/projected
+// 164/154/166/152; projected with delta/motion/both, then all plus plane normal
+// 164/154/165/293. Original component producers restored.
+// Round 224: Live actor/handle/occupant and actor-handle/actor-occupant/handle-occupant/all/all-forward
+// 311/146/218/324/328/218/322/363; live-handle count/index short-word/short-long/long-word/long-long
+// 229/185/232/185. Six-point 146 rejected below margin; original receivers and signed traversal restored.
+// Round 228: Immutable range/distance/scaled-range producers, all seven combinations,
+// and all three with the seat workspace at entry 152 each. Original mutable declarations
+// and seat lifetime restored; result/range homes and inverse SIMD groups remain.
+// DH round 230: Live handles with amount/plane/both/vectors/all projection declarations at entry
+// 146 each; fallback thresholds before facing 238; direct facing outputs 245; conditional final result 228.
+// Six-point forms rejected; original body restored. Result/range/projection homes and SIMD groups remain.
+// Round 394: empty/non-player/both seat continue exits, each with native/seat-scope
+// query outputs, 205 each; both with later up 205; both with long index 209.
+// Original eligibility, cursor and output scopes restored; result/range/SIMD homes remain.
+// DH round 232: Unsigned full-width result 152; stable actor direction gate 296; both 296;
+// signed admission interval 162, with unsigned result 162, stable gate 301, both 301;
+// unsigned-word result on the full graph 301. Native result/range/projection homes remain; restored.
 // @retail 0x263810
-long function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
+short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
-	long const *actor_reference = &actor_index;
-	point3f const *const *endpoint_reference = &endpoint;
-	char const *posture_reference = &posture;
-	short const *mode_reference = &mode;
-	bool const *facing_reference = &use_facing;
-	bool *const *range_reference = &out_of_range;
 	volatile long result = 0;
 	if (mode == 0 || mode == 1)
 	{
@@ -471,7 +497,7 @@ long function_263810(point3f const *origin, long actor_index, point3f const *poi
 			delta.i = point->x - origin->x;
 			delta.j = point->y - origin->y;
 			delta.k = point->z - origin->z;
-			if (*endpoint_reference && !actor->unknown007)
+			if (endpoint && !actor->unknown007)
 			{
 				vector3f motion;
 				motion.i = endpoint->x - point->x;
@@ -501,7 +527,7 @@ long function_263810(point3f const *origin, long actor_index, point3f const *poi
 				real scale = 1.0f;
 				if (!(*settings & 1))
 				{
-					switch (*posture_reference)
+					switch (posture)
 					{
 					case 0: scale = 0.3f; break;
 					case 1: scale = 0.7f; break;
@@ -511,11 +537,12 @@ long function_263810(point3f const *origin, long actor_index, point3f const *poi
 				if (scaled_range * scaled_range > distance_squared)
 				{
 					real secondary, primary;
-					if (!actor->unknown007 && *facing_reference)
+					if (!actor->unknown007 && use_facing)
 					{
-						function_263740(*actor_reference, &delta, (vector3f *)((byte *)actor + 0x2a8),
+						real facing_secondary, facing_primary;
+						function_263740(actor_index, &delta, (vector3f *)((byte *)actor + 0x2a8),
 							(vector3f *)((byte *)actor + 0x2b4), (vector3f *)((byte *)actor + 0x2c0),
-							range, scale, &secondary, &primary);
+							range, scale, &facing_secondary, &facing_primary);
 						long object_index = *(long *)((byte *)actor + 0x26c);
 						if (object_index != NONE)
 						{
@@ -536,33 +563,40 @@ long function_263810(point3f const *origin, long actor_index, point3f const *poi
 										function_30bf0(&side);
 										cross3f(forward, &side, &up);
 										real a, b;
-										function_263740(*actor_reference, &delta, forward, &side, &up, range, scale, &a, &b);
-										if (a > secondary) secondary = a;
-										if (b > primary) primary = b;
+										function_263740(actor_index, &delta, forward, &side, &up, range, scale, &a, &b);
+										if (a > facing_secondary) facing_secondary = a;
+										if (b > facing_primary) facing_primary = b;
 									}
 								}
 								++seat;
 							}
 						}
+						secondary = facing_secondary;
+						primary = facing_primary;
 					}
 					else
 					{
 						primary = scaled_range;
 						secondary = scaled_range * 0.7f;
 					}
-					if (*mode_reference == 0 && secondary * secondary > distance_squared)
-						result = distance_squared < 36.0f ? 3 : 2;
+					if (mode == 0 && secondary * secondary > distance_squared)
+					{
+						if (distance_squared < 36.0f)
+							result = 3;
+						else
+							result = 2;
+					}
 					else if (primary * primary > distance_squared)
 						result = 1;
 				}
 				else
 				{
-					if (*range_reference) **range_reference = true;
+					if (out_of_range) *out_of_range = true;
 				}
 			}
 			else
 			{
-				if (*range_reference) **range_reference = true;
+				if (out_of_range) *out_of_range = true;
 			}
 		}
 	}
@@ -1622,7 +1656,16 @@ real function_2683f0(long actor_index, long node_index, short type)
 	return result;
 }
 
-// score 684 (was 684): Frame 0x7c/0x80, sentinel/link homes and conversion expansion remain.
+// score 528 (was 536): the prop walk now uses the file's prop iterator (retail's unrotated walk with
+// the prop walk now uses the file's prop iterator (retail's unrotated walk with
+// the cursor at 0x3c and the current index at 0x38) and reads the actor index from its slot; the
+// frame is 0x84 against 0x80 since the visible flag became a stack byte, and the result/level slots,
+// the forward transform (retail if/else straight from the unit) and the scoring block differ.
+// Round 152: iterator 669 fast; NONE results before the actor lookup 666 fast, right after it 656
+// fast (673 plain); short best level 604; matching-object arm as a branch 584; forward if/else read
+// from the unit 775 (frame 0x74); retain set before the distance test and visible defaulted true
+// and cleared 564 (kept); visible alone 572.
+// Earlier: Frame 0x7c/0x80, sentinel/link homes and conversion expansion remain.
 // Earlier 684 (was 684): frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
 // frame 0x7c versus 0x80; saved links and conversion expansion remain.
 // frame 0x7c versus 0x80; sentinel homes, loop header and tick calls differ.
@@ -1674,21 +1717,49 @@ real function_2683f0(long actor_index, long node_index, short type)
 // access restored.
 // Round 354: shared dot at absolute/relative/facing/absolute-relative/absolute-facing/relative-facing/all
 // scoring sites 684 each; all with native signed-word maximum 707. Original complete body restored.
+// Native-word established/visible, positive, both, retain, pair-retain, positive-retain,
+// all scoring, all six predicates 699/711/728/684/703/715/732/751 (calibrated fast).
+// Word established/visible separately 694/685; pair with short best level/early
+// sentinels 700/700. Established word recovers frame 0x80, but all gains fail; restored.
+// Round 166: late visibility/derived retention/both/later established 577/572/567/564;
+// visibility+established/retention+established/all/all with long visibility 577/572/563/560.
+// Combined predicates recover frame 0x80, first +0x3b. On that graph: reversed results 559,
+// wide level 647, live iterator index 560, reversed+live 559, reversed+wide 646,
+// wide+live 647, all 646, all with early constants 655. Early constants alone/reversed
+// 568/568. Best five-point gain is below the gate; original body and parameter access restored.
+// Round 228: Independent first-search table ordinal, NONE/bounded induction, long/short
+// result and conditional/guarded pointer selection 552/549/552/548/536/538/555/551.
+// Guarded long ordinal with ordinary actor input also 536, plain confirmed at retail
+// 2880 bytes; retained without the parameter-address alias. First frame remains 0x84/0x80,
+// selection/iterator homes, forward transform and scoring allocation still differ.
+// DH round 230: On the independent-ordinal graph, long established/visible/retain/pair-established-visible/
+// pair-established-retain/pair-visible-retain/all predicates 577/579/550/583/567/579/603;
+// all with reversed selection declarations 604. Restored; frame 0x84/0x80 and native result homes remain.
+// Round 399: independent-search graph, word first/second/both counters 533/530/530;
+// long second result 577; word first result with long second 575, with word second
+// counter 528 (kept); word counters/first result with long/byte second result 580/639.
+// Calibrated preview; first result stays in -1..1 and each bounded counter in 0..2.
+// Frame remains 0x84/0x80; selection/iterator, forward and scoring homes differ.
+// DH round 232: On the retained ordinal graph, unsigned ordinal, native word threshold,
+// both, per-use iterator index, index/ordinal, index/threshold, all, and all with the first-pass
+// workspace scoped each score 536 in the calibrated image. Frame 0x84/0x80 and selection/
+// iterator/transform/scoring homes remain; complete original executable body restored.
 // @retail 0x266640
 void function_266640(long actor_index)
 {
-	long const *actor_reference = &actor_index;
 	s_actor_view *actor = actor_get(actor_index);
+	long best_node = NONE, strongest_node = NONE;
 	byte *data = (byte *)actor;
 	memset(data + 0x324, 0, 0x10);
-	long best_node = NONE, strongest_node = NONE;
-	long best_level = 0;
+	short best_level = 0;
 	real strongest = 0.0f;
-	long next;
-	for (long index = actor_get(actor_index)->first_prop_index; index != NONE; index = next)
+	s_actor_prop_iterator iterator;
+	iterator.next = actor_get(actor_index)->first_prop_index;
+	s_prop_node_view *entry;
+	while ((entry = actor_next_prop(&iterator)) != NULL)
 	{
-		s_prop_datum *node = prop_ref_get(index);
-		next = *(long *)((byte *)node + 0x2c);
+		s_prop_datum *node = (s_prop_datum *)entry;
+		long index = iterator.index;
 		s_type_f95cd3 *view = NULL;
 		if (node->tracking_index != NONE)
 		{
@@ -1711,7 +1782,7 @@ void function_266640(long actor_index)
 				if (prop_get(node->prop_index)->unknown23)
 				{
 					function_2672e0(view, (s_prop_node_view *)node);
-					function_267700(*actor_reference, node, prop, view);
+					function_267700(actor_index, node, prop, view);
 					if (node->unknown27 >= 1) ++*(char *)(data + 0x325);
 					++*(char *)(data + 0x324);
 				}
@@ -1723,8 +1794,9 @@ void function_266640(long actor_index)
 					bool very_close = false;
 					if (node->unknown28 < 8.0f) close = true;
 					else if (*(bool *)((byte *)state + 0x62) && other &&
-						*(long *)(data + 0x338) != NONE && *(long *)((byte *)other + 0x338) != NONE)
-						close = prop_ref_get(*(long *)(data + 0x338))->object_index == prop_ref_get(*(long *)((byte *)other + 0x338))->object_index;
+						*(long *)(data + 0x338) != NONE && *(long *)((byte *)other + 0x338) != NONE &&
+						prop_ref_get(*(long *)(data + 0x338))->object_index == prop_ref_get(*(long *)((byte *)other + 0x338))->object_index)
+						close = true;
 					if (view->unknown06 == 0 || view->unknown06 == 1)
 						very_close = node->unknown28 < 3.0f;
 					if (close) ++*(char *)(data + 0x326);
@@ -1740,10 +1812,10 @@ void function_266640(long actor_index)
 	}
 	*(short *)(data + 0x328) = best_level;
 	*(long *)(data + 0x32c) = best_node;
-	if (strongest_node != *(long *)(data + 0x338)) function_267770(strongest_node, *actor_reference);
-	function_266540(*actor_reference);
+	if (strongest_node != *(long *)(data + 0x338)) function_267770(strongest_node, actor_index);
+	function_266540(actor_index);
 	*(bool *)(data + 0x340) = false;
-	function_2662f0(*actor_reference);
+	function_2662f0(actor_index);
 	if (*(bool *)(data + 0x30c) && *(short *)(data + 0x310) >= 0 &&
 		*(short *)(data + 0x310) < 2 && actor->unknown086 < 8)
 	{
@@ -1762,10 +1834,10 @@ void function_266640(long actor_index)
 			if (elapsed == first)
 			{
 				if (player->player_index != NONE)
-					function_1fb7e0(0xa8, *actor_reference, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
+					function_1fb7e0(0xa8, actor_index, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
 			}
 			else if (elapsed == second && player->player_index != NONE)
-				function_1fb7e0(0xa9, *actor_reference, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
+				function_1fb7e0(0xa9, actor_index, NULL, *(long *)(g_4e8c24->data + (g_4f55cc[*(short *)(data + 0x310)].player_index & 0xffff) * 0x21c + 0x2c), NONE);
 		}
 		else *(short *)(data + 0x30e) = 0;
 	}
@@ -1793,11 +1865,13 @@ void function_266640(long actor_index)
 	players.datum_index = NONE;
 	while (data_datum_iterator_next(&players))
 	{
+		short player_table_index = NONE;
+		for (long p = 0; p < 2; ++p)
+			if (g_4f55cc[p].player_index == players.datum_index) { player_table_index = p; break; }
 		s_ai_player *player = NULL;
-		for (long p = 0; p < 2; p++)
-			if (g_4f55cc[p].player_index == players.datum_index) { player = &g_4f55cc[p]; break; }
+		if (player_table_index != NONE) player = &g_4f55cc[player_table_index];
 		short player_slot = NONE;
-		for (long i = 0; i < 2; i++)
+		for (short i = 0; i < 2; i++)
 			if (g_4f55cc[i].player_index == players.datum_index) { player_slot = (short)i; break; }
 		long threshold = round_tick_count((real)g_510c54->field_2_3 * 2.0f);
 		if (player && *(long *)(players.datum + 0x2c) != NONE)
@@ -1826,8 +1900,10 @@ void function_266640(long actor_index)
 				direction.k = actor->position.z - point.z;
 				real distance = function_30bf0(&direction);
 				bool established = actor->unknown31c == player_slot && actor->unknown31e > (short)threshold;
+				bool retain = true;
 				if (!(distance > 0.0f)) continue;
-				long reference = function_25d810(unit_index, *actor_reference, false);
+				bool visible = true;
+				long reference = function_25d810(unit_index, actor_index, false);
 				vector3f velocity = unit->velocity;
 				vector3f relative;
 				relative.i = unit->velocity.i - vehicle->velocity.i;
@@ -1841,7 +1917,8 @@ void function_266640(long actor_index)
 					real value = relative.k * direction.k + relative.j * direction.j + relative.i * direction.i;
 					if (value > approach) approach = value;
 				}
-				bool visible = reference == NONE || prop_ref_get(reference)->unknown27 >= 1;
+				if (reference != NONE && prop_ref_get(reference)->unknown27 < 1)
+					visible = false;
 				real facing = 0.0f, score = 0.0f;
 				bool positive = false;
 				if (distance < 15.0f)
@@ -1866,7 +1943,6 @@ void function_266640(long actor_index)
 					}
 					else if (visible && !(distance > 3.5f && approach < 0.5f)) positive = score > 0.0f;
 				}
-				bool retain = true;
 				if (positive)
 				{
 					if (actor->unknown31c != NONE)

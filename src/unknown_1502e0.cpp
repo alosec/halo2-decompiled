@@ -178,6 +178,29 @@ static inline long game_seconds_to_ticks_round(real seconds)
 	return result;
 }
 
+/* a flag field read as word bits: retail reads these flags with a load, a
+   shift and a test of the low bit */
+struct s_flag_word_bits
+{
+	word bit0 : 1;
+	word bit1 : 1;
+	word bit2 : 1;
+	word bit3 : 1;
+	word bit4 : 1;
+	word bit5 : 1;
+	word bit6 : 1;
+	word bit7 : 1;
+	word bit8 : 1;
+	word bit9 : 1;
+	word bit10 : 1;
+	word bit11 : 1;
+	word bit12 : 1;
+	word bit13 : 1;
+	word bit14 : 1;
+	word bit15 : 1;
+};
+
+// score 114 (was 124): flag 4 read through a word bitfield view gives retail's load-and-shift; the rest still differs.
 // @retail 0x151ea0
 void function_151ea0(long player_index, long object_index)
 {
@@ -189,7 +212,7 @@ void function_151ea0(long player_index, long object_index)
 	byte *definition = g_4e3b44[*(long *)object & 0xffff].bytes;
 	long ticks = game_seconds_to_ticks_round(*(real *)(definition + 0x130));
 	bool unavailable = false;
-	if (header->flags & 0x10)
+	if (TEST_FIELD_BIT(((s_flag_word_bits *)&header->flags)->bit4))
 		unavailable = true;
 	if ((short)ticks > 0 && !unavailable)
 	{

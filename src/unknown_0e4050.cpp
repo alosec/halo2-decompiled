@@ -28,10 +28,15 @@ struct s_e4050_object_header
 	s_e4050_object *object;
 };
 
+// score 18 (was 30): retail holds the constant 1 in edx (a dword) and reuses it for both flag
+// tests, the state compare and the return (mov eax, edx); ours tests with immediates and returns
+// through setne. A long result 18; a bool result 28; return 1 / 0 30; the flags through word,
+// dword or long bitfield views 30 (18 with the long result).
 // @retail 0xe4050
 bool function_e4050(long object_index)
 {
 	s_e4050_object *object = ((s_e4050_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+	long result = 0;
 
 	if (!TEST_FIELD_BIT(object->flag_c1_0) && TEST_FIELD_BIT(object->flag_348_0))
 	{
@@ -49,11 +54,11 @@ bool function_e4050(long object_index)
 			if (object->state_3dc == 1 || object->state_3dc == 3)
 			{
 				if (object->parent_index == NONE)
-					return true;
+					result = 1;
 			}
 		}
 	}
-	return false;
+	return result != 0;
 }
 
 /* inline keeps it out of the callers' register tracking: retail's callers

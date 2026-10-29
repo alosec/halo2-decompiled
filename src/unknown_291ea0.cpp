@@ -94,6 +94,7 @@ inline void dialogue_name_override(long volatile *name, long value)
 
 /* plays the actor's variant of a vocalization; returns whether it found one */
 // score 9 (was 9): the default-element and object-pool temporaries use EDX where retail uses EAX,
+// and the scaled object index uses EAX where retail uses EDX; the loop padding byte differs too.
 // and the scaled object index uses EAX where retail uses EDX; padding follows. Round 47: typed default
 // element 9; header pointer arithmetic 9; default if/else 48; cached unit index 129; direct globals
 // access 9; existing object getter 9; first-element syntax 9; scaled header local 9; header-base local 9;

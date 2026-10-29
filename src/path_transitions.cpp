@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "unknown_0259a0.h"
 #include "unknown_20fe20.h"
+#include "normalize3d.h"
 #include <float.h>
 
 real function_30bf0(vector3f *v);
@@ -59,15 +60,6 @@ struct s_transition_collision
     byte unknown4c[0x10];
 };
 
-// score 9 (was 15): only the two calls' setup differs, BLOCKED-BY 0xfa1a0: ours passes the time-scale pointer
-// in EDX (`xor edx, edx`) where retail pushes it (one more push, ret 0x2c).
-// Existing speed getter 126; direct globals 15; reused alternate rise 32; entry result/shared exit 108;
-// early rise 38; common widened index 82; direction at entry 32; entry result plus alternate rise 108.
-// Round 144: the drop tests and the second call in retail's direction (start above end; the alternate
-// pair passed start first, as 0x272020 passes start on the stack and end in ECX) 15 -> 9 (kept: it
-// fixes the values, not just the bytes); both calls' ends swapped instead 33. On 0xfa1a0 (all
-// reverted, the pointer stays in EDX): scale read once 262, delta.k with i/j 247, gravity operands
-// swapped 266.
 // @retail 0x26f150
 bool function_26f150(short type, point3f const *start, point3f const *end,
     point3f const *alternate_start, point3f const *alternate_end)
@@ -234,6 +226,9 @@ bool function_270130(s_object_marker const *marker, point3f const *position, rea
 // best before best_distance 20; the marker query before both 99; dot3f alignment 26; sum
 // x + y + z 20; nested point test 20; flags through a word local 22; alignment k + i + j 20;
 // the markers array after best 20; long count 111; const character 20.
+// A direct word cast 20; the existing orientation predicate forced inline 22; count declared before
+// best_distance and assigned in place 20; const count 20; the loop ordinal declared outside 20;
+// const actor 20; success result assigned before the point query 106; const marker 20.
 // @retail 0x26fc80
 bool function_26fc80(long actor_index, long object_index, real distance, void *path, point3f *point)
 {
@@ -331,9 +326,36 @@ bool function_26fe90(long actor_index, long object_index, real distance, s_objec
     return false;
 }
 
-// score 167 (was 199): entry and loop register allocation differ; single exit 167;
+// score 31 (was 31): frame 0xe34 and retail length agree; collector flags, scan/selected-index
+// comparison and copy widths remain. Earlier at 154:
+// comparison and copy widths, and alignment-dot j ordering remain. Earlier at 154:
+// the flags argument to 0x26f930 is 16-bit in retail (as for 0x26fc80,
+// the flags argument to 0x26f930 is 16-bit in retail (as for 0x26fc80,
+// BLOCKED-BY 0x26f930's `long flags`), which shifts the loop padding; the alignment dot's j
+// term loads g_4687b0 first where retail loads the marker. Tried: single exit 167;
 // long best 199; long loop index 202; point names 199; vector helper 202;
-// single exit with long best 181.
+// single exit with long best 181; the helpers with the alignment written out 154 (loop
+// pointer based at +0x4c); dot3f operands swapped 154; 0.95f < dot 154; a named alignment
+// 154; the alignment through markers[i] 154 (more x87 differences); both dots written out
+// with the delta and normalize helpers 141 (14 more instructions off once aligned).
+// Input-only marker/actor/character/all receivers 154 each; wide count 106; word selection 156;
+// word induction 106; combined native scan 113; wide count with wide scan/selection/both 66/120/33;
+// actual marker cursor with wide count 67, with wide scan 63, with short count 153;
+// paired wide scan/selection with short count 31 kept; unsigned-word scan on that graph 120
+// with either count; all-wide marker cursor 30 (sub-threshold addition, discarded).
+// Candidate/delta/selected-point uninitialized entry storage, all seven subsets and all three with the native
+// marker array: 154/154/154/154/154/154/154/154. Protected query promotion, loop padding and dot allocation
+// remain
+// original declaration scopes restored.
+// Round 379: query before defaults 32; false result after providers 164; entry short count 31;
+// query/result 164, query/count 32, result/count 164, all three 164; selected-index Boolean 98.
+// Original body restored; the alignment dot agrees on this graph.
+// Round 164: native point setter at final/capture/both 51/50/166; short selection with
+// original count and wide scan 66, plus final/capture/both setters 169/170/142;
+// selected marker pointer 196. All restored; original short count and wide ordinals retained.
+// Round 279: separate geometric/weighted distances with scale/update/admission guards
+// 31/31/31/31/33/33/33/33, all at 608 bytes. Original body restored; collector promotion
+// and scan/copy widths remain.
 // @retail 0x26f990
 bool function_26f990(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point)
 {
@@ -344,32 +366,20 @@ bool function_26f990(long actor_index, long object_index, real distance, s_objec
     {
         s_object_marker markers[32];
         real best_distance = FLT_MAX;
-        short best = NONE;
+        long best = NONE;
         point3f best_point;
         short count = function_26f930(object_index, markers, 32, character->marker_flags);
-        for (short i = 0; i < count; i++)
+        for (long i = 0; i < count; i++)
         {
             s_object_marker *marker = &markers[i];
-            if (marker->matrix.forward.i * g_4687b0->i + marker->matrix.forward.k * g_4687b0->k +
-                marker->matrix.forward.j * g_4687b0->j > 0.95f)
+            if (dot3f(&marker->matrix.forward, g_4687b0) > 0.95f)
             {
                 point3f candidate;
                 function_270130(marker, &actor->position, distance, &candidate);
                 vector3f delta;
-                delta.i = actor->position.x - candidate.x;
-                delta.j = actor->position.y - candidate.y;
-                delta.k = actor->position.z - candidate.z;
-                real length = (real)sqrt(delta.k * delta.k + delta.j * delta.j + delta.i * delta.i);
-                if (!(fabs(length) < 0.0001f))
-                {
-                    real inverse = 1.f / length;
-                    delta.i = inverse * delta.i;
-                    delta.j = delta.j * inverse;
-                    delta.k = delta.k * inverse;
-                }
-                else length = 0.f;
-                real dot = delta.k * marker->matrix.left.k + delta.j * marker->matrix.left.j +
-                    delta.i * marker->matrix.left.i;
+                vector3d_from_points3d(&candidate, &actor->position, &delta);
+                real length = normalize3d(&delta);
+                real dot = dot3f(&delta, &marker->matrix.left);
                 length *= (real)(3.f / (1.f + 2.f * fabs(dot)));
                 if (best_distance > length)
                 {
@@ -485,9 +495,29 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
     return result;
 }
 
-// score 299 (was 299): entry register convention and floating-point scheduling differ;
+// score 278 (was 278): Frame 0x40 agrees; early root EBX retention and float/vector scheduling remain.
+// Earlier 278 (was 278): frame 0x40 agrees; early pathfinding EBX ownership and float scheduling differ.
+// entry root retention and floating-point scheduling differ;
 // result first 299; surface first 299; vector names 299; vector helper 299;
 // case order 300; separate vector declarations 299.
+// Round 24: trace-time state reload, mutable entry, both, coherent pathfinding/surface swap,
+// direct distance arguments and direct projected-origin 299 each; c/b/a/d pointer
+// declarations 278; direct case-5 direction 278 (selected with the declaration order).
+// Round 210: Four consistent vertex-index values in word/long/dword 338/344/344; word/long with
+// the actor value at entry 338/344; word/long with both shared differences 346/360;
+// both shared differences on the original c/b/a/d graph 297. All restored.
+// Entry vertex table at case/dispatch scope 280/340; ordinary result 340;
+// case table with ordinary result 342; early actor predicate 278; common case-5
+// outputs 404, with case table 404, with ordinary result 398. Original body restored.
+// Round 222: Complete point constructors: paired fallback 366; both case-5 copies 356; both 383; both case-2 copies 365; fallback/case-2 379; case-5/case-2 376; all 390; all with both vector setters 378. Frame 0x40 agrees; early root retention and vector scheduling remain. All restored.
+// Actor-valid direction scope with whole-vector initialization, readonly surface and
+// ordinary-result interactions: 284/334/284/334/363/357/363/357; restored.
+// Complete external vertex observations in paired/actor/trace cases 427/402/370;
+// paired+actor/paired+trace/actor+trace 475/475/448; all cases 519; all with
+// ordinary result 495. Retained element receivers and original result restored.
+// DH round 218: paired-edge vector aggregates/native surface reference/both 278/278/278;
+// ordinary result on these three graphs 340/340/340; all endpoint role names with aggregates,
+// with/without surface reference 278/278. Original body and qualifier restored.
 // @retail 0x26f3f0
 bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
     s_type_c3b527 const *entry, long actor_index, s_type_f17a25 *state,
@@ -506,9 +536,9 @@ bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
         if (parent_point && (long)surface->vertices[0] != NONE && (long)surface->vertices[1] != NONE &&
             (long)surface->vertices[2] != NONE && (long)surface->vertices[3] != NONE)
         {
-            point3f const *a = &pathfinding->vertices[surface->vertices[0]];
-            point3f const *b = &pathfinding->vertices[surface->vertices[1]];
             point3f const *c = &pathfinding->vertices[surface->vertices[2]];
+            point3f const *b = &pathfinding->vertices[surface->vertices[1]];
+            point3f const *a = &pathfinding->vertices[surface->vertices[0]];
             point3f const *d = &pathfinding->vertices[surface->vertices[3]];
             vector3f first, second;
             first.i = b->x - a->x;
@@ -559,8 +589,7 @@ bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
     case 5:
         {
             point3f const *position = &pathfinding->vertices[surface->vertices[2]];
-            point3f const *direction_point = &pathfinding->vertices[surface->vertices[3]];
-            vector3f direction = *(vector3f const *)direction_point;
+            vector3f direction = *(vector3f const *)&pathfinding->vertices[surface->vertices[3]];
             direction.i = direction.i * -1.f;
             direction.j = direction.j * -1.f;
             direction.k = direction.k * -1.f;
@@ -593,7 +622,7 @@ bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
                 (vector3f const *)direction_point, NULL, (long *)start_out, NULL, parent_node_index_out))
             {
                 s_path_trace_result trace;
-                function_26c590(data, position, parent_node_index, NONE,
+                function_26c590((s_pathfinding_data *)state->pathfinding, position, parent_node_index, NONE,
                     (vector3f const *)direction_point, 0.2f, NULL, &trace);
                 start_out->point = trace.point;
                 start_out->output_index = parent_point->output_index;

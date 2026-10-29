@@ -82,9 +82,27 @@ static __forceinline long real_to_long(real value);
 // 361/316/435/398; those four with one time step 362/314/431/394.
 // Aligned forms lose matched callees; other forms regress. Original repeated queries,
 // manual capsule lifetime, expanded update and complete executable body restored.
+// Round 358: Existing duration conversion with raw/shared length and raw/shared point production
+// 353/353/353/353; all four with one three-use step 356 each. Manual capsule lifetime and body
+// restored; matched controls preserved.
 // Round 23: library input-orientation/zero-velocity/support copies and all pairs/all
 // 353 each; all with final point library publication 353. All eight keep 1164 bytes,
 // the plain 0x8c frame and 340 executable instructions; original transfers restored.
+// Round 203: native vector setter for orientation, velocity, both, support/reset, orientation/support,
+// velocity/support and all transfers 377/353/380/371/398/374/395; all with final point setter 395.
+// All keep plain frame 0x8c and grow the code; every transfer and original body restored.
+// Round 227: Capsule/intermediate-base destruction, each with immutable binding and earlier matrix combinations 355/353/355/353/355/353/355/353.
+// Original body and all helpers restored.
+// Round 237: component/body at uses and one input handle 368/357/356; component-body/
+// component-handle/body-handle/all 398/367/356/359; all with automatic capsule 344, losing seven
+// checked matches (control 353). Original body restored; plain frame and callee propagation remain.
+// Round 14: the placement-new buffer as a 16-byte aligned local reaches 305 with retail's exact
+// aligned frame and length (1164 bytes), the automatic aligned local 307; both break the matched
+// functions 0xb77d0, 0x1c4b00, 0x1ed340 and 0x2901e0 (29/49/133/45) that the plain form keeps
+// matching. Original body restored; plain frame and callee propagation remain.
+// Round 390: Separate target inline/noinline contracts with manual/aligned-byte/automatic
+// capsule lifetimes and aligned-byte period observation: 353/353/305/305/307/307/306/306. Original body restored.
+// Aligned forms recover frame 0x94 but lose four matched controls; declaration contracts do not fix it.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {

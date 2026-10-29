@@ -984,6 +984,7 @@ long function_16b990(s_record_pool *data, long index);
 // reference 5; native value reference 6; unsigned expression bits 5; thread
 // rereads 130; size memset 88; script-index memset 12; unsigned allocated
 // index 5; external thread reference 5.
+// score 4 (was 5): the script index reset before the expression read (found by the permuter).
 // @retail 0x2090a0
 void function_2090a0(void)
 {
@@ -1002,8 +1003,8 @@ void function_2090a0(void)
             long slot = (i & 0x8000) ? (i & 0x7fff) : (i & 0x7fff) + 0x41d;
             long value_index = function_16b990(g_4f9380, slot);
             s_hs_global_value *value = &((s_hs_global_value *)g_4f9380->data)[value_index & 0xffff];
-            long expression_index = *(long *)(global + 0x24);
             thread->script_index = NONE;
+            long expression_index = *(long *)(global + 0x24);
             thread->frame->size = 0;
             function_2099f0(thread_index, (long *)&value->value, expression_index);
             if (thread->flags & 1)

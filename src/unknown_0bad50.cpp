@@ -59,6 +59,8 @@ struct s_object_variant_definition_ab
 
 void function_b7360(long object_index);
 
+__declspec(noinline) void function_ba3d0(long object_index);
+
 // @retail 0xba3d0
 void function_ba3d0(long object_index)
 {

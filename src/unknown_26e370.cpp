@@ -180,13 +180,6 @@ bool joint_decline(long actor_index, short invitation_index)
 	return true;
 }
 
-// score 79 (was 79): retail reads the game-time pointer inside the loop and keeps the actor in ESI and
-// the lowest index in EBP; ours hoists the game-time pointer and keeps the actor in ECX (15 bytes longer
-// with the loop-top padding). Tried: the joint through a named pointer 79; the invitation fields read
-// through the actor 95; the declarations reordered (three orders) 79; a long result 79; the index
-// declared before the loop 79; the two exit tests joined with || 115; the time test reversed 79;
-// else-if arms 79; no actor local 78; an invitations pointer 68 (folds the +0x194); the priority read
-// at each use 79; the loop ending on the result, no breaks, 77 (actor in ESI as retail, time hoisted).
 // @retail 0x26ea10
 short function_26ea10(long actor_index, short priority)
 {
@@ -211,10 +204,11 @@ short function_26ea10(long actor_index, short priority)
 			break;
 		}
 
-		short participant_priority = JOINT_STATE(invitation->joint_index)->participants[invitation->participant_index].priority;
-		if (participant_priority < lowest_priority)
+		joint_state *joint = JOINT_STATE(invitation->joint_index);
+
+		if (joint->participants[invitation->participant_index].priority < lowest_priority)
 		{
-			lowest_priority = participant_priority;
+			lowest_priority = joint->participants[invitation->participant_index].priority;
 			lowest_index = i;
 		}
 	}
@@ -566,37 +560,43 @@ PRIVATE inline long joint_invitation_ticks(real seconds)
 bool __stdcall joint_initiate(long actor_index, s_slot *slot)
 {
 	s_joint_behavior_state *behavior = (s_joint_behavior_state *)slot;
-	s_joint_behavior_definition *definition = JOINT_DEFINITION(behavior->type);
 	bool result = true;
-	long joint_index;
+	s_joint_behavior_definition *definition = JOINT_DEFINITION(behavior->type);
+	long joint_index = NONE;
 
-	if (!definition->create || (joint_index = definition->create(actor_index, behavior)) == NONE)
-		return false;
-
-	if (behavior->waiting)
+	if (definition->create)
+		joint_index = definition->create(actor_index, behavior);
+	if (joint_index == NONE)
 	{
-		s_joint_invitation_request request = { 5, NONE };
-		long ticks;
-
-		ticks = joint_invitation_ticks(definition->invitation_seconds) > 2 ? joint_invitation_ticks(definition->invitation_seconds) : 2;
-		request.invitation.type = behavior->type;
-		request.invitation.joint_index = joint_index;
-		request.invitation.expiration_time = g_510c54->game_time + ticks;
-
-		result = definition->gather(actor_index, joint_index, behavior, &request) + 1 >= definition->minimum_participants;
-		if (result)
-		{
-			behavior->timer = (short)ticks;
-			function_26ec20(&request.invitation, actor_index);
-		}
-		else
-		{
-			joint_leave(actor_index, slot);
-			return result;
-		}
+		result = false;
 	}
+	else
+	{
+		if (behavior->waiting)
+		{
+			s_joint_invitation_request request = { 5, NONE };
+			long ticks;
 
-	behavior->state = JOINT_STATE(joint_index)->state;
+			ticks = joint_invitation_ticks(definition->invitation_seconds) > 2 ? joint_invitation_ticks(definition->invitation_seconds) : 2;
+			request.invitation.joint_index = joint_index;
+			request.invitation.type = behavior->type;
+			request.invitation.expiration_time = g_510c54->game_time + ticks;
+
+			result = definition->gather(actor_index, joint_index, behavior, &request) + 1 >= definition->minimum_participants;
+			if (result)
+			{
+				behavior->timer = (short)ticks;
+				function_26ec20(&request.invitation, actor_index);
+			}
+			else
+			{
+				joint_leave(actor_index, slot);
+			}
+		}
+
+		if (result)
+			behavior->state = JOINT_STATE(joint_index)->state;
+	}
 	return result;
 }
 
@@ -604,37 +604,43 @@ bool __stdcall joint_initiate(long actor_index, s_slot *slot)
 bool __stdcall joint_initiate_b(long actor_index, s_slot *slot)
 {
 	s_joint_behavior_state *behavior = (s_joint_behavior_state *)slot;
-	s_joint_behavior_definition_b *definition = JOINT_DEFINITION_B(behavior->type);
 	bool result = true;
-	long joint_index;
+	s_joint_behavior_definition_b *definition = JOINT_DEFINITION_B(behavior->type);
+	long joint_index = NONE;
 
-	if (!definition->create || (joint_index = definition->create(actor_index, behavior)) == NONE)
-		return false;
-
-	if (behavior->waiting)
+	if (definition->create)
+		joint_index = definition->create(actor_index, behavior);
+	if (joint_index == NONE)
 	{
-		s_joint_invitation_request request = { 5, NONE };
-		long ticks;
-
-		ticks = joint_invitation_ticks(definition->invitation_seconds) > 2 ? joint_invitation_ticks(definition->invitation_seconds) : 2;
-		request.invitation.type = behavior->type;
-		request.invitation.joint_index = joint_index;
-		request.invitation.expiration_time = g_510c54->game_time + ticks;
-
-		result = definition->gather(actor_index, joint_index, behavior, &request) + 1 >= definition->minimum_participants;
-		if (result)
-		{
-			behavior->timer = (short)ticks;
-			function_26ec20(&request.invitation, actor_index);
-		}
-		else
-		{
-			joint_leave(actor_index, slot);
-			return result;
-		}
+		result = false;
 	}
+	else
+	{
+		if (behavior->waiting)
+		{
+			s_joint_invitation_request request = { 5, NONE };
+			long ticks;
 
-	behavior->state = JOINT_STATE(joint_index)->state;
+			ticks = joint_invitation_ticks(definition->invitation_seconds) > 2 ? joint_invitation_ticks(definition->invitation_seconds) : 2;
+			request.invitation.joint_index = joint_index;
+			request.invitation.type = behavior->type;
+			request.invitation.expiration_time = g_510c54->game_time + ticks;
+
+			result = definition->gather(actor_index, joint_index, behavior, &request) + 1 >= definition->minimum_participants;
+			if (result)
+			{
+				behavior->timer = (short)ticks;
+				function_26ec20(&request.invitation, actor_index);
+			}
+			else
+			{
+				joint_leave(actor_index, slot);
+			}
+		}
+
+		if (result)
+			behavior->state = JOINT_STATE(joint_index)->state;
+	}
 	return result;
 }
 

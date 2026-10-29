@@ -56,6 +56,7 @@ static __forceinline long floor_to_long_inline(real value)
 // Flags-first or-chain, two-statement split and &=/|= split 80 (reassociated);
 // named word local in the call, named bools before the store, kind term first,
 // dword kind 80; separate call-value copy for the out-of-line floor 80.
+// score 46 (was 80): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,
@@ -156,7 +157,7 @@ short function_2cbf0(long geometry, long category, short instance, dword flags,
             s_2cb30_state *state = g_4c0b78.state;
             if (!state->active)
                 ++g_4c0b78.previous;
-            if (entry->unknown00 & 0x40)
+            if (TEST_FIELD_BIT((entry->unknown00 >> 6) & 1))
             {
                 section = (byte *)function_44940((short)index, (bool)((entry->unknown00 >> 12) & 1));
                 *(void **)(entry->unknown10 + 4) = NULL;

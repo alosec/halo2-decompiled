@@ -27,6 +27,9 @@ void lane_b_bv_agent::cleanup()
 // child parent/placement stores are reversed; copy initialization 2;
 // child assignment 9; direct handler 23; direct dispatcher 54; split declarations 2;
 // const type results 2; first/second declarations before child 2/2.
+// constructor-only wrapper 2; placement/wrapper and wrapper/placement 2/2;
+// child/other/both query-shape locals 2/2/2; wrapper with both 2;
+// placement and wrapper with both 2.
 // @retail 0x2e6d70
 lane_b_bv_agent::lane_b_bv_agent(body_2ea940 const *a, body_2ea940 const *b, lane_a_dispatch *const *input, void *manager) : lane_a_agent_base(manager)
 {
@@ -201,6 +204,9 @@ void lane_b_bv_agent::get_penetrations(body_2ea940 const *a, void const *b, void
 // child parent/placement stores are reversed; child assignment 9;
 // early dispatcher 52; query handler 2; const results 2; split declarations 2;
 // first/second declarations before child 2/2; later dispatcher 2.
+// constructor-only wrapper 2; placement/wrapper and wrapper/placement 2/2;
+// child/other/both query-shape locals 2/2/2; wrapper with both 2;
+// placement and wrapper with both 2.
 // @retail 0x2e7710
 void __cdecl function_2e7710(body_2ea940 const *a, body_2ea940 const *b, lane_a_dispatch *const *input, void *collector)
 {

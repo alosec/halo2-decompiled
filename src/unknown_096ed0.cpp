@@ -13,7 +13,12 @@ long replication_table_find_in_chains(s_handle_peers *peers, long *handles, long
 void replication_table_release(s_handle_peers *peers, long handle);
 void replication_table_release_chain(s_handle_peers *peers, long count, long const *handles);
 
-// score 199 (was 217): Frame 0x48 agrees; the blocked flags now sit in the dead output slot and each
+// score 132 (was 132): frame 0x48, receiver EBP and pending counter ESI agree; selector,
+// cursor/entry/query homes and load scheduling remain. Earlier 170: the peers table is read through a local; the
+// index is read inside the enabled test, the cursor is declared under the index test, advanced
+// before the stores and the size is one expression, so retail's prologue and output block match.
+// Left: our cursor, entry pointer and item-priority slots sit 4 bytes below retail's and our
+// chain loop keeps its counter in a stack slot instead of ESI.
 // chain loop has one count test. Left: receiver EDI/EBP (ours keeps the index in ebx, retail spills it
 // and reloads it each iteration), so every callee-saved register rotates.
 // Lane 8 r64 (199 = output cursor local, no `<= 0` guards before the chain loops, `priority = 0.0f`
@@ -90,22 +95,74 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // Round 195: Pending/active reversed-relational and conditional-replacement maximum
 // graphs, alone and in all pairs, 217 in eight forms. Equality/unordered choices retained;
 // original body restored, with receiver and callback/output/blocked homes unresolved.
+// Round 104: an entry pointer for the body's reads 216; also driving the loop step 216; size as one
+// expression 202 (aligned count unchanged); count incremented first 209; the `index != NONE` guard that
+// repeated the loop test removed 199 (identical code, kept).
+// Round 31 lead (170 at 814 bytes, not kept: mixed reads and a repeated loop guard): a
+// `s_handle_peers *peers = table;` local for the peer lookup and the three single-handle calls (the
+// chain loops keep `table->`) puts every callee-saved register where retail has it (this EBP,
+// peer/count EDI, table/index ESI, type EBX) 207; the output in 0x8b890's order (`out = cursor;
+// count++; cursor++;`, size as one expression with `(handles_count > 1 ? 2 : 0)`) then gives retail's
+// output block exactly 175; index read inside `if (unknown09)` and the cursor declared under `if
+// (index != NONE)` with a `for (; ...)` loop gives retail's prologue 170. Left: in the first chain
+// loop retail keeps the chain index in ESI, the vtable in EBX and spills type to [esp+0x34] (reloaded
+// before the join); ours keeps type in EBX and spills the index, shifting the cursor/entry/item slots
+// by 4. On that lead: type declared last/at function scope, one shared chain index, the first loop's
+// item locals at block scope, the chain query through the local 170 each; `type = 3` after the loop
+// 249 (782 bytes); type set only on the unblocked exit 228; the local in the loops too 216; a 600 s
+// permuter run 158 only through a volatile read; an entry pointer for the reads 195. Without the local: the sibling output order 234,
+// with the cursor inside the flag test 232; count renamed result 199 (identical).
+// Round 250: two-use pending handle 199; pending array cursor 258; both 258;
+// active array cursor 207; handle/active 207; both cursors 213; handle/both 213;
+// all with cursors before chain queries 214. Original traversal restored.
+// Round 169: Recovered receiver/output graph: selector, distinct chain-index and callback-output
+// identities, all seven subsets 170; native dword selector 170. Pending selector/index
+// interference and the four-byte cursor/entry/callback home shift remain.
+// Conditional pending/active/both aggregate zero joins 170/170/170;
+// post-query pending/active/both failure lifetimes 173/170/173; both joins with late/shared predicates 173/170.
+// Complete per-use/table-local/traversal-local/owner-local roots on the EBP graph 231/228/228/222; original body restored.
+// Round 173: native signed-byte/byte/short/word selector on the recovered EBP graph
+// 216/216/200/200; complete post-query selector publication at those widths
+// 278/278/266/266. Original selector, table observations and body restored; cursor/entry
+// homes and pending selector/chain-index residency remain.
+// Round 73: retail spills type around the first chain loop only (stored before the chain query, reloaded
+// into EBX at the join) and keeps the counter in ESI and the vtable in EBX; ours keeps type in EBX and
+// spills the counter. Renaming type (two names) or the chain counters (two names) 170 each; the first
+// chain counter declared with its zero before `type = 3` 189.
+// Round 396: real pending/active array cursors after/before lookup on the EBP graph
+// 216,132,242,221,148,247,247,252; active post-lookup cursor kept at 132 plain, 823/814 bytes.
+// Pending selector now spills at +0x20 versus +0x34; cursor/query homes remain four bytes low.
+// Round 227: On the aligned receiver graph, early size reduction/conditional maxima/both
+// 170/170/170; positive availability and its three combinations 171 each;
+// all with a private pending total 218. Original reductions restored; selector/induction
+// interference and the four-byte cursor/entry/callback shift remain.
+// Round 175: On the recovered EBP graph, pending/active/both native chain-buffer names
+// 170/170/170; two-use pending callback handle 170, with either/both buffers 170/170/170;
+// complete graph with alternate buffer home order 170. Original executable body restored.
+// Round 180: Pending/active selector constants after queries and single-item counts after
+// callbacks, masks 1-7, then all with single-item selectors after callbacks:
+// 172/170/172/229/230/229/230/229. Original executable body restored.
+// Round 399: retained active-cursor graph, output/selector/input names in masks 1-7,
+// all with callback-output names, native count/index names, those with selector/input,
+// explicit remaining-count pointer walk and that walk with count/selector names: 132 each.
+// Active remaining count still coalesces with selector at +0x20; complete body restored.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
 	long count = 0;
-	s_entry_450c94 *out = (s_entry_450c94 *)output;
 	if (unknown09)
 	{
 		long index = unknown5024;
 		if (index != NONE)
 		{
+			s_entry_450c94 *cursor = (s_entry_450c94 *)output;
 			for (; index != NONE && count < max_count; index = entries[index].unknown0a)
 			{
 				if (entries[index].state)
 				{
 					long handle = entries[index].handle;
-					s_handle_peer *peer = &table->peers[handle & 0x3ff];
+					s_handle_peers *peers = table;
+					s_handle_peer *peer = &peers->peers[handle & 0x3ff];
 					long type;
 					long handles_count;
 					real priority;
@@ -140,7 +197,7 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 								continue;
 							type = 1;
 							handles_count = 1;
-							table->owner->v3(handle, entries[index].unknown04, a1, &priority, &size);
+							peers->owner->v3(handle, entries[index].unknown04, a1, &priority, &size);
 						}
 					}
 					else if (entries[index].state == 3)
@@ -155,14 +212,16 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 								handles_count = replication_table_get_chain(table, handle, handles);
 								priority = 0.0f;
 								size = 0;
+								long const *active_cursor = handles;
 								for (long i = 0; i < handles_count; i++)
 								{
 									real item_priority;
-									table->owner->v9(handles[i], a1, &item_priority);
+									table->owner->v9(*active_cursor, a1, &item_priority);
 									if (item_priority > 0.0f)
 										priority = priority > item_priority ? priority : item_priority;
 									else
 										blocked = true;
+									++active_cursor;
 								}
 								if (blocked)
 									priority = 0.0f;
@@ -173,7 +232,7 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 									continue;
 								type = 2;
 								handles_count = 1;
-								table->owner->v9(handle, a1, &priority);
+								peers->owner->v9(handle, a1, &priority);
 								size = 0;
 							}
 						}
@@ -183,7 +242,7 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 								continue;
 							type = 5;
 							handles_count = 1;
-							table->owner->v8(handle, entries[index].unknown04, entries[index].unknown0c, a1, &priority,
+							peers->owner->v8(handle, entries[index].unknown04, entries[index].unknown0c, a1, &priority,
 								&size);
 						}
 					}
@@ -191,15 +250,14 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 						continue;
 					if (priority > 0.0f)
 					{
+						s_entry_450c94 *out = cursor;
+						count++;
+						cursor++;
 						out->unknown00 = *(long *)unknown04;
 						out->index = index;
 						out->unknown04 = priority;
 						out->unknown0c = type;
-						out->size = size + 14 * handles_count + 3;
-						if (handles_count > 1)
-							out->size += 2;
-						out++;
-						count++;
+						out->size = size + 14 * handles_count + 3 + (handles_count > 1 ? 2 : 0);
 					}
 				}
 			}

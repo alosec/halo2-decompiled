@@ -724,9 +724,6 @@ bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
 	real *speed_out, real *time_out, real *distance, real *vertical_speed, real *horizontal_speed);
 
-// score 5 (was 5): the arguments of the ballistics call are pushed in another
-// order and the high arc flag goes into EDX; retail's function_fa1a0 takes the
-// target before the origin and is defined in src/projectiles.cpp.
 // @retail 0x1f8100
 bool function_1f8100(long actor_index, point3f const *origin, point3f const *target)
 {
@@ -741,12 +738,12 @@ bool function_1f8100(long actor_index, point3f const *origin, point3f const *tar
 
 real normalize2d(point2f *v);
 
-// score 168 (was 168): BLOCKED-BY 0xfa1a0. Frame 0x48 and the prologue agree. Our 0xfa1a0 takes its
-// time-scale pointer in EDX where retail pushes it (retail spends EDX on the gravity pointer and keeps
-// the distance output in EDI), so both trajectory call setups differ, and with them the result's
-// register (retail DL), the object-table register (retail ESI), the request copy and the exits; the type
-// scan's found exit re-tests `i < 6`; retail keeps three separate direction stores and returns the
-// validity flag (`mov al, bl`) on the invalid exit.
+// score 171 (was 171): frame 0x48 and entry stores agree; the found-search re-test,
+// trajectory result DL, retry homes, object/query allocation and movement tails differ.
+// The trajectory helper uses retail ret 0x2c; the older extra-EDX blocker is absent.
+// frame 0x48, entry initialization and trajectory convention agree.
+// The found-type scan has an extra bound test; trajectory result registers, retry scalar homes,
+// object/query allocation and separate movement-return tails still differ.
 // Forms tried: search then selection 172; unsigned scan 178; fixed do/while 191; types arm first 191;
 // fallback setters 195; split plus unsigned scan 223; signed-long search 192; signed-byte search 188;
 // exact exhaustion 210; named first normalization result 172; low-bit presence guard 228; native type
@@ -794,6 +791,20 @@ real normalize2d(point2f *v);
 // Round 31 (lane 12): first normalization as `!(... > 0.0f)` 167; with `!(base_speed * 1.2f >= chosen_speed)`
 // 166; then the success store as the `if` arm 192 (942 B); the scan with selection and break on that graph
 // 183 (matches through +0x111); 0xfa1a0 time scale read once into a value 166 (0xfa1a0 262, still EDX).
+// Round 10 (lane 11): both of those with `return valid` 167; with a plain `for`/`break` scan 167; with a
+// bottom-tested scan 207; with the selection inside the scan 183; retry vertical renamed to sort first 168.
+// Round 236: native request/movement/selected-type result and all combinations, then native table
+// fields 171 each; all restored.
+// Round 162, with the corrected trajectory convention: found-bit selection, both output-pair orders,
+// false-validity return, overall result and the combined output/result form 174 each; early first-type
+// 230; byte/word trajectory success 189/177. Coordinated trajectory inline declarations on the
+// original/found-bit graphs 171/174. All bodies, call tuples and outside declarations restored.
+// Round 224: Native initial/retry speed pairs with full-width result, seven subsets
+// 174/172/175/199/199/202/202; both pairs with enclosing retry scope 175. No match; all pair
+// storage, result width and body restored.
+// Round 224 continuation: Native planar normalization/output workspace on the corrected trajectory convention, crossed with
+// earlier result, entry planar declaration and complete memcpy publication, eight forms 267 each.
+// Original 3D output, planar uses, declarations, comparisons and full body restored.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
@@ -1361,6 +1372,19 @@ PRIVATE inline real movement_normalize2d(point2f *v)
 // slots, but the result takes the origin slot and facing EBP), with the result declared there too 296;
 // radius read at each use 277 (1165 B); not-left type-zero arm assigning y first 285; type exit
 // returning 0.0f 252 (identical).
+// Round 10 (lane 11): one signed offset for the type-zero arm 293 (1140 bytes); `return 0.0f` at the type
+// exit 252 (same code); direction renamed to sort last 252 (same code); flag declared after the
+// normalization 287; side dot product with the side terms first 252 (same code).
+// Round 28: Ordinary origin with eight consistent native parameter orders 272 each;
+// register inputs before/between/after ordered type/origin/facing/obstacles, 1173 or 1164 bytes.
+// Original definition, declarations and both callers restored; early flag/normalization homes remain.
+// Ordinary origin with existing 2D product producer across paired projections,
+// cosine and side classification 267 in all seven combinations; complete products
+// plus side-offset arms 278. Exact length throughout; original body restored.
+// Round 225: ordinary origin with fraction branches, desired-point subtraction and paired
+// 3D setters, seven nonempty combinations 267/295/295/267/267/295/295;
+// all producers with native long side 289. Original body restored; ordinary input
+// and steering producer forms do not recover the zero/radius or initial homes.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)

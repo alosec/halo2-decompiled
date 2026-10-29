@@ -40,13 +40,10 @@ bool function_e4050(long object_index);
 s_type_5cfb45 *function_25d670(long prop_ref_index);
 real normalize2d(point2f *v);
 bool function_1f57f0(long actor_index, long animation, long const *target);
-bool function_1be410(long actor_index, long object_index, point3f *point);
+bool function_1be410(point3f *point, long actor_index, long object_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 bool function_1f8100(long actor_index, point3f const *origin, point3f const *target);
 
-// score 74 (was 74): the three position components are loaded into different
-// SSE registers
-// here and the copies on the stack sit at different offsets.
 // @retail 0x1be4b0
 short __stdcall function_1be4b0(long actor_index)
 {
@@ -58,10 +55,13 @@ short __stdcall function_1be4b0(long actor_index)
 		if (object_get(actor->unknown018)->type == 0)
 		{
 			function_b9dd0(actor->unknown348, &geometry.point);
-			real z = actor->position.z - geometry.point.z;
 			real x = actor->position.x - geometry.point.x;
 			real y = actor->position.y - geometry.point.y;
-			if (z * z + x * x + y * y < 16.0f && function_1be410(actor_index, actor->unknown348, &geometry.point))
+			real z = actor->position.z - geometry.point.z;
+			real distance = z * z;
+			distance += x * x;
+			distance += y * y;
+			if (distance < 16.0f && function_1be410(&geometry.point, actor_index, actor->unknown348))
 			{
 				geometry.origin = geometry.point;
 				geometry.origin.x -= object_get(actor->unknown348)->unknown03c;
@@ -114,7 +114,7 @@ short __stdcall function_1be6e0(long actor_index, s_slot *slot, bool active)
 // in retail, because function_26fc80 takes its point argument in EBX in
 // retail and on the stack in our build.
 // @retail 0x1be410
-bool function_1be410(long actor_index, long object_index, point3f *point)
+bool function_1be410(point3f *point, long actor_index, long object_index)
 {
 	s_slot_object_view *object = object_get(object_index);
 	real distance = 0.2f;
@@ -218,7 +218,7 @@ void __stdcall function_1be8f0(long actor_index, s_slot *slot)
         actor->unknown420 = 6;
         *(long *)&actor->unknown424 = state->unknown10;
         point3f point;
-        if (function_1be410(actor_index, state->unknown10, &point) && function_1f8160(actor_index, NULL, &point, false))
+        if (function_1be410(&point, actor_index, state->unknown10) && function_1f8160(actor_index, NULL, &point, false))
         {
             actor->unknown228 = true;
             state->unknown0c = true;

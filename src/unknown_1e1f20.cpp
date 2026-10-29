@@ -675,7 +675,11 @@ void function_1e1740(long actor_index, long object_index);
 void function_26dc20(long actor_index);
 void swarm_leader_detach(long actor_index);
 
-// score 277 (was 277): Frame 0x20 agrees; early actor-pool allocation, cleanup and slot homes remain.
+// score 285 (was 285): frame 0x1c versus 0x20, entry actor displacement and cleanup stack homes remain.
+// Earlier: Frame 0x20 agrees; early actor-pool allocation, cleanup and slot homes remain.
+// frame 0x1c versus 0x20, early actor/pool allocation,
+// cleanup countdown and slot homes remain.
+// Frame 0x1c versus 0x20; entry actor/displacement allocation and cleanup countdown/slot homes remain.
 // Round 141: the memory loop is the existing joint_decline (0x26ed40) inlined in retail (test through the
 // cached actor, body re-derived, participant index re-read per store), BLOCKED-BY 0x26ed40: its /Ob1
 // file keeps it out of line (a call there 317/343). The tail block (flag 9 clear, as 0x1c7bb0/0x1e3920
@@ -749,16 +753,57 @@ void swarm_leader_detach(long actor_index);
 // Prop walk through 0x26be00/0x26be30 alone (fresh pool reads after the callback) 298 (996 bytes);
 // tail read per use 282; prop record re-derived per use 278; named bool for the definition bit 277;
 // the bit test as `(bool)((x >> 3) & 1)` 291 (retail: shr/and al, stored in the dead index slot).
+// Earlier: the frame is 0x1c instead of 0x20, the actor byte offset is kept in EBX
+// instead of EAX and the slot index in ECX instead of EDX, and the cleanup loop keeps its
+// countdown in a register instead of a stack slot.
+// Round 167: entry cleanup/scan/both constants 285/322/322; uninitialized
+// callback/memory/both workspaces 285/285/285; both constants and workspaces
+// alone/with final receiver 322/322. Entry scan recovers frame 0x20, not allocation.
+// Native unsigned scan late/early 285/322; prop displacement/complete handles
+// 285/285; early scan with displacement/handles 322/322; all domains late/early
+// 285/322. Original declarations, domains, observations and executable body restored.
+// Round 27 reduced preview 261 with a full-image caveat: cleanup pointer/offset/stack countdown 283/981;
+// with shared prop walk 297/964; explicit actor offset/retained pointer 311/958; with countdown 310/958;
+// native bool predicate 265/983; with countdown 304/999; declarations reordered 320/1012;
+// countdown for 283/981, ordinary 285/981. Opening body restored.
+// Round 250: existing cleanup helper with fresh admission and long/short/byte/unsigned
+// indices 335/335/325/335; cached admission with those domains
+// 347/347/346/347. Shared declaration unchanged; original body restored.
+// Shared inline/forced declaration diagnostics, each long/short/byte/unsigned,
+// 330/303/285/330 and 330/303/285/330; declarations restored.
+// Round 29: Existing record/current-datum reference scans, normal/entry workspace declarations and both workspace names: 266 each against unchanged fast 261; ordinary baseline 285 retained. Original scan and include restored.
+// Round 109: joint_decline declared inline and called from the memory loop 330 (it then also inlines
+// into 0x1bead0 and 0x26ef70, which lose their matches); on the fast image (261 there, caveat): the
+// memory test through the cached actor 352, the participant index re-read per store 287, both 371,
+// a short memory index 261. The bool `value` needs every declaration changed, one of them in
+// src/unknown_1e3920.cpp (another lane's this round).
+// Round 383 (fast control 261, ordinary 285): native invitation/destination/both records
+// 261/261/261; per-store participant field with invitation/destination/both/both plus short
+// ordinal/both plus destination reference 287 each. Original types, field reads and body restored.
+// Round 222: Native callback-handler ownership, conditional iterator-result declaration,
+// cleanup-only workspace scope, all seven subsets and readonly handler: eight 261 fast
+// against unchanged fast 261 (ordinary 285). Original executable body restored.
+// Self-exclusion by native pool-slot identity, word/long/dword/unsigned-int
+// entry carriers 288/312/312/312; uniformly reused getter carriers 294/313/313/313
+// against unchanged fast 261 (ordinary 285). Original pointer test, complete
+// handles, getter observations and executable body restored.
+// DH round 230 (fast control 261, ordinary 285): iterator actor/handle/both outputs initialized
+// 279/274/274; complete zero aggregate 301; their entry-declaration forms 279/274/274/326.
+// All restored; frame 0x1c/0x20, actor/displacement allocation and cleanup countdown remain.
+// DH round 234 (fast control 261, ordinary 285): direct callback-field observations with
+// native iterator/cleanup lexical scopes and unsigned cleanup ordinal, eight forms 261 each.
+// Original body restored; frame 0x1c/0x20 and actor/displacement/countdown homes remain.
 // @retail 0x1e1a00
 void __stdcall function_1e1a00(long actor_index, long value)
 {
-	for (short slot_index = 0; slot_index <= actor_get(actor_index)->current; ++slot_index)
+	s_actor_view *actor = actor_get(actor_index);
+	for (short slot_index = 0; slot_index <= actor->current; ++slot_index)
 	{
-		t_slot_proc stop = g_46eeb8[actor_get(actor_index)->slots[slot_index].type]->stop;
+		t_slot_proc stop = g_46eeb8[actor->slots[slot_index].type]->stop;
 		if (stop)
-			stop(actor_index, slot_index < 4 ? &actor_get(actor_index)->slots[slot_index] : NULL);
+			stop(actor_index, slot_index < 4 ? &actor->slots[slot_index] : NULL);
 	}
-	actor_get(actor_index)->current = NONE;
+	actor->current = NONE;
 	function_258600(actor_index);
 	long memory_index = 0;
 	do
@@ -774,7 +819,7 @@ void __stdcall function_1e1a00(long actor_index, long value)
 			memory->type = NONE;
 		}
 	} while (++memory_index < 4);
-	if (*((byte *)actor_get(actor_index) + 0xa))
+	if (actor->unknown00a[0])
 		function_203fb0(actor_index);
 	else
 		function_203ed0(actor_index, (byte)value != 0);
@@ -848,11 +893,11 @@ void __stdcall function_1e1a00(long actor_index, long value)
 			}
 		} while (++i < 3);
 	}
-	s_actor_view *actor = actor_get(actor_index);
-	if (actor->unknown009)
+	s_actor_view *actor_view = actor_get(actor_index);
+	if (actor_view->unknown009)
 	{
-		actor->unknown009 = false;
-		*(long *)((byte *)actor + 0x10) = g_510c54->game_time;
+		actor_view->unknown009 = false;
+		*(long *)((byte *)actor_view + 0x10) = g_510c54->game_time;
 		--*(short *)((byte *)g_4f55d0 + 0x36a);
 	}
 	record_pool_release(g_4f55f0, actor_index);

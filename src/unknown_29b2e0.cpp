@@ -73,7 +73,13 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
     arg_3->k = local_6;
 }
 
-// score 389 (was 389): frame 0x2c and length agree; early J load and magnitude/angle homes differ; K first 389, shared axis cross 409, magnitude return 406, global optimization off 2150, float consistency 656, K first plus return 399.
+// score 389 (was 389): frame 0x2c and length agree; early J load and magnitude/yaw homes differ.
+// Round 89 (fast; aligned count 239 at 389): the 2-D normalize through normalize3d after the k store
+// 398 (sibling 0x29b990 lost, 10); the actor angle fields read at each use as retail does 404; the two
+// angle defaults assigned in the else arm 397 (the three magnitudes then share retail's [esp+0xc]
+// slot, but the frame drops to 0x24); only the first angle's default in the else arm 406 (frame 0x28);
+// J read into a local before the length 399 (still folded). Retail's else arm copies the angle zero
+// from the register that holds the other angle (movaps xmm0, xmm2).
 // early J preload and magnitude/yaw home remain; indexed long/short normalization
 // loops 417/421; pointer loop 423; loop common result 423; real absolute first/both 399/395; loop with
 // real absolute first/both 421/416.
@@ -120,6 +126,25 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
 // native numeric truth alone/with entry default 397/394; rotation input/axis/both
 // native copies 466/502/553; both copies with root default 557. All restored.
 // Round 251: Rotation helper role orders axis-input-angle-output, input-angle-axis-output, axis-angle-input-output, angle-axis-input-output, input-output-axis-angle, axis-output-input-angle, output-axis-input-angle, output-angle-axis-input: 389/389/389/389/389/389/389/389. Original helper contract and both alias-safe calls restored.
+// Round 373: All-row sine-cross parts, with rounded reciprocal, input parts,
+// input+reciprocal, axis parts, axis+reciprocal, all parts, all+reciprocal
+// 395/393/389/400/398/404/395/393. Reciprocal forms lose the matched sibling; all restored.
+// Round 211: Caller-side CRT copies for first/second/rotation inputs, all seven combinations, 389
+// each; all three plus planar input copy 404/1696. Original copies and helpers restored; early J
+// and magnitude/yaw home reuse remain. All three matched controls survived.
+// Round 87: retail gives the two angles no home of their own: the yaw shares the magnitude slot
+// (+0xc), the pitch uses the scale parameter's slot, and the else path writes 0 from the zero register
+// at the merge. Both zeroed only in the else branch gives that ending, but the frame shrinks to 0x24
+// (the first angle's spill then reuses the 2D vector's slot) 397; yaw only 406; pitch only 406; that with
+// the first angle declared at function scope 397; plain reciprocal scaling in the normalizer 400
+// (0x29b990 6).
+// Round 393: Complete XY square terms in vector/point/both, sums in vector/point/both, both phases and role names:
+// 398/395/400/389/389/389/398/398. Original roots/products and all helper contracts restored.
+// Round 395: paired square operations J-first in vector/point/both 398/395/400; reversed two-term
+// sums in vector/point/both 389/389/389; both J-first and reversed 400, with named sums 398. All restored.
+// Round 395: actor/object/both pools at use 490/428/481; all repeated coefficients
+// once 400; actor/object/both with coefficients 485/455/494; all with coefficient
+// role names 494. Original receivers, coefficient reads, copies and helpers restored.
 // @retail 0x29b2e0
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
     vector3f const *arg_3, real arg_4, vector3f *arg_5)

@@ -64,7 +64,15 @@ bool balance_teams(long arg_0, long arg_1, bool arg_2, long arg_3, long arg_4,
 void function_71ff0(c_session_state_matchmaking *arg_0, long arg_1,
 	const s_match_player_list *arg_2, const long *arg_3);
 
-// score 439 (was 439): retail length; frame 1000 versus 996, result byte home and second state/getter handling differ.
+// score 439 (was 439): retail length; frame 0x3e8/0x3e4, result byte and getter/readiness handling differ.
+// Retail stores the tested session state to a dead stack slot before each early exit (the idiom
+// 0x706f0 and 0x5c490 reproduce only with volatile locals), so every later row is shifted in the
+// lockstep compare. Round 152, nested rewrite without gotos (existing value getter, live-state
+// helper, ready = player match then cleared by each failing test, deadline block skipped on the
+// success path): calling the /Ob1 time helpers 512; with file-local time copies and a noinline
+// data getter 468 (frame, prologue and entry registers now retail's; 353 of 463 retail rows align
+// against 268 here); mode-7 arm before a re-tested guard 470; owner progress pointer first 492;
+// force-inline time copies 468. All restored.
 // Refreshed first balance inputs 454; fallback balance inputs 466; both phases 513;
 // native state-value getter 449; final transition-result union 449.
 // frame 0x3e8 versus 0x3e4, result-byte home and getter boundary differ;
@@ -130,6 +138,13 @@ void function_71ff0(c_session_state_matchmaking *arg_0, long arg_1,
 // 0x72140, 448 (1580 bytes); that with the noinline getter and time-since helper 461 (1573 bytes,
 // frame, entry and failure stores now retail's; left: the property value and both flag bytes
 // cleared before the player-count branch, a separate mode-7 exit per missing pointer).
+// Round 369: ready/getter interaction 504; byte reset 511; early property 502; property/reset 511; separate missing-input exits 488, with reset/property/both 493/501/493. Match-only carrier forms, header and body restored.
+// Round 235: ratings/assignment/admission consumption scopes, all seven combinations 439 each; readiness-output consumption scope 439.
+// Round 201: signed/unsigned outstanding roster counts 463/463; missing counts 447/447;
+// direct lookup-result accumulation 469/469; bool/byte all-found results 443/443 (exact-only).
+// Original complete lookup count and signed zero/negative admission restored.
+// Round 226: Property/balance defaults before count observation 457/439; both 457; each/both
+// with Boolean reset 472/469/472; property with Boolean balance 462; all with both Booleans 479. All restored.
 // @retail 0x71730
 bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 {

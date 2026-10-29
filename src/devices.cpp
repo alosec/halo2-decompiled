@@ -1216,7 +1216,10 @@ struct s_index_pair
 };
 bool function_0b6760(s_index_pair const *pair);
 
-// score 303 (was 303): Frame 0x1c versus 0x20 and index/header/state/result homes remain; native
+// score 294 (was 294): Frame 0x1c versus 0x20 and index/header/state/result homes remain; the
+// group path still reloads the definition pointer from three base registers and adds the two
+// products in the opposite order.
+// Earlier: Frame 0x1c versus 0x20 and index/header/state/result homes remain; native
 // power/position/both/activity flag values 376/302/379/370; power-activity/position-
 // activity/all/shared 376/373/376/376. One-point gain rejected.
 // Earlier: Frame 0x1c versus 0x20; index/header and state/result homes remain.
@@ -1266,18 +1269,33 @@ bool function_0b6760(s_index_pair const *pair);
 // it also re-reads the animation-state offset after the result/state stores. Plain index 389; plain
 // index and definition 421; plain index with the result declared first 394; plain index with a
 // ternary state 416; result declared first 301 (two-point gain dropped).
+// Round 230: existing state-admission helper with independent tag-pointer name/result-first
+// homes 400/400/400/400; the same four with ordinary index 369/369/370/370. Original
+// admission, index, declarations and scalar homes restored.
 // Round 352: next-tick value, elapsed product and both 303; one shared previous power velocity
 // alone and with next-tick/elapsed/both 368; all with long next-tick 365. Frame remains 0x1c;
 // original delay, velocity observations, acceleration producers and inherited qualifiers restored.
 // Round 23: distinct phase/block/channel previous owners 307/307/303; short first/second/both
 // completion 387/335/408; phase plus first short 388; channel plus both shorts 408.
 // Frame stays 0x1c versus 0x20; original scalar lifetimes and bool completions restored.
+// Round 239: actual power/position/both field references 386/391/373;
+// velocity reference 396, with power/position/both 401/396/414; all references
+// with result initialized before lookup 414. Frame and index/state/result homes
+// remain; original field observations, producers, qualifiers and body restored.
+// Round 84 (lane 5): event ids as a select between two field reads (retail's separate loads)
+// 351; with a plain index 361 (frame 0x20, the index * 12 kept in a register as retail, 394
+// instructions as retail, but index/offset in EDI/ESI where retail has ESI/EBX and the result in
+// a register where retail keeps its byte); also a plain definition 410; with the result declared
+// first 366, the state before the result 361, the state second 360.
+// Round 390: Complete first-motion/integration/second-motion byte-or-long completion
+// carrier domains, all eight combinations: 294/383/386/414/324/402/392/413. Original bool carriers restored.
+// Long integration gives frame 0x20 but worsens length and register allocation.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {
 	s_device *device = DEVICE_GET(device_index);
-	byte const *volatile saved_definition = g_4e3b44[device->definition_index & 0xffff].bytes;
 	bool result = false;
+	byte const *volatile saved_definition = g_4e3b44[device->definition_index & 0xffff].bytes;
 	real previous;
 	s_animation_state *state = NULL;
 	if (device->animation_state_offset != NONE)
@@ -1315,7 +1333,11 @@ bool __stdcall function_106790(long volatile device_index)
 		}
 		else
 		{
-			if (state && device->channels[0].graph_tag_index != NONE && device->channels[0].animation_id.index != NONE)
+			bool power_channel_animates = false;
+			if (state)
+				power_channel_animates = device->channels[0].graph_tag_index != NONE &&
+					device->channels[0].animation_id.index != NONE;
+			if (power_channel_animates)
 				device->channels[0].set_frame_ratio(device->power);
 			real position_acceleration = *(real const *)(saved_definition + 0xcc) * device->position;
 			real remaining_acceleration = *(real const *)(saved_definition + 0xd4) * (1.0f - device->position);

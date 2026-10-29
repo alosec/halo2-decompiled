@@ -30,19 +30,19 @@ bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f const *arg_3, real arg_4, vector3f *arg_5);
 
-PRIVATE __forceinline real function_29ab91(vector3f const *arg_0)
+PRIVATE __forceinline real function_29ab91(vector3f arg_0)
 {
-	real local_0 = (real)sqrt((double)arg_0->k * arg_0->k + (double)arg_0->j * arg_0->j + (double)arg_0->i * arg_0->i);
-	return 0.0001f > fabs((double)local_0) ? 0.0f : local_0;
+	real local_0 = (real)sqrt(arg_0.k * arg_0.k + arg_0.j * arg_0.j + arg_0.i * arg_0.i);
+	return fabs(local_0) < 0.0001f ? 0.0f : local_0;
 }
 PRIVATE __forceinline real function_29ab92(vector2f *arg_0)
 {
-	real local_0 = (real)sqrt((double)arg_0->j * arg_0->j + (double)arg_0->i * arg_0->i);
-	if (!(0.0001f > fabs((double)local_0)))
+	real local_0 = magnitude2d(arg_0);
+	if (!(fabs(local_0) < 0.0001f))
 	{
 		real local_1 = 1.0f / local_0;
-		arg_0->i *= local_1;
-		arg_0->j *= local_1;
+		arg_0->i = local_1 * arg_0->i;
+		arg_0->j = arg_0->j * local_1;
 	}
 	else
 		local_0 = 0.0f;
@@ -59,21 +59,21 @@ PRIVATE __forceinline void function_29ab94(vector3f const *arg_0, real arg_1, ve
 	arg_2->k = arg_0->k * arg_1;
 }
 
-// score 428 (was 428): Frame 0x5c versus 0x64, actor/input convention and x87 homes remain.
-// Earlier 428 (was 434): Frame 0x5c versus 0x64, input convention and x87 homes remain.
-// Earlier score 434 (was 434): frame 0x5c versus 0x64, input registers and x87 lifetimes differ;
-// Frame 0x5c versus 0x64, input convention and x87 homes remain.
-// frame 0x5c versus 0x64, input convention and x87 homes remain.
-// Earlier: Frame 0x5c versus 0x64, input convention and x87 homes remain.
-// Frame 0x5c versus 0x64, input convention and x87 homes remain.
-// Earlier 434 from 434: frame 0x5c versus 0x64, input registers and x87 lifetimes differ;
-// double input components 437; scalar component parameters 469; double product lifetimes 437; repeated field access 434; size optimization 802.
+// score 383 (was 383): frame 0x5c versus 0x64, actor/input transport and x87 homes differ.
+// frame 0x5c/0x64, actor/requested-vector transport and x87 homes differ.
+// Earlier: frame 0x5c versus 0x64, actor/input transport and x87 homes differ.
+// Earlier 396 from 428: magnitude helpers now give retail's copies, memory-operand products and epsilon;
+// magnitude helpers now give retail's copies, memory-operand products and epsilon;
+// magnitude helpers now give retail's copies, memory-operand products and epsilon;
+// frame 0x5c versus 0x64 and the convention remain: ours takes arg_0 in ECX and arg_2 in EAX (kept in
+// EBX) and folds the +0x290 vector into [ebp+0x290]; retail keeps that pointer in EBX, loads arg_2 into
+// ESI after the position call and takes only arg_0 in EAX. x87 homes also differ.
+// Double input components 437; scalar component parameters 469; double product lifetimes 437; repeated field access 434; size optimization 802.
 // Degenerate normal first 434; independent speed components 434; initial/requested/output memcpy 434/434/434;
 // fallback direction at use 441; shared initial vector value 434; native sign word 440.
-// Earlier 434 from 434: frame/input ownership and x87 result homes remain.
 // Double magnitude/planar/both returns 434/434/434; double magnitude carrier 471;
 // named full squared sums magnitude/planar/both 434/437/437; planar input/output 434.
-// DL131: Frame 0x5c versus 0x64, input convention and x87 homes remain; native actor view 434;
+// DL131: native actor view 434;
 // shared history weight 428; named current weight 434; both weights 428; native actor with
 // history/current/both 428/434/428; actor/weights/shared fallback 428. Keep the history coefficient
 // once for all six original uses; original arithmetic grouping, source vectors, stores, helpers and
@@ -109,6 +109,74 @@ PRIVATE __forceinline void function_29ab94(vector3f const *arg_0, real arg_1, ve
 // Round 353: native actor/object handle and word-mode parameter domains in
 // all seven combinations 428 each; signed native handles with word mode 428.
 // Original definition and sole disabled declaration restored.
+// Round 146: by-value magnitude helper 477; non-const/early/const-actor +0x290 pointer 428/426/428;
+// existing normalize2d_fast for the planar steps 428 (retail's products, wrong branch order);
+// planar length through magnitude2d with inverse-first/last products 428; plus float magnitude
+// products 463; plus by-value magnitude 396 (kept); magnitude sum written i,j,k 396; magnitude
+// zero test as an if statement 453 (retail's branch and slot, one instruction off elsewhere).
+// With the disabled caller enabled (diagnostic) the convention stays ECX/EAX.
+// Round 231: direction/velocity/paired field references 396/396/396; history/direction-
+// history/velocity-history/all three references 397/397/397/397; all plus settings reference 396.
+// Original body restored.
+// Round 148: the +0x290 pointer through the actor view's field 396; local_4 copied from that field
+// directly 396; the magnitude through length_sq3f 396; local_15 from the field directly 396; the scale
+// helper taking its output first 396 (all the same code). Diagnostic only: arg_2 read once through its own
+// address gives retail's convention (arg_0 in EAX, arg_2 on the stack) and length, 373 (difflib-aligned
+// 402 -> 277); left then: the +0x290 pointer in EBX (ours folds it), frame 0x58/0x64, the magnitude's x87
+// order and its zero test, and the magnitude in a dead parameter home.
+// File default convention and complete scalar selections 396; result-first reusable
+// clamp 439, with scalar joins/default convention/both 439. Clamp result assigned on
+// all paths 451, with default convention or scalar joins 451. Those ten trial forms restored;
+// private helpers and sole disabled declaration unchanged. Frame/input and x87 homes remain.
+// Named ratio numerator 395; both complete turn factors 389; both forms together 383 kept.
+// All three computed parts retain the original floating grouping and operands; frame/input homes remain.
+// Round 267: scale vector return 412; planar vector return with length output 568;
+// both vector returns 589; entry working-vector declarations 383; those three return
+// graphs with entry declarations 412/568/589; both plus scale value input 710.
+// Original helper interfaces, body and declarations restored; frame/input homes remain.
+// Round 366: returned position producer 408; shared scale 383; both 408; full vector setter 399; position/setter 426; scale/setter 399; all 426; all with earlier reused magnitude 413. All restored.
+// Round 245: existing scale formal orders 021/102/120/210 and clamp orders
+// 102/120/201/210 all 383. Original helper definitions and every call restored.
+// Frame 0x5c/0x64, actor/requested-vector transport and x87 homes remain.
+// Round 208: all three native square-product carriers in six declaration orders 383 each;
+// successive original K/J/I sum with those carriers 383; first-declared epsilon result on the
+// product graph 439. All helper/body text restored; frame 0x5c/0x64, actor/input transport and x87
+// homes remain.
+// Round 368: settings-only magnitude 390; in-place epsilon result 454; separate turn/speed 385;
+// scope/result 388; scope/separate 384; result/separate 448; all and native length names 382/382 (one-point
+// gain rejected).
+// Round 370: complete/default sign results with homogeneous planar multiplier placement and
+// widened reciprocal carrier 383/383/441/441/383/383/441/441; original body and helpers restored.
+// Round 377: common publication exit/object-first receivers/stored-turn result 383/444/396;
+// paired exit+receivers/exit+turn/receivers+turn/all 444/396/455/455;
+// all with read-only object receiver 455. All restored; frame/input/magnitude homes remain.
+// Round 211: Complete history value alone/with shared current add/history scale/both
+// 401/402/411/411; those four with a shared current coefficient 401/401/411/406. All original
+// helpers, fields and arithmetic restored; frame/input and magnitude homes remain.
+// Round 281: existing scale publication ikj/jik/jki/kij/kji 383 each; planar ji 383;
+// scale jki/kji with planar ji 383/383. All helper bodies and the original movement body
+// restored; frame/input transport and magnitude homes remain.
+// Round 379: actor at later formal positions 1..8, preserving every other input order,
+// 383/381/381/381/381/381/381/381. Positions 2..8 recover actor EAX but leave vector ECX,
+// frame 0x5c and ret 0x1c; two-point gains rejected. Definition and disabled caller restored.
+// Round 381: marked-function requested/movement/acceleration vector references, all seven
+// nonempty subsets, 383 each; all vectors plus native scalar-output references 383.
+// Every original signature, operation and disabled declaration/call restored.
+// Round 153 (fast): vector argument through its address (diagnostic) 368, with an if-statement magnitude test 449;
+// vector locals renamed into retail's slot order 383; output declared first 383; position declared first 383.
+// Round 222: Selective ordinary-inline magnitude/planar/clamp boundaries, all seven
+// subsets 383 each; all four private math helpers ordinary inline 383. Original
+// forced boundaries, helper bodies and every call restored; frame/input homes remain.
+// Round 174: coherent existing work/position, planar and magnitude home identities,
+// all seven nonempty family subsets 383 each; complete graph with alternate role
+// identities 383. Original names/helpers/body restored; frame 0x5c/0x64, actor/input
+// delivery and native magnitude homes remain.
+// Round 233: Distinct squared-speed/half-limit, later floor/heading and query-output
+// identities in seven subsets, then alternate complete roles: 383/383/383/383/383/383/383/383.
+// Original names, scopes, helper bodies and complete executable body restored.
+// Round 182: input-updated clamp result in all six formal orders 438 each;
+// lower-failure nesting with forward/reverse orders 438/438 (1814 bytes).
+// Original repeated helper, all four uses and movement body restored.
 // @retail 0x29ab90
 void __stdcall function_29ab90(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)
@@ -131,7 +199,7 @@ void __stdcall function_29ab90(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f local_6 = *g_4687a4;
 	point3f local_7;
 	function_b9dd0(arg_1, &local_7);
-	real local_9 = function_29ab91(arg_2);
+	real local_9 = function_29ab91(*arg_2);
 	if (local_2)
 	{
 		if (!*(bool *)(local_0 + 0x5d0) || *arg_7)
@@ -162,10 +230,13 @@ void __stdcall function_29ab90(long arg_0, long arg_1, vector3f *arg_2,
 			real local_19 = local_14 * local_14;
 			if (!(local_19 > 0.001f)) local_19 = 0.001f;
 			real local_20 = local_2->field_1c * 0.5f;
-			local_20 = local_20 * local_20 / local_19;
+			real numerator = local_20 * local_20;
+			local_20 = numerator / local_19;
 			real local_21 = local_13.i * local_15.i + local_13.j * local_15.j;
 			if (!(local_21 > 0.0f)) local_21 = 0.0f;
-			local_18 = (1.0f - local_21) * 0.5f * (local_20 * 0.5f) * 4.0f;
+			real turn_weight = (1.0f - local_21) * 0.5f;
+			real scaled_ratio = local_20 * 0.5f;
+			local_18 = turn_weight * scaled_ratio * 4.0f;
 		}
 		real local_19 = local_2->field_4c > 0.05f ? local_2->field_4c : 0.05f;
 		local_18 = function_29ab93(local_18, local_19, 1.0f);

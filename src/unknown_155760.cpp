@@ -5,6 +5,7 @@
 
 #include "unknown_11c920.h"
 #include "globals.h"
+#include "local_players.h"
 #include <string.h>
 
 
@@ -197,17 +198,6 @@ short function_155810(long unit_index, short *mode)
 			}
 		}
 		*mode = 2;
-	}
-	return result;
-}
-
-static inline bool local_player_exists(long index)
-{
-	bool result = false;
-
-	if (index != NONE)
-	{
-		result = g_4e8c20->entries[index] != NONE;
 	}
 	return result;
 }

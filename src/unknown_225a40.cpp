@@ -97,10 +97,16 @@ static inline void sound_track_start_impulse(long index, long handle)
 	}
 }
 
-// score 16 (was 16): the record's index is scaled before the base is added where retail adds the base
+// score 16 (was 16): retail forms the entry address as a scaled index added to the entries
+// array (`imul`, `add eax, [edx + 0x70]`, `mov eax, [eax + 0x3c]`), ours folds the base into
+// the load; after the call to 0x222930 retail copies the parameter address through eax, ours
+// through edx.
 // first, and the two calls take their argument in the other register.
 // typed/constant-size/forced element helpers 16/16/16; forced impulse helper 16;
 // parameter pointer 16; early handle 16; const track 16; no default 61; indexed byte address 16.
+// Member memcpy 16; entry value/reference 80/16; shared impulse input order 16;
+// short impulse index 45; index before parameter fill 17; short/unsigned loop index 57/16.
+// The scaled entry address still folds into the member load; the impulse pointer uses EDX.
 // @retail 0x225ab0
 void function_225ab0(void)
 {

@@ -173,6 +173,12 @@ struct s_block_candidate
 };
 
 // score 370 (was 370): Frame 0x1050 versus 0x1054; page-offset/ring-tail allocation and policy blocks differ.
+// Round 32: retail lays the segment arms out in source order (none, block, gap, then the scan), but
+// ours moves the else arm past the scan; retail also uses the page offset (EBX) as its zero from
+// the limit clamp on, so EBX is pushed first. Candidate stores offset before time 370; busy as
+// `proc && proc(current)` 376; offset declared with the result at entry 400 (EBX/ESI prologue as
+// retail, offset in EDI); arms inverted (`current != NONE` first) 367 at 1213 bytes (three-point
+// gain dropped; the none arm then moves past the scan); inverted with early offset 382.
 // tail and keeps page offset in EBX. Limit-first guard 385; oldest timestamp
 // initialised 381; enclosing inner-next scope 370; short ring endpoints 392;
 // candidate copy through memcpy 370.
@@ -218,6 +224,10 @@ struct s_block_candidate
 // Round 226: Native inserted candidate initializer 387; zero-initialized best 398; both 398;
 // native deletion iterator initializer 370; insertion/iterator 387; best/iterator 398;
 // all three 398; all with entry best initialization 417. Frame/page-tail homes remain.
+// Round 162: Coordinated policy parameter orders 021/102/120/201/210 370 each; individual
+// physical/candidate/best mutable-pointer input declarations 370 each. Policy body and all matched
+// controls stay exact; original declarations and call restored. Frame 0x1050 versus 0x1054 and
+// page/ring homes remain.
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {

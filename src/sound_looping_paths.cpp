@@ -154,7 +154,7 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 	return index;
 }
 
-// score 886 (was 886): Frame 0x4e0 agrees; entry zero, target/primary/query-array homes and choice carriers remain.
+// score 886 (was 886): frame 0x4e0 agrees; entry zero, target/primary/query-array homes and choice carriers remain.
 // Earlier 919 (was 919): count/array homes and choice registers differ in the 0x4e0 frame;
 // count/array homes and choice registers differ in the 0x4e0 frame;
 // Frame 0x4e0 agrees; entry zero, target/primary/query-array homes and choice registers remain.
@@ -182,6 +182,31 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 // Round 180 current gain active/inactive/outside state/both gains/active-outside/inactive-outside/all/byte
 // outside 890/889/887/893/891/890/894/887 (fast); all restored. Frame 0x4e0 agrees; entry zero,
 // query-array/count and primary homes remain.
+// Native floating decibel fields/conversions 998 (frame 0x4dc); all seven ordinary-
+// inline conversion-helper combinations 998 each. Original integer-bit fields,
+// helpers, query boundary and complete body restored.
+// Datum consumed-bit/selection bits/both 886/886/886; audible/muted bit assignments alone and with
+// consumed/selection/both 911/911/911/911; all with allocator bits 911. Original word view and statements restored.
+// Round 369: short-query graph choice pointer early/late count 962/922; all query-array names and gains/portal/cluster names individually 886 each; early/late pointers with all names 962/922. All restored.
+// Query arrays, matching records and inactive-pass workspaces ended at their real phase
+// boundaries, all seven subsets and producer-count ending after snapshot: 886 each.
+// Round 224: shared inline iterator first/second/both 968/1007/1103; shared calling iterator
+// first/second/both 905/915/899; real iterator-step first/second 953/919. Original scans restored.
+// Round 385: Existing allocator sentinel/zero/final-flag initialization, all seven subsets 886 each;
+// all with exhaustive allocation result 890. Original helper and body restored; entry zero,
+// target/primary/query-array homes and choice carriers remain.
+// DL167: Existing-record lookup from completed long/dword/short/word search ordinal
+// 892/892/893/893; each with a repeated target-tag snapshot 893/893/906/906. All
+// original scans, result publication, fields and helpers restored (fast/full control 886).
+// Round 249: native choice-muted/target-audible/target-muted byte domains, seven
+// subsets 915/890/886/898/886/890/890; all signed bytes 890. Original bool fields,
+// record layouts, complete body and every gain expression restored.
+// Round 225: target-step snapshot 889; target-tag snapshot 886; both 894 at retail length;
+// live pool 886; step/pool 889; tag/pool 886; all 894; all with direct computed gain 894.
+// Original target observations, pool snapshot and computed gain local restored.
+// Round 233: Common override attenuation, readonly override metadata and native
+// used-bit expression in seven subsets, then complete used-word expression: 982/886/982/886/982/886/982/982.
+// Common-result forms require a match; all original producers and body restored.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)
@@ -494,6 +519,23 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 // uniform cluster at use 272, with bool/short/long result 272 each. All restored.
 // Round 210: Late transition/fade/tag and their three strict pairs give
 // 242/244/266/253/278/291; early tag/fade alone 270/267. Original restored.
+// Round 16: query declarations portals-indices-clusters/portals-clusters-indices 223 each;
+// environment-index lexical name 223; request-field duration workspace 247; plain-inline cue helper 452;
+// forced listener search 223; separate query arrays and count declared after them 223 each.
+// Original body and both helper declarations restored.
+// Lane 10 r11: retail's camera test is `listener * 0x48 == -0x48` (a NONE index test) with
+// the camera address formed after the first-listener scan. NONE-guarded camera lookup 312;
+// camera test dropped, lookup inside the entry test 261 (1033 bytes); first-listener helper as
+// a NONE result set in the scan (retail's scan exactly) 235 (1033); that with the existing
+// local-player test 0x14ddc0 and the lookup inside 293 (retail's cmp/setne tests); with the
+// lookup at each use after the first-listener test 286. Original body and helper restored.
+// Round 16: query declarations portals-indices-clusters/portals-clusters-indices 223 each;
+// environment-index lexical name 223; request-field duration workspace 247; plain-inline cue helper 452;
+// forced listener search 223; separate query arrays and count declared after them 223 each.
+// Original body and both helper declarations restored.
+// Round 259: Two independent caller-owned cue requests at entry/listener/active/branch
+// scope, each with initializer output first/last, 223 each. Original helper-owned
+// requests and complete body restored; frame, BSP/camera/query and duration homes remain.
 #if !H2_NATIVE_PORT
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)

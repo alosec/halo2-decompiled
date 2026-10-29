@@ -17,6 +17,8 @@ static __forceinline long real_to_long(real value);
 #include "havok_reference.h"
 #include "unknown_122870.h"
 #include "normalize3d.h"
+#include "constraint_helpers_314090.h"
+#include "joint_descriptions_312920.h"
 
 #include <xmmintrin.h>
 
@@ -696,6 +698,19 @@ static inline void rigid_body_angular_velocity_get(s_havok_component *component,
 	}
 }
 
+/* both velocities of one rigid body (the zero vector for a fixed one) */
+static __forceinline void rigid_body_velocities_get(hkRigidBody *rigid_body, vector3f *linear_velocity, vector3f *angular_velocity)
+{
+	if (!rigid_body->m_fixed)
+		vector3d_from_havok(linear_velocity, &rigid_body->m_motion->m_linear_velocity);
+	else
+		*linear_velocity = *g_4687a4;
+	if (!rigid_body->m_fixed)
+		vector3d_from_havok(angular_velocity, &rigid_body->m_motion->m_angular_velocity);
+	else
+		*angular_velocity = *g_4687a4;
+}
+
 // @retail 0x1d09d0
 void havok_component_rigid_body_linear_velocity_get(s_havok_component *component, long rigid_body_index, vector3f *velocity)
 {
@@ -1046,16 +1061,7 @@ void havok_component_rigid_body_state_update(long rigid_body_index, s_havok_comp
 	vector3f angular_velocity;
 
 	havok_component_rigid_body_position_get(rigid_body_index, component, &position);
-	hkRigidBody *local_0 = havok_component_rigid_body_get(rigid_body_index, component);
-	bool local_1 = local_0->m_fixed;
-	if (!local_1)
-		vector3d_from_havok(&linear_velocity, &local_0->m_motion->m_linear_velocity);
-	else
-		linear_velocity = *g_4687a4;
-	if (!local_0->m_fixed)
-		vector3d_from_havok(&angular_velocity, &local_0->m_motion->m_angular_velocity);
-	else
-		angular_velocity = *g_4687a4;
+	rigid_body_velocities_get(havok_component_rigid_body_get(rigid_body_index, component), &linear_velocity, &angular_velocity);
 	rigid_body->position = position;
 	rigid_body->linear_velocity = linear_velocity;
 	rigid_body->angular_velocity = angular_velocity;
@@ -1830,12 +1836,6 @@ struct s_component_joint_model
     s_component_joint_hinge *hinges;
 };
 
-class c_component_joint_strength
-{
-public:
-    void set_strength(real strength);
-};
-
 // @retail 0x1d35d0
 void function_1d35d0(s_havok_component *component, long constraint_index, real scale)
 {
@@ -1869,7 +1869,7 @@ void function_1d35d0(s_havok_component *component, long constraint_index, real s
             joint[0x84 / 4] = (real)sin((angles->plane_minimum > angles->plane_maximum ? angles->plane_maximum : angles->plane_minimum) * scale * 0.01745329238474369f);
             joint[0x88 / 4] = (real)sin((angles->plane_minimum > angles->plane_maximum ? angles->plane_minimum : angles->plane_maximum) * scale * 0.01745329238474369f);
             joint[0x80 / 4] = (real)cos((angles->cone_minimum > angles->cone_maximum ? angles->cone_minimum : angles->cone_maximum) * scale * 0.01745329238474369f);
-            ((c_component_joint_strength *)joint)->set_strength((override_strength != 0.0f ? override_strength : angles->strength) * scale);
+            ((lane_a_ragdoll *)joint)->set_strength((override_strength != 0.0f ? override_strength : angles->strength) * scale);
         }
         break;
     case 1:
@@ -1891,46 +1891,6 @@ void function_1d35d0(s_havok_component *component, long constraint_index, real s
     }
 }
 
-struct c_component_joint_snapshot_0
-{
-    __m128 data[6];
-    c_component_joint_snapshot_0();
-};
-struct c_component_joint_reader_0
-{
-    void read(c_component_joint_snapshot_0 *output);
-};
-
-struct c_component_joint_snapshot_1
-{
-    __m128 data[9];
-    c_component_joint_snapshot_1();
-};
-struct c_component_joint_reader_1
-{
-    void read(c_component_joint_snapshot_1 *output);
-};
-
-struct c_component_joint_snapshot_2
-{
-    __m128 data[9];
-    c_component_joint_snapshot_2();
-};
-struct c_component_joint_reader_2
-{
-    void read(c_component_joint_snapshot_2 *output);
-};
-
-struct c_component_joint_snapshot_4
-{
-    __m128 data[3];
-    c_component_joint_snapshot_4();
-};
-struct c_component_joint_reader_4
-{
-    void read(c_component_joint_snapshot_4 *output);
-};
-
 // @retail 0x1cff80
 void function_1cff80(s_havok_component_element0c const *constraint, point3f *pivot_a, point3f *pivot_b)
 {
@@ -1938,12 +1898,12 @@ void function_1cff80(s_havok_component_element0c const *constraint, point3f *piv
     {
     case 2:
         {
-            c_component_joint_reader_2 *joint = (c_component_joint_reader_2 *)constraint->contact;
+            lane_a_ragdoll *joint = (lane_a_ragdoll *)constraint->contact;
             c_component_joint_snapshot_2 snapshot;
-            joint->read(&snapshot);
-            real x = snapshot.data[1].m128_f32[0];
-            real y = snapshot.data[1].m128_f32[1];
-            real z = snapshot.data[1].m128_f32[2];
+            joint->export_description(&snapshot);
+            real x = snapshot.pivot_a.m128_f32[0];
+            real y = snapshot.pivot_a.m128_f32[1];
+            real z = snapshot.pivot_a.m128_f32[2];
             pivot_a->x = x;
             pivot_a->y = y;
             pivot_a->z = z;
@@ -1954,12 +1914,12 @@ void function_1cff80(s_havok_component_element0c const *constraint, point3f *piv
         break;
     case 1:
         {
-            c_component_joint_reader_1 *joint = (c_component_joint_reader_1 *)constraint->contact;
+            lane_a_limited_hinge *joint = (lane_a_limited_hinge *)constraint->contact;
             c_component_joint_snapshot_1 snapshot;
-            joint->read(&snapshot);
-            real x = snapshot.data[1].m128_f32[0];
-            real y = snapshot.data[1].m128_f32[1];
-            real z = snapshot.data[1].m128_f32[2];
+            joint->export_description(&snapshot);
+            real x = snapshot.pivot_a.m128_f32[0];
+            real y = snapshot.pivot_a.m128_f32[1];
+            real z = snapshot.pivot_a.m128_f32[2];
             pivot_a->x = x;
             pivot_a->y = y;
             pivot_a->z = z;
@@ -1970,12 +1930,12 @@ void function_1cff80(s_havok_component_element0c const *constraint, point3f *piv
         break;
     case 0:
         {
-            c_component_joint_reader_0 *joint = (c_component_joint_reader_0 *)constraint->contact;
+            lane_a_hinge *joint = (lane_a_hinge *)constraint->contact;
             c_component_joint_snapshot_0 snapshot;
-            joint->read(&snapshot);
-            real x = snapshot.data[1].m128_f32[0];
-            real y = snapshot.data[1].m128_f32[1];
-            real z = snapshot.data[1].m128_f32[2];
+            joint->export_description(&snapshot);
+            real x = snapshot.pivot_a.m128_f32[0];
+            real y = snapshot.pivot_a.m128_f32[1];
+            real z = snapshot.pivot_a.m128_f32[2];
             pivot_a->x = x;
             pivot_a->y = y;
             pivot_a->z = z;
@@ -1986,12 +1946,12 @@ void function_1cff80(s_havok_component_element0c const *constraint, point3f *piv
         break;
     case 4:
         {
-            c_component_joint_reader_4 *joint = (c_component_joint_reader_4 *)constraint->contact;
+            lane_a_ball_socket *joint = (lane_a_ball_socket *)constraint->contact;
             c_component_joint_snapshot_4 snapshot;
-            joint->read(&snapshot);
-            real x = snapshot.data[1].m128_f32[0];
-            real y = snapshot.data[1].m128_f32[1];
-            real z = snapshot.data[1].m128_f32[2];
+            joint->export_description(&snapshot);
+            real x = snapshot.pivot_a.m128_f32[0];
+            real y = snapshot.pivot_a.m128_f32[1];
+            real z = snapshot.pivot_a.m128_f32[2];
             pivot_a->x = x;
             pivot_a->y = y;
             pivot_a->z = z;
@@ -2662,9 +2622,10 @@ void function_1d83e0(long body_index, s_havok_component *component, long node_a,
 
 void function_bba20(long object_index);
 void function_f7ed0(long vehicle_index, vector3f *impulse);
-// score 114 (was 135): Frame 0x30 and length agree; the full image pushes ebx/ebp/esi at entry where
-// retail stages them (the reduced image stages them as retail), and the getters keep the fixed byte
-// and zero-vector pointer in other registers.
+// score 50 (was 50): Frame 0x30 and length agree; the full image pushes ebx/ebp/esi at entry where
+// retail stages them (the reduced image stages them as retail and leaves 7: the five rigid-body reads
+// address [offset + data] where retail has [data + offset], and the 0x1d1010 call copies the component
+// to ESI before the index to ECX).
 // Earlier: Frame 0x30 agrees; admission save staging and paired fixed/zero velocity homes remain.
 // staggered register saves and paired velocity homes differ;
 // marked linear/angular/both getters 200/197/274; earlier angular norm 146; keyframe query 167 (fast base 135).
@@ -2707,12 +2668,44 @@ void function_f7ed0(long vehicle_index, vector3f *impulse);
 // Round 197: Readonly private linear/angular/both getter inputs 135 each; native signed-int
 // ordinal alone/with each input pair 135 each; readonly pair with common double scale 135.
 // Original native state-zero graph, helpers and ordinal restored.
+// Round 201: Private linear/angular/both per-use body receivers 135/135/196; readonly pair 135;
+// mixed per-use/readonly receivers 135/135; fixed-first pair 151 and per-use fixed-first pair 202
+// (both fixed-first forms lose matched users). Original helpers and body restored; frame/save homes remain.
 // Round 63: kept the loop's bit-2 test as TEST_FIELD_BIT(flag2) (retail's shr/test) 135 -> 114 and the
 // float numerators 100.0f/50.0f (retail's fdivr dword, aligned -2) 114; the first bit-2 test as the
 // bitfield too (retail's form there as well) 168, alone 174, while the entry saves are staged
 // differently (reduced image with both: aligned 37). Retail reloads g_4687a4 after the linear copy's
 // stores, as if its address were taken somewhere; ours never takes it. The change vector as a brace
-// initializer 114; its zeros chained 114.
+// initializer 114; its zeros chained 114. Round 103 (fast, reduced 92): nested entry tests 92; the
+// kind test as an empty then-arm 92; the type mask as (1 << 1) 92; the flag test as !(x & 4) 92; the
+// change's k component first 99. No function of the linked file is on this function's direct call chain
+// in our image, and its frame-aligning callees align themselves, so the entry staging is not a callee's
+// stack-alignment request.
+// Round 150 (reduced scores marked f): both velocities through one helper on one body pointer, the
+// matched 0x1cefb0's own sequence (retail's single body read, the flag in DL and the zero-vector
+// reload on the fixed path) with the first bit-2 test as TEST_FIELD_BIT 50 (7f; kept, 0x1cefb0 uses
+// the helper and still matches; the flag as a local at both tests 158f and loses 0x1cefb0); the entry tests as two early returns 50; loop index
+// declared at block top as 0x1d1c10 7f; preincrement 7f; count local 160f; const component 7f;
+// direct data[i] reads at the first site/all sites 7f/10f; a body pointer after the state update 7f.
+// Retail's call graph from here holds 25 functions and no cycle.
+// Round 195: Native final vector outputs linear/angular/both [241, 244, 314]; paired result before
+// receiver 314; native component-set output linear/angular/both [241, 230, 205]; paired early component
+// result 205. Original private getters restored; staged saves and fixed/zero homes remain.
+// Round 29 (controlled full-image scores; reduced body 7): existing vector constructor 50;
+// two-use change pointer 50; reversed velocity declarations 50; guarded do-while 53;
+// reversed loop comparison 52; preincrement 50; outer-block index 50; per-iteration body index 50.
+// Original body restored; entry saves, five address forms and the final argument moves remain.
+// Round 71 (reduced scores): 0x1d1010 declared (component, index, change) with its callers 5f (retail's
+// ECX-then-ESI setup at the call) but 0x1d1010 itself then reads [data + index] (1; callers in
+// unknown_206090.cpp and unknown_1c25a0.cpp were held this round); with an array pointer in the
+// velocity helper, 0x1d1010 still 1; array pointer at all five / the three late reads 10f/10f;
+// separate component-first velocity helpers 128f. The address order stays [index + data].
+// Round 383: retained pre-clamp body/owner handle/native repeated array receivers 190/190/53;
+// body+owner/body+array/owner+array/all/all with plain while 193/189/190/192/192 (controlled
+// preview 50). Original body, paired getter, observation graph and all interfaces restored.
+// Round 244: Paired-getter graph with shared scale linear/angular/both 50/50/50; common scale workspace
+// alone/with linear/angular/both 50/50/50/50; shared pair and single admission exit 50. Staged saves, five
+// address orders and final call moves remain; original source restored.
 // @retail 0x1ced00
 void function_1ced00(s_havok_component *component)
 {
@@ -2723,7 +2716,7 @@ void function_1ced00(s_havok_component *component)
         change.j = 0.0f;
         change.k = 0.0f - g_510c54->rate * g_51e9c4->unknown0;
         function_bba20(component->object_index);
-        if ((component->unknown04 & 4) == 0 &&
+        if (!TEST_FIELD_BIT(component->flag2) &&
             ((1 << ((s_component_transform_header *)g_4e0300->data)[component->object_index & 0xffff].type) & 2))
             function_f7ed0(component->object_index, &change);
         for (long i = 0; i < component->rigid_bodies.size; i++)
@@ -2731,8 +2724,7 @@ void function_1ced00(s_havok_component *component)
             if (havok_component_rigid_body_get(i, component)->m_motion->kind_code() != 6)
             {
                 vector3f linear, angular;
-                rigid_body_linear_velocity_get(component, i, &linear);
-                rigid_body_angular_velocity_get(component, i, &angular);
+                rigid_body_velocities_get(havok_component_rigid_body_get(i, component), &linear, &angular);
                 real speed_squared = linear.k * linear.k;
                 speed_squared += linear.j * linear.j;
                 speed_squared += linear.i * linear.i;
@@ -2800,42 +2792,44 @@ PRIVATE inline void component_matrix_frame(transform4x3f const *matrix, hkTransf
     havok_from_vector3d(&position, (vector3f const *)&matrix->position);
     frame->m_translation = position;
 }
-// score 206 (was 206): Frame 0xb4 and extent agree; body base/stride and protected relative-call input registers remain.
-// BLOCKED-BY 0x1d83e0 (contributor code): retail passes the component to it in EAX and loads the
-// component into EAX at entry; ours passes it in ECX, and the EAX/ECX roles swap from the first body.
-// Earlier baseline: Frame 0xb4 and exact extent agree; stride/base and protected relative-call input registers remain.
-// Earlier: Frame 0xb4 agrees; stride/base and relative-call input registers remain.
-// Earlier: body/stride registers and relative-call input differ;
-// body getters 206; first count after lookup 205 (below gate), both 275;
-// node streams 336; streams with getters 336 (plain scores). Original kept.
-// body stride/base registers and transform call differ;
-// count names 206; search names 206; transformed name 206; entry phase
-// transforms 301; equal-node arm first 248.
-// second selector word 226; promoted first nodes 290; entry matrix 206;
-// entry relative transform 206; fallback first 206 (plain scores).
-// Round 303: first mapped byte 299; second mapped byte 213; first node at use 338;
-// second node at use 226; loop-scoped child counters 206 (plain scores). Original kept.
-// Earlier: Frame 0xb4 agrees; body/stride and relative-call registers remain. Late first link 370; late second 309; array accessor 206; mapped-index names 206; second count after lookup 224 (plain).
-// Earlier: Frame 0xb4 agrees; body/stride and relative-call registers remain. Reused first body 206; word first mapped index 220; word second mapped index 212; array header pointer 336; per-phase model pointers 209 (plain).
-// Earlier: frame 0xb4 agrees; stride/base and relative-call registers remain.
-// Reduced search operand order first/second/both 346/346/346; frame-test operands
-// first/second/both 346/346/346; first mapped-index result 345; with search operands 345
-// (control 346; one-point reductions excluded).
-// Round 130: existing frame converter with matrix/output/both references 206/206/206; direct translation, with matrix/output/both
-// references and actual output return 367/367/367/367/367 (plain scores).
-// The original aligned translation temporary and all interfaces are restored.
-// Round 132: output-first converter, with matrix reference, output pointer return, and
-// output-first return 206/206/206/206; split rotation/translation, output-first split,
-// split return and output-first split return 206/206/206/206 (resolved previews).
-// Round 345: Shared sequential body index/count/first-link workspaces 299/208/302;
-// index+count/index+link/count+link/all/all with child ordinal 217/213/302/300/300.
-// Original per-side lifetimes, frame 0xb4 and contributor interface restored.
-// Round 153: Consistent requested-node snapshots first/second/both 367/254/400; count fields at
-// every use first/second/both 316/337/358; corresponding snapshot/bound pairs and all 369/369/419.
-// All restored.
-// Round 8: index through if/else 313; a body-link table local 209; the child search as a while with
-// the compound test 206 (same code); the second index assigned in plain statements (no embedded
-// assignment, same code, kept) 206; the child counter declared first 208 (plain scores).
+// score 206 (was 206): Frame 0xb4 and extent agree; body base/stride and protected relative-call
+// input registers remain. BLOCKED-BY 0x1d83e0 (contributor code): retail passes the component to it
+// in EAX and loads the component into EAX at entry; ours passes it in ECX, and the EAX/ECX roles
+// swap from the first body (+0x3d, still the first difference in round 68; the reduced build of the
+// fast check gives another convention, 346, so only the plain check scores this function).
+// Tried: body getters 206; first count after lookup 205 (below gate), both 275; node streams 336;
+// streams with getters 336; count names 206; search names 206; transformed name 206; entry phase
+// transforms 301; equal-node arm first 248; second selector word 226; promoted first nodes 290; entry
+// matrix 206; entry relative transform 206; fallback first 206; first mapped byte 299; second mapped
+// byte 213; first node at use 338; second node at use 226; loop-scoped child counters 206; late first
+// link 370; late second 309; array accessor 206; mapped-index names 206; second count after lookup
+// 224; reused first body 206; word first mapped index 220; word second mapped index 212; array header
+// pointer 336; per-phase model pointers 209; reduced search operand order first/second/both
+// 346/346/346; frame-test operands first/second/both 346/346/346; first mapped-index result 345, with
+// search operands 345 (control 346; one-point reductions excluded); existing frame converter with
+// matrix/output/both references 206/206/206; direct translation, with matrix/output/both references
+// and actual output return 367/367/367/367/367; output-first converter, with matrix reference,
+// output pointer return, and output-first return 206/206/206/206; split rotation/translation,
+// output-first split, split return and output-first split return 206/206/206/206; shared sequential
+// body index/count/first-link workspaces 299/208/302; index+count/index+link/count+link/all/all with
+// child ordinal 217/213/302/300/300; consistent requested-node snapshots first/second/both
+// 367/254/400; count fields at every use first/second/both 316/337/358; corresponding
+// snapshot/bound pairs and all 369/369/419; index through if/else 313; a body-link table local 209;
+// the child search as a while with the compound test 206 (same code); the second index assigned in
+// plain statements (no embedded assignment, same code, kept) 206; the child counter declared first 208.
+// Round 241: native requested-node shorts first/second/both 338/226/354; independent
+// readonly model snapshots first/second 221/321; both snapshots with first/second/both
+// shorts 267/325/283. Original frame, body and protected relative-call contract restored.
+// First link before count first/second/both 205/224/275; loop link locals first/second 206/206;
+// converter position declared first 206; translation read before rotations 254; converter force-inline 206 (plain).
+// Round 33: Native transform-value converter input, with pointer/reference output, output order
+// and actual output-address return combinations: 321/321/321/321/321/321/321/321. Original converter/body restored.
+// Round 233: Call-free native body records first/second/both, then each with
+// readonly first links, both with first-link/count order and both refinements:
+// 317/203/332/317/203/332/374/374. Original records, output reloads and protected call tuple restored.
+// Round 182: first/second/both actual link references 206/206/206; native body
+// record references confined to count/node searches, alone/with either/both links
+// and mutable body records, 332/332/332/332/332. Original records and body restored.
 // @retail 0x1d7ef0
 void function_1d7ef0(hkTransform *frame_a, s_havok_component *component,
     s_component_frame_owner *owner, s_component_frame_map const *mapping, hkTransform *frame_b,
