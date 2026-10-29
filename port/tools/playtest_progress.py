@@ -227,7 +227,10 @@ def main():
                 print("frame", g.frame, "fell: back to", [round(x, 2) for x in footing], flush=True)
             threads = dict(g.scripts)
             ours = sum(t["script"] in names for t in threads.values())
-            if threads and ours < len(threads) / 2:
+            foreign = sum(t["script"] not in names for t in threads.values())
+            # another map's scripts run now: most of them, or a few names this
+            # map has none of (08a and 07b share their encounter names)
+            if threads and (ours < len(threads) / 2 or foreign >= 3):
                 done = True   # another map's scripts run now (some names, like
                 break         # cinematic_skip_start, are in every map)
             places = []   # (times served, thread order, script, node, kind, volume name)
