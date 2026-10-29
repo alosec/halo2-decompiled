@@ -115,6 +115,10 @@ class Game:
                     for name, value in EXTRA.findall(line):
                         self.state[name] = int(value) if name in ("lights", "bsp") else int(value) / 1000
                     self.history.append(self.state)
+                # seated: the state line of the same frame is followed by the
+                # vehicle's (its world position)
+                if self.state and f"h2-state frame {self.frame} vehicle " in line:
+                    self.state["vehicle"] = line.split(" vehicle ", 1)[1].split()[0]
                 t = SCRIPT.search(line)
                 if t:
                     # each script thread's latest state: its script and the

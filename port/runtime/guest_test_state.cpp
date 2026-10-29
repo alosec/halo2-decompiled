@@ -328,7 +328,16 @@ static void run_test_commands(void)
 				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
 				if (radius > 0.0f && dx * dx + dy * dy + dz * dz > radius * radius)
 					continue;
-				function_d6bc0((long)(((dword)*(short const *)header << 16) | (dword)index));
+				if (*(word const *)(object + 0x10a) & (1 << 14))
+				{
+					/* one that cannot die (a boss: 05b's Regret, 08b's Tartarus)
+					   is beaten down to its pinned vitality instead
+					   (ai_vitality_pinned, 0xdc310: body at most 0.0002) */
+					*(real *)(object + 0xec) = 0.0001f;
+					*(real *)(object + 0xf0) = 0.0f;
+				}
+				else
+					function_d6bc0((long)(((dword)*(short const *)header << 16) | (dword)index));
 				++killed;
 			}
 			_snprintf(line, sizeof(line), "h2-test killed %ld", killed);
@@ -451,6 +460,21 @@ static void run_test_commands(void)
 				pressed, machine == NONE ? 0.0f : *(real const *)(((s_player_object_header *)g_4e0300->data)[machine & 0xffff].object + 0x140));
 			host_h2_log(line);
 		}
+		else if (command_is(command, "exit_vehicle", &rest))
+		{
+			/* out of the seat (request 0x1e, as a dying unit leaves its seat
+			   in 0xcaa60): a seated teleport moves the vehicle, which a place
+			   on foot (08b's boss platform) cannot use */
+			bool requested = false;
+			if (*(long const *)(unit + 0x14) != NONE)
+			{
+				s_unit_request request;
+				memset(&request, 0, sizeof(request));
+				request.type = 0x1e;
+				requested = function_e6900(player->unit_index, &request);
+			}
+			host_h2_log(requested ? "h2-test exit_vehicle requested" : "h2-test exit_vehicle none");
+		}
 		else if (command_is(command, "safe_to_save", &rest))
 		{
 			/* which of game_safe_to_save's checks says no (08b's Scarab
@@ -519,6 +543,10 @@ static void run_test_commands(void)
 			if (unit && *(real *)(unit + 0xec) > 0.0f)
 			{
 				*(word *)(unit + 0x10a) |= 1 << 14;
+				/* full shields are not depleted: clear shield_depleted (bit 3,
+				   set by 0xd6a70), which recharging would have cleared; left
+				   set, game_safe_to_save (0x14deb0) never passes (08b's Scarab) */
+				*(word *)(unit + 0x10a) &= (word)~(1 << 3);
 				*(real *)(unit + 0xec) = 1.0f;
 				*(real *)(unit + 0xf0) = 1.0f;
 			}

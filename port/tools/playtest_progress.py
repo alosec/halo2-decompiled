@@ -317,9 +317,10 @@ def main():
                         # and beat him down to his pinned vitality, round after
                         # round, as the player does
                         replies = len(g.test_replies)
-                        g.guest("enter_vehicle 0")
-                        g.wait(60)
-                        g.guest("kill_enemies 10")
+                        if "regret" in text:   # Regret is fought aboard his throne
+                            g.guest("enter_vehicle 0")
+                            g.wait(60)
+                        g.guest("kill_enemies %d" % (10 if "regret" in text else 0))
                         g.wait(30)
                         print("frame", g.frame, thread["script"], node, "-> boss round",
                               [r for r in g.test_replies[replies:] if r.startswith(("enter_vehicle", "killed"))],
@@ -363,6 +364,8 @@ def main():
                     elif count == 0:
                         print("frame", g.frame, thread["script"], node, "waits:", text[:160], flush=True)
                         acted[key] = 1
+                    else:
+                        continue   # nothing left to try at this wait: the one around it (08b's boss loop)
                     break
             idle = 0 if places or away else idle + 1
             if idle and idle % 10 == 5 and any("game_safe_to_save" in scripts_text for scripts_text in waiting_texts):
@@ -439,10 +442,26 @@ def main():
                     else:
                         point, reply = candidates[0], "teleport outside the bsp"
                     landed = inside(volume, g.state["pos"])
+                    if not landed and reply == "teleport done" and g.state.get("vehicle"):
+                        # seated, the vehicle went (08b's banshee, flown off the
+                        # boss platform): out of it, then the place on foot
+                        g.guest("exit_vehicle")
+                        g.wait(60)
+                        g.guest("teleport %.3f %.3f %.3f" % point)
+                        g.wait(20)
+                        landed = inside(volume, g.state["pos"])
                     if not landed and reply == "teleport done":
                         # the spot is taken (a doorway, a closed room): walk
                         # the rest of the way in, as a player would
                         g.go_to(point, tolerance=0.3, max_steps=25)
+                        landed = inside(volume, g.state["pos"])
+                    if not landed and reply == "teleport done":
+                        # still out: nothing to stand on there (08b's boss
+                        # platform turns on a machine the floor ray does not
+                        # see): held in it while the script polls
+                        for _ in range(30):
+                            g.guest("place %.3f %.3f %.3f" % point)
+                            g.wait(3)
                         landed = inside(volume, g.state["pos"])
                     print("frame", g.frame, script, node, "-> teleport", name, [round(x, 2) for x in point],
                           "inside" if landed else "outside (%s)" % reply, flush=True)
