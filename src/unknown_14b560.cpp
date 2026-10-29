@@ -2769,6 +2769,10 @@ struct s_unit_flags_14d8b0
 // 150/150/151/151; tag value after scratch store 17. Original executable body restored.
 // Round 164: separate root handle, branch-local short expiry result, tick/result/rate names,
 // all three names, joined slot result and root+slot result: 17 each. Original body retained.
+// score 11 (was 17): tick/rate now agrees; the damage parent load, later mode/slot and root
+// scratch registers remain. Late rate with a second low-time use 13; in-place multiply 205;
+// reversed/direct comparison/named conversion 13 each; tag-list pointer 145; typed time receiver
+// 11 kept; tag field-address pointer 11; two-use options receiver 290.
 // @retail 0x14d8b0
 void function_14d8b0(void)
 {
@@ -2812,9 +2816,9 @@ void function_14d8b0(void)
         long &ticks = *(long *)(player + 0x16c);
         if ((player[2] & 4) && (unit = *(long *)(player + 0x2c)) != NONE)
         {
-            real rate = g_510c54->rate;
+            s_game_time_globals *time_globals = g_510c54;
             ++ticks;
-            real time = rate * (real)ticks;
+            real time = time_globals->rate * (real)ticks;
             if (time >= 3.0f)
             {
                 if (!TEST_FIELD_BIT(((s_unit_flags_14d8b0 *)(object_get_unchecked(unit) + 0x10a))->bit5))
@@ -2837,7 +2841,7 @@ void function_14d8b0(void)
                     function_153cd0(index);
                 }
             }
-            else function_153bd0(*(short *)(player + 0x28), time * 0.3333333432674408f);
+            else function_153bd0(*(short *)(player + 0x28), time_globals->rate * (real)ticks * 0.3333333432674408f);
             if (g_4e6948->mode != 4) player[2] &= ~4;
         }
         else if (ticks > 0 && --ticks == 0)

@@ -215,19 +215,20 @@ void function_07b3e0(void)
 // score 58 (was 58): retail keeps the pool in two registers (ebx for the
 // bitmap scan, ebp for the datum address) and aligns the scan loop; ours uses
 // one register and no loop padding (the 11 missing bytes).
+// score 39 (was 58): the direct index scan and salted-index helper leave the pool in EBP
+// rather than EBX/EBP, with scratch-register and loop-layout differences at 132/131 bytes.
+// Direct expression 39; copied/independent/const scan pools 39/64/39; counted for scan 121;
+// refreshed pool 39; absolute-datum getter 71; salted-index helper 39 kept; split pools with it 39.
 // @retail 0x7b430
 void function_07b430(void)
 {
 	if (g_4cf8d4)
 	{
-		s_record_pool_iterator iterator;
-
-		iterator.data = g_4cf8d8;
-		iterator.datum_index = NONE;
-		iterator.index = NONE;
-		while (data_iterator_next_inlined(&iterator))
+		s_record_pool *data = g_4cf8d8;
+		long index = NONE;
+		while ((index = data_next_absolute_index_inlined(data, index + 1)) != NONE)
 		{
-			qos_release(iterator.datum_index);
+			qos_release(data_datum_index(data, index));
 		}
 		g_4cf8d8->valid = 0;
 		g_4cf8d4 = false;
