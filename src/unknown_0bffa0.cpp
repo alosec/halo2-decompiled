@@ -1438,6 +1438,9 @@ extern s_object_list *g_4de2f4;
 // Round 62: a point3f tint 49; alpha-only aggregate initializers 438; the last pair colour copied as
 // a whole color4f 365; a reused input pointer 357; a reused output pointer, chained alphas, a const
 // fraction handle, separate declarations, function-scope colours and const copy sources 49 each.
+// Round 77: `real &fraction` 49 (same code); the tint copied after the first call 75; the colour copies
+// after the second call 82; the pointer for the first call only (`light->fraction` after it) 214; the
+// pointer declared with the colours 88.
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {
