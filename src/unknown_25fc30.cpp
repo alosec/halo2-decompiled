@@ -930,23 +930,26 @@ void __stdcall function_25edd0(
 	}
 }
 
-// score 50 (was 50): protected iterator setup and range-bonus comparisons/multiplies differ.
-// Normalized clamp 66; bounded raw margin 137; positive fraction 83; source-domain fraction 51;
-// nested candidate 50; conditional weapon result 50; real unit reference 50; guarded owner result 264.
-// iterator setup, bonus tests/multiplies and query load scheduling differ.
-// Upper-margin-first 58; range once/limit once/range before root 155; full-width mode 258;
-// reversed style cases 50; forward position countdown 255; nearest conditional 50.
-// score 50 (was 50): vector workspace entry offset/closest/both 50/50/50;
-// in-place offset 50; component projection 95; in-place component projection 155;
-// projected workspace first 50; unsigned line ordinal 145. Iterator setup and bonus tests remain.
-// Selected-arm staged scales 72; upper-first staged 66; half by division 50;
-// selected margin carrier 186; near/far or separate bonus names 50; staged/name pairs 66.
-// score 50 (was 50): the range bonus in retail is a two-test select (over 2 first,
-// then over 0) with two multiplies (halve, then times ten); that exact form scores 66
-// (997 bytes) because the line loop's xmm homes rotate — the allocation cascade from the
-// protected iterator setup defeats it. Nested select 83; staged halves with the new
-// order 66; new order with folded multiply 58; old order with two multiplies 72;
-// squared-length local 186; closest product order 66; margin initialized 66.
+// score 31 (was 31): only the range bonus differs: retail tests over 2 first, then over 0, and
+// multiplies by 0.5 then by 10; ours tests over 0 first and folds the product. Retail's exact bonus
+// (two tests and two multiplies, as a staged `*=`, a named half, a division or a cast) gives retail's
+// code through the bonus but reorders the line loop's dot product (k+i+j in retail, j+k+i ours): 48
+// (997 bytes); with the product folded the two tests give 39 (xmm6/xmm7 rotated, loop as retail).
+// Earlier (score 50, before the iterator calls matched): normalized clamp 66; bounded raw margin 137;
+// positive fraction 83; source-domain fraction 51; nested candidate 50; conditional weapon result 50;
+// real unit reference 50; guarded owner result 264; upper-margin-first 58; range once/limit once/range
+// before root 155; full-width mode 258; reversed style cases 50; forward position countdown 255; nearest
+// conditional 50; vector workspace entry offset/closest/both 50/50/50; in-place offset 50; component
+// projection 95; in-place component projection 155; projected workspace first 50; unsigned line ordinal
+// 145; selected-arm staged scales 72; upper-first staged 66; half by division 50; selected margin carrier
+// 186; near/far or separate bonus names 50; staged/name pairs 66; nested select 83; staged halves with
+// the new order 66; new order with folded multiply 58; old order with two multiplies 72; squared-length
+// local 186; closest product order 66; margin initialized 66.
+// Round 155 (plain checks): two tests with the folded product 39, with a division 39; two multiplies as
+// a cast product (either operand order, or a division) 48, staged `*=` 48, staged division 48, named half
+// 48, bonus assigned in all three arms 65; on the staged form: dot operands swapped 48, no direction
+// pointer 126, squared-length local 168, closest products reoriented 48, t declared before the offset 48,
+// `-t` 48 and the length compare reversed 48 (both the same code), `continue` on the line type 48.
 // @retail 0x25eea0
 void __stdcall function_25eea0(
 	long actor_index,

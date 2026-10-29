@@ -113,6 +113,9 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // Round 252: native node reference with/without the data block 47/47; actor reference
 // after the view, alone/with node 47/47; entry actor reference alone/with node/with
 // node and data block/with data block 52/52/52/52. Original complete body restored.
+// Round 155: on the top actor lookup (index EBP, view EBX as retail; actor ESI/state EDI swapped): node/view
+// declared at the top 52, prop-index local 52, slot cast at each use 52, last test as if/else-return 52, NONE
+// as an early store and return 91; getter in both NONE test and node lookup 47; actor before the view test 97.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {

@@ -186,6 +186,7 @@ const dword g_455978[81] = {
 // Round 250: native lower/upper/translation vector producers, subsets 1..7
 // 494/490/547/365/508/521/562; all with complete endpoint copy 601.
 // All restored; optional-state homes and selective helper expansion remain.
+// Round 181: complete table-sample/ray-origin/output coordinate-copy subsets 395/306/306/395/395/306/395; all with basis-row loops 430. Original native copies and body restored.
 // Round 397: scan-lifetime bounds descriptor; entry constructor, native endpoint copy and shared table-sample masks 0..7
 // 465/470/486/491/465/470/486/491; all restored.
 // @retail 0x1d48f0

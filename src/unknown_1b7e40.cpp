@@ -171,6 +171,18 @@ evaluate:
 // all 102 at 231/264 bytes. Entire body, payload and getter declaration restored.
 // Complete final rejection with native payload/self-dot 87/87; staged final failures 90/90;
 // whole-slot forms 87/90/87/90, all 277 bytes. Original 264-byte body and getter restored.
+// retail calls function_25d740 out of line (ECX node) and sinks the ESI/EDI
+// saves past each early exit; our build inlines it through the prop_node_view wrapper, so the
+// blocks are laid out differently. Typed slot payload 73; payload/result first 73; payload/wide
+// result 74; payload/single result 88, with wide result 92; native node/view plus
+// payload/self-dot/final-result graphs 73/73/73/73/78/78/78/78; early returns 74 (retail's late
+// ESI/EDI saves, view still inlined); direct function_25d740 call 73, with early returns 74; named
+// actor 74; prop test nested again 79; with the call kept out of line the tails merge (102 at 231
+// bytes); a separate view-getter noinline with default status, direct proximity return, native
+// payload, unsigned-word status and double speed consumer: eight forms all 102 at 231 bytes.
+// Early returns with `return 0x10` 74 (still `mov ax`, retail `mov eax`); the slot field on the
+// left of the prop compare 74; a named actor with that compare 91; the existing magnitude3d for
+// the speed 73, with early returns 74.
 // @retail 0x1b81c0
 short __stdcall function_1b81c0(long actor_index, s_slot *slot, bool active)
 {

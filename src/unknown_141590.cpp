@@ -554,13 +554,15 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 	matrix4x3_basis_store(out, &position, &w, &plane->n);
 }
 
-// score 51 (was 51): the three components are squared and summed in a different order, the scaled
-// component is kept in a different register, and the cross product holds its operands in swapped
-// registers.
+// score 51 (was 51): frame 0x1c and sum grouping agree; the extra early first-component
+// load changes normalization-join registers and subsequent cross-product allocation.
 // The first difference is an extra early load of the first component (retail
 // loads only the second before the magnitude test). Second component scaled first
 // 52; first scaled as component * inverse 51; third stored first 53; first and
 // third read into locals 51; third scaled as k * inverse 51 (fast).
+// Round 406: direct nonnegative magnitude guard, length return and shared setter
+// 76/76/76/76; original magnitude expression at the caller boundary with the same
+// return/setter choices 89/89/89/89. All restored.
 // @retail 0x142390
 void function_142390(
 	plane3f const *plane,
@@ -803,6 +805,7 @@ void function_143250(
 // producers, 2040/2051/2051; separate shared 49-element array alone/first/second/both
 // 2279/2279/2294/2294; complete graph with basis identity 2294 (fast control 2040).
 // Original shared workspace, publications and complete polynomial body restored.
+// Round 187: On retained publications, helper inline/noinline/both 2088/2039/2088; with independent basis 2347/2298/2347; first-matrix negative lifetimes with inline 2092, with both plus independent basis 2347. All restored; rotation admission and matrix homes remain.
 // @retail 0x143600
 real *function_143600(real const *rotation, unsigned long order, real const *coefficients, real *result)
 {

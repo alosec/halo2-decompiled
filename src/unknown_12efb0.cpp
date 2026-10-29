@@ -246,6 +246,8 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 // clamp 812. Color-only reaches retail length but regresses; original helpers restored.
 // Round 390: Source-radius input snapshot with per-cluster default-range, color-alpha and
 // signed-byte palette combinations 694/770/710/670/702/728/629/728. Original helpers and body restored.
+// Round 407: native palette scalar/RGB/weighted/footer fields with radius snapshot, byte
+// palette and shared scenario receiver combinations 616/616/705/705/694/694/702/702. Original record and body restored.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {

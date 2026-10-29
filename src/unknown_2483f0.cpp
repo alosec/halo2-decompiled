@@ -172,12 +172,14 @@ static inline void particle_cross_product3d(vector3f const *a, vector3f const *b
 // forms excluded; tried scalar point coordinates 98; paired cross products 55; six cross
 // products 52; compound cross components 52; cross value result 140; frame-mode return 104;
 // offset at construction 52; shared point setter 78.
-// score 52 (was 52): cross scheduling and retained left-axis/point XMM homes remain.
+// cross scheduling and retained left-axis/point XMM homes remain.
 // Complete point result/aggregate 121/121; shared result setter 114; planar/horizontal/vertical results 51/52/53;
 // immutable input with complete result 121; scoped input/result 121. The one-point gain is rejected.
 // Cross scheduling and retained axis/point XMM homes still differ. Forward/up
 // snapshots 107/111; both axes and up-first 137/135; scoped axes 137; both/up/forward
 // publication before cross 137/137/137.
+// Complete cross first/second/both inputs by value 111/107/141; both with translation setter 141;
+// existing translation setter 53; paired matrix/point names 52; entry workspaces 52; native cross references 52.
 // @retail 0x248450
 void function_248450(matrix3x3 *rotation, s_particle_frame const *frame, point3f *position, matrix3x3 const **rotation_result, point3f const **position_result, bool field_b4)
 {

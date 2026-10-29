@@ -11,6 +11,7 @@ detonation. */
 #include "unknown_0259d0.h"
 #include "object_markers.h"
 #include "normalize3d.h"
+#include "vector_products.h"
 #include "object_iterator.h"
 #include "effects.h"
 #include "sound_sources.h"
@@ -354,7 +355,7 @@ bool __stdcall function_fa9a0(long *value)
 }
 
 /* the direction, distance and time to a target in a straight line */
-// score 87 (was 87): normalizer result lifetime moves the zero carrier before EBP and delays ESI; retail has separate zero/fallback tails.
+// score 58 (was 87): frame 0xc agrees; early zero/ESI save and normalization/fallback tails remain.
 // Shared point producer 81; shared inline normalize 84; shared scale-normalize 86;
 // point producer with those normalizers 78/80; conditional seconds with private/inline/scale
 // normalization 80/80/83. Shared arithmetic regrouping is exact-match-only; restored.
@@ -378,18 +379,20 @@ bool __stdcall function_fa9a0(long *value)
 // entry native width 90; entry seconds 92; selected source 102; shared input 86;
 // shared input/output 105. Result-boundary predicate plain 71 loses six caller
 // matches through its extra stacked input; all predicate forms restored.
+// Round 408: displacement aggregate with result/entry seconds 87/78; with library
+// output copy 87/78; native component-array traversal 81/58, with library copy 81/58.
+// Plain confirms component traversal with entry seconds at 58, retail length, no match loss.
 // @retail 0xfa580
 bool function_fa580(real speed, point3f const *origin, point3f const *target, vector3f *direction,
 	real *distance, real *speed_out, real *time)
 {
+	real seconds = 0.0f;
 	vector3f vector;
 
-	vector.i = target->x - origin->x;
-	vector.j = target->y - origin->y;
-	vector.k = target->z - origin->z;
+	for (long component = 0; component < 3; ++component)
+		vector.n[component] = target->n[component] - origin->n[component];
 
 	real length = projectile_normalize(&vector);
-	real seconds = 0.0f;
 
 	if (length == 0.0f)
 		vector = *g_4687b0;
@@ -675,6 +678,7 @@ void function_b75a0(long object_index, point3f const *point, vector3f const *for
 	s_location const *location, bool unknown);
 void __stdcall function_b77d0(long object_index, vector3f const *linear_velocity, vector3f const *angular_velocity);
 void __stdcall function_b93b0(long parent_index, long object_index, short node_index);
+vector3f *random_unit_vector(vector3f *result, dword *seed);
 void __stdcall function_1e2930(long object_index, long actor_index);
 void function_a83e0(long object_index, long parent_index, point3f const *point, short node_index,
 	vector3f const *forward);
@@ -703,7 +707,12 @@ PRIVATE inline void projectile_effect_parameters_initialize(s_effect_parameters 
 }
 
 /* pushes a projectile, and spins it at random by the push's strength */
-// score 69 (was 69): frame 0x10 and retail length agree; impulse EDX/ESI, axis homes and seed carriers differ.
+// score 34 (was 69): the existing random unit vector call gives retail's impulse ESI and seed EDI/EDX
+// (69 -> 36), the vector sums give retail's add order (34). Still differs: our build folds the
+// 1/65535 and pi/2 factors into one constant (retail multiplies by each), and loads all three axis
+// components ahead of the spin where retail folds i and j into mulss.
+// Round 75: length-first product 95; double sqrt product 36; add-scaled helper 71; in-place scale 34;
+// one-use named fraction 14 (no fold), with a double spin 13 (i folded), both reverted (one-use local).
 // Round 196: direct length 95; fraction 114; complete native scale 98; length/fraction 114;
 // length/scale 98; fraction/scale with either length 83 (one-use fraction, restored); shared magnitude/scale 98.
 // Commuted first product with complete scaled vector 69 (kept); in-place, direct-root in-place,
@@ -725,19 +734,16 @@ void function_fa820(long projectile_index, vector3f const *impulse)
 
 	if (*(long *)((byte *)projectile + 0x14) == NONE)
 	{
-		projectile->linear_velocity.i += impulse->i;
-		projectile->linear_velocity.j += impulse->j;
-		projectile->linear_velocity.k += impulse->k;
+		vector3f_add(&projectile->linear_velocity, impulse, &projectile->linear_velocity);
 
-		vector3f axis = g_4417f0[random_index(&g_4e7408->unknown0, 1026)];
+		vector3f axis;
+		random_unit_vector(&axis, &g_4e7408->unknown0);
 		real spin = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__) * (real)sqrt(length_sq3f(impulse)) *
 			1.5707964f;
 
 		vector3f rotation;
 		vector3f_scale(&axis, spin, &rotation);
-		projectile->angular_velocity.i += rotation.i;
-		projectile->angular_velocity.j += rotation.j;
-		projectile->angular_velocity.k += rotation.k;
+		vector3f_add(&projectile->angular_velocity, &rotation, &projectile->angular_velocity);
 		function_fbd40(projectile_index);
 		function_b9b90(projectile_index, false);
 	}
@@ -870,25 +876,11 @@ void function_fd7d0(long object_index, point3f const *point, byte const *effects
 		*second_value0c = NONE;
 }
 
-/* sticks a projectile to what it hit */
-// score 72 (was 72): First positioning-call setup and later parent-type receiver differ; entry and child scan agree.
-// Native real fields 72; named flag stores 72; conditional seconds 73; entry seconds 128;
-// seconds-first product 72; direct maximum reads 72; direct definition reads 219;
-// native fields/conditional seconds 73.
-// Two-use parent owner after its native type guard 72; with chained child zero
-// stores 74, named flags 72/74, complete seconds arms 73/75/73/75. Restored.
-// Early attachment counter 109; native while cursor 72; both 109; parent declaration
-// at entry 72; parent/tag names 72; incoming operand names 72; all-use parent
-// observations 72; those with early counter 109. Restored.
-// Scan-owned tag 133; complete projectile observations 201; full decay quotient 72;
-// tag/receiver 183; tag/quotient 133; receiver/quotient 201; all producers 183;
-// direct native void completion with all producers 183. Every body statement restored.
-// Separate parent type admission 72; separate type/owner/state admissions 72;
-// native parent mask named at its computation 72; scan-scoped child receiver 72;
-// receiver with those parent tests/mask 72/72/72; receiver/named reciprocal 72. Restored.
+/* sticks a projectile to what it hit; location is the hit's s_location, which the
+   callers' declarations still type as a vector */
 // @retail 0xfd560
 void function_fd560(long projectile_index, long object_index, short node_index, point3f const *point,
-	vector3f const *forward)
+	vector3f const *location)
 {
 	s_projectile *projectile = PROJECTILE_GET(projectile_index);
 	s_projectile_definition *definition = PROJECTILE_DEFINITION_GET(projectile->tag_index);
@@ -919,7 +911,7 @@ void function_fd560(long projectile_index, long object_index, short node_index, 
 		}
 	}
 
-	function_b75a0(projectile_index, point, forward, NULL, NULL, false);
+	function_b75a0(projectile_index, point, NULL, NULL, (s_location const *)location, false);
 	function_b77d0(projectile_index, g_4687a4, g_4687a4);
 	*(dword *)&projectile->flags |= 8;
 	function_b9b90(projectile_index, true);
@@ -927,10 +919,15 @@ void function_fd560(long projectile_index, long object_index, short node_index, 
 	{
 		function_b93b0(object_index, projectile_index, (short)(node_index));
 
-		s_projectile *parent = PROJECTILE_GET(object_index);
+		s_projectile_header *header = &((s_projectile_header *)g_4e0300->data)[object_index & 0xffff];
 
-		if (((1 << *((byte *)parent + 0xaa)) & 3) && *(long *)((byte *)parent + 0x12c) != NONE && g_4f55d0->active)
-			function_1e2930(projectile_index, *(long *)((byte *)parent + 0x12c));
+		if ((1 << header->unknown00[3]) & 3)
+		{
+			s_projectile *parent = header->object;
+
+			if (*(long *)((byte *)parent + 0x12c) != NONE && g_4f55d0->active)
+				function_1e2930(projectile_index, *(long *)((byte *)parent + 0x12c));
+		}
 	}
 
 	real seconds = 0.0f;
@@ -944,7 +941,7 @@ void function_fd560(long projectile_index, long object_index, short node_index, 
 
 	if (ticks >= 1.0f)
 		*(real *)((byte *)projectile + 0x15c) = 1.0f / ticks;
-	function_a83e0(projectile_index, object_index, point, node_index, forward);
+	function_a83e0(projectile_index, object_index, point, node_index, location);
 }
 
 real function_30bf0(vector3f *v);
@@ -1362,6 +1359,8 @@ void function_fcea0(long effects_index, point3f const *point, vector3f const *di
 // Coherent workspace names 115; paired-table initialization loop 249; sound-table
 // reads at use 115; names with loop/reads 249/115; loop with reads and all three 249;
 // separate direct-counter table initialization loops 249. Original body restored.
+// Round 408: native definition pointer/reference with neither, fallback, alternate
+// or both tag snapshots 115 each. Original record layout and body restored.
 // @retail 0xfd0e0
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
 	point3f const *point, vector3f const *normal, word index, bool attached, long object_index,

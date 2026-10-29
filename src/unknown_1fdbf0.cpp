@@ -335,6 +335,11 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // member-wise forward copy 88; negated cosine test 100.
 // Perpendicular/forward query inline and noinline declarations, singly/together 57 each; fallback
 // normalization via returned output pointer 71, with both inline declarations 71.
+// member-wise forward copy 88; negated cosine test 100. Only the declaration order of the four
+// scalars changes the block (all 24 orders compiled; this one is closest): operand and term orders
+// are canonicalised. Axis by cross3f 64; parallel scale written into each row 78; local_3 declared
+// before local_2 59; rows i, k, j 59; an inline rotate helper with named parallel/cross scalars 57
+// (with a cross vector, worse).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

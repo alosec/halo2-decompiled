@@ -140,6 +140,7 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // direct scale-return/add pipeline 141, with point publication 141; reverse add inputs
 // 141/141; native point publication alone 118; planar vector/point constructors with
 // pipeline 143. All restored; marker-clear receiver join and contribution schedule remain.
+// Round 247: complete published-motion observation, with facing/forward/both 410/448/443/476; complete candidate-motion observation, with facing/forward/both 417/450/464/481. Each worsens the matching prefix; marker-clear join and contribution schedule remain.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {

@@ -59,7 +59,10 @@ struct s_spawn_scenario_23aea0
 	s_spawn_settings_23aea0 *settings;
 };
 
-// score 105 (was 105): source receiver and integer destination induction still differ.
+// score 103 (was 105): the definition now stays in EAX and the source pointer in ECX, but
+// the destination is still an absolute pointer induction instead of retail's integer table
+// offset 0x18..0xa8; the prologue publishes the default table after the first scalar store
+// and the override loop keeps an extra lea esp, [esp].
 // actual batch/type ranges 139/227; inner type ordinal 139; direct twelve types 254;
 // source records with direct/batch/read-only ranges 257/227/227; complete override 140.
 // Word/byte batch ordinals 141/141; word/byte entry ordinals 242/242;
@@ -83,6 +86,9 @@ struct s_spawn_scenario_23aea0
 // globals' last member (retail's memset clears it) 102; running destination index 120.
 // No-link compiles of 1728 loop shapes, counter types and destination forms all fold the
 // global into a pointer induction variable; retail keeps the integer offset 0x18..0xa8.
+// A twelve-byte destination record indexed by the type ordinal moves the definition into
+// EAX and the source pointer into ECX (105 -> 103); the same record reached through a
+// pointer below the table regresses to 149.
 // @retail 0x23aea0
 void function_23aea0()
 {

@@ -1140,6 +1140,8 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // (two stack arguments): 112, host arm first 112, with continue 112; the same
 // with host read after the observer 109/109. Retail also re-reads member_count
 // in the member check where ours reuses the loop's load.
+// Round 198: guarded-result graphs at the existing channel/observer/member QoS helpers, seven
+// combinations 67 each; all three with late host read 86.
 // @retail 0x64480
 void network_session_get_member_latency(s_session_member_latency *latency, c_class_58d20 *session)
 {

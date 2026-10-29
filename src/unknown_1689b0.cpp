@@ -1599,6 +1599,9 @@ PRIVATE inline void camera_prism_point_16a8e0(s_prism const *prism, point2f cons
 // Round 225: projected offset/candidate displacement/both/squared lengths/offset-lengths/
 // displacement-lengths/all/all with three shared ray scales 618/555/553/554/618/555/617/553.
 // Original expression producers and all geometry/helper inputs restored.
+// Round 267: query count long/short 577/623; outer prism cursor live/long/short
+// 638/662/662; unsigned ordinal live/long/short 552/581/623. Original
+// query-count observations, signed outer ordinal and complete geometry restored.
 // @retail 0x16a8e0
 bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
 	long ignore_object, long ignore_parent, point3f *out, real *out_radius)

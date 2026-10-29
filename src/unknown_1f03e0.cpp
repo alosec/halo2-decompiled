@@ -1162,6 +1162,10 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // offset/position pointers 54; row i grouped (forward + left) + up 50 at 1043/1043; retail's
 // own row groupings (left + up, forward + left, forward + left) 59; one named output-velocity
 // pointer for both override blocks 265 (frame); a 600 s permuter run, none below 50.
+// Round 112: the convention already agrees (ret 0xc). Override add as `dst = dst + src` 50 (same code);
+// the rotation helper in 0x143070's accumulated form 87; helper parameter orders input/matrix/out 48,
+// input/out/matrix 48, matrix/out/input 54, out/input/matrix 50, out/matrix/input 52; input/matrix/out
+// with row i grouped (forward + left) + up 50 at 1043/1043; override add as a three-component loop 59.
 // Round 177: Independent matrix-axis pointer/reference boundaries, all eight forms 71;
 // shared in-place final override/support/both additions 83/88/83. Override loads recover
 // but coefficient allocation worsens; original helper, alias copy and body restored.
