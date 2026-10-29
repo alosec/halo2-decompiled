@@ -222,6 +222,15 @@ See `port/README.md` "Play" for the full commands.
   passes its direction (`0x41b8c`): plasma bolts were green smears drawn
   along their colour. Compare the registers and pushes at the call with
   the callee's prologue.
+- **Host shims that differ from Win32 in edge cases.** The fatal
+  "problem with the disc" screen at boot, about one boot in fifteen:
+  file times jittered (a two-clock conversion), so the font table's
+  time missed the saved one, and the font recopy it triggered failed
+  because the find shim matched `*.*` literally (extensionless font
+  files were never deleted). The fatal screen (`g_51ea00`, 0x121fc0,
+  0x18eaa0, 0x12bf00) draws through the Xbox's `0xf0000000`
+  write-combined view, which the port doesn't map. When the game stops
+  on black with no draws, check for that state before anything else.
 - **Depth surfaces.** The game binds depth separately from the colour
   target, and several targets share one depth buffer (fixed: shared
   depth keyed by `depth_stencil`).
