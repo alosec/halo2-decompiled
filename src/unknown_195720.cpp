@@ -195,6 +195,12 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // frame 8 vs 4; log/weight scheduling prevents argument-slot reuse;
 // limit before compare/read/call 41/44/60; limit/log local renames 38;
 // earlier weight declarations 38; integer weights 43; named weighted logs 38.
+// Both builds keep the upper log past its use only because the exp follows in the same
+// expression (an exponent stored first consumes it); retail pops it after the division because
+// both logs come first. In-place accumulator starting from the lower log 43; logs before the
+// limit test 41; limit as a conditional in one expression 47; inline helper taking lo/hi and
+// returning the exponent 38; named real count and exponent 52; log types, product orders,
+// statement splits, scopes and file flags (screened) give the same lower-product-first order.
 // @retail 0x194ff0
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 {
