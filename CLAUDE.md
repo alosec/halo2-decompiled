@@ -352,13 +352,20 @@ See `port/README.md` "Play" for the full commands.
     alpha x c + max(4(rgb - 0.75), 0), alpha x 0.25; four blurs; composite
     2(rgb/2 + a)) matches the recovered code, and bloom_wall exists to make
     that window glow, so the white doorway may be retail's own bloom. No
-    reference image to settle it.
+    reference image to settle it. Settled 2026-10-29: the bloom pass's
+    c0.a comes from 0x17170 loading bloom_wall's shared tag value block
+    (0x8087f9f4, entry 1 = 0xff000000), the same template binding giving
+    other bloom shaders 0.8/0.4/0.35: retail data asks for full bloom.
   - shadows that shift with the view: not reproduced yet. On 03a's
     opening the dark block beside the vent is the wall lightmap's baked
     shadow (static, with parallax against the protruding vent); each
     lightmapped geometry keeps one lightmap page across views (traced
-    with the `va` lines). Cairo spots from the user's session showed
-    nothing clear.
+    with the `va` lines). Six of the user's own 01b bsp-2 positions
+    (play3.log; scratchpad tools/user_spots.py crosses in with the bot's
+    switch volumes) showed nothing clear. Ruled out as well: the 128x128
+    object shadow maps (A8R8G8B8 color, not depth compare, so SHADOWFUNC
+    is moot), 0x497a0's light frame (its camera-attached case needs flags
+    0x20 and 0x40000, as retail) and 0x494b0's light window (matched).
   - render states still ignored, with no effect seen: `SHADOWFUNC` (set
     for shadowing light passes; no depth-format texture is sampled in any
     trace so far, flashlight included) and `LOGICOP` (the game only sets
