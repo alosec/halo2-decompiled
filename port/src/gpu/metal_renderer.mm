@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -40,6 +41,10 @@
 #include <unordered_set>
 #include <map>
 #include <vector>
+
+/* the "trace" control line (main.cpp): trace the next presented frame as
+   H2_TRACE_FRAME would */
+std::atomic<bool> g_trace_next_frame{false};
 
 namespace h2::gpu {
 namespace {
@@ -515,12 +520,12 @@ public:
                         frames.push_back(std::atoi(p));
             return frames;
         }();
-        return std::find(wanted.begin(), wanted.end(), presented_) != wanted.end();
+        return presented_ == traced_frame_ || std::find(wanted.begin(), wanted.end(), presented_) != wanted.end();
     }
 
     std::string trace_suffix(const std::string& suffix) const {
         const char* value = std::getenv("H2_TRACE_FRAME");
-        if (!value || !std::strchr(value, ','))
+        if ((!value || !std::strchr(value, ',')) && traced_frame_ < 0)
             return suffix;
         return "-f" + std::to_string(presented_) + suffix;
     }
@@ -782,6 +787,8 @@ public:
 
     void present(bool keep_pixels) override {
         ++presented_;
+        if (g_trace_next_frame.exchange(false))
+            traced_frame_ = presented_ + 1;
         @autoreleasepool {
             begin_command_buffer();
             bind(&back_, depth_for(back_, back_depth_surface_));
@@ -2113,6 +2120,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     std::uint64_t frame_ = 0;
     RendererStats stats_;
     int presented_ = 0;
+    int traced_frame_ = -1;
     static constexpr int kVisibilitySlots = 4096;
     id<MTLBuffer> visibility_buffer_ = nil;
     int open_slot_ = -1;

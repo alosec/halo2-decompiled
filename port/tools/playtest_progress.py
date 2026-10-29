@@ -278,7 +278,8 @@ def main():
                         # one's (08b: e5's waits for bsp 1 pulled the player
                         # out of e7's bsp 0 again and again)
                         later = encounter(thread["script"]) < latest
-                        if hop and count < 8 and not later and (thread["script"].startswith("mission") or idle >= 10):
+                        if hop and count < 8 and not later and (thread["script"].startswith("mission") or idle >= 10
+                                                               or args.thorough and encounter(thread["script"])):
                             places.append((count, order, key[0], key[1], "cross", hop))
                         if "(ai_actors" in text and count < 8:
                             g.guest("kill_enemies 0")   # and the enemies the wait counts (08b's e7 brutes)
@@ -361,15 +362,26 @@ def main():
                     elif ("ai_living_count" in text or "ai_strength" in text or "ai_living_fraction" in text
                            or "ai_nonswarm_count" in text) \
                             and count < 6:
+                        replies = len(g.test_replies)
                         g.guest("kill_enemies 0")
-                        print("frame", g.frame, thread["script"], node, "-> kill enemies", flush=True)
-                        acted[key] = count + 1
+                        g.wait(30)
+                        reply = next((r for r in g.test_replies[replies:] if r.startswith("killed")), "no reply")
+                        print("frame", g.frame, thread["script"], node, "-> kill enemies", reply, flush=True)
+                        # a helper's wait serves wave after wave (07b's
+                        # e12_safe_to_spawn_flood): only a try that found
+                        # nobody counts
+                        if reply in ("killed 0", "no reply"):
+                            acted[key] = count + 1
                     elif count == 0:
                         print("frame", g.frame, thread["script"], node, "waits:", text[:160], flush=True)
                         acted[key] = 1
                     else:
                         continue   # nothing left to try at this wait: the one around it (08b's boss loop)
                     break
+            if args.thorough and any(not a[3][0].startswith("mission") for a in away):
+                # an encounter's place waits in another bsp: the mission's own
+                # places (07b's and 08a's end volumes) wait for it
+                places = [p for p in places if not p[2].startswith("mission")]
             idle = 0 if places or away else idle + 1
             if idle and idle % 10 == 5 and any("game_safe_to_save" in scripts_text for scripts_text in waiting_texts):
                 # a wait on game_safe_to_save: log which of its checks says no
@@ -385,9 +397,12 @@ def main():
                 # control room)
                 # among bsp crossings, a later encounter's first (08b: e5's
                 # ambient wait for bsp 1 pulled the player back from e7's 0)
+                # thorough: the earliest encounter first, crossing or not
+                # (08a's e2 waits for bsp 1 while e6-e10's volumes lie in
+                # bsp 0 within reach: they came first and skipped e2-e5)
                 count, _, script, node, kind, name = min(
-                    places, key=lambda p: (p[4] == "cross", args.thorough and p[2].startswith("mission"),
-                                           -encounter(p[2]), p))
+                    places, key=lambda p: (encounter(p[2]) or 1000, p[2].startswith("mission"), p[4] == "cross", p)
+                    if args.thorough else (p[4] == "cross", -encounter(p[2]), p))
                 acted[(script, node)] = count + 1
                 if kind == "cross":
                     crossed = cross(g, volumes[name])
@@ -476,7 +491,8 @@ def main():
             elif away:
                 # nothing left in this bsp: through the switch from it nearest
                 # the place, the mission script's place first
-                _, _, _, key, name = min(away)
+                # the mission script's place first, or an encounter's when thorough
+                _, _, _, key, name = min(away, key=lambda a: (not a[0], a[1:]) if args.thorough else a)
                 nearby = [w for w in switches if w[1] == (g.state and g.state.get("bsp"))]
                 if nearby:
                     centre = volume_point(volumes[name], 0.5, 0.5)

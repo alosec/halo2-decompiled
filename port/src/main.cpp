@@ -41,6 +41,9 @@
 
 extern "C" int h2_call_guest_int_0(int (*function)(), void* stack_top);
 
+/* the "trace" control line: the renderer traces the next frame */
+extern std::atomic<bool> g_trace_next_frame;
+
 namespace {
 
 constexpr std::uint32_t kGuestStackAddress = 0x20000000u;
@@ -1108,7 +1111,7 @@ std::deque<std::string> g_guest_commands;
 /* H2_CONTROL=file: a test driver appends lines while the game runs, read at
    each frame: "press BUTTON FRAMES" (any input-script button, e.g. a, rt,
    ly+, rx-25), "mouse DX DY" (mouse motion in points), "snapshot" (as
-   SIGUSR1), "quit", "guest COMMAND..." (handed
+   SIGUSR1), "trace" (the next frame, as H2_TRACE_FRAME), "quit", "guest COMMAND..." (handed
    to the guest's test hooks, port/runtime/guest_test_state.cpp) */
 void poll_control(GameSession& session) {
     static const char* path = std::getenv("H2_CONTROL");
@@ -1140,6 +1143,8 @@ void poll_control(GameSession& session) {
             session.mouse_y += dy;
         } else if (command == "snapshot") {
             g_snapshot_requested = true;
+        } else if (command == "trace") {
+            g_trace_next_frame = true;
         } else if (command == "quit") {
             std::exit(0);
         } else if (command == "guest") {
