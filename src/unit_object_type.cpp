@@ -872,13 +872,14 @@ bool function_cc380(long object_index)
 /* the name of the unit's current animation, or NONE when it has none */
 inline long unit_animation_name(long unit_index)
 {
+	long result = NONE;
 	s_unit_animation *animation = UNIT_ANIMATION(UNIT_GET(unit_index));
 
 	if (animation->unknown68 != NONE && animation->unknown00 != NONE && animation->unknown06 != NONE)
 	{
-		return animation->name;
+		result = animation->name;
 	}
-	return NONE;
+	return result;
 }
 
 /* whether the unit's animation is 0x600008c */
@@ -2234,6 +2235,11 @@ struct s_unit_motion
 /* advances a position and velocity along the motion for a time; whether
    time remains after its last phase */
 // #515's rewrite of this body scored 28 (was 104) but moved 0x1e5af0's argument into a register (42), so this body stays.
+// score 104 (was 104): Input position/velocity remain stack arguments; retail copies XMM5/XMM4 and keeps time in XMM3.
+// Separate output accumulators 69 fast/plain, but lose matched 0x1e5af0; with a separate
+// noinline declaration 69 fast/plain, same loss. Ordered conditional clamps 104; phase steps 104;
+// completion from its test 126; accumulators with clamps/time/phase steps 69/69/69;
+// accumulators, clamps and completion test 69. All executable forms and declarations restored.
 // @retail 0xc7750
 bool function_c7750(s_unit_motion const *motion, real position, real velocity, real time, real *out_velocity,
 	real *out_position)
@@ -2546,6 +2552,9 @@ void function_cce00(long unit_index, short starting_profile_index, bool reset, b
 /* whether the unit is free to act: not riding, without object flags 26
    and 27 in its animation state, no blocking action, and neither hand's
    weapon busy (0x100880) */
+// score 79 (was 98): Frame agrees; merged animation loads, retained object lookup and weapon-loop carriers still differ.
+// Direct rejection 79 plain (kept); retained pool 98; masked getter 98; native slot 101;
+// hand cursor 84; pool/direct rejection/cursor 79; shared flag mask 135; failure-first result 119.
 // @retail 0xc85c0
 bool function_c85c0(long unit_index)
 {
@@ -2560,9 +2569,8 @@ bool function_c85c0(long unit_index)
 		unit_action_active(unit_index, 1) || unit_action_active(unit_index, 0xa) ||
 		unit_action_active(unit_index, 0xb))
 	{
-		result = false;
+		return false;
 	}
-	else
 	{
 		unit = UNIT_GET(unit_index);
 		for (long hand = 0; hand < 2; hand++)
@@ -2691,6 +2699,10 @@ struct s_unit_list_iterator
 /* finds a unit that is dying or down: object flags 22, 26 or 27 in its
    animation state, or in animation 0xc000043 or 0xd000042 without flag 2
    at +0x33e and bit 0 at its animation's +0x6c */
+// score 83 (was 103): Frame and entry/name carriers now agree; merged animation flags and byte-flag test still differ.
+// Shared name producer initialized result 83 plain (kept); iterator-datum reads 103;
+// result/datum reads 83; one flag snapshot 103; widened byte test 103; shared success 120;
+// one source exit 106; result/datum/one exit 87.
 // @retail 0xcc170
 bool __stdcall function_cc170(long *value)
 {
@@ -7450,7 +7462,7 @@ struct s_unit_melee_collision
    hit (through the player code when it asks), plays the impact and
    applies the second damage to the striker */
 // @retail 0xcf3d0
-void __stdcall function_cf3d0(long unit_index, long name, long flags, real scale)
+void __stdcall function_cf3d0(long unit_index, long name, byte flags, real scale)
 {
 	s_unit *unit = UNIT_GET(unit_index);
 	byte *local_98b918_2 = UNIT_DEFINITION_GET(unit);
@@ -7628,7 +7640,7 @@ void __stdcall function_cf3d0(long unit_index, long name, long flags, real scale
 		{
 			goto impact;
 		}
-		if (!(byte)flags)
+		if (!flags)
 		{
 			if (function_a76b0(unit_index, 0))
 			{

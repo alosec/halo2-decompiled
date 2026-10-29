@@ -1243,7 +1243,8 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 	return result;
 }
 
-// score 255 (was 255): scratch 8 versus retail 4; grouped inner traversal remains rolled, 186/347 bytes.
+// score 225 (was 255): scratch 0x10 versus retail 4; absolute-span inner traversal
+// remains rolled, 225/347 bytes.
 // Earlier: sixteen-step rolled loop versus four-by-four unrolling;
 // expanded loop changes the entry convention and loses the matched caller.
 // Direct getter comparison 281; split header/payload adds 281; arithmetic width 329;
@@ -1303,6 +1304,10 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 // post/pre-tested inner: 233/233/241/267/128/128/104/130; original-site width bool/byte
 // and direct subtotal byte/long identity: 233/233/233/257. All legal gains lose 0x54990;
 // group-width 241 preserves it but hoists one-use computation, so restored. Original grouped total retained.
+// Round 181: absolute spans pre/post ordered/equal 248/248/245/245;
+// pointer spans 249 each (four forms); outer/inner counter domains 254/225/244/244;
+// identity width/opposite/direct and unsigned span domains 225/245/244/225/225/225/225/225.
+// Short group start with long absolute channel ordinal retained; every 0x54990 loss rejected.
 // @retail 0x56220
 long voice_channels_get_bandwidth(s_voice_channels *channels, long player)
 {
@@ -1312,17 +1317,16 @@ long voice_channels_get_bandwidth(s_voice_channels *channels, long player)
 		long local_0 = voice_get_unknown00();
 		bool is_unknown00 = local_0 == player;
 		total = 2;
-		s_voice_channel *channel = &channels->channels[0];
-		for (long group = 0; group < 4; group++)
+		for (short first_channel = 0; first_channel < 16; first_channel += 4)
 		{
-			long step = 0;
+			long channel_index = first_channel;
 			do
 			{
+				s_voice_channel *channel = &channels->channels[channel_index];
 				if (voice_channel_has_player(channel, player))
 					total += channel->values[player] * (is_unknown00 ? 13 : 11) + 2;
-				channel++;
-				step++;
-			} while (step < 4);
+				++channel_index;
+			} while (channel_index < first_channel + 4);
 		}
 	}
 	return total;
@@ -1362,7 +1366,7 @@ void voice_queue_compact(s_voice_queue *queue, word mask)
 	queue->count = kept;
 }
 
-// score 141 (was 107): the convention now agrees with retail (queue ESI, player EAX copied to
+// score 141 (was 141): the convention now agrees with retail (queue ESI, player EAX copied to
 // EDI, cursor EDX before the player as the declared order, the rest on the stack, `ret 0xc`): the
 // result is computed before the header stores, so EDI holds it after the loop. Still differs:
 // retail keeps the player bit in EBP and the queue count in ECX (ours caches the count in EBP and
@@ -1390,6 +1394,8 @@ void voice_queue_compact(s_voice_queue *queue, word mask)
 // and the bit declared later screened in a one-file LTCG harness: none keeps both the count
 // in ECX and the product in EDI (written declared before the size keeps the count but puts the
 // product in EBX and the player back in EDI).
+// Round 198: one final mask snapshot dword/word after header 142/142, before result 141/141,
+// after result 141/141; snapshot with written before size 168/168.
 // @retail 0x55c40
 long function_55c40(s_voice_queue *queue, byte *cursor, long player, byte *output, long capacity, bool include_mask)
 {
@@ -3240,6 +3246,9 @@ static inline long voice_packet_clamp_count(byte count, long minimum, long maxim
 // frame and extent agree; channel/cursor/count registers and route homes differ.
 // Independent packet cursor 164; byte packet index 172; enclosing member lifetime 139;
 // entry route lifetime 139; ordinary delivery arm first 162.
+// Round 198: remaining set before/after delivery, word/dword 172/182/154/179; with independent
+// cursor 141/182/164/188; separate input/remaining sets with conditional clear 146/176, with
+// cursor 158/184.
 // @retail 0x55e10
 long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, bool relay)
 {

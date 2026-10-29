@@ -141,6 +141,8 @@ PRIVATE __forceinline bool function_1d6d04(long arg_0)
 // column's quad 49; both arguments through pointer locals 49; the rotation argument cast to
 // (hkRotation const *)&local_10.m_rotation 49 (this round, byte-identical to the baseline).
 // body group 49; center pointer 49.
+// Round 198: native rotation component loop long/dword/short/byte 63/63/223/223; separate axis
+// loops 51/51/120/120.
 // @retail 0x1d6d00
 void __stdcall function_1d6d00(s_havok_component *arg_0, void *arg_1, byte *arg_2,
  long arg_3, long arg_4, bool arg_5, bool arg_6)

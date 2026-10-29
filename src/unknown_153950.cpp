@@ -8,6 +8,8 @@
 #include <string.h>
 #include "sound_sources.h"
 #include "vector_angles.h"
+#include "vector_products.h"
+#include "normalize3d.h"
 
 /* the result of the speed effects: the type, the amount and the shake */
 struct s_speed_result
@@ -414,9 +416,14 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // Timer rereads and long update 64; validity result and angle-phase scope 85;
 // forward snapshot 126; normal snapshot 119; entry sine/cosine 64;
 // both draws after normalizing the cross vector 174.
-// Earlier: every operand and term order of the 2D dot/cross and of the rotation's dot
+// score 59 (was 64): every operand and term order of the 2D dot/cross and of the rotation's dot
 // compiles alike; of the rotation's statement orders (axis components, projection, sine and
 // cosine) the written one is best, j/i/k 63; cosine first worse.
+// Round 112 (baseline 60): v declared before w 60; existing cross3f_staged for the up cross product 60,
+// vector3f_scale for the final scale 60, dot3f(u, e) / dot3f(e, u) for the projection 60/60 and cross3f
+// for the axis cross 59 (all four kept: they replace hand-written helper bodies); the final scale through
+// &slot->vector 61 (reloads u.j as retail but reschedules the rotation).
+// Earlier: every operand and term order of the 2D dot/cross and of the rotation's dot
 // Round 177: Complete dot2/cross2/initial-normal/projection/rotation-cross/update products
 // 78/78/58/60/60/60; early dot+cross+normal 56; complete rotation and four early/rotation
 // combinations 60 and 56/56/56/56. Normal producer orders ijk/ikj/jik/jki/kij
@@ -473,28 +480,19 @@ void function_154df0(long index, s_speed_bounds *bounds, s_speed_slot *slot, vec
 			vector3f *e = &slot->forward;
 			vector3f *u = &slot->vector;
 
-			real ck = e->i * g_4687b0->j - e->j * g_4687b0->i;
-			real cj = g_4687b0->i * e->k - g_4687b0->k * e->i;
-			real ci = g_4687b0->k * e->j - g_4687b0->j * e->k;
-			u->i = ci;
-			u->j = cj;
-			u->k = ck;
+			cross3f_staged(e, g_4687b0, u);
 			function_30bf0(u);
 
 			real s = (real)sin(rotation);
 			real c = (real)cos(rotation);
-			real t = (u->k * e->k + u->j * e->j + e->i * u->i) * (1.0f - c);
+			real t = dot3f(u, e) * (1.0f - c);
 			vector3f axis_cross;
-			axis_cross.j = u->k * e->i - u->i * e->k;
-			axis_cross.k = u->i * e->j - u->j * e->i;
-			axis_cross.i = u->j * e->k - u->k * e->j;
+			cross3f(u, e, &axis_cross);
 
 			u->i = e->i * t + u->i * c - axis_cross.i * s;
 			u->j = e->j * t + u->j * c - axis_cross.j * s;
 			u->k = e->k * t + u->k * c - axis_cross.k * s;
-			u->i = u->i * scale;
-			u->j = u->j * scale;
-			u->k = u->k * scale;
+			vector3f_scale(u, scale, u);
 			slot->flags |= 2;
 		}
 	}

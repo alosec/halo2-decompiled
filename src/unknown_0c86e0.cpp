@@ -93,7 +93,8 @@ static __forceinline long weapon_get_zoom_out_sound(long weapon_index)
 	return result;
 }
 
-// score 107 (was 107): frameless entry saves, unit reload and sentinel carriers differ.
+// score 107 (was 107): frameless entry saves, fresh unit reload and late prior-state carrier differ.
+// frameless entry saves, unit reload and sentinel carriers differ.
 // frameless entry saves, fresh unit reload and late prior-state carrier differ.
 // Earlier: frameless entry saves, unit reload and sentinel carriers differ.
 // entry saves, fresh unit reload and sentinel carriers still differ.
@@ -136,6 +137,9 @@ static __forceinline long weapon_get_zoom_out_sound(long weapon_index)
 // Player early/conditional returns 113/113; weapon-slot early/conditional returns 100/107;
 // sound early/conditional returns 110/110; all producers early/conditional 105/114. The
 // seven-point slot gain is below the required eight; original producers restored.
+// Round 267: masked slot/header record/pool descriptor/header table 107/119/107/117;
+// descriptor with byte/long slot 111/114; preserved-state return 126, with header 129.
+// Original producers and complete executable body restored.
 // @retail 0xc86e0
 void function_c86e0(long unit_index, bool keep_weapon_zoom)
 {
