@@ -8,6 +8,7 @@
 #include "unknown_1fb7e0.h"
 #include "unknown_26b230.h"
 #include "unknown_11c010.h"
+#include "props.h"
 
 /* the state of a slot of type 0xe */
 struct s_slot_0e
@@ -328,20 +329,8 @@ bool function_1af530(long actor_index, long *b, long *a)
 	return result;
 }
 
-struct s_prop_timer_0f
-{
-	byte unknown00[0x38];
-	long time;
-	byte unknown3c[0xc4 - 0x3c];
-};
-
-struct s_unit_state_0f
-{
-	byte unknown00[0x346];
-	short state_offset;
-};
-
 static __forceinline long real_to_long(real value);
+short *function_e70b0(long unit_index, short *value);
 
 // score 49 (was 49): Frame agrees; actor/index ECX/EDX and final call setup differ.
 // Frame four agrees; actor/index ECX/EDX and final argument setup still differ.
@@ -366,6 +355,9 @@ static __forceinline long real_to_long(real value);
 // Nested prop/clock/tick names singly, in all pairs and together 49 each; early uninitialized tick declaration 49.
 // Actor getter boundary 49; getter observations at timer/prop/both 117/115/140;
 // unit/timer-unit/prop-unit/all phases 120/117/117/132; all computed receiver forms rejected.
+// Slot data block through slot->unknownc 49; existing unit action-state helper call 49 and existing prop
+// getter 49 (both kept: they replace hand-written copies, same code); nested final actor-state test 49;
+// named random delay 49.
 // Round 404: Native slot data block, then countdown/mode/elapsed combinations and entry cast order, all
 // eight 49 at 443/443. Data block canonicalizes unchanged; complete original body and type restored.
 // Actor/index and final-call allocation remain.
@@ -387,20 +379,20 @@ void __stdcall function_1afb30(long actor_index, s_slot *slot)
 		if (actor->prop_index != NONE)
 		{
 			s_prop_node_view *node = prop_node_get(actor->prop_index);
-			s_prop_timer_0f *timer = &((s_prop_timer_0f *)g_50241c->data)[node->unknown08 & 0xffff];
+			s_type_76cf92 *prop = prop_get(node->unknown08);
 			long now = g_510c54->game_time;
-			if ((real)(now - timer->time) * g_510c54->rate > 10.0f)
+			if ((real)(now - prop->unknown38) * g_510c54->rate > 10.0f)
 			{
 				function_1fb7e0(0x96, actor_index, NULL, node->object_index, NONE);
-				timer->time = now;
+				prop->unknown38 = now;
 			}
 		}
 		state->ticks = (short)real_to_long(g_510c54->field_2_3 * function_259d0(&g_4e7408->unknown0, NULL, 0, 3.0f, 10.0f));
 	}
 	if (state->unknown16 && !state->unknown17 && state->unknown34 && actor_get(actor_index)->unknown504 == 2)
 	{
-		s_unit_state_0f *unit = (s_unit_state_0f *)ai_object_get(actor->unknown018);
-		if (*(short *)((byte *)unit + unit->state_offset + 0x36) != 7)
+		short action;
+		if (*function_e70b0(actor->unknown018, &action) != 7)
 		{
 			function_1f4f40(actor_index, &state->facing, state->unknown34, &state->point, true);
 			state->unknown17 = true;

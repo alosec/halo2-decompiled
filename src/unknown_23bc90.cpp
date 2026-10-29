@@ -403,11 +403,6 @@ struct s_camera_player_23c110
 bool function_14ddc0(long local_player_index);
 long function_14de70(long local_player_index);
 
-// score 72 (was 72): retail keeps the input in EBX with three pushes and
-// reloads the unit index, ours keeps it in EBP with four pushes and keeps
-// the value live. BLOCKED-BY 0xcb810 (contributor code): retail pushes its
-// vector argument, ours passes it in EBX; with that call made through a
-// stack-convention pointer the prologue and the reloads become retail's.
 // @retail 0x23c110
 void __stdcall function_23c110(void *state, void *input, s_observer_command *command)
 {
@@ -421,15 +416,15 @@ void __stdcall function_23c110(void *state, void *input, s_observer_command *com
     else
         unit_index = NONE;
     long player = function_14de70(*(long *)input);
-    long current_unit = ((s_camera_player_23c110 *)players->data)[player & 0xffff].unit_index;
     s_view_angles *angles = &g_4ed284->entries[*(long *)input].angles;
     vector3f forward;
     real horizontal = (real)cos(angles->pitch);
+    s_camera_player_23c110 const *current_player = &((s_camera_player_23c110 *)players->data)[player & 0xffff];
     forward.i = horizontal * (real)cos(angles->yaw);
     forward.j = horizontal * (real)sin(angles->yaw);
     forward.k = (real)sin(angles->pitch);
-    if (current_unit != NONE)
-        function_cb810(current_unit, &forward);
+    if (current_player->unit_index != NONE)
+        function_cb810(current_player->unit_index, &forward);
     function_23bd70(unit_index, &forward, (s_camera_command_23bd70 *)command);
     byte *settings = *(byte **)((byte *)g_4e034c + 0xf4);
     real_bounds limits = *(real_bounds *)(settings + 0x18);

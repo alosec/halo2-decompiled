@@ -73,11 +73,11 @@ extern long g_55c154;
 // still differ. source default override 62; source existing override 61; source handle
 // lifetime 76; separate current selection 61; name generation result 61; saved handle
 // workspace 61; native generated name 61; native name source override 62.
-// score 61 (was 61): classification spill and selective copy expansion remain;
+// classification spill and selective copy expansion remain;
 // destination name after/before default 88/88; destination record late/early 88/88;
 // record/name receivers 88; publication order 174; named second load 61;
 // common name receiver 88; split loads plus common/default name receiver 199/199.
-// score 61 (was 61): classification spill and copy expansion remain;
+// classification spill and copy expansion remain;
 // external controller-slot / item-handle / list-receiver references 61/61/61;
 // controller-item / controller-list / item-list / all references 61/61/61/61;
 // all references with live type-field binding 61. Original inputs and body restored.
@@ -87,11 +87,14 @@ extern long g_55c154;
 // creation classification spill and selective copy expansion remain;
 // live entry-handle/edit-mode/type fields 61/61/61; handle-mode/handle-type/mode-type
 // field pairs 61/61/61; three live fields and external record combination 61/61.
-// score 61 (was 61): retail has two load arms (default/selected) and an out-of-line copy call.
+// retail has two load arms (default/selected) and an out-of-line copy call.
 // separate noinline declaration of the copy 61 (still inlined); single load re-testing the
 // selection 77; two load arms 174; two arms plus a shared default-name pointer 179 (the copy
 // becomes retail's register call, but zero is kept in ebx and this spills); arms on direct
 // entry reads 179.
+// Entry declarations with in-place assignments: source carrier 61; classification 61; both 61;
+// reversed pair 61; pair plus selected carrier 61; pair plus request workspace 61; pair plus
+// both buffers 61; pair with exchanged buffer declaration order 61.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {

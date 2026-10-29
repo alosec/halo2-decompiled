@@ -362,6 +362,9 @@ static inline bool teams_enabled_19e1c0()
 // ordinary result 691/691/691/691. All declarations and original case bodies restored.
 // Round 395: consumed name capacity with result after/before copy, result-fed capacity, and direct capacity exits
 // 618/649/519/621; ordinary result with those four capacity lifetimes 692/692/692/692. All restored.
+// Round 409: native cause/effect/both team-field addresses 390/390/394; formatter outcomes 414;
+// with cause/effect/both 411/411/414 (411 is retail length); all with ordinary final result 713.
+// Original result, team values, complete copy/format paths and body restored.
 // @retail 0x19e1c0
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining)
 {

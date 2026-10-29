@@ -1054,6 +1054,9 @@ s_slot_handler_2x g_47e9d0 =
 // view with long if/ternary result 86/86 and short result 77/77;
 // whole-slot receiver with the same choices 86/86/77/77.
 // Native pool/status carriers and the shared status load width remain.
+// Round 155, short status: early return at the actor test 73; status assigned in both arms 77; status
+// declared first/after actor/element first 61/61/48; global returned at the actor test with a block status 73;
+// element first with long status 67, with short status before the actor 47.
 // @retail 0x1ba4e0
 short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 {

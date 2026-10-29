@@ -1940,6 +1940,9 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 // Round 249: direct aiming-completion result bool/byte/short/long 441/441/471/470;
 // complete complementary result 441/441/470/469. Original default and success
 // assignment, every sample, native frame and all helper inputs restored.
+// Round 280: Delayed count pointer/reference with original/value-first products 391 each fast, pointer
+// plain 436; with early conditional blend defaults 169 each fast (exact-only, rejected). Fast control 411,
+// full baseline 410. Original helper and result producers restored.
 // @retail 0x16760c
 void __stdcall function_16760c(long user_index, long field_x11c898)
 {

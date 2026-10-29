@@ -165,6 +165,9 @@ PRIVATE inline byte const *material_parameters(long tag)
 // direct first updater 149; direct second updater 47; entry word at chain 47;
 // direct published entry 294. Original body restored.
 // Round 235: published table snapshot after entry/before entry/after packed 151/231/151; after-entry with distinct packed/chain/both/pass/all restore receivers 151/151/151/151/151.
+// Round 155: entry table from the local 151; entry stored to its field directly 47 (table reload in place,
+// the second index load hoists instead); plus range stored directly 163; entry local reused 183;
+// direct entry store with swapped index sum 47.
 // @retail 0x16b90
 void __stdcall function_16b90(byte *state, long tag, long first, long second,
     long third, long fourth, real scale)

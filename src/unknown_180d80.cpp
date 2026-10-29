@@ -120,6 +120,8 @@ __forceinline void function_180d83(transform4x3f const *arg_0, point3f *arg_1)
 // equality 95, both 548, combined count rejection 647; transform references
 // and packed-record memcpy 94, separate transform input/output 170.
 // early input register and count homes remain; normalizer inline 94; pack noinline 94; buffer inline 94; transform inline 94; nesting depth two 94; allocation byte count 169; published short count 169; short count and inline 169.
+// Packed vertex published after position/delta/squared-distance/maximum 589/568/572/574; same with
+// output record receiver 568/581/554/569. Original publication and receivers restored.
 // Shared vertex ordinal with output base/offset 284/293; shared short/long strip ordinal 528/418;
 // base/strip and offset/strip combinations 531/405/533/415. Restored.
 // @retail 0x180d80

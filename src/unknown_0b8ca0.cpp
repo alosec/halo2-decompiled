@@ -690,6 +690,9 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
 // Round 176: Comparison-produced near/facing/both long results 236/235/237; Boolean results 287/283/277;
 // one per-player success exit with comparison-produced long/Boolean result 237/277. Direct original
 // radius observations throughout; original result, inherited radius storage and all body statements restored.
+// Round 409: complete pool observations 251; one admitted unit handle throughout 262; both 251;
+// unsigned full handle alone/pool/unit/all 257/257/247/247; all with Boolean result 274.
+// Direct radius in all; original complete body restored.
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {

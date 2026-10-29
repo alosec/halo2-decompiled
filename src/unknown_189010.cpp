@@ -149,7 +149,11 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 	return ticks;
 }
 
-// score 110 (was 110): frame 0xa8 and the request in EAX agree; the first class lookup expands
+// score 109 (was 110): the priority now reads the request's own audible field, as retail does.
+// BLOCKED-BY 0x21d110 and 0x221810 (their tag/state registers): retail homes the request in EBX and
+// reloads the state flags after the first 0x221810 call, ours forwards them in a callee-saved
+// register across it, and retail builds the flag word in eax where ours builds it in edx.
+// frame 0xa8 and the request in EAX agree; the first class lookup expands
 // where retail calls it (and 0x21d110 takes the tag in EAX where retail passes the state there), so
 // the flag/priority/result homes, push placement and the end-test spill differ. Round 54: the
 // seconds-to-ticks rounding helper with the looping-sound global read at each use 110 kept
@@ -554,6 +558,9 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // pointer/reference/mutable bindings 51 each; complete submission copy 87; matrix with submission
 // copy 87; library submission copy 87; matrix with velocity copy 51; reference with submission copy
 // 87.
+// BLOCKED-BY 0xba300 (src/unknown_0b8bd0.cpp): retail passes the object in ECX and the location
+// in EAX to the root-location helper, ours passes the object in EAX and the location in ESI;
+// with the helper's own body matching, this function loses only the 0x189400 call.
 // frame agrees; saved registers, root-location contract and stacked play differ.
 // Plain workspace order 51; workspace names 51; zero initialization 99; aggregate construction 64;
 // native point copy 51; compression first 52; velocity first 49; separate location output 73.

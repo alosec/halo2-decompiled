@@ -2866,6 +2866,9 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // carrier with early or complete dispatch, consistently per-use tag reads and machine-width
 // selector combinations; per-use tags recover frame four but grow the body. Scores
 // 398/409/602/617/424/417/558/568. All restored.
+// Round 410: Complete callback object observations with complete dispatch, early zero-result
+// lifetime and full-width selector subsets 398/409/399/410/424/417/425/418. Original object
+// receiver, result lifetime, signed-word selector, dispatch and activity helper restored.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {
@@ -3198,6 +3201,9 @@ struct s_ammo_conversion_entry
 // source magazines with direct definition equality at transfer, complementary byte/bool and
 // positive bool/word acquisition, each with cached or complete per-use type observations. Scores
 // 231/231/226/235/248/248/224/242. All restored.
+// Round 410: Complete destination/source/both object observations 243/228/300;
+// source tag after transfers 213, with destination/source/both observations 243/221/317;
+// complete graph with consistent type-byte reads 328. Original object/tag graph restored.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
@@ -3346,6 +3352,10 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // capture alone/selection/count/both/const both 621 each (fast control 637). Capture
 // plain 621 at 2533/2533 bytes versus baseline 565 at 2526/2533; rejected. Original body restored.
 // Round 168: Failure-threshold/result/recoil subsets 579/567/596/638/605/593/627/627 fast (control 637); ordinary t01/t02/t03/t05/t06/t07 635/573/626/636/600/627. Original 565 restored; preview-only frame recovery rejected.
+// Round 186 (fast control 637): ordinary holder with four initial producer orders
+// 652/655/570/637; the four direct-parameter forms give the same scores.
+// Barrel/holder before definition, original/direct inputs, ordinary 619/619.
+// Original holder qualification, producer order, parameter aliases and body restored.
 // @retail 0x102fb0
 void __stdcall function_102fb0(long weapon_index, short barrel_index)
 {
@@ -3671,6 +3681,9 @@ PRIVATE __forceinline long weapon_visible_model_owner(long weapon_index)
 // use, crossed with barrel-phase complement lifetime, word activity and byte dual, grow to
 // 6052-6068 bytes; both native 0x20 double-bound selections give 1479 at 5748 bytes. Scores
 // 1842/1855/1865/1873/1842/1855/1865/1873/1479. All restored.
+// Round 410: Complementary dual-query bool/byte/short/long 1454/1454/1446/1447;
+// each with the adjacent owner query used directly 1454/1454/1446/1447. Original
+// dual producer and owner-result lifetime restored; frame and pool/dual homes remain.
 // @retail 0xfdfb0
 bool __stdcall function_fdfb0(long weapon_index)
 {
