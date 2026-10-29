@@ -325,8 +325,10 @@ See `port/README.md` "Play" for the full commands.
     which gates it in 0x4bcc0, stays 0 at rest; 01b's intro shows no
     shimmer). Fixed 2026-10-29: plasma bolts (`0x41980`'s argument
     order) and BR/SMG muzzle flashes (the first-person marker stub).
-    Still open: shadows that shift with the view angle; save and quit's
-    dialog defaults to Cancel (probably as retail).
+    Save and quit's dialog opening on Cancel is retail: 0x2321fc,
+    0x23661f and 0x19bc60 are matched and take the default from the UI
+    data. SMG flash confirmed too. Still open: shadows that shift with
+    the view angle.
   - "transparent marines" after the tram: 01b's intro, the bridge doors
     (frame 5490 with `H2_START_MAP=01b_spacestation` and only the menu
     script). The glow post-process (bright pass into a 160x120 target,
@@ -338,9 +340,14 @@ See `port/README.md` "Play" for the full commands.
     is `color_white` (so t1 = 1 is right). c0.a = 1 comes from
     `function_1b2c0` component 3: the shader's scalar parameter at
     state + 0x5c, already 1.0 there (native and recovered 0x1b2c0, 0x18a90
-    and 0x19530 agree). Next: find what evaluates that scalar (an
-    animated shader parameter; retail probably has it near 0 in this
-    shot).
+    and 0x19530 agree). Later probes (2026-10-29): the bloom pass's c0 is
+    not written by 0x19be0, 0x1a170, 0x17000 or 0x19ca0; 0x17170 loads
+    packed shader values (0x00ffffff / 0xff000000 pairs) into c0/c1 alpha
+    from shared value blocks. The glow chain itself (bright pass: avg x
+    alpha x c + max(4(rgb - 0.75), 0), alpha x 0.25; four blurs; composite
+    2(rgb/2 + a)) matches the recovered code, and bloom_wall exists to make
+    that window glow, so the white doorway may be retail's own bloom. No
+    reference image to settle it.
   - shadows that shift with the view: not reproduced yet. On 03a's
     opening the dark block beside the vent is the wall lightmap's baked
     shadow (static, with parallax against the protruding vent); each
