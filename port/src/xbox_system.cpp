@@ -252,11 +252,13 @@ std::optional<std::filesystem::path> host_path(const char* guest, bool* read_onl
 }
 
 std::uint64_t file_time(std::filesystem::file_time_type time) {
-    /* libc++ has no clock_cast: carry the offset between the two clocks over */
-    const auto system = std::chrono::system_clock::now() +
-                        std::chrono::duration_cast<std::chrono::system_clock::duration>(
-                            time - std::filesystem::file_time_type::clock::now());
-    const auto since = std::chrono::duration_cast<std::chrono::nanoseconds>(system.time_since_epoch());
+    /* libc++'s file clock counts from the Unix epoch, so the conversion is
+       exact. (Carrying the offset between two clocks' now() over gave the
+       same file a different time on each call, jittering by microseconds:
+       the font table's time then missed the one saved in the preferences,
+       the game recopied the fonts at boot, and that failed into its fatal
+       error screen.) */
+    const auto since = std::chrono::duration_cast<std::chrono::nanoseconds>(time.time_since_epoch());
     return kFileTimeUnixEpoch + static_cast<std::uint64_t>(since.count() / 100);
 }
 
@@ -306,6 +308,14 @@ bool wildcard_match(const std::string& pattern, const std::string& name) {
     while (p < pattern.size() && pattern[p] == '*')
         ++p;
     return p == pattern.size();
+}
+
+/* Win32 matching: a name without an extension also matches as "name.", so
+   "*.*" lists every file (the font copy at boot deletes "*.*" from the fonts
+   directory, whose files have no extension) */
+bool find_pattern_match(const std::string& pattern, const std::string& name) {
+    return wildcard_match(pattern, name) ||
+           (name.find('.') == std::string::npos && wildcard_match(pattern, name + "."));
 }
 
 template <typename T>
@@ -593,7 +603,7 @@ unsigned int host_h2_find_first(const char* pattern, void* data) {
     }
     FindState find;
     for (const auto& entry : std::filesystem::directory_iterator(*resolved, error))
-        if (wildcard_match(wildcard, lower(entry.path().filename().string())))
+        if (find_pattern_match(wildcard, lower(entry.path().filename().string())))
             find.entries.push_back(entry);
     std::sort(find.entries.begin(), find.entries.end(),
               [](const auto& a, const auto& b) { return a.path().filename() < b.path().filename(); });

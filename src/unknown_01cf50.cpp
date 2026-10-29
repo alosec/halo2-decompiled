@@ -3049,7 +3049,12 @@ void function_13d80()
             D3DLOCKED_RECT locked;
             D3DLOCKED_RECT *locked_result = &locked;
             D3DSurface_LockRect(surface, locked_result, NULL, 0);
+#if H2_WHOLE_IMAGE
+            /* the port maps contiguous memory once (0x88000000 up), with no
+               write-combined 0xf0000000 view of it */
+#else
             locked_result->pBits = (void *)((dword)locked_result->pBits | 0xf0000000);
+#endif
             if (locked_result->pBits)
             {
                 long width = (short)(g_5093c0.second >> 16) - (short)(g_5093c0.first >> 16);
@@ -3701,7 +3706,11 @@ void function_13f10(long bitmap_value, long front_value)
                 D3DResource_BlockUntilNotBusy(surface);
                 D3DLOCKED_RECT locked;
                 D3DSurface_LockRect(surface, &locked, NULL, 0);
+#if H2_WHOLE_IMAGE
+                byte *source = (byte *)locked.pBits;   /* no 0xf0000000 view (see 0x13d80) */
+#else
                 byte *source = (byte *)((dword)locked.pBits | 0xf0000000);
+#endif
                 if (source)
                 {
                     long size = function_1358c0(format) * width / 8;
