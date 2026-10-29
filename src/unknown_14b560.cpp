@@ -810,6 +810,9 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 
 // score 55 (was 55): the record pointer is kept in EBX here and in EDI in
 // retail, and the two are used the other way round after the index is masked.
+// Round 199: consistent per-use unit, iterator-player and both observations 55/55/55; each with
+// retained ancestry pointer 113/113/113 (414 bytes); unsigned parent with unit/both observations
+// 55/55. Original body restored; datum/unit roles and root-walk entry remain.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {
@@ -1265,15 +1268,19 @@ static inline s_players_globals *players_globals_14f2e0()
 
 /* gives a player its unit (the unit kept for it, the unit waiting to be
    reused, or a new unit at a starting location) and resets its spawn state */
-// score 114 (was 114): Player/tag/globals/unit register lifetimes and success BL still differ.
+// score 75 (was 114): Player/tag/globals/unit register lifetimes and success BL still differ.
 // Shared direction helper for reuse/create/both 251/201/276; creation/colors/both entry scopes
 // 152/114/152; native/byte success 174/177; sentinel clears 114;
 // representation inline/out-of-line declarations 114/114.
-// score 114 (was 114): BLOCKED-BY 0x152bf0, whose retail body takes the loadout in eax and the unit in
+// Earlier: BLOCKED-BY 0x152bf0, whose retail body takes the loadout in eax and the unit in
 // esi (ours ecx/eax): without that call the unit takes retail's esi (diagnostic). `result = true`
 // before the user-index calls gives retail's bl result but 147 (one-line shift); at the tail start
 // 147; globals and reuse flag declared before the guard 114; chained NONE outputs 116; unit index
 // initialised NONE 114.
+// Round 199: actual reusable-unit query pointer through admission/fallback; conditional/guarded
+// acquisition, direct global observations and early final success:
+// 170/163/203/232/198/191/206/235. All restored; the pointer lifetime changes the frame and does
+// not fix the protected spawned-unit convention.
 // @retail 0x14f2e0
 bool __stdcall function_14f2e0(long player_index)
 {
@@ -1987,6 +1994,10 @@ struct s_player_creation_record
 // shows; our build does not inline that call (267, also with
 // inline_recursion(on) around this function). Written in function_14f270's
 // arm order, the NONE call in the other arm inlines instead (49).
+// Round 199: direct previous-controller comparison on the current partial-helper graph, with
+// native current-player fields, requested-field observations and assignment-first arms:
+// 33/33/198/198/47/47/195/195. All restored; requested-value/register roles and selective
+// recursive expansion remain.
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
@@ -2769,10 +2780,8 @@ struct s_unit_flags_14d8b0
 // 150/150/151/151; tag value after scratch store 17. Original executable body restored.
 // Round 164: separate root handle, branch-local short expiry result, tick/result/rate names,
 // all three names, joined slot result and root+slot result: 17 each. Original body retained.
-// score 11 (was 17): tick/rate now agrees; the damage parent load, later mode/slot and root
-// scratch registers remain. Late rate with a second low-time use 13; in-place multiply 205;
-// reversed/direct comparison/named conversion 13 each; tag-list pointer 145; typed time receiver
-// 11 kept; tag field-address pointer 11; two-use options receiver 290.
+// Kimi lane 2 r37 (on the 17 body): typed time receiver with the else arm rereading the rate 11;
+// late rate with a second low-time use 13; in-place multiply 205; tag-list pointer 145.
 // @retail 0x14d8b0
 void function_14d8b0(void)
 {
@@ -2819,7 +2828,7 @@ void function_14d8b0(void)
             s_game_time_globals *time_globals = g_510c54;
             ++ticks;
             real time = time_globals->rate * (real)ticks;
-            if (time >= 3.0f)
+            if (time_globals->rate * (real)ticks >= 3.0f)
             {
                 if (!TEST_FIELD_BIT(((s_unit_flags_14d8b0 *)(object_get_unchecked(unit) + 0x10a))->bit5))
                 {
@@ -2830,18 +2839,20 @@ void function_14d8b0(void)
                         event.effect_player_index = index;
                         function_a7c50(&event);
                         function_19eb30(&event);
-                        s_type_1e6529 damage;
-                        damage.unknown7c = NONE;
-                        function_d6660(&damage, *(long *)(*(byte **)((byte *)g_4e034c + 0x144) + 0x28));
-                        *(byte *)&damage.unknown84 = 0x29;
-                        damage.flags |= 4;
-                        object_get_damage_owner(*(long *)(player + 0x2c), &damage.owner);
-                        function_d7b80(&damage, *(long *)(player + 0x2c), NONE, NONE, NONE, NULL);
+                        {
+                            s_type_1e6529 damage;
+                            damage.unknown7c = NONE;
+                            function_d6660(&damage, *(long *)(*(byte **)((byte *)g_4e034c + 0x144) + 0x28));
+                            *(byte *)&damage.unknown84 = 0x29;
+                            damage.flags |= 4;
+                            object_get_damage_owner(*(long *)(player + 0x2c), &damage.owner);
+                            function_d7b80(&damage, *(long *)(player + 0x2c), NONE, NONE, NONE, NULL);
+                        }
                     }
                     function_153cd0(index);
                 }
             }
-            else function_153bd0(*(short *)(player + 0x28), time_globals->rate * (real)ticks * 0.3333333432674408f);
+            else function_153bd0(*(short *)(player + 0x28), time * 0.3333333432674408f);
             if (g_4e6948->mode != 4) player[2] &= ~4;
         }
         else if (ticks > 0 && --ticks == 0)

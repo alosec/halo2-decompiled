@@ -558,6 +558,10 @@ static inline void actor_looking_rotate(vector3f *vector, vector3f const *axis, 
 // DH round 239: Existing rotation dot/cross/complete-setter subsets 324/320/324/320/324/320/324;
 // all three with parameter-only ranges after axis normalization 369. Frame remains
 // 0x9c/0xa8; original helpers and complete sampler restored.
+// Round 248: Complete forward observation, native/setter 354/353; later input 354/354;
+// later best 355/354; later input and best 355/354. Frame remains 0x9c.
+// Forward parameter at each other source position, definition and sole caller together: seven 320s.
+// Original input reads, signature and caller restored; frame and stack-input transport remain.
 // @retail 0x296e60
 PRIVATE bool function_296e60(point3f const *origin, vector3f const *forward, bool test_collision,
 	real yaw_lower, real yaw_upper, real pitch_lower, real pitch_upper, vector3f *direction)
@@ -680,6 +684,9 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 246: Per-case short/int/long state; shared short/int/long state; early per-case/shared short state: 301/310/310/301/310/310/307/307.
 // Each state value serves two tests; all signed widths preserve the native short domain.
 // All trial forms restored; no candidate qualifies.
+// Round 248: Common actor/weapon origin workspace with native/setter producer
+// 322/314; with early point 322/314, early origin 322/314, both 322/314.
+// All restored; fast control 301, plain baseline 290. Boolean roles and point/case transport remain.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)
@@ -977,6 +984,9 @@ real g_55e5cc = 0.08726646f;
 // Round 246: Earlier aiming projection/angle selector/read-only dot producer, seven combinations: 165/85/165/149/168/178/168/168.
 // Eighth form adds read-only actor/property/angle inputs to the complete producer form.
 // All trial forms restored; no candidate qualifies.
+// Round 248: Base workspace shared with fallback, native/setter 54/97;
+// base first 54/97; byte result 51/101; base first and byte result 51/101.
+// The three-point forms are restored; pitch-cap/scaled-bound and sampler transport remain.
 // @retail 0x297660
 PRIVATE bool function_297660(long actor_index, bool use_aiming_direction, bool use_character_bounds,
 	s_type_952051 *specification)

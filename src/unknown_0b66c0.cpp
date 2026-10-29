@@ -136,6 +136,9 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // here, and an extra register is pushed and restored around the copy loop. Tried: count before
 // start in the parameter list 40; the length in a named local after the sign tests 40;
 // string + start with start unmodified 28 but start then arrives in edx (0xb5f10 differs);
+// that with a plain string parameter 41; start = string + start 40.
+// Cursor displacement with fixed/explicit maximum, unequal/ordered end tests and signed/unsigned
+// returns: eight forms 36 each; threshold rejected, shared find changed.
 // that with a plain string parameter 41; start = string + start 40; a local copy of the start
 // 28, but the start then arrives in edx and the matched caller 0xb5f10 differs.
 // @retail 0xb6220
@@ -318,6 +321,9 @@ bool function_7af40(s_type_99af70 const *address);
 // register instead of in place. Earlier: the connection state is cleared with the three field
 // stores in a different order here, the flag is written as a word here and or-ed into the field in retail, and the two
 // calls take their arguments in a different order.
+// DL180: open inline 32; open noinline 32; valid inline 32; valid noinline 90; both inline 32;
+// open inline/valid noinline 90; open noinline/valid inline 32; both noinline 90. Original
+// executable body restored.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

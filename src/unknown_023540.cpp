@@ -2958,6 +2958,7 @@ struct s_2a2f0_record
 // (retail inlines the bitmap lookup 0x137550); everything else aligns. Swapped bounds compare 145;
 // the existing lookup called in a full-depth window 258 (out of line); plain count read 167;
 // separate count copy 145 (propagated); file-local forced lookup 258/297 (in a window, spills).
+// Round 187: Ordinal/remainder byte/short 273, short/short 273, word/short 273, long/long 184, long/dword 188, long/word 186, byte/word 265, short/long 190; unsigned forms omit the implied negative guard. All restored; missing count copy remains.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3207,6 +3208,7 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // 932/858/933/934/1212/935/1213; all with Boolean small-denial 1210. Original carriers restored.
 // Round 261: shared quantizer byte/word/dword results 985/1007/853; quantizer/output/both
 // formal orders 853 each; byte/word results with both orders 985/1007. Original helpers restored.
+// Round 187: Integral slope cap long/short/word/dword 1141/1161/1161/1082; each with inverse-span entry workspace 1141/1161/1161/1082. All restored; frame/save and state expansion remain.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
@@ -3829,11 +3831,21 @@ void function_147af1(long first, long second, c_render_window *window);
 struct s_2f800_view;
 void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 
-// score 34 (was 34): the two globals are written in the other order, a byte
+// score 34 (was 34): the stores to g_4ba038 and g_4ba010 land in other
+// places than retail's. Both stores are placed by the compiler, not by the
+// order of the statements: with the addresses of g_4ba038 and g_4ba010 taken
+// anywhere in the program they land exactly where retail puts them (probed
+// by taking them in src/unknown_02c560.cpp, which takes this function to 26),
+// so retail's program took those addresses somewhere this tree does not.
+// The flag is loaded as a dword where retail loads a byte, and the tail calls
+// 0x13680 with the flag pushed where retail passes it in bl; both follow
+// 0x13680's convention, which retail has as one bool in bl and a plain ret
+// (BLOCKED-BY 0x13680).
 // is loaded where retail loads a whole word, and the calls at the end are in
 // a different order with their arguments set up differently. The tail is
 // 0x13680's convention (retail passes the flag in bl; BLOCKED-BY 0x13680);
 // the flag passed from the frame's copy 34.
+// Round 187: Native mode-word/auxiliary-word/final-byte subsets 1/2/3/4/5/6/7 and all unsigned-mode bits 34 each; auxiliary-word forms lose caller. Original declarations restored; shared-store alias and protected flag convention remain.
 // @retail 0x2ba10
 void function_2ba10(s_2f970_view const *view, long cluster, long player,
     byte const *camera, bool enabled, long leaf, bool invalid, vector3f const *sky_color,

@@ -197,6 +197,9 @@ bool function_26c380(point3f const *origin, s_pathfinding_data const *pathfindin
 // Round 239: actual blocked/admission/both byte fields with long result 418/418/418;
 // with bool result 577/583/577; both char fields with long/bool result 418/577. All restored.
 // Blocked-field forms also move the matched edge helper to 10.
+// score 404 (was 418): the trace result fields are stored in retail's order, the traversal count is an
+// int, the first flag is a word, the edge direction a byte, and the accepted and blocked paths return
+// their result directly. The frame 0x5c versus 0x64 and the remaining field and register rotations remain.
 // @retail 0x26c590
 bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origin, long sector_index,
 	long target_sector_index, vector3f const *direction, real distance, s_path_location const *location,
@@ -209,9 +212,9 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 
 	result->unknown20 = 3.4028235e38f;
 	result->blocked = false;
-	result->sector_index = NONE;
 	result->edge_index = (word)NONE;
 	result->distance = distance;
+	result->sector_index = NONE;
 	result->unknown1c = false;
 	real last_distance = -0.1f;
 	if (pathfinding && sector_index != target_sector_index && sector_index >= 0 && sector_index < pathfinding->node_count)
@@ -221,29 +224,31 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 		cross3f(g_4687b0, direction, &normal);
 		if (magnitude3d(&normal) > 1e-5)
 		{
-			short count = 0;
+			int count;
+			count = 0;
 			vector2f line_normal;
 			real line_distance;
-			long next_sector_index = sector_index;
+			long next_sector_index;
+			next_sector_index = sector_index;
 
 			line_normal.i = normal.i;
 			line_normal.j = normal.j;
 			line_distance = dot_product2d(origin, &line_normal);
-			while (next_sector_index != NONE)
+			while (NONE != next_sector_index)
 			{
 				long previous_sector_index = current_sector_index;
 				s_pathfinding_node const *sector;
 				s_edge_iterator iterator;
-				bool first;
+				word first;
 				bool hit = false;
-				point3f const *point1;
 				real distance1;
+				point3f const *point1;
 
 				current_sector_index = next_sector_index;
 				next_sector_index = NONE;
 				sector = &pathfinding->nodes[current_sector_index];
 				if (!(sector->flags & 0x10) && !result->unknown1c &&
-					(!edge || (((s_sector_edge const *)edge)->flags & 0x200)))
+					(edge == 0 || (((s_sector_edge const *)edge)->flags & 0x200)))
 				{
 					result->unknown1c = true;
 					result->unknown20 = last_distance;
@@ -261,19 +266,21 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 					result->edge_index = (word)NONE;
 					result->distance = distance;
 					function_x697631(origin, direction, distance, &result->point);
-					success = result->blocked;
+					bool tmp1 = result->blocked;
+					success = tmp1;
 					goto done;
 				}
 				first = true;
 				do
 				{
-					bool forward = iterator.forward;
+					byte forward = iterator.forward;
 					point3f const *point0;
 					real distance0;
 
 					if (iterator.previous_surface_index != NONE)
 					{
-						point1 = &pathfinding->vertices[iterator.vertex];
+						long tmp3 = iterator.vertex;
+						point1 = &pathfinding->vertices[tmp3];
 						point0 = &pathfinding->vertices[forward ? edge->vertices[1] : edge->vertices[0]];
 						distance0 = dot_product2d(point0, &line_normal) - line_distance;
 					}
@@ -287,13 +294,14 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 						}
 						else
 						{
-							point0 = point1;
 							distance0 = distance1;
+							point0 = point1;
 						}
 						point1 = &pathfinding->vertices[iterator.vertex];
 					}
 					distance1 = dot_product2d(point1, &line_normal) - line_distance;
-					hit = function_26c380(origin, pathfinding, forward, current_sector_index, iterator.edge_index,
+					word tmp2 = iterator.edge_index;
+					hit = function_26c380(origin, pathfinding, forward, current_sector_index, tmp2,
 						direction, &next_sector_index, distance0, distance1, point0, point1, result);
 					if (hit)
 					{
@@ -305,7 +313,7 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 					}
 					edge = function_1fa720(&iterator);
 				} while (edge);
-				if (hit)
+				if ((bool)hit)
 				{
 					if (result->distance - last_distance < -0.1 && count > 0)
 					{
@@ -314,14 +322,15 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 					last_distance = result->distance;
 					if (result->distance - distance > 0.0001)
 					{
-						if (target_sector_index != NONE && target_sector_index != result->sector_index)
+						long tmp0 = result->sector_index;
+						if (target_sector_index != NONE && target_sector_index != tmp0)
 						{
 							if (next_sector_index == target_sector_index && result->distance - distance < 0.01)
 							{
 								result->sector_index = next_sector_index;
 								result->blocked = false;
 								result->edge_index = (word)NONE;
-								result->distance = distance;
+								result->distance = (real)distance;
 								function_x697631(origin, direction, distance, &result->point);
 								goto done;
 							}
@@ -331,15 +340,14 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 								result->blocked = true;
 								result->edge_index = (word)NONE;
 								function_x697631(origin, direction, distance, &result->point);
-								success = result->blocked;
-								goto done;
+								return result->blocked;
 							}
 						}
 						else
 						{
 							result->blocked = false;
-							result->edge_index = (word)NONE;
 							result->distance = distance;
+							result->edge_index = (dword)NONE;
 							function_x697631(origin, direction, distance, &result->point);
 							goto done;
 						}
@@ -353,14 +361,14 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 						function_270600(location, iterator.edge_index))
 					{
 						result->blocked = true;
-						success = hit;
+						success = (bool)hit;
 						goto done;
 					}
 					if (count > 200)
 					{
 						break;
 					}
-					count++;
+					++count;
 				}
 				else
 				{
@@ -375,9 +383,9 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 			}
 		}
 	}
-	result->blocked = false;
 	result->edge_index = (word)NONE;
 	result->sector_index = current_sector_index;
+	result->blocked = false;
 	result->distance = distance;
 	function_x697631(origin, direction, distance, &result->point);
 done:

@@ -536,6 +536,7 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // Round 244: existing rotation with distinct source/destination, output last/first,
 // axis-source-output first and scalar inputs first, each with projection before/after original
 // component snapshots, all 90. Original helper, in-place input copies and complete body restored.
+// Round 247: native ring-distance product 90; with ring phase 142; double base 118; base/phase 142; shared ring product 90; shared ring/phase 142; shared ring/base 118; all three 144. SSE ring conversion and rotation spill remain.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {

@@ -83,6 +83,9 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 // score 32 (was 32): node-base EDI versus retail ESI/shared two still differs; node, actor, view and combined receiver names 32; early node declaration and renamed early node 32; complete native node type 32; native node with open classification bounds 39.
 // node-base/constant register ownership and extent still differ; index/direct pointer lookup 109/32; shared handle 109/42; entry-scope view with index/native lookup 109/32; entry view and shared handle 109/42 (all plain).
 // score 32 (was 32): a compile-only harness hoists 2 into ESI (retail's form) only with a fifth use of short 2; first test `>= 2` gives retail's tail but `cmp si; jl` 33; early-exit default 32; sibling then-arm store order 32; range bounds swapped 33; prop index local 42; 384 store-order/nesting/polarity forms in the harness never hoist it.
+// score 32 (was 32): force-inline node getter/view/both 32/32/32; two-use classification
+// pointer 32; const actor/node/both 32/32/32; const receivers with the classification
+// pointer 32. Node-base/shared-two ownership and the four-byte extent excess remain.
 // @retail 0x1b21f0
 void __stdcall function_1b21f0(long actor_index, s_slot *slot)
 {

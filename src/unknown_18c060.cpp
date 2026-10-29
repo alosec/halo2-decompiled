@@ -53,8 +53,10 @@ long __stdcall function_18d1c0(long arg_0);
 bool function_b9d20(long arg_0);
 
 #pragma inline_depth(0)
-// score 94 (was 94): the pool is not kept in EBX across the loop (retail reloads it only after
+// score 107 (was 107): the pool is not kept in EBX across the loop (retail reloads it only after
 // 0x18a7b0), so the scan/datum/handle registers differ; the root-location call differs.
+// retail keeps the original pool in EBX, the scan pool in EBP, the datum in ESI and the handle in
+// EDI; ours loses the retained pool and gives those roles to other registers.
 // The pool global read at each use 94 (kept; the local copy was rematerialised from the
 // global); then a plain iterator read 107; an element pointer for the flag store 94; the flag
 // byte as bitfields 94; the local pool with the iterator set from the global 135; the existing

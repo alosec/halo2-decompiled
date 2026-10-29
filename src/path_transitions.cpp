@@ -356,6 +356,9 @@ bool function_26fe90(long actor_index, long object_index, real distance, s_objec
 // Round 279: separate geometric/weighted distances with scale/update/admission guards
 // 31/31/31/31/33/33/33/33, all at 608 bytes. Original body restored; collector promotion
 // and scan/copy widths remain.
+// Round 199: six complete selected/candidate/delta storage-name orders on the wide-ordinal graph
+// 31 each; all three uninitialized workspaces before the marker array in two orders 31/31.
+// Original body restored; protected collector promotion and scan/copy widths remain.
 // @retail 0x26f990
 bool function_26f990(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point)
 {

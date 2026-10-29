@@ -1142,6 +1142,8 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // member/native iterator and retained/producer-written mode default: 932/986/932/986/932/893/932/895.
 // All reach 2825 bytes; native reset fixes initial class/NONE roles and result +0x14 but adds entry
 // candidate stores and leaves traversal/candidate homes. Original constructors and complete body restored.
+// Round 268: One retained selection-success or selection-absence test, bool/byte/short/long, shared by
+// loop and requests: 1023/1023/998/1000/991/991/999/999. Original body restored.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
@@ -1250,6 +1252,8 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 // resets, member/native iterator and retained/producer-written mode defaults:
 // 932/986/932/986/932/893/932/895 at 2825 bytes. Initial result home/class roles improve with native
 // reset, but entry candidate stores and traversal homes remain. Original constructors and body restored.
+// Round 268: One retained selection-success or selection-absence test, bool/byte/short/long, shared by
+// loop and requests: 1023/1023/998/1000/991/991/999/999. Original body restored.
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

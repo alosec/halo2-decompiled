@@ -114,6 +114,9 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 // DH round 234: direct input/live lateral-radius field with last/scale/direction query
 // output defaults, eight combinations 835/835/808/808/832/832/805/805. All restored;
 // early input/heading and normalizer memory-product homes remain on frame 0x88.
+// Round 408: direct input with lookup/position ordinary/inline/noinline declaration
+// pairs, excluding ordinary/ordinary, 804 each (eight forms). Original declarations,
+// complete body, input home and all arithmetic helpers restored.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

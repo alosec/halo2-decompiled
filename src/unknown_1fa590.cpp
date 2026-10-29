@@ -9,6 +9,7 @@
 #include <math.h>
 #include "slot_handler.h"
 #include "normalize3d.h"
+#include "vector_products.h"
 
 void function_11d180(vector3f const *in, vector3f const *up, vector3f *forward, vector3f *left, vector3f *out);
 
@@ -31,45 +32,6 @@ struct s_motion_adjustment_result
 	vector3f velocity;
 };
 
-// score 73 (was 73): retail loads normalized j/k into xmm1/xmm0 before fsqrt and multiplies them in
-// frame 0x24 agrees; early J/K loads and the tick clamp still differ.
-// Earlier at 73: retail loads normalized j/k into xmm1/xmm0 before fsqrt and multiplies them in
-// place (i stays a memory operand), which also moves two j products earlier and costs 8 bytes
-// (7 in the normalization branches, 1 in the clamp); the tick clamp differs. Kept: else-copy
-// of the raw offset into a motion vector 92 (integer copy registers now retail's), then the
-// existing normalize3d 73. Tried after: motion products in any operand order 73;
-// scale helper for the motion 80; step before the copy 103, after sqrt 96; normalize_inline 85;
-// out-of-line function_30bf0 167; motion = offset before the if 73; declarations moved 73; the
-// normalize written out with a named inverse and the scale helper loads all three early 67;
-// MAX(0, *ticks - 1) gives retail's tail exactly (80 at 533 bytes, aligned 16 -> 12).
-// Earlier, at 86: product schedule, raw-copy registers and early normalization J/K loads differ;
-// left/up/both accumulation loops 86/86/86; target/combined/both scale receivers 131/86/131;
-// float square root 86; float absolute value 86.
-// tried offset aggregate 86; squared length value 96; adjustment rate value 109; tick rate value 120;
-// current position value 106; basis input value 128; offset component loop 103; normalization component loop
-// 96.
-// Raw-delta name 86; unit-direction name 86; combined-vector name 86; two offset names 86; entry
-// length 86; entry step 86; both scalar declarations 86; normalization scope 86.
-// Round 132: left/up/both in-place scale [95, 109, 109]; left/up/both native weighted values
-// [95, 109, 108]; mixed in-place/value scales [109, 109]. Early normalization J/K loads and
-// tick clamp remain.
-// Shared unit-scale difference 71; immutable raw offset 73; normalized motion initializer 73;
-// normalizer forceinline declaration 73; complete velocity publication 111;
-// difference plus motion initializer 71; immutable offset plus motion initializer 73;
-// difference plus normalizer declaration 71 (two-point gains restored).
-// Normalized output 81; selected pointer 100; conditional scale result 108; branch scale receiver 105;
-// normalized/motion/both library copies 73/73/73; normalized output with tick clamp 80.
-// Round 138: left i/j/k product parts 73/73/73; up i/j/k parts 73/73/73; up at offset 99; with left j part 102.
-// Round 85: the matched 0x294050 shows retail's pattern (j/k loaded before the test, then
-// mulss in place) where the normalized vector comes straight from stores; here it comes from
-// the struct copy. Normalize forms as other files write them: inverse * i, j * inverse,
-// k * inverse 73 (identical code); components read after the length 73; components read first
-// 84; sum grouped i*i + (j*j + k*k) 73; normalized assigned per component from the offset 78
-// (526 bytes, values stay in registers).
-// Round 402: shared left/up/both add-scaled 73/73/73; shared velocity add alone/with
-// left/with up/with both 68/73/73/73; all shared operations with native offset assign 73.
-// Output-add with native offset assign, branch clamp, unit difference, both 73/68/73/73.
-// All restored; reductions below eight while above thirty are not retained.
 // @retail 0x1fa810
 void __stdcall function_1fa810(long *ticks, s_motion_adjustment_result *out, s_motion_adjustment const *state)
 {
@@ -96,18 +58,11 @@ void __stdcall function_1fa810(long *ticks, s_motion_adjustment_result *out, s_m
 	real step = g_510c54->rate * state->rate;
 	vector3f motion;
 	if (length > step)
-	{
-		motion.i = normalized.i * step;
-		motion.j = normalized.j * step;
-		motion.k = normalized.k * step;
-	}
+		vector3f_scale(&normalized, step, &motion);
 	else
 		motion = offset;
-	out->velocity.i = state->current.i + motion.i;
-	out->velocity.j = state->current.j + motion.j;
-	out->velocity.k = state->current.k + motion.k;
-	long remaining = *ticks - 1;
-	*ticks = remaining < 0 ? 0 : remaining;
+	vector3f_add(&motion, &state->current, &out->velocity);
+	*ticks = *ticks - 1 < 0 ? 0 : *ticks - 1;
 }
 
 /* a node of a 2d tree: a line and the two children (negative: a leaf) */

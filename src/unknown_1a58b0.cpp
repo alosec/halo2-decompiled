@@ -121,17 +121,20 @@ void function_1a6340(vector3f const *b, vector3f const *a, point3f *out, point3f
 // score 32 (was 32): the arguments are pushed in a different order and one of the values is passed
 // in a register here and on the stack in retail.
 // Object-second/third interfaces 32/32; unsigned object index 32; original interface restored.
+// score 35 (was 42): early Boolean with a separate success exit 33/91 kept; early result
+// with one exit 36/95; result on both exits 33; bottom/axis/both output pointers 33/33/33;
+// radius pointer/value 33/33. Saved-register setup and the false-in-BL result still differ.
 // @retail 0x1a62e0
 bool function_1a62e0(long object_index, point3f const *origin, vector3f const *direction, point3f *out)
 {
 	struct s_1a62e1 { real field_0; point3f field_4; vector3f field_10; };
 	s_1a62e1 local_0;
-	function_df6c0(&local_0.field_4, &local_0.field_10, object_index, &local_0.field_0);
 	bool result = false;
+	function_df6c0(&local_0.field_4, &local_0.field_10, object_index, &local_0.field_0);
 	if (local_0.field_0 > 0.0001f)
 	{
 		function_1a6340(&local_0.field_10, direction, out, origin, &local_0.field_4, local_0.field_0);
-		result = true;
+		return true;
 	}
 	return result;
 }

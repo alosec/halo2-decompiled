@@ -1332,7 +1332,7 @@ struct s_rating_summary
 };
 
 #pragma inline_depth(0)
-// score 177 (was 202): frame 0xfc agrees; 1192 bytes against 1212. Left: the spill homes of the key,
+// score 177 (was 177): frame 0xfc agrees; 1192 bytes against 1212. Left: the spill homes of the key,
 // statistics cursor, change and group cursor are rotated (ours 0x18/0x1c/0x2c/0x38, retail
 // 0x1c/0x2c/0x38/0x18); our statistics cursor is biased +6 (retail +0xf44 unbiased); retail keeps
 // the name character as a word and its countdown in ECX; the summary stores and 0x73e00's argument
@@ -1394,6 +1394,7 @@ struct s_rating_summary
 // 234-236. Round 210: query-count table publication 123/132/213/231/312/321 202/206/213/344/214/345;
 // entry table with 123/321 202/345. Round 194: on native fifteen-bit player statistics and a shared
 // pass ordinal, byte/short/word/dword group counters with dword or word characters all 311.
+// Round 187: Native indexed group pointer, array cursor, body-stepped cursor, record reference, each with dword/word character: 300/295, 321/322, 286/294, 300/295. All restored; key/statistics/change/group homes remain.
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {

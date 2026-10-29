@@ -788,6 +788,9 @@ struct s_signed_file_write_parameters
 // retail's but two copies per getter site, 279 at 944 bytes (0x2ad7c0 63); split
 // size/claim helpers 131/139; write count declared before the getter 147; named
 // body offset in the extend sum 131.
+// DL180: case order 2013 324; case order 3012 331; case order 0213 192; case order 0312 273; case
+// order 1203 313; case order 2103 314; case order 2301 332; case order 3210 328. Original
+// executable body restored.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

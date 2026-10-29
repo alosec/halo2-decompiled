@@ -318,7 +318,11 @@ short __stdcall function_1ac3f0(long actor_index)
 	return result;
 }
 
-// score 35 (was 35): frame four agrees; scale is popped at the first timer multiply and stores differ;
+// score 29 (was 34): both draws now precede the state stores (retail stores the seed once, after the
+// second draw) and the first timer keeps the scale on the x87 stack as retail; left are the seed store
+// between the draws, the scale's folded 2/65535 product (retail scales by 1/65535, then doubles) and the
+// last two stores of the short-delay path in the other order.
+// Earlier: frame four agrees; scale is popped at the first timer multiply and stores differ;
 // tried first timer shared conversion direct 114; first timer shared conversion named seconds 103;
 // second timer shared conversion 49; both timers shared conversion 121; integral tick rate 47;
 // shared timer homes at entry 49; scale first timer product 43; chained boolean resets 46;
@@ -341,6 +345,11 @@ short __stdcall function_1ac3f0(long actor_index)
 // Round 53: adjacent draws remove the seed store but the scale multiply pops (43); scale through
 // the file's random range 38, both draws 38; seconds-to-ticks inline 47 (named rate 43); scale-first
 // product 43; direct rate 47, flat scope 47; real_to_long 114, force-inlined 47; arms swapped 44.
+// Round 155, adjacent draws: scale through slot_random_range 29 (kept, with the rate local dropped: same
+// code); both draws through it 35; with 0x259d0 for both: the file's timer writer first/both 47/47, a
+// seconds-to-ticks helper first/both 47/47 (with a (real) rate 47, rate last 47), rate local before/after
+// the draws 76/37, no rate local 47, ticks declared first 43, scale declared first 43. On the kept form:
+// tail arms swapped 46, `delay < g_45dbd8` 29.
 // @retail 0x1ac430
 bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 {
@@ -350,10 +359,10 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 	if (!state->unknown0c)
 	{
 		real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->lower, character->upper);
+		real scale = slot_random_range(1.0f, 3.0f);
 
 		state->unknown0d = true;
 		state->unknown12 = false;
-		real scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 1.0f, 3.0f);
 		state->unknown10 = false;
 		state->unknown25 = false;
 		state->unknown3a = false;
@@ -361,8 +370,7 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 		state->unknown22 = 0;
 		state->unknown3b = false;
 		{
-			real rate = g_510c54->field_2_3;
-			real seconds = rate * scale;
+			real seconds = g_510c54->field_2_3 * scale;
 			long ticks;
 			__asm
 			{
