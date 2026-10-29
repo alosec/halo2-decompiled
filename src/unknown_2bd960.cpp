@@ -1146,7 +1146,7 @@ PRIVATE __forceinline bool territory_holder_matches_player(long holder, long pla
     return player_get_2be(holder)->team == player_get_2be(player_index)->team;
 }
 
-// score 79 (was 88): frame 0xc and marker SI agree; holder/player/pool homes, predicate and append schedule differ;
+// score 79 (was 79): frame 0xc and marker SI agree; holder/player/pool homes, predicate and append schedule differ;
 // inline depths one/two, state per use, early team-array lifetime, invalid
 // marker continue, point memcpy and nested holder test 88; marker-first 90.
 // holder and marker registers plus append carriers remain; append output last 88; point last 88; full-list guard 88; short ordinal 153; word ordinal 151; player team first 88; team failure exit 92; short ordinal with output last 153.
@@ -1157,6 +1157,9 @@ PRIVATE __forceinline bool territory_holder_matches_player(long holder, long pla
 // external pool reference 88; reference plus array 88; opposite predicate / one result 88/88;
 // opposite with mixed getters 79 (rejected); opposite with array 88. Consistent per-use pool
 // and existing getters 79 (kept); opposite predicate with consistent per-use pool 79.
+// Round 412: Validated datum receiver 94; common result 88; native long result 89; failure
+// predicate 94; successful comparison test 102; real record lookup 164 with an unresolved-call
+// caveat; current-player first 94; guarded holder on that graph 101. All restored.
 // @retail 0x2bf740
 void c_game_engine_45c948::v32(long player_index, long list_pointer)
 {
