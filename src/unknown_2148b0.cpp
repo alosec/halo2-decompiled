@@ -35,7 +35,7 @@ extern s_cache_copy_request g_55be24[2];
 // clamp as two ifs 2; numerator named in the division arm 29. A non-volatile total converts the
 // numerator first but keeps total in EAX (37); a volatile numerator goes through EAX (40).
 // @retail 0x2148b0
-bool function_2148b0(long progress)
+bool function_2148b0(real *progress)
 {
 	bool result = false;
 	real fraction = 0.0f;
@@ -64,7 +64,7 @@ bool function_2148b0(long progress)
 	fraction = PIN(fraction, 0.0f, 1.0f);
 	if (progress)
 	{
-		*(real *)progress = fraction;
+		*progress = fraction;
 	}
 	return result;
 }
@@ -87,7 +87,7 @@ real cache_copy_progress_for_map(char const *map_name)
 	{
 		if (map_names_equal(g_55bd21, map_name))
 		{
-			function_2148b0((long)&result);
+			function_2148b0(&result);
 		}
 		return result;
 	}

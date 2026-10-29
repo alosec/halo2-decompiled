@@ -2259,12 +2259,17 @@ PRIVATE inline void vehicle_contact_steer(s_vehicle_physics_state *state, s_vehi
 /* the physics of type 1 vehicles (the wheel-steered ones): the engine's
    torque to every contact, the steered contacts turned, and the wheels'
    spin */
-// score 189 (was 357): Shared quaternion frame, initial vehicle/state homes and gear width agree;
+// score 189 (was 189): frame 0x34 versus 0x30; native gear and incoming roles agree;
 // torque/contact homes, flag extraction and spin allocation remain. Shared workspace/in-place spin
 // and original bits 304/257/201/272/216; native short gear on the two legal graphs 187/202.
 // Early one-use bit forms 334/92/121 and their short-gear/return-value forms
 // 155/172/101/161/238/263 restored. Bit expressions at their original use point,
 // after contact stores, value/pointer period and original/short gear 201/187/216/198; t09 retained after plain confirmation.
+// DL180: entry-zero torque/dword flags 274; selection-zero torque/dword flags 301; entry-zero
+// torque/word flags 273; selection-zero torque/word flags 300; entry-zero torque/byte flags 284;
+// selection-zero torque/byte flags 311; entry-zero torque/use-point bits 274; selection-zero
+// torque/use-point bits 301; spin forceinline 189; steer forceinline 189; both forceinline 189;
+// spin noinline 425; steer noinline 350; both noinline 545. Original executable body restored.
 // @retail 0xf1f80
 void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -3410,7 +3415,7 @@ extern byte g_5107ee;
    marker's downward pitch, the distance and the vehicle's speed; the
    effect's last marker sits between the marker and the hit, aimed along
    the reflected ray */
-// score 160 (was 186): count/marker/strength homes and reflection schedule differ;
+// score 160 (was 160): count/marker/strength homes and reflection schedule differ;
 // Frame 0x8cc agrees; count/marker carriers, strength residence and reflection schedule remain.
 // Round 384: sixteen-marker capacity 186; with shared vector setter 170; indexed loop 186, with
 // setter 170; complete reflection input captures 190/205/190/205.
@@ -3418,6 +3423,13 @@ extern byte g_5107ee;
 // long/short/word loops 170/163/160, readonly marker 170.
 // Retained sixteen native marker records, shared vector assignment and plain word-indexed marker
 // loop; requested count and all vector/call values unchanged.
+// DL180: facing setter 173; midpoint setter 160; facing/midpoint setters 173; reflection setter
+// 160; facing/reflection setters 173; midpoint/reflection setters 160; all setters 173; in-place
+// direction 183; long countdown 174; short countdown 174; count countdown 158; countdown/all
+// setters 153; countdown/facing setter 153; countdown/midpoint setter 158;
+// countdown/facing+midpoint 153; countdown/reflection setter 158; countdown/facing+reflection
+// 153; countdown/midpoint+reflection 158; positive word countdown 159; positive dword countdown
+// 165. Original executable body restored.
 // @retail 0xf62f0
 void __stdcall function_f62f0(long vehicle_index)
 {

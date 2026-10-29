@@ -189,33 +189,22 @@ void *c_game_havok_memory::allocate16(long size, long memory_class)
 	return result;
 }
 
-// score 36 (was 36): First upper-bound branch pair and EAX bound reuse still differ; shared bounds 36;
-// outer bounds 36; shared bounds with delayed fixed receiver 43; numeric bounds 36;
-// shared upper/lower 36/36; read-only bounds 36; shared bounds with exits 45.
-// Fixed membership 95; paired memberships 146; independent pool/fixed/physical bounds 106/48/48;
-// all independent bounds 134; separate pool-bound decisions 36; eager memberships 114.
-// First upper-bound branch pair, EAX bound reuse and shared-dispatch placement still differ.
-// first upper-bound branch pair is missing and bound
-// registers differ. Typed pool bounds 36; typed bounds and pool dispatch 73;
-// direct pool fields 36; typed bounds with delayed fixed receiver 43; fixed
-// object size 36; physical object reference 36; pool object reference 36;
-// typed fixed receiver 36.
-// Shared inclusive begin/end helper 43; begin/size helper 44; helper with the fixed
-// receiver 36; begin/size helper with early returns 44; size-first end 43. Retail's
-// jge/jne pair and EAX ends come only from a second (equality) test of each end.
+// score 8 (was 36): the first range's end is now a named local tested for equality, which gives
+// retail's jge/jne pair and the shared dispatch block; the first range's start and the second and
+// third ranges' ends are still computed in edx where retail uses eax.
 // @retail 0x147320
 void c_game_havok_memory::deallocate16(void *address, long size, long memory_class)
 {
 	if (address)
 	{
-		c_havok_abstract_allocator *fixed = g_479894;
-		if (ADDRESS_IN_BLOCK(address, (byte *)g_479898 + 0x4340, (byte *)g_479898 + 0xf0340))
+		byte *pool_end = (byte *)g_479898 + 0xf0340;
+		if (((long)((byte *)g_479898 + 0x4340) <= (long)address && ((long)pool_end >= (long)address || pool_end == address)))
 		{
 			g_479898->deallocate16(address, size, memory_class);
 		}
-		else if (ADDRESS_IN_BLOCK(address, (byte *)fixed + 0x30, (byte *)fixed + 0x15030))
+		else if (ADDRESS_IN_BLOCK(address, (byte *)g_479894 + 0x30, (byte *)g_479894 + 0x15030))
 		{
-			fixed->deallocate16(address, size, memory_class);
+			g_479894->deallocate16(address, size, memory_class);
 		}
 		else if (ADDRESS_IN_BLOCK(address, g_47989c->m_buffer, (byte *)g_47989c->m_buffer + g_47989c->m_size))
 		{
