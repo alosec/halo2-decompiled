@@ -377,8 +377,12 @@ See `port/README.md` "Play" for the full commands.
     `vs 16dad4554a203ba2`) feeds the pixel shader c6, the camera's back
     axis (c4-c6 are the camera basis), in the bump tangent frame next to
     the lightmap's incident direction (v5), so retail's own shading follows
-    camera orientation; whether the strength matches is open (the pixel
-    combiner that uses it is the suspect). c50-c52 there are instanced
+    camera orientation. Its pixel shader (`fs 2319a1c6ac7713d0`) decodes as
+    lightmap x (1 + bump N.L detail) x base (no camera input) plus a
+    Phong highlight (R.V)^8, R = 2(N.L)N - L, scaled by the gloss alpha
+    and the shader's c0[4]/c0[5]; V is c6 (toward the eye, the right
+    sign). So the view-dependent part is retail's specular with one view
+    vector per draw, its strength from map data. c50-c52 there are instanced
     geometry transforms, not lights. Earlier: On 03a's
     opening the dark block beside the vent is the wall lightmap's baked
     shadow (static, with parallax against the protruding vent); each
