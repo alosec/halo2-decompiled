@@ -18,3 +18,10 @@ src/unknown_2d7f00.cpp
 src/unknown_2d8030.cpp
 src/unknown_2d8280.cpp
 src/unknown_2d8cc0.cpp
+
+# A placeholder from before the first-person weapon code was recovered: its
+# first_person_weapon_get_markers_internal reports no markers, and as a
+# native rewrite it beat src/unknown_165ce5.cpp's recovered (unmatched) one.
+# Effects on the player's own weapon (the BR's and SMG's muzzle flashes)
+# found no first-person marker and showed nothing.
+src/first_person_marker_native.cpp

@@ -209,6 +209,19 @@ See `port/README.md` "Play" for the full commands.
   colour-range constant one channel: the yellow-green tint). Include the
   shared header instead. Duplicates win over `src/` copies in the image
   (see `overridden` in `whole-image-report.json`), so check those first.
+- **Native placeholders beating recovered code.** `build_whole_image.py`
+  ranks a `*_native.cpp` rewrite above an unmatched `src/` draft, so a
+  stub written before the real function was recovered keeps winning.
+  `src/first_person_marker_native.cpp` reported no first-person markers
+  over `src/unknown_165ce5.cpp`'s recovered one: effects on the player's
+  own weapon (BR and SMG muzzle flashes) had nowhere to appear. Such
+  files go in `port/whole_image_exclude.txt`; check `overridden` in
+  `whole-image-report.json` for a stub winner when something is missing.
+- **Argument order at calls into custom-convention functions.**
+  `0x41980` called `0x42850` with a light volume's colour where retail
+  passes its direction (`0x41b8c`): plasma bolts were green smears drawn
+  along their colour. Compare the registers and pushes at the call with
+  the callee's prologue.
 - **Depth surfaces.** The game binds depth separately from the colour
   target, and several targets share one depth buffer (fixed: shared
   depth keyed by `depth_stencil`).
@@ -310,7 +323,10 @@ See `port/README.md` "Play" for the full commands.
     while shields were full (fixed by the 2026-10-27 merge of main); the
     Chief's shield shimmer "always on" (not reproduced: object +0xf4,
     which gates it in 0x4bcc0, stays 0 at rest; 01b's intro shows no
-    shimmer); muzzle flash looks wrong.
+    shimmer). Fixed 2026-10-29: plasma bolts (`0x41980`'s argument
+    order) and BR/SMG muzzle flashes (the first-person marker stub).
+    Still open: shadows that shift with the view angle; save and quit's
+    dialog defaults to Cancel (probably as retail).
   - "transparent marines" after the tram: 01b's intro, the bridge doors
     (frame ~5490 from H2_START_MAP=01b_spacestation). The glow
     post-process (bright pass into a 160x120 target, blur, then a
