@@ -1246,6 +1246,11 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 // every caller and the frame 0x10/x87 send graph restored.
 // Round 259: native output-reference append with six complete formal orders and
 // pointer/reference output results: eight forms 200 each. Original helper and all calls restored.
+// Round 267: retained append count dword/long 172/172; early level 177/177;
+// direct rear fields 154/154; early level/direct rear 177/177. Plain 154/606 loses
+// matched 0x2af7b0 (27); all count-retention forms restored. Actual pair pointer/reference
+// reservation before both stores 226/226, between bin and volume 218/218; each loses
+// the same caller. Original append producer and complete body restored.
 // @retail 0x2af920
 void c_sound_effects::add_sends(s_sound_send_parameters *parameters, long unused, long mode, s_mixbin_settings *mixbins)
 {

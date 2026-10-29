@@ -745,7 +745,6 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 PRIVATE long const g_44a200[] = { 0, 1, 2 };
 PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
-// @retail 0x21d630
 // score 60 (was 60): the local variables sit in stack slots that are four bytes apart from retail's,
 // so every load and store of a local uses a different offset.
 // Round 43: the lone bool loop_alternate always takes a byte slot below the dwords; retail gives it
@@ -754,6 +753,11 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // holds the entry flags in eax and the tag base in ecx (retail the reverse). Tried: the tag lookup
 // before the entry flags 78 (fast; baseline fast 67); alternate as an if/else-if chain 133; state
 // before alternate in the looping arm 67; the group switch as if/else-if 114.
+// DL180 fast previews: dword flags/long state 199; dword flags/char state 192; word flags/long
+// state 151; word flags/char state 162; byte flags/long state 193; byte flags/char state 195;
+// dword flags/short state 152; complete native looping snapshot 226. Original executable body
+// restored.
+// @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {
 	s_sound_effect *effect = sound_effect_get(effect_index);

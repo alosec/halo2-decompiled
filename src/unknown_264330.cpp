@@ -205,6 +205,9 @@ owner_selected:
 // either with native-width narrowed category 76/76; existing facing getter plus either
 // direction form 109/109, with native-width category 75/75. Original body restored;
 // header-base retention and the second object lookup still differ.
+// Round 248: Per-use reference handle, late/early headers 67/110;
+// typed counterparts 67/110; wide narrowed category 76/77, typed 76/77.
+// All restored; header-base retention and the second object lookup still differ.
 // @retail 0x264940
 void function_264940(long actor_index, long prop_ref_index)
 {

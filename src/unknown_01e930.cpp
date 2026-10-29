@@ -78,7 +78,7 @@ s_bink_bitmap g_55ece8;
 long __stdcall function_12d2f0(long a, long b, long c, long d);
 void function_12c600(void);
 double timing_ticks_to_seconds(__int64 ticks);
-bool function_2148b0(long a);
+bool function_2148b0(real *a);
 struct D3DTexture *function_23e340(short width, short height, short format,
 	void *(__stdcall *allocate)(long size, long alignment), long *size, void **data, struct D3DTexture *header);
 short function_1358c0(short format);

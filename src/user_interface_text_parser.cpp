@@ -295,6 +295,30 @@ done:
 // and inline-noinline shared variant-wrapper declarations 49/49/52/52/49/49/52/52;
 // code rows 37/37/39/39/37/37/39/39. Getter inline loses two checked callers;
 // wrapper outlining loses the checked variant parser. All original declarations restored.
+// our size-optimized build keeps the buffer address in EBX for its two uses; retail
+// pushes it as an immediate and moves it into EAX again (no matched size-built function does that; a
+// favour-speed setting gives it, not kept), and the tag/selector schedule follows. Native name ID,
+// const globals, name declaration first, default first and absent cases 54; direct tag field 45 (171
+// bytes); existing getter/copy force-inline 54/54; selected-name fallback result 54; numeric case
+// order 49; descending 52; native copy 54; direct selector 57 at 171 bytes; const variant 54; scalar
+// names 54; entry variant/tag declarations 54/54; native buffer object 49; seven adjacent case-pair
+// layouts 48/49/51/51/51/51/50; translator inline/noinline 49/49; native copy inline/noinline 49/49;
+// both inline 49; selected parameter 49; even-priority cases 56; low/high pairs 51; the translator
+// call in each case 37 (171 bytes; ESI then holds the buffer), the same in retail's block order
+// 0/1/9/2/3/4/7/8 42 (171 bytes), with the tag read in each call 45 (171 bytes: retail's block order
+// and late EDI save, only the EBX buffer and the tag load differ); the buffer named once 49;
+// `&g_55c6e4[0]` at the translator 49. direct tag field 45 (171 bytes; still 39 code rows); selected-
+// name fallback result 54. Numeric case order 49; entry variant/tag declarations 54/54. Coordinated
+// getter inline/inline-noinline/noinline 49/49/49; parser inline 49; null-definition exit 72; native
+// tag member 49; native member with null exit 72; terminal case first 54. name-block order 54;
+// reverse/encoded name order 51/51; entry/middle/tail name pairs 55/53/53; tail/middle groups first
+// 53/54. Executable rows do not improve; original cases restored. Native buffer object 49; seven
+// adjacent case-pair layouts 48/49/51/51/51/51/50. Best executable reduction is one row. Translator
+// inline/noinline 49/49; low/high pairs 51. Round 74: the tag read before the variant call 55 (171
+// bytes); the default case copying and returning 58 (180 bytes); a const tag 49 (identical); the
+// selector read straight from the variant getter 55 (171 bytes); the copy repeated after the
+// translator with its own return 38 at 178 bytes (the switch path then caches the buffer in ESI, the
+// default path uses the immediate; not retail's shape, not kept).
 // @retail 0x22d456
 void __stdcall parse_gametype(long string_handle, word *buffer)
 {

@@ -255,6 +255,9 @@ void c_animation_channel_data_get(c_animation_channel const *channel, s_animatio
 // Round 398: actual eligibility retained for sampling and loop-result accumulation,
 // bitwise bool/byte/short/long 306/306/303/304; logical
 // accumulation with those carriers 324/324/314/310. Original result and body restored.
+// Round 186: double storage for initial/weighted/both/countdown/initial-countdown/weighted-countdown/all
+// results 285/326/352/290/314/305/330; weighted double with promoted sample frame 335.
+// Original scalar storage and body restored; frame, getter expansion and ordinal spill remain.
 // @retail 0x10e530
 void function_10e530(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)

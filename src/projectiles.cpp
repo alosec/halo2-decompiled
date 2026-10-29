@@ -355,7 +355,7 @@ bool __stdcall function_fa9a0(long *value)
 }
 
 /* the direction, distance and time to a target in a straight line */
-// score 87 (was 87): normalizer result lifetime moves the zero carrier before EBP and delays ESI; retail has separate zero/fallback tails.
+// score 58 (was 87): frame 0xc agrees; early zero/ESI save and normalization/fallback tails remain.
 // Shared point producer 81; shared inline normalize 84; shared scale-normalize 86;
 // point producer with those normalizers 78/80; conditional seconds with private/inline/scale
 // normalization 80/80/83. Shared arithmetic regrouping is exact-match-only; restored.
@@ -379,18 +379,20 @@ bool __stdcall function_fa9a0(long *value)
 // entry native width 90; entry seconds 92; selected source 102; shared input 86;
 // shared input/output 105. Result-boundary predicate plain 71 loses six caller
 // matches through its extra stacked input; all predicate forms restored.
+// Round 408: displacement aggregate with result/entry seconds 87/78; with library
+// output copy 87/78; native component-array traversal 81/58, with library copy 81/58.
+// Plain confirms component traversal with entry seconds at 58, retail length, no match loss.
 // @retail 0xfa580
 bool function_fa580(real speed, point3f const *origin, point3f const *target, vector3f *direction,
 	real *distance, real *speed_out, real *time)
 {
+	real seconds = 0.0f;
 	vector3f vector;
 
-	vector.i = target->x - origin->x;
-	vector.j = target->y - origin->y;
-	vector.k = target->z - origin->z;
+	for (long component = 0; component < 3; ++component)
+		vector.n[component] = target->n[component] - origin->n[component];
 
 	real length = projectile_normalize(&vector);
-	real seconds = 0.0f;
 
 	if (length == 0.0f)
 		vector = *g_4687b0;
@@ -1357,6 +1359,8 @@ void function_fcea0(long effects_index, point3f const *point, vector3f const *di
 // Coherent workspace names 115; paired-table initialization loop 249; sound-table
 // reads at use 115; names with loop/reads 249/115; loop with reads and all three 249;
 // separate direct-counter table initialization loops 249. Original body restored.
+// Round 408: native definition pointer/reference with neither, fallback, alternate
+// or both tag snapshots 115 each. Original record layout and body restored.
 // @retail 0xfd0e0
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
 	point3f const *point, vector3f const *normal, word index, bool attached, long object_index,

@@ -52,6 +52,9 @@ long function_26d100(vector3f const *up, long *unknown, s_collision_result_1697c
 // Eighth form uses distinct first/second query scalar names.
 // Common scalar outputs before/after root lookup; after lookup with shared point/whole center: 143/140/140/114.
 // All trial forms restored; no candidate qualifies.
+// Round 248: Shared index/object/both/marker/index-marker/object-marker query outputs
+// 100/101/130/101/130/130; early shared index-object/index-marker 136/136.
+// Original body restored; pre-dispatch initialization, output homes and case tails remain.
 // @retail 0x26bfa0
 void function_26bfa0(long object_index, long *location_index, s_location_view *location)
 {

@@ -1137,23 +1137,26 @@ static __forceinline void point_list_add_2bf(s_point_list_2bf *list, point3f pos
 }
 
 /* adds the territories the player's team holds to the list */
-PRIVATE __forceinline bool territory_holder_matches_player(long holder, long player_index, s_record_pool *data)
+PRIVATE __forceinline bool territory_holder_matches_player(long holder, long player_index)
 {
     if (holder == player_index)
         return true;
-    if (holder == NONE || !datum_get_inlined(data, holder))
+    if (holder == NONE || !datum_get_inlined(g_4e8c24, holder))
         return false;
-    s_player_2be *players = (s_player_2be *)data->data;
-    return players[holder & 0xffff].team == players[player_index & 0xffff].team;
+    return player_get_2be(holder)->team == player_get_2be(player_index)->team;
 }
 
-// score 88 (was 88): holder/marker carriers and predicate join differ;
+// score 79 (was 88): frame 0xc and marker SI agree; holder/player/pool homes, predicate and append schedule differ;
 // inline depths one/two, state per use, early team-array lifetime, invalid
 // marker continue, point memcpy and nested holder test 88; marker-first 90.
 // holder and marker registers plus append carriers remain; append output last 88; point last 88; full-list guard 88; short ordinal 153; word ordinal 151; player team first 88; team failure exit 92; short ordinal with output last 153.
-// score 88 (was 88): the team test branches directly with the holder predicate as one condition,
+// the team test branches directly with the holder predicate as one condition,
 // but the players base hoists 92; read through the pool in the test 96; helper as one expression 96;
 // position passed directly 92; position copied as a struct through its pointer 88 (same code, kept).
+// Existing player getters with mixed pool observation 79 (rejected); explicit player-array input 88;
+// external pool reference 88; reference plus array 88; opposite predicate / one result 88/88;
+// opposite with mixed getters 79 (rejected); opposite with array 88. Consistent per-use pool
+// and existing getters 79 (kept); opposite predicate with consistent per-use pool 79.
 // @retail 0x2bf740
 void c_game_engine_45c948::v32(long player_index, long list_pointer)
 {
@@ -1167,7 +1170,7 @@ void c_game_engine_45c948::v32(long player_index, long list_pointer)
 
 		if (marker != NONE)
 		{
-			if (territory_holder_matches_player(holder, player_index, g_4e8c24))
+			if (territory_holder_matches_player(holder, player_index))
 			{
 				point3f const *source = &g_4e0350->marker_entries[marker].position;
 				point_list_add_2bf(list, *source,

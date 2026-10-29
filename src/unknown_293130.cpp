@@ -105,6 +105,12 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 }
 
 // score 68 (was 68): four causes. Frame: retail packs the random-to-float temp at +8 and the
+// result, conversion and sine stack homes differ; rotation
+// registers also differ.
+// Transient creation handle with range result, trig input and shared cross boundaries:
+// 361/358/360/357/360/357/359/364. Result, conversion and sine homes plus rotation registers
+// remain.
+// four causes. Frame: retail packs the random-to-float temp at +8 and the
 // result at +0xc (the sine temp shares +0 with the first sum), ours the result at +8 (sharing it
 // with the sine temp) and the random temp at +0xc. Ours reassociates `range draw + base` (adds
 // the base first); the rotation's xmm colouring differs; the scheduler hoists the 0x18 NONE store.
