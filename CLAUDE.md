@@ -325,6 +325,11 @@ See `port/README.md` "Play" for the full commands.
     which gates it in 0x4bcc0, stays 0 at rest; 01b's intro shows no
     shimmer). Fixed 2026-10-29: plasma bolts (`0x41980`'s argument
     order) and BR/SMG muzzle flashes (the first-person marker stub).
+    The Chief's shield shimmer "always on": fixed 2026-10-29 (0xd5de0
+    passed 0xd8b50 the damage info, not the character's vitality
+    properties: +0xf4 never faded; upstream draft #883). In combat the
+    screen takes 0x40890's full-screen flash (mode 1, cyan from damage
+    effects) on hits; frequent under fire, not shown to be wrong.
     Save and quit's dialog opening on Cancel is retail: 0x2321fc,
     0x23661f and 0x19bc60 are matched and take the default from the UI
     data. SMG flash confirmed too. Still open: shadows that shift with
