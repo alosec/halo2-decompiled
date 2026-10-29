@@ -382,7 +382,11 @@ See `port/README.md` "Play" for the full commands.
     Phong highlight (R.V)^8, R = 2(N.L)N - L, scaled by the gloss alpha
     and the shader's c0[4]/c0[5]; V is c6 (toward the eye, the right
     sign). So the view-dependent part is retail's specular with one view
-    vector per draw, its strength from map data. c50-c52 there are instanced
+    vector per draw, its strength from map data.
+    Characters: the skinned programs (e.g. `vs d119ee40`) read no camera
+    vectors, and one marine's lighting and shadow-projection constants
+    (c40-c45, c42 = the 128x128 shadow map) change by at most 1% between
+    the two views (its idle animation): no view dependence there. c50-c52 there are instanced
     geometry transforms, not lights. Earlier: On 03a's
     opening the dark block beside the vent is the wall lightmap's baked
     shadow (static, with parallax against the protruding vent); each
