@@ -99,6 +99,12 @@ PRIVATE inline bool append_save_entry_2164c0(s_save_list_2164c0 *list, s_save_en
 // score 32 (was 32): the append's count/result/list registers (ours eax/cl/edx, retail esi/al/ecx,
 // new count stored before the copy) and the scratch pairs before the format call and
 // XFindNextSaveGame differ; without the format call the enumeration registers are retail's.
+// Our length is 659 plus 3 bytes of fill. Deleting the append alone makes the format-call and
+// enumeration registers retail's (deleting the dead flag block, the ASCII conversion, the 0x216e50
+// call or the path block does not), so the append's allocation sets their rotation; the reduced image
+// scores the same. Round 17: break + if (type < 11) append/else diagnostic 64; diagnostic arm first
+// 76; increment before the copy into [count - 1] 53; the list read through its own reference 32;
+// named count with the new count stored first 51; the found block placed first (same code) 32.
 // The append's memcpy into `&entries[count++]` gave retail's index copy (51 -> 32). Tried:
 // file path/directory/both receivers 51/51/51; conditional character store 69; capacity first 54;
 // capacity nonzero 51; short type index 189; no parameter address 51/32; file-reference/all helpers
