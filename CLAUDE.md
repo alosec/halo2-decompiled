@@ -129,8 +129,9 @@ See `port/README.md` "Play" for the full commands.
 - **Deterministic runs:** use a fresh `--profile-root` per run. A reused
   profile keeps campaign progress, which changes the menu flow and timing.
 - **Frame trace extras:** with `H2_TRACE_DUMP`, each traced draw also saves
-  `vs-<hash>.metal` (its translated vertex program), `c-NNNN.bin` (192 vertex
-  constants) and `p-NNNN.bin` (the raw `h2_gpu_draw` packet).
+  `vs-<hash>.metal` (its translated vertex program), `c-f<frame>-NNNN.bin`
+  (192 vertex constants) and `p-f<frame>-NNNN.bin` (the raw `h2_gpu_draw`
+  packet).
 - **Offline map reading:** `port/tools/h2_map.py MAP [name...]` (tag index at
   header `+0x10`; names table `+0x2c4`/`+0x2cc`; meta follows the index, so
   the address base is the lowest tag address minus (index offset + index
@@ -369,7 +370,16 @@ See `port/README.md` "Play" for the full commands.
     c0.a comes from 0x17170 loading bloom_wall's shared tag value block
     (0x8087f9f4, entry 1 = 0xff000000), the same template binding giving
     other bloom shaders 0.8/0.4/0.35: retail data asks for full bloom.
-  - shadows that shift with the view: not reproduced yet. On 03a's
+  - shadows that shift with the view (the user: lighting on bipeds and
+    walls, not only the flashlight). Measured 2026-10-29 in 01b's opening:
+    a pillar's shading brightens about 35% as a pure camera turn moves it
+    toward the screen edge. The environment vertex program (map microcode,
+    `vs 16dad4554a203ba2`) feeds the pixel shader c6, the camera's back
+    axis (c4-c6 are the camera basis), in the bump tangent frame next to
+    the lightmap's incident direction (v5), so retail's own shading follows
+    camera orientation; whether the strength matches is open (the pixel
+    combiner that uses it is the suspect). c50-c52 there are instanced
+    geometry transforms, not lights. Earlier: On 03a's
     opening the dark block beside the vent is the wall lightmap's baked
     shadow (static, with parallax against the protruding vent); each
     lightmapped geometry keeps one lightmap page across views (traced

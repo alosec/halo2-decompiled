@@ -677,12 +677,14 @@ public:
         if (tracing_frame() && packet.vertex_constants) {
             if (const char* dump_dir = std::getenv("H2_TRACE_DUMP")) {
                 char path[512];
-                std::snprintf(path, sizeof(path), "%s/c-%04d.bin", dump_dir, frame_draw);
+                std::snprintf(path, sizeof(path), "%s/c-f%llu-%04d.bin", dump_dir,
+                              static_cast<unsigned long long>(presented_), frame_draw);
                 if (FILE* file = std::fopen(path, "wb")) {
                     std::fwrite(guest<float>(packet.vertex_constants), 16, 192, file);
                     std::fclose(file);
                 }
-                std::snprintf(path, sizeof(path), "%s/p-%04d.bin", dump_dir, frame_draw);
+                std::snprintf(path, sizeof(path), "%s/p-f%llu-%04d.bin", dump_dir,
+                              static_cast<unsigned long long>(presented_), frame_draw);
                 if (FILE* file = std::fopen(path, "wb")) {
                     std::fwrite(&packet, sizeof(packet), 1, file);
                     std::fclose(file);

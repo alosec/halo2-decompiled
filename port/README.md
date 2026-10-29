@@ -67,7 +67,8 @@ build/release/port/halo2-port --data-root orig/game \
 - `H2_RENDER_SCALE=N` sets the render resolution multiple (default 2).
 - `H2_RECORD=session.mp4` records the game to an MP4 (needs `ffmpeg`; the
   file stays playable even if the game is killed). `H2_AUDIO_RECORD=mix.wav`
-  records the sound separately.
+  records the sound separately. `port/tools/play_recorded.sh` plays with
+  both on (and the state log), saved by start time in `~/Movies/halo2-sessions`.
 
 **Known gaps:**
 - The difficulty screen's 3D backdrop is missing.
