@@ -930,23 +930,7 @@ void __stdcall function_25edd0(
 	}
 }
 
-// score 50 (was 50): protected iterator setup and range-bonus comparisons/multiplies differ.
-// Normalized clamp 66; bounded raw margin 137; positive fraction 83; source-domain fraction 51;
-// nested candidate 50; conditional weapon result 50; real unit reference 50; guarded owner result 264.
-// iterator setup, bonus tests/multiplies and query load scheduling differ.
-// Upper-margin-first 58; range once/limit once/range before root 155; full-width mode 258;
-// reversed style cases 50; forward position countdown 255; nearest conditional 50.
-// score 50 (was 50): vector workspace entry offset/closest/both 50/50/50;
-// in-place offset 50; component projection 95; in-place component projection 155;
-// projected workspace first 50; unsigned line ordinal 145. Iterator setup and bonus tests remain.
-// Selected-arm staged scales 72; upper-first staged 66; half by division 50;
-// selected margin carrier 186; near/far or separate bonus names 50; staged/name pairs 66.
-// score 50 (was 50): the range bonus in retail is a two-test select (over 2 first,
-// then over 0) with two multiplies (halve, then times ten); that exact form scores 66
-// (997 bytes) because the line loop's xmm homes rotate — the allocation cascade from the
-// protected iterator setup defeats it. Nested select 83; staged halves with the new
-// order 66; new order with folded multiply 58; old order with two multiplies 72;
-// squared-length local 186; closest product order 66; margin initialized 66.
+/* adds the weapon-range bonuses and the bonus for the distance to the nearest line of type 2 */
 // @retail 0x25eea0
 void __stdcall function_25eea0(
 	long actor_index,
@@ -1035,7 +1019,7 @@ void __stdcall function_25eea0(
 			{
 				real range = weapon->unknown0c * 0.8f;
 
-				position->score += range > distance ? 10.f : range / distance * 10.f;
+				position->score += range > distance ? 10.f : 10.f * (range / distance);
 			}
 
 			if (maximum_range > 0.f && maximum_range > distance)
@@ -1052,9 +1036,13 @@ void __stdcall function_25eea0(
 					margin = distance - minimum_range;
 				}
 				real bonus = 0.f;
-				if (margin > 0.f)
+				if (margin > 2.f)
 				{
-					bonus = margin > 2.f ? 10.f : margin * 0.5f * 10.f;
+					bonus = 10.f;
+				}
+				else if (margin > 0.f)
+				{
+					bonus = 10.f * (margin / 2.f);
 				}
 				position->score += bonus;
 			}
@@ -1087,9 +1075,11 @@ void __stdcall function_25eea0(
 						closest.i = direction->i * nt + offset.i;
 						closest.j = direction->j * nt + offset.j;
 						closest.k = nt * direction->k + offset.k;
-						if (nearest > length_sq3f(&closest))
+						real length_squared = length_sq3f(&closest);
+
+						if (nearest > length_squared)
 						{
-							nearest = length_sq3f(&closest);
+							nearest = length_squared;
 						}
 					}
 				}

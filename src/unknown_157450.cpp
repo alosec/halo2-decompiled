@@ -484,6 +484,12 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // the compare but is still not shared with the update); two-width union view of the mask 90;
 // union with a named wide copy 90; word local with a promoted copy 134; updated mask
 // computed before the branch 133; union plus carrier 91.
+// Retail reloads the word mask once into ecx before the first test and ORs present into
+// it for the store. `*team_mask |= present_teams` (the old mask then only compared, word
+// or dword; or the field re-read in the test) 130/130/130; word mask with the tests'
+// operands swapped 78, without the store's cast 77; word old playing mask too 59; word
+// mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
+// the bit from `player->team` 46.
 // @retail 0x158140
 void function_158140(void)
 {
