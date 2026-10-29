@@ -23,7 +23,7 @@ struct s_object_attachment_bef30
 bool function_b9ce0(long object_index);
 void function_c3220(long datum_index);
 void __stdcall function_c2d00(long datum_index);
-void __stdcall function_c1720(long object_index, bool remove, bool add);
+long __stdcall function_c1720(long object_index, byte remove, byte add);
 
 // @retail 0xbef30
 void __stdcall function_bef30(long object_index, long remove, long add,
@@ -67,7 +67,7 @@ void __stdcall function_bef30(long object_index, long remove, long add,
         }
 
         if ((*(dword *)(object + 4) >> 6) & 1)
-            function_c1720(object_index, (bool)remove, (bool)add);
+            function_c1720(object_index, (byte)remove, (byte)add);
 
         long child = *(long *)(object + 0x10);
         if (child != NONE)
