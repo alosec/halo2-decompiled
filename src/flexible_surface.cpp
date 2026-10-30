@@ -334,6 +334,10 @@ void function_117510(long index)
 // the top read of link->a in EBX (retail re-reads it) and splits its test, a/link swap EAX/EDX. On it:
 // rest square before the clamp 155 (twice); shared point difference 154; long bits local 154;
 // short-parameter forceinline pin test 163; fields through definition->links[i] 220. All restored.
+// Round 418: entry declarations for definition/count/both/link/definition-link/
+// count-link/all 139 each; all with coherent geometric role names 139. Every
+// acquisition stays at its original operation. All restored; entry record/link
+// allocation, pinned-word observations and correction scheduling remain.
 // @retail 0x117790
 void __stdcall function_117790(long index)
 {
