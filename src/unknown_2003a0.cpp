@@ -2339,8 +2339,6 @@ void function_201ea0(void)
 }
 
 
-PRIVATE __forceinline s_squad_datum *function_201c83(s_squad_record_iterator *arg_0);
-
 // @retail 0x201df0
 void function_201df0(void)
 {
@@ -2913,43 +2911,31 @@ void function_202720(void)
     }
 }
 
-PRIVATE __forceinline s_squad_datum *function_201c83(s_squad_record_iterator *arg_0)
+struct s_squad_datum_walk
 {
-    s_squad_datum *local_0 = NULL;
-    if (g_4f55d0->active)
+    s_data_datum_iterator iterator;
+    long walk_index;
+};
+
+/* the next squad while the ai is active, or NULL */
+PRIVATE __forceinline s_squad_datum *squad_datum_walk_next(s_squad_datum_walk *walk, bool active)
+{
+    s_squad_datum *squad = NULL;
+    if (active)
     {
-        s_record_pool *local_1 = arg_0->records.data;
-        long local_2 = data_next_absolute_index_inlined(local_1, arg_0->records.index + 1);
-        if (local_2 == NONE)
-        {
-            arg_0->records.index = local_1->maximum_count;
-            arg_0->records.datum_index = NONE;
-        }
-        else
-        {
-            byte *local_3 = local_1->data + local_1->size * local_2;
-            arg_0->records.index = local_2;
-            arg_0->records.datum_index = (*(short *)local_3 << 16) | local_2;
-            local_0 = (s_squad_datum *)local_3;
-        }
-        arg_0->squad_index = arg_0->records.datum_index & 0xffff;
-        arg_0->squad = local_0;
+        if (data_datum_iterator_next_inlined(&walk->iterator))
+            squad = (s_squad_datum *)walk->iterator.datum;
+        walk->walk_index = walk->iterator.datum_index & 0xffff;
     }
-    return local_0;
+    return squad;
 }
 
-// score 43 (was 43): Frame 0x28 and rounding homes agree; missing-record tail duplication and index extension remain.
-// Earlier: the record's index is combined with the pool's base before the test; retail keeps
-// the two apart until the compare and the division. Shared guarded search 43; shared salted-index
-// constructor 43; both 43; shared datum iterator under the activity guard 126; explicit activity
-// argument with the original/search/index/both forms 43/43/43/43. Original body and helper restored.
 // @retail 0x201c80
 void function_201c80(void)
 {
     long local_0 = g_510c54->game_time;
     long period_once;
     long period_twice;
-    long time_copy = local_0;
     long period_half;
     real local_6 = (real)g_510c54->field_2_3;
     __asm
@@ -2980,17 +2966,18 @@ void function_201c80(void)
         function_2024c0();
         function_202720();
     }
-    s_squad_record_iterator local_4;
+    s_squad_datum_walk squad_walk;
     if (g_4f55d0->active)
     {
-        local_4.records.data = g_51e9d8;
-        local_4.records.index = NONE;
+        squad_walk.iterator.data = g_51e9d8;
+        squad_walk.iterator.index = NONE;
     }
-    while (function_201c83(&local_4))
+    s_squad_datum *squad;
+    while ((squad = squad_datum_walk_next(&squad_walk, g_4f55d0->active)) != NULL)
     {
-        long local_5 = local_4.squad_index;
-        if (((word)local_5 + time_copy) % period_half == 0 && (*((byte *)local_4.squad + 2) & 0x80))
-            function_203360(local_5);
+        long squad_slot = squad_walk.walk_index;
+        if (((squad_slot & 0xffff) + local_0) % period_half == 0 && (*((byte *)squad + 2) & 0x80))
+            function_203360(squad_slot);
     }
     function_201df0();
 }

@@ -245,7 +245,7 @@ void function_1e54d0(void *state, long mode)
 }
 
 // @retail 0x1e5a60
-void function_1e5a60(s_biped_physics_result *result, s_biped_physics_input const *input, void *physics)
+void function_1e5a60(void *physics, s_biped_physics_result *result, s_biped_physics_input const *input)
 {
 	byte *state = (byte *)physics;
 	result->contact_index = NONE;
