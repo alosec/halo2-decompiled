@@ -225,6 +225,13 @@ static __forceinline bool structure_bsp_collision_available()
 // flag from the && expression with the model query nested under `if (!excluded)` 68; the requery
 // in an inline helper that updates the collision through its address 90; found cleared in the
 // scenery arm with no flag 68.
+// Round 78: the flag assigned `excluded = function_10a0b0(...) != 2` inside the type test, with
+// `if (excluded) goto done` or `if (!excluded)` guards 54/54 (286 bytes, but aligned worse: setne
+// and the threaded exit stay); the object part in an inline helper returning `!excluded` 106
+// (keeps the flag in BL and the join test, adds a sete); the final test nested in the requery
+// arm 77; `return function_14a8e0(...)` with an && flag 77 (263 bytes). A compile-only screen of
+// 177 flag/guard/tail forms threads the 0x10a0b0 compare in every one; only a computed value in
+// the join (a negation, a widening, a store) keeps retail's un-threaded flag test.
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {
@@ -517,6 +524,9 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // Earlier: with the part list read through its 0x48-byte range records and the part offset read
 // at each use, the model/collision registers (EBX/EDI swapped), lookup address (retail keeps it
 // in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differed.
+// with the part list read through its 0x48-byte range records and the part
+// offset read at each use, only the model/collision registers (EBX/EDI swapped), the lookup address
+// (retail keeps it in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differ.
 // Round 8 (lane 10): range-record list 95 (kept); part offset at each use 78 (kept); section groups
 // after the node search 208; bounds read at its use in the vertex call 274; separate local for the
 // second object lookup 78; lookup declared at the top 78; object lookup before the model 219;
@@ -602,6 +612,10 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // Round 209: Borrowed collision-point input with original/branch-owned point production, do/for vertex
 // loop 70/70/70/70; corresponding bounded short vertex ordinals 102/102/102/102. Original body
 // restored; bounds timing, lookup reuse and triangle-test registers remain.
+// Round 78: the work after the lookup nested under `if (lookup.initialize(...))` 70; the lookup
+// guard as `return result` 231; a const bounds pointer 70; the lookup and surface lookup in their
+// own block 70; section groups from the section index local 157. Diagnostic: the bounds read
+// before the geometry-block call still gives 9 (left: the lookup address, 0x11e800's registers).
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)

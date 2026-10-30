@@ -40,7 +40,11 @@ long function_26d100(vector3f const *up, long *unknown, s_collision_result_1697c
 
 /* finds the location of the object's root: a unit's (0), a vehicle's (1),
    otherwise the pathfinding location under its center */
-// score 89 (was 89): query homes, case-tail and point-copy scheduling still differ.
+// score 89 (was 89): Object receiver, pre-dispatch defaults, query homes and case/copy scheduling remain. Per-
+// use/default-only receiver 138/102; default-only with whole center 106; early independent index
+// with per-use/default-only 135/95; early marker equivalents 133/95; early index plus whole center
+// 109. Original observations and case bodies restored.
+// Earlier: query homes, case-tail and point-copy scheduling still differ.
 // case-tail and point-copy scheduling differ; nine excess bytes remain.
 // Query index captured after the location guard: kind zero/one/both 150/158/155;
 // null-output-first counterparts 167/158/155; result assigned per dispatch arm 140/140.

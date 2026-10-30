@@ -101,6 +101,12 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // Native type-reader/team-predicate/marker-query inline declarations in seven subsets
 // 95 each; all three with byte admission result 95. All outside declarations restored;
 // the pool-data spill remains on the repaired MIN/MAX and separate-byte-store graph.
+// Round 190 on the recovered graph: native completion read 95; native completion stores 187;
+// read/stores 187; native helper admission read 95; completion/admission reads 95;
+// stores/admission read 187; complete native flag graph 187; complete graph with short slot
+// 186.
+// Round 289: Terminal query completion/non-special-first/blocked completion subsets; full graph with final team result arms:
+// [95, 111, 111, 131, 131, 131, 131, 130]. All executable source and temporary types restored.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {

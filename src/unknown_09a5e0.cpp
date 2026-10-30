@@ -706,24 +706,29 @@ struct s_typed_object_header
 /* 0xe68c0, src/unknown_0e68c0.cpp */
 bool function_e68c0(long type, long unit_index);
 
-// score 57 (was 75): the result is a byte that spills to a frame slot and the guard tests
-// the vehicle index first, so the body lines up with retail's; what is left is the register
-// set (retail keeps the vehicle index in eax and the pool pointer in ebp, ours in ebp and
-// edi) and the 1<<type shifts, which retail does in ebx and ours in eax.
-// register set and the order of the body differ.
-// With the result a long in ebx the 1<<type shifts use eax, so the vehicle index moves to ebp in
-// the prologue; retail's byte result loses bl to the shifts and spills to the frame slot, the
-// vehicle index stays in eax and ebp is saved late for the pool pointer.
-// Byte result 85; masked-index locals 75; pool data read at each use 77; mask operand order 75;
-// byte result with pool before the guard 89; split missing guards 83; dword indices 75;
-// byte result with the seat read once 85; byte mask locals 82.
+// score 19 (was 57): with the result declared first (retail clears bl before the lookups) and
+// the unit index tested first, the length and every block are retail's; what is left is the
+// register pair: retail keeps the unit index in edi and the object pool pointer in ebp (pushed
+// after the guard), ours the other way round, and the unit's header type is read as
+// [esi + edx + 3] (retail [edx + esi + 3]).
+// Earlier (75 -> 57): with the result a long in ebx the 1<<type shifts use eax, so the vehicle
+// index moves to ebp in the prologue; retail's byte result loses bl to the shifts and spills to
+// the frame slot.
+// Tried: byte result 85; masked-index locals 75; pool data read at each use 77; mask operand
+// order 75; byte result with pool before the guard 89; split missing guards 83; dword indices 75;
+// byte result with the seat read once 85; byte mask locals 82. This round: result first with the
+// vehicle tested first 53; unit tested first alone 70; on the 19 form: the unit's type test
+// through `headers` 98 (the object read then shares the element address); one typed headers
+// pointer for all three reads 100; headers from the global 100; the pool read at each use 98;
+// the pool declared at the top 19; the indices declared before their calls 19; typed headers
+// for the vehicle 19; the pool named `objects` 19; the pool read before the lookups 26.
 // @retail 0x9ee20
 bool c_unit_exit_vehicle_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
+	bool result = false;
 	long unit_index = function_a58d0(entities[0]);
 	long vehicle_index = function_a58d0(entities[1]);
-	bool result = false;
-	if (vehicle_index != NONE && unit_index != NONE)
+	if (unit_index != NONE && vehicle_index != NONE)
 	{
 		s_record_pool *local_1 = g_4e0300;
 		byte *headers = (byte *)local_1->data;

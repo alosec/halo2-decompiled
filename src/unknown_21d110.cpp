@@ -778,6 +778,11 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // spellings and statement orders; only dropping the definition local moves the bool among the
 // dwords. Retail's order: sound flags, effect, entry offset, controller, state, index, rate stage,
 // repeat state, bool, listener, tag, definition.
+// before alternate in the looping arm 67; the group switch as if/else-if 114; renaming either
+// local 67 (no slot moves: names do not order this frame); the two declared the other way round
+// 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry
+// flags read at each use 78. Screened (one-file LTCG): declared at the top, the definition or tag
+// index declared earlier, the definition read at each use: the bool stays at the bottom.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

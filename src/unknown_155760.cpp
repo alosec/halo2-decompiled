@@ -168,9 +168,13 @@ long function_10f5f0(long object_index);
 // early invalid return/shared result/both 85/32/103; shared short result kept, plain 32.
 // Constant label success 90; dword/Boolean result 31/69 (Boolean loses callers);
 // final binary result test with short/dword storage 96/92. Dword one-point gain restored.
-// Earlier: retail pushes esi and edi at the top and keeps a zero in esi for the
+// Earlier 78 (was 78): retail pushes esi and edi at the top and keeps a zero in esi for the
 // mode, and it pushes ebp only around the call that fills it; ours pushes ebp in the
 // prologue, which shifts every stack offset, and retail returns the 1-results in eax
+// Round 413: comparison-result short/long/word/dword/byte 32/31/32/31/32;
+// short/long result tested against one 39/32; label result stored before mode 32.
+// Wider comparison results save two bytes but only one score point; original Boolean restored.
+// Earlier: retail pushes esi and edi at the top and keeps a zero in esi for the
 // Round 206: Shared query/label success with conditional/if modes, constant/accepted/long-query/seat-flag
 // results [54, 13, 54, 28, 52, 41, 88, 102]. Mode complement 12; result-first/complement/immutable query [51, 51, 51].
 // Named label, label-first admission, common mode result, query-valued direct success [13, 39, 95, 91].

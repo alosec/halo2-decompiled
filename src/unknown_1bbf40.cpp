@@ -344,6 +344,9 @@ real function_1e3920(long actor_index);
 // declared at the top of the function 46/46.
 // Separate raw/admitted reference values with immutable raw value and entry request/scratch
 // declarations: 46/46/48/48/46/46/48/48, all 344 bytes. Original lifetimes and body restored.
+// Round 18 (lane 10): the select-or-remember tail as a forceinline helper 46 (same code); the reference
+// or the scratch pointer declared at the block top 46/46; the reference compare written global-first 46;
+// the result declared after the actor 65.
 // @retail 0x1bcab0
 bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 {

@@ -230,6 +230,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // products go to new registers where retail scales in place 64 (369 bytes);
 // limit from the rate local 68; real ticks at the top 103; real ticks after the
 // rate 104; the same without the parameter reference 80.
+// Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
+// stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
+// (394 bytes); the rate read from the global at each use 99 (375 bytes).
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {
