@@ -988,6 +988,7 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
 // Round 420: Incoming edge used as mutable working index, with iteration/traversal receiver and short/word bounded
 // ring counts: 415 each; the same four with early ring anchor 361 each (1295 bytes). Original input copy,
 // receiver/count and anchor lifetimes restored; frame remains 0x30 versus 0x28.
+// Round 194: Shared point-setter normal/positive/negative producers and subsets 422/470/447/479/468/508/535; all plus successful output setters 513. All grow away from retail and restore the original helpers, geometry and complete traversal.
 // @retail 0x2c3030
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)

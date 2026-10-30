@@ -342,7 +342,8 @@ bool function_b51b0(s_transport_endpoint *endpoint, s_type_99af70 const *address
 
 bool function_7af40(s_type_99af70 const *address);
 
-// score 32 (was 32): tried the flag bit set through a byte cast of the flags word, as retail
+// score 32 (was 32): the flag is read before the three endpoint field stores instead of after
+// tried the flag bit set through a byte cast of the flags word, as retail
 // the flag is read before the three endpoint field stores instead of after
 // them, the endpoint pointer is kept in a register here instead of being reloaded from the
 // connection, and the attempt counter is incremented in a register instead of in place. Retail
@@ -370,6 +371,7 @@ bool function_7af40(s_type_99af70 const *address);
 // store differs (after the call, retail before it): 15 at 245 bytes, but the mixed reads can only
 // be kept with a match. Other orders of the counter, state and copy 35/35/37/111; the flag alone
 // re-read 42; the open alone re-read 109; `= count + 1` 111.
+// tried the flag bit set through a byte cast of the flags word, as retail
 // tried the flag bit set through a byte cast of the flags word, as retail
 // sets it in the low byte, 30 (an address cast for 2 points: not kept); the flag is still read
 // before the three field stores instead of after them, the endpoint pointer is kept in a register
@@ -539,7 +541,10 @@ short function_b5000(s_transport_endpoint *endpoint, void const *buffer, short l
 // restore exit last; ours puts the restore exit first. Tried: `return true` in the would-block arm 44;
 // direct returns everywhere 72 (retail's block order, but the results fold to constants); the
 // plain failure as `return false` behind `if (sent != -2)` 20; looping while the iteration
-// succeeded with the completion guarded after the loop 44; success arm ending in `continue` 10.
+// succeeded with the completion guarded after the loop 44; success arm ending in `continue` 10;
+// `if (sent != -2) return result;` then the restore and the goto 25 (retail's order, folded false);
+// success arm first in an if/else 10; position declared before the loop 10. Retail's shared
+// return (BL, not folded) follows the would-block test, so it comes first in its source order.
 // @retail 0xb6000
 bool s_http_connection_ab::send()
 {

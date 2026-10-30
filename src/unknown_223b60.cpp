@@ -93,10 +93,17 @@ __int64 timing_counter_peek(timing_counter *c)
 	return total;
 }
 
-// score 28: the conversion is correct, but our compiler keeps the union local
+// score 28 (was 28): the conversion is correct, but our compiler keeps the union local
 // in registers (`movzx eax`; `shr ax`) while retail keeps it in memory
 // (`xor ecx, ecx`; `mov cx, [eax]`; `shr word ptr [esp + 4], 5`) and puts the
 // blue channel in dl. No source shape or annealed permuter run reproduced it.
+// A plain word local shifted in place with a separate colour gives retail's load,
+// in-memory shift and shared slot (29), but blue is then computed in the word's own
+// register after the slot store; retail computes it in a copy (dl) first. Blue stored
+// into the colour straight after its OR 26 (blue first, colour gets its own slot);
+// blue from a byte copy in one expression 26 (89 bytes); long blue 28 (90 bytes);
+// channels written into the colour fields 28; colour object through address casts 29;
+// word copy for the shifts 42 (73 bytes); 20 statement orders and channel spellings 29.
 // @retail 0x223e70
 void function_223e70(const word *rgb, S3TC_COLOR *out)
 {

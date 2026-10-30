@@ -2970,8 +2970,9 @@ struct s_2a2f0_record
 };
 
 #pragma inline_depth(0)
-// score 145 (was 145): one missing register copy of the bitmap count before the bounds compare
-// (retail inlines the bitmap lookup 0x137550); everything else aligns. Swapped bounds compare 145;
+// score 145 (was 145): frame 0x64 and 1496-byte length agree; the bounded bitmap count register copy remains absent.
+// Earlier: one missing register copy of the bitmap count before the bounds compare
+// at bounded bitmap selection; the remaining instructions align. Swapped bounds compare 145;
 // the existing lookup called in a full-depth window 258 (out of line); plain count read 167;
 // separate count copy 145 (propagated); file-local forced lookup 258/297 (in a window, spills).
 // Round 187: Ordinal/remainder byte/short 273, short/short 273, word/short 273, long/long 184, long/dword 188, long/word 186, byte/word 265, short/long 190; unsigned forms omit the implied negative guard. All restored; missing count copy remains.
@@ -2982,6 +2983,9 @@ struct s_2a2f0_record
 // definition local 161; selection as a ternary 143 (realigned only). Not an inline of 0x137550:
 // linked inline (its file without /Ob1, diagnostic) reloads the group and compares the count in
 // memory (297), as do forced inline lookups by tag, by group or with the count passed.
+// Round 224: readonly real strip table, entry/branch constant initialization,
+// record-pointer/direct fields and long/short ordinal combinations with independent
+// dimensions and ordinary count reads: 166/272/175/230/205/268/215/255. All restored.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3241,6 +3245,10 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // gain clamps as FILTER_PIN too 1171 (102); a long alpha selector instead 1154 (204). Left: our link
 // inlines 0x222d0 at mode zero's eight blending states and the final depth state (retail calls all 36
 // out of line), and the offset clamp branches where retail stores 1.0 and conditionally overwrites it.
+// Round 224: existing blending helper inline/ordinary declarations with bool/byte/
+// short/long additive input 1457/1457/1453/1453/1457/1457/1453/1453. Actual-mode helper
+// long/short/byte/dword under force-inline 853 each, under inline 1446/1455/1534/1446.
+// Original helper contract, all call inputs and complete body restored.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
@@ -3513,28 +3521,28 @@ failure:
 
 dword g_4b8424;
 void function_27aa0();
-// score 5 (was 5): opening projection remains x/y/z with direction x first.
-// Z/y/x with all/first/third k copy-then-multiply 101/101/101; buffer after projection 16;
-// input view after projection 16; early buffer with late input view 16; early dot declaration 16;
-// first k-i-j row 23; multi-use first-scale local 101.
-// score 5 (was 16): retail adds the dot product's terms z, y, x and loads the
-// position's x before the direction's; here x, y, z with the direction's x
-// first. Tried: the terms z, y, x 16 (the k products then copy the scale);
-// y, x, z 7; x, z, y 20; y, z, x 20; z, x, y 18; one expression in any order,
-// dot3f either way round or partial sums 105-106; n[] subscripts 16; scale
-// first in the products 16; vector3f_scale for the rows 101-105; position as
-// the first parameter (with the caller) gives retail's dot with z, y, x but
-// the j products then load the component first, 14 (654 bytes)
-// New trials at 5: zero-initialized buffer 160; cleared buffer 160;
-// cleared trailing triple 105; first/third/second row component loops
-// 242/242/242; coefficient loop 242; first reciprocal divided in place 104.
-// score 5 (was 5): Opening projection loads x before z. Last projection term
-// after reciprocal one/two/three 38/151/149; y and z after first reciprocal
-// 51; split projection 59; fourth reciprocal at use 140; third reciprocal at
-// use 136; fade clamped in its output slot 63.
-// opening projection loads remain x/y/z rather than z/y/x.
-// Six-by-four buffer 5; branched reciprocal 72; full buffer initializer 155;
-// direction/scalar/tail/third-row ordering 100/148/143/75; shared span carrier 144.
+// score 5 (was 5): retail adds the dot product's terms z, y, x, loading the position's component
+// first in each; here x, y, z, and the x term loads the direction's first in every order.
+// Tried: the terms z, y, x 16 (the k products then copy the scale); y, x, z 7; x, z, y 20;
+// y, z, x 20; z, x, y 18; one expression in any order, dot3f either way round or partial sums
+// 105-106; n[] subscripts 16; scale first in the products 16; vector3f_scale for the rows
+// 101-105; position as the first parameter (with the caller) gives retail's dot with z, y, x but
+// the j products then load the component first, 14 (654 bytes). Z/y/x with all/first/third k
+// copy-then-multiply 101/101/101; buffer after projection 16; input view after projection 16;
+// early buffer with late input view 16; early dot declaration 16; first k-i-j row 23; multi-use
+// first-scale local 101; zero-initialized buffer 160; cleared buffer 160; cleared trailing triple
+// 105; first/third/second row component loops 242/242/242; coefficient loop 242; first
+// reciprocal divided in place 104; last projection term after reciprocal one/two/three
+// 38/151/149; y and z after first reciprocal 51; split projection 59; fourth reciprocal at use
+// 140; third reciprocal at use 136; fade clamped in its output slot 63; six-by-four buffer 5;
+// branched reciprocal 72; full buffer initializer 155; direction/scalar/tail/third-row ordering
+// 100/148/143/75; shared span carrier 144.
+// Round 14 (exact LTCG harness, aligned counts, 4 = this body): a product's operand order in
+// the dot never follows the text; each k/j row product copies the scale when its dot term is
+// not the last one. Every term order as statements 4-18; z/y/x with the sum's local renamed
+// 8; separate spans 60-64; buffer/settings declarations moved 4-18 (no effect); no settings
+// local 60-64; [6][4] buffer, same; mixed statement/expression sums 6-66; the three
+// plane-offset sums with either operand first, no effect.
 // @retail 0x25a10
 void function_25a10(vector3f const *direction, point3f const *position, byte const *state)
 {

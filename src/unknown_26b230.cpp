@@ -508,6 +508,10 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 // all three 114; typed initial pool array 3, on the recovered native calling walk.
 // Round 247: early prop receiver 26; Boolean side 100; both 103; early receiver/promoted team 93; Boolean side/promoted team 102; all three 106; early receiver/entry walk 26; receiver/Boolean side/native handle 90. Initial extension and push schedule remain.
 // Round 296: Side-query inline declaration alone/with predicate/lookup/both 3/3/3/3; with native short/promoted team 31/31; full side result 15; native team/full side 42. All executable source and declarations restored.
+// Round 86: retail's unfolded add + movsx is the shape of a team read merged from two uses (as 0x201460's
+// compare-then-pass); every promoted/short/int team local folds the add and sinks the EDI save 31; short
+// const & / pointer to the field 25; clump_get named 3, in the argument 31; team or side getter by index 31,
+// by clump pointer 3; prop between clump and side 26, before both 45.
 // @retail 0x26b900
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {
@@ -768,6 +772,14 @@ void function_26ac60(s_clump_link_view *node)
 
 PRIVATE __forceinline s_prop_node_view *clump_member_prop_next(s_iterator *iterator);
 PRIVATE __forceinline s_type_76cf92 *clump_next_prop(s_iterator *iterator);
+
+/* a walk over a clump's props that keeps the current prop ahead of its iterator,
+   as s_clump_pool_iterator keeps the current clump */
+struct s_clump_prop_walk
+{
+	s_type_76cf92 *prop;
+	s_iterator iterator;
+};
 
 // @retail 0x26b1d0
 void function_26b1d0(long actor_index)
@@ -1940,18 +1952,8 @@ void function_2689d0(void)
 	}
 }
 
-// score 5 (was 5): node next is at stack +0x1c instead of +0x18; prop next is at +0x14 instead of +0x1c.
-// Member for-loop 204; prop for-loop 222; both for-loops 316; disjoint traversal scopes 5.
-// Scopes/member for-loop 204; scopes/prop for-loop 222; scopes/both for-loops 316; setup record references 5.
-// Member/prop/role iterator names 5/5/5; member/prop/both iterator references 5/5/5.
-// Member/prop ordinary inline 5/5; every plain whole-program trial preserves all baseline matches.
-// node/prop next homes 0x1c/0x14 versus 0x18/0x1c; setup scope 5; typed prop 5; both 5;
-// link references 5; array views 5; prop names 5; record references 5; joint declarations 5.
-// Prop iterator declared before the node iterator 5; both iterators in one array 69 (frame 0x14);
-// node iterator renamed to sort after props 5; prop iterator initialized before the node loop 125;
-// prop init through the clump view 174 (the clump-offset spill vanishes); helper definitions
-// swapped 5; both iterators brace-initialized 5; prop init by array indexing 5; an early dead
-// store into the prop iterator 5. The two homes do not move for any source-level reordering.
+/* adds an actor to a clump: links it into the clump's actors, moves the actor's prop
+   nodes onto the clump's props and gives it a node for each clump prop it lacks */
 // @retail 0x269250
 void function_269250(long clump_index, long actor_index)
 {
@@ -1999,26 +2001,25 @@ void function_269250(long clump_index, long actor_index)
 			record_pool_release(g_502418, nodes.index);
 		}
 	}
-	s_iterator props;
-	props.next = ((s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump)))->first_prop;
-	s_type_76cf92 *prop;
-	while ((prop = clump_next_prop(&props)) != NULL)
+	s_clump_prop_walk props;
+	props.iterator.next = ((s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump)))->first_prop;
+	while ((props.prop = clump_next_prop(&props.iterator)) != NULL)
 	{
-		long slot = *(long *)((byte *)prop + 8) & 0xffff;
+		long slot = *(long *)((byte *)props.prop + 8) & 0xffff;
 		if (g_4de300[slot] != g_4de2fc)
 		{
 			g_4de300[slot] = g_4de2fc;
-			long index = function_26a8d0(props.index);
+			long index = function_26a8d0(props.iterator.index);
 			if (index != NONE)
 			{
-				s_clump_prop *current = (s_clump_prop *)(g_50241c->data + (props.index & 0xffff) * sizeof(s_clump_prop));
+				s_clump_prop *current = (s_clump_prop *)(g_50241c->data + (props.iterator.index & 0xffff) * sizeof(s_clump_prop));
 				s_clump_link_view *link = (s_clump_link_view *)prop_ref_get(index);
 				long first = current->first_node;
 				if (first != NONE)
 					((s_clump_link_view *)prop_ref_get(first))->previous = index;
 				link->next = first;
 				current->first_node = index;
-				link->prop_index = props.index;
+				link->prop_index = props.iterator.index;
 				function_26aa40(actor_index, index);
 			}
 		}
@@ -2088,6 +2089,10 @@ void function_269250(long clump_index, long actor_index)
 // Round 299: chained category initialization in both assignment orders, with
 // invariant-first completion and native node-datum subsets: 87/89/87/89/87/89/87/89.
 // Two-count forms restored; category homes and deletion/pool scheduling remain.
+// Round 433: Typed current clump and changed-reference count on frame 0x24, signed/unsigned with
+// original/invariant-first completion and direct/shared head; fast
+// 230/230/229/229/230/230/229/229.
+// Original body and existing helper restored.
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {

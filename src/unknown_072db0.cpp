@@ -1705,6 +1705,9 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
 // Round 217: completion mapping/received/clamped scalar role names, seven subsets, 709 each;
 // mapped output at completion-player scope 709. Initial cursor base/home and slot expansion
 // remain; original complete body restored.
+// Request descriptor type once in long/dword 709/709; key once in long/dword
+// 725/725; both in signed/unsigned and mixed native storage 725 each. Original reads and
+// whole body restored; key forms recover length but enlarge the aligned frame.
 // @retail 0x74aa0
 void function_074aa0(void)
 {
