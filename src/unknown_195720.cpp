@@ -179,7 +179,8 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 	}
 }
 
-// score 38 (was 38): retail computes both logarithms before either product, keeps
+// score 38 (was 38): four-byte frame and both-logs-first scheduling remain unresolved.
+// retail computes both logarithms before either product, keeps
 // the upper one on the x87 stack until the division (FILD n + FDIVP) and stores the
 // integer weights in the dead lo/hi argument slots (PUSH ECX frame); ours multiplies
 // the lower product first (FIMUL), divides with FIDIV and needs a second slot; the
@@ -198,6 +199,21 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // lo/hi 38; named real count and exponent 52; accumulated exponent (`+=`) 43, upper
 // term first 43; logs in an inner block 43; exp of a double argument 43; exp guarded
 // by an implied `n > 0` 35 (redundant test, not kept).
+// the lower product first, divides with FIDIV and needs a second slot. Implicit
+// integer weights 43 (FIMUL); one expression with the log calls 43; named exponent
+// with inline conversions 43; weights before the logs 38; named exponent 38; double
+// intrinsics 41; the blend as an inline helper taking the logs 38 (diagnostic only);
+// n declared after the logs 38.
+// frame is 8 bytes versus 4; lower product precedes upper log;
+// upper-first logs, real weighted sum/exponent, entry log homes and reader declarations 38;
+// explicit log/weight locals with one result 64; positive interior admission 49.
+// Extra four-byte stack slot and endpoint-log scheduling remain.
+// double logs 38; upper double log 38; lower product reversed 38; upper reversed 38; both reversed 38; integral lower weight 44; integral upper weight 44; direct interior return 36, rejected two-point gain.
+// frame 8 vs 4; log/weight scheduling prevents argument-slot reuse;
+// limit before compare/read/call 41/44/60; limit/log local renames 38;
+// earlier weight declarations 38; integer weights 43; named weighted logs 38.
+// Double weight pair and double logs/weights 38/38; complete double products, sum and exponent with real logs 38/38/38;
+// complete double products, sum and exponent with double logs 38/38/38; float logs/exponent/both 38/38/38.
 // @retail 0x194ff0
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 {

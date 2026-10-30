@@ -224,6 +224,14 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // locals 49, b * (b * accelerations[1]) 99, a loop over the three segments
 // 59-65 (unrolled, factored), aggregate initializers 49, accelerations
 // zero-initialized 101, the arrays filled or declared in another order 49-50.
+// Round 16 (lane 10): retail's three tick clamps are PIN(x, 0, bound) with the value and bound
+// re-evaluated (the macro this file already defines further down); that form gives retail's integer
+// code exactly, but the float preloads stay 2 bytes shorter and shift the listing: 96 (aligned
+// 45 -> 37); with one 2x3 coefficient array 95 (0x1c frame); with the last term as a separate +=
+// 90 (retail's add order and single-exit tail); with both 88 (aligned 33: only the coefficients'
+// registers differ, retail spills both peak copies and the acceleration and keeps start and
+// deceleration in xmm6/xmm7, ours spills one); the fills in retail's load order 88 (spills start
+// instead); a, b, c declared first 88; aggregate initializers 90.
 // Round 181: all coefficient field reads at uses 117; complete native profile snapshot 107; snapshot
 // plus field reads 105; profile reference 49, plus field reads 117; reordered profile/ticks 49, plus
 // field reads 117, plus native snapshot 107. Coefficient homes and 0x1c frame remain unresolved;
