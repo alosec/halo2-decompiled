@@ -1151,6 +1151,11 @@ struct s_equipped_object_view
 // object_get 28 or object_header_get 28. Tried (r27b): the comparison through a
 // real local 12; the tag index through a long local 12; `if (...) result = true`
 // 14. 0xee8a0 (matched) needs the same volatile view for its weapon lookup.
+// Round 14, no volatile: the existing function_cbd50 for the held index 28 (result
+// declared first 40); the existing unit_get_current_weapon 28; the fields at each use
+// 27; the object pointer for the held slot with the slot read through a second
+// lookup 4 (retail's reload; only the entry's data register and the slot's sign
+// extension differ). Two held lookups reload it data-first (15, 142 bytes).
 // @retail 0x2675f0
 bool function_2675f0(long object_index)
 {
@@ -1200,45 +1205,42 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 	return result;
 }
 
-// score 99 (was 99): clock conversion, rounded-result copy and geometry homes differ.
-// Earlier: clock/compare schedule and vector homes differ; ordinary
-// pooled/clock reads with memset zero 178; projected-point loop 297; wide query
-// results 318; named maximum 146; target-copy loop 141 (one-count gain rejected).
-// ordinary-access common tick conversion 400; native point setter 146;
-// activity lifetime 344; iterator rejection continue 146; elapsed interval 293.
-// Per-use prop lookup 119; shared dot/length/both 146/146/146 (grouping rejected);
-// query output initialization omitted 347; prop read first 326; native fields 146;
-// false-byte array memset 206. All eight use ordinary pooled/clock reads.
-// j93: Frame 0x60 agrees; clock hoisting, conversion copy and three vector homes remain; typed offset output recovers movement/offset homes.
-// wide event results 371; wide target result 374; state per use 433; state eligibility snapshot 338; typed
-// offset output 99; offset outer direction 99; offset blend before delta 99; offset outer query homes 99.
-// Earlier: Clock conversion schedule, integer copy and geometry homes remain. branch
-// decay result 398; delta before conversion 100; smoothing value samples 345; sampled early delta
-// 389; native rounded count 99; stored width rounded count 396; branch decay late delta 394;
-// sampled branch decay 402; ordinary conversion inline 373; branch exponent result 416.
-// clock/compare schedule, conversion copy and geometry homes remain.
-// clock/compare schedule, conversion copy and geometry homes remain.
-// Fast: smoothed field 99; desired field 99; both fields 99; native position 393;
-// native origin 383; both geometry inputs 431; prop record 99; field and geometry 431.
-// Earlier: clock conversion, interpolation registers and three geometry homes remain;
-// interpolation product inputs 99; direct delta 99; direct blend 99; delta-first addition 99;
-// direct pair 414; direct delta/addition 99; direct blend/addition 99; direct pair/addition 414.
-// Clock conversion schedule, integer copy and geometry homes remain. branch
-// decay result 398; delta before conversion 100; smoothing value samples 345; sampled early delta
-// 389; native rounded count 99; stored width rounded count 396; branch decay late delta 394;
-// sampled branch decay 402; ordinary conversion inline 373; branch exponent result 416.
-// Earlier: the tick-rate conversion is hoisted above the decay test (both arms start the
-// same); the vector homes offset/ahead/target/direction are offset/direction/ahead/target here.
-// Ticks ternary 99; rounding of a ternary 170; 0.25 first 99; negated test 103; a seconds-to-ticks
-// helper for both or one arm 99; vector local names 99; vector declarations moved 99.
-// Round 246: Native smoothing fields/cached clock/native byte flags, seven combinations: 99/425/425/99/99/425/425/425.
-// Eighth form writes the native smoothing update explicitly; actual actor-layout aliases preserve old byte-array users.
-// All trial forms restored; no candidate qualifies.
-// Native target assignment 133; offset setter 101; both 135; projected-point aggregate 99;
-// target/aggregate 133; offset/aggregate 101; all producers 135; read-only projected point 135.
-// Clock conversion/copy and direction/ahead/target homes remain; all producers restored.
-// Round 293: Uninitialized difference/decay/blend entry declarations, all seven subsets, and all with rounded-count entry declaration: 99 each. Every value producer stays in place; complete original declarations, existing local qualifier and body restored.
-// Round 427: exact quarter/player-window/hold clock products using double literals, seven
+long function_146650(void);
+
+// score 14 (was 99): only three vector homes differ: retail stacks movement, offset, ahead,
+// target_direction, direction upward from esp+0x34; ours movement, offset, direction, ahead,
+// target_direction (12-byte slots; names and declaration places do not move them).
+// Tried, round 22 (fast, plain 14): `long ticks` with the decay after the if 99, with `real
+// ticks` 384 (SSE conversion), `double ticks` 394 (qword constant); the volatile decay dropped
+// 415; the shared real_to_long 170; the decay computed in each arm (kept: 26, the rounding is
+// then filded straight from its slot); the game-time read through the existing getter (kept:
+// 16, retail reads the time before the rounding); `>= 1 ? 3 : 1` for the last state (kept: 14),
+// both states as one ternary 39, the outer ternary 36; vector names (direction, target, ahead
+// renamed) 14 each; direction declared outside the loop, at the loop body's top, beside or
+// before target_direction 14 each; ahead declared with movement 14; ahead through
+// vector3f_add_scaled or real_point3d_set 16/16 (before the tail fix).
+// Earlier (score 99, the old ticks form): ordinary pooled/clock reads with memset zero 178;
+// projected-point loop 297; wide query results 318; named maximum 146; target-copy loop 141;
+// ordinary-access common tick conversion 400; native point setter 146; activity lifetime 344;
+// iterator rejection continue 146; elapsed interval 293; per-use prop lookup 119; shared
+// dot/length/both 146/146/146; query output initialization omitted 347; prop read first 326;
+// native fields 146; false-byte array memset 206; wide event results 371; wide target result
+// 374; state per use 433; state eligibility snapshot 338; typed offset output 99; offset outer
+// direction 99; offset blend before delta 99; offset outer query homes 99; branch decay result
+// 398; delta before conversion 100; smoothing value samples 345; sampled early delta 389;
+// native rounded count 99; stored width rounded count 396; branch decay late delta 394; sampled
+// branch decay 402; ordinary conversion inline 373; branch exponent result 416; smoothed field
+// 99; desired field 99; both fields 99; native position 393; native origin 383; both geometry
+// inputs 431; prop record 99; field and geometry 431; interpolation product inputs 99; direct
+// delta 99; direct blend 99; delta-first addition 99; direct pair 414; direct delta/addition 99;
+// direct blend/addition 99; direct pair/addition 414; ticks ternary 99; rounding of a ternary
+// 170; 0.25 first 99; negated test 103; a seconds-to-ticks helper for both or one arm 99; vector
+// local names 99; vector declarations moved 99; native smoothing fields/cached clock/native byte
+// flags, seven combinations 99/425/425/99/99/425/425/425; native target assignment 133; offset
+// setter 101; both 135; projected-point aggregate 99; target/aggregate 133; offset/aggregate
+// 101; all producers 135; read-only projected point 135; uninitialized difference/decay/blend
+// entry declarations, all seven subsets, and with the rounded count at entry 99 each.
+// Round 427 (old ticks form): exact quarter/player-window/hold clock products using double literals, seven
 // subsets 423/256/425/133/424/257/426; all with the rounded-count name 426. Every signed-short
 // product remains exactly representable. Original literals, count name and full body restored;
 // hoisted clock conversion, joined count copy and geometry homes remain.
@@ -1274,13 +1276,12 @@ void function_267c50(long actor_index)
 		else if (level >= 8) *(real *)(data + 0x3d4) = *(real *)values;
 		else *(real *)(data + 0x3d4) = 0.0f;
 	}
-	long ticks;
+	real decay;
 	if (*(real *)(data + 0x3d4) > *(real *)(data + 0x3d8))
-		ticks = round_tick_count((real)g_510c54->field_2_3 * 0.25f);
+		decay = expf(-0.6931471824645996f / round_tick_count((real)g_510c54->field_2_3 * 0.25f));
 	else
-		ticks = round_tick_count((real)g_510c54->field_2_3);
+		decay = expf(-0.6931471824645996f / round_tick_count((real)g_510c54->field_2_3));
 	real difference = *(real *)(data + 0x3d4) - *(real *)(data + 0x3d8);
-	volatile real decay = expf(-0.6931471824645996f / ticks);
 	real blend = 1.0f - decay;
 	*(real *)(data + 0x3d8) += difference * blend;
 	if (actor->unknown024 != NONE && !team_is_enemy(actor->unknown024, 1) &&
@@ -1330,7 +1331,7 @@ void function_267c50(long actor_index)
 							long player_index = object_get(node->object_index)->player_index;
 							s_ai_player *player;
 							if (player_index != NONE && (player = ai_player_get(player_index)) != NULL)
-								active = g_510c54->game_time - player->unknown0c < round_tick_count((real)g_510c54->field_2_3 * 2.5f);
+								active = function_146650() - player->unknown0c < round_tick_count((real)g_510c54->field_2_3 * 2.5f);
 						}
 						if (prop_get(node->prop_index)->unknown25 && active)
 						{
@@ -1395,7 +1396,7 @@ void function_267c50(long actor_index)
 		*(short *)(data + 0x3e0) = 0;
 	}
 	if (actor->unknown086 >= 2) actor->unknown084 = 4;
-	else actor->unknown084 = 1 + 2 * (actor->unknown086 >= 1);
+	else actor->unknown084 = actor->unknown086 >= 1 ? 3 : 1;
 }
 
 // @retail 0x2675b0

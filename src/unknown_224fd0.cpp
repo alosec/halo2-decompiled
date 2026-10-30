@@ -122,6 +122,9 @@ PRIVATE __forceinline void draw_rotation(vector3f const *axis, real sine, real c
 // DL175: Three independent/shared-counter row scaling loops [1630, 1631]; full-width unsigned
 // count/first/both [395, 396, 402]; both with independent rows 1619; immutable word span carriers
 // alone/with rows [380, 1630]. Original helper, scaling and span carriers restored.
+// Round 309: Existing cross producer, scalar/native-vector inputs and pointer/native-result
+// outputs 468/924/705/500; with scalar rotation inputs 389/617/840/517. The 389 form
+// recovers frame 0x6c, first +0xaf, but regresses; original helpers and full body restored.
 // @retail 0x224fd0
 void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache *values,
 	point3f const *position, vector3f const *direction, real scale, color4f const *color,

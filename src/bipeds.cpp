@@ -635,6 +635,11 @@ struct s_biped_flags_10a_view
 	word unknown3 : 5;
 };
 
+// score 281 (was 281): frame 0x16c agrees; early EBX save, state/change homes and Boolean tail differ.
+// Array zero initialization 300; long parent type 286; native byte flags/Boolean shifts 283;
+// array/type 301; array/bits 299; type/bits 282; all 300; Boolean result 281;
+// all/result 300; entry array with all/result 307; guarded exit 295; all/guard 300;
+// array/guard 300; Boolean result/guard 295. Original array, field view, body and exits restored.
 // @retail 0xdd360
 bool __stdcall function_dd360(long arg_159e6d)
 {
@@ -1642,7 +1647,7 @@ void __stdcall function_def60(point3f *point, long arg_159e6d, short mode, point
 
 /* a biped's collision capsule: its bottom point, the vector to its top and
    its radius, from its two capsule nodes when its definition names them */
-// score 6 (was 105): frame, length, pool/output/node/fallback roles agree; midpoint addition loads differ.
+// score 6 (was 6): frame, length, pool/output/node/fallback roles agree; midpoint addition loads differ.
 // Earlier: one-dword frame, stack object index and retail length now agree;
 // pool/definition and output-register roles remain. Existing node queries 105;
 // vector difference and fallback names 134 each, node combinations and entry locals 105.
@@ -1654,6 +1659,9 @@ void __stdcall function_def60(point3f *point, long arg_159e6d, short mode, point
 // difference 8, with scaler 8; shared difference/scaler without reversal 8. Original arm order and
 // shared difference alone 8; commuted means 8; existing object/header getters 6/8. Masked ordinal
 // 118; sequential mean sums 6; both 118; both with header getters 15. Cleanup and full plain 6 kept.
+// Round 435: Existing point setter, either complete operand order 14/14; existing vector addition
+// then in-place scaling, either order 119/119; direct component means, either order 6/6;
+// both position subobjects at midpoint/whole geometry scope 6/104. Original body restored.
 // @retail 0xdf6c0
 void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long arg_159e6d, real *radius)
 {
@@ -2190,6 +2198,9 @@ bool __stdcall function_e23e0(long arg_159e6d, point3f const *point, real value,
 // started/placement-succeeded names, late mask declaration and combined native names
 // 6 each; list scope through placement/mask with shared output 99/99, distinct output
 // 103/103. All restored; six mask/Boolean/output homes remain.
+// Round 435: Actual lookup-return receiver with shared/separate traversal output,
+// long/char/dword root 77/79/88/90/81/83; long root with entry placement declaration
+// 77/79. Original body and calls restored; six stack offsets remain.
 // @retail 0xe1b60
 bool __stdcall function_e1b60(long arg_159e6d, point3f const *point, real value)
 {
@@ -3543,7 +3554,7 @@ real magnitude3d(vector3f const *v);
 /* an actor riding a fast vehicle that is about to leave the ground (no
    ground under it, or none along its flight) says so, at most once every
    half second: falling (0x54), flipping over (0x56) or a jump (0x55) */
-// score 19 (was 105): Frame 0x84 agrees; the actor index for 0x1fb7e0 stays in ECX across the
+// score 19 (was 19): Frame 0x84 agrees; the actor index for 0x1fb7e0 stays in ECX across the
 // 0x24590 call (retail moves it to EDI and back: its callers do not trust 0x24590 to keep ECX), and
 // that 2-byte tail difference shifts six jumps to the exit. Round 35: both probes through 0xdf880
 // (as 0xe30c0 does) 28 at retail length; the vehicle's 0x34c byte 27; the time comparison written
@@ -3556,6 +3567,9 @@ real magnitude3d(vector3f const *v);
 // Native short ticks 209; time at each use 122; both 211; entry flight workspace 105,
 // with short ticks 209; fallback event result 119, with ticks/workspace 207.
 // One-use normal copy 61 at retail length (exact-match-only, restored).
+// Round 435: Word/long event carriers 19/19; complete short/long conditionals 19/19;
+// fallback defaults 60/60; complementary nested selection 20/20. Original body restored;
+// the actor carrier across the magnitude call still differs.
 // @retail 0xe3380
 void __stdcall function_e3380(long arg_159e6d)
 {

@@ -62,13 +62,20 @@ struct s_object_view
 	byte unknown0ab[0xb4 - 0xab];
 	long havok_component_index;
 	byte unknown0b8[0xc0 - 0xb8];
-	word unknown0c0 : 6;
-	word physics_active : 1;
-	word flag7c0 : 1;
-	word physics_disabled : 1;
-	word : 2;
-	word flag11c0 : 1;
-	word : 4;
+	union
+	{
+		struct
+		{
+			word unknown0c0 : 6;
+			word physics_active : 1;
+			word flag7c0 : 1;
+			word physics_disabled : 1;
+			word : 2;
+			word flag11c0 : 1;
+			word : 4;
+		};
+		word flags0c0;
+	};
 	byte unknown0c2[0xd4 - 0xc2];
 	long field_x10a40f;
 	byte unknown0d8[0x10e - 0xd8];
@@ -1474,32 +1481,26 @@ done:
     return result;
 }
 
-// score 17 (was 26): the name index parameter is read as a dword (address taken by the volatile reload), retail reads it
-// as a word both at entry and after function_bf090; the tail's registers differ (retail: type ecx, palette ebx, size eax
-// sign-extended at its load, datums esi then ebp). Tried: no volatile (name index stays in ebp, result spilled) 76;
-// function_bb760 call for the lookup, same 76; result declared after the force block 81; long/inline definition
-// fields with a block local 43, 34; long size only 38.
-// the placement tail: retail keeps the type in ecx and loads the
-// definition into eax, copying it to esi for the size and datums reads (palette offset first);
-// ours keeps the type in esi and reads the definition through eax/ecx.
-// Copy + volatile name reload 26; result declared before the lookup 83; no result variable 78;
-// result declared in the tail 85; long size 27; long offsets + palette at the call + datum local 27;
-// the 0xb7300 placement-block helpers (both orders, both product orders) 23; lookup via 0xbb760 17.
-// score 17 (was 17): type/descriptor/palette/stride allocation at the tail remains.
-// Test-produced result 78; with wide stride/call-use palette/both 76/44/42;
-// with direct offsets/type name/read-only descriptor/read-only wide 78/78/78/76.
-// entry agrees; tail type/base/palette/stride allocation differs.
-// Canonical descriptor fields through mutable/const pointers and references all 17;
-// the same four contracts with a promoted stride all 27 (236 bytes).
-// score 17 (was 17): entry agrees; tail type/descriptor/stride ownership still differs.
-// Shared type home 17; promoted placement index 28; both 28; shared type plus stride 27;
-// promoted index/stride 36; shared type/index/stride 36; shared type with call-use palette 37;
-// shared type/index with call-use palette 26.
-// score 17 (was 17): the same tail allocation and 237/236 length remain. Plain/typed aliases 17/17;
-// typed name 17; promoted datum index 19/236; typed block 17; direct name-index reads 31/236;
-// early field/base declarations 17/17; definition declaration/initialization first 17/17;
-// register type/size 17/17; alias with wide stride 27/236; definition/type-definition before guard 17/17;
-// placement-type name 17.
+// score 17 (was 17): entry agrees; in the placement tail retail keeps the type in ecx, the palette offset in
+// ebx and the size in eax (sign-extended at its load, the definition copied to esi first); ours keeps the
+// type in esi and the size as a word in bx (237 bytes against 236).
+// Tried: no volatile (name index stays in ebp, result spilled) 76; function_bb760 call for the lookup, same
+// 76; result declared after the force block 81; long/inline definition fields with a block local 43, 34;
+// long size only 38. Copy + volatile name reload 26; result declared before the lookup 83; no result
+// variable 78; result declared in the tail 85; long size 27; long offsets + palette at the call + datum
+// local 27; the 0xb7300 placement-block helpers (both orders, both product orders) 23; lookup via 0xbb760
+// 17. Test-produced result 78; with wide stride/call-use palette/both 76/44/42; with direct
+// offsets/type name/read-only descriptor/read-only wide 78/78/78/76. Canonical descriptor fields through
+// mutable/const pointers and references all 17; the same four contracts with a promoted stride all 27
+// (236 bytes). Shared type home 17; promoted placement index 28; both 28; shared type plus stride 27;
+// promoted index/stride 36; shared type/index/stride 36; shared type with call-use palette 37; shared
+// type/index with call-use palette 26. Plain/typed aliases 17/17; typed name 17; promoted datum index
+// 19/236; typed block 17; direct name-index reads 31/236; early field/base declarations 17/17; definition
+// declaration/initialization first 17/17; register type/size 17/17; alias with wide stride 27/236;
+// definition/type-definition before guard 17/17; placement-type name 17.
+// Round 14 (0xa73b0's lookup forms): definition read at each use with a datum local 33 (236 bytes);
+// definition local with a datum local 33; long stride with the placements pointer 27 (236 bytes, the
+// product then extends the index into eax); the product's operands either way round, no effect (17/27).
 // @retail 0xbb670
 long __stdcall function_bb670(short name_index, bool force)
 {
@@ -1584,18 +1585,6 @@ void havok_component_rigid_body_linear_velocity_get(s_havok_component *component
 void havok_component_rigid_body_angular_velocity_get(s_havok_component *component, long body, vector3f *velocity);
 void function_1d96d0(long index);
 
-// score 13 (was 13): final flag update is branchless, retail uses constant set/clear arms and separate exits.
-// Byte result 13; signed-byte result 13; word result 126; long result 124; guarded parent reference 13.
-// Byte result/parent reference 13; byte result/constant stores 20. A byte-wide store of the flag through a
-// local overlay of the object scored 7 (not kept: a cast to a made-up layout); the view's flag bits at
-// +0xc0 declared as byte bit fields (same bits) are the form to try.
-// Constant arms through a ternary 20; raw byte or/and arms 20; byte pointer to the flags at the join 22
-// (the hoisted common load stops the threading but loses the memory or/and); flags pointer at function
-// scope 20; ternary of bit-field stores 20; an inline parent test with a result variable 138 (object
-// moves to ebx, the result to the stack); early-return parent test 14; the whole update as a
-// force-inline helper 14/8. A byte bit-field store is branchless too (12), so byte fields alone do not
-// give the arms; retail's join keeps `mov bl, 1` unthreaded, which in matched code (0x59780) comes from
-// a result that stays live after its test.
 // @retail 0xbc5e0
 void __stdcall function_bc5e0(long index)
 {
@@ -1650,7 +1639,9 @@ void __stdcall function_bc5e0(long index)
         disabled = parent != NONE ?
             TEST_FIELD_BIT(OBJECT_GET(parent)->physics_disabled) : true;
     }
-    object->physics_disabled = disabled ? 1 : 0;
+    word *flags = &object->flags0c0;
+    if (disabled) *flags |= 0x100;
+    else *flags &= ~0x100;
 }
 
 PRIVATE __forceinline void object_attachment_point(transform4x3f const *matrix, point3f const *point, point3f *result)
@@ -1742,6 +1733,7 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // position/forward/up input pointers, masks 1/2/3/4/5/6/7, 285/283/283/283/283/283/283.
 // The two-point pointer forms are exact-match-only and rejected; original declaration and body
 // restored. Accepted header-table reload, expanded node query and transform carriers remain.
+// Round 194: Node-address/inverse phases after node, link and header writes 290/281/289/291/292/287; before first parent write 281/285. Native activity on inverse phases 278/286/283/280. On 278, hidden/connection/component shift subsets 285/281/278/284/285/281/284. Best 278 gains seven, rejected; original header and body restored.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {

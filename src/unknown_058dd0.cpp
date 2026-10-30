@@ -794,6 +794,9 @@ void c_session_client::function_06dbc0()
 // use (no local) worse (this in eax). Compile-only, all with this in edx: 32 combinations of the
 // condition shape (also the type test first), truthy memcmp, a copy of this as the call argument and
 // grouped or separate case 7/8; an inline copy of 0x58d90's body gives retail's direct table only.
+// Lane 13 r14: the existing 0x58d90 called with a `__forceinline` declaration in this file stays
+// out of line (its /Ob0 definition) 100, as a plain call 100; the type test first 43; memcmp with
+// the id first 47; the memcmp folded into the mode/type condition 43.
 // Round 84: an early return on the mode and type 43; session read in the switch and the local
 // after it 43; the type tested before the mode 43; memcmp operands swapped 47; a return after the
 // call 43; harness: one && condition with the memcmp, cases 3 and 5 left to the default, an id
@@ -1222,6 +1225,8 @@ static __forceinline long function_724a6(s_surface_description *arg_0)
 // Entry level/type declarations and a shared variant workspace, alone and combined: eight forms 7.
 // Width helper declared inline in its own unit and every prototype 7; force-inline 235 (584 bytes).
 // All restored; the member/level-address/type scratch-register rotation remains.
+// Round 14: level declared at function scope (first/after the collection) 7/7; variant or type
+// declared at function scope 7/7; the collection at each of its three uses 44.
 // @retail 0x72330
 void function_72330(c_session_state_matchmaking *state)
 {

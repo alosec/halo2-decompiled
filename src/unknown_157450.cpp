@@ -509,7 +509,6 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
 // loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
 // first on the word form 77, carrier on the word form 78.
-// computed before the branch 133; union plus carrier 91.
 // Round 94: a plain `word old_team_mask` gives retail's entry (`mov cx`, word store), but the compare
 // then reads the mask from memory where retail reloads it into ECX before the first branch and
 // shares it with the update (one instruction short, the rest shifts) 77; with the team-bit carrier 83;
@@ -521,6 +520,12 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // operands swapped 78, without the store's cast 77; word old playing mask too 59; word
 // mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
 // the bit from `player->team` 46.
+// Lane 13 r14: the word mask (aligned 21 -> 19, one instruction long after the loop: its compare
+// folds a movzx from memory and the update reloads it) 77; with the store's cast dropped 77;
+// `old_team_mask != present_teams` 77; `old_playing_teams != playing_teams` 78; the store as
+// `(word)(present_teams | old_team_mask)` 77, with the swapped compare 77; `present_teams |
+// old_team_mask` uncast 77; the team mask pointer and word mask declared before the old playing
+// mask 82, the pointer alone first 77.
 // Round 116: the mask as a local copy updated in place (`mask |= present_teams;` then stored
 // through the field pointer) 77, dword 102; that with present not volatile 63; the playing test
 // before the present update 41; a bit local for the present update only 29. A non-volatile
@@ -1782,7 +1787,13 @@ void function_15e460(long object_index, long value)
 // guard moves the engine lookup to ESI/EDI (retail's) yet keeps one in EAX 29;
 // that plus the assignment on the special arm 29; the special arm as an early
 // return 30; a single || chain return 31. A permutation run's cold scratch
-// build outran its timeout before searching.
+// build outran its timeout before searching. Result true first with the special
+// arm returning true 30, returning result 30, setting true in an if/else 30;
+// three returns 30; the compare returned under the negated special case 30;
+// one guard with the negated special case 32. Compile-only screens (~110 forms,
+// exact against ours): result types bool/byte/char/long/int/short/dword, bool or
+// byte return, options local first/second/in the guard, all reads through
+// engine_options(), a split result: none holds the one apart from the result.
 // @retail 0x15eb20
 bool function_15eb20(long player_index)
 {
@@ -2295,7 +2306,11 @@ static __forceinline void add_clamped_score(short *score, short delta)
 // Helper parameter order swapped 5; helper taking long delta with the cast inside 5; single
 // expression sum 5; score-first sum 5; value returned and stored by the callers 5; dword index 5;
 // nested index28 test 5; player declared before index 5; score address as base plus index 99;
-// branch order swapped with the tests merged 111.
+// branch order swapped with the tests merged 111; clamp and notify as one helper shared with
+// 0x15b3a0 5 (either parameter order); ternary clamp store 5; the field added directly, either
+// operand first 5/5; engine tests through g_55e4d0[globals->engine_index] 5/5/5; player pointer
+// after the add 97, at its use 104. Retail's 0x1e9ce0 has the same engine-test swap, and 0x2422d0
+// rotates three identical engine tests through EAX, ECX, EDX (scratch rotation, not spelling).
 // @retail 0x15b7c0
 bool function_15b7c0(long delta, long player_index)
 {
@@ -3081,7 +3096,11 @@ void function_15ba20(void)
 // lookup keeps the index in a different register. Tried: an unsigned index parameter 16; the shared
 // input-counter helper 16; the force-inline input-counter helper 16; the table read before the peer
 // call 68; the existing cause setter forced inline 70; the existing initializer forced inline 79;
-// size optimization 125; global optimization off 86.
+// size optimization 125; global optimization off 86; team through event_player_get 16 (aligned 9);
+// cause team stored before the cause player 56 (with event_player_get 56); engine_player_get
+// pointer before the event 50, after the initializer 56; team read into a local 56. Retail stores
+// type and f first and loads the data pointer before the NONE stores; every form keeps the
+// initializer's store order (as the matched 0x162d00 and 0x2bc420 do).
 // @retail 0x157ed0
 void function_157ed0(long player_index)
 {
@@ -3467,6 +3486,9 @@ int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *forma
 // Round 298: event-admission return result 199; entry result 94; both 200;
 // entry text workspace 82; with admission/result/both 199/94/200; native long
 // admission result 189. All restored; separate failure-result paths remain.
+// Round 225: suppression/text nested decision trees, either order, split sentinel/zero,
+// with or without complete notice-type capture: 82/104/104/82/82/104/104/82.
+// Original result graph restored; distinct failure exits and event clear schedule remain.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {
@@ -4324,6 +4346,11 @@ void function_15fe20(long team_index, color3f *color);
 // Round 295: common team/individual selection storage for score, rival score, both,
 // rival index, score/index, rival score/index, all three, all with field selector:
 // 133/88/133/88/133/88/133/133. Original branch-local storage restored; color transfers remain.
+// Round 225: ordinary native-size color copies, rival/own/both team, rival palette
+// alone/with rival/own/both team and all four: 88 each. Original body restored.
+// Same-type color construction rival/own/both team 65/405/46; palette subsets
+// 88/65/405/46/46; earlier weapon default/presence/both on that graph 77/46/77.
+// The plain 46 construction form was excluded as cast steering; no gain retained.
 // @retail 0x15f3a0
 bool function_15f3a0(long local_index, s_player_score_display *display)
 {
@@ -5411,6 +5438,9 @@ void __stdcall function_d6bc0(long object_index);
 // Round 295: true-default reset 151; complete distance/query result 144; both 144;
 // entry storage for placement/object/index, all three, all plus schedule: 144 each.
 // All original producers and body restored; frame and timer/base homes remain.
+// Round 225: reset-counter pointer/reference, before query/at update,
+// with ordinary/entry countdown declarations: 174/172/174/172/174/172/174/172.
+// Original field reads and body restored; independent timer home remains missing.
 // @retail 0x15ae70
 void __stdcall function_15ae70(s_netgame_entry_state *entries)
 {
