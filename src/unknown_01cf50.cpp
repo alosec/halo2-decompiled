@@ -7719,7 +7719,7 @@ void function_12190()
 void function_1bdf0();
 bool function_016ac0();
 bool function_022710();
-void __stdcall function_2bcd0(long, long, bool, long, long, long, real);
+void __stdcall function_2bcd0(long, bool, bool, bool, long, long, real);
 void __stdcall function_21a80(real, real, real);
 
 // @retail 0x13680
