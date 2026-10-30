@@ -314,6 +314,9 @@ void __stdcall function_44c90(long group, dword selection_mask, long level,
 // alignment/library center capture subsets 199/199/199/199. Complete native query copy on the same
 // four graphs 207/207/207/207. Separate storage grows frame to 0x10a4; all original alignments,
 // copies, calls and full body restored.
+// Round 302: Nested node-cache guards NONE-first/cache-first with original/filled count
+// and original/radius-first scheduling 190/190/191/191/190/190/191/191. Original guards,
+// count initializer and complete executable body restored; entry/index and point homes remain.
 // @retail 0x45560
 void function_45560(short entry_index, point3f const *center, real radius)
 {

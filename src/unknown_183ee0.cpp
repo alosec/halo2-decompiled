@@ -84,6 +84,9 @@ static inline byte *bsp_bit_vector(long index)
 // in a struct, inline read, clear and release helpers, and a plain global array
 // keep the byte offset or score worse; the 600 s permutation run found no
 // improvement.
+// Round 302: Occupied-slot-only clear with continue/nested/branch-owned/mode-exit
+// publication 7/7/29/29; the same with a shared identifier snapshot 7/7/29/29.
+// Original unconditional clear and complete loop restored; element/byte induction remains.
 // @retail 0x185a30
 void function_185a30(void)
 {
