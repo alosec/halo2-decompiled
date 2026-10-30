@@ -68,15 +68,9 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
-PRIVATE __forceinline vector3f *function_249171(real arg_0, vector3f *arg_1)
-{
-	arg_1->i = arg_0 * arg_1->i;
-	arg_1->j = *(real const volatile *)&arg_1->j * arg_0;
-	arg_1->k = *(real const volatile *)&arg_1->k * arg_0;
-	return arg_1;
-}
-
-// score 82 (was 82): per-case stack homes (conversion temporaries, angles, seed and
+// score 65 (was 82): what is left is per-case stack homes (conversion temporaries, angles, seed
+// and extents in cases 0, 1, 5, 7 and 9), the case 1/9 fsin/xorps order, the side test's ucomiss
+// operands and the first normalisation product (scale first in retail, one byte shorter).
 // extents) differ in cases 0, 1, 5, 7 and 9; also the case 1/9 fsin/xorps order, the side
 // test's ucomiss operands and the first normalisation product (scale first in retail, one
 // byte shorter, which also moves the jump table by four bytes).
@@ -287,8 +281,16 @@ normalize:
 	vector3f *velocity = &particle->velocity;
 	real speed_squared = velocity->i * velocity->i + velocity->j * velocity->j + velocity->k * velocity->k;
 	if (speed_squared != 0.f)
-		function_249171(particle_inverse_sqrt(speed_squared), velocity);
-	function_249171(function_246cd0(&definition->speed, values), velocity);
+	{
+		real inverse_speed = particle_inverse_sqrt(speed_squared);
+		velocity->i = inverse_speed * velocity->i;
+		velocity->j = velocity->j * inverse_speed;
+		velocity->k = *(real const volatile *)&velocity->k * inverse_speed;
+	}
+	real speed = function_246cd0(&definition->speed, values);
+	velocity->i = velocity->i * speed;
+	velocity->j = *(real const volatile *)&velocity->j * speed;
+	velocity->k = *(real const volatile *)&velocity->k * speed;
 }
 
 // @retail 0x249aa0

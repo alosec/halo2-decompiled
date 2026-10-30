@@ -305,6 +305,11 @@ struct s_flag_word_bits
 // doesn't add (it aligns at 9 or fewer, as in 0xb7150 and 0xb6df0). Nested flag tests 78; one header
 // for both passes 78; the iterator declared at the top 78; a named object index 78; one combined
 // condition 78; the datum iterator helper isn't inlined here (89 instructions).
+// Round 15 (lane 11): the flag 3 test written `!(header->flags & 8)` (no word-bitfield view) makes the
+// second pass retail's instruction for instruction (aligned 94 -> 1), but the score rises to 78 (the
+// iterator exit layout shifts the tail), so main's form stays; on that form the existing datum iterator
+// for the second pass, the failing tests as a `continue`, nested flag tests, iterator fields set
+// index-first and the datum index left unset were no better.
 // @retail 0xb6f10
 void function_b6f10()
 {

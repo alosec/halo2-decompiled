@@ -708,6 +708,9 @@ done:
 // Per-use selected count with ternary/result-first clamp: retained kind/value [168, 170];
 // direct value [168, 170]; direct kind [180, 182]; both direct [180, 182].
 // Original inputs restored; details cursor and kind/count/search homes remain.
+// Round 208: uniform twice-used validity before score reset, bool/byte/short/long
+// 169/169/166/168; with native score/distance/count fields 209/209/206/208.
+// All restored; details cursor and kind/count/search homes remain.
 // @retail 0x91000
 void __stdcall session_search_score_and_sort(s_session_search *search)
 {

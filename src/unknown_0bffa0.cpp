@@ -801,6 +801,9 @@ byte g_55e708;
 // in retail, but the loop counts down in registers); short index only 114; short count only 128.
 // Round 141: bool warning flag 109; `count = 1` before the flag test 126; `count == 0` fallback test
 // 109; colour pointer local 109.
+// Round 39: count before markers 109; count/index before markers 109; cursor before the count clamp 109;
+// const cursor 109; pointer for loop 109; marker_count/marker_index names 109/109;
+// cursor after the array declaration 109. Fast preview 131 with caveats; plain all 109; original restored.
 // @retail 0xc3340
 void __stdcall function_c3340(long light_index, long unused)
 {
