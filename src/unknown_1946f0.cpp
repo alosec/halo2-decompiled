@@ -109,6 +109,8 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // `do {} while (false)` between the decode and the normalization 62 (identical code: no join); zero
 // after y / between x and y / after the face pointer 73/81/62; the decoder returning its output
 // pointer into the normalization 62.
+// Round 34: face pointer and zero before the grid values 87; the three rows into locals, then the
+// stores 61; constant-first grid products and doubling 61; y before x 71; `1.f != face->scale` 61.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {

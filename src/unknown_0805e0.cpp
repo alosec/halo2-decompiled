@@ -74,6 +74,15 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // from the successor 52, guarded do-while 49; harness: mask on the dword, inline, as two bit tests or
 // through a char cast, `continue` filters, short index/successor mixes - the mask stays an immediate.
 // The mask is the XDK guest mask (`XOnlineIsUserGuest`, as this function's caller tests it).
+// Round 34: the hoisted mask in AL is the one cause: it makes the result constant at each exit (two
+// false exits), the successor take EBX and the early ESI save; with early returns everything else
+// is retail's. A compile-only screen confirms VC7.1 hoists the 3 only with two uses in the loop and
+// retail keeps one, so the second use was removed after hoisting. Tried: the zero-XUID test as a
+// null-identity comparison (`!(xuid == 0 && guest number == 0)`) 67 (hoists, but the extra guest
+// test stays, 140 bytes); guarded do-while with a named successor and early returns 49; successor
+// local with early returns 49; the XDK `XOnlineIsUserGuest` on the flags dword 43, with the
+// do-while 49; harness only: the guest test twice (merged before hoisting), dword and byte forms
+// together (both stay), a use of 3 outside the loop (no hoist).
 // @retail 0x805e0
 bool player_configuration_cache_next_recent_player(s_recent_player *player, long *iterator)
 {
@@ -489,6 +498,14 @@ void function_1537f0(s_profile_record *record);
 // (inlined across files) 67. The
 // harness also folds a dword[3]/byte[12]/union identity, a zeroing loop, a 64-bit identity type and an
 // opaque entry pointer.
+// Round 34: retail's frame is one 0x9c-byte object padded to 0xa0 (identity at +0x10, record right
+// after at +0x1c): with the identity and the record as two members of one local struct the record's
+// block store stops the zeros being forwarded, and the identity is stored and read back as retail
+// does: 101 with the tail clear, 45 at 259 bytes without it and with the record's 64-bit field as two
+// dwords (4-aligned record), 52 with it 8-aligned; links in retail's store order 45, the global NONE
+// stores chained 45. Not kept: no existing type has that layout, and an invented grouping struct is
+// not an accepted form. What then remains is NONE hoisted into EBP across the loop (retail keeps the
+// record's first zero dword there).
 // @retail 0x7f930
 void function_7f930(void)
 {

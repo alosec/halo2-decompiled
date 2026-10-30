@@ -144,10 +144,13 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 }
 
 
-// score 55 (was 55): BLOCKED-BY 0xba300: our object_get_root_location takes the object in eax and the output in esi,
-// retail's the output in eax and the object in ecx, so the object index can't stay in esi as in retail. Retail keeps a
-// bool result in bl (xor bl, bl at entry) and returns through tail copies (mov al, 1 / mov al, bl); the final location
-// copy stores its second dword first. Frame 0x18 and normal-transform block agree.
+// score 23 (was 58): with 0xba300 now returning its location (retail's convention) a bool result set after the
+// audible store gives retail's entry (`xor bl, bl`), EBX/EBP roles and split success/failure returns. Left: the
+// machine object pointer loads into EAX (retail reuses EBP), the cluster lookup's ECX/EDX roles and base-load
+// order, and the final location copy (retail stores its second dword first, interleaved with the call setup).
+// Round 34: bool result set before the audible store 68; with it after: the lookup index named 23, as
+// `18 * index + row` 23, the cluster table typed as rows of 18 23, memcpy for the location copy 23, a named
+// header pointer for the machine read 23. Earlier forms (under the old 0xba300 convention):
 // Byte result first 150; Boolean early-success result 152; long result 135; independent type tests 170;
 // excluded-class exit 165; long result first 134 kept (plain).
 // Root output at entry 134; forward at entry 134; direct successful completion 185; machine arm first 134; CRT location publication 134; existing normal helper input values 55 kept (plain).
@@ -167,7 +170,7 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
-	long result = 0;
+	bool result = false;
 	s_sound_object_view *object = (s_sound_object_view *)function_badc0(object_index, NONE);
 
 	if (object && !object_or_parent_hidden(object_index))
@@ -222,12 +225,12 @@ bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker
 				}
 
 				location->spatial.location = object_location;
-				result = true;
 				location->audible = function_18d4b0(tag_index, location->requested_audible, object_index, NULL);
+				result = true;
 			}
 		}
 	}
-	return result != 0;
+	return result;
 }
 
 struct s_sound_unit_view

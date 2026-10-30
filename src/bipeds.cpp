@@ -3264,20 +3264,13 @@ void __stdcall function_e2fa0(long arg_159e6d, long object_index, void *unused)
 
 /* counts the ticks an actor's biped has been falling too far to jump back
    (+0x3ab), and reports it once a second */
-// score 88 (was 154): Frame 0xa0, EBX index, native flag loads and probe homes agree; probe/energy and timer scheduling differ.
-// Caller-only noinline declaration 208, with collision arms 206 (two-point gain dropped).
-// Native conversion boundary 166; collision arms 162; Boolean bits 183; both 181;
-// actual count clamp 154 kept; workspace names 166; complete energy parts 166; all 177.
-// Round 196: deferred count with original/conditional collision calls and original/Boolean bits
-// 169/170/88/165; post-probe selected count and clamp 169/170/88/165. Outcome zeroing plus Boolean bits 88 kept.
-// On that graph, named mask ternary/arms 84/84 (four-point additions rejected); complete energy parts 88,
-// complete setters 93, reused up base 88, native time inputs 162. Original call tuple and arithmetic retained.
 // @retail 0xe30c0
 void function_e30c0(long arg_159e6d)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
 	byte *definition = BIPED_DEFINITION_GET(biped);
 	byte *state = (byte *)biped + *(short *)((byte *)biped + 0x12a);
+	bool stuck = false;
 	long count;
 
 	if (!TEST_FIELD_BIT((biped->flags_348 >> 7) & 1) && biped->physics_mode == 1 && !TEST_FIELD_BIT((biped->flags_134 >> 9) & 1) &&
@@ -3285,23 +3278,12 @@ void function_e30c0(long arg_159e6d)
 		*(long *)(state + 0x7c) != 0xe0000c3 && biped->unknown399 > function_1469f0(0.5f))
 	{
 		byte *globals = *(byte **)((byte *)g_4e034c + 0x144);
-		s_biped_ground_collision collision;
-		point3f start;
-		vector3f vector;
-		bool stuck = true;
+		point3f ground;
 
-		function_b9dd0(arg_159e6d, &start);
-		start.x -= g_4687bc->i * 0.4f;
-		start.y -= g_4687bc->j * 0.4f;
-		start.z -= g_4687bc->k * 0.4f;
-		vector.i = g_4687bc->i * 6.0f;
-		vector.j = g_4687bc->j * 6.0f;
-		vector.k = g_4687bc->k * 6.0f;
-		collision.unknown24 = NONE;
-		if (function_1697c0(function_ddf60(arg_159e6d) ? 0x800001 : 0x84000d, &start, &vector, NONE, NONE,
-			(s_collision_result_1697c0 *)&collision))
+		/* probes 6 units down from the biped for ground */
+		stuck = true;
+		if (function_df880(NULL, g_4687bc, NONE, arg_159e6d, NONE, 6.0f, &ground, NULL, NULL, NULL, NULL, NULL))
 		{
-			point3f ground = collision.point;
 			point3f position;
 			vector3f velocity;
 
@@ -3320,22 +3302,20 @@ void function_e30c0(long arg_159e6d)
 					jump = function_1e20b0(biped->actor_index);
 				}
 				jump *= 1.5f;
-				if (jump * jump > (position.z - ground.z) * g_51e9c4->unknown0 * 2.0f + velocity.k * velocity.k)
+				if ((position.z - ground.z) * g_51e9c4->unknown0 * 2.0f + velocity.k * velocity.k < jump * jump)
 				{
 					stuck = false;
 				}
 			}
 		}
-		if (stuck)
+	}
+	if (stuck)
+	{
+		count = biped->unknown3ab + 1;
+		if (count > 0xfe)
 		{
-			count = biped->unknown3ab + 1;
-			if (count > 0xfe)
-			{
-				count = 0xfe;
-			}
+			count = 0xfe;
 		}
-		else
-			count = 0;
 	}
 	else
 		count = 0;
@@ -3344,7 +3324,7 @@ void function_e30c0(long arg_159e6d)
 	{
 		long last = biped->unknown38c;
 
-		if (last != 1 || (real)g_510c54->game_time > g_510c54->field_2_3 * 0.5f + (real)last)
+		if (last - 1 != 0 || g_510c54->field_2_3 * 0.5f + (real)last < (real)g_510c54->game_time)
 		{
 			biped->unknown38c = g_510c54->game_time;
 			function_114b60(NONE, 0xe, arg_159e6d, 0xd, 0);
