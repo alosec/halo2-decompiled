@@ -1370,6 +1370,9 @@ bool function_0b6760(s_index_pair const *pair);
 // Round 424: actual power/position/both group target snapshots 351/389/368;
 // each with ordinary index 312/349/392; both with ordinary saved pointer,
 // without/with ordinary index 388/425. All restored; frame/index/header/state homes remain.
+// Round 229: complete tag-table observations with device/entry-key reads, inherited/ordinary
+// index and ordinary/result-first lifetime, all eight 442/370/374/412/442/370/374/412.
+// Original saved pointer, qualifiers and complete body restored.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {
