@@ -132,6 +132,9 @@ bool function_bafb0(long object_index, long ancestor_index);
 
 bool function_14ddc0(long local_player_index);
 
+// Round 19: unchanged; only the helper-call chain reproduces retail's BL re-test (89 at 203 bytes:
+// the table pointer spills and the index takes ebp) and every cached-entry form folds the re-test
+// away (72-80); the existence byte and the loop/unit registers remain.
 // score 44 (was 44): BLOCKED-BY 0xbafb0. The existence byte (retail BL, tested again after the
 // split test) and the loop/unit registers differ. `if (function_14ddc0(i) && split)` with the unit read
 // as `function_14ddc0(i) ? player(function_14de70(i))->unit_index : NONE` gives retail's two existence

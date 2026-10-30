@@ -4212,19 +4212,22 @@ dword function_db810(long object_index, long node_index)
 }
 
 /* the model node of the object's lowest ranked physics node */
-// score 28 (was 134): retail calls 0x16d890 here (its only caller), so it is declared noinline ahead of its
+// score 4 (was 134): retail calls 0x16d890 here (its only caller), so it is declared noinline ahead of its
 // definition in unknown_16d280.cpp (noinline only on this file's declaration still inlines it: 134). Left: the
-// prologue's instruction order, the outer count load/add order, and where the inner `xor esi, esi`
-// goes (retail does it before the inner guard). Tried: the row and index base pointers as locals
-// before the inner loop (87, 116 with both), a component local dropped (84), `long j = 0` before
-// the `if` (111), the inner `for` under the `if` (69).
+// prologue's order (retail masks the tag index before it pushes EBP) and the register that holds the tag's
+// definition (retail reuses EAX). Fixes made: the rigid body loop guarded by its count before its first
+// pointer is formed, `j` declared before the inner guard, the model index read after the two results are set
+// (28 -> 4). Tried: the model index read first 7, a definition pointer local 4, the row read inside the loop
+// 4, an up-counting loop over an indexed rigid body 4. Before the guard: the row and index base pointers as
+// locals before the inner loop (87, 116 with both), a component local dropped (84), `long j = 0` before the
+// `if` (111), the inner `for` under the `if` (69).
 // @retail 0xdbb40
 long function_dbb40(long object_index)
 {
 	s_damage_object *object = DAMAGE_OBJECT(object_index);
-	long model_index = *(long *)(g_4e3b44[object->tag_index & 0xffff].bytes + 0x38);
 	long result = 0x7fffffff;
 	long lowest_rank = 0x7fffffff;
+	long model_index = *(long *)(g_4e3b44[object->tag_index & 0xffff].bytes + 0x38);
 
 	if (model_index != NONE && object->node_index != NONE)
 	{
@@ -4235,29 +4238,33 @@ long function_dbb40(long object_index)
 			byte *physics = g_4e3b44[physics_index & 0xffff].bytes;
 			byte *component = g_51e9b8->data + (object->node_index & 0xffff) * 0xa0;
 			long rigid_body_count = *(long *)(component + 0x74);
-			byte *rigid_body = *(byte **)(component + 0x70) + 0x48;
 
-			for (long i = rigid_body_count; i > 0; i--, rigid_body += 0x60)
+			if (rigid_body_count > 0)
 			{
-				long node_count = *(long *)(rigid_body + 4);
+				byte *rigid_body = *(byte **)(component + 0x70) + 0x48;
 
-				if (node_count > 0)
+				for (long i = rigid_body_count; i > 0; i--, rigid_body += 0x60)
 				{
-					byte *rows = *(byte **)(physics + 0x3c);
-					char *node_indices = *(char **)rigid_body;
+					long node_count = *(long *)(rigid_body + 4);
 					long j = 0;
 
-					do
+					if (node_count > 0)
 					{
-						byte *row = rows + node_indices[j] * 0x90;
-						long rank = *(short *)row;
+						byte *rows = *(byte **)(physics + 0x3c);
+						char *node_indices = *(char **)rigid_body;
 
-						if (rank < lowest_rank)
+						do
 						{
-							lowest_rank = rank;
-							result = render_model_find_marker_group(model_index, *(short *)(row + 2));
-						}
-					} while (++j < node_count);
+							byte *row = rows + node_indices[j] * 0x90;
+							long rank = *(short *)row;
+
+							if (rank < lowest_rank)
+							{
+								lowest_rank = rank;
+								result = render_model_find_marker_group(model_index, *(short *)(row + 2));
+							}
+						} while (++j < node_count);
+					}
 				}
 			}
 		}

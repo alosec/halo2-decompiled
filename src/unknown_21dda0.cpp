@@ -175,7 +175,10 @@ long sound_classes_match(long class_a, long class_b)
 // the load timing matches but the callback moves from EBP to EAX. Index locals
 // and split invocation with the original load score 2; sound-source lookup 77;
 // sourced-branch return expression 75; shared-failure draft did not compile.
-// Original retained; the direct callee matches.
+// Original retained; the direct callee matches. Round 88: the index guard as its own
+// return then the named callback 3; a long result with early returns of it 132 (direct or
+// named callback); the index test moved into the outer condition as `(!source || ...)` gives
+// retail's block order and load timing, but the callback still takes EAX 3 (named or direct).
 // @retail 0x21e0b0
 long sound_voice_matches(s_voice_playing_sound const *sound, s_sound_voice const *voice)
 {

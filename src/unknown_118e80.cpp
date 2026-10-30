@@ -1193,6 +1193,9 @@ void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped
 // helper inline/noinline declarations 94/94, inline with those observations 156/132/121; existing vector
 // assignment at requested/output-basis/velocity copy masks 1-7 269/149/290/101/280/162/302, all copies with the
 // terminal flag setter 302.
+// Round 47: real output workspace with pointer/direct movement field 94/94; real movement workspace 94;
+// two-use velocity copy 109; read-only query result 94; split query declaration 94; late declarations
+// swapped 94; complete movement workspace 103 (frame 0x1ec). Original body restored.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {

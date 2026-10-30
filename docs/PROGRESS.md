@@ -2,6 +2,26 @@
 
 The newest entry comes first.
 
+## 2026-10-30: 10100 functions match
+
+```
+matched 10100 of 11326 game functions (1718730 of 2786206 bytes, 61.69%)
+matched 1267 of 1436 Havok functions (174339 of 290362 bytes, 60.04%)
+```
+
+10 new matches, none lost:
+- Machine 3's batch 162 (#943): `0xa1df0`, `0xbc470`, `0xeb5d0`, `0x128020`, `0x12a450`, `0x19a2ce`, `0x1a5370`, `0x1a5c00`, `0x1a7b30` and `0x1c27a0` match.
+
+## 2026-10-30: 10090 functions match
+
+```
+matched 10090 of 11326 game functions (1714582 of 2786206 bytes, 61.54%)
+matched 1267 of 1436 Havok functions (174339 of 290362 bytes, 60.04%)
+```
+
+0 new matches, none lost:
+- @coldspear's #942: closer scores and notes, no new match.
+
 ## 2026-10-30: 10090 functions match
 
 ```
