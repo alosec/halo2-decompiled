@@ -2153,6 +2153,10 @@ PRIVATE inline real vehicle_wheel_spin(real spin, real const *period)
 // Y405: Frame 0x14 versus 0x10 and zero/scalar homes remain;
 // gear-none/two-defaults/active-gear/sign-arm torque results 126/140/138/126; each with shared
 // straight-drive product 132/141/141/132.
+// r97: the turn product written at both uses (retail's xmm6 zero, xmm5 product) 113;
+// torque if/else with NONE first 138, with that 138; spin helper as one fmod of
+// `spin > 0 ? spin : spin + period` 112, with the product at both uses 149; spin
+// result local 134. The extra frame word is not 0x2056e0's (it aligns itself).
 // @retail 0xf1cd0
 void __stdcall function_f1cd0(long vehicle_index, s_vehicle_physics_state *state)
 {

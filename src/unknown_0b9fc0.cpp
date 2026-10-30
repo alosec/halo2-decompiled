@@ -686,7 +686,11 @@ struct s_component_property_view
 // Locals or const references for the value pointer or the component offset,
 // a volatile read of the parameters, the call inline in the test, early
 // returns and the havok_component_get form score 13 to 23; the 600 s
-// permutation run found no improvement.
+// permutation run found no improvement. The callee's parameters in all five
+// other orders 13 (identical code); a free-function callee with the component
+// first, second, third or last 13; the component written in the call 14; offset
+// before the data pointer 13; 0xa0-byte element indexing 13; result declared
+// first 13; one && test with the call 14.
 // @retail 0x11bd60
 bool __stdcall function_11bd60(long object_index, long key, long value, long positive)
 {

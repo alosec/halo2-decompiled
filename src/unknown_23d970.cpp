@@ -573,6 +573,11 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 // xmm2/xmm1/xmm0; ours uses xmm2/xmm0/xmm1. Retail's second cross product copies
 // registers and addresses forward through ecx; ours mixes ecx/edi and stores up.i early.
 // The else branch stores forward.j/k through ecx in retail and through edi here.
+// cross3f_staged for the second product 217 (aligned 37 from 44: retail's ecx reads
+// and eax stores, but 6 bytes longer: u.k/right.i colours swapped); both products
+// staged 221; previous up read after the forward copy 268, before the distance
+// 241; direction_from_angles in the else branch 224 (angles read once), with
+// cross3f_staged 220.
 // @retail 0x23de50
 void __stdcall function_23de50(void *state, void *input, s_observer_command *output)
 {
