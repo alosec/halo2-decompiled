@@ -5,6 +5,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "sound_sources.h"
+#include "impacts.h"
 #include <math.h>
 
 #define k_maximum_local_players 4
@@ -211,7 +212,7 @@ struct s_seat_animations
 	s_seat_animation *animations;
 };
 
-// score 63 (was 63): retail's ebp is not a frame pointer: it holds animation for the whole body, and result lives
+// score 55 (was 63): retail's ebp is not a frame pointer: it holds animation for the whole body, and result lives
 // in the push ecx slot ([esp + 0x10]), stored on a hit and reloaded into edx after the inner loop. Ours keeps result
 // in ebp and reloads animation from its parameter slot at every use; that register-or-spill choice is the whole
 // difference. Retail's inner loop has no result test (a hit stores and breaks, then index = parent and the outer
@@ -231,27 +232,34 @@ struct s_seat_animations
 // address 64 (element_index back on the stack, 0x188130 matches; left: count/element
 // registers swapped, the 16-bit index load, the duplicated tail); that read with the
 // parent step before the test 71 (type in eax).
+// Round 116: the index as the material class (parameter and walking local) gives retail's 16-bit
+// index load, 55 (c_block_index the same). On it: count before result 57; first/index/count/result
+// order 55; no inner guard with count first 65; class + entry pointer + no guard + count first 71
+// (158 bytes); that with `if (result) break;` before the parent step 63 (185 bytes: retail's
+// animation/result homes, but the tail is duplicated and count/element swap EAX/EBX), with a short
+// index local 64. Without the inner guard the first pass loads type into ESI unless count is
+// declared before result.
 // @retail 0x187fe0
-s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, short element_index)
+s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, c_type_47f957 element_index)
 {
 	bool first = type == 0;
 	s_seat_animation_entry *result = NULL;
 	long count = first ? animation->first_count : animation->second_count;
-	short index = element_index;
+	c_type_47f957 index = element_index;
 	s_globals_element *element;
 
-	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, index)) != NULL)
+	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, index.m_index)) != NULL)
 	{
 		for (long i = 0; i < count && !result; i++)
 		{
 			s_seat_animation_entry *entries = first ? animation->first_entries : animation->second_entries;
-			if (entries[i].element_index == index)
+			if (entries[i].element_index == index.m_index)
 			{
 				result = &entries[i];
 				break;
 			}
 		}
-		index = element->parent_index;
+		index = c_type_47f957(element->parent_index);
 		if (result)
 			break;
 	}
@@ -325,7 +333,7 @@ static inline s_seat_animation_entry *seat_animation_entry_find(long tag_index, 
 	if (animation_index != NONE)
 	{
 		s_seat_animations *animations = (s_seat_animations *)g_4e3b44[tag_index & 0xffff].bytes;
-		result = function_187fe0(type, &animations->animations[animation_index], element_index);
+		result = function_187fe0(type, &animations->animations[animation_index], c_type_47f957(element_index));
 	}
 	return result;
 }
@@ -604,6 +612,8 @@ long function_189400(s_sound_position const *position, long object_index, long t
 // aggregate effect point 77; typed effect-direction local 77; point and description first 77.
 // Round 36: query inline 77; query and target inline 77; target inline 77; array-decay outputs 77;
 // function-scope counters 77; aggregate sound position 77; compression last 76 (rejected); vector assign 77.
+// Round 116: named effect index 77; named sound index 77; both 77; dword second scan with the named
+// sound index 89; description filled before the effect scan 98.
 // @retail 0x188180
 void function_188180(point3f const *point, vector3f const *forward, long tag_index, long object_index, long index, long variant,
 	long entry_element_index, long effect_value, s_location const *location, real scale)
