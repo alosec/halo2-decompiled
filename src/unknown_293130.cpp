@@ -1,6 +1,7 @@
 // @flags /O2 /Gr /arch:SSE
 #include "unknown_2551c0.h"
 #include "globals.h"
+#include "unknown_293070.h"
 #include <math.h>
 
 struct s_293130
@@ -80,17 +81,6 @@ long __stdcall function_b7b40(void *arg_0);
 void __stdcall function_b8540(long arg_0);
 bool function_2936b0(long arg_0, long arg_1);
 
-__forceinline dword function_293131()
-{
-	g_4e7408->unknown0 = g_4e7408->unknown0 * 0x19660d + 0x3c6ef35f;
-	return g_4e7408->unknown0 >> 16;
-}
-
-__forceinline real function_293132(real arg_0, real arg_1)
-{
-	return arg_0 + (arg_1 - arg_0) * ((real)function_293131() * (1.0f / 65535.0f));
-}
-
 __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *arg_2)
 {
 	real local_0 = (real)sin(arg_0);
@@ -99,12 +89,25 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	real local_3 = arg_1->k * arg_2->j - arg_2->k * arg_1->j;
 	real local_4 = arg_2->k * arg_1->i - arg_1->k * arg_2->i;
 	real local_5 = arg_2->i * arg_1->j - arg_1->i * arg_2->j;
-	arg_2->i = arg_2->i * local_1 + arg_1->i * local_2 - local_3 * local_0;
-	arg_2->j = arg_2->j * local_1 + arg_1->j * local_2 - local_4 * local_0;
-	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_5 * local_0;
+	real cosine_term_i = arg_2->i * local_1;
+	real axis_term_i = arg_1->i * local_2;
+	real cross_term_i = local_3 * local_0;
+	real projected_term_i = cosine_term_i + axis_term_i;
+	arg_2->i = projected_term_i - cross_term_i;
+	real cosine_term_j = arg_2->j * local_1;
+	real axis_term_j = arg_1->j * local_2;
+	real cross_term_j = local_4 * local_0;
+	real projected_term_j = cosine_term_j + axis_term_j;
+	arg_2->j = projected_term_j - cross_term_j;
+	real cosine_term_k = arg_2->k * local_1;
+	real axis_term_k = arg_1->k * local_2;
+	real cross_term_k = local_5 * local_0;
+	real projected_term_k = cosine_term_k + axis_term_k;
+	arg_2->k = projected_term_k - cross_term_k;
 }
 
-// score 52 (was 52): y/z range-add order, rotation registers and final sentinel
+// score 43 (was 52): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
+// Earlier: y/z range-add order, rotation registers and final sentinel
 // scheduling differ. Result, conversion and sine stack homes now agree.
 // retail packs the random-to-float temp at frame +8 and the
 // result at +0xc (the sine shares +0 with the first sum); ours swaps those two
@@ -150,6 +153,14 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // remain.
 // Round 289: Coherent selected radius, radius/negative, two reused bounds, complete selected row; each with shared double trig input:
 // [247, 243, 242, 294, 250, 229, 229, 285]. All executable source and temporary types restored.
+// Round 186: Native member lookup and shared random APIs, with normalized raw-draw arithmetic at the
+// fraction producer; cosine/axis/cross products and the cosine-plus-axis sum named in all three rotation
+// rows: 43 from 52 at 1405 bytes. Shared/staged cross 55/55; named range return 65, with cross 71/71;
+// shared random/cross 69/69; full outputs 157. Native member getter via handler/header 57/57, byte flag 57;
+// with shared random 48. Complete-row parts 123/117/53/111/71/60/60/43; double trig/commuted dot/both/byte
+// flag 60/43/60/43. Fraction raw-draw/seed-step normalization 43/43; original raw draw without cast 60;
+// direct real-fraction operand 62. The direct fraction-call copy at 43 was dropped. Arithmetic grouping,
+// draw order and game-call tuples stay fixed.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {
@@ -176,7 +187,7 @@ long __stdcall function_293130(long arg_0)
 		}
 		if (total_weight > 0.0f)
 		{
-			real random_fraction = (real)function_293131() * (1.0f / 65535.0f);
+			real random_fraction = _random(&g_4e7408->unknown0, NULL, 0) * (1.0f / 65535.0f);
 			real selection_weight = total_weight * random_fraction;
 			for (local_16 = 0; local_16 < local_3->field_c; local_16++)
 			{
@@ -193,7 +204,7 @@ long __stdcall function_293130(long arg_0)
 		}
 		else if (local_6 > 0)
 		{
-			short local_9 = (short)((function_293131() * local_6) >> 16);
+			short local_9 = random_index(&g_4e7408->unknown0, local_6);
 			short local_10 = 0;
 			for (local_17 = 0; local_17 < local_3->field_c; local_17++)
 			{
@@ -216,21 +227,20 @@ long __stdcall function_293130(long arg_0)
 			local_13.field_b4 = 1;
 			local_13.field_b6 = 0x34;
 			if (local_3->field_20 > 0.0f && local_3->field_24 > 0.0f)
-				local_13.field_58 = function_293132(local_3->field_20, local_3->field_24);
-			local_13.field_1c.x = function_293132(-local_11->field_14, local_11->field_14) + local_11->field_0.x;
-			local_13.field_1c.y = function_293132(-local_11->field_14, local_11->field_14) + local_11->field_0.y;
+				local_13.field_58 = function_259d0(&g_4e7408->unknown0, NULL, 0, local_3->field_20, local_3->field_24);
+			local_13.field_1c.x = function_259d0(&g_4e7408->unknown0, NULL, 0, -local_11->field_14, local_11->field_14) + local_11->field_0.x;
+			local_13.field_1c.y = function_259d0(&g_4e7408->unknown0, NULL, 0, -local_11->field_14, local_11->field_14) + local_11->field_0.y;
 			if (local_12)
 				local_13.field_1c.z = local_11->field_0.z;
 			else
-				local_13.field_1c.z = function_293132(-local_11->field_14, local_11->field_14) + local_11->field_0.z;
+				local_13.field_1c.z = function_259d0(&g_4e7408->unknown0, NULL, 0, -local_11->field_14, local_11->field_14) + local_11->field_0.z;
 			real local_18 = local_11->field_c;
 			local_13.field_28 = *g_4687a8;
 			function_293133(local_18, g_4687b0, &local_13.field_28);
 			local_0 = function_b7b40(&local_13);
 			if (local_0 != NONE)
 			{
-				s_handler_object_view *local_14 = handler_object_get(local_0);
-				s_293135 *local_15 = local_14->flags134 == 1 ? (s_293135 *)((byte *)local_14 + local_14->ai_offset) : NULL;
+				s_293135 *local_15 = (s_293135 *)flock_object_get_member(((s_flock_object_header *)g_4e0300->data)[local_0 & 0xffff].object);
 				if (local_15)
 				{
 					local_15->field_0 = NONE;
@@ -248,7 +258,7 @@ long __stdcall function_293130(long arg_0)
 					if (local_3->field_14 > 0)
 					{
 						short count = (short)local_3->field_14;
-						local_15->field_4 = (short)((function_293131() * count) >> 16);
+						local_15->field_4 = random_index(&g_4e7408->unknown0, count);
 					}
 				}
 				else

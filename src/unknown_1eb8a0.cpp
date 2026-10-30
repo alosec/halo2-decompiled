@@ -839,7 +839,7 @@ PRIVATE __forceinline long movement_counter_increment(byte value)
  return next;
 }
 
-// score 2 (was 78): only the third dot's x term differs (ours loads the state vector first,
+// score 2 (was 2): only the third dot's x term differs (ours loads the state vector first,
 // `movss xmm1, [edi]; mulss xmm1, [eax]`; retail the global up vector first); y and z agree.
 // Round 158: the release call in each failing else arm (no goto) gave retail's attached ESI/EBP
 // roles 68; with the contact table read at each use (no table local) 4; found set before the
@@ -952,6 +952,11 @@ PRIVATE __forceinline long movement_counter_increment(byte value)
 // Round 276: Native parent/flags/component input fields, all seven nonempty combinations, 78 each;
 // Round 276: complete native input with contact table observed at use 346 at 1819 bytes.
 // Round 276: Original input reads and body restored; own-object/node roles and scan setup remain.
+// Round 186: Whole global/state/both dot inputs 400/403/345; direct dot-result consumption 2; function-
+// scope dot scalar 2; global input plus direct consumption 400; double carrier 212; both inputs plus double
+// 350. Wider carriers lose matched caller 0x1e5a60 and are rejected. Every original input, helper, counter,
+// matrix, call tuple and executable body restored; only the cumulative note remains. The third dot
+// x-load/multiply operand order is still the sole two-instruction gap.
 // @retail 0x1ed4a0
 void function_1ed4a0(s_state_c570 *state, dword *output, byte const *input)
 {
