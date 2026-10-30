@@ -1799,6 +1799,8 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // Round 170: node copy first 107 (the marker index extension hoists into the entry); with a per-arm
 // long index 107; with the branches inverted 173; forward components at function scope 77; read
 // before the position block 236 (795 bytes).
+// Round 172: the forward rows' accumulators follow row statement order (XMM5, XMM4, XMM3); statement
+// orders i,k,j / j,i,k / j,k,i / k,i,j / k,j,i 82/77/82/81/81.
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -1986,6 +1988,9 @@ static inline bool effect_location_in_zone_178c80(s_location const *location, po
 // colour helper (system, A, B) 178 (frame 0x44, but colour A lands in the dead `unknown` slot and the
 // cursor in the new frame slot, retail the reverse); colours inside the update block 184; zone read
 // at each use 165; helper with that zone 181.
+// Round 172: shared colour helper (system, A, B) 178 (0x177040 92); its parameters renamed 178
+// (identical); both type queries as the call's arguments 145 (`multiplied()` runs first); cursor computed
+// after the colour call 158 (552 bytes); matrix at function scope 178.
 // @retail 0x178c80
 void function_178c80(real scale, s_effect_datum *effect, s_particle_system_datum *particle_system, s_effect_particle_system_definition *definition, real unknown, bool field_b4)
 {
@@ -2353,6 +2358,10 @@ event_done:
 // Round 95: root index (0xbaf80's result) as 0x1794a0's first argument 197 (585 bytes; the index
 // stays in ESI); location stores cluster first 63, with the root index 197; chained NONE location
 // stores 63, with the root index 197. Original body restored.
+// Round 172: retail calls 0x1794a0(root index, object index) (the first argument's header flag is
+// tested). With the root index: second test as `NONE != ...` 197; a bool helper for the first test 197;
+// `if (effect && effect->object_index != NONE)` 130 (retail's head and reload, but the reloaded index is
+// then cached in ESI for 0x1794a0 and NONE takes EBX); nested head ifs 130; tail reading the field 130.
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {
@@ -2983,6 +2992,11 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // effect index 128; system looked up first 114. On the spawn form: colours after the cursor 90, mode
 // first 90, mode after the colours 89, colour B in the call 129, b4 first 111, early return 94, shared
 // colour helper (system, A, B) 90; per-call-mode colour/scope/b4/next variants 107-122.
+// Round 172: LTCG takes this convention from the body's allocation. Mode read per call (retail's shape,
+// frame 0x54) 108: the effect pointer is computed in EAX and both indices become register arguments;
+// parameters swapped 93 (cached, identical)/120 (per call); per call with the index read through its
+// address 127; definition before the next index 114; system looked up first 119; shared colour helper
+// (system, A, B) 92.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3084,6 +3098,10 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 // point and delta declared at the loop top/first/unit scope/entry 12 each; location index before the
 // unit 15; 0x179fb0's mode-0 iterator 12 (0x179fb0 46); a `players` pool local 20; while-form search
 // 234.
+// Round 172: rows x/y follow the first-assignment order of the point transform's x/y/z locals (z, x, y
+// gives retail's rows x/y but loads z first, 11, and breaks matched 0x179fb0/0x17a380); row z follows the
+// symbol count. Point copied then transformed in place 230; through a position local 257; returned
+// pointer for the delta 20; absent-node branch first 149; radius once per player 161.
 // @retail 0x1778d0
 bool function_1778d0(void)
 {
@@ -3208,6 +3226,10 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 // Round 170 (plain checks; the reduced image scores 416 here): default-if scale 272 (1518 bytes);
 // point transformed from the location's position 332; scale before the copies 95; `scale_b * scale`
 // 88; default-if with `scale_b * scale` 272.
+// Round 172 (a fast check with the callees listed reproduces 88): retail copies x and y before the scale
+// branch, ours only x; no helper spelling (local orders, `*=`, a scale local) or placement changes it.
+// Forward/up before the point 334; colour after the transform 219; position copied last 92; copies in
+// up/forward/position order 92; default-first scale before the copies 312.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {
