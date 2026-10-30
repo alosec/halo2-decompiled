@@ -238,6 +238,9 @@ void function_268840()
 // Round 178: On the deletion-owned graph, pool after setup 278; plus Boolean retention 286;
 // plus complete expiry 284; both 302; with long child-step result 276/277/282/288.
 // Original pool observations, retention, expiry and child-step widths restored.
+// Round 412: Existing deletion method outlined/ordinary/inline/forceinline 322/221/221/221; inline
+// with direct expiry 234, Boolean retention 222, both 234; ordinary with entry player pool 283.
+// All body and outside declarations restored.
 // @retail 0x268c90
 void function_268c90()
 {

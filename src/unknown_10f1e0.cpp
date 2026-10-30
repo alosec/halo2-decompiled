@@ -422,6 +422,12 @@ void function_1d90e0(long render_model_index, long node_index, transform4x3f *no
 // --fast here.
 // Complete unvisited decision with shift/mask tests and bool/byte/short/long iterator results
 // 55/42/55/42/83/88/81/86; back-edge reload order and later call carriers remain.
+// Round 17: our code is 536 bytes plus 3 of fill. A mask-form test (any spelling) computes the
+// update's mask first and splits its OR into load/OR/store, as the matched 0x29df30 does after its
+// own mask test, so retail's fused `or [word], mask` after a mask test needs another spelling. Tried:
+// bit_vector_test 42; with the update as `visited[i >> 5] |= 1 << (i & 31)` 42; the test written as
+// `(word & mask) == 0` 42; the second lookup in a nested if 37 (same code); the shared graph/iterator
+// setup hoisted with a ternary call 167 (retail duplicates the setup in both arms).
 // @retail 0x113980
 void __stdcall function_113980(long object_index, long target_index, bool alternate, real weight,
 	s_animation_state *state, s_graph_pair_iterator *iterator, long node_count, transform4x3f *nodes)
@@ -2782,7 +2788,14 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
     return elapsed;
 }
 
-// score 61 (was 122): frame 0x3c versus 0x38, action/decision and input homes remain.
+// score 52 (was 61): frame 0x3c versus 0x38, action/decision and input homes remain. Measured from
+// the frame top every slot agrees except the action short (ours 4-aligned below the 4-byte slots,
+// retail 2-aligned with the two flag bytes under it) and the control/definition pair; VC7.1 gives a
+// lone 2-byte local, word, char[2], one-short struct or inlined short parameter a 4-aligned slot, so
+// the packing needs a 4-byte aggregate. Round 17: success exit as `*flag = result = true` 52 (kept,
+// retail's AL store and length); control declared before state 61; definition declared last 55; flag
+// initializations before the lookup 206; force flag declared first 52; block-scoped action 52;
+// overlay initialized at its declaration 54.
 // Returned action comparison plus a separate existing channel-copy statement recover
 // native query/play ordering at retail length; the shared result exit is retained.
 // frame 0x3c versus 0x38; the escaped action short has its own
@@ -2931,8 +2944,7 @@ bool function_10ff40(long unit_index, long type, short side, short value,
             animated = state->play_indexed(animation, side, value, side_out, value_out);
         if (animated)
         {
-            *flag = true;
-            result = true;
+            *flag = result = true;
             goto done;
         }
     }
