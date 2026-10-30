@@ -68,7 +68,8 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
-// score 65 (was 82): what is left is per-case stack homes (conversion temporaries, angles, seed
+// score 65 (was 65): case conversion/angle/seed/extent homes, trigonometric order, side test and normalization loads differ.
+// Earlier at 65: what is left is per-case stack homes (conversion temporaries, angles, seed
 // and extents in cases 0, 1, 5, 7 and 9), the case 1/9 fsin/xorps order, the side test's ucomiss
 // operands and the first normalisation product (scale first in retail, one byte shorter).
 // extents) differ in cases 0, 1, 5, 7 and 9; also the case 1/9 fsin/xorps order, the side
@@ -93,6 +94,9 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Ordinary pooled scaling with fraction result reference-first/pointer 106/106; returned real 82;
 // ordinary-inline reference-first/pointer/return 819/819/976; returned real plus ordinary extent query
 // 443; ordinary-inline original reference 819.
+// Round 421: cone velocity setter 114; ring velocity setter 548; cone/ring setters 552; fixed/direction setter 99;
+// cone/fixed setters 107; ring/fixed setters 558; all velocity setters 562; all velocity setters/final scale
+// helper 562.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

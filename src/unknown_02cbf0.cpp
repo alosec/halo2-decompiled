@@ -49,7 +49,8 @@ static __forceinline long floor_to_long_inline(real value)
 	}
 }
 
-// score 46 (was 46): packed-word load order (ours reads the old word first), the intensity
+// score 36 (was 36): packed-word load order, intensity spill, final kind-word carrier and state setup differ.
+// Earlier at 46: packed-word load order (ours reads the old word first), the intensity
 // packed-word load order, intensity spill and final word home.
 // the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
 // shifted the listing, 46 at 1036 bytes) and the loader's two flags are named before the call, so
@@ -92,6 +93,9 @@ static __forceinline long floor_to_long_inline(real value)
 // array in the first/kind word 47/57.
 // Earlier: a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
 // Round 409: All eight ordinary/inline/separate-noinline section/kind declaration pairs 46 (1036/1033); no gain. Original contracts restored. Retained-word load order, intensity slot, final word carrier and shifted flag test remain.
+// Round 421: shared masked input 110; uniform record indexing 374; masked/indexed record 364; short record index
+// 36; masked/short index 110; indexed/short index 375; all record inputs 364; entry-scope masked input/all record
+// inputs 394.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,

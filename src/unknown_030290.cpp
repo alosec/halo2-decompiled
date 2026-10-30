@@ -611,7 +611,8 @@ static __forceinline void index_state_flags_update_31660(s_index_state_31660 *st
     }
 }
 
-// score 98 (was 98): only the 0x3800 loops differ: ours tests set13 before loading the value (movzx),
+// score 77 (was 77): runtime word loads/tests, later pad, final flag test and output-store schedule differ at retail frame/length.
+// Earlier at 98: only the 0x3800 loops differ: ours tests set13 before loading the value (movzx),
 // retail loads first, splitting the zero extension around the test (xor eax, eax / test dl / mov ax).
 // Tried: plain loops without the helper (133), word flags (162), direct *value updates (213),
 // long set13/set12 (186), set12 before set13 (175), loading the value in each branch (194),
@@ -621,7 +622,10 @@ static __forceinline void index_state_flags_update_31660(s_index_state_31660 *st
 // edi); short flags in the second-group pass only 62 (that pass then matches; not kept, the two
 // passes would differ in type). A short flag word gives retail's group-loop code but widens the
 // constant 0x20000 pass's mask (retail 0xdfff), so the constant and runtime passes may not share code.
-// score 77 (was 98): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Earlier at 77: a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Round 421: first/third packed fields 77; filtered packed fields 225; all helper packed fields 225; final packed
+// fields 77; first/third/final fields 77; filtered/final fields 225; all packed fields 225; all fields/ascending
+// runtime publication 225.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)
