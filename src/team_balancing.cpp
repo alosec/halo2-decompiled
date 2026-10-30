@@ -716,6 +716,9 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // open_slots)` (compile-only); in the build it loads the maximum into ECX early and keeps EDX for
 // the mask: `MAX(0, ...) <= maximum` 45 (192 bytes), the same through a local 45, as `maximum >=
 // MAX(...)` 45, as an `if` clearing the result 45, the `< 0 ? 0 :` form written out 45.
+// Separate maximum reduction and guarded memcpy, copy before/after scan, indexed/advancing
+// source and if/conditional maximum 93/93/83/83/79/79/88/88. Count register exchange and clamp
+// homes remain; original body restored.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

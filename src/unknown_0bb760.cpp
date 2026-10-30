@@ -540,6 +540,9 @@ void function_3dd10(long object_index, bool force);
 // Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
 // variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
 // const choice count with the signed first bound 637 (unrolled). Original body restored.
+// Round 439: complete supplied/default/converted color result, loop/entry lifetimes and
+// field/indexed clamps with field/result dual publication: 261/261/291/286, repeated at entry.
+// Frame grows to 0x60; original object-output pipeline, scans and all float trees restored.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
