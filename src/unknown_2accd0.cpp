@@ -628,6 +628,23 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // plus the best per-arm body 163 (0x2adb10 278). A compile without /GL (every extern global
 // then aliases) models retail's reloads: there the best per-arm form is 160, and no source
 // order made VC7.1 hoist the shared body_size load.
+// retail loads body_size before header_size in the entry total and hoists
+// one body_size load into the switch dispatch (shared by the body and signature cases, which then
+// keep it in ecx); it computes the remaining size in each buffer arm, re-read after the scratch
+// getter's global stores, and clamps the capacity by it; ours computes it once before the arms.
+// Tried: short-lived body/header/both size reads 182/174/182; reversed signature equality 68;
+// Boolean equality 68; inline depth one 68; global optimization off 491; frame pointer 246; per-arm
+// remaining written into size by the getter 179, capacity clamped by remaining 181, remaining
+// clamped by capacity 234; total as sizeof first 68; body size grouped with sizeof 68. With the
+// scratch object as one address-taken record (0x8000-byte storage first, then owner, pointer, size,
+// flag; init `pointer = storage`, retail's 0x4fa0c8..0x5020d4 layout) 173 (0x2adb10 134 -> 131),
+// plus the per-arm remaining 173-175 (aligned 50 against 55: reloads and getter now retail's;
+// entry order, dispatch load and size/position homes in esi/edi swapped remain), the getter storing
+// the owner before the flag 175-176, signature state as its own case with `default: __assume(0)`
+// 166, size sums and the case-1 comparison in either order 166-167, getter fresh pointer reads 163.
+// Round 402: shared byte count, seek-position home, signature outputs and role names 68 each.
+// Round 15: body size first in the total, sizeof first, body test written size-first, both,
+// the total as a long, the total converted without a dword local: 68 each (same code).
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {

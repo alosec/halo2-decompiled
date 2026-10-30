@@ -202,6 +202,9 @@ static __forceinline real noise_curve_value(const s_noise_curve *curve, real inp
 // that reorder 625 plain; with `definition->exponent - 2 < 0 ? 0 : definition->exponent - 2` (retail's
 // add -2/xor/test/setl sequence exactly) 632 plain; ternary/else-first/read-first exponent forms 687/687/673
 // fast. The flag stays a stack load into AL in every form.
+// Round 291: Complete paired interpolation partial sums/products 690/692; centered random operands 680;
+// partial/product terms with centered operands 690/692; existing native point pair 680; native pair plus
+// partial/product and centered terms 690/692 (fast control 680; full 626).
 // @retail 0x516d0
 long __stdcall function_516d0(bool reduced, dword seed,
 	const s_noise_draw_definition *definition, const s_random_draw *draw,
