@@ -550,6 +550,8 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 // Round 205: updater/angle/environment-consumer inline versus noinline
 // declarations, all eight coordinated combinations 223. Every provider
 // and caller declaration restored; frame and BSP/camera/duration homes remain.
+// Round 425: Three native missing-tail library fills in six orders, then a shared
+// signed/unsigned byte extent, 284 each. Original merged fill loop and body restored.
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)
 {

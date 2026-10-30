@@ -428,10 +428,14 @@ bool function_f42f0(long vehicle_index);
    definition's steering curve, and its throttle and turn rates */
 PRIVATE inline void vehicle_approach(real *value, real const *rates, real bound, real dt);
 
-// score 237 (was 246): frame and cross/dot schedule, rate-bound and final-angle homes differ.
+// score 229 (was 237): Frame 0x10 versus 0x14, cross/dot and argument homes remain; genuine control scalars kept.
 // Shared cross/dot/approach subsets 262/246/262/239/248/239/248; both dots 235
 // (regrouping restored). Exponent and ordinary clamp subsets 246 each; all with
 // shared rate approach 237, retained after plain confirmation.
+// J198: staged cross/rate tables/both/control scalars/tables-controls/staged-controls/all/entry declarations
+// 244/282/307/229/274/236/298/298; real absolute ratio/division/both/late sign 229/229/229/234.
+// Cross/dot, scalar-argument and rate schedules remain; original grouping and game-call roles preserved.
+// Native grouped-left and one-use absolute-call-result forms are exact-only; all restored.
 // @retail 0xeec90
 void function_eec90(long vehicle_index, real *steering)
 {
@@ -455,9 +459,11 @@ void function_eec90(long vehicle_index, real *steering)
 	}
 	else
 	{
-		real bound = (0.0f > vehicle->throttle ? *(real *)(definition + 0x1f8) : *(real *)(definition + 0x1f4)) * vehicle->throttle;
+		real throttle = vehicle->throttle;
+		real bound = (0.0f > throttle ? *(real *)(definition + 0x1f8) : *(real *)(definition + 0x1f4)) * throttle;
 		vehicle_approach(&vehicle->speed, (real const *)(definition + 0x1f4), bound, dt);
-		bound = (0.0f > vehicle->steering ? *(real *)(definition + 0x230) : *(real *)(definition + 0x22c)) * vehicle->steering;
+		real turn_input = vehicle->steering;
+		bound = (0.0f > turn_input ? *(real *)(definition + 0x230) : *(real *)(definition + 0x22c)) * turn_input;
 		vehicle_approach(&vehicle->turn, (real const *)(definition + 0x22c), bound, dt);
 	}
 
@@ -2003,6 +2009,10 @@ bool function_f5d70(long vehicle_index);
 // with full gear / requested direction first / live gear 182/152/197; word delay 155, with full
 // gear 184, with limited result 151. Uniform shift phase byte/word/long 156/154/183; limited
 // result with word phase 150; limited result with word delay and word phase 181. All restored.
+// J197: early direction-result lifetime after current/ratio 166/156;
+// long/byte result 204/166; result from tests 166;
+// complete direction operands 166; early native gear 157;
+// early direction with separate limited result 162. Entry spill/shift-byte home remain.
 // @retail 0xf1950
 void __stdcall function_f1950(long vehicle_index, real throttle_input, short new_gear)
 {
@@ -2169,6 +2179,10 @@ PRIVATE inline real vehicle_wheel_spin(real spin, real const *period)
 // Y405: Frame 0x14 versus 0x10 and zero/scalar homes remain;
 // gear-none/two-defaults/active-gear/sign-arm torque results 126/140/138/126; each with shared
 // straight-drive product 132/141/141/132.
+// r97: the turn product written at both uses (retail's xmm6 zero, xmm5 product) 113;
+// torque if/else with NONE first 138, with that 138; spin helper as one fmod of
+// `spin > 0 ? spin : spin + period` 112, with the product at both uses 149; spin
+// result local 134. The extra frame word is not 0x2056e0's (it aligns itself).
 // @retail 0xf1cd0
 void __stdcall function_f1cd0(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -2259,6 +2273,11 @@ PRIVATE inline void vehicle_contact_steer(s_vehicle_physics_state *state, s_vehi
 // selection-zero torque/byte flags 311; entry-zero torque/use-point bits 274; selection-zero
 // torque/use-point bits 301; spin forceinline 189; steer forceinline 189; both forceinline 189;
 // spin noinline 425; steer noinline 350; both noinline 545. Original executable body restored.
+// J198: torque name/throttle scope/quaternion loop-entry/function-entry declarations 189 each;
+// native contact cursor with original/loop/entry/combined lifetimes 245 each.
+// Value-input spin result, value/field periods and short/byte gear 182/261/197/262;
+// separate exhaustive/default-zero results with value/field periods 189/261/208/258.
+// Seven-point value-input gain below margin; frame, torque/contact and period homes remain.
 // @retail 0xf1f80
 void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -3081,10 +3100,15 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 /* the orientation the vehicle's physics aims for: its facing held level,
    turned through its flip while it flips (returns whether it flips), else
    the state's own */
-// score 204 (was 204): Restored original body; projection/cross-product scheduling and angle precision remain.
+// score 169 (was 204): Staged cross, native up receiver and complete products kept; projection/trig schedules remain.
 // Shared cross 204; external cross 326; native forward/up/both 263/269/298;
 // shared cross with forward/both 263/298. Wide angle 177 rejected without exact equality;
 // coordinated external force-inline 326, with wide angle 359; all original contracts restored.
+// J198: staged cross/projection/both/dot/products/combinations 188/205/190/211/206/207/207/207.
+// Up/forward/both receivers and case/trig combinations 177/204/178/188/188/178/178/178.
+// On native receiver, complete projection/dot/both/sine-first 171/171/169/169; staged cross, native up receiver and all symmetric products kept plain.
+// Double angle/cases/trig/both 147/147/147/147; shared dot/scale/both/trig 154/148/149/149.
+// All precision/grouping forms exact-only and restored. Projection-load order, cross operands and trig homes remain.
 // @retail 0xf44a0
 bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_physics_state *state,
 	matrix3x3 *result)
@@ -3094,17 +3118,24 @@ bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_p
 	bool flipping = fraction > 0.0f;
 	real dot;
 
+	vector3f *up = &facing->up;
 	facing->forward = vehicle->local_velocity;
-	facing->up = *g_4687b0;
-	dot = facing->up.j * facing->forward.j + facing->up.k * facing->forward.k + facing->up.i * facing->forward.i;
-	facing->up.i -= facing->forward.i * dot;
-	facing->up.j -= facing->forward.j * dot;
-	facing->up.k -= facing->forward.k * dot;
-	if (function_30bf0(&facing->up) == 0.0f)
+	*up = *g_4687b0;
+	real dot_j = up->j * facing->forward.j;
+	real dot_k = up->k * facing->forward.k;
+	real dot_i = up->i * facing->forward.i;
+	dot = dot_j + dot_k + dot_i;
+	real projected_i = facing->forward.i * dot;
+	real projected_j = facing->forward.j * dot;
+	real projected_k = facing->forward.k * dot;
+	up->i -= projected_i;
+	up->j -= projected_j;
+	up->k -= projected_k;
+	if (function_30bf0(up) == 0.0f)
 	{
-		facing->up = *g_4687a8;
+		*up = *g_4687a8;
 	}
-	vehicle_cross(&facing->up, &facing->forward, &facing->left);
+	cross3f_staged(up, &facing->forward, &facing->left);
 	if (flipping)
 	{
 		real angle;
@@ -3134,13 +3165,13 @@ bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_p
 			goto rotate_up;
 		}
 		cosine = (real)cos(angle);
-		vehicle_cross(&result->forward, &result->up, &axis);
+		cross3f_staged(&result->forward, &result->up, &axis);
 		sine = (real)sin(angle);
 rotate_up:
 		result->up.i = axis.i * sine + result->up.i * cosine;
 		result->up.j = result->up.j * cosine + axis.j * sine;
 		result->up.k = result->up.k * cosine + axis.k * sine;
-		vehicle_cross(&result->up, &result->forward, &result->left);
+		cross3f_staged(&result->up, &result->forward, &result->left);
 	}
 	else
 	{
@@ -3320,7 +3351,7 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 /* a hovering vehicle's wash: from each of its engine markers, a ray down a
    cone around the marker's forward, and the definition's effect where it
    hits, fading with the distance */
-// score 48 (was 53): from the marker count sum on, retail's scratch registers run one step
+// score 48 (was 48): from the marker count sum on, retail's scratch registers run one step
 // ahead of ours (retail `movsx ecx, ax; add edi, ecx`, ours `movsx eax, ax; add eax, edi`; in the
 // loop retail dx/eax/ecx where ours use cx/edx/eax; ours loads the definition first in the effect
 // block), plus the 0x146320 set-up pair (its declared order, BLOCKED-BY 0x146320: seed declared
@@ -3333,6 +3364,11 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 // pointer 129; the ray through vector3f_scale 48; facing declared with the loop locals 48; `long count`
 // declared before the first count 48; count from the second call, then `+= primary_count` 48 (the
 // 48s are the same code: the second count's sign extension stays preferenced to eax).
+// Round 420: native facing producer 67; native ray producer 48; native facing producer + native ray
+// producer 67; collision miss continue 48; native facing producer + collision miss continue 67; native
+// ray producer + collision miss continue 48; native facing producer + native ray producer + collision
+// miss continue 67; native facing producer + native ray producer + collision miss continue + readonly
+// marker 67; total owns first marker result 141. Original body restored.
 // @retail 0xf6060
 void __stdcall function_f6060(long vehicle_index)
 {
@@ -3419,6 +3455,10 @@ extern byte g_5107ee;
 // countdown/facing+midpoint 153; countdown/reflection setter 158; countdown/facing+reflection
 // 153; countdown/midpoint+reflection 158; positive word countdown 159; positive dword countdown
 // 165. Original executable body restored.
+// J197: existing complete initializer, ordinary/inline/forced 330/276/159;
+// request construction before vector helpers, forced/inline/ordinary 181/316/333;
+// forced initializer with bounded strength 177, with native countdown 166.
+// Count/marker/strength homes and reflection schedule remain.
 // @retail 0xf62f0
 void __stdcall function_f62f0(long vehicle_index)
 {
@@ -3712,6 +3752,12 @@ PRIVATE __forceinline real vehicle_larger(real a, real b)
 // Round 401: single-result case orders 012345867 143; 031425867 157; 013425867 156; 012345768 123;
 // 013482567 157; 013467825 129; 876543210 134; 258013467 162. All restored; lookup scheduling and
 // late tail merges remain.
+// Round 420: complete magnitude outcomes with entry result 117; complete magnitude outcomes with
+// lookup-time result 117; second magnitude default with entry result 117; second magnitude default with
+// lookup-time result 117; first magnitude default with entry result 119; first magnitude default with
+// lookup-time result 119; native double magnitudes and outcomes with entry result (wider frame/qword
+// spills; rejected) 101; native double magnitudes and outcomes with lookup-time result (wider
+// frame/qword spills; rejected) 101. Original body restored.
 // @retail 0xf78e0
 real __stdcall function_f78e0(long vehicle_index, long limit)
 {
@@ -4066,23 +4112,17 @@ bool __stdcall function_f7a60(long *vehicle_index)
 	return false;
 }
 
+/* an eight-byte vehicle seat-state entry; the occupancy word is at +4 */
+struct s_vehicle_seat_state
+{
+    byte unknown00[4];
+    word flags;
+    word unknown06;
+};
+typedef char assert_vehicle_seat_state_size[(sizeof(s_vehicle_seat_state) == 8) ? 1 : -1];
+
 /* whether an occupied vehicle (one with its flag 2 at +0x10a set) is within
    ten world units of a player on foot, and which */
-// score 124 (was 142): the seat loop differs (retail zero-extends the seat word into EBP and tests it
-// with `test ebp, 0xfff8; ja`, so the iterator's object index is re-read in the inner loop where ours
-// keeps it in EBP). Round 31: retail's own player scan has no on-foot filter and no 16 cap (the shared
-// collector's form was wrong here): its own scan with a unit local 144, reading the unit field at
-// each use 124 (kept, the scan is byte-equal to retail); with the vehicle iterator struct (current
-// vehicle before the iterator, retail's frame 0x118 and vehicle slot) as 0xf7a60; a center pointer
-// changes nothing (144 with the unit local, 124 with per-use reads; not kept).
-// Outer declarations, const vehicle, loop scope, single result, shared center and
-// point-difference helper all 142; indexed seats 156; native unsigned seat mask
-// with plain pointer stepping 140 at 561/549 (-2, restored).
-// Y405: the shared collector reading the unit at every use moves this to 150 (not kept); own body restored. Positive
-// word return with short/long/word/byte ordinal and plain seat stepping 170/164/170/172; long
-// return 167/162/167/169. Occupied-mask result dword/long/word/short at entry/after collection
-// 215/177/215/177/179/158/180/157; raw seat-word result dword/long at entry/after collection
-// 200/158/198/152. Frame 0x114 versus 0x118 and returned-object home remain.
 // @retail 0xf7ca0
 bool __stdcall function_f7ca0(long *vehicle_index)
 {
@@ -4117,19 +4157,20 @@ bool __stdcall function_f7ca0(long *vehicle_index)
 			{
 				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.iterator.object_index)
 				{
-					real dx = iterator.vehicle->center.x - centers[i].x;
-					real dy = iterator.vehicle->center.y - centers[i].y;
-					real dz = iterator.vehicle->center.z - centers[i].z;
+					point3f const *center = &centers[i];
+					real dx = iterator.vehicle->center.x - center->x;
+					real dy = iterator.vehicle->center.y - center->y;
+					real dz = iterator.vehicle->center.z - center->z;
 
 					if (100.0f > dz * dz + dy * dy + dx * dx && TEST_FIELD_BIT(VEHICLE_WORD_BITS(iterator.vehicle->flags_10a)->bit2))
 					{
 						long seat_count = (unsigned long)iterator.vehicle->unknown120 >> 3;
-						word const *seat = (word const *)((byte *)iterator.vehicle + iterator.vehicle->unknown122 + 4);
+						s_vehicle_seat_state const *seat = (s_vehicle_seat_state const *)((byte *)iterator.vehicle + iterator.vehicle->unknown122);
 						long j;
 
-						for (j = 0; j < seat_count; j++, seat += 4)
+						for (j = 0; j < seat_count; j++)
 						{
-							if (*seat & 0xfff8)
+							if ((seat[j].flags & 0xfff8u) > 0)
 							{
 								*vehicle_index = iterator.iterator.object_index;
 								return true;

@@ -1524,6 +1524,9 @@ static __forceinline real function_x82e52f(dword *seed, char const *file, long l
 // 431/435/434/422. Original override branch, lookup and complete executable body restored.
 // Round 430: Actual weapon-array cursor, body pointer step, long/short/dword/word ordinals: index-
 // bound 415/309/415/309; array-end bound 440/474/440/474. Original index-based body restored.
+// Round 212: const overlay return pair with two role names 220/220; pair reservation at
+// weapon/iteration/user scope, both names, 388 each (fast control 220). Original lookup lifetime and body
+// restored; frame and look homes remain.
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {
@@ -1948,6 +1951,9 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 // Round 280: Delayed count pointer/reference with original/value-first products 391 each fast, pointer
 // plain 436; with early conditional blend defaults 169 each fast (exact-only, rejected). Fast control 411,
 // full baseline 410. Original helper and result producers restored.
+// Round 212: native user animated-test/store and adjusted-store bits, seven dword subsets
+// 415/411/415/414/426/414/426; complete byte view 410 (fast control 411). One-point byte gain rejected;
+// original user record and all consumers restored; early blend and receiver homes remain.
 // @retail 0x16760c
 void __stdcall function_16760c(long user_index, long field_x11c898)
 {

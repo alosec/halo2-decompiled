@@ -50,6 +50,8 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // outer block, and read-size/count/cursor homes differ. Unsigned token / unique / both counts
 // 128/128/128; signed-word token / unique / both 232/144/231; returned copy destination 126,
 // with unsigned counts 126; returned name 199, both returned paths 124 (one-use result, restored).
+// Tried: clamp, terminator and first token before the local_7 test, 118 (not kept: retail
+// tests local_7 first at 0x1220ef and only then clamps and tokenizes; this ran them on a failed read).
 // Earlier: retail saves ebp together with esi and edi at the start of the
 // !g_4e3b40 block and pops ebp after the g_4e3b40 store; ours saves ebp inside
 // the token loop, so every stack offset in the block differs by four. The size

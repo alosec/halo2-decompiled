@@ -1117,6 +1117,9 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // free function in type/address/handler/message and handler-first orders 220/220; cases 2/4/8/5 first
 // 220/216/219/216; message-typed local first 190 (444 bytes, one lower, not kept); link pointer first 242
 // (this moves to ecx); explicit default/scoped lookups/returns 220 each. Diagnostic message test first 212.
+// score 193 (was 193): retail takes the selector in eax, the message in ecx (kept in ebx), this in
+// edx and the address on the stack (edi), with one switch over 0..24; ours the selector in ecx, the
+// address in eax and the message on the stack, and two switches.
 // Case-subset bisect: one-case bodies take the type in eax, any full body keeps ecx. An unused fourth size
 // parameter is dropped by LTCG (the caller stops passing it) and leaves the registers as they are, 220.
 // Round 188: Residual connection/peer interleaves 5,22,6,23,7,24 / 22,5,23,6,24,7 /
@@ -1147,6 +1150,13 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // connection/peer/session and connection/query/peer orders, eight forms,
 // 195/189/194/193/187/192/193/188 fast; control 191, full 193. All restored;
 // selector/payload/sender convention and single dispatch root remain.
+// Round 39 (m3 lane 12): the address read once through its address (on the stack as retail) with
+// orders (address, message, type) 198, (message, type, address)/(message, address, type) 201;
+// one retail-order switch with it 220, also with (type, address, message) 220 (fast; selector ecx,
+// message eax in every form). All restored.
+// Round 219: Residual singleton handlers 8/11/18 before the connection family, all six orders,
+// 191 each; split singleton placements 192/191 (reduced control 191, full 193). All restored;
+// incoming selector/message/sender allocation and dispatch root remain.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {

@@ -656,8 +656,34 @@ struct s_1f9762
 // A compile-only layout screen moved the approach block with none of ~10 forms.
 // Selected projection by value across four three-vector lexical orders, last/validity-first guards
 // 133/264 in every order; extra vector storage grows the frame and does not recover native tails.
+// Round 16: the approach call written in each arm of the previous-point choice 114 (arms swapped
+// 118, the magnitude test in each arm too 114); `!last` then `direction_valid` nested 67; the
+// reverse nesting 191; the approach inside the not-last arm under or after its direction test
+// 104/104; the projection as a forced-inline test called from both paths 320 (not cross-jumped).
+// Compile-only screens (~70 forms): the previous-point false arm and the approach call are
+// compiler-made copies; a `direction_valid`-first approach test appends them before the final
+// exit block as retail does, but the reached path then keeps a runtime projection test (pointer
+// live from entry); a `last`-first test threads every path and keeps the copies in place.
+// `!reached` or `!projection_direction` guards, the last arm's test as `<=` or nested, and the
+// last arm written first change neither.
 // Boolean result/home role names in four lexical orders 67/67/67/67; each with a shared
 // output predicate used for both validity and vector publication 83/83/83/83 (616 bytes).
+// Round 82: the unknown456 arm without its `direction_valid = false` 127 (retail keeps that store);
+// an explicit `else direction_valid = false` in the not-last arm 111; validity assigned in every arm
+// with no initializer 128; the projection test as one condition without `remaining` 67; the
+// reached test inverted (`<= distance` arm first) 88; the output if/else inverted 67.
+// Round 9: a bool `project` flag beside the pointer 67, with `direction_valid && !last` 152; the
+// projection as an inline predicate on each path 320; the previous point picked inside the valid
+// branch of the not-last arm 108; `if (!reached && direction_valid && unknown4d4)` in place of the
+// last arm's else-if 67; `projection_direction = mag > 0.0f ? &approach : NULL;` 67. Compile-only
+// screens: VC lays blocks out as fall-through runs in IL order, so retail's projection must be the
+// IL successor of the last arm's pointer store, with the approach (false arm, join and call) placed
+// just before the final return block, where VC puts blocks it creates late; no form moved it there
+// with the pointer in EAX.
+// Round 11 (lane 15): `bool use_approach = !last && direction_valid;` 67 (same code); the approach
+// inside the not-last arm's valid branch with a ternary reversed, if/else or nested `if
+// (direction_valid)` 104/104/104, with a default plus `if` 111. Compile-only: only `direction_valid
+// && !last` (listed) moves the approach after the first return, and it keeps the pointer in EDI.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)

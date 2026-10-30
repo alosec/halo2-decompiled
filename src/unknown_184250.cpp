@@ -251,6 +251,10 @@ void function_1c55e0(real const *bounds);
 // material/probability and scale occupy opposite dead parameter homes.
 // Retained input handle with current bit-word/mask staging scored 33;
 // the same forms with a named bit-word index scored 62 (all 495 bytes).
+// A long bit parameter matches, but 0x1d96d0's file declares it byte
+// (BLOCKED-BY 0x1d96d0). Renamed material, probability or scale 33;
+// the byte parameter used directly 42; probability in one expression
+// 71; a bit-word pointer 33.
 // @retail 0x184060
 void function_184060(long index, byte bit, s_type_1e6529 *input_data, long surface_index)
 {
