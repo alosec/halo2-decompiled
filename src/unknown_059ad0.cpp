@@ -3753,6 +3753,9 @@ bool function_07ab10(long key_index, s_type_99af70 *address, long local, word po
 // the shared clock forceinline declaration 145/145/145. Native full-record
 // copies with resolver alone/all boundaries 136/145. Host/session staging,
 // cleanup placement and clock expansion remain; all declarations and bodies restored.
+// Round 299: entry address/address-and-remote workspaces 136/136; false result
+// after lookup/close/transport 139/143/153, each with entry address 139/143/153.
+// Original workspaces, result lifetime and body restored; host/session and cleanup remain.
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,
@@ -4671,7 +4674,7 @@ bool __stdcall function_05d9e0(c_class_58d20 *session, const void *message_)
 
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update);
 
-// score 122 (was 122): frame 0x9148 versus retail 0x914c and mask homes remain; held mark-message owner spill is missing.
+// score 110 (was 122): frame 0x9148 versus retail 0x914c and mask homes remain; held mark-message owner spill is missing.
 // Earlier: missing owner spill leaves frame 0x9148 versus 0x914c (BLOCKED-BY 0x76930:
 // retail passes the owner to the mark-message call as an unused argument; its file is held);
 // mask/counter role names 122, first-loop cursor 122, eligibility guard 122,
@@ -4682,6 +4685,9 @@ void __stdcall function_60400(c_class_58d20 *session, const byte *current, const
 // Round 403: live sequence 138; live channel 137; readonly state 122; default buffer 135; default
 // live sequence 138; default live channel 150; readonly live sequence 138; readonly live channel 137.
 // Opening body restored.
+// Round 299: member-entry channel/observer/both/sequence/channel-sequence/observer-sequence
+// snapshots 138/110/137/137/134/137; native unsigned sequence 122; all snapshots
+// with unsigned sequence 136. Uniform observer snapshot 110 plain, 417/416 bytes, kept.
 // @retail 0x62640
 void function_62640(c_class_58d20 *session)
 {
@@ -4692,11 +4698,11 @@ void function_62640(c_class_58d20 *session)
  for (long i = 0; i < session->member_count; i++)
  {
   s_network_session_member_state *state = &session->member_states[i];
-  if (state->flag1 && !state->flag3 && session->observer->channels[state->unknown04].state == 7 &&
+  s_network_observer *observer = session->observer;
+  if (state->flag1 && !state->flag3 && observer->channels[state->unknown04].state == 7 &&
    state->unknown08 != session->value4c)
   {
    long channel = state->unknown04;
-   s_network_observer *observer = session->observer;
    long sequence = state->unknown08;
    if (network_observer_channel_ready(observer, channel, 0x19))
     network_observer_mark_message(observer, channel, 0x19);
