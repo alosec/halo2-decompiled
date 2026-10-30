@@ -1957,6 +1957,11 @@ extern dword g_54d5b8;
 // source order).
 // Round 186: dialog result at entry long/int/dword/unsigned-int, native-scope int/dword/unsigned-int
 // 36 each; full unsigned state 36. Original body restored; shared tail placement remains.
+// Round 13 (lane 13): all 120 case orders lay out the same (compile-only); the call follows
+// case 4 only when case 4 has its own call that VC tail-merges (compile-only, fastcall), but
+// here case 4's call pushes a constant: 81 with `dialog` or 0xad. Also: the switch only picks
+// the dialog and `state != 4 || !g_51ec99` guards the call 55; a forced-inline dialog helper
+// returning NONE 85; case 4 `if (!g_51ec99) break;` then store and return 48.
 // @retail 0x250804
 void c_session_lobby_screen::show_session_state()
 {

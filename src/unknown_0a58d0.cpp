@@ -693,7 +693,7 @@ void function_aa9e0(long index, point3f const *previous_position, vector3f const
 
 
 long function_b5990(long tag_index, bool flag);
-void function_b5920(long identifier);
+void function_b5920(long identifier, long object_index);
 void object_dispatch_detach_simulation_entity(long object_index);
 struct s_effect_object_placement;
 
@@ -718,7 +718,7 @@ void function_a7a60(long index)
  long identifier = header->object->field_d4;
  if (identifier != NONE)
  {
-  function_b5920(identifier);
+  function_b5920(identifier, index);
   s_object_view *object = ((s_object_header *)g_4e0300->data)[index & 0xffff].object;
   object_dispatch_detach_simulation_entity(index);
   object->field_d4 = NONE;
