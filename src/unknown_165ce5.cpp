@@ -1943,6 +1943,9 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 // Round 280: Delayed count pointer/reference with original/value-first products 391 each fast, pointer
 // plain 436; with early conditional blend defaults 169 each fast (exact-only, rejected). Fast control 411,
 // full baseline 410. Original helper and result producers restored.
+// Round 428: complete eligibility/duration classifier arms, full bool/byte/short/long
+// 422/422/443/443; complementary bool/byte/short/long 446/446/446/447
+// (fast control 411; full 410). Early blend byte and user/weapon/sway homes remain; restored.
 // @retail 0x16760c
 void __stdcall function_16760c(long user_index, long field_x11c898)
 {

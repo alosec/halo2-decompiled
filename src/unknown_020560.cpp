@@ -273,6 +273,9 @@ void function_16f60(byte *state, word const *range)
 // Round 182: Native prefix-table masks and a complete mode/state table do not recover selective setter expansion
 // Trials 1-8: 176, 134, 101, 124, 198, 192, 216, 226.
 // Trials 9-9: 832.
+// Round 428: enabled-first complete group orders (1=one/two, 3=three/four):
+// 13560 201; 13650 199; 15360 209; 15630 223;
+// 16350 197; 16530 205; 10365 158; 10635 146. Original complete arm order and body restored.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -877,6 +880,10 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
     *direction = sample->direction;
 }
 
+// score 627 (was 627): Frame 0x1c versus 0x2c; count/selection/projection and fraction homes differ.
+// Round 428: complete squared products in both searches, projection products and both 627 each;
+// actual selected-record common copy tail, with either/both products and common distance storage,
+// 748 each at 1944/2122 bytes. All original sums, copy paths and body restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
