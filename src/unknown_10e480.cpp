@@ -265,6 +265,10 @@ void c_animation_channel_data_get(c_animation_channel const *channel, s_animatio
 // Round 225: fabsf with mutable/immutable weight, native real/double absolute
 // values, mutable/immutable and with immutable weight: 207 each. Original
 // absolute expression, frame tests and body restored; getter/ordinal/frame remain.
+// DL202: Native external frame/weight table direct/pointer/const-pointer/per-iteration pointer/reference/
+// const-reference 207/250/250/250/250/250; pointer/const-pointer with twice-used long sample
+// frames 222/222. Input aliases recover frame 0x2c but regress; original table fields,
+// observations, constructors and body restored. Destination/ordinal homes and getter expansion remain.
 // @retail 0x10e530
 void function_10e530(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)

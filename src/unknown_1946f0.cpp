@@ -85,7 +85,7 @@ static __forceinline void decode_direction(long index, vector3f *direction)
 	direction->k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
 }
 
-// score 47 (was 61): what still differs is the normalization: ours keeps the decoded k on the x87
+// score 47 (was 47): what still differs is the normalization: ours keeps the decoded k on the x87
 // stack (fst) and squares it first; retail pops it and sums j*j, k*k, then i*i from memory, as if a
 // block ended after the decode (a diagnostic branch there gives retail's order). These sum orders
 // follow VC's tuple numbering, not the source order. Round 13: the decoder builds its grid point
@@ -145,6 +145,10 @@ static __forceinline void decode_direction(long index, vector3f *direction)
 // pointer into the normalization 62. Round 20: constant-first doubling 61; `x *= face->scale` 61;
 // face pointer before the grid values 81; the equal-direction arm first 61; zero between the grid
 // products and the doubling 72; the rows written in both scale arms 224 (no tail merge).
+// DL201: shared squared length with sqrtf and fabs/fabsf, dot/length forms 87/87/87/87;
+// double magnitude with sqrt/sqrtf 118/118. Out-of-line magnitude query 118/118
+// is unresolved and excluded. Ordered two-sided magnitude tests, dot/length 92/92.
+// Original normalization restored; final-component forwarding remains.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
