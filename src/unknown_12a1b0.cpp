@@ -1213,6 +1213,10 @@ struct s_looping_detail_request
 // Round 186: caller-only query noinline/inline 138/138; mode predicate 138;
 // destination after copy/reference 138/138; offset workspace name 138;
 // caller noinline with later destination 138; mode with later destination 138.
+// Round 77: a noinline first-player query plus a header copy for its three inlining callers matched,
+// but DECOMPILING.md rules out added noinline, so it was reverted; mode before type, audible stores in
+// struct order, vector3f_add for the position and the camera taken first in the else arm 133 (under the
+// keep bar, restored).
 // @retail 0x21cc60
 bool looping_sound_prepare_detail(s_type_a82d9f const *detail, long looping_sound_index, s_looping_detail_request *request)
 {
