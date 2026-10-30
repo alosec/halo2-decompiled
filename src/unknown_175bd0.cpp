@@ -1244,6 +1244,10 @@ void function_17aec0(short node_index, s_effect_datum *effect, transform4x3f *ma
 // Tried (r35): the qualified snapshot with a later plain parameter read 13; the direct fallback 31;
 // the initial read through its address 13; a C++ reference 32; an overwritten snapshot 37;
 // memcpy without the reread 37; `(void)&node_index` with either snapshot form 37.
+// Tried (r105): parameters reversed (matrix first, flag last; definition and the 0x178bc0 call)
+// with the node read once through its address 31 (flag cl, matrix on the stack), with the
+// current body 13 (0x178bc0 2: its setup follows the declared order), plain 37; a word or
+// long node parameter, plain body, 37.
 // @retail 0x17af30
 void function_17af30(bool field_b4, short node_index, s_effect_datum *effect, transform4x3f *matrix)
 {
