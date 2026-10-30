@@ -36,9 +36,10 @@ __declspec(noinline) long network_session_cancel_reservations(c_class_58d20 *ses
 bool session_summary_remove_machine(s_session_summary *summary, s_session_id *id);
 bool network_session_host_set_summary(c_class_58d20 *session, const s_session_summary *summary);
 
-// score 9 (was 11): the found/count initialisation order matches retail now;
+// score 9 (was 9): Frame and both scans agree; final summary address is reused rather than rematerialized.
 // only the summary address still differs: retail recomputes `lea eax,[esp+0x24]`
 // after the push, ours reuses the `ebx` copy of `&summary`.
+// Round 296: Explicit inline/noinline call-summary subsets for cancellation/removal/publication (all seven combinations) 9 each; named removal result 9. Complete body and declarations restored.
 // @retail 0x6d380
 void __stdcall function_06d380(c_session_client *client, const s_session_id *id)
 {

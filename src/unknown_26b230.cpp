@@ -547,7 +547,7 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 	return result != NULL;
 }
 
-// score 3 (was 3): initial team load width and push scheduling remain.
+// score 3 (was 3): Initial signed team load and EBP-save schedule remain; frame and the complete walk agree.
 // Earlier forms:
 // with a fifth word in the clump iterator (shared with 0x26bc60 and 0x269040;
 // reverted in review, two points) the frame agrees at 66; retail sign-extends the
@@ -587,6 +587,7 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 // getter/complete side 15; getter/per-use receiver 113; complete side/per-use receiver 114;
 // all three 114; typed initial pool array 3, on the recovered native calling walk.
 // Round 247: early prop receiver 26; Boolean side 100; both 103; early receiver/promoted team 93; Boolean side/promoted team 102; all three 106; early receiver/entry walk 26; receiver/Boolean side/native handle 90. Initial extension and push schedule remain.
+// Round 296: Side-query inline declaration alone/with predicate/lookup/both 3/3/3/3; with native short/promoted team 31/31; full side result 15; native team/full side 42. All executable source and declarations restored.
 // @retail 0x26b900
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {
