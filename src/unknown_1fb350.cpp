@@ -35,6 +35,11 @@ PRIVATE __forceinline byte *function_1fb762(s_record_pool_iterator *arg_0);
 // Round 34: early result return 54, also with one parameter address read 54; assignment-return 54;
 // read-only or unsigned parameter 12 each; read-only record pointer 12; condition-scoped record 12;
 // predicate-assigned result 29.
+// Round 15: walk record {animation, iterator} 12; result declared after the iterator setup 13;
+// body moved after its helpers 12; two continue tests 12; step result initialized first 12.
+// Compile-only screens reproduce ours exactly; declaration/setup orders, nested tests, swapped
+// compare, goto exit, stdcall, a pool local, pool read at each use in the step all keep ESI;
+// only an object index held in EBX from entry (0x1fb760's case) moves the pool to EDI.
 // @retail 0x1fb6f0
 bool recorded_animation_playing(long object_index)
 {

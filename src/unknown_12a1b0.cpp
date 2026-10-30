@@ -1149,7 +1149,7 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 	}
 }
 
-// score 24 (was 25): retail's code is this loop with 0x126df0 inlined (its fade-in half); the
+// score 24 (was 24): retail's code is this loop with 0x126df0 inlined (its fade-in half); the
 // index and the element pointer have ESI and EDI the other way round. Earlier: the state load was
 // folded before the element pointer was formed and the final looping store was scheduled early;
 // pool at each use 66; count declared first 66; count renamed 66; state guard 66;
@@ -1173,6 +1173,10 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 // 0x126df0 call with the state tested through this file's getter 42, through the callee's own
 // SOUND_PLAYBACK_GET 24 (kept); then a one-use sound local, index first, iterator index, pool local,
 // NONE-first loop test, `2 ==`, `index = NONE` and the state read through iterator.index 24 each.
+// Round 15: convention already retail's (EBX, ret 8); `continue` on state != 2, early return,
+// iterator fields index-first, iterator/both at function scope 24 each. Compile-only with a
+// forced-inline 0x126df0 copy gives retail's index EDI/element ESI when the count gets EBX;
+// with the first index in EBX (LTCG) ours swaps them.
 // @retail 0x21be20
 void looping_sound_fade_in(long first_sound_index, short curve, real duration)
 {
