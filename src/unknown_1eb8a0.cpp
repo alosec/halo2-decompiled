@@ -836,7 +836,47 @@ PRIVATE __forceinline long movement_counter_increment(byte value)
  return next;
 }
 
-// score 78 (was 78): attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// score 78 (was 78): attached-block ESI/EBP roles (retail: object handle esi, node offset and up-vector pointer
+// ebp) and contact-scan setup remain. Tried: per-use direction 88. Unsigned attached handle 157; const contacts
+// 157; unsigned selection 157; initialized found 364; forward workspace 482; shared difference 237; const
+// objects 157. On per-use scan: direct count 88; direct table 356; both 356; found first 87 (one-point addition
+// dropped). Native flags/parent/both 88/88/88; attachment/position/input-field references 88/88/88; frame
+// pointer 563; global analysis off 1220. Validated attached handle 88; detached selection lifetime 396; outer
+// found 88; state reference 88; output flag reference 88; post-validation selection 106; selected contact
+// reference 88; direct output test result 104. current-handle bits 88; node-transform input pointer 88; full-
+// width definition bits 90; shared object handle, shared receiver and both lifetimes 88; live input flags 88;
+// native contact count 88. Shared component lookup, native owner/table/count/all fields, native component
+// receiver and external contact array each 88f; long found result 411f. Node byte/data offset and immutable
+// handle 88; shared projection scale 90; scale plus in-place difference 78; nested/best-first scan 88/98;
+// detached dot 88; independent forward output on the scaled flow 437. Input values and grouping retained. outer
+// projected-up lifetime 78f; scale-output pointer consumed 78f. both scale lifetimes 78f; shared cross on scale
+// flow 78f. signed-byte found 78f; signed-byte disabled 78f. both byte results 78f; scale output plus byte found
+// 78f. per- use/external-reference owner fields 376/385; conditional/guarded existing counter results 437/437;
+// per- use/reference owner plus conditional 453/450; plus guarded 453/450. Own handle bits 78; attached counter
+// field reference 78; selected-index success 398; orientation test result 78; detached shared difference 166;
+// detached shared cross 78; both detached helpers 78; contact height field reference 78. Opening body retained.
+// Early best 78; best before selected 88; scalar contact copy 300; library copies 78; third dot inputs commuted
+// 78; selected guard first 83; byte counter return 415; ordinary inline counter 78. From the contact scan on,
+// scratch registers rotate one step because the table is loaded before the unroll test. count before table 78;
+// found before the attached flag 77; table read per iteration via an element pointer 337; table indexed per
+// iteration 346 (retail's scan and everything after it, shifted one byte by a loop-alignment nop while the
+// attached roles stay swapped; aligned 49 -> 19); on that: dot inputs swapped, function-scope handle, release
+// flag, named up pointer 346 each. Round 74: release call in the forward-zero else with one goto 77; up-vector
+// dot commuted 78; object flags read without the object local 78; node offset added after the node base 78;
+// typed node-matrix pointer arithmetic 78; handle read straight from the component lookup 78; attached follow as
+// an inline helper returning success 357.
+// attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// Round 17: the contact table read through the component inside the scan (no local) plus `found =
+// true` before the field_11 store gives retail's scan and everything after it (aligned diff 52 ->
+// 20) but a one-byte pad at the unrolled loop head (347 positional). The pad comes from the attached
+// roles: retail's world-up pointer lives in EBP and its two `[ebp]` reads take a displacement byte,
+// so retail's loop head lands 15 bytes from alignment (no pad) and ours 1 byte from it. Diagnostic
+// copies without the world-up copy or without the first dot give object_index retail's ESI. On that
+// scan form (all 346/347, same roles): node matrix local, world-up local at the dot, object pointer
+// inline, transform terms reordered, the existing object_get/object_node_matrix helpers, dot
+// arguments swapped; world-up local before the transform call 504.
 // Unsigned attached handle 157; const contacts 157; unsigned selection 157;
 // initialized found 364; forward workspace 482; shared difference 237; const objects 157.
 // On per-use scan: direct count 88; direct table 356; both 356; found first 87 (one-point addition dropped).

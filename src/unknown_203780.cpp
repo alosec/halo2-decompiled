@@ -31,6 +31,12 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // bool 70; result assigned inside the test 70; store through an address
 // local 70; global optimization off 210 (diagnostic). No source form
 // enregisters the NONE constant: VC propagates it per web.
+// Lane 11 r12 (aligned counts, base 44): the cell pointer as a typed element
+// address or index-first sum 44 (identical code); the guards nested to one exit
+// with the call result in its own local, or `local_0 = call; if (local_0 !=
+// NONE) store` 102/97 (arg_1 moves to dx); the call result in its own local
+// copied to local_0 on success, early returns kept 93 (NONE in ebx, local_0
+// spilled, frame 0xdc).
 // @retail 0x203780
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3)
 {

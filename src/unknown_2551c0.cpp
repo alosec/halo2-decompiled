@@ -97,6 +97,9 @@ short __stdcall function_2551c0(long actor_index)
 // order and the output term order change code. Cross i/k/j 49; projection (1 - cosine) first
 // 72; dot3f(axis, vector) 72; outputs v*cos - cross*sin + projection*axis 133 (814 bytes);
 // score as the distance part times the dot part 43.
+// Round 16 (lane 10): the score's dot as a named local 109 (it also reshuffles the rotation schedule);
+// the helper returning the vector 43; sine and cosine named before the call 43; the rotated vector
+// renamed to sort after forward 43; the helper's axis parameter first 43; cosine before sine 72.
 // Round 181: native slot data block 89 (820 bytes, larger frame); restored slot view with rotation
 // inputs axis/vector/sine/cosine or axis/sine/cosine/vector or cosine/sine/axis/vector 43 each;
 // vector/sine/cosine/axis, sine/cosine/axis/vector, axis/cosine/sine/vector and

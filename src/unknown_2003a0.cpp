@@ -1142,6 +1142,13 @@ struct s_squad_tree_definition
 };
 
 // score 31 (was 31): One-dword frame and first two passes agree; later parent loads still lose the retained record address.
+// Round 76: retail's passes 3/4 need the field loaded twice at register allocation and the second load
+// turned into `mov eax, ecx` afterwards (a volatile test, diagnostic only, gives the folded load into ECX
+// and the dead `add eax, edx` but keeps the second load); a noinline declaration of 0x205280 in place
+// of the in-body inline_depth pair 31 (not kept: DECOMPILING.md rules out both; a file-scope pair is
+// allowed). Parent through a ternary select 66;
+// `continue` on a missing parent in both passes 31; group and squad pointers at function scope 31;
+// the group pointer reused for the sibling walk 31.
 // parent field into ECX through [eax+edx+offset] and still forms the record pointer (add eax,edx) before
 // the compare, then copies the value to EAX; ours forms the pointer first and loads through it into EAX.
 // Tried: const current group 43; unsigned squad parent 43; unsigned group parent 63; unsigned sibling 43;
@@ -1532,7 +1539,7 @@ bool function_2104b0(short output_index, point3f const *point, point3f *out);
 // Round 407: native entry-point field reference with cached/live squad, byte/native actor
 // and assignment/library fallback copy 58/58/58/58/76/76/76/76. Entry base still splits; all restored.
 // @retail 0x204950
-real function_204950(long actor_index, long squad_index, short mode)
+real function_204950(long squad_index, long actor_index, short mode)
 {
     real result = 3.402823466e+38F;
     byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
@@ -1614,7 +1621,7 @@ long function_204b20(long actor_index, short mode)
             continue;
         else
             weight = 1.333f;
-        real distance = function_204950(actor_index, squad_index, mode);
+        real distance = function_204950(squad_index, actor_index, mode);
         if (distance < 3.402823466e+38F)
         {
             if (squad_index == *(long *)(actor + 0x28))
@@ -2332,8 +2339,6 @@ void function_201ea0(void)
 }
 
 
-PRIVATE __forceinline s_squad_datum *function_201c83(s_squad_record_iterator *arg_0);
-
 // @retail 0x201df0
 void function_201df0(void)
 {
@@ -2350,7 +2355,7 @@ void function_201df0(void)
     }
 }
 
-void function_1e3400(long actor_index, long squad_index);
+void function_1e3400(long actor_index, short squad_index);
 void function_26def0(long actor_index, long owner_index);
 
 // @retail 0x204ca0
@@ -2906,43 +2911,31 @@ void function_202720(void)
     }
 }
 
-PRIVATE __forceinline s_squad_datum *function_201c83(s_squad_record_iterator *arg_0)
+struct s_squad_datum_walk
 {
-    s_squad_datum *local_0 = NULL;
-    if (g_4f55d0->active)
+    s_data_datum_iterator iterator;
+    long walk_index;
+};
+
+/* the next squad while the ai is active, or NULL */
+PRIVATE __forceinline s_squad_datum *squad_datum_walk_next(s_squad_datum_walk *walk, bool active)
+{
+    s_squad_datum *squad = NULL;
+    if (active)
     {
-        s_record_pool *local_1 = arg_0->records.data;
-        long local_2 = data_next_absolute_index_inlined(local_1, arg_0->records.index + 1);
-        if (local_2 == NONE)
-        {
-            arg_0->records.index = local_1->maximum_count;
-            arg_0->records.datum_index = NONE;
-        }
-        else
-        {
-            byte *local_3 = local_1->data + local_1->size * local_2;
-            arg_0->records.index = local_2;
-            arg_0->records.datum_index = (*(short *)local_3 << 16) | local_2;
-            local_0 = (s_squad_datum *)local_3;
-        }
-        arg_0->squad_index = arg_0->records.datum_index & 0xffff;
-        arg_0->squad = local_0;
+        if (data_datum_iterator_next_inlined(&walk->iterator))
+            squad = (s_squad_datum *)walk->iterator.datum;
+        walk->walk_index = walk->iterator.datum_index & 0xffff;
     }
-    return local_0;
+    return squad;
 }
 
-// score 43 (was 43): Frame 0x28 and rounding homes agree; missing-record tail duplication and index extension remain.
-// Earlier: the record's index is combined with the pool's base before the test; retail keeps
-// the two apart until the compare and the division. Shared guarded search 43; shared salted-index
-// constructor 43; both 43; shared datum iterator under the activity guard 126; explicit activity
-// argument with the original/search/index/both forms 43/43/43/43. Original body and helper restored.
 // @retail 0x201c80
 void function_201c80(void)
 {
     long local_0 = g_510c54->game_time;
     long period_once;
     long period_twice;
-    long time_copy = local_0;
     long period_half;
     real local_6 = (real)g_510c54->field_2_3;
     __asm
@@ -2973,17 +2966,18 @@ void function_201c80(void)
         function_2024c0();
         function_202720();
     }
-    s_squad_record_iterator local_4;
+    s_squad_datum_walk squad_walk;
     if (g_4f55d0->active)
     {
-        local_4.records.data = g_51e9d8;
-        local_4.records.index = NONE;
+        squad_walk.iterator.data = g_51e9d8;
+        squad_walk.iterator.index = NONE;
     }
-    while (function_201c83(&local_4))
+    s_squad_datum *squad;
+    while ((squad = squad_datum_walk_next(&squad_walk, g_4f55d0->active)) != NULL)
     {
-        long local_5 = local_4.squad_index;
-        if (((word)local_5 + time_copy) % period_half == 0 && (*((byte *)local_4.squad + 2) & 0x80))
-            function_203360(local_5);
+        long squad_slot = squad_walk.walk_index;
+        if (((squad_slot & 0xffff) + local_0) % period_half == 0 && (*((byte *)squad + 2) & 0x80))
+            function_203360(squad_slot);
     }
     function_201df0();
 }

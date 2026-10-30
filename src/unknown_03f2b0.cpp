@@ -1304,33 +1304,10 @@ long function_4c450(long object_index, real distance, real const *definition, re
 short function_4bcc0(byte *output, long object_index, real distance, long override,
     bool *cached, bool force, signed char *level);
 
-// score 43 (was 43): count/current take edi and wanted esi (retail esi and edi, with wanted
-// computed in ecx and copied); the early level read adds a byte. Direct level read 83 at 281
-// bytes (one instruction more aligned); wanted from current/wanted first/non-const wanted 43
-// each; random mixes of declaration orders, compound division, defaults-first branch, early
-// level read and result at the top 43-110; pointers defaulting to the zero buffer 54/53;
-// local and parameter renames 43 each.
-// count/current EDI and wanted ESI replace retail ESI/EDI;
-// default count and selector scheduling remain. Native definition/library clear/both 43/43/43;
-// defaults first 99; default pointers 54; native level/result 83/100; typed default pointers 54.
-// Cache/selector inline, outline and combined call contracts: six further trials at 43.
-// Entry inline/stdcall/cdecl 43/43/44; byte return 43; final false/true exits 64;
-// fallback failure exit 100; both failure exits 119; inline final exits 64.
-// early EDI save, count/current EDI and wanted ESI remain.
-// Pointer order/role name, entry result, count first/library clear, signed workspace all 43;
-// direct level 83; unused formal addresses 43; count/variant names 43/43;
-// twice-used source count 43; source count with direct level 83.
-// Native word buffer 43; default tag scope with byte/word data 98/98; native word clear 43;
-// actual object fields with byte/word data 43/43; initial-selection result alone/with fields 43/43.
-// DL179: Inline clobber contract on the existing outlined cache setter, crossed with
-// eight ordinary/inline/noinline getter and selector pairs, 43 each. Original complete
-// target and all provider declarations restored; count/current/wanted allocation remains.
 // @retail 0x4c190
 bool function_4c190(long *count, long object_index, bool defaults, long tag,
     short *level, signed char fallback_level, signed char *sections, bool *fallback)
 {
-    (void)&object_index; (void)&defaults; (void)&tag;
-    (void)&level; (void)&fallback_level; (void)&sections; (void)&fallback;
     byte *definition = g_4e3b44[tag & 0xffff].bytes;
     byte zero[16];
     byte const *wanted;
@@ -1339,22 +1316,19 @@ bool function_4c190(long *count, long object_index, bool defaults, long tag,
     {
         byte *object = (byte *)((s_render_object_header *)g_4e0300->data)[object_index & 0xffff].object;
         *count = *(short *)(object + 0x118);
-        wanted = object + *(short *)(object + 0x11a);
+        byte const *object_wanted = object + *(short *)(object + 0x11a);
         *count = *count / 10;
+        wanted = object_wanted;
         current = function_3d430(object_index);
     }
     else
     {
-        *(long *)(zero + 0) = 0;
-        *(long *)(zero + 4) = 0;
-        *(long *)(zero + 8) = 0;
-        *(long *)(zero + 12) = 0;
+        memset(zero, 0, sizeof(zero));
         *count = *(long *)(definition + 0x1c);
         current = (signed char *)zero;
         wanted = zero;
     }
-    short requested_level = *level;
-    bool result = function_4c2b0(tag, wanted, current, requested_level, true, sections, fallback);
+    bool result = function_4c2b0(tag, wanted, current, *level, true, sections, fallback);
     if (!result && fallback_level != -1)
     {
         result = function_4c2b0(tag, wanted, current, fallback_level, false, sections, fallback);

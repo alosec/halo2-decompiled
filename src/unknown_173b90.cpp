@@ -1092,7 +1092,7 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
     result->k = a->i * b->j - a->j * b->i;
 }
 
-// score 135 (was 213): frame and length agree, and so do the entry saves. Left: the tag index lands
+// score 135 (was 135): frame and length agree, and so do the entry saves. Left: the tag index lands
 // in EAX (retail EDX, 0x137bd0's register) and the extra `mov edx, eax` shifts the camera block;
 // retail tests definition bit 5 as `mov dl; shr dl, 5; test dl, 1`; it reloads the location
 // after 0x1e4e0 (BLOCKED-BY 0x1e4e0, todo) and calls 0x1751d0 before pushing 0x40e30's arguments.
@@ -1150,6 +1150,15 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
 // Round 248: definition-getter inline/noinline/both declarations 213 each; with child
 // set/clear stores 219 each; noinline/both with child stores and native word bit five 316/316.
 // Complete getter declaration and body restored; frame agrees, early EDI/tag and child homes remain.
+// Round 411: existing shared lookup alone/field flags/request/both 135/343/133/331;
+// with word bit five, alone/field flags/request/both 310/340/129/328. The 133 and 129
+// forms are below threshold and restored. Callback inline/noinline/both 125/135/125;
+// the inline-only declaration of the external 0x1e4e0 (125) is not kept: no definition in this
+// file; complete original body and shared lookup linkage restored.
+// Round 411: Availability rejection to the common child tail, with original/reference-first/
+// separate-tag/group-first declarations 135/135/135/135; definition rejection with the
+// same four declaration graphs 135/135/135/135. Original nested body restored; tag/group
+// ownership, definition bit five and callback reloads remain.
 // @retail 0x174420
 void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
 {
