@@ -691,6 +691,12 @@ real g_55e618;
 // consumer 285/191; alone 289/102. All restored; sweep/collision homes and projection spills
 // remain.
 // Round 293: Destructive normal-copy projection/velocity-copy tangent/both 265/283/332; scaled response 101 (one-count gain rejected); projection/response 264, tangent/response 278, all stages 337, all with direct velocity producer 285. Original vectors and complete body restored.
+// Round 44: velocity read at each use 199; velocity pointer 194 (frame 0x118, sweep at +0x44); renamed
+// perpendicular/tangent locals 102/102 (no code change); normal read as a union member 605, with the velocity pointer
+// 601, interleaved 596. Grid of velocity copy/pointer/initialised copy, three dot-product text orders, sequential or
+// per-component interleaved perpendicular/tangent, keep factor early/late, position after/before the tangent: best 102
+// (this body), interleaved with the position first 124, pointer with the position first 125, the rest 194-237; the dot
+// product's text order never changed the code. Retail homes tangent at +0x38 and perpendicular at +0xa4.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)
