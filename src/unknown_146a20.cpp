@@ -74,7 +74,11 @@ bool g_47f05b;
 // globals as one struct.
 // Force-inline abstract constructor 34; scoped block 34; abstract-typed block 34; refcount-typed block 34;
 // intermediate/derived/abstract result reused for the pool 44/44/44; intermediate result published 38;
-// inline target 34.
+// inline target 34. Round 5 (g_479888 read at both placements, which puts the reload on the
+// constructed arm, while only the `block` form keeps the 1 in edx): chained flag assignment 38;
+// pool address through a byte pointer named after the first construction 38; if/else on the
+// placement result 38; bool flag first 38; NONE flag last 38. Four explicit base-constructor
+// stores in place of the loop still drop the vtable store (30, 0x146b80 lost).
 // @retail 0x146a20
 void function_146a20(void)
 {

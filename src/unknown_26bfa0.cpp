@@ -60,6 +60,10 @@ long function_26d100(vector3f const *up, long *unknown, s_collision_result_1697c
 // 100/101/130/101/130/130; early shared index-object/index-marker 136/136.
 // Original body restored; pre-dispatch initialization, output homes and case tails remain.
 // Round 251: independent result/owner/marker query-home names, all seven subsets 89 each; complete point-home names 89. Original independent case outputs restored. Earlier location-slot volatile read 94 was dropped in review.
+// Round 253: Independent early per-case scalar roles
+// index/object/index-object/marker/index-marker/object-marker/all 82/82/85/83/84/83/124; all with
+// independent early points 124. Early indices with native center copy/point setter 102/82.
+// Seven-point forms excluded; original complete body restored.
 // @retail 0x26bfa0
 void function_26bfa0(long object_index, long *location_index, s_location_view *location)
 {
