@@ -236,6 +236,15 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // plus field reads 105; profile reference 49, plus field reads 117; reordered profile/ticks 49, plus
 // field reads 117, plus native snapshot 107. Coefficient homes and 0x1c frame remain unresolved;
 // original arrays and input binding restored.
+// Round 93 (PIN clamps make the integer part exact; the coefficient spill choice is what is left):
+// PIN + 2x3 array + last term as a separate += 88 (aligned 23); on it the second peak copied from the
+// first element 114 (259 bytes); PIN + two arrays + separate += 90 (frame 0x10, only rates[2] homed);
+// on it renamed arrays 90 (names do not move the spill), aggregate initializers 90, segment times in a
+// float array summed in a loop 106 (unrolled and factored). On the 2x3 form, sum texts: per-segment
+// terms 95, coefficient-first products 88, rates then accelerations 95, one statement per segment
+// 105, one six-term sum 95, squares grouped t * (t * k) 86; the arrays in one local struct 88;
+// peaks filled by a chained assignment 114 (both peaks one register, no frame). The preloads keep
+// four coefficients in xmm4-7 in every form; retail spills the peaks and the acceleration.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

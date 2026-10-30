@@ -349,6 +349,9 @@ extern real g_47f05c;
 // Round 274: Shared branch-distance home with separate/common clamp joins, crossed with
 // uniform height/body-byte observations 192/288/205/283/208/294/220/289. Original
 // branch-owned distances, snapshots and full body restored; frame and carriers remain.
+// Round 411: Double best-alignment storage with entry success/selection defaults and
+// immutable count in all eight subsets 259 each (890 bytes); frame remains 0xd0 and
+// the accumulator uses x87 work. Original float accumulator, defaults and count restored.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)
