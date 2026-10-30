@@ -405,7 +405,10 @@ real *function_120810(real const *point, short axis, byte side, real *out);
 // of hand-scaled byte offsets 36 (kept); the side copy not volatile 74; the 0x21c read not volatile
 // 94; one side flag and edge pointer for all three loops 55; both vertices through 0x120810 74; the
 // far difference's subtractions swapped 36; the second product's factors swapped 36; a separate
-// projected point then the difference 36.
+// projected point then the difference 36. Round 36: a byte copy of the side before the loop for the
+// far projection 36 (folds back to movzx); the far projection first with plain near reads 95 (the near
+// index is then hoisted and shared); the near index written side first 36; the far call given the
+// near's side value 45; the first loop's vertex index read at each use 197.
 // @retail 0x1de2c0
 void function_1de2c0(s_1de2c0 *arg_0, long arg_1)
 {

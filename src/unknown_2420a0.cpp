@@ -1113,7 +1113,10 @@ void c_game_engine_markers::v21(long object_index)
 // Round 77: the team at each call again 119 (the options pointer then stays in EDX from entry and the
 // type lookup takes ESI/EDI); a short slot 93, with the team at each call 93 (438 bytes); the unit
 // looked up before the type test 119, with the team at each call 132; an object pointer after the
-// test with the team at each call 130.
+// test with the team at each call 130. Round 36, on the kept form: the flag as `flags[slot] & 1` 40
+// (identical); the team through the player getter, no player local 40 (identical); the absolute
+// index, player and team all inside the flag block 93; a char team 88; the unit through the object
+// getter at both player-index reads 113 (439 bytes).
 // @retail 0x240ff0
 void c_game_engine_markers::v23(long object_index, long unit_index)
 {
@@ -1863,6 +1866,10 @@ long function_242ef0(s_242ef1 arg_0, long team)
 // code); the out-of-line initializer 103, with the out-of-line cause-player setter 129 (both stay
 // calls), the inline initializer with that setter 75. EBP is used for the engine type alone; ruled out
 // as a cause: the final table store merged with the first table read across the event call.
+// Round 36: subtype and type locals before the initializer 53 (identical); an options pointer local
+// for the mode and engine type 60 (and caller 0x241620 stops matching); the type ternary inverted 53;
+// a guard return on the time test 53; the index declared after the mode test with the time test
+// joined 67. Diagnostic: without the final table store EBP is still used.
 // @retail 0x2430a0
 void function_2430a0(long player_index, bool flag)
 {

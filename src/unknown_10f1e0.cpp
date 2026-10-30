@@ -2863,6 +2863,11 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // 69/61/71/61; consistent mode-at-use combinations 171/194/200/194; single renamed set with
 // Boolean/signed aggregate 127/122. Keep the two-use selected-set carrier and Boolean aggregate,
 // plain confirmed 61; frame 0x3c versus 0x38 and action-short packing remain.
+// Round 36 (plain checks; --fast builds this function differently, 219 on unchanged source): the
+// action short declared after the overlay pointer 52 (identical); the action query in an inline
+// bool helper owning the short 167 (stays a call; frame 0x38), force-inlined 145 (frame 0x38, flags
+// still at +2/+3, and LTCG then inlines 0xe70b0, which retail calls). Declared first, between or
+// before the flags: identical under --fast.
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)
