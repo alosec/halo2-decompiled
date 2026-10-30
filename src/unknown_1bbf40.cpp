@@ -468,7 +468,7 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
-// score 47 (was 85): NONE in EBP (retail EBX) and the special flag in BL (retail CL: the special
+// score 47 (was 47): NONE in EBP (retail EBX) and the special flag in BL (retail CL: the special
 // path does `mov cl, 1; jmp tail`, the scan stores 0 at its start) remain; the tail and the
 // proximity block now match. Round 78: the tail's prop node as a named pointer 85 -> 51 and the
 // deltas x, y, z 51 -> 47 (kept); on that, `&&` flag 200; flag set in if/else arms 200;
@@ -504,6 +504,11 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // canonical bitwise conjunction with long/bool/byte/short special 152/85/85/201.
 // Boolean bitwise conjunction kept, 85/861 plain; the post-scan tail is shared.
 // Entry NONE EBP/EBX, predicate setup and separation SSE homes still differ.
+// Round 39 (m3 lane 12): the bitwise flag is already spilled around the scan to the dead
+// actor-index slot as retail, but its byte def before the branch takes BL (so NONE takes EBP);
+// every branchy def gives NONE in EBX but threads the known-true flag by copying the tail's
+// first block onto the special path (flag memory-only, 872 bytes): `&&` 200, false then if
+// 202, `&& != 0` 200, function-scope `&&` 200; const bitwise flag 47. All restored.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {
