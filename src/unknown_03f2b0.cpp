@@ -1205,7 +1205,10 @@ static inline long render_memory_allocate(long bytes)
 // score 1 (was 1): the permutation pointer arrives in eax, retail passes it in ecx; the register is fixed by the caller function_4c690, which is not retail's yet
 // frame pointer 27; alias analysis off 1; global expressions off 62; inline depths one/zero 1/89; native result/count 1/1; input role names 1;
 // the permutations last or first (old order kept for the caller by a forwarding overload) 1/1; a const member of a 16-byte permutation type 1;
-// extra_bytes read once through its address 1; (void)&node_count 1.
+// extra_bytes read once through its address 1; (void)&node_count 1; the node-count callee's parameters
+// reordered (permutations first, both callers) 1; the count read back through node_count 1; the output
+// pointer as a conditional argument 27; the byte count as a conditional expression 54; bytes declared
+// before the count call 15. Every parameter position, __stdcall/__cdecl and flag set keeps eax.
 // @retail 0x3e380
 long function_3e380(long model_index, byte lod, transform4x3f const *nodes,
     byte const *permutations, long *node_count, long extra_bytes)

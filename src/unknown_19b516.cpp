@@ -141,6 +141,8 @@ void c_widget::v15(c_widget *widget)
 // forceinline next-or-first helper in a for loop 42 (out of line 72); helper with the head copy 42;
 // one cursor stepped at the loop top 64; separate entry/step results 42, with for-walks 42 (the loop
 // body then matches retail; the entry result still joins the widget in ESI and the test is copied).
+// Candidate-tested while with a body widget 26; one stepping loop from this 64; break then focus
+// under if (widget) 47; widget assigned before the loop and at its end 20; first-sibling walk local 20.
 // @retail 0x22ebc3
 void c_widget::v16()
 {
