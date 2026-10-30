@@ -273,6 +273,9 @@ void function_16f60(byte *state, word const *range)
 // Round 182: Native prefix-table masks and a complete mode/state table do not recover selective setter expansion
 // Trials 1-8: 176, 134, 101, 124, 198, 192, 216, 226.
 // Trials 9-9: 832.
+// Native common suffixes, two/three/four setters across modes 3/4/6: 121/243/236;
+// with mode 5: 217/244/243; all enabled modes, two/four setters: 269/313.
+// Selected suffix results shorten the body but do not recover selective expansion; original tails restored.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -877,6 +880,10 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
     *direction = sample->direction;
 }
 
+// score 627 (was 627): Frame 0x1c/0x2c, offset/selection homes, override layout and fraction retention differ.
+// Native point-difference producer subsets nearest/anchor/both/opposite/nearest+opposite/
+// anchor+opposite/all: 626/627/626/685/668/685/668; all plus shared dot 668 (exact-only).
+// The one-point nearest gains are ineligible; original scalar producers and arithmetic restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
@@ -1353,6 +1360,13 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // at the top of the global block 88; the slot pointer before the global test 22; a const counter
 // copy before the slot pointer 6; the whole frame expression there 75; an inline query helper
 // taking the counter 106.
+// J197: validity from admission, ordinary/before-slot/early-row/after-slot: 78/78/74/78;
+// byte/long/short validity 78/103/106; default-false availability 79. Shared inline bit
+// test on the direct-key graph 6; with early counter capture 6, row at helper argument 73,
+// capture before global admission 6. Counter-load scheduling remains; opening body restored.
+// J199: direct slot fields with early/use-point counter 71/71; original graph
+// with default availability/amount/both 42/82/86; direct final disjunction 12;
+// default-true/default-false final results 40/40. Counter load still sinks; restored.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {

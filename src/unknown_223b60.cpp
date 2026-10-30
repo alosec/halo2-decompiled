@@ -39,6 +39,11 @@ __int64 timing_counter_resume(timing_counter *c)
 // Round 41: reversed total addition 4; branch-duplicated totals 26; branch-duplicated
 // total/stopped stores 24; explicit false guard 4; const pointer formal 4; entry total
 // with reversed addition 29; delta-only rename 4; reversed clamp comparison 4.
+// J199: existing shared timestamp producer 4; reader cdecl/stdcall 4/4; separate
+// default-zero/exhaustive clamped outputs 40/4; inline peek accumulation with
+// default/cdecl/stdcall reader 77/77/77 (resume loses its match). Original restored.
+// Scoped stop stdcall/cdecl 4/4; unsigned result with default/stdcall/cdecl 4/4/4;
+// only the queued signature and its existing caller declaration changed, then restored.
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {

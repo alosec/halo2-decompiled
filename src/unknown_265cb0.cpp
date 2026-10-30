@@ -1760,6 +1760,9 @@ real function_2683f0(long actor_index, long node_index, short type)
 // DH round 252: Independent repeated player handle/datum observations and direct current-contact result,
 // all seven subsets, then all with completed selection scope
 // 528/528/528/528/528/528/528/528. Original complete executable body restored.
+// Existing transform/relative/both complete setters 528/528/528; safe in-place transform
+// 705 (frame 0x74), with relative/point/both 705/712/708; native transform initializer with
+// relative and point producers 528. All vector producers restored; frame and saved homes remain.
 // @retail 0x266640
 void function_266640(long actor_index)
 {

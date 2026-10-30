@@ -909,6 +909,12 @@ bool function_108530(long device_index, long name)
 // register); stores before the cruise and half times 144; if-statement clamps, no remaining local,
 // fresh distance, every order of the denominator terms and the initial velocity at every parameter
 // position never give the initial velocity a register (about 2000 forms screened).
+// incoming velocity remains on the stack rather than XMM6;
+// duration/ramp-down allocation and the 0x18/0x14 return gap remain. Earlier half-time/store
+// sweeps best 121; clamp helpers 123; clamped locals 122; coordinated parameter placements 121-124;
+// acceleration-field pointer store 131; early initial-speed square 142. External inline/noinline/both
+// 121/121/121; file-local plain/inline/noinline 121/121/121; shared signed phase acceleration 121;
+// shared acceleration with file-local inline/noinline 121. Original routine and both calls restored.
 // @retail 0x107ab0
 void device_motion_start(s_device_motion *motion, real target, real duration, real ramp_up_time,
 	real ramp_down_time, real final_velocity, real initial_velocity)

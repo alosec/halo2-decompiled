@@ -1011,6 +1011,9 @@ bool function_68670(byte *source, long size, void *block);
 // pointer 97; inline read method 135; header size per use 135; buffer hoisted out of the loop 204.
 // Round 182: Self-aligned standard entry, case-workspace scopes and complete ring-field forms do not recover receiver and reader visibility
 // Trials 1-8: 179, 172, 179, 172, 164, 159, 164, 159.
+// Distinct native byte-buffer class with ordinary/inline/noinline/both reader knowledge:
+// 97/352/97/97; with the occupied-span subexpression 135/353/135/135. Original class identity,
+// all member declarations, caller body and window form restored; reload/count-update gap remains.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {
