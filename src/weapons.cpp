@@ -1959,6 +1959,9 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 271: consistent header-data snapshot with retained/live handle, entry/gate
 // counter and short/long reserve values: 182/221/191/217/201/234/184/211.
 // All restored; magazine/availability and receiver homes still differ.
+// Round 423: consistent first/other/both reserve-field reads 124/127/127; each with
+// a real per-slot weapon receiver 124/127/127; both fields with short slot counter 430,
+// also with the receiver 430. Reduced previews only; complete original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {

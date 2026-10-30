@@ -241,6 +241,10 @@ void function_268840()
 // Round 412: Existing deletion method outlined/ordinary/inline/forceinline 322/221/221/221; inline
 // with direct expiry 234, Boolean retention 222, both 234; ordinary with entry player pool 283.
 // All body and outside declarations restored.
+// Round 422: returned position 222; returned position/all squared products 222; returned
+// position/actor point scope 222; returned position/products/point scope 222; returned
+// position/bool retention 228; returned position/products/bool 228; returned position/point
+// scope/bool 228; returned position/all interactions 228. Opening body restored.
 // @retail 0x268c90
 void function_268c90()
 {
@@ -1942,6 +1946,9 @@ void function_269250(long clump_index, long actor_index);
 // best default with branch/selection-first 89/89 fast, ternary 128/128. Retained
 // branch score initialized from best, 87 plain; pool/selection and x87/SSE homes remain.
 // Round 247: common-graph scalar homes 89; wide best/names 175/175; wide candidate/names 146/146; both wide/names 169/169; homes with existing center setter 111. Pool and scalar/x87 allocation remain.
+// Round 422: persistent score 128; native selection handle 146; persistent score/native handle
+// 152; actor handle snapshot 89; persistent score/actor handle 128; native/actor handles 146;
+// all scan lifetimes 152; function-scope candidate 128. Opening body restored.
 // @retail 0x2689d0
 void function_2689d0(void)
 {

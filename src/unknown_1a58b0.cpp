@@ -752,6 +752,9 @@ dword function_1a7ad0(long owner_index)
 // Overlap-safe primary/fallback/both transfers 165/166/140; both with every-use tags, readonly
 // source, separate primary scope, default-first fallback or indexed definition 138/140/140/121/140.
 // Original transfers restored.
+// Round 418: actor record 96; primary bits record 96; actor/primary records 96; fallback bits record 96;
+// actor/fallback records 96; both bits records 96; all records 96; readonly all records 96. owner/output
+// ranks, separate fallback base and intersection setup remain.
 // @retail 0x1a7b30
 void function_1a7b30(s_flag_bits *result, long owner_index)
 {
@@ -1893,6 +1896,9 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 // Descriptor reference across nullable conversion: pointer/reference table, mutable/readonly
 // descriptor and iteration/entry query output all 13 at 565 bytes. Exact-only selectors restored;
 // query and count ranks remain.
+// Round 418: initial test count 111; marker test count 164; both test counts 166; both result count 166;
+// nullable initial count 111; nullable marker count 145; nullable both counts 152; nullable result count
+// 152. query/name carriers, optional matrix conversion and count/exit allocation remain.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)

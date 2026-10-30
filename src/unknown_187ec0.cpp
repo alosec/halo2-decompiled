@@ -466,6 +466,9 @@ bool function_172750(long mode, point3f const *point, real radius);
 // existing material class for the 4th/5th parameters (and 0x1882d0's) it matches (fast;
 // tag index in EBX, first index on the stack): BLOCKED-BY the declarations in src/impacts.cpp
 // and src/projectiles.cpp, which name the old parameter types.
+// Round 420: first payload defaults 193; second payload defaults 151; both payload defaults 176; variant
+// defaults 184; first payload and variants 175; second payload and variants 175; all defaults 193; all
+// defaults and type outcomes 172. Original body restored.
 // @retail 0x1883e0
 void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long entry_element_index, long index, long variant,
 	long *first_value04, long *second_value04, long *first_value, long *second_value, long *first_value0c, long *second_value0c)

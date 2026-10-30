@@ -3315,7 +3315,7 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 /* a hovering vehicle's wash: from each of its engine markers, a ray down a
    cone around the marker's forward, and the definition's effect where it
    hits, fading with the distance */
-// score 48 (was 53): from the marker count sum on, retail's scratch registers run one step
+// score 48 (was 48): from the marker count sum on, retail's scratch registers run one step
 // ahead of ours (retail `movsx ecx, ax; add edi, ecx`, ours `movsx eax, ax; add eax, edi`; in the
 // loop retail dx/eax/ecx where ours use cx/edx/eax; ours loads the definition first in the effect
 // block), plus the 0x146320 set-up pair (its declared order, BLOCKED-BY 0x146320: seed declared
@@ -3328,6 +3328,11 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 // pointer 129; the ray through vector3f_scale 48; facing declared with the loop locals 48; `long count`
 // declared before the first count 48; count from the second call, then `+= primary_count` 48 (the
 // 48s are the same code: the second count's sign extension stays preferenced to eax).
+// Round 420: native facing producer 67; native ray producer 48; native facing producer + native ray
+// producer 67; collision miss continue 48; native facing producer + collision miss continue 67; native
+// ray producer + collision miss continue 48; native facing producer + native ray producer + collision
+// miss continue 67; native facing producer + native ray producer + collision miss continue + readonly
+// marker 67; total owns first marker result 141. Original body restored.
 // @retail 0xf6060
 void __stdcall function_f6060(long vehicle_index)
 {
@@ -3704,6 +3709,12 @@ PRIVATE __forceinline real vehicle_larger(real a, real b)
 // Round 401: single-result case orders 012345867 143; 031425867 157; 013425867 156; 012345768 123;
 // 013482567 157; 013467825 129; 876543210 134; 258013467 162. All restored; lookup scheduling and
 // late tail merges remain.
+// Round 420: complete magnitude outcomes with entry result 117; complete magnitude outcomes with
+// lookup-time result 117; second magnitude default with entry result 117; second magnitude default with
+// lookup-time result 117; first magnitude default with entry result 119; first magnitude default with
+// lookup-time result 119; native double magnitudes and outcomes with entry result (wider frame/qword
+// spills; rejected) 101; native double magnitudes and outcomes with lookup-time result (wider
+// frame/qword spills; rejected) 101. Original body restored.
 // @retail 0xf78e0
 real __stdcall function_f78e0(long vehicle_index, long limit)
 {
