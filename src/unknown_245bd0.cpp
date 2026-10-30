@@ -417,6 +417,12 @@ bool function_2461a0(
 	return result;
 }
 
+// score 104 (was 106): every sum now associates as in retail (the compiler reorders unparenthesized
+// sums of three products); what still differs is scheduling of the first block: retail multiplies
+// v.k by u.k from memory before summing a, and keeps a in XMM3 and uv in XMM0 (ours XMM4, XMM1), which
+// swaps registers to the end. Tried: any subset of the four parenthesized sums (151-214), w computed
+// k, j, i by hand (211), a or uu parenthesized (180, 206), uv unparenthesized in any order (214),
+// uv as += statements (182), a/uv/uu statement orders (104-217), den = a * uu (104).
 // @retail 0x246360
 bool function_246360(
 	vector3f const *direction,
@@ -437,10 +443,10 @@ bool function_246360(
 	}
 	vector3f w;
 	vector3d_from_points3d(&capsule->origin, start, &w);
-	real uw = dot3f(u, &w);
-	real vw = v->k * w.k + v->j * w.j + v->i * w.i;
+	real uw = (u->j * w.j + u->i * w.i) + u->k * w.k;
+	real vw = (v->k * w.k + v->j * w.j) + v->i * w.i;
 	real b = vw * uv - uw * a;
-	real c = (w.k * w.k + w.j * w.j + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
+	real c = ((w.k * w.k + w.j * w.j) + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
 	real disc = b * b - c * den;
 	if (0.f > disc)
 	{
@@ -506,7 +512,7 @@ bool function_246360(
 	q.i = u->i * t_enter + w.i;
 	q.j = u->j * t_enter + w.j;
 	q.k = u->k * t_enter + w.k;
-	real along = (v->k * q.k + v->j * q.j + q.i * v->i) / a;
+	real along = ((v->k * q.k + v->j * q.j) + q.i * v->i) / a;
 	real back = 0.f - along;
 	plane->i = v->i * back + q.i;
 	plane->j = v->j * back + q.j;

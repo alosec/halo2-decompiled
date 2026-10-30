@@ -2,6 +2,16 @@
 
 The newest entry comes first.
 
+## 2026-10-29: 10005 functions match
+
+```
+matched 10005 of 11326 game functions (1671040 of 2786206 bytes, 59.98%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+12 new matches, none lost:
+- @ccgman123's #694, @ccgman123's #697, @ccgman123's #698, @andrewnakas's #710, @marioag0412's #728, @ccgman123's #748, @ccgman123's #764, @coldspear's #774, @coldspear's #783, @coldspear's #899: `0xba300`, `0xc5740`, `0xd6790`, `0xd9e70`, `0xf0f90`, `0xf0fd0`, `0x189210`, `0x1ac570`, `0x257630`, `0x26f060`, `0x29f400` and `0x2aa480` match.
+
 ## 2026-10-29: 9993 functions match
 
 ```
