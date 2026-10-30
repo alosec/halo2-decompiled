@@ -354,6 +354,9 @@ void function_125a90(long value);
 // gives retail's `imul eax` + `lea esi` but sinks it below the b test 43; with `if (remove)`
 // first as well 47; `if (remove)` first alone 51; ELEMENT(array, T, datum) 62, with index 94;
 // `&((T *)data)[index]` 47; `(T *)(data + index * sizeof(T))` 47.
+// Round 442: Live type observations with bool/byte/short/long removal 91/91/85/90; removal-
+// first completion 91/91/85/90. Original type capture, comparison widths and complete body
+// restored.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {
