@@ -602,7 +602,23 @@ struct s_signed_file_read_parameters
 
 __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 
-// score 68 (was 68): header/body carriers, dispatch loads, scratch capacity and
+// score 68 (was 68): header/body carriers, dispatch loads, scratch capacity and signature
+// receiver differ. Retail computes the remaining size in each buffer arm (re-read after the
+// scratch-buffer stores) and clamps the capacity by it, and loads body_size once in the switch
+// dispatch for the body and signature cases. Tried: short-lived body/header/both size reads
+// 182/174/182; reversed signature equality 68; Boolean equality 68; inline depth one 68; global
+// optimization off 491; frame pointer 246; per-arm remaining written into size by the getter
+// 179, capacity clamped by remaining 181, remaining clamped by capacity 234; total as sizeof
+// first 68; body size grouped with sizeof 68. Round 11: with the scratch object made one
+// address-taken record (storage, owner, pointer, size, flag; init `pointer = storage`, as
+// retail's 0x4fa0c8..0x5020d4 layout shows) the body is 173 and 0x2adb10 134 -> 131; adding
+// the per-arm remaining 175, the getter storing the owner before the flag 175 (0x2adb10 129),
+// and the signature state as its own case with `default: __assume(0)` 166 (aligned 54 -> 37:
+// signature case and getter now retail's) but two instructions longer: case 1 reloads
+// body_size where retail reuses the dispatch load, and the buffer goes eax -> ebp; size sums
+// and the case-1 comparison in either order 166-167; getter fresh pointer reads 163 (0x2adb10
+// 279).
+// header/body carriers, dispatch loads, scratch capacity and
 // signature receiver differ; short-lived body/header/both size reads 182/174/182;
 // reversed signature equality 68; Boolean equality 68; inline depth one 68;
 // global optimization off 491; frame pointer 246.
@@ -788,6 +804,9 @@ struct s_signed_file_write_parameters
 // retail's but two copies per getter site, 279 at 944 bytes (0x2ad7c0 63); split
 // size/claim helpers 131/139; write count declared before the getter 147; named
 // body offset in the extend sum 131.
+// DL180: case order 2013 324; case order 3012 331; case order 0213 192; case order 0312 273; case
+// order 1203 313; case order 2103 314; case order 2301 332; case order 3210 328. Original
+// executable body restored.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

@@ -721,6 +721,9 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
 // Round 168: Byte row/widget/fixed-team ordinals in seven subsets 675/629/570/685/668/625/679;
 // all with byte saved bit 679. The team-only three-point gain is dropped. Complete status-arm
 // orders 678/704/584/695/704/681/707/609; original ordinals, arm order and body restored.
+// Round 409: row declared with outputs 680; widened state 598; both 700; common total 573;
+// total with row/state/both 680/598/700; all with explicit status-text result 700.
+// Original scalar lifetimes, state width and complete body restored.
 // Round 189: real widget-array discovery cursor, long/short/byte/char query ordinals,
 // bounded ordinal latch 637/614/619/619; real array-end latch 628/610/607/607. Original
 // discovery restored; frame bias and initial flags/clock homes remain unresolved.

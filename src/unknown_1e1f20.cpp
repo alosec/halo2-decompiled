@@ -579,9 +579,8 @@ void function_203f60(long actor_index);
 void function_203fb0(long actor_index);
 
 // @retail 0x1e3400
-void function_1e3400(long actor_index, long squad_index)
+void function_1e3400(long actor_index, short squad_index)
 {
- const long *squad_reference = &squad_index;
  s_actor_view *actor = actor_get(actor_index);
  function_1e22d0(actor_index, false);
  if (*((byte *)actor + 0xa))
@@ -590,14 +589,14 @@ void function_1e3400(long actor_index, long squad_index)
   function_203ed0(actor_index, false);
  if (function_1e13f0(actor_index))
  {
-  if ((short)*squad_reference != NONE)
+  if (squad_index != NONE)
   {
-   function_203d70(actor_index, (short)*squad_reference, true);
+   function_203d70(actor_index, squad_index, true);
    return;
   }
  }
  else
-  *(long *)((byte *)actor + 0x34) = (short)*squad_reference;
+  *(long *)((byte *)actor + 0x34) = squad_index;
  function_203f60(actor_index);
 }
 
@@ -793,6 +792,9 @@ void swarm_leader_detach(long actor_index);
 // DH round 234 (fast control 261, ordinary 285): direct callback-field observations with
 // native iterator/cleanup lexical scopes and unsigned cleanup ordinal, eight forms 261 each.
 // Original body restored; frame 0x1c/0x20 and actor/displacement/countdown homes remain.
+// Round 186 (fast control 261, ordinary 285): participant pool/readonly pool/guarded data/pool-data
+// observations with original/const callback locals 262/262, 262/262, 261/261, 262/262.
+// Original pool observations, callback local and body restored; frame and cleanup homes remain.
 // DH round 236: terminal three-slot table ordinal initialized at function entry or before
 // the tag query, long/short/byte/dword in each lifetime: eight 261 fast, equal to unchanged
 // fast control (full 285). Original ordinal lifetime and entire executable body restored;

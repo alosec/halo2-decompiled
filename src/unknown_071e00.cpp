@@ -128,6 +128,8 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 // the search block written out twice, with local_0 = true (37), return true (65) or one of
 // each (90); returns in the players-match branch and a goto to the end (41); a
 // do/while (false) with breaks (37); state == 0 and inline state helpers (37).
+// Unhandled-result bool/char/short/word/dword 83/83/89/89/86; genuine success
+// char/short/word carriers 66/54/54. Original Boolean result and shared tail restored.
 // @retail 0x712d0
 bool function_712d0(c_session_state_matchmaking *arg_0)
 {

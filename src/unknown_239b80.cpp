@@ -347,6 +347,7 @@ long function_239d50(long count, point2f const *points, point2f *hull)
 // Round 182: native unsigned-word input count, long/bool departure and
 // late/early heading crossed with memcpy/memmove 260/232/258/239/253/259/261/266;
 // matched caller becomes 34 in each reduced trial. Original signature and body restored.
+// Round 181: lowest/candidate-distance/ranking rejection subsets 203 each (seven forms); complete rejection graph with explicit stdcall 203. Original body and contract restored.
 // @retail 0x239e50
 short function_239e50(short count, point2f const *points, short *indices)
 {

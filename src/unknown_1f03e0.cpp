@@ -890,6 +890,10 @@ struct s_flags_1f0870
 // Round 235: Existing vector setters for disabled initial/lateral/vertical/initial+lateral/
 // initial+vertical/lateral+vertical/all/all plus general output 627/590/600/627/628/600/628/629.
 // All restored; the first three-axis forms reach 3047 bytes but retain the extra frame dword.
+// Round 411: native setters at bounded initial/fallback/both/history copies
+// 590/613/619/716; initial+history/fallback+history/all/all with direct output
+// 710/692/686/680. Initial copy reaches retail length without a score gain;
+// complete original body, copies, history publication and output receiver restored.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {
@@ -1162,6 +1166,10 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // offset/position pointers 54; row i grouped (forward + left) + up 50 at 1043/1043; retail's
 // own row groupings (left + up, forward + left, forward + left) 59; one named output-velocity
 // pointer for both override blocks 265 (frame); a 600 s permuter run, none below 50.
+// Round 112: the convention already agrees (ret 0xc). Override add as `dst = dst + src` 50 (same code);
+// the rotation helper in 0x143070's accumulated form 87; helper parameter orders input/matrix/out 48,
+// input/out/matrix 48, matrix/out/input 54, out/input/matrix 50, out/matrix/input 52; input/matrix/out
+// with row i grouped (forward + left) + up 50 at 1043/1043; override add as a three-component loop 59.
 // Round 177: Independent matrix-axis pointer/reference boundaries, all eight forms 71;
 // shared in-place final override/support/both additions 83/88/83. Override loads recover
 // but coefficient allocation worsens; original helper, alias copy and body restored.
@@ -1313,6 +1321,10 @@ PRIVATE inline real contact_normalize(vector3f *vector)
 // Round 235: Existing vector setters for default/negated desired/projected direction/
 // default+negation/default+projection/negation+projection/all/all with test-produced result
 // 482/421/421/482/482/421/482/479; all restored; persistent zero and scalar homes remain.
+// Round 411: existing setters at input/relative, relative/desired, both and
+// desired/direction clones 584/511/615/428; input+direction/desired+direction/
+// all/all plus fallback direction clone 585/509/616/615. All restored; original
+// copies, qualified count, candidate cursor, outputs and arithmetic retained.
 // @retail 0x1f2250
 bool function_1f2250(vector3f const *velocity, byte const *request, vector3f const *input,
     bool moving, vector3f *out, long *surface, real *speed, long *object_index)
@@ -1501,6 +1513,10 @@ bool havok_component_any_rigid_body_active(s_havok_component *component);
 // Round 235: Named squared sum with double/real movement 241/229; all three named squared
 // products 243/229; products plus sum 243/233; complete graph with long/short moving 307/305.
 // One-point forms restored; original magnitude, selection and material calls retained.
+// Round 411: stationary/unsupported/both/unflagged predicate ownership
+// 257/266/285/293; stationary+unflagged/unsupported+unflagged/all/all with
+// native magnitude 286/293/286/287. Complete original magnitude, positive
+// current/saved predicates, observations, selection and calls restored.
 // @retail 0x1f19c0
 void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
 {

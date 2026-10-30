@@ -483,6 +483,10 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // list test and fix the three reload pairs (with scale declared first, all but the rotation
 // blocks match), but turn the rotations' products around and add 10 bytes: indexed 119,
 // indexed with scale first 117; plus split += rows 116; plus a matrix pointer local 123.
+// Round 112: scale declared before multiplier alone 54 (fixes the 1.0 store order only); existing
+// 0x173c10 for both hand-written mask refreshes 56 (same code, kept); on the indexed form with scale
+// first, input-first products 117 and a greedy screen of every rotation row's term order 116 at best;
+// the offset as a for-loop init 56.
 // Complete position/velocity/both row products 127/56/127; all-products before stores 164/121/171;
 // both input copies on complete-product graph 170; shared translation add with row products 127.
 // Indexed definitions plus scale-first defaults with those six product graphs 103/117/103/141/153/116.
@@ -523,9 +527,7 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 			dword emitter_mask = emitter_definition->mask;
 			if (definition->unknown0c)
 				function_248450(&rotation, (s_particle_frame const *)emitter, &origin, &rotation_result, &origin_result, *((byte *)location + 2) != 0);
-			dword mask = emitter_mask & 0x107f0;
-			function_173ba0(~cache->mask & mask, cache->field_48, cache->field_4c, cache->field_50, cache->values);
-			cache->mask |= mask;
+			cache->function_173c10(emitter_mask & 0x107f0);
 			if (emitter_definition->flags & 1)
 				color.alpha = function_246cd0(&emitter_definition->alpha, cache->values);
 			if (emitter_definition->flags & 2)
@@ -543,8 +545,7 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 					cache->field_50 = particle;
 					cache->mask &= 0xffff07f0;
 				}
-				function_173ba0(~cache->mask & particle_mask, cache->field_48, cache->field_4c, cache->field_50, cache->values);
-				cache->mask |= particle_mask;
+				cache->function_173c10(particle_mask);
 				particle_index = particle->next_index;
 				if (!(emitter_definition->flags & 1))
 					color.alpha = function_246cd0(&emitter_definition->alpha, cache->values);
@@ -1149,6 +1150,11 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
 // Round 248: definition-getter inline/noinline/both declarations 213 each; with child
 // set/clear stores 219 each; noinline/both with child stores and native word bit five 316/316.
 // Complete getter declaration and body restored; frame agrees, early EDI/tag and child homes remain.
+// Round 411: existing shared lookup alone/field flags/request/both 135/343/133/331;
+// with word bit five, alone/field flags/request/both 310/340/129/328. The 133 and 129
+// forms are below threshold and restored. Callback inline/noinline/both 125/135/125;
+// the inline-only declaration of the external 0x1e4e0 (125) is not kept: no definition in this
+// file; complete original body and shared lookup linkage restored.
 // @retail 0x174420
 void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
 {

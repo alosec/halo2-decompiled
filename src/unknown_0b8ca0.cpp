@@ -690,6 +690,9 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
 // Round 176: Comparison-produced near/facing/both long results 236/235/237; Boolean results 287/283/277;
 // one per-player success exit with comparison-produced long/Boolean result 237/277. Direct original
 // radius observations throughout; original result, inherited radius storage and all body statements restored.
+// Round 409: complete pool observations 251; one admitted unit handle throughout 262; both 251;
+// unsigned full handle alone/pool/unit/all 257/257/247/247; all with Boolean result 274.
+// Direct radius in all; original complete body restored.
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {
@@ -1729,6 +1732,9 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // Round 191: complete entry/ancestry and accepted-refresh table graphs, reused byte/native
 // receivers 321/329, separate byte/native phase tables 304/328; with the physical slot
 // instead of the byte offset 320/320/303/303. All regress; original table reads restored.
+// Round 270 M: ordinary saved activity on the retained node-query graph, alone/with
+// ordinary index/ordinary node/both 289/314/289/317; the same four with the actual
+// header activity member 289/314/289/317. Original qualifiers, header and body restored.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {

@@ -738,6 +738,8 @@ union s_60403
 // not homes); previous renamed to sort before current 149; mask after the member loop with a
 // plain bool discriminator 343, declared at function scope 343; member copy written once
 // before the changed test 149.
+// Round 198: native comparison result conditional/guarded/equal-header 271/276/268, split
+// header and payload results 328; with late mask 265/290/282/392.
 // @retail 0x60400
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update)
 {

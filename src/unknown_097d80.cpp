@@ -56,6 +56,9 @@ struct c_aggregate : c_child
 // Round 73: ordinal/child-cursor dispatch 115; explicit inner length on ordinal/range forms 102/99;
 // guarded count-down block traversal 130; shared output/output as count/result 84/84/84;
 // produced count reused as cleanup total 130. Opening body restored.
+// our frame is 0x8024 against retail's 0x8020 (retail packs the completion
+// output with two later spills), and the dispatch loop and one allocator reload still differ:
+// retail loads the global again for the release, into eax then edi.
 // Frame 0x8024 versus 0x8020, scalar output homes, dispatch ownership and allocator reload remain.
 // Frame 0x8024 versus 0x8020, completion-output home, dispatch ownership and allocator reload remain.
 // Earlier 85 (was 92): frame 0x8024 against 0x8020 (retail packs the completion output with two later

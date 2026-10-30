@@ -1686,6 +1686,9 @@ void function_b7360(long object_index);
 // Round 247: complete terminal cases 9/13/9+13/20/9+20/13+20/all before the core
 // fallthrough groups 524/525/517/520/510/540/513; all in reverse order 513. All regress;
 // original case order, actor/output acquisition, rounding and complete body restored.
+// Round 280: Isolated duration producer scope 471; delay default 482; independent end ticks 483; both 482;
+// coherent scratch names 471; names with delay/end/both 482/483/482. Original conversion destinations,
+// case graph and actor-object observation restored.
 // @retail 0x258cf0
 short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
@@ -2137,6 +2140,9 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // Round 262: reference-check/state-publication/secondary-motion/request-admission
 // inline and noinline declarations 491/491/491/491/491/491/491/491 (fast control 491; full 478).
 // Every declaration and complete callback body restored; actor/state and point homes remain.
+// Round 280: Entry-produced return result short/long with zero/one defaults 491 each; byte/bool with
+// zero/one defaults 642 each (fast control 491, full 478). Original return storage, completion byte and
+// actor/state acquisitions restored.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {

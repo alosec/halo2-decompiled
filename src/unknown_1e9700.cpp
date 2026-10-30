@@ -70,7 +70,12 @@ void function_1ea770(byte code, long player_index, s_statborg *statistics, long 
 	*(dword *)g_4e9ae8 |= 0x20;
 }
 
-// score 107 (was 115): retail reloads g_510ca0 at each test (ours keeps it in
+// score 107 (was 107): retail's signature differs from ours and cannot be changed here: retail takes six
+// arguments (EAX, ECX, EDX = the player index, and three stack arguments read as
+// `mov cl, byte ptr [esp + 0xc]`; `ret 0xc`), while ours has four parameters, and retail calls
+// function_196ef0 with three register arguments where our call passes one. On the body: retail
+// reloads g_510ca0 at each test where ours keeps it in DL and holds the old maximum's -1 in ECX
+// with a second -1 in EAX for the inner index test; ours is ten bytes shorter than retail.
 // DL) and holds the old maximum's -1 in ECX with a second -1 in EAX for the
 // inner index test; ours is ten bytes shorter than retail. The two maximum
 // reads as `if (g_510ca0) x = i != NONE ? value : NONE` gave retail's nested

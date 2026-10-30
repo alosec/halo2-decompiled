@@ -1947,6 +1947,13 @@ extern dword g_54d5b8;
 // bytes). Tried: that copy with the dialog set before the switch, inside the guard,
 // or with a goto to the store 81; case 4 as `if (!g_51ec99) {...; break;} goto
 // shown;` 37; `case 1:` with the default 36.
+// Lane 11 r12: a NONE dialog for the flagged case 4 with `if (dialog != NONE)`
+// before the call (assigned then cleared, a ternary, an if/else) 36/62/37: VC
+// threads the test away and keeps the same layout; case 4 first or the default
+// last 36 (identical code: case blocks are laid out the same whatever their
+// source order).
+// Round 186: dialog result at entry long/int/dword/unsigned-int, native-scope int/dword/unsigned-int
+// 36 each; full unsigned state 36. Original body restored; shared tail placement remains.
 // @retail 0x250804
 void c_session_lobby_screen::show_session_state()
 {
@@ -2107,6 +2114,8 @@ void function_1905bf(long controller, bool flag);
 // Base call after the if/else with the else returning 137; the base call in every
 // path that reaches it 107; not-signed-in early return 106; bool result first and
 // returned by the early test 111; constant returns with a direct base return 137.
+// Success from inherited failure test at long/bool/signed-char/short width 153/142/143/154; direct
+// event index reads with those widths 153/142/143/154. Original result producer retained.
 // Negative outcome bool/long/signed-byte/unsigned-byte 146/138/146/146; with shared team-direction case
 // 126/147/126/126. Restored.
 // @retail 0x250b1e
