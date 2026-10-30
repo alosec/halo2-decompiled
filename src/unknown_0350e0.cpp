@@ -4275,7 +4275,7 @@ PRIVATE __forceinline real absolute_32350(real value)
     return value >= 0.0f ? value : 0.0f - value;
 }
 
-// score 482 (was 623): retail returns a separate false byte, not the special flag (`mov al, [esp+0xb]` on every
+// score 506 (was 623): retail returns a separate false byte, not the special flag (`mov al, [esp+0xb]` on every
 // non-success exit; the flag 3d7f0 writes is the byte at [esp+0x13]), so a special object returns false; the draft
 // returned the flag. 31f50's 5th output feeds the depth, its 4th the *2 field (the draft had them swapped), the
 // two cross products are separate branches (cmov before), the frame points come from g_47fd18+0xc, and the final
@@ -4284,13 +4284,13 @@ PRIVATE __forceinline real absolute_32350(real value)
 // unmatched, same as 0x31170); (3) retail tests the two pass bits as `shr; not; test bl, dl` with ebx = 1 held
 // for the pass inlined below (ours `shr; test 1`, constant 1 not in a register); (4) retail's |x| > |y| keeps
 // both absolute values and re-evaluates the winner in each arm (ja/jbe diamond), ours selects with a move.
-// Tried: result as a plain bool (folds to xor al, al, 653), if/else statements for the larger magnitude (531, ternary 524
+// Tried: the result as a volatile local byte (482; not kept, as it doesn't make the function match), if/else statements for the larger magnitude (531, ternary 524
 // before the frame-point change), `!(bit) || !(bit)` and `== 0` spellings of the gate (same shr/test form).
 // @retail 0x32350
 bool __stdcall function_32350(long index, real input_alpha)
 {
     byte *object = ((s_scalar_object_header *)g_4e0300->data)[index & 0xffff].object;
-    volatile bool result = false; // retail keeps the false return value in a stack byte
+    bool result = false;
     real alpha = 0.0f;
     bool special;
     bool eligible = function_3d7f0(index, &alpha, &special);
