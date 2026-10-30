@@ -652,6 +652,9 @@ void c_network_reliable_stream::mark_received(long sequence)
 // Default previous 17; reversed message guard 38; in-place previous 7; early message declaration/
 // previous before message 7/7; reset before/after lookup 39/138; reversed fallback order 10;
 // default type 82; field/direct publication 70/70.
+// Last delivery arm as `a ? true : b` 79, as a false default set true by the `||` test 7, as an
+// else-if split 113; the whole decision in one condition 22; the window arm before the bit arm 111;
+// delivered defaulted from current == acknowledged 93.
 // @retail 0x96910
 long c_network_reliable_stream::function_96910(long sequence, long bit_count, dword const *bits, bool complete)
 {

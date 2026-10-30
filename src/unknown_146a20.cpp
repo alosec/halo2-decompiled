@@ -94,6 +94,12 @@ bool g_47f05b;
 // virtual call in the derived constructor (devirtualised after the final vtable store), out-params
 // by reference in the base, a pointer-walk loop.
 // stores in place of the loop still drop the vtable store (30, 0x146b80 lost).
+// Round 103 (fast, with 0x146b80/0x146e30/0x22c3e0): the fixed base storing the count before the
+// size 33 (0x146e30 121); the abstract loop reading a const initial table 34; the fixed base's
+// fields as a member initializer list 34; `__declspec(novtable)` fixed base 34; size-only
+// constructor whose body reads the buffer into the count before clearing it 34 (140 bytes).
+// Harness only: a field read in the fixed base (not forwarded, store still dropped) 23 but
+// 0x146b80 15; a description struct by const reference 36 (146 bytes, 1 as immediates).
 // Round 37: the fixed, fixed-base and abstract constructors each defined out of line in another file (LTCG
 // inlines them) 34/34/34, no other function changes; the block typed as its layout (fixed allocator, buffer,
 // pool) 34; the count flag stored first 38. With the vtable store forced (diagnostic only) 12 at 147 bytes:

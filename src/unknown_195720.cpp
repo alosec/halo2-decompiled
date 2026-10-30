@@ -32,6 +32,8 @@ bool function_1946f0(s_bitstream *stream)
 // positive clear count 21; inclusive remaining count 2; named byte mask 2; native signed bit offset 2.
 // Index expression at each use 2; bytes through the dword buffer member 2; data pointer local 35;
 // plain masked assignment 2; size-first bound comparison 4.
+// `saved / 8` at the two address uses or at every use 2/2; a `byte *const &` reference to the data
+// field before/after the index 2/2; the masked byte as an explicit read-modify-write 2.
 // @retail 0x194710
 void function_194710(s_bitstream *stream, bool discard)
 {

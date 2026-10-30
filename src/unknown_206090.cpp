@@ -248,6 +248,10 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 // pool/count, all three and all with direct kind equality:
 // 1368/1364/1368/1365/1382/1365/1382/1404. List-only schema reaches 6238 bytes;
 // frame stays 0x5d0 and component/velocity homes still differ. All original types and body restored.
+// Round 195: On current float products, scalar magnitude/second-normalizer/first-cross
+// input captures and their four combinations 1606/1364/1394/1606/1555/1394/1555;
+// all with first-normalizer result join 1540. Complete original helpers, vector snapshot,
+// cross captures and body restored; frame 0x5d0 versus 0x58c and indexed homes remain.
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {

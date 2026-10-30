@@ -347,6 +347,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // direction scalars 74, with staged axis 81; complete direction value with staged
 // turn/both 196/219; both vector inputs as complete scalars 74. All restored;
 // final axis/direction carriers and the copied parallel product remain.
+// Round 100: the existing cross-file forced-inline rotation helper (vector, axis, 0.5, 0.866) 69;
+// identical code at 43: axis-first products in the j/k rows, axis declared before forward, the
+// parallel part through dot3f, the i-row cross term computed last (the matched 0x11d3b0 colours
+// its axis the way ours does).
 // Round 119: retail multiplies axis j/k by the parallel part in their own registers (axis operand
 // first), so it frees a register, loads direction j/k before the i store and keeps the cosine in a
 // register; every source spelling of the product gives the parallel part first. Parallel term first
@@ -465,17 +469,13 @@ bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const 
 extern vector3f *g_4687b0;
 
 // @retail 0x1fe410
-// score 2 (was 42): the cosine is loaded onto the x87 stack before the register that
-// holds the point is pushed, retail pushes it first.
 void function_1fe410(point3f *point, real distance)
 {
     point3f start;
     start.x = g_4687b0->i * 1.5f + point->x;
     start.y = g_4687b0->j * 1.5f + point->y;
     start.z = g_4687b0->k * 1.5f + point->z;
-    real angle = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f;
-    angle *= 6.2831854820251465f;
-    angle -= 3.1415927410125732f;
+    real angle = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -3.1415927410125732f, 3.1415927410125732f);
     vector3f radial;
     radial.i = (real)cos(angle);
     radial.j = (real)sin(angle);

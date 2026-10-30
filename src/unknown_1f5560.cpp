@@ -1130,6 +1130,11 @@ real function_50650(real cosine);
 // settings getter 117. Opening body restored.
 // Round 39: shared planar normalizer common/separate result, either arm first 117;
 // complete native input with those result forms 382 (fast control 117). Shared helper restored.
+// Round 22 (one-file harness with the 0x1e5450 and arccosine files, 119 at 1326 bytes; it differs
+// from the full build only in the epilogue pops): actor getter 119; object first 120; settings
+// from an inline object lookup 119; tag index local 119; scaled-offset local 119; 2-D normalize
+// shapes (else-zero, `s * v->c`, sum j first, `v->c * s`, early return, i or j local) identical
+// code 119; velocity dot operand orders 119, `2.0f + (...)` 122, `a + (b + 2.0f)` 120.
 // Ordered turn/approach, facing and following results, seven subsets
 // 334/137/334/137/334/137/334; all with the staged final velocity product 334.
 // All restored; the caller-inclusive unchanged preview is 137.

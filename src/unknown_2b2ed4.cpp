@@ -86,6 +86,9 @@ PRIVATE __forceinline long function_2b2ed6(XUID const *xuid, bool *active)
 // Disjoint UI/final-item scopes, branch-owned text result, and independent child-pointer
 // declarations, seven nonempty combinations 358 each; all with online arm first 701/2373.
 // The 0xfd4 frame now agrees; scoped workspaces do not change the remaining buffer homes.
+// Round 224: only final layout constructed after the null guard/child lookups/
+// before name publication/after status publication, with whole-word or native-bit
+// flag stores: 694/694/670/670/526/526/463/463. Original construction and body restored.
 // @retail 0x2b2ed4
 void __stdcall function_2b2ed4(c_y_menu_list *list, bool friends, bool empty,
     c_class_1a2c81 *item, s_friend *datum)
