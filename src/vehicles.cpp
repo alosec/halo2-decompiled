@@ -799,6 +799,9 @@ __forceinline long vehicle_round(real value)
 // never give the first cross's f.i load, which moves only when the side block is removed.
 // Round 425: native rate clamp 12; strength if/else 140; writable flag bit 15; shared byte clear 12;
 // clamp/strength 140, clamp/bit 15, strength/bit and all 140. All original source restored.
+// Round 48: shared up at both crosses 141; shared forward 204; both 209; forward-default axis 169;
+// angular copy/in-place scale 266/91; full forward snapshot 226; up snapshot with rate 146;
+// branch-scoped up at the first/side cross 150/109. Original body restored.
 // @retail 0xef870
 bool function_ef870(long vehicle_index)
 {

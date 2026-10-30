@@ -60,6 +60,9 @@ inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool fl
 // Round 202: independent clamp bounds 8; native bound returns 34; upper-first bounds 13;
 // existing shared real clamp with word/full/direct edge outcomes 8/10/10, edge-first 27,
 // one real result 35. All bodies and helper declarations restored.
+// Round 48: word outcome with two returns 8; signed word with two returns 9; inverted word returns 8;
+// eager word outcome 49; entry-declared/late-assigned word 8; shared real clamp with word returns 8,
+// full-width returns 10 and direct full-width returns 10. Original body and declarations restored.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {

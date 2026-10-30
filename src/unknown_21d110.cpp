@@ -747,6 +747,8 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 PRIVATE long const g_44a200[] = { 0, 1, 2 };
 PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
+// Round 48 (Kimi 2): repeat_state and loop_alternate held in one named 8-byte record matched byte for byte
+// (0 at 823); not kept, a struct that only groups locals to move their stack homes.
 // score 30 (was 60): every remaining difference is a stack offset. Retail keeps the loop bool
 // in a dword-aligned unit (its low byte) between repeat_state and the listener; ours is a
 // one-byte home in the lowest unit, which shifts the lighter dwords by four and reorders the
