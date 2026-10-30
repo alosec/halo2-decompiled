@@ -174,6 +174,9 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 // Round 291: Paired double-square terms, complete direction-square terms, both, ordered accumulator
 // clamp, and clamp combinations 410/414/420/402/410/414/420; all with disjoint clears before common
 // remaining initialization 454 (fast control 402; full 444).
+// Round 300: Existing vector setter for source/opposite/trigonometric constructions in seven
+// nonempty subsets 413/408/414/410/414/416/423; complete setter graph with readonly source/sample
+// records 423 (fast control 402; full 444). Original constructions and arithmetic restored.
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {

@@ -317,6 +317,9 @@ s_object_gc_entry_ab g_440570[6] =
 // query 110.
 // Round 256: Once-observed action/gather/both callbacks 108/110/108; with terminal state at use
 // 134/125/134; both with query-produced critical, original/direct cleanup 132/136. All restored.
+// Round 300: Named native long/dword level mask at use with compound, rejection-guard and
+// nested-positive eligibility 110/110/110/110/110/110; rejection/nested forms with terminal state
+// fields at use 125/125. Original frame, loop, field observations and body restored.
 // @retail 0xbf380
 void function_bf380()
 {
