@@ -1666,7 +1666,7 @@ real function_2683f0(long actor_index, long node_index, short type)
 	return result;
 }
 
-// score 502 (was 528): frame 0x84 versus 0x80, selection/iterator and transform/scoring homes differ.
+// score 502 (was 502): frame 0x84 versus 0x80, selection/iterator and transform/scoring homes differ.
 // the prop walk now uses the file's prop iterator (retail's unrotated walk with
 // the cursor at 0x3c and the current index at 0x38) and reads the actor index from its slot; the
 // frame is 0x84 against 0x80 since the visible flag became a stack byte, and the result/level slots,
@@ -1764,6 +1764,9 @@ real function_2683f0(long actor_index, long node_index, short type)
 // final positive-score producer alone/with rows/with dots/with both 502/503/502/503;
 // all with native byte positive 503. Keep only the shared positive producer, plain
 // confirmed at 502, 2856/2880 bytes; original products, grouping, iterators and calls remain.
+// Round 430: Complete visibility result with original/complete close/complete very-close/both
+// proximity producers: bool 560/636/512/628; byte 560/636/512/628. Complete close recovers frame 0x80
+// but regresses; original body restored.
 // @retail 0x266640
 void function_266640(long actor_index)
 {

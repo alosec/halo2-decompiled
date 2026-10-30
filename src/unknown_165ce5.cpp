@@ -1522,6 +1522,8 @@ static __forceinline real function_x82e52f(dword *seed, char const *file, long l
 // Round 426 (fast control 220): shared bool/long override with logical publications
 // 404/422; bitwise publications 422/413; those four with direct overlay-result assignment
 // 431/435/434/422. Original override branch, lookup and complete executable body restored.
+// Round 430: Actual weapon-array cursor, body pointer step, long/short/dword/word ordinals: index-
+// bound 415/309/415/309; array-end bound 440/474/440/474. Original index-based body restored.
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {

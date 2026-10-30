@@ -118,6 +118,9 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 // (`a = b = true`) 36; first test `>= 2` with `> 0` 36 (2 hoisted from entry, 1 no longer hoisted:
 // five byte stores alone do not hoist it); the range test inverted with the view in its arm 32; view-arm
 // stores swapped 32; `> 0` for the lower bound alone 33.
+// Round 430: Primary classification result reused for activity, bool/byte/short/long, with secondary
+// state-to-mode field readback 32/32/32/32; reverse field readback 32/32/32/32. Original executable
+// body restored.
 // @retail 0x1b21f0
 void __stdcall function_1b21f0(long actor_index, s_slot *slot)
 {

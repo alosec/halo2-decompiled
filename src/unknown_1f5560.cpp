@@ -826,6 +826,9 @@ real normalize2d(point2f *v);
 // 135/186/151/159; each with direct request return 182/193/173/153. All restored.
 // Separate trajectory admission/final result, bool/byte/word/long carrier 199/157/149/150;
 // each with the final result declared before outputs 199/157/149/150. All restored.
+// Round 430: One selected-speed lifetime through retry, with entry result declaration, valid-scope
+// retry outputs and both native axis-pair names: all eight 204 at 917/935 bytes. Original two speed
+// lifetimes and complete body restored.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
