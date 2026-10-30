@@ -641,7 +641,7 @@ struct s_sound_label_play
 	char const *variant;
 };
 
-long function_189210(long object_index, long marker_name, s_sound_label_play const *play);
+long function_189210(long object_index, s_sound_label_play const *play, long marker_name);
 
 /* sends the unit request 8 between two updates of the unit */
 // @retail 0xc4820
@@ -672,14 +672,8 @@ bool function_c4970(long unit_index)
 }
 
 /* plays one of the globals' sounds at the object's marker 0x4000095 */
-// score 2 (was 2): only marker-immediate/play-address setup order differs; frame and callee registers agree.
-// Earlier at 10: BLOCKED-BY 0x189210, whose retail form takes the play record in edi
-// (ours pushes it); play fields tag first 10; named globals pointer 10; 0x189210 parameter
-// orders play first/middle 10/10; 0x189210 reading the play fields at entry 16 (80 bytes).
-// Full/partial/const aggregate records 10/10/10; entry record 10; lookup assigned in the test 10;
-// 0x189210 inline with test assignment/original body 10/10; noinline declaration 10.
-// Eight alternate label/tag/scale/variant schedules 2/4/5/4/5/4/5/4; direct tag-field lookup 11,
-// with scale/variant/label order 14; absent-tag early return 2, with scale/variant/tag/label order 5. Restored.
+// The last two instructions to match were the marker immediate (eax) and the play record's address (edi):
+// callers set up register arguments last to first, so 0x189210 takes the play record before the marker name.
 // @retail 0xc5890
 void function_c5890(long object_index, short index)
 {
@@ -693,7 +687,7 @@ void function_c5890(long object_index, short index)
 		play.tag_index = tag_index;
 		play.scale = 1.0f;
 		play.variant = 0;
-		function_189210(object_index, 0x4000095, &play);
+		function_189210(object_index, &play, 0x4000095);
 	}
 }
 
@@ -6855,7 +6849,7 @@ bool __stdcall function_c58f0(long unit_index)
 				play.tag_index = sound;
 				play.scale = scale;
 				play.variant = 0;
-				function_189210(unit_index, 0x4000095, &play);
+				function_189210(unit_index, &play, 0x4000095);
 			}
 		}
 	}
