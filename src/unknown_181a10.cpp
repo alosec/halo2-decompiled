@@ -578,6 +578,9 @@ PRIVATE __forceinline bool batch_shape_pointer(c_batch_contact_shape const *shap
 // Round 181: common exit with original/separate/compound/nested admission 321 each; reversed material arms on those four graphs 316 each. Five-count lead rejected; original body restored.
 // Round 397: shared initial component query; marked getter, second-first acquisition and two-use entity masks 0..7
 // 321/358/328/362/321/358/328/362; all restored.
+// Key-continuation node/shape 322/353; shared admitted normal Z 317; native-position
+// combinations 313/378/340/373 (exact-only grouping, rejected); position alone 344;
+// shape plus shared Z 349. Original body restored; frame and plane/output homes remain.
 // @retail 0x1822f0
 void c_query_batch_collector::collect(s_batch_contact const *contact)
 {

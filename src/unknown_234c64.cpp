@@ -272,6 +272,8 @@ void c_window_channel::v9()
 // after the same call. One tested link-order change left the score unchanged.
 // Other locals, address forms and control flow scored 3 or worse; the 600 s
 // permutation run found no improvement.
+// A twice-used callback snapshot, with both request types and both result
+// declaration orders, scored 29 in all eight forms (79/78 bytes).
 // @retail 0x23531c
 void c_window_channel::v10()
 {

@@ -1097,6 +1097,8 @@ real function_50650(real cosine);
 // Round 403: native settings 117; readonly settings 117; native settings actor 117; readonly native
 // actor 117; readonly object 117; readonly settings actor 117; readonly native receivers 117; native
 // settings getter 117. Opening body restored.
+// Round 39: shared planar normalizer common/separate result, either arm first 117;
+// complete native input with those result forms 382 (fast control 117). Shared helper restored.
 // @retail 0x1f9e70
 real function_1f9e70(long actor_index, long object_index, point2f const *position,
     vector2f const *path_direction, vector2f const *facing, vector2f const *desired,

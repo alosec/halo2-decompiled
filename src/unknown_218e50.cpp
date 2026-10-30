@@ -12,9 +12,11 @@ static inline s_sound_permutation_set *sound_permutation_set_get(s_sound_promoti
 	return &((s_sound_globals_promotion_view *)g_51ebd4)->sets[sound->permutation_base + set_index];
 }
 
-// @retail 0x218e50
 // score 40 (was 40): the argument is read into BP where retail reads it into EBP, so the values are
 // kept in the 16 bit registers instead of the 32 bit ones.
+// Direct signed-count validation with early or positive ownership scored
+// 95/90 (164/169 bytes); short/long sample results and global reads varied.
+// @retail 0x218e50
 real function_218e50(long tag_index, short set_index, short permutation_index, short sample_index)
 {
 	s_sound_promotion_tag *sound = (s_sound_promotion_tag *)g_4e3b44[tag_index & 0xffff].bytes;

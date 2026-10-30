@@ -87,6 +87,12 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 // classification pointer 32; one shared flag tail 49; view test nested 32; view-arm stores
 // reversed 32; then-arm flag store first 32; open bounds with one shared flag tail 51. In the screen
 // no range spelling, tail sharing, nesting or store order puts 2 in ESI.
+// Round 93: view-arm stores chained (`a = b = 2`) 32; `== 1 || == 2` range 106 (183 bytes: the view
+// lookup is no longer inlined); `> 0 && < 3` 39; one if/else structure without the early return 32.
+// Round 8: the fast check needs 0x25d740 in the image (without it the view lookup is called, 184
+// bytes); a harness screen of 72 forms (then-arm store orders x view-arm orders x three range
+// spellings x `> 1`/`>= 2`) hoists 2 only with `>= 2`; real checks: then-arm 420/41c/488 order with
+// `> 0 && < 3` 39 (view order either way 39), that order with `>= 2` 33, 41c-first orders 32/32.
 // retail keeps 1 in EBX from the first test and, after the node lookup, uses ESI for
 // the node pool base and then for the constant 2 (four uses: the `<= 2` test and three word stores);
 // ours uses EDI for both pool bases, leaves the view pool load unfolded and stores immediate 2s; four
