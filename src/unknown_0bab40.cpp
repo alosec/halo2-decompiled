@@ -67,6 +67,10 @@ bool function_ba8c0(s_object_function_ab const *function, long object_index, rea
 // 117 (358 bytes: forwarded to `mov al, 1` and cross-jumped with the 0x10aac0 return); the result set
 // before the value store 117; the 1.0 case as the chain's final else 28; a second `return enabled`
 // in the dispatch branch 28; a separate register result for the 1.0 case and the final return 117.
+// A plain `return true` in the 1.0 case 117 (the early return jumps into its pops); the early
+// 0x10aac0 result as `enabled = true` at the head of the chain 124; a switch on the name 104;
+// the early result as a named bool returned when set 28, with the 1.0 `return true` 117. The
+// recursive call's EAX/ECX swap is absent from a compile-only build (an LTCG effect).
 // @retail 0xbab40
 bool __stdcall function_bab40(long object_index, long name, real *value)
 {

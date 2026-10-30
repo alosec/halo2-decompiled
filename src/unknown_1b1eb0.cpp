@@ -39,7 +39,11 @@ PRIVATE __forceinline void function_1b1eb2(long arg_0)
 // before the state 14; helper taking the actor pointer 14; actor_get spelled out,
 // index first, or as an array element (first get, second, or both) 14; the flag read
 // into a local first 14; if/else form 14; the reference in a local first 28; actor_get
-// after the if 25; no actor local 34.
+// after the if 25; no actor local 34. Round 15: the existing 0x1f86a0 inlined at link time 18
+// (same swap); result declared first 14; slot read directly 14; actor_get at one use 25;
+// eight spellings of the helper's address (cast, integer sum, data/pool/offset locals) 14;
+// definition order in the file 14. The swap needs the reset's second actor pointer: with one
+// or two reset stores (folded address) the index takes EAX as in retail.
 // @retail 0x1b1eb0
 bool __stdcall function_1b1eb0(long actor_index, s_slot *slot)
 {

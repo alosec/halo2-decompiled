@@ -986,6 +986,10 @@ struct s_string_buffer
 // 57/53, upper/lower range result 95/53 (plain scores).
 // Range in a bool local 13; both values under a repeated test 104; conditional
 // values 140; forced-inline mode predicate 50; one flag for both values 50 (fast).
+// r105 (fast): the plain six-way chain 65 (480 bytes, 9 in line); the chain without 9
+// and an `else if (== 9)` arm with the same loads 65 (the arms merge); the chain in a
+// bool, a long, or a flag set by an if 65; the score1 format call in both arms with the
+// chain 100 (483 bytes) or the range 104.
 // @retail 0x2342e9
 void c_postgame_statistics_list_459680::fill_row(c_class_1a2c81 *item, long row)
 {

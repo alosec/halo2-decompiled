@@ -260,6 +260,8 @@ void function_bb8f0(long a)
 	}
 }
 
+// matches retail (was 4): the new deadline is the delta plus the game time, and the
+// comparison reads the old deadline and that sum on both sides of it.
 // score 4 (was 4): retail keeps the delta in the accumulator and adds the
 // game time to it, ours keeps the game time in the accumulator and adds the
 // delta to that, so the four instructions that build the time differ.
@@ -284,10 +286,7 @@ void function_bb950(long object_index, bool add, long delta)
 			if (TEST_FIELD_BIT(header->flag0))
 				list->count++;
 		}
-		long time = g_510c54->game_time;
-		time += delta;
-		long current = object->next_time;
-		object->next_time = (current > time) ? current : time;
+		object->next_time = (object->next_time > delta + g_510c54->game_time) ? object->next_time : delta + g_510c54->game_time;
 	}
 	else if (TEST_FIELD_BIT(object->flag14))
 	{
@@ -540,6 +539,9 @@ void function_3dd10(long object_index, bool force);
 // Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
 // variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
 // const choice count with the signed first bound 637 (unrolled). Original body restored.
+// Round 439: complete supplied/default/converted color result, loop/entry lifetimes and
+// field/indexed clamps with field/result dual publication: 261/261/291/286, repeated at entry.
+// Frame grows to 0x60; original object-output pipeline, scans and all float trees restored.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
@@ -693,6 +695,20 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // Round 212: complemented bool/byte/short/long return on plain pointer-body traversal 159/159/131/132;
 // with admitted current lifetime 158/158/129/130 (fast control 91). Original return, pointer lifetimes
 // and traversal restored; saved receiver roles remain.
+// Latest round: retail keeps the destination pointer in ebx and the source pointer only in the
+// stack slot at E+0x0c, and gives the blend loop's scratch pointer and the second loop's byte
+// offset to edi; ours keeps the source pointer in ebx and the destination in edi, and uses ebx
+// for that scratch pointer and offset. The copy, the blend call and the scale and clamp
+// accesses therefore name different registers.
+// Retail also forms the destination after the count test, and scales red as value*red, green
+// as green*value and blue as blue*value, while ours scales red as red*value, green as
+// value*green and blue as value*blue.
+// Destination formed after the count test 100; the same with the destination built from the
+// object expression 119; the source declared after the destination and not used before the
+// loop 172; the destination passed as a plain pointer 91; the scale multiplies written out 91;
+// the destination taken as &base[count] 91; the two pointer increments swapped 91.
+// Source pointer derived from the destination inside the loop, so that the source induction
+// variable is never used in the preheader 186.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {
