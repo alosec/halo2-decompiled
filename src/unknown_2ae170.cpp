@@ -1136,6 +1136,9 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // Round 414: joint front/rear/both endpoint producers 137/151/141; routing-result arms
 // alone/front/rear/both 137/137/152/142; routing default with both pairs 133 at 396/396
 // (gain four, below eight; test-produced routing also exact-only). Original complete body restored.
+// Round 81: zero-case switch 141; full-width front endpoints on that switch 137; gain after endpoints 137;
+// explicit default 137; capacity first 141; separate gain assignment 137; integer-bit zero with
+// full-width/byte endpoints 158/196 (exact-only, no match). Original body restored.
 // @retail 0x2afb80
 void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rear, long mode, s_mixbin_settings *mixbins)
 {

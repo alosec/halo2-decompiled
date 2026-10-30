@@ -3556,6 +3556,9 @@ long network_observer_attach_channel(s_network_observer *observer, long owner_in
 // Round 403: copy scope 131; const copy scope 131; scoped input output 131; scoped input state 131;
 // const input copy 131; reservation output lifetime 131; output first 131; scoped result lifetime
 // 136. Opening body restored.
+// Round 81 (fast): direct state time 173; direct now 137; direct age 173; age condition order 137;
+// reservation output at reserve scope 131; counter at reserve scope 131; const reason parameter 131;
+// reason-store return expression 131. Original body restored.
 // @retail 0x5c720
 bool __stdcall function_5c720(c_class_58d20 *session, const s_session_member_identity *identity,
 	long player_count, const dword *identities, const long *values, bool reserve,
