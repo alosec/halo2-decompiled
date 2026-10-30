@@ -415,7 +415,7 @@ bool function_1b9420(long actor_index)
 
 	s_object_child_iterator iterator;
 
-	function_d0620(actor->unknown26c, &iterator);
+	function_d0620(&iterator, actor->unknown26c);
 	if (function_d0690(&iterator))
 	{
 		do
