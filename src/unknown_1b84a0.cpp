@@ -118,6 +118,30 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // (retail duplicates it for the NONE path); left are actor/state ESI/EDI swapped, EBX saved at entry and
 // the 0x1f4f40/0x262800 argument temporaries. On it: the slot parameter cast at each use 52; the view
 // computed first as NULL-or-view and tested once 52; the NONE case as an early store and return 91.
+// Round 198: typed slot data block/current/entry 61/62; on that block actor once/at use 66/85; long/word/byte readiness 76/78/77; stored readiness 47 (exact-match-only, restored). Opening body restored.
+// Round 238: actual input/required/done byte fields, all seven subsets, 61 each;
+// completion byte field 61. Original Boolean field types and body restored.
+// Round 89: the readiness stored in the field and tested from it, kept (retail's mov eax, 1) 47; on
+// it, one actor lookup at the top 52 (index EBP and view EBX as retail, actor/state ESI/EDI swapped),
+// plus the state declared first 52, a prop index local 52 or the typed slot data block 52; the
+// NONE case as an early store and return 91 (actor EDI as retail, more pushes sink).
+// Round 173: Role allocation names in all seven index/actor/view subsets 47 each; indexed data block with
+// complete names 47. Direct concrete callback input, alone/one actor lookup/role names/both, 47/52/47/52.
+// Original body, input declaration and table entry restored; late EBX save and register ownership remain.
+// Round 270: native success/else-return gates for active, facing and release phases,
+// all seven subsets 47; full gates with the slot data member 47. Original restored.
+// Round 252: native node reference with/without the data block 47/47; actor reference
+// after the view, alone/with node 47/47; entry actor reference alone/with node/with
+// node and data block/with data block 52/52/52/52. Original complete body restored.
+// Round 155: on the top actor lookup (index EBP, view EBX as retail; actor ESI/state EDI swapped): node/view
+// declared at the top 52, prop-index local 52, slot cast at each use 52, last test as if/else-return 52, NONE
+// as an early store and return 91; getter in both NONE test and node lookup 47; actor before the view test 97.
+// Round 7 (lane 13): --fast frees this handler's convention (the table is dropped from the reduced image), so
+// all trials ran plain. Retail's actor is a local (first load folded, then `add edi, edx`). On the top actor
+// form, the completion store written again for the NONE case (if/else) gives retail's late EBX push and own
+// NONE epilogue with state ESI and actor EDI, but the index then stays on the stack and the node takes EBX:
+// 69; the same with the slot parameter typed `s_slot_23 *` (table cast) 69, node/view declared first 69,
+// NONE arm first 91; that store on the current body 97.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {

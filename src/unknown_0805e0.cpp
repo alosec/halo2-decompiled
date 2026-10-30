@@ -821,6 +821,7 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // entry time workspace 66; pre-copy long adjustment 382; indexed destination 168;
 // mutable removal with upper-first declarations 66; shared range-direction relation 381;
 // indexed destination with native timestamp member 168. Original body restored.
+// Round 183: actual endpoint 389; plain endpoint 396; one count 89 (frame 0x10); endpoint/count 380; plain endpoint/count 394; endpoint relation 387; plain relation 394; combined count/relation 384. Original body restored.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {

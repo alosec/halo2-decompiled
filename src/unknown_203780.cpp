@@ -23,6 +23,18 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 
 // score 70 (was 70): retail keeps NONE in esi (or esi,-1 at entry; four
 // compares and two exits use it) with arg_0 in ebx and ebp/edi pushed past
+// the first guard; ours keeps arg_0 in esi, NONE in eax for the first exit
+// only (immediates elsewhere), pushes all four at entry, and shares one fail
+// exit (345 vs 369 bytes). Early returns 109 (shrink-wrap appears but NONE
+// stays immediate); only the arg_1 guard early 109; local_8 initialized at
+// declaration 109; the marker && split into nested ifs 75; marker index as a
+// ternary 70; marker-found through a bool 70; result assigned inside the test
+// 70; store through an address local 70; global optimization off 210
+// (diagnostic). No source form enregisters the NONE constant: VC propagates
+// it per web. Round 78: single exit with every guard nested 115 (arg_1 then
+// arrives in dx), with `if (local_0 == NONE) return NONE;` kept 100, plus an
+// early `return NONE` for arg_1 123; the squad-index product named first 70;
+// the actor store under `if (local_0 != NONE)` 71.
 // the first guard; ours keeps arg_0 in esi, NONE as immediates, pushes all
 // four at entry, and shares one fail exit (345 vs 369 bytes). Early returns
 // 109 (shrink-wrap appears but NONE stays immediate); only the arg_1 guard

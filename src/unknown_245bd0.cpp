@@ -231,6 +231,7 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 	out->unknown0d = source->unknown0d;
 	out->unknown0e = source->unknown0e;
 }
+// score 57 (was 57): the sphere test's normal: retail multiplies the x and z
 
 // score 57 (was 57): the sphere test's normal: retail multiplies the x and z differences in
 // place (normal x/y/z in xmm1/xmm3/xmm2, differences x/z/y in xmm1/xmm2/xmm4) and loads 1.0 in

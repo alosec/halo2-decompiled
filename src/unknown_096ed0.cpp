@@ -158,6 +158,12 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // Trials 1-8: 55, 55, 216, 229, 208, 208, 101, 171.
 // Trials 9-16: 57, 183, 185, 170, 185, 185, 185, 185.
 // Trials 17-18: 153, 153.
+// Lane 14 r6: the walking active cursor makes the compiler count the active chain down in a
+// stack slot it shares with the pending chain's type spill, so that slot sorts first (more
+// references); retail indexes the active chain (i in esi, count in edi), and its type spill is
+// the last 4-byte slot below the handle arrays. Plain `handles[i]` in the active loop 170 (the
+// pending loop then spills i and keeps type in ebx); type renamed kind/a_type/z_type 55 each;
+// cursor renamed 55.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {

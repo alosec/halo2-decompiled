@@ -1113,7 +1113,11 @@ void c_game_engine_markers::v21(long object_index)
 // Round 77: the team at each call again 119 (the options pointer then stays in EDX from entry and the
 // type lookup takes ESI/EDI); a short slot 93, with the team at each call 93 (438 bytes); the unit
 // looked up before the type test 119, with the team at each call 132; an object pointer after the
-// test with the team at each call 130.
+// test with the team at each call 130. Round 19, on the team at each call (its whole difference is
+// the options pointer kept in EDX from entry, which moves the type test to ESI/EDI): the flag as a
+// byte mask 119; an empty `do {} while (false)` after the type test 119 or before the engine-type
+// test 119 (no reload); the unit's player index read at each use 93; the flag in a named bool before
+// the player pointer 119.
 // @retail 0x240ff0
 void c_game_engine_markers::v23(long object_index, long unit_index)
 {
@@ -1678,6 +1682,10 @@ void function_242e00(long player_index, long team);
 // Round 71: unchanged; 0xba300 still contributor code (todo). Retail never takes the engine
 // globals pointer's address (only loads and its allocation store), so its reload after each
 // 0xb58c0 call is the register choice the element-pointer form above reproduces.
+// Round 19: the same element pointer inside the existing marker_position helper (`s_marker_entry
+// *entry = &g_4e0350->marker_entries[marker_index]; return &entry->position;`) gives 2 here, only
+// the 0xba300 call differing, with the file's other 60 functions unchanged (fast); the same address
+// as one expression 64. Held for the 0xba300 change like the tail form above. BLOCKED-BY 0xba300.
 // @retail 0x242660
 void function_242660(long object_index, bool arg_1)
 {
@@ -2023,12 +2031,17 @@ PRIVATE __forceinline short function_244301(short arg_0)
 	return arg_0 == 8 ? NONE : arg_0;
 }
 
-// @retail 0x244300
 // score 68 (was 68): the record pool's pointer is loaded into EDX where retail loads it into ECX, and
 // the products of the dot product are computed in the other order. Round 70: the delta vector in a
 // loop local with the header from-points/length helpers gives retail's z,y,x products (68, the pad
 // shift remains); with it: constants getter 68; slot before the square 68; result after the point 68;
 // do-while loop 68; dword slot 68. A 600 s permuter run reached 13 only through volatile stores.
+// Round 19: on the delta form only the entry (constants and pool data in EDX, retail ECX) and the
+// iterator's pool load into EDX (retail EAX, a byte shorter, which is also the loop pad shift) remain,
+// aligned 17. The slot read before the radius 79; the iterator declared at function scope 68; on the
+// delta form: the team after the first position call 108, the iterator's index stored before its
+// absolute index 70, early returns in place of the result flag 69.
+// @retail 0x244300
 bool function_244300(long object_index, long *player_index)
 {
 	bool result = false;

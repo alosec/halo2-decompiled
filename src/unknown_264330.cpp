@@ -214,6 +214,13 @@ owner_selected:
 // calling 0x264260 or 0x30bf0 through a function pointer makes ours reload the object pointer
 // but keep the element address (lea esi), not retail's header base; BLOCKED-BY 0x264260's
 // side-effect summary (it reads only through its pointers) in part.
+// Round 78: a compile-only build of this body (every callee opaque) keeps the header base and
+// fetches the object again after the calls exactly as retail; only LTCG's knowledge that
+// function_30bf0 and function_264260 write no object memory merges the second lookup into the
+// first (function_264260 is a pure leaf in an avoid-listed file). Direction through
+// vector3d_from_points3d 67; header base read before the position call 109; facing copied
+// member-wise 102; direction before the object lookup 75; object lookup after the zero-length
+// fallback 154.
 // @retail 0x264940
 void function_264940(long actor_index, long prop_ref_index)
 {
