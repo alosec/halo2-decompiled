@@ -206,6 +206,9 @@ public:
 // Round 214: salted index before disjoint initialization with an allocation/link-only receiver;
 // receiver and index declaration priorities, later/earlier failure paths 235/235/238/238/235/235/238/238.
 // Original acquisitions and stores restored; frame 0x10/0x14, metadata/head homes and x87 cleanup remain.
+// Round 431: Complete viewer lookup via both branches then immutable conditional result, each with
+// original/viewer/child-cursor/position receiver identities: 234/234/234/234/234/234/234/234. Original
+// pointer producer, receiver identities and complete executable body restored.
 // @retail 0x248970
 void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s_particle_system_datum *arg_2,
 	real *arg_3, transform4x3f const *arg_4)

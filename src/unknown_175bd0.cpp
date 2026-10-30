@@ -2926,7 +2926,7 @@ void __stdcall function_17a380(s_effect_datum *effect)
 	}
 }
 
-// score 93 (was 96): frame 0x4c versus 0x54 (retail spills the definition and keeps two more
+// score 93 (was 93): frame 0x4c versus 0x54 (retail spills the definition and keeps two more
 // dwords), the particle system in EDI (retail ESI), color B spilled (retail EDI) and the cached
 // mode differ. Tried: transform name 109; query results, particle cursor and colors at entry 109;
 // read-only settings 109; immutable mode once 96 (kept); size policy 146; inline depth zero 109;
@@ -2964,6 +2964,9 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // fail retention. Original getter definition/declaration, query types, successor qualifier, mode, every
 // call tuple and executable body restored. Frame 0x50 versus 0x54, system/color homes and color-call
 // staging remain.
+// Round 307: Coordinated effect-first/system-second inputs with mode/tint/cursor lifetimes
+// 93/94/106/112/120/110/117/113; direct mode reads also lose the matched caller.
+// Original definition, declaration, input order and caller restored; frame 0x4c versus 0x54 remains.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {

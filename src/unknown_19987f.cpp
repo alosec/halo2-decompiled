@@ -1903,7 +1903,7 @@ struct s_session_map_view
    5 the members' status, 6 ready, 7 the wrong players, 8 to 10 the host's
    states; the members' progress goes to progress. Retail keeps progress on
    the stack: reading it through its address keeps it there */
-// score 21 (was 29): progress/session/result homes and map limit/iterator registers now agree;
+// score 21 (was 21): progress/session/result homes and map limit/iterator registers now agree;
 // the lower setting test (EDI versus immediate one) differs, 576/577; chained zeros recover the data-test schedule.
 // Earlier: ours holds progress in EDI; retail reads it from its stack home at both
 // uses, keeps the limit in EDI, the team mask in EBX and the count in progress's home.
@@ -1921,6 +1921,9 @@ struct s_session_map_view
 // Round 423: zeros chained 21 (plain); mask/count/both after output query 29/198/199;
 // zeros chained after query 199; signed-zero/invalid-range bounds 29/29; delayed zeros/zero bound 199;
 // chained zeros with zero bound/nested minimum/default-first/invalid branch 21/79/33/80.
+// Round 307: Positive minimum selection 21; zero-only correction 80; native-byte maximum with
+// positive/zero correction 137/147; uniform setting-field reads give the same four counts.
+// Original minimum and long storage restored; lower-bound sharing and invalid-range join remain.
 // @retail 0x19a2ce
 long function_19a2ce(real *progress)
 {
