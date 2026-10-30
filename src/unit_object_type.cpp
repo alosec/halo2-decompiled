@@ -1494,13 +1494,20 @@ long function_ccd60(s_unit_starting_weapon const *weapon, long unit_index, bool 
 }
 
 /* whether either weapon the unit holds is in state 1 or 2 (+0x20c) */
-// score 39 (was 54): Retail reloads object data per weapon; ours caches it.
+// score 19 (was 39): Only the register pair differs: retail keeps the unit in EDX and the slot/weapon
+// index in ECX, ours the other way round.
 // Success-only/reversed/result-first accumulators 58 each; explicit failure/success 54;
-// state at each test 54; OR accumulator 39 (kept, 161 bytes); cached unit/success 60; hand pointer walk 92.
+// state at each test 54; OR accumulator 39; cached unit/success 60; hand pointer walk 92;
+// existing slot lookup 0xcbd50 per hand 41-53; pool local for the weapon lookups with
+// `result = result ||` 19 (kept: retail's per-weapon data reload and true-result join);
+// unit read once before the loop 24; with 0xcbd50 19; result declared first 19; nested slot
+// tests 19; long index 54; masked-index unit lookup 19; screened without change: local names,
+// function-scope index/weapon/holder declarations, char index, if-form weapon index, two
+// written-out hands.
 // @retail 0xcc0c0
 bool function_cc0c0(long unit_index)
 {
-	s_unit *unit = UNIT_GET(unit_index);
+	s_record_pool *objects = g_4e0300;
 	bool result = false;
 
 	for (long hand = 0; hand < 2; hand++)
@@ -1509,11 +1516,11 @@ bool function_cc0c0(long unit_index)
 		short index = (&holder->current_weapon_index)[hand];
 		long weapon_index = index != NONE ? holder->weapon_object_indices[index] : NONE;
 
-		if (weapon_index != NONE && !result)
+		if (weapon_index != NONE)
 		{
-			char state = *((char *)UNIT_GET(weapon_index) + 0x20c);
-
-			result |= state == 1 || state == 2;
+			result = result ||
+				((char *)((s_unit_header *)objects->data)[weapon_index & 0xffff].unit)[0x20c] == 1 ||
+				((char *)((s_unit_header *)objects->data)[weapon_index & 0xffff].unit)[0x20c] == 2;
 		}
 	}
 	return result;
@@ -2097,9 +2104,6 @@ void function_cb430(long unit_index, s_unit_weapon_hands *hands)
 
 /* asks the unit sharing the seat group of the unit's seat to get out
    (request 0x20); returns false */
-// score 37 (was 50): Frame 0x20 agrees; seat-table address scheduling and request-byte
-// registers remain. Table/definition/element/all producers 50 each; data-before-type 50;
-// reversed data-before-type 49; table plus data-first 50; admission exits 37 (kept, 206 bytes).
 // @retail 0xd0f30
 bool __stdcall function_d0f30(long unit_index, bool a, bool b)
 {
@@ -2113,10 +2117,10 @@ bool __stdcall function_d0f30(long unit_index, bool a, bool b)
 	short seat_index = unit->parent_seat_index;
 	if (seat_index == NONE)
 		return false;
-	short other_seat_index = *(short *)((byte *)&UNIT_SEATS(UNIT_DEFINITION_GET(parent))[seat_index] + 0x3e);
-	if (other_seat_index == NONE)
-		return false;
-	long occupant_index = function_c8f60(parent_index, other_seat_index);
+	s_unit_seat_definition *seat = &UNIT_SEATS(UNIT_DEFINITION_GET(parent))[seat_index];
+	long occupant_index = NONE;
+	if (*(short *)((byte *)seat + 0x3e) != NONE)
+		occupant_index = function_c8f60(parent_index, *(short *)((byte *)seat + 0x3e));
 	if (occupant_index != NONE && occupant_index != unit_index)
 	{
 		s_unit_request request;
@@ -3484,6 +3488,11 @@ void function_c6990(long unit_index)
 // Pointer table walk 50, plus seat polarity 103, shared difference 63, both entry constants 46.
 // Both point library copies 49, plus shared difference 62; entry result with library copies 44;
 // entry result with pointer walk 45. The 44/408-byte form fails the minimum-eight rule; restored.
+// On entry result: distance before the seat bit 45; point pointers after the constants 44; seat
+// bit declared last 45; the seat label read into a local before the call 41 (one-use local, no
+// match); a 600 s permuter run reached 34 only by swapping the label and table arguments (wrong
+// call). Retail stores the seat bit before reading the marker name; ours keeps it in AL until the
+// call, and every later temporary then takes the next register (EAX/ECX/EDX rotated).
 // @retail 0xc7160
 long __stdcall function_c7160(long unit_index, short seat_index, long a, long vehicle_index, long b)
 {
