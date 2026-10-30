@@ -247,6 +247,11 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
 // Round 37: normalized/object, normalized/sphere and all relative-position workspaces shared per
 // object 866/867/867, at entry 866/867/867; all with independent query storage 889, ordinary actor
 // pointer 959. Original vectors, query record, qualifiers, operands and complete body restored.
+// Round 79 (plain): no unit_index volatile 917 (fast 867: fast misleads here); unit no-obstacle bit
+// tested as a word `(bool)((w >> 2) & 1)` 919 (retail's `mov dl, byte; shr dl, 2; test dl, 1`);
+// location and raised point as separate locals 889; both 918; no actor volatile 959; no settings
+// volatile 931. Retail holds actor_index/unit_index/self_unit in ebx/edi/ebp (reloaded on the
+// object loop's back edge) with its zero in ebp.
 // @retail 0x2c0d60
 void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_index, byte flags,
     s_path_settings const *volatile settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
@@ -870,11 +875,6 @@ void function_2c2740(point2f const *point, point2f const *center, real radius, b
 
 #include "unknown_1fa590.h"
 
-PRIVATE __forceinline word edge_node_2c(s_pathfinding_edge const *edge, long side)
-{
-    return side ? edge->surface : edge->unknown0c;
-}
-
 PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, long index)
 {
     if (index == NONE || index == 0xffff)
@@ -882,7 +882,33 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
     s_pathfinding_node const *node = &data->nodes[index];
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
-// score 385 (was 385): frame 0x28 agrees; zero/radius schedule, history homes and indexed node-word lowering remain.
+
+/* the same test of the node on one side of an edge, read as the edge's word */
+PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_pathfinding_edge const *edge,
+    long side)
+{
+    word index = edge->nodes[side];
+    if (index == NONE || index == (word)NONE)
+        return false;
+    s_pathfinding_node const *node = &data->nodes[index];
+    return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
+}
+// score 347 (was 385): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
+// direction.x and the first offset's y, where retail clobbers its xmm0 zero with 0 - radius and
+// re-zeroes it for the compares; the edge pointer then sits in ebx (retail esi) and the vertex in
+// memory (retail ebx). Retail's crossing test is one byte set three times (`xor dl, dl` before the
+// normalisation, `mov dl, 1` per test): the flag form `crossing = false; if (..) crossing = true` x3
+// reaches 318 here (kept out: flag rule).
+// Round 79 kept: the edge's node pair as a real array, the fixed-side tests on the edge's word
+// (edge_node_open_2c: retail's `mov cx, word; movzx eax, cx; cmp cx, 0xffff`), the long test on
+// the indexed ones, start/end vertices by if/else, complete geometry before the tests, the ring
+// direction as `bool forward`, the portal loop stepping through the portal pointer with the source
+// edge formed first, the previous vertex by if/else, no volatile on first_vertex and the walking
+// edge in its own local (retail stores the edge index back to its own slot at entry) 347.
+// Round 79 tried on 347/318: flag 318; offsets summed product-first/direct products/second difference
+// first/both scales first 318/338/343/354; `|` of the crossing parts 371; the `||` crossing in one
+// expression 350; vertex-select polarity flip no change; on 347: offset and difference interleaved
+// 403, one offset reused 403, direction from the vertex indices before the start pointer 394.
 // Data must stay in EBP: forms that move it let LTCG pass it in a register (ret 0x14).
 // Earlier: frame 0x28 agrees; zero/radius schedule, history homes and indexed node loads remain.
 // Earlier: Frame 0x28 and length agree; zero/radius schedule, history homes and indexed node loads differ.
@@ -961,12 +987,13 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
     long edge_index, bool side, point2f *result)
 {
     long previous_vertex = NONE;
-    volatile long first_vertex = NONE;
+    long first_vertex = NONE;
+    long current_edge = edge_index;
     for (;;)
     {
-        s_pathfinding_edge const *edge = &data->edges[edge_index];
-        bool first_open = path_node_open_2c(data, edge_node_2c(edge, 0));
-        long node_index = edge_node_2c(edge, !first_open);
+        s_pathfinding_edge const *edge = &data->edges[current_edge];
+        bool first_open = edge_node_open_2c(data, edge, 0);
+        long node_index = edge->nodes[!first_open];
         if (!path_node_open_2c(data, node_index))
             return false;
         s_pathfinding_node const *node = &data->nodes[node_index];
@@ -974,7 +1001,7 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         if (previous_vertex != NONE && surface_index != NONE && data->surface_count > 0)
         {
             s_pathfinding_edge const *portal = &data->edges[data->surfaces[surface_index].index];
-            long opposite = edge_node_2c(portal, portal->surface != node_index);
+            long opposite = portal->nodes[portal->surface != node_index];
             if (path_node_open_2c(data, opposite))
             {
                 *result = *(point2f const *)&data->vertices[previous_vertex];
@@ -983,25 +1010,35 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         }
         long vertex0 = edge->vertices[0];
         long vertex1 = edge->vertices[1];
-        point2f const *start = (point2f const *)&data->vertices[first_open ? vertex1 : vertex0];
-        point2f const *end = (point2f const *)&data->vertices[first_open ? vertex0 : vertex1];
+        long start_vertex, end_vertex;
+        if (first_open)
+        {
+            start_vertex = vertex1;
+            end_vertex = vertex0;
+        }
+        else
+        {
+            start_vertex = vertex0;
+            end_vertex = vertex1;
+        }
+        point2f const *start = (point2f const *)&data->vertices[start_vertex];
+        point2f const *end = (point2f const *)&data->vertices[end_vertex];
         point2f direction;
         vector2d_from_points2d(start, end, &direction);
         point2f normal = { direction.y, 0.0f - direction.x };
         normalize_offset_direction_2c(&normal);
-        point2f offset;
+        point2f offset, other_offset;
         scale_offset_direction_2c(radius, &normal, &offset);
         offset.x = origin->x + offset.x;
         offset.y = origin->y + offset.y;
-        point2f first;
+        scale_offset_direction_2c(0.0f - radius, &normal, &other_offset);
+        other_offset.x = origin->x + other_offset.x;
+        other_offset.y = origin->y + other_offset.y;
+        point2f first, second;
         vector2d_from_points2d(&offset, start, &first);
+        vector2d_from_points2d(&other_offset, start, &second);
         bool first_crossing = (first.y * direction.y + first.x * direction.x < 0.0f ? 1 : 0) == side &&
             first.x * direction.y - first.y * direction.x < 0.0f;
-        scale_offset_direction_2c(0.0f - radius, &normal, &offset);
-        offset.x = origin->x + offset.x;
-        offset.y = origin->y + offset.y;
-        point2f second;
-        vector2d_from_points2d(&offset, start, &second);
         bool second_crossing = second.x * direction.y - second.y * direction.x < 0.0f;
         bool crossing = first_crossing || second_crossing || first_vertex == NONE;
         long vertex = ((crossing != first_open) == side) ? vertex1 : vertex0;
@@ -1023,19 +1060,24 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         }
         if (!(node->flags & 8))
         {
+            s_pathfinding_surface const *portal;
             for (long surface = node->first_surface; surface != NONE && data->surface_count > 0;
-                surface = data->surfaces[surface].next)
+                surface = portal->next)
             {
-                s_pathfinding_surface const *portal = &data->surfaces[surface];
-                if (portal->type == 0 && ((long const *)portal->unknown0c)[!side] == edge_index)
+                portal = &data->surfaces[surface];
+                if (portal->type == 0)
                 {
+                    s_pathfinding_edge const *source = &data->edges[portal->index];
+                    if (((long const *)portal->unknown0c)[!side] != current_edge)
+                        continue;
                     s_pathfinding_edge const *target = &data->edges[portal->object_index];
-                    if (path_node_open_2c(data, edge_node_2c(target, 0)) ||
-                        path_node_open_2c(data, edge_node_2c(target, 1)))
+                    if (edge_node_open_2c(data, target, 0) || edge_node_open_2c(data, target, 1))
                     {
-                        s_pathfinding_edge const *source = &data->edges[portal->index];
-                        edge_index = portal->object_index;
-                        previous_vertex = source->vertices[side ? 0 : 1];
+                        current_edge = portal->object_index;
+                        if (side)
+                            previous_vertex = source->vertices[0];
+                        else
+                            previous_vertex = source->vertices[1];
                         first_vertex = NONE;
                         goto next_edge;
                     }
@@ -1043,18 +1085,18 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
             }
         }
         {
-            long first_edge = edge_index;
+            long first_edge = current_edge;
             short count = 0;
             for (;;)
             {
-                long direction_index = vertex != edge->vertices[1];
-                if (path_node_open_2c(data, edge_node_2c(edge, direction_index)) == side)
+                bool forward = vertex == edge->vertices[1];
+                if (path_node_open_2c(data, edge->nodes[!forward]) == side)
                     break;
-                edge_index = edge->next_edges[direction_index];
-                if (edge_index == 0xffff)
+                current_edge = edge->next_edges[!forward];
+                if (current_edge == 0xffff)
                     return false;
-                edge = &data->edges[edge_index];
-                if (edge_index == first_edge || ++count > 50)
+                edge = &data->edges[current_edge];
+                if (current_edge == first_edge || ++count > 50)
                     return false;
             }
         }
@@ -1068,6 +1110,8 @@ __declspec(noinline) real normalize2d(point2f *v);
 real function_11cc90(vector2f const *a, vector2f const *b);
 
 // score 172 (was 172): frame 0x34 and the first 0x3e bytes agree; retail keeps the shared return-true block
+// (round 79: register-masked diff 27 lines; side directions forward y from the x87 stack, `fst [y]`,
+// and keep it in xmm0 across the length test)
 // after the length test (both final compares jump back to it), forwards x87 values in the direction
 // normalizations, and rounds the second side through memory before its clamp.
 // Round 144: VC keeps the last of the merged `return true` blocks; with both final compares as
@@ -1167,6 +1211,9 @@ real function_11cc90(vector2f const *a, vector2f const *b);
 // Round 37: one completion goto with bool/byte/char/short result assigned by the zero-length
 // guard 172/189/189/194; default success at entry 414/421/421/429. Original returns, geometry,
 // helper calls, operation trees and first-side qualifier restored; early true host still differs.
+// Round 79: length test `!(0.0f < length)` 172 (same code); side directions by direct initialisers
+// 380 (aligned 74 -> 70: forwarding, no y preload); both 380; plus no first-side volatile 365;
+// `0.0f <` test with no first-side volatile 379.
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
@@ -1386,6 +1433,11 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // Round 37: native member-produced record, const/mutable and before/after the pure output address,
 // 494/493/494/493; complete coordinate member producers 469/464/469/464. Query/radius homes recover,
 // but the 0x11c frame remains; original complete record copy and body restored.
+// Round 79: candidate direction by direct initialiser (retail forwards y, `fst`) 458; step through a
+// pointer with type/link in two short locals and the output element at the emit 509 (1686 bytes,
+// frame 0x104, aligned unmatched 442 -> 317); both 517; no output_index volatile (retail: di) 486,
+// with the step pointer 541 (aligned 308); no source-radius volatile 469/498; source pointer before
+// the loop identical code.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)
