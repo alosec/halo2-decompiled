@@ -49,6 +49,11 @@ void function_2d140(long, real const *, long, long, s_filter_vector const *);
 // everywhere/from reused integer inputs 146/120; case-converted offsets 159/139.
 // Early grid declaration repeats those four scores. All body/type changes restored;
 // mode/resource/point homes and offset/bound schedule remain.
+// Round 42: the per-case sums put mode and resource in retail's homes (aligned 118 -> 106) but swap
+// the point and the result id (the compile-only build gives retail's order there, LTCG does not);
+// on them the point/result/x,y declarations moved or default first 157 each (identical), the result
+// initialised to NONE at its declaration 172 (alone 134); the bounds converted in retail's dd2, dd6,
+// dd4, dd0 order 123, with the reciprocals first 143, with the per-case sums too 159.
 // @retail 0x22b8e2
 void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 {
