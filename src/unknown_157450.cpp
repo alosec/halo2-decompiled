@@ -478,6 +478,27 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 /* recomputes the teams that have players */
 // score 32 (was 32): the old team mask is kept as a 32 bit value here and as a 16 bit one in
 // retail; the comparison and the update of the two masks use different registers, and the input
+// counter loop uses different ones too. Retail keeps the word mask in a register after the loop
+// (reloaded into ecx before the first test, shared by the compare and the OR for the store);
+// every word-mask form here reads it from memory at each use.
+// Tried: team-bit carrier 29 (the loop then matches; below the keep threshold); carrier with the
+// engine lookup hoisted 29; carrier with the mask compare swapped 29 (the mask load leads the
+// compare but is still not shared with the update); two-width union view of the mask 90; union
+// with a named wide copy 90; union plus carrier 91; word local with a promoted copy 134; updated
+// mask computed before the branch 133; a plain `word old_team_mask` 77 (retail's entry: `mov cx`,
+// word store); team-bit carrier on the word form 78/83; word mask with the field stored directly
+// and the OR uncast (either operand order) 77; the word mask read straight from the field 129
+// (re-read after the loop); the mask read and stored through globals 129; `*team_mask |=
+// present_teams` (the old mask then only compared, word or dword, or the field re-read in the
+// test) 130; present not volatile 102 (63 with the word mask); the loop as a force-inlined helper
+// writing through mask pointers 139; the engine lookup named first on the word form 77; word mask
+// with the tests' operands swapped 78, without the store's cast 77; word old playing mask too 59;
+// `present = present | bit` 32 (identical); the bit from `player->team` 46; compares as old != new
+// 33.
+// Round 84: a word `team_mask` copy of the field, updated with `|=` and stored back 129 (375
+// bytes: the copy folds into field reads, frame 0xc); the word mask read through the field
+// pointer, updated with `|=` and stored through it 77; with that, compares as old != new 78, a
+// bit local for the present update 78, a dword cast in the compare 77.
 // counter loop uses different ones too.
 // Team-bit carrier 29 (the loop then matches; below the keep threshold); carrier with the
 // engine lookup hoisted 29; carrier with the mask compare swapped 29 (the mask load leads
@@ -488,7 +509,6 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
 // loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
 // first on the word form 77, carrier on the word form 78.
-// computed before the branch 133; union plus carrier 91.
 // Round 94: a plain `word old_team_mask` gives retail's entry (`mov cx`, word store), but the compare
 // then reads the mask from memory where retail reloads it into ECX before the first branch and
 // shares it with the update (one instruction short, the rest shifts) 77; with the team-bit carrier 83;
@@ -500,21 +520,21 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // operands swapped 78, without the store's cast 77; word old playing mask too 59; word
 // mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
 // the bit from `player->team` 46.
+// Lane 13 r14: the word mask (aligned 21 -> 19, one instruction long after the loop: its compare
+// folds a movzx from memory and the update reloads it) 77; with the store's cast dropped 77;
+// `old_team_mask != present_teams` 77; `old_playing_teams != playing_teams` 78; the store as
+// `(word)(present_teams | old_team_mask)` 77, with the swapped compare 77; `present_teams |
+// old_team_mask` uncast 77; the team mask pointer and word mask declared before the old playing
+// mask 82, the pointer alone first 77.
 // Round 116: the mask as a local copy updated in place (`mask |= present_teams;` then stored
 // through the field pointer) 77, dword 102; that with present not volatile 63; the playing test
 // before the present update 41; a bit local for the present update only 29. A non-volatile
 // present gives retail's loop RMW, the mask reload before the first branch and the folded
 // `or reg, [present]`, but 384/378 bytes (the entry and compare forms then differ).
-// computed before the branch 133; union plus carrier 91; word mask with the field stored
-// directly and the OR uncast (either operand order) 77, the word mask read straight from the
-// field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
-// loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
-// first on the word form 77, carrier on the word form 78.
 // retail; after the loop retail reloads it once into ecx before the first test and shares it
 // between the compare (`movzx eax, cx`) and the update (`or ecx, [present]`), where ours reads it
 // from memory at each use; the comparison, the update and the input counter loop then take
 // other registers.
-// Tried: team-bit carrier 29 (the loop then matches; below the keep threshold); carrier with the
 // engine lookup hoisted 29; carrier with the mask compare swapped 29; two-width union view of the
 // mask 90; union with a named wide copy 90; union plus carrier 91; word local with a promoted copy
 // 134; updated mask computed before the branch 133; a plain `word old_team_mask` 77 (retail's entry,
@@ -3452,6 +3472,9 @@ int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *forma
 // Round 298: event-admission return result 199; entry result 94; both 200;
 // entry text workspace 82; with admission/result/both 199/94/200; native long
 // admission result 189. All restored; separate failure-result paths remain.
+// Round 225: suppression/text nested decision trees, either order, split sentinel/zero,
+// with or without complete notice-type capture: 82/104/104/82/82/104/104/82.
+// Original result graph restored; distinct failure exits and event clear schedule remain.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {
@@ -4309,6 +4332,11 @@ void function_15fe20(long team_index, color3f *color);
 // Round 295: common team/individual selection storage for score, rival score, both,
 // rival index, score/index, rival score/index, all three, all with field selector:
 // 133/88/133/88/133/88/133/133. Original branch-local storage restored; color transfers remain.
+// Round 225: ordinary native-size color copies, rival/own/both team, rival palette
+// alone/with rival/own/both team and all four: 88 each. Original body restored.
+// Same-type color construction rival/own/both team 65/405/46; palette subsets
+// 88/65/405/46/46; earlier weapon default/presence/both on that graph 77/46/77.
+// The plain 46 construction form was excluded as cast steering; no gain retained.
 // @retail 0x15f3a0
 bool function_15f3a0(long local_index, s_player_score_display *display)
 {
@@ -5396,6 +5424,9 @@ void __stdcall function_d6bc0(long object_index);
 // Round 295: true-default reset 151; complete distance/query result 144; both 144;
 // entry storage for placement/object/index, all three, all plus schedule: 144 each.
 // All original producers and body restored; frame and timer/base homes remain.
+// Round 225: reset-counter pointer/reference, before query/at update,
+// with ordinary/entry countdown declarations: 174/172/174/172/174/172/174/172.
+// Original field reads and body restored; independent timer home remains missing.
 // @retail 0x15ae70
 void __stdcall function_15ae70(s_netgame_entry_state *entries)
 {

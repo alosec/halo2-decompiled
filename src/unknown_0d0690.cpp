@@ -51,7 +51,25 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 56 (was 56): the frame, the sky/count homes, the trig temporaries and the color0 store match.
+// score 52 (was 56): the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
+// the blend registers and the color0 store match. Left: the strength add loads the entry's strength,
+// adds and copies back where retail adds it to xmm7 in place (its operands flip only when the strength
+// load comes before the color copy in the i == 0 block, which then changes that block), 0x131c20's
+// `&color` formed in edi and copied to ecx (retail: ecx, then edi), and retail's sete collision test.
+// Round 38 (lane 9): the contribution through vector3f_assign and the sum through vector3f_add 52
+// (kept: the j/k adds load the contribution as retail, since the contribution's fields are written in
+// an inlined helper; replaces the hand-written double sums). On it: `strength = strength + power` 52;
+// vector3f_add(&contribution, &direction, ...) 52; strength declared first 55; float `+=` and plain
+// contribution-first sums 162/162; double sums 56; strength first in the i == 0 block 97 (821 bytes,
+// strength add in place, color copy changes); a power pointer 52; `if (i != 0)` with the i == 0 block
+// in the else 118 (816 bytes). Compile-only screens, strength order unchanged: direction_from_angles
+// with vector3f_add (contribution-first adds, angles loaded once), the three declaration orders, a
+// typed entry struct, a color pointer, memcpy, a named power local, `0.0f <` test, entry read late.
+// Round 100 (lane 5): j/k sums without the cast 56; no-lights arm first 184; start copied field by
+// field 198; `strength = power + strength` 56; strength updated before the blend call 191; strength
+// declared before direction/color 59; named power local 171.
+// Earlier (93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// the frame, the sky/count homes, the trig temporaries and the color0 store match.
 // Left: the j and k direction adds load the direction where retail loads the contribution (the i add
 // matches with the double-typed sum); the entry strength is loaded, added and copied back where retail
 // adds it to the strength in place (`addss xmm7, [ebp + 0x10]`); 0x131c20's `&color` is formed in edi
@@ -145,13 +163,6 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
 // in double scalar carriers 186. Original contribution and color ownership restored.
 // Round 183: shared vector add, either input owner, and unit add-scaled in place 93/93/93/93; separate native sum output, plain/scaled and either owner, 188/188/188/188. Original accumulation restored.
-// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
-// color0 store match. Left: the strength is loaded, added and copied back where retail adds the
-// entry's strength to it in place, the two remaining x87 direction adds load the direction where
-// retail loads the contribution, 0x131c20's `&color` is formed in edi and copied to ecx where retail
-// Round 187: widened compound accumulation/immutable contribution/strength-first/direct clamp/
-// clamp plus strength/relative-strength part/light-divisor part/all scalar parts with compound
-// accumulation 56/56/56/56/56/56/140/56. Original executable source restored.
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {
@@ -176,12 +187,9 @@ long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_
                     {
                         byte *entry = *(byte **)(light + 0x30);
                         vector3f contribution;
-                        contribution.i = (real)(cos(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
-                        contribution.j = (real)(sin(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
-                        contribution.k = (real)sin(*(real *)(light + 0x10));
-                        direction.i = (double)contribution.i + direction.i;
-                        direction.j = (double)contribution.j + direction.j;
-                        direction.k = (double)contribution.k + direction.k;
+                        vector3f_assign(&contribution, (real)(cos(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10))),
+                            (real)(sin(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10))), (real)sin(*(real *)(light + 0x10)));
+                        vector3f_add(&direction, &contribution, &direction);
                         if (i == 0)
                         {
                             color = *(color3f *)(entry + 4);

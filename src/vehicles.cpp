@@ -2015,6 +2015,9 @@ bool function_f5d70(long vehicle_index);
 // long/byte result 204/166; result from tests 166;
 // complete direction operands 166; early native gear 157;
 // early direction with separate limited result 162. Entry spill/shift-byte home remain.
+// Round 309: Normalized-speed result, consistent speed-limit read and disjoint shift-priority
+// subsets 1-7: 156/215/215/167/167/211/211; all with separate final limited result 204.
+// Original scalar stages, field reads, state branches and whole body restored; initial phase spill remains.
 // @retail 0xf1950
 void __stdcall function_f1950(long vehicle_index, real throttle_input, short new_gear)
 {
@@ -2175,12 +2178,19 @@ PRIVATE inline real vehicle_wheel_spin(real spin, real const *period)
 /* the physics of type 0 vehicles (the differential-steered ones): the
    engine drives each side's contacts, the turn trading torque between
    the sides */
-// score 115 (was 192): Kept live period receiver, native twice-used gear and result-first torque; zero/scalar residency and spin schedule remain.
+// score 115 (was 115): frame 0x14 against 0x10 (one dead slot below gear_throttle; the four used slots
+// agree but sit 4 higher); zero/scalar residency and spin schedule remain. Kept earlier: live period
+// receiver, native twice-used gear and result-first torque.
 // Live period 136; native gear 190; both 113; scalar roles 192/136/190/113; result-first torque 101 kept plain.
 // Spin exit / period-first / both 101; named absolute steering with each 127; early torque zero 140.
 // Y405: Frame 0x14 versus 0x10 and zero/scalar homes remain;
 // gear-none/two-defaults/active-gear/sign-arm torque results 126/140/138/126; each with shared
 // straight-drive product 132/141/141/132.
+// Round 21: `if (gear == NONE) torque = 0; else torque = ...` gives retail's arm order and threaded
+// zero magnitude but torque in xmm3, 697 bytes, 138 (ternary 138, `!=` with else 145, magnitude set in
+// each arm 126; all 24 declaration orders of torque/magnitude/left/right 138); the turn product inline
+// in both sides 113; removing the gear call or merging the two throttle minimums shrinks the frame by
+// two slots (diagnostic).
 // r97: the turn product written at both uses (retail's xmm6 zero, xmm5 product) 113;
 // torque if/else with NONE first 138, with that 138; spin helper as one fmod of
 // `spin > 0 ? spin : spin + period` 112, with the product at both uses 149; spin
@@ -3109,7 +3119,7 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 /* the orientation the vehicle's physics aims for: its facing held level,
    turned through its flip while it flips (returns whether it flips), else
    the state's own */
-// score 169 (was 204): Staged cross, native up receiver and complete products kept; projection/trig schedules remain.
+// score 169 (was 169): Staged cross, native up receiver and complete products kept; projection/trig schedules remain.
 // Shared cross 204; external cross 326; native forward/up/both 263/269/298;
 // shared cross with forward/both 263/298. Wide angle 177 rejected without exact equality;
 // coordinated external force-inline 326, with wide angle 359; all original contracts restored.
@@ -3118,6 +3128,9 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 // On native receiver, complete projection/dot/both/sine-first 171/171/169/169; staged cross, native up receiver and all symmetric products kept plain.
 // Double angle/cases/trig/both 147/147/147/147; shared dot/scale/both/trig 154/148/149/149.
 // All precision/grouping forms exact-only and restored. Projection-load order, cross operands and trig homes remain.
+// Round 431: full forward value 264; staged rotated forward/up/both rows 169/169/169;
+// forward value with rotated forward/up/both 264/264/262; complete staging with tested flipping result 262;
+// native CRT forward/up/matrix copy subsets 169 each (seven). Original graph restored; projection preloads and trig residence remain.
 // @retail 0xf44a0
 bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_physics_state *state,
 	matrix3x3 *result)
@@ -3767,6 +3780,9 @@ PRIVATE __forceinline real vehicle_larger(real a, real b)
 // lookup-time result 119; native double magnitudes and outcomes with entry result (wider frame/qword
 // spills; rejected) 101; native double magnitudes and outcomes with lookup-time result (wider
 // frame/qword spills; rejected) 101. Original body restored.
+// Round 431: parameter-owned magnitudes, conditional result with original/entry/lookup return 109/123/123;
+// conditional second output 205/117/117; unused self-address removed on complete results 123/117;
+// zero-initialized target result at entry/lookup 123/123. Original helper and returns restored.
 // @retail 0xf78e0
 real __stdcall function_f78e0(long vehicle_index, long limit)
 {
