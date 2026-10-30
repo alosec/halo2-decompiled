@@ -387,7 +387,7 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 }
 #pragma function(_ReadWriteBarrier)
 
-// score 67 (was 80): the count delta now matches retail (the delta named, then the two new team
+// score 67 (was 67): the count delta now matches retail (the delta named, then the two new team
 // counts); what remains is the order of the spread queries: retail calls the candidate's
 // count_spread first in both comparisons (and the reference's cost first), ours calls the
 // reference's first whatever the operand order, which also adds a `mov ebx, esi` (514 bytes).
@@ -486,6 +486,9 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // Round 295: separate noinline declarations for count/total/rank query methods,
 // all seven nonempty subsets, 80 each; rank-only inline declaration 80. Every
 // declaration and body restored; count homes, inner party and query ownership remain.
+// Round 230: solution selection at every query, alone, with A/B/both team observations,
+// outer-party lifetime, both candidate-team roots, shared candidate spread and equality-first
+// acceptance: 112/179/150/186/112/182/107/115. Original selection, named post-swap counts and body restored.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
