@@ -1242,6 +1242,10 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
 // bytes and timestamps in all seven combinations 104 each; full native metadata with array
 // addition 104. Original record, byte-offset observations, body and interfaces restored;
 // temporary file-displacement ECX, request-copy and I/O setup remain.
+// Round 208: uniform native acquired handle at every post-open test/value use,
+// with pointer/reference receivers and local/iteration output lifetimes: 215;
+// comparison-produced write success in each context: 216 (898 bytes). All restored;
+// file displacement, request-copy and I/O scheduling within frame 0x1144 remain.
 // @retail 0x213970
 void function_213970(void)
 {

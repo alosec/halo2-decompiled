@@ -247,6 +247,10 @@ void function_a87a0(long first, long second, long third, byte const *input);
 void function_a8ee0(long first, long second);
 void function_1c55e0(real const *bounds);
 
+// score 33 (was 33): byte bit argument load versus a retail dword, then
+// material/probability and scale occupy opposite dead parameter homes.
+// Retained input handle with current bit-word/mask staging scored 33;
+// the same forms with a named bit-word index scored 62 (all 495 bytes).
 // @retail 0x184060
 void function_184060(long index, byte bit, s_type_1e6529 *input_data, long surface_index)
 {

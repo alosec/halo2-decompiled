@@ -673,7 +673,7 @@ void function_aa9e0(long index, point3f const *previous_position, vector3f const
    velocity_change.j *= elapsed;
    velocity_change.k *= elapsed;
   }
-  function_d0620(index, &iterator);
+  function_d0620(&iterator, index);
   while (function_d0690(&iterator))
   {
    byte *child = (byte *)((s_object_header *)objects->data)[iterator.child_index & 0xffff].object;

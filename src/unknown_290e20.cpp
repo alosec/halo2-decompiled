@@ -403,6 +403,9 @@ struct s_ai_scene_assignment
 
 // score 56 (was 56): retail keeps the maximum count in esi through the loop
 // and reloads the role index at each use; ours keeps the role index in esi.
+// Retail reads the maximum-count argument slot as a dword, so a 32-bit
+// parameter scores 70 plain, 56 with a 16-bit view of it and 91 with the
+// role index in a local; the role index in a local alone scores 99.
 // The choice follows the role index's uses (dropping its recursion or call use
 // flips it) and the iterator callees' file being linked in. Parameters used
 // directly (address forms removed) 56; next role as a long local 61 (347 bytes);
@@ -422,6 +425,8 @@ struct s_ai_scene_assignment
 // Four parallel output-slot pointers before scoring or on success, crossed with the
 // actual previous-assignment source and selector-output store priority: eight at 56;
 // previous-source copies reach 347 bytes. All one-use element-pointer forms restored.
+// Round 292: Entry-capacity and completed-copy capacity regions, each terminal return or positive
+// scope and all eight nonoriginal combinations, 56 each; original exits restored.
 // @retail 0x2919e0
 void __stdcall function_2919e0(s_ai_scene *scene, s_ai_scene_assignment *assignments, short *assignment_count, short maximum_count,
 	short role_index, short role_count, long ai_index, long ai_index2, long ai_index3)

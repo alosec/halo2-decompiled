@@ -196,6 +196,9 @@ short function_239e50(short count, point2f const *points, short *indices);
 // state and both loop-condition orders: 35/42 or worse (the swapped condition adds three instructions);
 // normalize2d with j read into a scalar first 42, both scalars 42, the reciprocal written at each scale 42,
 // j scaled first 42, an else arm setting the result to zero 42.
+// Indexed point receiver across dispatch with short/long/signed-byte/enum state 89/104/109/104;
+// the same receiver at function scope 89/104/109/104. Original indexed expressions and state
+// restored.
 // @retail 0x239b80
 short function_239b80(short count, point2f const *points)
 {
@@ -353,6 +356,11 @@ long function_239d50(long count, point2f const *points, point2f *hull)
 // late/early heading crossed with memcpy/memmove 260/232/258/239/253/259/261/266;
 // matched caller becomes 34 in each reduced trial. Original signature and body restored.
 // Round 181: lowest/candidate-distance/ranking rejection subsets 203 each (seven forms); complete rejection graph with explicit stdcall 203. Original body and contract restored.
+// Round 185: Coupled entry heading/departure bool/byte/short/long with memcpy/memmove
+// 259/267/259/267/259/249/259/244; actual output cursor, long/bool departure and CRT combinations
+// 249/266/277/264, with early heading 268/250/276/263. Cursor frame grows to 0x1c and four memcpy forms lose
+// the caller. All state lifetimes, ordinals, original compaction and body restored; native result/departure
+// homes and count register remain.
 // @retail 0x239e50
 short function_239e50(short count, point2f const *points, short *indices)
 {
