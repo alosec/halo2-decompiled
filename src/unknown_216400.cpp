@@ -212,6 +212,10 @@ PRIVATE inline bool append_save_entry_2164c0(s_save_list_2164c0 *list, s_save_en
 // result declaration 32; enumeration receiver 32; entry and enumeration receivers 32;
 // entry receiver 32; explicit diagnostic addresses 32; mutable append input and
 // sizeof(*entry) 32. Original body restored.
+// Round 98: existence result named before its goto 32; count/index copy in the append (retail's
+// count-to-index copy) 51; the ASCII buffer declared before the wide one 32; `continue` on a
+// successful append then `break` 32; no parameter address with the named result 32; `inline` on
+// 0x217a80's definition 32 (its callers 0x216da0/0x216e50 still reuse esi after it).
 // @retail 0x2164c0
 void function_2164c0(long memory_unit, s_save_list_2164c0 *list)
 {
