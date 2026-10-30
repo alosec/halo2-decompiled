@@ -713,6 +713,9 @@ void function_22a664(s_widget_quad_2b11 const *quad, s_float_rect const *coordin
 
 // score 2 (was 2): the two words are read in the other order: retail loads the
 // global into CX before it reads the word of the record into AX.
+// Right offset right after its inset 197; bounds copied to a local first 302; the
+// rectangles as short_rectangle2d 2; top inset after the other offsets 123; piece
+// declared before inner 2.
 // @retail 0x1e9140
 bool __stdcall function_1e9140(s_request_screen_bounds const *bounds)
 {

@@ -688,6 +688,9 @@ void hill_build_polygon(s_polygon_2be *hill, long index)
 // Consumed count 9 fast; initialized divisor 61; shared start numerator 9;
 // compound step 9; nested validation 9; division normalization 56;
 // common exit 9; parallel endpoint numerators 9. Fast baseline 9, full 2.
+// Parameter names in either sort order 2; polygon test nested 9 fast; loop index
+// declared at the top 9 fast; count stored as one expression and halved from the
+// field 9 fast; while loop 9 fast (the restore pair unchanged in each).
 // @retail 0x2bdc70
 void hill_set(s_polygon_2be *hill, long index)
 {
