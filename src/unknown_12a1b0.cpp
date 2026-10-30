@@ -13,6 +13,7 @@
 #include "unknown_221810.h"
 #include "unknown_124f90.h"
 #include "vector_products.h"
+#include "bit_vector.h"
 #include <string.h>
 #include <math.h>
 
@@ -1371,11 +1372,20 @@ short function_128a60(long sound_index, short count, short const *voice_indices)
 /* retail expands the permutation getter in function_21c190 and calls it elsewhere */
 inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_definition *definition, s_looping_playback_definition *playback, long track_index, short arg_58ecd0, bool clear);
 
-// score 93 (was 93): frame 0x60 and the stack result byte now agree; left: our build keeps the
-// first track-index read across the pitch-range call (ESI), so the definition lives only on the stack
-// (retail ESI, spilled at +0x1c) and the permutation/pitch-range homes swap (+0x18/+0x1c against
-// +0x14/+0x18); the set path reads the track index inside its arm (`add eax, 7`) where retail reads
-// it before the flag test; retail loads the flags into EAX for the take test.
+// score 50 (was 93): the prologue through the pitch-range call agrees; left: both permutation
+// paths read the track index inside their arms (`add eax, 7`) where retail reads it before the
+// flag test (`lea [x + x*4 + 0x23]`), retail loads the flags into EAX for the take test, the
+// shared take path schedules as the 0x21cb90 note says (BLOCKED-BY 0x2194c0's parameter order),
+// and retail extends the previous permutation (`movsx eax, ax`).
+// Round 106: the transition flag set through the existing word_flags_set 75 (kept: the flag store
+// through a pointer stops the track-index read being reused across the pitch-range call, so the
+// definition takes ESI); the playing record before the definition 50 (kept); on that, `result`
+// declared before the pitch-range call 48 (two points, not kept); the previous value through the
+// existing 0x21cc30 with an `inline` declaration 127 (retail's `movsx`, one instruction more);
+// the set through the existing 0x21cbe0 with an `inline` declaration (same code as written);
+// 0x21cb90 indexing the track entry twice 146 (its own 10 unchanged; the take path then reads
+// the index before the test with retail's `lea`); with `result` late and 0x21cc30 65; `long
+// previous` 65 (same code).
 // Earlier: result first 176; tag per use 236; tag/range/mask names 176; outputs declared first 176;
 // counts at entry 176; reasons before span selection 176; native selected voice group 188; short
 // previous 166. Round 180: existing get/previous/set helper calls, seven subsets 215/199/245/224/282/
@@ -1400,13 +1410,13 @@ inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_
 bool function_21c190(s_type_5ef569 *sound, s_type_06b94f *track, long sound_index, dword *seed)
 {
 	bool result = false;
-	looping_sound_definition *definition = (looping_sound_definition *)g_4e3b44[sound->definition_index & 0xffff].bytes;
 	s_looping_track_sound *playing = track_sound_get(g_4e637c, sound_index);
+	looping_sound_definition *definition = (looping_sound_definition *)g_4e3b44[sound->definition_index & 0xffff].bytes;
 	long offset = g_44a188[track->next_state];
 	looping_sound_track_definition *track_definition = &definition->tracks[playing->loop.track_index];
 	long definition_index = *(long *)((byte *)track_definition + offset + 4);
 	s_looping_playback_definition *playback = (s_looping_playback_definition *)g_4e3b44[definition_index & 0xffff].bytes;
-	playing->transition_pending = true;
+	word_flags_set(&playing->flags, 3, true);
 	short arg_58ecd0 = function_218f50(playback, playing->pitch_range_index, playing->pitch);
 
 	/* Retail expands the permutation helpers here, but calls them from
