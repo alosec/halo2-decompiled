@@ -1144,6 +1144,11 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // candidate stores and leaves traversal/candidate homes. Original constructors and complete body restored.
 // Round 268: One retained selection-success or selection-absence test, bool/byte/short/long, shared by
 // loop and requests: 1023/1023/998/1000/991/991/999/999. Original body restored.
+// Round 417: existing native resource hierarchy expanded through one/two/three levels,
+// original/resolved/both requests: 2101/2157/3335, 1989/1988/2978, 828/828/828. Full
+// expansion ties but changes matched helper controls; all declarations and body restored.
+// Unsigned class key/set key/both/all four input-key domains 828 each; definitions
+// and shared declarations restored.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
@@ -1254,6 +1259,10 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 // reset, but entry candidate stores and traversal homes remain. Original constructors and body restored.
 // Round 268: One retained selection-success or selection-absence test, bool/byte/short/long, shared by
 // loop and requests: 1023/1023/998/1000/991/991/999/999. Original body restored.
+// Round 417: existing native resource hierarchy expanded through one/two/three levels,
+// original/resolved/both requests: 2101/2157/3335, 1989/1988/2978, 828/828/828. Full
+// expansion ties but changes matched helper controls; unsigned class key/set key/both/
+// all four input-key domains 828 each. All declarations and executable source restored.
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

@@ -53,6 +53,10 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
 // all four normalizations (152; the rest is forward's registers: retail preloads only j and i, puts 1/m in xmm6
 // and multiplies k from memory, `inv * k`, with the skip path reloading k). Plain i, j, k for up and left 152;
 // plain everywhere 155; the k, j, i statement sum everywhere 155; j, i, k statement sum for forward 152.
+// Round 418 on the j-square graph: complete scalar inputs, magnitude return,
+// both, native reference output, reference/scalars, reference/magnitude, all,
+// and scalar/reference receiver return 149/149/149/149/149/149/149/149. All restored;
+// first reciprocal/component carriers and later magnitude schedules remain.
 // @retail 0x1d3fc0
 void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
 {

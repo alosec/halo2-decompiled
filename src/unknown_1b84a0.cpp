@@ -286,6 +286,9 @@ bool function_1f4a20(s_1f4a20_entry const *entries, long actor_index, s_referenc
 // Round 400: Character/distance scope before scratch, entry payload pointer and readonly
 // character in masks 1-7, then complete movement scope: 212/212/212/212/212/212/212/212.
 // Original lifetimes restored.
+// DH round 257: Marker readiness byte/short/long 212/279/283; selection result byte/short/long
+// 212/240/243; long-ready with byte-result 283, byte-ready with long-result 243; concrete slot
+// input/native payload member 212. All restored.
 // @retail 0x1b85a0
 bool __stdcall function_1b85a0(long actor_index, s_slot *slot)
 {

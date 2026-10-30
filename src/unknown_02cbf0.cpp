@@ -49,7 +49,9 @@ static __forceinline long floor_to_long_inline(real value)
 	}
 }
 
-// score 36 (was 46): the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
+// score 46 (was 46): packed-word load order (ours reads the old word first), the intensity
+// packed-word load order, intensity spill and final word home.
+// the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
 // shifted the listing, 46 at 1036 bytes) and the loader's two flags are named before the call, so
 // the load test is set first as in retail. Left: retail ORs the incoming flags and category before
 // the kept top bits; the scaled intensity spills to `outside`'s home (ours `level`'s); retail keeps
@@ -67,7 +69,6 @@ static __forceinline long floor_to_long_inline(real value)
 // store 89; old word copied to a local 91; only the instance named 38; only the load named 79;
 // instance named first 39; both named with the field-bit test 73; flags-last and category-first
 // word-one or-chains 46 (reassociated); a bitfield view for the kind store (diagnostic) 80.
-// packed-word load order, intensity spill and final word home.
 // packed-word load order (ours reads the old word first), the intensity
 // packed-word load order (ours reads the old word first), the intensity
 // spill (ours in level's dead slot, retail in outside's: retail's callers push level as a
