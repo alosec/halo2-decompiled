@@ -988,7 +988,8 @@ struct s_item_flags_view_10b850
     byte flag6 : 1;
     byte flag7 : 1;
 };
-// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
+// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and collision/carrier/rotation homes remain.
+// Earlier: Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
 
 // Earlier: Frame 0x154 versus 0x12c, entry Boolean bytes and collision/carrier/rotation homes still differ.
 // Earlier: Frame 0x154 versus 0x12c and Boolean/vector homes remain.
@@ -1074,6 +1075,8 @@ struct s_item_flags_view_10b850
 // Round 285: existing staged orientation cross at first/second/third/fourth/first-two/last-two/
 // all sites, then all with staged flow cross: 821/821/821/818/813/820/820/935 fast.
 // Original complete body and helpers restored; frame and Boolean/vector homes remain.
+// Round 223: complete persistent decisions in signed-byte/byte/short/word storage 813/813/872/872;
+// complete contact decisions in those domains 813/813/897/897. Original complete body restored.
 // @retail 0x10b850
 void __stdcall function_10b850(long object_index)
 {
@@ -1295,7 +1298,8 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 	function_10cf80(&velocity, object_index, false);
 }
 
-// score 154 (was 154): Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
+// score 185 (was 185): Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Earlier: Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
 // Earlier 154 (was 154): frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
 // Frame 0xac agrees; release-byte RMW/tail and event/location homes remain.
 // frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
@@ -1377,6 +1381,8 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // Round 205: immutable addressed impulse output, with none/rate/gain/both/
 // direction/direction-rate/direction-gain/all input snapshots 154/200/200/200/194/194/194/194.
 // Original mutable output and input graph restored; release-byte RMW/tail and event homes remain.
+// Round 223: unsigned/signed word and dword full-byte bitfields, each with word/byte named-bit units,
+// 185/213/185/213/185/213/185/213. Actual record layout and complete body restored.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {

@@ -1839,7 +1839,8 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 	return (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 }
 
-// score 85 (was 85): frame 0xf0 and prefix through +0x102 agree; query carriers, optional transform and exits differ.
+// score 85 (was 85): Frame 0xf0 and prefix agree; query address/name ranks, optional matrix conversion and count/exit homes remain.
+// Earlier: frame 0xf0 and prefix through +0x102 agree; query carriers, optional transform and exits differ.
 // Earlier: frame 0xf0 agrees; the marker loop's query carriers and the optional second
 // matrix (retail: a nullable marker selected before the capacity test, then null-tested) differ.
 // With a selector local (allowed only with a match) 13, plus a marker list local 11 at 565 bytes;
@@ -1893,6 +1894,9 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 // Descriptor reference across nullable conversion: pointer/reference table, mutable/readonly
 // descriptor and iteration/entry query output all 13 at 565 bytes. Exact-only selectors restored;
 // query and count ranks remain.
+// Round 223: one metadata bound on the original indexed loop plus nullable second record; long/short query
+// 108/96, also with readonly descriptor, earlier index declaration and both 108/96 each. All exact-only
+// forms restored; query/count ranks and nullable conversion remain.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)
