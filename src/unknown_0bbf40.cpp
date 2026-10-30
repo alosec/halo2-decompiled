@@ -315,6 +315,8 @@ s_object_gc_entry_ab g_440570[6] =
 // Pressure query inline/noinline/both declarations 110 each; critical output first-written with
 // ordinary/inline/noinline/both declarations 138 each; named collection predicate with inline/noinline
 // query 110.
+// Round 256: Once-observed action/gather/both callbacks 108/110/108; with terminal state at use
+// 134/125/134; both with query-produced critical, original/direct cleanup 132/136. All restored.
 // @retail 0xbf380
 void function_bf380()
 {
@@ -748,6 +750,10 @@ void __stdcall function_bc300(long object_index)
 // noinline together 42.
 // Round 197: Full alignment power carried across allocation, signed/unsigned power x short/long
 // old size x outcome/allocation result 43, 102, 72, 109, 43, 102, 72, 109.
+// Round 29: retail keeps the header in ebp and extra in edi (ours edi/ebp) and reads size
+// with a 16-bit load. A named short length 42; the header table in its own local first 42;
+// mask and extra declared at the top 42; the header declared before result 42; single exit
+// 42. A short size parameter gives the 16-bit load (40) but every declaration must change.
 // @retail 0xbc380
 bool function_bc380(long object_index, long block_offset, long size, long alignment_bits)
 {
