@@ -454,10 +454,20 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // final component loop 111; scaled-add publication 115; normalizer loop/ordinary inline/inverse
 // lifetime/native slot names 47 each; both publication and normalizer loops 107 at retail length.
 // Every executable form restored; lower-tail stores and back-edge reload order remain.
+// Round 6: the minimum branch alone differs in the tail (retail's j/k products are the copy and
+// in-place forms of values defined before the inverse; the identical maximum branch is
+// sequential in both). Minimum scale with the normalized pointer as its output 34; the in-place
+// scale helper on the normalized pointer 34; a named velocity pointer for the blend and clamp
+// 397, for the clamp only 260; previous velocity scaled into its own vector 191. Restored.
 // Round 282: selected-bound common completion, upper/lower defaults and split normalize/scale
 // 365/362/342/365; with shared change magnitude 359/360/355/359 (frame 0xac).
 // Shared normalization-product setter 37 (1519 bytes). All restored; native 0xb4 frame,
 // back-edge definition/first reloads and lower normalization publication remain.
+// Round 30: matched 0x30bf0/0x1201a0 get retail's paired j/k products from `v->i = v->i * inv;
+// v->j = inv * v->j; v->k = inv * v->k;` with a computed inv; with the asm-written inverse every
+// product order compiles the same. That order in the normalizer 34 (same code); file scale
+// helper in the normalizer 34 (same code); file scale helper for the minimum's final scale 34
+// (same code); squared-first minimum test 34 (same code); next assigned just before the loop 86.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {

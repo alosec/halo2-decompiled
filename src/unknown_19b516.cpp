@@ -348,6 +348,9 @@ static __forceinline long real_to_long(real value);
 // swapped (retail converts y first). y before x in the second block only 89 (homes right);
 // in both blocks 93; width + left operand order 89; height before width 91; right edge re-derived
 // from the placement after the left offset 108.
+// Round 189: placement index at use 89; tag at use 155; both metadata observations 163; byte alpha 98; short
+// alpha 98; dword alpha 89; read-only metadata 89; both observations with byte alpha 165.
+// Original body retained; coordinate homes and late width-register death remain, with frame 0x44 and retail length preserved.
 // @retail 0x24bda2
 void c_widget::v12(long a)
 {

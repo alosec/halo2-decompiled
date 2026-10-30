@@ -409,6 +409,8 @@ PRIVATE __forceinline void function_21dcf1(long effect_index)
 // Round 258: accessor word/short/dword inputs 213/213/204; separate noinline
 // declarations with those inputs 256 each; external inline word/short inputs
 // 213/213. All eight sensitive callers preserved; original accessor restored.
+// Round 206: Native C contracts on private starter/allocator/record accessor, seven subsets
+// [204, 204, 204, 204, 204, 204, 204]; all three standard callee-cleanup 204. Original contracts restored.
 // @retail 0x21d110
 long function_21d110(s_sound_play_state *state, long tag_index)
 {
@@ -776,6 +778,11 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // spellings and statement orders; only dropping the definition local moves the bool among the
 // dwords. Retail's order: sound flags, effect, entry offset, controller, state, index, rate stage,
 // repeat state, bool, listener, tag, definition.
+// before alternate in the looping arm 67; the group switch as if/else-if 114; renaming either
+// local 67 (no slot moves: names do not order this frame); the two declared the other way round
+// 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry
+// flags read at each use 78. Screened (one-file LTCG): declared at the top, the definition or tag
+// index declared earlier, the definition read at each use: the bool stays at the bottom.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

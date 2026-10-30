@@ -561,7 +561,7 @@ long function_cbd50(long unit_index, short weapon_index);
 struct s_collision_result_1697c0;
 bool function_16a040(long flags, point3f const *point0, point3f const *point1, long ignore_object_index,
 	long ignore_unit_index, s_collision_result_1697c0 *result);
-void object_get_root_location(long object_index, s_location *location);
+s_location *object_get_root_location(long object_index, s_location *location);
 long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 short *function_1886d0(long object_index, short *material_type);
 struct s_globals_element;
@@ -788,14 +788,17 @@ short __stdcall function_c8b80(long object_index, s_object_seat *seats, short ma
 }
 
 /* clears the unit's flag 2 at +0x10a and its state that depends on it */
-// score 13 (was 23): the final call receives the unit in EAX rather than retail ESI and becomes a tail
+// score 13 (was 13): the final call receives the unit in EAX rather than retail ESI and becomes a tail
 // jump, and `1 << type` lands in EDX (retail EAX). BLOCKED-BY 0xe4bd0, which inlines 0xe5930 where retail
-// calls it. Existing indexed/both byte helpers 22/22; state pointer 22; subscript 23;
+// calls it (BLOCKED-BY 0xe5930: only a noinline declaration beside its definition keeps it out). Existing indexed/both byte helpers 22/22; state pointer 22; subscript 23;
 // explicit state assignment 23; native state flags via pointer/at use 22/23;
 // native flags with masked lookup 22. Round 89: the animation flags cleared as the word they are
 // (bipeds.cpp's `word const *animation_flags`) 13, kept (retail's `and byte [eax+edi], 0xfb` and dead
 // `add eax, edi`); a `word *animation_flags` local 10 (matches once 0xe4bd0 is called as retail does,
 // see 0xe4bd0's note); on the word clear, a word subscript/`0xfffb`/offset first/short 13 each, dword 23.
+// Round 94: `unit->type == 0` or `!unit->type` for the mask test 12 (retail's length, not its shl/test);
+// 0xe4bd0's flag test as a field bit 13; a noinline declaration of 0xe4bd0 13; inline depth 0 around
+// 0xe4bd0 (diagnostic) gives it retail's 61 bytes but inlines it here (86).
 // @retail 0xcaf00
 void function_caf00(long unit_index)
 {
@@ -1753,6 +1756,7 @@ bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 // score 2 (was 2): only the order of the two argument loads before function_d0620 differs
 // (retail moves unit_index into eax before taking the iterator's address). Flag 11 read as a field
 // bit gives the rest. Iterator first, result first or an iterator pointer local 2; result after the call 77.
+// Round 94: matches with 0xd0620's formals as (iterator, object_index), held for src/damage.cpp's callers.
 // Round 410: Initializer inline/noinline, next inline/noinline, both inline and both noinline 2
 // each; natural for initializer 2; predicate-defined result 49. All restored; initializer
 // argument-load order remains.
@@ -3731,22 +3735,34 @@ void __stdcall function_cfc90(long unit_index, long definition_index, s_unit_mel
 	function_c5740(unit_index, false);
 }
 
+/* v multiplied by the scale, component by component */
+static __forceinline void vector_scale_in_place(vector3f *v, real scale)
+{
+	v->i *= scale;
+	v->j *= scale;
+	v->k *= scale;
+}
+
+/* scales v to unit length and returns its old length, or 0 for a vector
+   too short to normalize (items.cpp expands the same normalization) */
+static inline real vector_normalize_in_place(vector3f *v)
+{
+	real length = (real)sqrt(length_sq3f(v));
+
+	if (!(fabs(length) < 0.0001f))
+	{
+		vector_scale_in_place(v, 1.0f / length);
+	}
+	else
+	{
+		length = 0.0f;
+	}
+	return length;
+}
+
 /* whether a unit may enter the vehicle's seat from a marker: near enough
    (+0x98), facing it (+0xa0), the marker facing the unit (+0x9c), and
    moving with the vehicle (+0xa4) */
-// score 10 (was 33): the existing squared-length helper gives retail's k, j, i sum; only the first
-// scale product differs (retail copies the scale and multiplies by direction.i in memory, ours
-// loads direction.i before the division). Round 73: the scale assigned inside the first product 10;
-// existing scale helper with the quotient/a named scale 10/14; existing normalize helper 13
-// (copy form on j too, sum k, i, j); scale declared at the top 10.
-// Earlier (score 33, was 85): normalization started differing at +0x7f.
-// Angle order 84; with comparison result 92; nonzero normalization arm first 78/86;
-// shared point difference 45/67, with normalization 43/65; entry Boolean result 33.
-// Paired offset parts 137/130; both masked getters 43/33, with parts 137/130; first getter 43.
-// Squared-length/dot helpers 10, normalization helpers 14/13, shared scale and length 14;
-// all changed-grouping forms restored. Complete scale/point/both setters 33; shared scale 33.
-// Eight parallel scale product orders/compound assignments with squared length all 10, exact-only.
-// Retain shared point difference, entry result and retail symmetric angle order.
 // @retail 0xc9040
 bool function_c9040(long vehicle_index, long unit_index, short seat_index, vector3f const *forward,
 	point3f const *position)
@@ -3760,18 +3776,7 @@ bool function_c9040(long vehicle_index, long unit_index, short seat_index, vecto
 
 	function_cafc0(unit_index, &center);
 	vector3d_from_points3d(&center, position, &direction);
-	distance = (real)sqrt(length_sq3f(&direction));
-	if (!(0.0001f > (real)fabs(distance)))
-	{
-		real scale = 1.0f / distance;
-		direction.i = scale * direction.i;
-		direction.j = direction.j * scale;
-		direction.k = direction.k * scale;
-	}
-	else
-	{
-		distance = 0.0f;
-	}
+	distance = vector_normalize_in_place(&direction);
 	if (*(real *)(seat + 0x98) > distance &&
 		*(real *)(seat + 0xa0) >= function_11cf50(&unit->unknown168, &direction) &&
 		*(real *)(seat + 0x9c) >= 3.1415927f - function_11cf50(forward, &direction))
