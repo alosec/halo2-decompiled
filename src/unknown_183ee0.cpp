@@ -77,6 +77,9 @@ static inline byte *bsp_bit_vector(long index)
 	return &((s_bsp_bit_vectors *)g_4ed280)->bits[g_4686c4][index];
 }
 
+// MiniMax I run 16: an `if (i == NUMBEROF(g_4eca60))` after the loop with the same store in both
+// branches keeps the slot index live and matches; not kept (a test with identical branches only
+// steers the register allocator).
 // score 6 (was 6): retail keeps the slot index in esi ([esi*4 + g_4eca60],
 // inc esi, cmp esi, 8); ours steps a byte offset ([esi + g_4eca60], add esi, 4,
 // cmp esi, 0x20). The other differing lines are the same instructions one byte

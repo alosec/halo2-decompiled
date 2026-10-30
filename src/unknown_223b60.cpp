@@ -33,6 +33,11 @@ __int64 timing_counter_resume(timing_counter *c)
 	return total;
 }
 
+// score 4 (was 4): identical body and length; our prologue stores the first
+// delta zero before pushing esi, while retail pushes esi first and then stores
+// both zero dwords. Every spelling of the reader and of the caller ties at 4,
+// and the permuter found no better variant; only a barrier or a volatile
+// anchor gives retail's order, and both are barred.
 // score 4: identical body and length; our prologue stores the first delta
 // zero before pushing esi, while retail pushes esi first and then stores both
 // zero dwords. The permuter found no better variant.
