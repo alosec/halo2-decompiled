@@ -1897,6 +1897,9 @@ void function_269250(long clump_index, long actor_index);
 // Round 422: persistent score 128; native selection handle 146; persistent score/native handle
 // 152; actor handle snapshot 89; persistent score/actor handle 128; native/actor handles 146;
 // all scan lifetimes 152; function-scope candidate 128. Opening body restored.
+// Round 83 (fast; unchanged control 89): two-arm score assignment 128; zero-initialized two-arm
+// assignment 128; reversed strict comparison 89; separate best publication 89; old-clump local
+// after/before the scan 141/147; flattened selection/creation tests 89; byte activity snapshot 89.
 // @retail 0x2689d0
 void function_2689d0(void)
 {
