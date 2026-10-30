@@ -3172,6 +3172,8 @@ void function_c6810(long unit_index)
 // address. Tried: both branches calling 0xe6900 179 (second also inlined); a noinline declaration of 0xe6900 150
 // (not honoured); the call sites reordered 179; a shared request local 179; the player slot as a local byte
 // pointer, a struct view or an array element 60 (same); the requester unit and its player index re-read 60.
+// @coldspear (#104, 2026-10-30): reading the request definition g_4677c8[9] through a volatile pointer gives 26,
+// not kept (no match), but it shows retail re-reads the definition there.
 // @retail 0xce520
 void function_ce520(long weapon_index, long unit_index, bool flag)
 {
@@ -5604,6 +5606,9 @@ void function_cf040(long unit_index, short type)
 // array, two lookups, a volatile read of the weapon index (all 1); a short hand counter 180, a char
 // weapon slot 71. Before the tail change: a while or a for for the root walk 24, a copy of the vehicle
 // index 24, an explicit offset for the header 24, the two tail conditions swapped 20.
+// @coldspear (#104, 2026-10-30): the remaining difference is the order of an address's two registers on a byte array
+// (ours [index + pointer], retail [pointer + index]), as in 0x4c450, 0x181cf0, 0x23600, 0x1988e0 and 0x194710. About 20
+// forms tried on two of them (index spelling, declaration order, pointer formation, char and const types): none changed it.
 // @retail 0xc92c0
 bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_index, long *blocker_index, bool *grouped)
 {
