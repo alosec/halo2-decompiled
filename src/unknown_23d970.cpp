@@ -32,7 +32,11 @@ typedef void *(__stdcall *texture_allocate_proc)(long size, long alignment);
 // spills the header register into the dead width slot before the allocation call and makes the null
 // result only on the failure path. Tried: the dimensions used directly 46; each path storing the
 // outputs and returning 52 (retail's tests, no spill); `if (!result) buffer = 0;` 28; a named
-// validity bool 28; a dword aligned size 28.
+// validity bool 28; a dword aligned size 28; long width/height here and in the caller's
+// prototype 27 (176 bytes: the entry and the caller's movsx pushes as retail; the spill, the
+// early null and the field order still differ); with that, result starting as the header and cleared with the buffer 42 (failure
+// path as retail), result = header at the top 69 (header moves to eax), result set in both arms
+// or the test inverted 69, the lock store first 31 (43 with the header result).
 // @retail 0x23e340
 D3DTexture *function_23e340(short width, short height, short format,
 	texture_allocate_proc allocate, long *size, void **data, D3DTexture *header)
