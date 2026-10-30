@@ -1152,6 +1152,9 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // Round 425: Iterator graph field at every post-search graph use, with all eight
 // requested mode/class/type field subsets, 969/964/1008/1024/969/964/1008/1024.
 // Original graph/key owners, constructors, iterator outputs and requests restored.
+// Round 197: Immutable native candidate with both member transfers and native-iterator/
+// readonly named-source/readonly iterator-entry masks 0..7 all 997 at 2825 bytes.
+// The matched channel-refresh caller also differs; original complete body restored.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
