@@ -1268,6 +1268,9 @@ long function_2197f0(real gain);
 // Round 196: native table-array base 200; readonly table 200; short ordinal 170;
 // gain inside gate 234; readonly class/base-release/common result/unsigned gain 200/200/212/200.
 // All restored; table base changes incoming register transport without recovering the entry gain home.
+// Round 193: branch-local/shared active/entry interpolation outputs 149/174/174;
+// each with distinct final result 157/165/165; distinct result alone 157;
+// shared entry outputs/result with role home names 165. All restored.
 // @retail 0x127010
 long function_127010(short class_index)
 {
@@ -2697,6 +2700,9 @@ static inline short sound_voice_find_available_channel(char type)
 // Round 279: byte result from completed paths with short/long channel and buffer
 // 148/154/144/150; driver result at channel selection with long buffer 130, completed-path too 148;
 // completed byte result with complemented status, short/promoted outputs 151/160. Original byte-result body restored.
+// Round 193: failure-scoped byte with shared/direct true exits 134/131;
+// those exits with low-byte complemented status 133/135; entry byte result 96;
+// published-channel/per-use system/both commit observations 96/96/96. All restored.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3091,6 +3097,9 @@ long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 // Round 279: flag admission separated from class-mode production, short/long mode,
 // switch/direct guard and repeated/shared class index: eight forms 153 each.
 // Original conditional mode and loop restored; playback/clock schedule still differs.
+// Round 193: callback procedure alone/with source receiver 86/86;
+// one class-record observation short/with callback 105/105; long/with callback 171/171;
+// readonly class with short/long plus callback 105/171. All restored.
 // @retail 0x1282d0
 void function_1282d0(void)
 {
