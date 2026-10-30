@@ -189,6 +189,37 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // count before first 140 (count in ax/eax as retail, index in ECX, zero EDX); on the block form, no
 // first local 162. Retail indexes the blocks (count read once as a short, scaled index spilled); the
 // block form stays the closest.
+// retail multiplies the index into edx and clears the globals before the
+// loop, ours computes the index in eax and stores the table pointer later. Without the block
+// pointer (count and entries indexed at each use) the head is retail's (scaled index in edx,
+// spilled) and so is the loop tail, but
+// count lands in cx/edx (retail ax/eax, zero in ecx) and first stays in eax where retail
+// spills it across the inline memcpy; 144 (count through the metadata view or the block,
+// 492 bytes); entries indexed by the counter 164; separate cursor pointer 54; with the
+// current stored first 140; block pointer declared inside the if 151; index head with the
+// block pointer only for the loop 155; count read once into a short local 177 (480 bytes).
+// Round 35, all on the indexed form: the cursor set after the selection with the copy source
+// indexed 164 (retail's loop, saves and reload at the join, but both parameters on the stack);
+// one variable for first and the loop index 159 (retail's head exactly: index in edx, count in
+// ax/eax, zero in ecx, entries in edx; the index then lives in ebp and mode is spilled, where
+// retail spills first and keeps mode in ebp); `first + n` with `entries[n]` 158; first by a
+// chained assignment 158; the copy's destination through the stored current 164; the loop
+// index set before the selection 162 (cache index in ecx); the selection as if/else or as the
+// reversed ternary 164/164; selection, n/index, cursor or first declared early 164 each; the
+// cursor before the copy with one index variable 163; the count in a short local read before
+// the clears 164. The two g_4c1a80 statements (the same field as g_4c1a48[2].flags) removed:
+// same code. Count, mode and first-index homes conflict across the inline copy: metadata
+// pointer plus entry-table expression and early index 154; shared-scale entries 159; direct
+// metadata with early index 159; const first 146; direct copy with late entries 163; first
+// address direct/reference 163 each; early selection 169. Original block body restored.
+// Round 16 (all indexed, no block pointer): first and index separate, entries pointer after the
+// copy 164 (cache_index moves to the stack); one index variable, entries after 160 (retail's
+// head to the clears, then the index takes EBP and mode stays on the stack, where retail loads
+// mode into EBP at entry and spills first); first and index separate, entries pointer set before
+// the copy 144 (mode in EBP at entry as retail, but the count lands in CX with the zero in EAX,
+// so first stays in EAX across the copy and the entries pointer is spilled at once); one index
+// variable with entries before the copy 163 (cache_index in EAX); a short count local for the
+// guard, copy size and advance 177 (cache_index in ECX).
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {

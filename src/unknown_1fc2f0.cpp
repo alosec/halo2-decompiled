@@ -242,11 +242,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // 18 bytes); the tick products written into a second vector 43 (the code is unchanged). The chain
 // order follows the order of the first definitions, so it moves with the loads and cannot be
 // changed on its own.
-// extends the word into EDI, while ours writes the word with a 16-bit store
-// to DI and loads the float into xmm0.
-// retail's first 0x5a bytes (rate kept in xmm3, the three components loaded
-// first) but the tick products land in fresh registers and the correction's
-// last product moves late, one instruction long: rate local with long ticks 64;
+// Earlier: forms that give retail's first 0x5a bytes (rate kept in xmm3, the three components
+// loaded first) put the tick products in fresh registers and move the correction's last
+// product late, one instruction long: rate local with long ticks 64;
 // with the tick scale through local_scale3d 64; tick product and delta per
 // component 64; ticks read first 64; the limit test as !(limit * limit > ...) 56.
 // `long ticks` and a `rate` local give retail's first 21
@@ -263,6 +261,14 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // square and the two spill stores then follow retail's schedule; chains still i, j, k and ticks in
 // xmm4); that plus tick_scale defined after the chains 73 (ticks reuse xmm3 as retail, but the tick
 // products become copies and the chains run k, j, i). No-op products (diagnostic) never move the j chain.
+// Round 18 (lane 11): retail converts the ticks into the rate's XMM3 after the rate products, so
+// the conversion follows them in the source, yet scales in place. The conversion after the rate
+// chains gives retail's first 0x5a bytes (j, i, k chains, cvtsi2ss xmm3) but the tick products
+// copy the tick register 64 (369 bytes); the same with inline conversions, local_scale3d,
+// vector3f_scale, products written tick first, declared at the top and assigned late 64 each;
+// tick products j, i, k 73; one `scale` local for rate then ticks 66. The subtraction fused into
+// the tick product (`velocity.i = (velocity.i - p0.x) * tick_scale;`) scales in place in XMM3
+// but loses the j-first schedule: 66; with chain/product/delta orders 48/54/71 (best at 366 bytes).
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

@@ -587,12 +587,10 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // its update named first 32 (both identical code); the occupant key from `&collection->players[i]`
 // 32 (identical); the conflict scan through `collection` 263; `collection` declared before the
 // player-mask test 32.
-// Round 35: the swap callee declared (collection, player, update, other) with its definition and
-// this call, 36 (the swap call becomes retail's row for row: slot pushed before the updates load;
-// the swap callee still matches; the last record's two source reads then trade registers and the
-// occupied key address keeps its order); on it the last record's reads swapped 47, read before the
-// count increment 40, the occupied key through `collection->players + i` 36, its index stored
-// before its type 38.
+// Round 19 (lane 11), on the swap order above: the swap's update through the local `update` 36;
+// the occupied key through `watcher->players.players[i]` 292; the second loop's player and mask
+// through `collection` 271, its player alone 267. With it the occupied key is still
+// (offset + cursor) + collection where retail adds (collection + offset) first.
 // @retail 0x83610
 void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_simulation_player_update *updates)
 {

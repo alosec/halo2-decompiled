@@ -161,6 +161,9 @@ short function_239e50(short count, point2f const *points, short *indices);
 // score 42 (was 42): state/index/point registers (retail ECX/EDX/ESI) and the XMM homes
 // differ at frame 0x18; retail keeps the line normal's j in XMM2 through the scaling, so its
 // constants sit one XMM register higher, and its dot multiplies the normal's i in place.
+// state/index/point registers (retail ECX/EDX/ESI, ours EDX/ESI/ECX) and the
+// XMM homes differ at frame 0x18; retail keeps the line normal's j in XMM2 through the scaling,
+// so its constants sit one XMM register higher, and it stores the first point's y before x.
 // Tried: local/formal point cursor with short ordinal 94/93; short remaining count 94/93; long
 // ordinal 97/97; long remaining count 94/93; byte state 91; unsigned word ordinal 85; state
 // increments 76; terminal equality 43; first point before scan 85; normalizer reference 42;
@@ -221,6 +224,21 @@ short function_239e50(short count, point2f const *points, short *indices);
 // Indexed point receiver across dispatch with short/long/signed-byte/enum state 89/104/109/104;
 // the same receiver at function scope 89/104/109/104. Original indexed expressions and state
 // restored.
+// components 63; accumulated dot result 46; repeated j input 42; repeated i input 42; both
+// scalar inputs 126; state renamed to sort before the index 42; zero-length arm first 44;
+// `>= epsilon` far test 68; named normalizer length 56; line declared before the first point
+// 42; shared normalizer/magnitude 42/42; tested initial/distance states 81/76; both tested
+// states 79; early distance default 65; shared normalizer with tested states/default 79/65;
+// bounded geometric enum with original/count-first/terminal/zero-first graph, independent-point
+// word/enum/count-first/terminal graph, first-point memcpy/memmove 86/94/86/86/54/58/99/58/42/99;
+// indexed point receiver across dispatch with short/long/signed-byte/enum state 89/104/109/104,
+// the same receiver at function scope 89/104/109/104.
+// Round 18 (lane 11): state declared first 42; loop index declared at the top or first 42/42;
+// while loop with the increment at the end 42; count test first 99. Compile-only (reproduces
+// our SSE block exactly): 0x2b400's normalizer form, compound, operand-order and j-first
+// scales, single-result normalizer, early inv/m defaults, j read into a local, named square,
+// each with four dot operand orders: all give our block (j-first one worse); field-wise or
+// memcpy first-point copies keep the x-first stores.
 // @retail 0x239b80
 short function_239b80(short count, point2f const *points)
 {

@@ -144,6 +144,13 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // Round 83: field_10 first 133 (aligned 21: the split compare and the child-loop registers);
 // loop test written count-first 71; child ordinal passed as word 70; record/parent stores swapped
 // 70; child definition read into a named local 76; -1 literal for the last 0x173fd0 argument 70.
+// Round 18: compile-only, the split is this compiler's default tuning after an x87 store that
+// follows x87 arithmetic in one block; it folds after a call's fstp, when the compare starts a
+// block (a jump target), or with /G7 or /Os. Screens of inline sample/compare/update helpers,
+// do/while, a one-pass loop, an empty if and identical store arms all split. Full builds with
+// field_10 first: 133 (aligned 21, 876 bytes); with a label before the compare 140; the sample
+// through the reference helper 133; the cache update as an early-return inline helper 133;
+// typed compare 133.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)

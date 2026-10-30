@@ -491,6 +491,11 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // Round 83: `&&` flag 200 (aligned 23: flag memory-only, the unknown268 block laid out after the
 // special path); with returns for the scan exits 226; with an inline timer-minimum helper used twice
 // 286; const `&&` flag 200; the player loop as a forceinline helper, `&&`/bitwise flag 235/207.
+// Round 18 (lane 11): `&&` flag, if/else arms, false then if, scan in the else with
+// the flag set there or at its declaration: 189/189/191/189/191 at 872 bytes (NONE in
+// EBX, entry matches, but the flag stays in memory and the tail follows the special
+// path); the tail as a forced-inline helper taking the flag by value 47 (same code),
+// with the `&&` flag 189.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

@@ -36,6 +36,14 @@ void function_265c30(long arg_0, long arg_1, bool arg_2);
 // conversion result, and orders local_1, local_14, local_2 at the top); with 0x1af530's second
 // output in its own block local 44; local_14 renamed 44 (names move nothing); with the +0x14
 // result field read once 46; the separate output local alone 67.
+// Round 16 (plain, all with the forceinline declaration): the frame is one dword larger than
+// retail's: retail packs the fistp temporary, 0x261280's long output and 0x1af530's output into
+// one slot and the 0x262b40 result into the actor offset's; ours packs the fistp temporary and a
+// separate 0x1af530 output into the actor offset's slot and gives the 0x262b40 result its own.
+// The conversion result in a named long 44; the separate output declared before the real 44;
+// the bool for 0x1f4a20 declared at the top 44; the long and bool outputs of 0x261280 declared
+// the other way round 44; 0x261280's outputs scoped to a block ending after 0x2626b0 (the empty
+// result branch returning early) 206.
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {

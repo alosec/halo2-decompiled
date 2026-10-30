@@ -426,6 +426,10 @@ done:
 // layout, still the EBX buffer, two bytes ahead); on it `&g_55c6e4[0]` at the copy 54, an early
 // `goto done` for a missing definition 54, the selector straight from the getter 57 (171 bytes),
 // an explicit `goto done` after the call 54.
+// Round 19 (lane 11): the buffer only this function references (no other retail use of 0x55c6e4),
+// with internal linkage 49; the copy in the default case with its own return 58 (180 bytes); a
+// NONE name tested before the translator 49; the tag read at the translator call 45 (171 bytes);
+// both 45 (171 bytes).
 // @retail 0x22d456
 void __stdcall parse_gametype(long string_handle, word *buffer)
 {
