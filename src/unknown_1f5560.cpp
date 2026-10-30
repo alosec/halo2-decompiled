@@ -658,6 +658,14 @@ struct s_1f9762
 // 133/264 in every order; extra vector storage grows the frame and does not recover native tails.
 // Boolean result/home role names in four lexical orders 67/67/67/67; each with a shared
 // output predicate used for both validity and vector publication 83/83/83/83 (616 bytes).
+// Round 9: a bool `project` flag beside the pointer 67, with `direction_valid && !last` 152; the
+// projection as an inline predicate on each path 320; the previous point picked inside the valid
+// branch of the not-last arm 108; `if (!reached && direction_valid && unknown4d4)` in place of the
+// last arm's else-if 67; `projection_direction = mag > 0.0f ? &approach : NULL;` 67. Compile-only
+// screens: VC lays blocks out as fall-through runs in IL order, so retail's projection must be the
+// IL successor of the last arm's pointer store, with the approach (false arm, join and call) placed
+// just before the final return block, where VC puts blocks it creates late; no form moved it there
+// with the pointer in EAX.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)
