@@ -339,6 +339,12 @@ void function_125a90(long value);
 // first 51. Harness only: the file's ELEMENT macro 37 (worse registers); element as
 // `&((T *)data)[i]`, `data + i * sizeof`, `sizeof * i`, `i + (T *)data`, an elements
 // pointer: the ESI multiply in each; `remove = type == 0x26 && !a` threads the sete away.
+// Round 100 (real builds): the file's ELEMENT macro 62 (same early flag load, EBP/EDI swap);
+// `remove` declared first 47; removal written first 51: both arm bodies then end as retail's
+// (special arm `je keep` into the removal, kind arm `jne remove` into keep), but the kind arm
+// stays the type test's fall-through and the special arm with the removal moves after the
+// next-index code; with the type test negated and the kind arm first 51 (identical); with the
+// kind tests joined by && 51.
 // Round 11: `if (0x20) remove = false; else if (0x26) remove = !a; else if (kind)` with removal
 // first 87 (retail's block order, but no re-test of 0x26 for 0x20); the condition named `bool
 // special = 0x20 || 0x26` with removal first gives retail's whole block order in the compile-only

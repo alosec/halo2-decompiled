@@ -471,6 +471,16 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // product order compiles the same. That order in the normalizer 34 (same code); file scale
 // helper in the normalizer 34 (same code); file scale helper for the minimum's final scale 34
 // (same code); squared-first minimum test 34 (same code); next assigned just before the loop 86.
+// Round 204: vector-squared input by const reference, ordinary/forced squared and normalizer
+// availability, and void/pointer normalizer output: eight contracts 10 each. All original
+// helpers and marked bodies restored; back-edge reloads and maximum squared producer remain.
+// Round 24 (lane 10): the vector normalizer's sum through length_sq3f 34 (0x2b98b0 59); the
+// vector-squared statements in i,j,k order 9 (0x2b98b0 61); the velocity normalizer with k read first
+// and i,j,k statements, in both branches 10 (1517 bytes: maximum branch exact, the minimum's j product
+// loads j instead of copying the inverse); successor read right after the particle pointer 328; cache
+// declared first 10. Compile-only screen of the tail (~900 forms): an expression sum in the maximum
+// branch always turns the minimum's j/k scale sequential; k read first with i,j,k statements gives the
+// whole tail, but no vector-squared body with it keeps 0x2b98b0 (its first normalize needs k,i,j).
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {

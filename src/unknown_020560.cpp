@@ -1282,6 +1282,11 @@ bool function_0bfe60(dword const *flags, long bit);
 // All restored; loop/count and test-index colours plus bitset row address remain.
 // Lane 8 r79: non-query draw first 140; bitset row declared between test and status 54; device
 // global at each use 93; bitset row global at each use 122; `(1 << slot->c) & mask` 52.
+// Lane 13 r14: retail gives the test index EDI and the device pointer EBX (status's register),
+// leaving EBP to the loop counter and the total; ours puts the counter, device and total in EDI and
+// the test index in EBP. The total declared at the top of the query block 139 (441 bytes); status
+// declared before the test index 53; `set + index * 3` 52; the test index written at both calls 142;
+// the clamped total stored in the arm with an else storing 0 132 (443 bytes).
 // Round 23 (lane 10): the SDK's begin-visibility-test call for the push expansion 158 (stays out
 // of line); the index from an if instead of the ternary 55; the result locals at the query block
 // 52; the clamp as if/else 52; a const set 52. Without LTCG every spelling of the bitset row
@@ -1363,6 +1368,10 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // Lane 8 r79: key and query as inline helpers 96-117; plain amount local 86 (frame 0x1c); with
 // this body: the frame computed before the slot pointer 75, the counter read first 72, read as an
 // __int64 copy, after the slot pointer, reassigned, 64-bit add or `+ 1` first: 6 each; permuter 6.
+// Round 20: the counter read at the storage block top with the set at the arm top 6 (the load
+// sinks), read before the storage test 6; written inside the bitset test 72 (the load stays, the
+// divide moves after the clamp); the bit test through function_0bfe60 90; the bit test before
+// the clamp 79.
 // Round 23 (lane 10): the existing bit-test helper (stays out of line) 90, with the counter read
 // at the top of the global block 88; the slot pointer before the global test 22; a const counter
 // copy before the slot pointer 6; the whole frame expression there 75; an inline query helper

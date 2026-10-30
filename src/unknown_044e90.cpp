@@ -71,6 +71,11 @@
 // Round 218: Live view source/direct ranges/both/both with native short view 481/474/453/450;
 // native eight-byte storage alignment on those graphs 481/473/453/449. List/plane and entry/table
 // homes remain; original header, observations and complete body restored.
+// Round 435: Native eight-byte storage alignment plus chained counts and paired capacities,
+// field orders pointer/count/capacity, pointer/capacity/count, count/pointer/capacity,
+// count/capacity/pointer, capacity/pointer/count, capacity/count/pointer:
+// 418/418/418/417/417/417; initialization by real capacity pairs, counts/capacities
+// or capacities/counts 418/418. Four-point gain rejected; original header/body restored.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {

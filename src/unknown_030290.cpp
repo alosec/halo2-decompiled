@@ -526,6 +526,12 @@ real function_30bf0(vector3f *v);
 // carriers retained. Round 40: staged second product straight into vector 42; struct copy of the
 // result 74; whole axis copied into a local 103; reference locals bound axis-first 43, with the staged
 // second product 41. The reversed parameter order (35) needs the caller in src/unknown_0350e0.cpp.
+// Round 43: retail's second product is cross3f_staged's k, j, i order. Axis pointer local 35 (x87
+// part matches, 230 bytes); the staged product into vector 42, into a local 42 (35 with the axis
+// pointer), copied as a struct 68; axis or vector pointer with the staged product 36/36; both
+// pointer locals with the staged product 36 (224 bytes, retail's product grouping, xmm homes and
+// three x87 operand pairs differ); a 27-form screen of pointer locals x declaration order x second
+// product form no better than 35.
 // carriers retained.
 // Round 295: shared staged cross first/second/both 42/42/42; second product in
 // the normalized workspace with ordinary/staged first 68/68; direct staged output
@@ -626,7 +632,7 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
         }
 }
 
-// score 27 (was 77): the code is retail's apart from one alignment pad: retail pads the label after
+// score 27 (was 27): the code is retail's apart from one alignment pad: retail pads the label after
 // the 0x3800 pass (2 bytes), which also changes the final loop's pad (ours jumps over a longer one).
 // The group helper with a trailing loop removed by a constant false argument matches byte for byte
 // (not kept: that argument and loop exist only for the pad, and the helper would have one call).
@@ -647,6 +653,9 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
 // Round 421 (at 77, before the group helper): first/third packed fields 77; filtered packed fields 225; all helper packed fields 225; final packed
 // fields 77; first/third/final fields 77; filtered/final fields 225; all packed fields 225; all fields/ascending
 // runtime publication 225.
+// Round 309: On split constant/runtime helpers, byte/short/word/long runtime controls
+// 27 each; with complete Boolean source-bit producers 213 each. Original controls,
+// producer, helpers and whole executable body restored; final-section pad remains.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)

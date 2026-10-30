@@ -6,6 +6,7 @@
 #include "unknown_1c62f0.h"
 #include "unknown_1cafc0.h"
 #include "unknown_0259d0.h"
+#include "normalize3d.h"
 #include "unknown_xd56787.h"
 #include "unknown_11cb00.h"
 #include <float.h>
@@ -143,12 +144,18 @@ void c_animation_channel::clear()
 // Round 83: retail order 42 (callers lose); unknown0e stored right after unknown0d 42 (stored at
 // once, ECX free for the id copy); the two NONE id words as one chained assignment, retail
 // order/current 41/36; the two zero words chained 38.
+// Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
+// lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
+// frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
 // the id copy 36; flags stored next to the derived byte 36.
 // Round 42 (all with graph in ESI and the six matched callers off by 1-68): retail order with
 // unknown0e stored first/before unknown0d 40/42, graph stored last 42, id stored last 44; existing
 // reset() or clear() inlined first, then retail's assignments with or without frame/rate 51 (the
 // unknown10 clear is dropped, flags move to ECX); the graph/frame/id/rate/unknown0e/flag-bit stores
 // in a forced-inline helper taking unknown0e as a short (call-site conversion) 42.
+// Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
+// lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
+// frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)
@@ -730,6 +737,12 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // Round 408: dispatcher inline/noinline/both declarations 97 each; those with
 // direct callback transport 125 each; inline/both with early state clear 116 each.
 // Original dispatcher contract, state writes and callback transport restored.
+// Round 85 (retail loads the callback into EBX at the first dispatch, reuses it at the second and
+// reloads it at the third; the second-dispatch reload is our 4 extra bytes): callback read directly at
+// all three dispatches 133 (loaded into EBX at entry, graph spilled); plain read at the first dispatch
+// 133; channel read directly for the byte clear 97, also for the first flags 97 (same code); the
+// volatile read moved to the second dispatch 97 (same code); volatile read at the third dispatch only
+// 141 (callback in EBX from entry, frame 0x10).
 // Round 419: end failure exit 97; loop failure exit 97; both later failure exits 97; first/end failure
 // exits 97; first/loop failure exits 97; all dispatch failure exits 97; all failures with direct final
 // update 109; native events with direct final update 109. Word-load/state-clear scheduling and second
@@ -813,9 +826,7 @@ bool c_animation_channel::velocity_get(vector3f *delta, vector3f *velocity) cons
 		vector3f position;
 
 		c_animation_channel_frame_sample(this, frame_position, &position, delta);
-		velocity->i = position.i * scale;
-		velocity->j = position.j * scale;
-		velocity->k = position.k * scale;
+		vector3f_scale(&position, scale, velocity);
 		result = true;
 	}
 	return result;

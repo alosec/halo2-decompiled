@@ -328,29 +328,6 @@ bool function_1f8660(long actor_index);
 real function_1f8940(long actor_index);
 real function_1e3920(long actor_index);
 
-// score 9 (was 46): the search result is kept in `reference` and its copy in `found`, so the result
-// stays in EAX through the test and the push and only the copy moves to ESI late (retail), leaving
-// EBX for the actor index. Left: the failure arm is merged with the scratch release, so VC hoists
-// `mov edx, edi` above its two stores and the selection-success path cannot join that release; the
-// two out values swap ECX/EDX. With the success arm written first every instruction of both arms is
-// retail's, but that arm is laid out first (`je` to the failure arm; retail `jne` to the success arm,
-// the failure arm falling into the release it shares with the selection-success path).
-// Forms on the copy graph: actor flag cleared before the result 8 (store order not retail's); out
-// locals swapped 9; release in each arm 21; success arm first 31, with `!=` on the long values, `==
-// false`, operands swapped 31/31/32; early `return true` for an inactive actor 105 (both arm orders);
-// `selected = reference; selected = function_2626b0(..., selected, ...)` 46 (the copy merges);
-// permuter 35 tries, none better.
-// Before the copy graph (all 46 unless noted): result first 53; per-use actor receiver with nested
-// failure-first and output-home names 117; early admission 140; success-first 116; typed request
-// reference fields; complete request Boolean 89; named movement kind; aggregate zero with fields/Boolean
-// 99; selection compared inside the else-if; reference declared before the scratch call; success
-// branch first; flag store before the result; out locals swapped; the reference compared as a long
-// value; the search part as an inline helper 223; the scratch release written in each branch 47; the
-// failing actor re-read into `actor`; the selection tested without a local; the search outputs or the
-// reference declared at the top; separate raw/admitted reference values 46/48; reference declared,
-// then assigned; actor before result 65; both comparisons with the sentinel first; the request declared
-// at the top of the function 48; the select-or-remember tail as a forceinline helper; the reference or
-// the scratch pointer declared at the block top; the reference compare written global-first.
 // @retail 0x1bcab0
 bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 {
@@ -380,7 +357,6 @@ bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 		if (REFERENCE_EQUAL(reference, g_470fa0))
 		{
 			result = false;
-			actor_get(actor_index)->unknown040 = false;
 		}
 		else
 		{
@@ -389,6 +365,8 @@ bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 			if (REFERENCE_EQUAL(reference, g_470fa0))
 				function_262800(actor_index, found, false);
 		}
+		if (!result)
+			actor_get(actor_index)->unknown040 = false;
 		ai_scratch_buffer_release(scratch);
 	}
 	return result;
@@ -491,6 +469,11 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // Round 83: `&&` flag 200 (aligned 23: flag memory-only, the unknown268 block laid out after the
 // special path); with returns for the scan exits 226; with an inline timer-minimum helper used twice
 // 286; const `&&` flag 200; the player loop as a forceinline helper, `&&`/bitwise flag 235/207.
+// Round 85: `&&` flag with the scan as the then-arm and `special = true` in the else 202; flag set in
+// both arms (`special = false` in the scan arm) 200; `&&` with a return for the proximity exit 226;
+// `&&` with the datum test nesting the loop body 200; `&&` with the proximity minimum as an early
+// `goto done` 200. A compile-only screen shows what moves the `&&` layout: the proximity exit inside
+// the loop (without it, or without the loop, the special path jumps over the scan as in retail).
 // Round 18 (lane 11): `&&` flag, if/else arms, false then if, scan in the else with
 // the flag set there or at its declaration: 189/189/191/189/191 at 872 bytes (NONE in
 // EBX, entry matches, but the flag stays in memory and the tail follows the special
@@ -501,6 +484,9 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // every branchy def gives NONE in EBX but threads the known-true flag by copying the tail's
 // first block onto the special path (flag memory-only, 872 bytes): `&&` 200, false then if
 // 202, `&& != 0` 200, function-scope `&&` 200; const bitwise flag 47. All restored.
+// Round 433: Complementary ordinary-case predicate, bitwise/logical OR, original/complementary
+// permission, entry/eligible permission scope; fast 48/74/53/75/200/222/201/222.
+// Original body and existing helper restored.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

@@ -144,7 +144,7 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 }
 
 
-// score 23 (was 58): with 0xba300 now returning its location (retail's convention) a bool result set after the
+// score 23 (was 23): with 0xba300 now returning its location (retail's convention) a bool result set after the
 // audible store gives retail's entry (`xor bl, bl`), EBX/EBP roles and split success/failure returns. Left: the
 // machine object pointer loads into EAX (retail reuses EBP), the cluster lookup's ECX/EDX roles and base-load
 // order, and the final location copy (retail stores its second dword first, interleaved with the call setup).
@@ -167,6 +167,9 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // row first 55; high location fields first 65; cluster-derived result 197; eligibility-derived result 199.
 // One shared header across type/machine consumers, cached/per-use type, long/bool result,
 // native/CRT location publication 144/144/181/181/178/178/186/186. Header lifetime adds receiver pressure; restored.
+// Round 431: common word/long datum slots 151/23; with machine receiver reacquired 151/23;
+// root-location returned output original/word/long slot 172/108/172; long slot with overlap-safe location copy 53.
+// Frame and normal block agree; machine receiver, cluster-map registers and final publication order remain.
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {

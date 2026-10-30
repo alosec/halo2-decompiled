@@ -317,6 +317,9 @@ PRIVATE __forceinline void function_94151(s_type_f7e40b *reply, const s_session_
 // branch displacement and the padding at the end.
 // success/failure locals 12/12; helper-owned reason 48; widened result 12;
 // separate decisions 61; two result tests 12; reply-field forms 44/72; inverted inner select 12.
+// One || condition then 8 / else 9 33 (the 9 is loaded above the je); 9 by default, 8 under the
+// || condition 32; 8 by default, 9 under the && condition 34; the one-condition form with a
+// short reason 25, a char reason 29.
 // @retail 0x94150
 void network_message_handler_handle_leave_request(c_class_938e0 *handler, long address, const s_session_id *message)
 {

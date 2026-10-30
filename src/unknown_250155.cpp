@@ -1405,6 +1405,11 @@ int __cdecl matchmaking_compare_value(void const *a, void const *b)
 // Round 256: Compaction candidate before predicate in first/second/both scans 119/118/121; with shared
 // mode-one query 127/125/129; both scans with indexed tails, separate/shared query 160/159. All
 // restored.
+// Round 86: mode-one query through item_count (retail's [ebp-0xc] in both branches) gives frame 0x54 but
+// item_count/index_count slots swap and scores 123; renames of either 123, declaration orders 123/123/123;
+// with index fills as for loops (retail's guarded rep stosd) 161, indices[i] rows 133/135, all three 171;
+// maximum spelled `q >= count ? q : count` 116 (same code) / 123 with the shared query; mode-one maximum
+// as an if 123.
 // Round 303: branch-owned first/second/both working collection counts 153/153/158;
 // both with definite selected result 158, indexed tails 159, shared query 164,
 // indexed tails/shared query 162, all three 162. Original counts and complete body restored.
@@ -2134,6 +2139,9 @@ void function_1905bf(long controller, bool flag);
 // Parameter-2 early valid-team exit long/bool 93/106, with directional guards 99/107;
 // availability-owned callback long/bool 93/106, with directional guards 99/107. Original result
 // and callback joins restored.
+// Conditional outer/inner dispatch 133/119, both 121; their unsigned-first
+// combinations 163/126/144; complete Boolean-result graph 122, entry result 127.
+// Original dispatcher and result restored.
 // Round 78: signed-scope done label 151; signed-scope label with separate unsigned return 137;
 // unsigned constant return 137; unsigned-to-signed done jump 106; tested base result 109;
 // unsigned own return 138; final done label 151; constant handled returns 106. Original body restored.
@@ -2461,6 +2469,7 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Promoted first-loop team with numeric/reverse and absent-first/last switch cases 238 at 915 bytes
 // in all four orders; default-result initialization on each 234 at 913. Scalar homes stay
 // displaced; original short team and switch restored.
+// Complete four-output publication schedules 182/192/114/151/184/158/192/182; original helper stores restored.
 // Round 77: second-loop element pointer 180; element pointers in both loops 180; counter before count 111;
 // counter before query 111; final receiver address reads 111; voice parameter address reads 111; player
 // pointer arithmetic 111; interleaved widget-helper parameters 111. Original body and helper restored.
