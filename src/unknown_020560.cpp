@@ -1354,6 +1354,9 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // byte/long/short validity 78/103/106; default-false availability 79. Shared inline bit
 // test on the direct-key graph 6; with early counter capture 6, row at helper argument 73,
 // capture before global admission 6. Counter-load scheduling remains; opening body restored.
+// J199: direct slot fields with early/use-point counter 71/71; original graph
+// with default availability/amount/both 42/82/86; direct final disjunction 12;
+// default-true/default-false final results 40/40. Counter load still sinks; restored.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
