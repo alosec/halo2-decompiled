@@ -456,6 +456,10 @@ void function_245400(s_source_245400 const *source, long index,
 // Round 13 (lane 14): second code and plane table ahead of the first code 203; plane table first
 // 203; early return on equal materials 203; point transform before the vector transform 203; edge
 // vector after the side flags 202 (not kept). Source still arrives in EDX.
+// Round 203: destructive plane-code decoding, paired/sequential long 204/206, dword 203/205,
+// short 206/206, word 206/206; the independent side spill reuses the matrix argument home.
+// Actual marked point transform, return/native output 405/405; scaled-vector/both calls 386/582;
+// each with a force-inline declaration 405/405/386/582. Original body and declarations restored.
 // @retail 0x245540
 void function_245540(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
