@@ -1451,7 +1451,7 @@ struct s_unit_child_iterator
 };
 struct s_damage_object;
 s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
-void function_1e3400(long actor_index, long squad_index);
+void function_1e3400(long actor_index, short squad_index);
 void function_201ad0(long squad_index, long object_index);
 
 // score 218 (was 218): frame 0x32c and length agree; the driver byte spills

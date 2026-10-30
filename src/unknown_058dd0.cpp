@@ -1952,6 +1952,10 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // bool ready set in each arm, failure arm first/second 96/96; a long ready so 69; a bool ready
 // false at its declaration, set in the timer arm 90; the pending flag set in each arm with the
 // failure arm first 52.
+// Round 76: a bool ready assigned in each arm (`ready = remaining == 0;` / `ready = false;`) 96, aligned
+// 12 -> 11: retail's `sete al` and `test al, al`, only the 0x6e720 setup and the block order left; the
+// same with the failure arm first 96 (same code); the failure stores swapped 96; a long ready 69 (retail's
+// shared `xor eax, eax` for the timer and the flag, but `test eax, eax`); `ready = unknown18 = 0;` 96.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {

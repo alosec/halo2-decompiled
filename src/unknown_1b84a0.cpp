@@ -112,6 +112,12 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // 47/47; actor reference after the view 47; entry actor reference variants 52; the slot read once
 // through its address 47, with the top actor 52, with the top actor and the state first 52; the
 // getter at the 0x262800 call instead of the inner actor local 88 (276 bytes).
+// Round 76: retail keeps one actor pointer across the calls (EDI, read at +0x418 at the end); a second
+// lookup at the final call reloads the pool after the calls here 71, so the source looks the actor up
+// once at the top. That form (52) gives retail's index EBP and view EBX and the shared final store
+// (retail duplicates it for the NONE path); left are actor/state ESI/EDI swapped, EBX saved at entry and
+// the 0x1f4f40/0x262800 argument temporaries. On it: the slot parameter cast at each use 52; the view
+// computed first as NULL-or-view and tested once 52; the NONE case as an early store and return 91.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {

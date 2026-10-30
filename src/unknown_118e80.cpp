@@ -654,7 +654,10 @@ bool function_119380(long arg_0, s_119380 *arg_1)
 void function_1e54d0(void *arg_0, long arg_1);
 bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 
-// score 83 (was 83): the object table base and the looked up object are kept in different
+// score 83 (was 83): the object table base and the looked-up object are kept in different
+// registers, one word field is loaded zero-extended here and as a plain word in retail, and the
+// value stored at the 0x134 slot is sign-extended differently. Retail passes the size to 0xbc380
+// as a 16-bit argument, which needs that callee's shared declaration changed.
 // registers, one word field is loaded zero extended here and as a plain word in retail, and the
 // value stored at the 0x134 slot is sign extended differently. Round 81: retail passes the
 // size to 0xbc380 as a 16-bit argument (xor eax, eax; mov ax, ...), which needs that callee's

@@ -347,6 +347,9 @@ bool function_26fe90(long actor_index, long object_index, real distance, s_objec
 // with scale/update/admission guards 31-33; six selected/candidate/delta storage-name orders 31
 // each; the workspaces before the marker array 31/31; short i and best 154; best before
 // best_distance 31; markers[i] at each use 33; the matching body with a long count 173.
+// Round 76: short index and selection 154 (aligned 12 -> 8); short index with long selection 127;
+// that plus dot3f operands swapped 154 (same code); index declared before the loop 154; named
+// alignment on the short graph 154 (j product unchanged).
 // @retail 0x26f990
 bool function_26f990(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point)
 {

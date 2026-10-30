@@ -1474,7 +1474,7 @@ struct s_camera_clip_reference_16ebf0
 	byte field_14[4];
 };
 
-// score 140 (was 209): frame 0x98 agrees. Left: retail passes the narrow flag to 0x171d00 in DL (its
+// score 140 (was 140): frame 0x98 agrees. Left: retail passes the narrow flag to 0x171d00 in DL (its
 // fraction pointer in EAX, the slot shared with the early state spill at 0x34), BLOCKED-BY 0x171d00
 // (src/unknown_170d70.cpp is held: it takes the flag on the stack and the end point in EDX here, ESI in
 // retail); retail struct-copies the state's forward/up/position through pointers it keeps (forward in
@@ -1589,6 +1589,7 @@ struct s_camera_clip_reference_16ebf0
 // native forward/up inputs 210/210/214/213. Original narrow truth, copies and body restored.
 // Round 261: separate out-of-line validation/mode/location declaration subsets, all seven
 // 209; separate composition declaration 209. Original declarations and complete body restored.
+// Round 409: Staged cross with direct or retained matrix inputs, each with/without the inner position alias, 144/144/144/144; genuine reused state-field receivers on those four graphs 209/209/209/209. State/forward/point homes and held clipping convention remain. Original cross, copies, aliases and complete body restored.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {
