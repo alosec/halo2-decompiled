@@ -227,7 +227,36 @@ void c_turret_entity_definition::v21(s_entity *entity)
 	}
 }
 
-// score 49 (was 49): retail holds a bool result in BL from before the creation call, saves EBP
+// score 49 (was 49): retail holds a bool result in BL from before the creation call, saves EBP only
+// around the header test and, for the object, reloads the table's data and recomputes the index (the
+// table global stays in EDX): a CSE kill, as a store between the flag test and the object read gives.
+// Ours keeps a long result in EBP and shares one header address. Tried: incoming output flags 87;
+// later result 80; both 89; invalid header first 75; shared header 77; incoming flags and header 87;
+// guard exits 77; result from validity 69; byte/native/short result 76/49/52; published index 70;
+// full acceptance 73; incoming flags with byte/native result 64/69; early long/byte/short/signed-byte
+// success result 67/70/65/70; byte after notification 70; native header acceptance 65; native
+// rejection first 52; combined native acceptance 67; early bool result set after the attach 77 (160
+// bytes: BL right, but EBP then caches the last argument across both virtual calls and the header
+// address is still shared), with the header or the object through the entity's stored index 77/77,
+// with the result declared after the in/out value 77; native result with the header through the
+// entity's index 49; signed-byte/unsigned-word/unsigned-native validity 76/52/49; shared success exit
+// bool/long/byte 75/67/70; shared validity exit native/word 52/55; result declaration first, output
+// role name, both, native-result header record 49 each; shared header/object/both getters 49/49/49;
+// both getters with early bool success 77; success-default bool/native/byte at entry 72/49/72, after
+// creation 70/52/70; created-index validity return 70; actual attached-index result 72; bool result
+// with a table local/forceinline getters/named flag/else-if NONE retest/entity index 78/77/77/75/77;
+// cross-file getters, guard returns and an == 0 test (screened) still share the address. Round 6:
+// deleted index set to NONE then published and retested 38, as a ternary 38 (both give retail's object
+// read; the join keeps `cmp; mov [edi+8]; je` because a join block holding a store is never threaded);
+// ternary field store with a field retest 43; flagged-arm store with a field retest 55; repeated index
+// store in the clear arm 42. Round 36: a compiler barrier after the header test with the bool result
+// 42 (retail's EBP window and data reload; the index arithmetic stays shared), with a word index 39;
+// the header flag as a value tested twice 66; a barrier after a join on the local 38; the index
+// re-read from the entity after the clear arm 67 (none kept). Round 33: a compiled-out
+// `do {} while (false)` before the object read 49, with the bool result 77 (the empty block gives no
+// kill here); every read through the entity's stored index with a bool/long result 82/69; the table's
+// data in a local for both lookups 49.
+// retail holds a bool result in BL from before the creation call, saves EBP
 // only around the header test, and reloads the table data and recomputes the index for the
 // object read (only the global load is shared); ours keeps a long result in EBP and shares one
 // header address. Tried: incoming output flags 87; later result 80; both 89; invalid header
@@ -308,9 +337,6 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // free and caches the last argument across both virtual calls (160 bytes). Zero frame agrees.
 // Tried: incoming output flags 87; later result 80; both 89; invalid header first 75; shared
 // header 77; incoming flags and header 87; guard exits 77; result from validity 69;
-// byte/native/short result 76/49/52; published index 70; full acceptance 73; incoming flags with
-// byte/native result 64/69; early long/byte/short/signed-byte success result 67/70/65/70; byte
-// after notification 70; native header acceptance 65; native rejection first 52; combined native
 // acceptance 67; early bool result set after the attach 77, with the header or the object read
 // through the entity's stored index 77/77, with the result declared after the in/out value 77;
 // native result with the header read through the entity's index 49; signed-byte/unsigned-word/

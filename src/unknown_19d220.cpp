@@ -77,6 +77,11 @@ static __forceinline void king_settings_verify(s_game_variant_king_settings *set
 // statement moved there 75 (0x19d220 118); `valid = memcmp(...) == 0` 455; `valid = false`
 // before the defaults call 57; the original copy declared first 57; valid declared just
 // before the compare 459.
+// Round 32 (lane 16), all in the shared initializer: the name copied through the existing
+// unicode_string_copy 57 (0x19d220 kept); the flags48 and/or as two statements 57 (kept); the
+// terminator stored after the flags 57 (0x19d220 15); engine and unknown03 stored before the
+// terminator 57 (0x19d220 3); unknown4c cleared before the flags 57 (0x19d220 15). 0x212c20 shows the
+// same swap (retail loads flags48 into EAX after the copy call); no statement order moves it.
 // @retail 0x19d650
 bool function_19d650(s_game_variant *variant)
 {

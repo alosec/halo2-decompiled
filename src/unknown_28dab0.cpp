@@ -98,7 +98,12 @@ void __stdcall swarm_delete(long arg_0);
 // allocation local 89, also on allocation failure 89; on the s2 shape (retail's stores and count):
 // the NONE pair chained either way 92, early `return local_0` for both tests 88 (NONE is then made
 // after the first call), for each test 104; the tag pointer stays in ESI even without the NONE stores,
-// without the tag-field test or without the flag test.
+// without the tag-field test or without the flag test. Round 33: the tag lookup written at both
+// uses 67 (it sinks below the flag call); the lookup inside the flag test 53, with the s2 shape 103;
+// s2 with the zero pair chained 92; s2 with a separate allocation local and the result set on success
+// 89. Compile-only screens: the tag takes ESI over the NONE result whatever the use counts, store
+// order, declaration order, nesting, deletions (loop and delete path removed) or a use of the result
+// before the lookup; only a non-constant initial result (computed from the argument) gives it EDI.
 // @retail 0x28dab0
 long __stdcall function_28dab0(long arg_0, s_28dab2 const *arg_1)
 {

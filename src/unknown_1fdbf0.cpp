@@ -341,6 +341,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // direction scalars 74, with staged axis 81; complete direction value with staged
 // turn/both 196/219; both vector inputs as complete scalars 74. All restored;
 // final axis/direction carriers and the copied parallel product remain.
+// Round 34: j/k rows as axis * parallel with the cosine term second 57; each row as one expression,
+// parallel product first 57; axis scaled in place before the rows 80; valid at the state block's
+// scope with the rotation after the dot block 43; the fallback normalizing 0x11d000's returned
+// pointer 57 (axis/forward slots swap).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)
