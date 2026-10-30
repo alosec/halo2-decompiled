@@ -367,8 +367,9 @@ struct s_1f8a70_actor
 	byte unknown00[0x4ac];
 	s_1f8a70_frame frame;
 };
+// score 398 (was 398): frame 0x80 agrees; pool/data entry schedule, early false and unit-output/route/result homes differ.
 
-// score 398 (was 398): frame 0x80 agrees; pool/data staging and returned-unit-output/route/result homes differ.
+// Earlier: frame 0x80 agrees; pool/data staging and returned-unit-output/route/result homes differ.
 // Earlier 399 (was 399): Frame 0x80 agrees; pool/data schedule, protected unit-mode boundary and result/route homes remain.
 
 // Earlier 399 (was 399): Frame 0x80 agrees; pool/data ordering, protected unit-mode boundary and result/route homes remain.
@@ -454,6 +455,7 @@ struct s_1f8a70_actor
 // (first +5); data staging and result/route homes remain. All original code restored.
 // Round 239: direct three-route decision chains 210/201/120/102/021/012
 // 417/416/420/398/420/416; 210 with long route/returned unit output 423/414. All restored.
+// Round 412: branch-owned disabled false and ordinary false after unit, bool/byte/short/long 419/427/441/432; after resets 417/425/441/432. Only the pool load moves before allocation; data and result/route homes remain. All original results, calls and phases restored.
 // @retail 0x1f8a70
 bool __stdcall function_1f8a70(long actor_index, long unknown)
 {
