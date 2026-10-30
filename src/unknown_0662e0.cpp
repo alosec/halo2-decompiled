@@ -509,6 +509,9 @@ __forceinline void network_configuration_levels_initialize(s_network_configurati
 	}
 }
 
+// score 363 (was 363): retail holds the constant five in edx from the value28 store to the
+// value1b0 store and walks esi over the first table's value84 row with value40 at [esi - 0x44];
+// ours rematerialises the five, indexes the first table with esi and fills the flags differently.
 // score 363 (was 363): frame 0x20 agrees; constant five, first-table induction and flag
 // initialization differ. Register allocation differs from the first loop on. Retail keeps i in
 // ebp and walks a pointer in esi over value84 (value40 at [esi - 0x44]), comparing it with

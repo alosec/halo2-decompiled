@@ -396,6 +396,10 @@ __forceinline short function_1a1fb0(short height)
 // (on the stack but kept in ebx).
 // Scoped primary receiver 9; split branch receivers 9; store in the override condition 9;
 // a two-use height-field pointer 61; a shared setter 9; const receivers 9; clamp-and-store helper 34.
+// Round 39: plain blip uses with `(void)&blip` 78 (and caller 0x1a264e loses its match); the blip
+// reread before the clamp 21, at the top of the arm 21; the override as nested ifs 9; a char height
+// 9. Retail never takes g_4e6948's address (byte scan), so the store does not pin the load there;
+// ours gives the global eax and the blip edx (retail: blip eax, global ecx after the store).
 // @retail 0x1a1faf
 void motion_sensor_blip_set_type(long local_player_index, long object_index, s_motion_sensor_blip *blip)
 {
