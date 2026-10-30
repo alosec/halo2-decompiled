@@ -1481,12 +1481,13 @@ struct s_camera_clip_reference_16ebf0
 	byte field_14[4];
 };
 
-// score 140 (was 140): frame 0x98 agrees. Left: retail passes the narrow flag to 0x171d00 in DL (its
-// fraction pointer in EAX, the slot shared with the early state spill at 0x34), BLOCKED-BY 0x171d00
-// (src/unknown_170d70.cpp is held: it takes the flag on the stack and the end point in EDX here, ESI in
-// retail); retail struct-copies the state's forward/up/position through pointers it keeps (forward in
-// EBX, up spilled at 0x3c, position in EBP) and reads the cross-product inputs back from the copied
-// locals; the saved-state/direction homes follow.
+// score 120 (was 140): frame 0x98 and state/forward/up/point homes now agree.
+// Left: forward/position saved registers, cross-product carriers and the stacked clipping flag.
+// Native byte clipping truth 120; short/long/dword/word 124/123/123/124; entry fraction 140,
+// with word truth 124; byte truth plus role names 120, native state-field receivers 206,
+// delayed original-position receiver 250 (caller lost), inner alias removed 120, staged cross 121.
+// Complete shared zone test: direct/Boolean result 168/168; one-use byte result 92 (exact-only,
+// restored); native-byte shared return/direct use 92 (matched helper lost, restored).
 // Round 74: forward/up struct-copied from the state and passed to the shared cross3f (retail's
 // copies through EBX/EAX and cross inputs read back from the copied locals) 153; the volatile saved
 // state dropped 153; left computed before the matrix's forward/up copies and the position copied
@@ -1651,7 +1652,7 @@ void function_16ebf0(long user_index)
 	{
 		s_location location;
 		function_11bed0(&location, &point);
-		bool narrow;
+		byte narrow;
 		if (location.cluster_index != NONE)
 		{
 			s_16e210_match_view *geometry = (s_16e210_match_view *)g_4e0348;
