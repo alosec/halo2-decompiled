@@ -674,6 +674,9 @@ bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 // remain. Native external input fields at selected/controller/allocation subsets 1-7 scored 83 each;
 // complete native input with promoted repeated selection 90. Original void input, callback declaration
 // and byte-offset reads restored.
+// Round 46: inner success return 132; positive guard with direct false exit and inner return 88;
+// separate predicate tests on that graph 95; initial/post-reset/post-allocation/final/all object getters
+// 95 each. Original body restored.
 // @retail 0x118510
 bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
 {

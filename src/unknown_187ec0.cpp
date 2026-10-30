@@ -246,6 +246,10 @@ struct s_seat_animations
 // 52; the getter in a for loop's init and step 164 (243 bytes); the while declaration with the entries
 // pointer, no guard and the break before the parent step 63 (185 bytes); animation before type in the
 // parameter list with the address read 52.
+// Round 82: explicit entry byte offset 53; offset with compared-entry result 71 (0x188130 1); count before result,
+// no inner guard, offset and compared entry 71 (158 bytes, caller matched); result declared first but initialized
+// after count 71; per-arm entry 85 (187); single-exit label 71; element declared before result 71; pre-tested inner
+// while 71. All restored; the offset's two-point gain was below the retention threshold.
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, c_type_47f957 element_index)
 {

@@ -1496,7 +1496,7 @@ struct s_camera_clip_reference_16ebf0
 	byte field_14[4];
 };
 
-// score 120 (was 140): frame 0x98 and state/forward/up/point homes now agree.
+// score 120 (was 120): frame 0x98 and state/forward/up/point homes now agree.
 // Left: forward/position saved registers, cross-product carriers and the stacked clipping flag.
 // Native byte clipping truth 120; short/long/dword/word 124/123/123/124; entry fraction 140,
 // with word truth 124; byte truth plus role names 120, native state-field receivers 206,
@@ -1616,6 +1616,9 @@ struct s_camera_clip_reference_16ebf0
 // Round 42: position declared after directions 249; forward/up full state receivers 119/119;
 // working matrix inputs both/forward-only 120/120; early matrix declaration 120; const position
 // pointer 120; two-read forward receiver 120. One-point gains rejected; original body restored.
+// N227: Independent computed left-axis output, simple/staged cross, direct/retained matrix
+// inputs and native/CRT transfers: eight at 239/976. Original cross destination, copies
+// and complete body restored; forward/position saved-register exchange remains.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {
