@@ -371,7 +371,7 @@ void __stdcall function_115220(long machine_index)
 	}
 }
 
-// score 273 (was 286): frame 0xc8 and early flag acquisition agree through +0x5f; the initial
+// score 273 (was 273): frame 0xc8 and early flag acquisition agree through +0x5f; the initial
 // clamp spill and later float/portal/movement scheduling remain.
 // Earlier: its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // Frame 0xc8 agrees; early flag carriers, the extra clamp spill, floating schedule and portal/movement homes remain.
@@ -400,6 +400,8 @@ void __stdcall function_115220(long machine_index)
 // bool/byte/short/long predicate 273/273/435/321. Keep only the guarded bool, ordinary full 273,
 // 1899/1887, first +0x5f; all baseline matches preserved. Both predicate uses stay inside the enable
 // block; the word snapshot, every call, field read and floating group are unchanged.
+// Round 236: guarded word/short/dword/long masks, then each with later animation-state constants 450/450/440/440/345/345/347/347.
+// Original executable body restored.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
