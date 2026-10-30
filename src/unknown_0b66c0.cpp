@@ -132,7 +132,20 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 	return destination;
 }
 
-// score 40 (was 40): retail moves the start from ECX into EDI at entry so the inlined length scan
+// score 40 (was 40): the string pointer and the character counter are kept in different registers
+// here, and an extra register is pushed and restored around the copy loop. Tried: count before
+// start in the parameter list 40; the length in a named local after the sign tests 40;
+// string + start with start unmodified 28 but start then arrives in edx (0xb5f10 differs);
+// that with a plain string parameter 41; start = string + start 40.
+// Cursor displacement with fixed/explicit maximum, unequal/ordered end tests and signed/unsigned
+// returns: eight forms 36 each; threshold rejected, shared find changed.
+// that with a plain string parameter 41; start = string + start 40; a local copy of the start
+// 28, but the start then arrives in edx and the matched caller 0xb5f10 differs.
+// Lane 8 r79: `string + start` gives retail's loop registers (the compile-only /Gd body is
+// retail's: start EDI, walk EDX, length ECX) but LTCG passes start in EDX, not ECX: 28 with
+// 0xb5f10 6; with count before start in every declaration and call 28; the length test nested
+// 28; a plain string parameter 41; early returns 48.
+// retail moves the start from ECX into EDI at entry so the inlined length scan
 // counts in ECX and walks in EDX (as matched 0xb61d0 does); ours keeps the start in ECX, counts in
 // EDX and walks in EDI, so EDI is saved with EBX around the scan. Tried: count before start in the
 // parameter list 40; the length in a named local after the sign tests 40; string + start with start
@@ -327,6 +340,12 @@ bool function_7af40(s_type_99af70 const *address);
 // DL180: open inline 32; open noinline 32; valid inline 32; valid noinline 90; both inline 32;
 // open inline/valid noinline 90; open noinline/valid inline 32; both noinline 90. Original
 // executable body restored.
+// Round 35: an early invalid-address exit with the failed open closing and returning first 35 at
+// 245 bytes (the open test inverts; the false exits then go to the close path's return); the copy
+// helper as plain inline 32 (identical); the state stored before the counter 33; the flag and the
+// open call reading the connection's endpoint again 111 (the split counter takes ebx, the address
+// then arrives in eax and 0xb40b0 stops matching). A compile-only copy without link-time code
+// generation splits the counter even with the copy written out, so it cannot screen this.
 // Round 5: retail reads connection->endpoint once for the three clearing stores and again for the
 // flag (`or byte`, as `flags |= 0x40` on the word gives) and for the open call. Those reads with
 // the existing copy 111 (the counter's split temporary takes EBX and the address then arrives in
@@ -340,6 +359,9 @@ bool function_7af40(s_type_99af70 const *address);
 // strncpy alone 36. A compile-only probe splits the counter whenever the destination survives the
 // call in a callee-saved register (existing copy, a local pointer, an inline wrapper, a separate
 // block), so retail's in-place `inc` with an ESI destination still needs its source form.
+// Lane 8 r79: an early `return false` for a bad address 32; `count = count + 1` 32; the failed
+// open closing and returning first 33; `connection->endpoint` read at each use 119 (0xb40b0 61);
+// the endpoint read before the address check 64.
 // Round 35: an early invalid-address exit with the failed open closing and returning first 35 at
 // 245 bytes (the open test inverts; the false exits then go to the close path's return); the copy
 // helper as plain inline 32 (identical); the state stored before the counter 33; the flag and the

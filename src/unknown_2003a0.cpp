@@ -50,7 +50,7 @@ extern short const g_44aee8[20] =
 	3, 7, 3, 3, 3, 3, 1, 2, 2, 4, 4, 4, 5, 5, -1, 3, 7, 7, 7, 4
 };
 
-// score 90 (was 82): the five handles are now filled by memset (retail's NONE in EDX, LEA ECX
+// score 90 (was 90): the five handles are now filled by memset (retail's NONE in EDX, LEA ECX
 // base and five stores); aligned on retail the body differs in 6 instructions (49 before),
 // but the second flag bit's load is hoisted above the branch and its store merged after it
 // (retail ORs/ANDs the byte in memory in each arm), which shifts the positional listing by one,
@@ -64,6 +64,9 @@ extern short const g_44aee8[20] =
 // fills 82/90; late next-link/word/long sentinel subsets 82 (seven orders); native-short
 // five-handle counter 99; Boolean first/second/both bits 107/88/112; conditional second bit 88;
 // library clear with first/both bits 124/127; counted pointer fill 82, with Boolean bits 112.
+// DH round 257: Typed 0x74 input record with native source bits and first/second output bitfields, eight
+// combinations 90/90/90/90/94/94/94/94. All record, interface, caller and body changes restored; flag
+// mask/store gaps remain.
 // @retail 0x200c20
 void function_200c20(byte const *definition)
 {
@@ -479,6 +482,9 @@ s_squad_definition_entry *function_203330(s_squad_definition_view const *squad);
 // The definition lookup now calls the existing getter 0x203330 (byte-identical).
 // Round 407: branch-owned next at entry/end 89/95; late current/handle/definition 93/123/89;
 // all late 122; all late with branch-owned next 116, with late palette 116. All restored.
+// DH round 257: Reused flag/mode carriers in parameter/word/long domains, eight non-original pairs
+// 92/92/160/160/158/92/92/92. Every carrier and body restored; parent registers and persistent zero
+// remain.
 // @retail 0x204ec0
 void function_204ec0(s_squad_iterator *iterator, short squad_index, short flags, short mode)
 {

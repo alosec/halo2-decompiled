@@ -118,8 +118,8 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 							vector3f displacement;
 							displacement.j = matrix.position.y - moved.y;
 							displacement.k = matrix.position.z - moved.z;
-							displacement.i = matrix.position.x - moved.x;
 							real scale = (real)g_510c54->field_2_3;
+							displacement.i = matrix.position.x - moved.x;
 							vector3f change = {
 								displacement.i * scale,
 								displacement.j * scale,
@@ -142,8 +142,8 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 	return result;
 }
 
-// score 74 (was 88): Frame 0x88 agrees; the second point-velocity first linear add uses a register
-// copy and memory add instead of a direct load/add. The nonrotating scale/add schedule remains, three bytes long.
+// score 30 (was 74): Frame 0x88 agrees; the second point-velocity first linear add uses a register
+// copy and memory add instead of a direct load/add. The nonrotating scale/add schedule remains at retail length.
 // Earlier: point-velocity and nonrotating scale/add
 // Frame 0x88 and first point-velocity agree; second point-velocity and nonrotating schedules remain.
 // Frame 0x88 and first point block agree; second point inputs, nonrotating products and five extra bytes remain.
@@ -216,6 +216,13 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // clock: first staged 74 (plain-confirmed, kept), second staged 186, first direct 89, second direct 179.
 // Displacement orders on the kept graph ijk/ikj/jik/kij/kji 74/73/74/73/73; the one-point forms restored;
 // a nonrotating velocity receiver 164.
+// Round 418 on the first-staged graph: second complete point result 179; clock before
+// all displacement producers / after j / after k 68/31/30; second complete result with
+// those clock positions 171/175/175, with the first clock and shared change scale 171.
+// Shared change scale on the after-k/after-j clocks 30/31; final delta scale 30;
+// both scales on the after-k clock 173. Only the after-k clock read is kept, plain 30;
+// all helpers and output boundaries restored. Frame and retail length agree; the
+// second point's first linear add and nonrotating SIMD scheduling remain.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {
