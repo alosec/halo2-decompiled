@@ -418,6 +418,11 @@ PRIVATE inline long polygon_round_19f(real value)
 // Round 415: ordinary variant/body cursor step with native current/previous vertices and
 // top-first declarations, seven subsets 429/416/396/432/429/416/396; all with CRT input copies 396.
 // Both matched callers lose two in every trial; complete executable body restored.
+// Round 122 (fast): retail also inlines 0x1ccb0(59)/0x1cd90 here (both in an /Ob1 contributor file; inline
+// declarations here 379). Ours keeps &vertices[index].y in EBP, so the step and fade denominator lose retail's EBP and
+// perimeter slot. uv loop indexing the block array each pass 374 (count in the test 374); fade if/else 436; inner
+// radius at its use 430; on the uv form: bottom by fields 374, bottom right after the index 375 (step in EBP,
+// pointer spilled instead), edge with one cast 374, top from the vertex 377, top.z assigned 375.
 // @retail 0x19f680
 void function_19f680(long tag, long group, long pass, long variant, void *context,
     point2f const *vertices, long count, point3f const *center, real radius,
