@@ -326,6 +326,10 @@ void function_125a90(long value);
 // decisions 115/110/168/177; existing fully inlined iterator with the same four forms
 // 115/110/168/177. Original traversal restored; the early policy load, ESI multiply
 // and special/remove/ordinary/keep ordering remain.
+// Lane 14 r9: the join as `if (remove) {removal} else keep` 51 (kind arm, keep, then the special arm and
+// removal after the loop step); every action written in its own arm (no flag) 110; the flag declared
+// before the element 47 (same code); the kind tests joined with && 47, plus the flipped join 51; the
+// special arm as `remove = type == 0x26 ? !a : false` 47.
 // Round 95 (one-file harness with 0x221810 pinned out of line; aligned 23 = 47 here): ours ends
 // the kind arm with a jump into the special arm's `je` (tail merge), so the kind arm is the
 // fall-through; that order survives the special arm cut down to `remove = false`, the arms

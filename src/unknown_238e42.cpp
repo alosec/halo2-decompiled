@@ -353,7 +353,29 @@ extern long g_51ec0c;
 
 /* joins the friend's game (mode 1 to 4: how a squad already formed comes
    along) */
-// score 80 (was 80): frame 0x14 agrees; only the placement differs (aligned, 6 instructions): the
+// score 80 (was 80): only the placement differs (aligned, 6 instructions): the state 6-8 and
+// mode-not-1 call blocks follow the mode-one branch, where retail emits them after the mode-3 window
+// block, next to the 0x2398a0 call; the longer jumps make the body twelve bytes short. Frame 0x14
+// agrees. --fast builds this one differently unless its callees are listed.
+// Tried: earlier join-mode widths and session-record forms excluded; state ranges 125; cold range
+// first 99; availability gate 126; common switch exits 80; later join-type lifetime 155; timestamp
+// workspace 80; gate/common exits 126; ranges/lifetime 137; cold cases first 80; state nine first
+// 80; entry join result 96; shared player gate 104; leave from join result 123; positive title gate
+// 101; zero-time initializer 80; query declarations first 80; native/numeric mode switches 116/116;
+// mode-one rejection first 81; leave/screen mode first 79/112; screen-first mode switch 116;
+// non-three state outcome first 95; invitation test outcome 103; leave code written in both branches
+// 104; return/break in every combination 80; in-session chain first 80 (same code); case locals at
+// function scope 80; rejection as a final else-if 80 (same code); a one-point leave-first gain
+// (rejected); explicit unsupported-state exit, actual squad predicate and both 80/80/80; leave action
+// from original inputs with neither/either/both boundaries 104 each at 479 bytes; precomputed
+// complete leave expression 147 at 495 bytes; leave code written in both mode arms 104 (479 bytes,
+// merged into the mode-one arm); explicit else around the mode-not-one call 80; squad test merged
+// into the first condition 80; join part after the switch with cases 6-8 and default returning 80
+// (same layout); the last two mode arms swapped (mode != 3 first) 78 (wrong arm order, aligned
+// worse); the leave label in the mode-one arm (the mode-4 arm jumping to it) 81; the goto after the
+// mode-one test 80; the two session arms in the other order 80; the in-this-title test inverted (its
+// part first) 101 (475 bytes); the global store before the goto in the mode-one arm 80.
+// frame 0x14 agrees; only the placement differs (aligned, 6 instructions): the
 // state 6-8 and mode-not-1 call blocks follow the mode-one branch, where retail emits them after the
 // mode-3 window block; the longer jumps make the body twelve bytes short. Our compiler places pending
 // call-and-leave blocks first when a straight-line run ends (compile-only probe), so retail's two

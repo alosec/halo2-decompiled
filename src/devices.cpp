@@ -899,6 +899,16 @@ bool function_108530(long device_index, long name)
 /* starts a motion from the current position toward a target (both pinned to
    0..1) over a duration: accelerating from a velocity for the acceleration
    time, cruising, and decelerating to a final velocity */
+// score 121 (was 121): retail passes the initial velocity in xmm6 (one register for its whole
+// life, so ret 0x14) and keeps the ramp-down time in its stack slot throughout; ours keeps the
+// ramp-down time in xmm1 through the clamps and loads the initial velocity late (ret 0x18).
+// The cruise velocity stored into the motion in each branch (no velocity local) gives retail's
+// acceleration and deceleration blocks exactly, but alone 134. Tried (with both callers): that
+// tail with the position pinned after the target 102 (target then passed in a register; 0x108670
+// 13 -> 28); cruise time first, then the stores, then the halves 116 (ramp-down then passed in a
+// register); stores before the cruise and half times 144; if-statement clamps, no remaining local,
+// fresh distance, every order of the denominator terms and the initial velocity at every parameter
+// position never give the initial velocity a register (about 2000 forms screened).
 // @retail 0x107ab0
 void device_motion_start(s_device_motion *motion, real target, real duration, real ramp_up_time,
 	real ramp_down_time, real final_velocity, real initial_velocity)

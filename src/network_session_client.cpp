@@ -580,7 +580,27 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 	return result;
 }
 
-// score 55 (was 55): aligned frame agrees; the code is retail's apart from the colours: retail takes
+// score 55 (was 55): aligned frame agrees. The stored machine/player pointers preset to NULL and
+// set when the session is live and has them (0x6ec80's form), with the summary from the existing
+// getter, give retail's test schedule at 49 (not kept: a gain of 6, and it adds the live-state
+// test). Left: the colours. Retail takes the session in
+// EBX (its callers copy it there) and gives the loop temporaries ESI/EDI; ours keeps the session in
+// ESI (a first pass with the session on the stack and a harness build give ESI for every body tried,
+// even with either loop removed; unrelated code doesn't move it).
+// Tried: countdown native object copy 55; native address copy 55; machine object reference 55;
+// machine value copy 55; short machine alias 55; immutable member count 55; machine counter names 55;
+// top-tested countdown 114; member count read before the clears 129; summary set after the clears
+// 129; machine pointer before the clears 55; zero initialisers for the two buffers 151; summary as a
+// conditional 131; as a session method 55; the address copy as a plain for loop 114 (477 bytes);
+// bit-first mask test 55; nested mask and slot tests 55; short player index 128 (492 bytes); member
+// copy address cursor 59; walked output pointer 58; player buffer declared first 55; summary declared
+// at function scope 63; existing setter: void result, guard exits, test-derived result and direct
+// success 55 each; native result 146 (out of line); shared live predicate, native receiver and input
+// order 55 each; force-inline native/original result 55/55. With the stored pair: untyped pair 49;
+// result false in an else 153; summary NULL in an else 131; early false return 143; players cleared
+// first / declared and cleared first 53/53; result set at the top of the live block 98; player index
+// declared with the buffers 49.
+// aligned frame agrees; the code is retail's apart from the colours: retail takes
 // the session in EBX (its callers copy it there) and gives the loop temporaries ESI/EDI; ours keeps the
 // session in ESI. Deleting the whole tail (live test, 0x4994 setter, machine limit) moves it to EBX
 // (diagnostic 244, 321 bytes), deleting either setter alone does not; a /Gd first pass and a harness

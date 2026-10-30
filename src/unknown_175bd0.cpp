@@ -2343,6 +2343,9 @@ event_done:
 // (src/unknown_0bad50.cpp, avoid-listed this round). Round 99: from the 0x1794a0 call to the end
 // ours and retail agree instruction for instruction; every difference is the cached object index
 // across 0xbadc0 (no new forms: its file was avoid-listed again).
+// Round 95: root index (0xbaf80's result) as 0x1794a0's first argument 197 (585 bytes; the index
+// stays in ESI); location stores cluster first 63, with the root index 197; chained NONE location
+// stores 63, with the root index 197. Original body restored.
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {
