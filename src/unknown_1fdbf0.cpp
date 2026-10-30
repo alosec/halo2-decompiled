@@ -341,6 +341,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // direction scalars 74, with staged axis 81; complete direction value with staged
 // turn/both 196/219; both vector inputs as complete scalars 74. All restored;
 // final axis/direction carriers and the copied parallel product remain.
+// Round 100: the existing cross-file forced-inline rotation helper (vector, axis, 0.5, 0.866) 69;
+// identical code at 43: axis-first products in the j/k rows, axis declared before forward, the
+// parallel part through dot3f, the i-row cross term computed last (the matched 0x11d3b0 colours
+// its axis the way ours does).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

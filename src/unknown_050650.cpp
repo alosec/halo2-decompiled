@@ -1104,6 +1104,10 @@ struct s_actor_looking_structure_view
 // code); one extra float tuple at entry/at the loop top 48/48 (only the selected-direction sum rotates);
 // the axis read once through a local before the loop 70; fraction default before the copy 23; horizontal
 // forward as an initializer 199; forceinline in-place helper 23.
+// Round 100: score as dot3f(&forward, &directions[i]) 33 (moves the rotation's axis loads ahead of the
+// copy, as retail, but flips other product operands); the existing cross-file rotation helpers with
+// sine/cosine arguments (cross-first scalars / dot3f with a cross vector) 146/140; the candidate array
+// declared before forward 23; forward copied member-wise 199.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {

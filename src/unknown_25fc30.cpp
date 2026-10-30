@@ -433,6 +433,11 @@ void __stdcall function_25dd50(
 // Round 39: cover-first ownership with separate geometry/transform guards and positive output
 // scope, all eight combinations 197 at 837 bytes; trace-first positive output alone/transform
 // guards 38/38, with separate geometry guard/both 149/149 at 836 bytes. All original source restored.
+// Round 100: the failed-facing arm falling into a shared `side = position->side` read after the
+// if/else 275 (the arm lands after the cover arm as in retail, but the context moves to EBX); the
+// side read after the if/else with both continues 38; the facing dot with the normal first 38; the
+// side-finding call in its own `if` after the face tests 149 (836 bytes); the face flags through
+// s_pathfinding_data's edge array 42.
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,

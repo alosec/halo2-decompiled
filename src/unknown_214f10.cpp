@@ -79,73 +79,13 @@ PRIVATE __forceinline long function_214f83(char const *arg_0, s_file_handle *arg
 // tested through a resize helper's pointer parameter 55; `success = false; if (valid) success =
 // true;` 50 (store sunk into the branch) or with the file copy 53; `success = opened` from a
 // long or a long cast 55/55.
-// argument, builds the success byte with `xor edx, edx; setne dl` and re-reads it from memory
-// before the test, as a volatile flag would; ours tests a register copy. Forms tried: full-width
-// open result 42; first/second/both waits and shared opener/combined helpers 55; branched success
-// 50; local role names 55; native/early/named result and late success 42; typed open outcome 42;
-// typed success update/complete outcomes 44/42; early outcome home 42; positive outcome/byte
-// admission 43/55; initialized success output/byte declaration order 83/42; long ordinal 111;
-// word/byte ordinals 42/42; path/status lifetimes 42/42; long ordinal with all workspaces/failure
-// continue 111/111; short endpoint equality 42; handle test and call on the array element with
-// the long result 44; element copy inside the branch 42; element pointer for open/test/call with
-// the long result 44, with a bool result 55; handle tested again at the branch 53; resize
-// inline/outline/both 42/42/42; single open/resize/both wait admission 60/52/63; native handle
-// value and branch-set full-width open result 42/42; opener void/native result 42/42; ordinary
-// inline 229; task aggregate 84; const/early file 42/42; unsigned/word status 42/42; existing
-// wait helper for both waits 42 (kept); plain bool success 55; success set inside a test 53;
-// ternary/initialized declaration/array element 55/55/55. Diagnostic only: a volatile success
-// flag 48-50; with the array element passed directly and the handle test in an inline helper
-// returning bool (or a long cast) it matches; without the volatile flag no form re-reads it.
-// handle ECX and the success-byte store and memory re-test differ; retail re-tests the
-// byte the way a volatile flag would (with one, everything after the open matches but retail's `xor edx,
-// edx`: 48, not kept). Full-width open result 42; first/second/both waits and shared opener/combined
-// helpers 55; branched success 50; local role names 55; native/early/named result and late success 42;
-// typed open outcome 42; typed success update/complete outcomes 44/42; early outcome home 42; positive
-// outcome/byte admission 43/55; initialized success output/byte declaration order 83/42; long ordinal 111;
-// word/byte ordinals 42/42; path/status lifetimes 42/42; long ordinal with all workspaces/failure continue
-// 111/111; short endpoint equality 42; handle test and call on the array element with the long result 44;
-// element copy inside the branch 42; element pointer for open/test/call with the long result 44, with a
-// bool result 55; handle tested again at the branch 53. native/early/named result and late success 42.
-// Resize inline/outline/both 42/42/42; single open/resize/both wait admission 60/52/63; native handle value
-// and branch-set full-width open result 42/42. Opener void/native result 42/42; ordinary inline 229; task
-// aggregate 84; const/early file 42/42; unsigned/word status 42/42. initialized success output/byte
-// declaration order 83/42. Long ordinal 111; short endpoint equality 42. Round 74 (all 351 bytes): the
-// plain `success = handle != INVALID; if (success)` 55; success at function scope 55; `if (!success)
-// continue;` 55; long result tested through success 55; success cleared then set inside the open branch 53.
-// Only a volatile success byte (not kept) gives retail's store-and-reload.
-// handle ECX and the success-byte store and memory re-test differ; retail
-// re-tests the byte the way a volatile flag would (with one, everything after the open
-// matches but retail's `xor edx, edx`: 48, not kept). Full-width open result 42;
-// first/second/both waits and shared opener/combined helpers 55; branched success 50;
-// local role names 55; native/early/named result and late success 42; typed open outcome 42;
-// admission 43/55; initialized success output/byte declaration order 83/42; long ordinal
-// 111; word/byte ordinals 42/42; path/status lifetimes 42/42; long ordinal with all
-// workspaces/failure continue 111/111; short endpoint equality 42; handle test and call on
-// the array element with the long result 44; element copy inside the branch 42; element
-// pointer for open/test/call with the long result 44, with a bool result 55; handle tested
-// again at the branch 53.
-// handle register, success-byte reload and resize/wait scheduling differ.
-// Full-width open result 42; first/second/both waits and shared opener/combined helpers 55;
-// branched success 50; local role names 55; native/early/named result and late success 42.
-// Earlier: handle ECX and published success-byte reload remain.
-// Resize inline/outline/both 42/42/42; single open/resize/both wait admission 60/52/63;
-// native handle value and branch-set full-width open result 42/42.
-// handle/status publication and the second wait still differ.
-// Opener void/native result 42/42; ordinary inline 229; task aggregate 84;
-// const/early file 42/42; unsigned/word status 42/42.
-// typed open outcome 42; typed success update/complete outcomes 44/42;
-// early outcome home 42; positive outcome/byte admission 43/55;
-// initialized success output/byte declaration order 83/42.
-// Earlier: Handle ECX and success-byte reload remain unresolved. Long ordinal 111;
-// word/byte ordinals 42/42; path/status lifetimes 42/42; long ordinal with all
-// workspaces/failure continue 111/111; short endpoint equality 42.
-// Round 181: memset-owned share/flags/both/create-path/share+path/flags+path/all zeros
-// 40/38/107/36/105/107/112; 64-bit outcome 50. Signed-byte/word/unsigned/64-bit outcomes on omitted
-// flags 69/38/38/71, on omitted create-path 67/36/36/69. Six-point best rejected; original initializer
-// and handle/status flow restored.
-// Only a volatile success byte (not kept) gives retail's store-and-reload. Round 158 (all 55 at 351
-// bytes, register test): inline bool handle helper by pointer/by value; char success with a bool
-// pointer argument; long result stored with a bool cast.
+// Round 158 (all 55 at 351 bytes, register test): an inline bool handle helper by pointer/by
+// value; char success with a bool pointer argument; a long result stored with a bool cast.
+// Diagnostic only: with a volatile success flag everything after the open matches but retail's
+// `xor edx, edx` (48).
+// Round 100: the opener helper also waiting and writing success through a pointer parameter 49
+// (still forwarded); success from the array element before the file copy 55; `!(handle ==
+// INVALID)` 55; `if (opened != 0)` 42 (identical); the handle compared again at the branch 53.
 // @retail 0x214f80
 void game_state_cache_files_open(void)
 {
