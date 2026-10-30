@@ -1800,7 +1800,7 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 	return function_26a780(clump, &candidate);
 }
 
-// score 3 (was 128): the array cursor LEA precedes the initial JLE/MOVZX instead of following them.
+// score 3 (was 3): the array cursor LEA precedes the initial JLE/MOVZX instead of following them.
 // Earlier: retail caches the generation in ebx (reloaded after each mark store and call) and reloads the prop pool at each use; ours caches the prop pool in ebx and loads the generation at each use.
 // frame 0xd8; entry generation scheduling, child-next register and count/end traversal differ; fresh destination head 171f; short plus fresh head 167 plain; short/end 216f; typed object views 192f; delayed source base 219f; source first 211f; masked slots 198f.
 // Round 280: remaining-count traversal 128 plain; current-child handle 164; collection write cursor 172; array scope 167; early active flag 199.
@@ -1825,6 +1825,9 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 // remaining 80/3/80/3. Shared members, source timing, mark slots and short latch kept,
 // 3 plain at 737/737 bytes; counter/cursor declaration placements, const cursor and
 // joint copy-role names 3 each. All other forms restored.
+// Round 304: collected-count consumption/postdecrement 3/3; cursor consumption alone/with count 81/81;
+// word/long collection 4/12; populated-end traversal 85; collector write cursor 32.
+// Original body restored; cursor LEA still precedes the positive-count branch and extension.
 // @retail 0x269580
 void function_269580(long destination_index, long source_index)
 {
