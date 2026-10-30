@@ -209,6 +209,9 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 // Common-result forms require a match; all original producers and body restored.
 // Round 407: completed choice-duplicate ordinal long/dword/short/word, each with
 // original/repeated-tag snapshot on the short-query graph 948/948/948/948/947/947/934/934. All restored.
+// Round 415: existing hoisted-bound first/second pool scans and shared salted-index
+// producer, seven subsets 886/886/886/924/924/924/924; all with forced datum getter 924.
+// Original scanners, identifier expressions, getter and complete body restored.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)
