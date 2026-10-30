@@ -1390,6 +1390,9 @@ PRIVATE __forceinline bool function_274a51(long arg_0, s_object_seat const *arg_
 // Round 298: native selected-seat copies at selection/object lookup/after leave/winning
 // update 125/124/80/168; library-copy counterparts 125/124/80/168. All restored;
 // selected-seat retention does not recover the initial candidate schedule or request homes.
+// Round 433: Complementary walk decision bool/byte/short/long at entry
+// 230/230/234/233, at the selected seat 99/99/91/85. All restored;
+// real decision polarity/lifetime does not recover the request registers or seat loads.
 // @retail 0x274a50
 void function_274a50(long ai_index, long vehicle_index, long filter_range, bool load)
 {
@@ -2560,6 +2563,11 @@ struct s_scenario_scripting_view
 // Round 298: joint best-distance/index entry, outer admission, pre-actor and post-actor
 // lifetimes 103/99/95/95; with loop-local short counter 103/99/94/94. All restored;
 // actor/set/counter homes and delayed data observation remain.
+// Round 433: Encoded unsigned-short winner 93; double storage of real distances alone/with
+// encoded winner 149/149; encoded winner with loop-owned short counter 87; double storage
+// with loop counter/with encoded winner and counter/plus existing self-product 149/149/149;
+// signed long winner with double storage and loop counter 152. All restored; actor/counter
+// homes and the delayed scripting-data observation remain.
 // @retail 0x2769d0
 void function_2769d0(long point_reference)
 {

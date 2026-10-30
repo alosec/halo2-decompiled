@@ -130,6 +130,9 @@
 // Round 213: existing staged cross for first/final special view and paired projection
 // families, seven subsets, 581 each; all with independent second wave displacement 656.
 // Original body restored; frame 0x58/0x60 and shape/basis/wave homes remain.
+// Round 433: Exhaustive reciprocal result with entry shapes/source case order, four forms
+// 611/678/611/678; single denominator counterparts 600/696/600/696. All restored;
+// the live-through-wave inverse default is not the missing frame cause.
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -514,6 +517,9 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Round 213: existing staged side/normal/both products 615 each; each with complete
 // paired side offset 630, plus shared normal scales 630/630. Paired offset shrinks the
 // frame to 0xa8 and length to 2584. Original 0xac-frame body restored; carriers/layout remain.
+// Round 433: Independent transition endpoints/shared camera displacement/both 615 each;
+// definition observed at every use alone/with either/with both 626 each, all plus source
+// observations 634. All restored; native phase receivers do not recover the early carriers.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {
