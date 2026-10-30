@@ -954,24 +954,20 @@ real function_21f650(long channel_index, long mode);
 
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
-// score 2 (was 42): only function_219290's two arguments differ: they load group-first (retail
-// index-first), BLOCKED-BY 0x219290 (a contributor's matched function; its parameters swapped would fix
-// it, and caller 0x21c400 calls the present order). Naming the voice's chunk (released,
-// then the queued one requested) fixed the rest. Tried: a function-wide channel_index local 113; the last
-// block's locals folded into one expression 42; elapsed_time read into a local before the rate call 42; a
-// stream pointer for the last state test 42; the table pointer declared at the outer scope 42; a named
-// rate 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
-// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42.
-// function_219290's two arguments load group-first (retail index-first; its
-// parameters swapped would fix it, but contributor caller 0x21c400 calls the present order), one
-// store sits after the permutation copy, the second release hoists the chunk-table load, and the
-// last block swaps ecx/edx with the post-call SOUND_SYSTEM load in edx (retail eax). Tried: a
-// function-wide channel_index local 113; the last block's locals folded into one expression 42;
-// elapsed_time read into a local before the rate call 42; a stream pointer for the last state
-// test 42; the table pointer declared at the outer scope 42.
-// Round 181: per-use chunk table 42; retained chunk base 85; per-use voice array 180; native
-// loaded-field comparison 66; early queued-pointer clear 42; exact-size transfer memcpy 42;
-// queued/current permutation lifetimes 74/102. EAX global-load allocation remains.
+// score 2 (was 2): only function_219290's two arguments differ: they load group-first (retail
+// index-first). BLOCKED-BY 0x219290 (a contributor's matched function): with its parameters declared
+// (group, index) at the definition and both calls, this function and 0x219290 both match; contributor
+// caller 0x21c400 calls the present order. Naming the voice's chunk (released, then the queued one
+// requested) fixed the rest. Tried: a function-wide channel_index local 113; the last block's locals
+// folded into one expression 42; elapsed_time read into a local before the rate call 42; a stream
+// pointer for the last state test 42; the table pointer declared at the outer scope 42; a named rate
+// 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
+// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42; per-use chunk
+// table 42; retained chunk base 85; per-use voice array 180; native loaded-field comparison 66; early
+// queued-pointer clear 42; exact-size transfer memcpy 42; queued/current permutation lifetimes 74/102;
+// a named chunk index for the call 2; the call result in a short local 2; a group local 2; the release
+// argument written in place 2; one permutation local for the chunk and the call 104; the test in a
+// bool local 2.
 // @retail 0x12a450
 void sound_voice_update_chunks(short voice_index)
 {

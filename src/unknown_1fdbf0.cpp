@@ -161,20 +161,6 @@ struct s_aim_definition
 	dword flags;
 };
 
-// score 41 (was 41): the target index stays in EAX where retail keeps it in EBX, so
-// the moving object header's address is recomputed and its type byte is read into BL.
-// object_index assigned before the header lookup 43 (retail's length and memory type
-// compare); the same with the header from target_index 43; passing object_index to
-// 0x118e80 43; object_header_get 43; flags & 0x100 47; the target field re-read 44,
-// passing object_index then 58. The fallback's callee 0xcba50 is unmatched. Round 76: the
-// field read for the NONE test, object_index and the call (no target local) 44 (retail's
-// `mov edx, ebx; mov ecx, edx` copy, the value in EAX not EBX); object_index first with the
-// call re-reading the field 43; target declared at the top 43; forward pointer local for the
-// fallback copy 48 (retail's source/destination registers, first load folded); member-wise
-// fallback copy 46.
-// passing object_index then 58. The fallback's callee 0xcba50 is unmatched.
-// Existing actor/object lookup force-inline declarations, singly/together 41 each;
-// native dword flag Boolean/direct 41/47; word Boolean/direct and byte Boolean 53 each.
 // @retail 0x1fe120
 void function_1fe120(long actor_index, vector3f *direction)
 {
@@ -182,24 +168,23 @@ void function_1fe120(long actor_index, vector3f *direction)
 	long object_index = actor->unit_index;
 	if (actor->unknown268)
 	{
-		long target_index = actor->unknown274;
-		if (target_index != NONE)
+		if (actor->unknown274 != NONE)
 		{
-			s_moving_object_header *header = &((s_moving_object_header *)g_4e0300->data)[target_index & 0xffff];
-			object_index = target_index;
+			object_index = actor->unknown274;
+			s_object_header_view *header = object_header_get(actor->unknown274);
 			if (header->type == 1)
 			{
 				s_moving_object *object = (s_moving_object *)header->object;
 				s_aim_definition *definition = (s_aim_definition *)g_4e3b44[object->tag_index & 0xffff].bytes;
 				if ((bool)((definition->flags >> 8) & 1))
 				{
-					function_118e80(target_index, direction);
+					function_118e80(actor->unknown274, direction);
 					return;
 				}
 			}
 		}
 	}
-	*direction = *(vector3f *)((byte *)moving_object_get(object_index) + 0x168);
+	*direction = *(vector3f *)(object_header_get(object_index)->object + 0x168);
 	function_cba50(object_index, direction, false);
 }
 

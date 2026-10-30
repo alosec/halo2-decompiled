@@ -1197,6 +1197,10 @@ long function_1931a0(long count, s_surface_description *variant);
 // Further forms (fast control 17): ordinary summary/elapsed/both stores 19/17/19;
 // elapsed accumulator/named expression 17/17; ratings at entry/before time 17/17;
 // complete range-state observations 17. Original body and inherited qualifications restored.
+// Round 114: BLOCKED-BY 0x7e210 for the session push and the elapsed store (a register-session stand-in
+// for 0x7e210 gives retail's order there, fast 17 -> 10). On that stand-in: plain summary stores 19;
+// minimum after/before the capacity 10/10; named capacity 56; player-count store later 23; minimum at
+// each use 10; capacity ternary 54. The group/add masks still take EDX/ECX (retail EAX/EDX).
 // @retail 0x73530
 void function_73530(c_helper_a *helper, void *description)
 {
