@@ -112,6 +112,12 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 // (`a = b = true`) 36; first test `>= 2` with `> 0` 36 (2 hoisted from entry, 1 no longer hoisted:
 // five byte stores alone do not hoist it); the range test inverted with the view in its arm 32; view-arm
 // stores swapped 32; `> 0` for the lower bound alone 33.
+// Round 96 (one-file LTCG harness with src/unknown_25d690.cpp, reproduces the build): any fifth use of
+// short 2 (a diagnostic extra field store in either arm) gives retail's whole allocation (ESI = 2 after the
+// node lookup, the view pool base folded); so retail's source has a fifth use that leaves no instruction.
+// Range bounds reversed 33 (harness positional 23); upper bound `< 3` 27; first test `>= 2` 22 (two
+// instructions longer); a two-use `short type` local 22; then-arm 41c/420/488 order 22; view-arm stores
+// swapped 22; view-arm `41c = 420 = 2` 22 (harness positional; base 22).
 // @retail 0x1b21f0
 void __stdcall function_1b21f0(long actor_index, s_slot *slot)
 {

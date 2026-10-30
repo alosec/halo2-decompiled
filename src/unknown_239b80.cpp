@@ -191,6 +191,11 @@ short function_239e50(short count, point2f const *points, short *indices);
 // Bounded geometric enum with original/count-first/terminal/zero-first graph; independent-point
 // word/enum/count-first/terminal graph; first-point memcpy/memmove 86/94/86/86/54/58/99/58/42/99.
 // Original executable source restored.
+// Round 96 (one-file LTCG harness, reproduces the build; aligned 35, positional 42): 89 combinations of five
+// scale spellings in normalize2d, three dot_product2d operand orders, three declaration orders of first/line/
+// state and both loop-condition orders: 35/42 or worse (the swapped condition adds three instructions);
+// normalize2d with j read into a scalar first 42, both scalars 42, the reciprocal written at each scale 42,
+// j scaled first 42, an else arm setting the result to zero 42.
 // @retail 0x239b80
 short function_239b80(short count, point2f const *points)
 {
