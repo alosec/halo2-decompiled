@@ -1234,7 +1234,7 @@ bool function_26f360(s_path_settings const *settings, point3f const *start, poin
 bool function_26fe90(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point);
 bool function_26f990(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point);
 
-// score 202 (was 235): Frame 0xe4 agrees; actor/character registers, selector tests and target/direction homes still differ.
+// score 81 (was 235): Frame 0xe4 agrees; actor/character registers, selector tests and target/direction homes still differ.
 // Shared point difference 240; entry request reservation 236; both 242; initial if admission 226;
 // if admission plus shared difference 202 kept (1002 bytes); entry request plus if 228;
 // complete graph/role names 209/209. Ascending admission 226, with shared difference 202,
