@@ -233,6 +233,44 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // in a register where retail loads it into EDI and spills it, and the entries cursor is spilled at
 // once); a long count named at the block top 140 (29 aligned), before the `if` 165, as a short
 // before the `if` 177 (480 bytes), named after first 166.
+// takes cache_index in EDX (its caller 0x404b0 passes it there), multiplies it in place, reads the
+// count once as a short into AX (zero in ECX) and clears the globals before the loop; ours computes
+// the index in EAX and stores the table pointer later. Without the block pointer (count and entries
+// indexed at each use) the head is retail's (scaled index in EDX, spilled) and so is the loop tail,
+// but count lands in CX/EDX (retail AX/EAX, zero in ECX) and first stays in EAX where retail loads
+// it into EDI and spills it across the inline memcpy; the entries cursor is spilled at once.
+// Tried: indexed form 144 (count through the metadata view or the block, 492 bytes; aligned 30
+// against the block form's 55); entries indexed by the counter 164; separate cursor pointer 54;
+// with the current stored first 140; block pointer declared inside the if 151; index head with the
+// block pointer only for the loop 155; count read once into a short local 177 (480 bytes); the
+// block local renamed (records, zone) or taken as a reference 54; on the block form: each entry as
+// `&block->entries[n]` 146 (494 bytes), no first local 162; metadata pointer plus entry-table
+// expression and early index 154; shared-scale entries 159; direct metadata with early index 159;
+// const first 146; direct copy with late entries 163; first address direct/reference 163 each;
+// early selection 169. The two g_4c1a80 statements (the same field as g_4c1a48[2].flags) removed:
+// same code. On the indexed form: the cursor set after the selection with the copy source indexed
+// 164 (retail's loop, saves and reload at the join, but both parameters on the stack); the cursor
+// defined after the copy or set before the loop 164 (the scaled index takes EBP, both parameters on
+// the stack); one variable for first and the loop index 159-163 (retail's head exactly: index in
+// EDX, count in AX/EAX, zero in ECX, entries in EDX; the index then lives in EBP and mode is
+// spilled, where retail spills first and keeps mode in EBP), with entries after the copy 160, with
+// entries before it 163 (cache_index in EAX); `first + n` with `entries[n]` 158; first by a
+// chained assignment 140/158; current set from previous and first read back 140; the copy's
+// destination through the stored current 164; the loop index set before the selection 162 (cache
+// index in ECX); the selection as if/else or as the reversed ternary 164/164; selection, n/index,
+// cursor or first declared early 164 each; the cursor before the copy with one index variable 163;
+// the count in a short local read before the clears 164, for the guard, copy size and advance 177
+// (cache_index in ECX); entries declared before first 145; a for loop over n 144 (141 with the
+// chained first); entries pointer after the copy 164 (cache_index moves to the stack); no first
+// local (previous read for the copy and the loop index) 157 (count AX/EAX, zero ECX and first EDI
+// as retail, but the index arrives in EAX, the frame grows to 0x4c and previous is re-read); a long
+// count named at the block top 140 (aligned 29: count in AX/EAX as retail, index in ECX, zero EDX),
+// before the `if` 165, as a short before the `if` 177 (480 bytes), named after first 166. Round 41
+// (fast, indexed form): the named long count with one first/index variable 163; the short count
+// local with one first/index variable 112 (508 bytes but aligned 68); the field re-read for the
+// copy and advance with one first/index variable 163; with the named long count, entries declared
+// before first or before the count 140/140, the copy source indexed and entries set after the
+// advance 155. The block form stays the closest.
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {

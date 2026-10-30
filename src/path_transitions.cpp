@@ -473,6 +473,10 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
 // Earlier 278 (was 278): frame 0x40 agrees; early pathfinding EBX ownership and float scheduling differ.
 // entry root retention and floating-point scheduling differ;
 // result first 299; surface first 299; vector names 299; vector helper 299;
+// score 278 (was 278): frame 0x40 and length agree. Retail loads actor_index into EAX at entry (case
+// 5 tests it first) and so moves pathfinding into EBX (pushed at entry); ours loads actor_index in
+// case 5 and keeps pathfinding in EAX, which re-colours every case; paired-edge float/vector
+// scheduling also differs. Tried: result first 299; surface first 299; vector names 299; vector helper 299;
 // case order 300; separate vector declarations 299.
 // Round 24: trace-time state reload, mutable entry, both, coherent pathfinding/surface swap,
 // direct distance arguments and direct projected-origin 299 each; c/b/a/d pointer
@@ -499,6 +503,11 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
 // Round 434: parent value captured in paired/actor/trace cases 395/384/330; paired-actor/
 // paired-trace/actor-trace 421/399/388; all cases 421, all with native radius snapshot 420.
 // Parent records grow the frame to 0x44/0x4c/0x50; original field observations and body restored.
+// Round 41 (fast): actor_index declared first (every declaration and call) 278; the actor test
+// nested 278; projection terms in z, y, x order (both/one/other) 278; dot3f for both projections,
+// either argument order, 278 (identical code). Diagnostic only, reverted: actor_index read at entry
+// through a volatile cast gives retail's EBX entry (aligned 199 -> 134, masked 58 -> 39) but swaps
+// the EAX/ECX parameters (318, 1284 bytes); a plain entry copy is propagated away (280).
 // @retail 0x26f3f0
 bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
     s_type_c3b527 const *entry, long actor_index, s_type_f17a25 *state,
