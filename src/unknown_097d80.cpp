@@ -50,7 +50,11 @@ struct c_aggregate : c_child
 	void v8(long a, long b);
 
 };
-// score 85 (was 85): our frame is 0x8024 against retail's 0x8020 (retail packs the completion
+// score 85 (was 85): Completion-output home, ordinal dispatch and allocator reload remain. Cumulative boundaries with
+// carried total/direct table/local output/table cursor, original and ordinal dispatch, scored
+// 134/155, 140/157, 132/141, 142/157. Direct boundary outputs recover frame 0x8020 but lengthen
+// dispatch; original collection and cleanup restored.
+// Earlier: our frame is 0x8024 against retail's 0x8020 (retail packs the completion
 // output with two later spills), and the dispatch loop and one allocator reload still differ:
 // retail loads the global again for the release, into eax then edi.
 // Frame 0x8024 versus 0x8020, scalar output homes, dispatch ownership and allocator reload remain.

@@ -403,8 +403,10 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 	slot->request.amount = slot->request.amount * scale;
 	slot->flags |= 1;
 }
-
-// score 60 (was 60): dot/cross product operands, rotation xmm roles and
+// score 59 (was 59): Dot/cross operand ranks, rotation XMM roles and final scale reloads remain. Shared
+// axial/normal/tangent contribution vectors, masks 1/2/3/4/5/6/7, scored 105/97/94/63/109/72/92;
+// complete shared affine sum 85. Original helpers and body restored.
+// Earlier: dot/cross product operands, rotation xmm roles and
 // final component reloads still differ; executable tail is three bytes short.
 // Norm scalar 67; nested norm tests 64; early 2D cross 207; direction
 // copy loop 271; rotation/scale/both component loops 166/166/166;
@@ -416,7 +418,7 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // Timer rereads and long update 64; validity result and angle-phase scope 85;
 // forward snapshot 126; normal snapshot 119; entry sine/cosine 64;
 // both draws after normalizing the cross vector 174.
-// score 59 (was 64): every operand and term order of the 2D dot/cross and of the rotation's dot
+// Earlier: every operand and term order of the 2D dot/cross and of the rotation's dot
 // compiles alike; of the rotation's statement orders (axis components, projection, sine and
 // cosine) the written one is best, j/i/k 63; cosine first worse.
 // Round 112 (baseline 60): v declared before w 60; existing cross3f_staged for the up cross product 60,
