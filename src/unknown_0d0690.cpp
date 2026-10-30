@@ -1800,7 +1800,7 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
     point->weight[3] = dequantize16(source[4]);
 }
 
-// score 761 (was 782): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
+// score 761 (was 761): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
 // +0x24 versus +0x20, sample homes and material/magnitude expansion remain.
 // Earlier: Frame 0x90 agrees; result +0x3c versus +0x24, mesh +0x2c versus +0x20, and helper expansion
 // remain. Existing scalar clamp output pointer 811; weight loop 819; native sample table 819;
@@ -1880,6 +1880,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Complete captures with late-structure/early-model/both phases 761/803/761; early-structure
 // with original/early model 772/772; readonly late-structure/early-model/both 761/803/761.
 // Consistent reused UV and ordinal inputs at the natural structure phase kept, plain 761.
+// Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
+// 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
+// independent captures, mesh homes and status order restored.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

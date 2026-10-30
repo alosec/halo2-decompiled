@@ -366,7 +366,7 @@ static __forceinline void draw_element_24bda2(s_sprite_element *element, long le
 	function_235e5e(element, &from, &to, (alpha << 24) | 0xffffff, 0, 0);
 }
 
-// score 52 (was 89): coordinate homes and the shared draw schedule agree; dimension and edge XMM
+// score 52 (was 52): coordinate homes and the shared draw schedule agree; dimension and edge XMM
 // allocation and the zero/conversion order still differ.
 // Round 75: full draw helper 123; two-use base edges 123; ordered helper 68; delayed conversions 52;
 // short dimensions 154; direct source width 52; long dimensions 139; long width only 138; computed
@@ -378,6 +378,8 @@ static __forceinline void draw_element_24bda2(s_sprite_element *element, long le
 // Round 189 (on main's written-out form, 89): placement index at use 89; tag at use 155; both metadata
 // observations 163; byte alpha 98; short alpha 98; dword alpha 89; read-only metadata 89; both observations
 // with byte alpha 165.
+// Round 420: Shared draw-boundary dimensions short/long/real with short or long offsets, and short/long dimensions
+// with real offsets: eight forms, all 52. Original dimension reads and helper contract restored.
 // @retail 0x24bda2
 void c_widget::v12(long a)
 {
