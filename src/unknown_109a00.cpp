@@ -389,6 +389,11 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // Round 279: physics-array/count/both/index-list/array-list/count-list/all metadata
 // snapshots 247/135/247/169/247/171/247; all with existing center conversion 239.
 // Original search and center copy restored; entry registers and projection order remain.
+// Round 419: object record 112; physics record 112; object record/physics record 112; search body record
+// 112; object record/search body record 112; physics record/search body record 112; object record/physics
+// record/search body record 112; object record/physics record/search body record/existing center
+// conversion 149. Entry register pair, physics-record spill and center/projection scheduling remain.
+// Original body restored.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {

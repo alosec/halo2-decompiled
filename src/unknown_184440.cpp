@@ -182,6 +182,13 @@ __forceinline bool function_184448(long arg_0)
 }
 
 #pragma inline_depth(1)
+// score 977 (was 977): Frame 0x11d4 versus 0x11cc and scene/surface geometry homes remain.
+// Round 419: scene field observations 983; effect record reference 977; scene field observations/effect
+// record reference 983; surface record reference 977; scene field observations/surface record reference
+// 983; effect record reference/surface record reference 977; scene field observations/effect record
+// reference/surface record reference 983; scene field observations/effect record reference/surface record
+// reference/material record reference 989. Frame 0x11d4 versus 0x11cc and scene/surface geometry homes
+// remain. Original body restored.
 // @retail 0x184440
 void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, long arg_3)
 {

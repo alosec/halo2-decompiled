@@ -725,7 +725,7 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 	return success;
 }
 
-// score 115 (was 119): coefficient XMM roles, classification operands and projection staging still differ.
+// score 115 (was 115): coefficient XMM roles, classification operands and projection staging still differ.
 // Intersection/projected point setters 119/119; existing in-place vector scale 115; long/byte result 216/119.
 // Forward value copy 474; direct projected element 246; scaled direct element 247; separate scaled vector 115.
 // Second-plane-first 425; reuse first negated normal 463; indexed plane selection 375.
@@ -751,6 +751,12 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // rows 305/267/280/269; with existing component assignment for every normal negation
 // 306/301/174/285. All restored; original grouping, scale helper and guards retained; coefficient
 // preload and projection homes remain.
+// Round 419: complete near plane 496; complete far plane 460; complete near plane/complete far plane 564;
+// complete near plane/immutable completed planes 496; complete far plane/immutable completed planes 460;
+// complete near plane/complete far plane/immutable completed planes 564; complete near plane/complete far
+// plane/parallel full offset producers 567; complete near plane/complete far plane/immutable completed
+// planes/parallel full offset producers 567. Coefficient/zero XMM roles, classification operands and
+// projection staging remain. Original body restored.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {
