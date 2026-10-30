@@ -747,7 +747,7 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 PRIVATE long const g_44a200[] = { 0, 1, 2 };
 PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
-// score 30 (was 60): every remaining difference is a stack offset. Retail keeps the loop bool
+// score 30 (was 30): every remaining difference is a stack offset. Retail keeps the loop bool
 // in a dword-aligned unit (its low byte) between repeat_state and the listener; ours is a
 // one-byte home in the lowest unit, which shifts the lighter dwords by four and reorders the
 // heavier ones. Retail's order: sound flags, effect, entry offset, controller, state, index,
@@ -841,6 +841,10 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // with a ternary 77. Screens: renaming definition/repeat_state/tag_index moves no slot; initialising
 // repeat_state reorders several slots but the bool stays a byte; the looping state fetched through an
 // inlined helper with out-parameters leaves the frame unchanged.
+// Round 126 (fast, fast baseline 58 at 824 bytes; its callees build differently in the reduced image):
+// the 'snd!' case's three one-use locals written as direct reads 65 (827 bytes); with a named
+// sound-system pointer 65; the loop flag as `(flags & 0x10) != 0` 58; as a ternary 58; as a word
+// bitfield (the looping record's flags as a word of bits) 58.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

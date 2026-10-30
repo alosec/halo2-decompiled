@@ -108,6 +108,13 @@ struct s_spawn_scenario_23aea0
 // reference local, while loop, `<= 13`, zero-based ordinal, struct copy (not unrolled).
 // Screens show VC keeps an integer offset only when two different global symbols share the
 // induction, and then rebases it to start at 0; retail's starts at 0x18 (12 * type, not rebased).
+// Round 126 (real `--fast`): a zero-based loop over the twelve records (source from +0x180) 105; a named
+// `real const *` source indexed by type * 7 121; one twelve-byte record copy per type 257 (279 bytes, not
+// unrolled); the table pointer stored after the two scalar defaults 105; byte-offset destination 254 (278).
+// One-link LTCG screens (exact for this function, which calls nothing): a forceinline copy helper taking
+// the record pointer (2..13 or 0..11) gives the base code; an out-of-file copy function is not inlined into
+// this /Ob1 file even when its definition is `inline` (called). Retail's 12 * type offset with the table
+// address folded into the displacement looks like a loop strength-reduced over a register base.
 // @retail 0x23aea0
 void function_23aea0()
 {
