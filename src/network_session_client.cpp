@@ -580,7 +580,20 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 	return result;
 }
 
-// score 55 (was 55): aligned frame agrees; session ESI/EBX and loop-carrier rotation remain.
+// score 55 (was 55): aligned frame agrees; retail takes the session in EBX (its callers copy it
+// there) and gives the loop temporaries ESI/EDI; ours keeps the session in ESI. The session's use
+// weight decides it: without the tail (live/5dd0 test and the two setters) our build gives EBX
+// like retail (diagnostic 244, 321 bytes); without either setter alone it stays ESI (163/163).
+// Forms: countdown native object copy 55; native address copy 55; machine object reference 55;
+// machine value copy 55; short machine alias 55; immutable member count 55; machine counter
+// names 55; top-tested countdown 114; member count read before the clears 129; summary set after
+// the clears 129; machine pointer before the clears 55; zero initialisers for the two buffers 151;
+// summary as a conditional 131; as a session method 55; the address copy as a plain for loop 114
+// (477 bytes); bit-first mask test 55; nested mask and slot tests 55; short player-loop index 128;
+// address cursor in the copy loop 59; output pointer walked beside the player loop 58; player
+// buffer declared first 55; summary at function scope 63; limit helper as one `if` 55; named
+// player pointer 58; state macro for the tail's live test 221 (setters stop inlining).
+// aligned frame agrees; session ESI/EBX and loop-carrier rotation remain.
 // aligned frame agrees; session ESI/EBX and machine/player carriers differ.
 // Countdown native object copy 55; native address copy 55; machine object reference 55;
 // machine value copy 55; short machine alias 55; immutable member count 55;

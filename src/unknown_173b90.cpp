@@ -491,6 +491,13 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // both input copies on complete-product graph 170; shared translation add with row products 127.
 // Indexed definitions plus scale-first defaults with those six product graphs 103/117/103/141/153/116.
 // Entry/reload order and matrix/input product scheduling remain; original body retained.
+// Round 19: in the first rotation only row x differs (ours evaluates forward.i*x first, so x and z
+// take each other's XMM registers; rows y and z agree apart from them). The row x pair swapped in both
+// rotations 56 (identical: VC orders the products itself, by the function's tuple count); both
+// rotations through the existing in-place matrix_transform_174420 119, on the indexed form 121; on
+// this body the translation as `+=` 56, a named scale value at both scale sites 119 (1136 bytes), the
+// 0x107f0 mask named 55 (second rotation's register numbering only); on the indexed form with scale
+// first (117, every non-rotation difference fixed): `+=` 117, named scale value 121, named mask 117.
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
@@ -1150,6 +1157,10 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
 // Round 248: definition-getter inline/noinline/both declarations 213 each; with child
 // set/clear stores 219 each; noinline/both with child stores and native word bit five 316/316.
 // Complete getter declaration and body restored; frame agrees, early EDI/tag and child homes remain.
+// Round 411: Availability rejection to the common child tail, with original/reference-first/
+// separate-tag/group-first declarations 135/135/135/135; definition rejection with the
+// same four declaration graphs 135/135/135/135. Original nested body restored; tag/group
+// ownership, definition bit five and callback reloads remain.
 // Round 411: existing shared lookup alone/field flags/request/both 135/343/133/331;
 // with word bit five, alone/field flags/request/both 310/340/129/328. The 133 and 129
 // forms are below threshold and restored. Callback inline/noinline/both 125/135/125;
