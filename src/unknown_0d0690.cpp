@@ -69,6 +69,22 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // field 198; `strength = power + strength` 56; strength updated before the blend call 191; strength
 // declared before direction/color 59; named power local 171.
 // Earlier (93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// the frame, the sky/count homes, the trig temporaries and the color0 store match.
+// Left: the j and k direction adds load the direction where retail loads the contribution (the i add
+// matches with the double-typed sum); the entry strength is loaded, added and copied back where retail
+// adds it to the strength in place (`addss xmm7, [ebp + 0x10]`); 0x131c20's `&color` is formed in edi
+// and copied to ecx (retail ecx, then edi); and retail's collision test materialises a sete before its
+// branch. The strength add flips with the i add: every form that gives retail's i add gives the
+// loaded strength, and the earlier 93 form had the strength but not the i add.
+// Round 100 (on the 56 form): j/k sums without the double cast 56 (same code); the no-lights arm
+// first (`count <= 0`) 184 (all three adds as retail, strength still loaded; the arm moves ahead of
+// the loop); the zero-vector start copied field by field 198 (all adds as retail, the copy becomes
+// SSE moves); `strength = power + strength` 56; strength updated before the blend call 191;
+// strength declared first 59; a named power local for the test, divide and add 171.
+// The direction adds follow first-assignment order: retail's form needs direction's fields assigned
+// before the contribution's. Earlier (93 form and before):
+// frame 0x8c and first trig/product sum agree; two x87 add operands, blend address ownership, strength-add destination/copy and collision normalization remain.
+// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
 // color0 store match. Left: the three x87 direction adds load the direction first where retail adds
 // it as the memory operand, 0x131c20's `&color` is formed in edi and copied to ecx where retail
 // forms it in ecx and then edi, and the collision test's sete. The fast check also leaves two of
@@ -76,6 +92,18 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // and the color0 store now match. Left: the three x87 direction adds load the direction first
 // (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
 // (retail ecx, then edi), and the collision test's sete.
+// the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the j and k x87 direction adds load the direction where retail loads the
+// contribution (the adds follow which field is first assigned earlier in source: assigning direction's
+// fields before the loop gives retail's adds), the strength is loaded, added and copied back where
+// retail adds the entry's strength to it in place (it flips with the i add), 0x131c20's `&color` is
+// formed in edi and copied to ecx where retail forms it in ecx and then edi, and the collision test's
+// sete (only a bool set in a test and tested afterwards gives it).
+// Round 99 (lane 6), on the double-cast adds: the cast on the other operand, on the direction, or
+// `+= (double)` 56 each (identical code); contribution as a real[3] 56; existing direction_from_angles
+// for the contribution 167 (the angles are loaded first); `strength = strength + entry` 56;
+// `(double)strength + entry` 210.
+// Earlier (round 93 form):
 // Round 69: `direction.i = contribution.i + direction.i` written out, or contribution declared
 // before direction, 93/93 (identical code: the add operands are reordered); the collision test as
 // an inline/forceinline bool helper (call && no-object) 93/93 (folded); the per-light count test as
@@ -1810,7 +1838,7 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
     point->weight[3] = dequantize16(source[4]);
 }
 
-// score 761 (was 782): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
+// score 761 (was 761): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
 // +0x24 versus +0x20, sample homes and material/magnitude expansion remain.
 // Earlier: Frame 0x90 agrees; result +0x3c versus +0x24, mesh +0x2c versus +0x20, and helper expansion
 // remain. Existing scalar clamp output pointer 811; weight loop 819; native sample table 819;
@@ -1890,6 +1918,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Complete captures with late-structure/early-model/both phases 761/803/761; early-structure
 // with original/early model 772/772; readonly late-structure/early-model/both 761/803/761.
 // Consistent reused UV and ordinal inputs at the natural structure phase kept, plain 761.
+// Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
+// 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
+// independent captures, mesh homes and status order restored.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

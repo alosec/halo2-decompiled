@@ -153,6 +153,9 @@ __declspec(noinline) short __stdcall function_1c8df0(short arg_3, short arg_2, p
 // point-lifetime form restored.
 // Round 206: Native short probe-mode contract with role-name/Boolean-primary/short-category subsets
 // [170, 170, 175, 175, 234, 234, 225, 225]. Original interface and body restored.
+// Round 302: Late classifier default-four/default-two/terminal-selection/full-selection
+// 176/172/170/170; with Boolean primary state 174/174/175/175. Original category
+// producers and primary state restored; frame 0x8c/0x94 and secondary tail remain.
 // @retail 0x1c8df0
 short __stdcall function_1c8df0(short arg_3, short arg_2, point3f const *arg_4, long arg_0,
  void const *arg_1, long arg_5, bool arg_6, bool arg_7, bool arg_8, long *arg_9)

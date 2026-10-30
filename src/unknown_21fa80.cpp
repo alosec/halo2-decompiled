@@ -136,6 +136,9 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 // Round 290: Existing linear/bit-pin/real-pin input reference subsets 542/532/536/532/542/532/536;
 // all with native gain value 536 (fast control 532, full 545). Original executable source
 // restored.
+// Round 218: Complete speaker library copy with seven native voice-output entry-scope subsets, then
+// all three role names, 529 each (reduced control 532, full 545). Three-count reductions rejected;
+// all native output scopes, copy and body restored.
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)
