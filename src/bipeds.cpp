@@ -498,6 +498,8 @@ void function_e5930(long unit_index);
 // Native destination word bit: Boolean branch 113; direct bit 127; direct Boolean 139;
 // negative Boolean admission 116. Byte destination bit: those four forms 121/131/131/121.
 // Best five-point gain is below threshold; original type and body restored.
+// Round 198: Complete destination flags in a local, stored once: byte 118, word 130,
+// dword/long 122, with either branch or conditional-value form. Original body restored.
 // @retail 0xde4c0
 void __stdcall function_de4c0(long arg_159e6d)
 {
@@ -3362,6 +3364,9 @@ void function_e3910(long arg_159e6d);
 // The native high word bitfield store is kept; all input/call expressions retain their original roles.
 // Round 190: conditional high-bit value in bool/byte/short/long 125/125/122/121;
 // bitwise canonical flags in those domains 144/144/147/152. Original immunity producer restored.
+// Round 198: Native payload flag bit with canonical bool/byte/word/long immunity
+// 98/98/101/96; with payload flag first 99/99/102/97. The two-count gain is dropped;
+// original payload layout, input expressions and biped flag/notification order restored.
 // @retail 0xe3700
 void function_e3700(long arg_159e6d)
 {
@@ -3982,6 +3987,8 @@ void function_e5790(long arg_159e6d);
 // interface orders 124/124/124/124. HELD: the handle-first order (handle, point, contact, knocked) changes the
 // call in 0xcaa60, which is in an open contributor PR (#858); apply it with both declarations and both calls
 // once #858 has landed or closed.
+// Round 198: Complete upward products, doubled extent and actual position-getter result:
+// seven subsets and immutable full form all 124; original body, interface and cap source restored.
 // @retail 0xe4a20
 void __stdcall function_e4a20(point3f const *point, long arg_159e6d, long object_index, bool knocked)
 {
