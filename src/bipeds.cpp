@@ -2306,18 +2306,16 @@ bool __stdcall function_10f430(long unit_index, long field_7c, long state_name, 
 
 /* gets a fallen biped up from its ragdoll: back to its getting-up
    animation, Havok asleep, at a clear spot facing along its slide */
-// score 4 (was 120): only the order of two stores differs. Retail clears unknown34b first and then the low three bits
-// of the second flags byte (`and byte [edi + 0x349], 0xf8`); ours emits the `and` first. Needed for the rest: the
-// first flag test in a `bool` local (retail loads it with the fallen test), the second test re-read through
-// BIPED_GET as `(bool)(x >> 29 & 1)` (a plain `>> 29 & 1` becomes `test dword [edi + 4], 0x20000000`), and
-// `facing = velocity` then `facing.k = 0`.
-// Tried: the flags byte as `*((byte *)&flags_348 + 1) &= 0xf8` after the store (86, 429 bytes); the store through
-// BIPED_GET (131); the two statements in either order (4 both).
+// The ragdoll state (+0x34b) goes through a pointer local: written as biped->unknown34b, the compiler sinks its
+// clearing store below the flags `and` (score 4). Also needed: the first flag test in a `bool` local (retail loads
+// it with the fallen test), the second test re-read through BIPED_GET as `(bool)(x >> 29 & 1)` (a plain `>> 29 & 1`
+// becomes `test dword [edi + 4], 0x20000000`), and `facing = velocity` then `facing.k = 0`.
 // @retail 0xe18d0
 void __stdcall function_e18d0(long arg_159e6d, bool place)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
-	bool fallen = biped->unknown34b == 1;
+	byte *ragdoll_state = &biped->unknown34b;
+	bool fallen = *ragdoll_state == 1;
 	bool flagged = (biped->object_flags >> 29) & 1;
 
 	if (flagged)
@@ -2335,11 +2333,11 @@ void __stdcall function_e18d0(long arg_159e6d, bool place)
 		function_ba350(arg_159e6d, blend);
 		function_10f430(arg_159e6d, 0x7000101, 0x7000101, 0x7000101, 0xd000042, 0.0f, false, 0x210);
 	}
-	biped->unknown34b = 0;
+	*ragdoll_state = 0;
 	biped->flags_348 &= 0xf8ff;
 	function_b9b90(arg_159e6d, false);
 	function_1c3770(arg_159e6d, 0);
-	if (place && biped->unknown34b)
+	if (place && *ragdoll_state)
 	{
 		point3f center;
 		real height;
