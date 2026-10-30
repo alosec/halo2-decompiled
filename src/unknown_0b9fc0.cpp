@@ -686,7 +686,10 @@ struct s_component_property_view
 // Locals or const references for the value pointer or the component offset,
 // a volatile read of the parameters, the call inline in the test, early
 // returns and the havok_component_get form score 13 to 23; the 600 s
-// permutation run found no improvement.
+// permutation run found no improvement. Round 45: direct query result 26;
+// component declared before/after result 13/13; const component 13; value/key
+// through their own addresses 13/13; named validity 13; validity-initialized
+// result 23.
 // @retail 0x11bd60
 bool __stdcall function_11bd60(long object_index, long key, long value, long positive)
 {

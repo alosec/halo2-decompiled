@@ -467,7 +467,9 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // 60/60/60/60/59 (all four kept: they replace hand-written helper bodies); the final scale through
 // Round 114: rotation through slot fields at each use 80; axis as a local copy 120; rotation as an
 // inline (vector, axis, sine, cosine) helper 59; axis cross before the projection 66; complement
-// first in the projection 59.
+// first in the projection 59. Round 45: an inline declaration on the rotation helper 13;
+// scale/rotation/both declared earlier 13/13/13; descriptive scale/rotation names 13/13;
+// rotation declared before scale 13; sine/cosine declared earlier 13.
 // @retail 0x154df0
 void function_154df0(long index, s_speed_bounds *bounds, s_speed_slot *slot, vector3f *direction, real priority)
 {
