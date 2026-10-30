@@ -671,6 +671,12 @@ bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center,
 // prior-direction memcpy, and all seven nonempty combinations 675 each; complete memmove graph 779/2942
 // bytes. Geometry transfers canonicalize without recovering byte success, radius/pathfinding ownership or
 // scalar homes. Original body, helpers, copies and all five native forward indices restored.
+// Round 201: Existing search inline/default and stdcall 675; cdecl variants 680 and lose matched
+// 2c4030. Boolean success with inline/cdecl/stdcall 754/753/754. Existing actor getter, exact
+// shared magnitude, actual const actor record and all seven native producer combinations 675;
+// complete graph with Boolean success 754. Original body, includes, layout assertions and search
+// declaration restored. Reduced control 2c39f0 already differs in the unchanged preview; no full-
+// image loss accepted.
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,
