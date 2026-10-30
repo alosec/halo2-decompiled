@@ -1993,6 +1993,12 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 // conversion and clamp registers, elapsed reload differ; shared quotient 30;
 // shared elapsed 79; both time values 79; shared change 74; quotient/change 74; shared lower bound
 // 74; quotient/lower bound 74; all clamp values 74.
+// Round 32 (fast): elapsed_time stored first 28 (conversion copy then retail's); with it: the fade-out
+// through approach_126660 72; `fade = fade + PIN(...)` 28; value-first clamp (value < lower) 68 (retail's
+// copy/zero registers, but the two return tails merge and the add reloads the fade into XMM1); the same
+// with lower-first branch arms 72, written result + fade 68, named clamp result 68; a fade local read
+// once 65 (tails kept, fade held in XMM3); fade local for the clamp only 71. The whole function alone
+// in a /GL- file 111 (retail keeps EDX across 0x12be90, so its register use is known there).
 // @retail 0x1269f0
 void sound_system_update_time(void)
 {
