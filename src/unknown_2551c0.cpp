@@ -72,6 +72,10 @@ short __stdcall function_2551c0(long actor_index)
 }
 
 // score 43 (was 43): cross-product schedule and score-dot registers still differ.
+// Round 78: score as (1 + dot) 43; best_score < score 43; 0.2f * distance 43; angle as
+// 0.7853982f * i 43; distance * 0.2f * (dot + 1) without the grouping 118. A diagnostic no-op
+// product (not kept) reorders the projection dot and fixes the length (814) without touching the
+// score dot: both orders follow VC's tuple numbering, not statement position.
 // Earlier allocation: retail computes the second products of the j and k cross terms before
 // the call's pushes (ours the first j product: 2 bytes longer, j/k cross registers swapped) and
 // sums the score's dot product j, k, i (ours k, i, j). Kept: the rotation as projection first, then
