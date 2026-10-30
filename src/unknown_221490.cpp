@@ -172,6 +172,10 @@ void function_221490(
 // direct SDK count 87; completed-result descriptor via aggregate/fields/DWORD count 88/88/88
 // (281 bytes, frame 0xd8); early descriptor initializer with DWORD count 83.
 // Original descriptor, scalar mirror, input observations and all output updates restored.
+// Round 20: the list arrives in ecx (retail eax): the all-stack first pass puts the shared zero
+// in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
+// initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
+// read after the mixbin compare 135.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,

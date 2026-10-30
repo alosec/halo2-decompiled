@@ -92,6 +92,9 @@ static inline long file_handle_build_2170e0(long generation, short index, bool f
 // native fields with byte-table aggregate copy 91; native fields with byte-table library copy 91;
 // native table/location library copy 91; byte location with native-table library copy 91; force-inline
 // whole scan 150; existing record constructor with library copy 91. Original types and body restored.
+// Round 303: completed-search index before handle encoding, long/short/dword/word
+// carriers 93/94/93/94; each with the complete library copy 93/94/93/94. Original
+// encoding boundary, copy and body restored; adjusted-table and successful-index spills remain.
 // @retail 0x2170e0
 long function_2170e0(long file_index)
 {

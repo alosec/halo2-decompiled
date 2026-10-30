@@ -512,6 +512,10 @@ void function_1537f0(s_profile_record *record);
 // stores chained 45. Not kept: no existing type has that layout, and an invented grouping struct is
 // not an accepted form. What then remains is NONE hoisted into EBP across the loop (retail keeps the
 // record's first zero dword there).
+// Round 12 (lane 13): tail clear and sentinel removed with the byte type kept (the initializer's NONE
+// byte is forwarded as retail does) 78 at 238 bytes (aligned 43 against 51); with the flags as two
+// stores / links as separate statements / the 64-bit field as two dwords 80 each at 236; the entry
+// pointer declared first 67, with the tail removed 78.
 // @retail 0x7f930
 void function_7f930(void)
 {

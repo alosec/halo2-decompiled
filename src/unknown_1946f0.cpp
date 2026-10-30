@@ -124,6 +124,9 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // compound face scaling 61.
 // Round 34: face pointer and zero before the grid values 87; the three rows into locals, then the
 // stores 61; constant-first grid products and doubling 61; y before x 71; `1.f != face->scale` 61.
+// pointer into the normalization 62. Round 20: constant-first doubling 61; `x *= face->scale` 61;
+// face pointer before the grid values 81; the equal-direction arm first 61; zero between the grid
+// products and the doubling 72; the rows written in both scale arms 224 (no tail merge).
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {

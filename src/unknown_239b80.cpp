@@ -239,6 +239,25 @@ short function_239e50(short count, point2f const *points, short *indices);
 // scales, single-result normalizer, early inv/m defaults, j read into a local, named square,
 // each with four dot operand orders: all give our block (j-first one worse); field-wise or
 // memcpy first-point copies keep the x-first stores.
+// state/index/point registers (retail ECX/EDX/ESI) and the XMM homes differ;
+// retail loads the line normal's j into XMM2 before the division and scales it there, so its
+// constants sit one XMM register higher (frame 0x18 agrees). Tried: local/formal point cursor with
+// short ordinal 94/93; short remaining count 94/93; long ordinal 97/97; long remaining count 94/93;
+// byte state 91; unsigned word ordinal 85; state increments 76; terminal equality 43; first point
+// before scan 85; normalizer reference 42; point-first dot 42; success normalizer 102; normalizer
+// input vector 126; compound scales 42; factor-first scales 42; positive normalizer scope 42; long
+// point index 101; count-first guard 99; long state 86; plane/point names 42; forced normalizer,
+// forced dot, both forced 42; single-result normalizer 42; squared-length expression 42; staged
+// scales 42; reverse scale publication 42; length workspace 56; signed-distance expression 42;
+// native first-point components 63; accumulated dot result 46; repeated j input 42; repeated i
+// input 42; both scalar inputs 126; state renamed to sort before the index 42; zero-length arm
+// first 44; `>= epsilon` far test 68; named normalizer length 56; line declared before the first
+// point 42; shared normalizer/magnitude 42/42; tested initial/distance states 81/76; both tested
+// states 79; early distance default 65; shared normalizer with tested states/default 79/65; bounded
+// geometric enum with original/count-first/terminal/zero-first graph and independent-point
+// Round 12 (lane 15): if/else chain for the switch 90; the normal's j component computed first 49;
+// while loop 42; normalizer reading j before the division 42; j read once for the length and the
+// scale 42; every scale and length operand order in the normalizer the same code.
 // @retail 0x239b80
 short function_239b80(short count, point2f const *points)
 {

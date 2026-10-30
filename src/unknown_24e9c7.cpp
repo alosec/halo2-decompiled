@@ -148,6 +148,9 @@ struct s_24e9c7_bounds
 // Round 193: complete per-use kind/bitmap/group observations 207/182/205;
 // kind+bitmap/kind+group/bitmap+group/all 225/223/201/225;
 // all with per-use sequence field 326. All original observations restored.
+// Round 303: early outer/texture/selected-bitmap admissions 128/127/149;
+// outer+texture/outer+bitmap/texture+bitmap/all 130/149/149/183;
+// all with returned height declared after admission 183. Original scopes and body restored.
 // @retail 0x24e9c7
 real function_24e9c7(s_24e9c7_marker const *marker, s_24e9c7_placement const *placement)
 {

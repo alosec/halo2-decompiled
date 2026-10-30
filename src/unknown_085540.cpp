@@ -806,7 +806,7 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 }
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
-// score 14 (was 49): retail's code apart from two single differences: retail stores kind 1
+// score 14 (was 14): retail's code apart from two single differences: retail stores kind 1
 // between the header's two zero stores (ours after both), and forms the data address with
 // `add eax, ebp` (ours `lea ecx, [eax + ebp]`). The loop runs while the writes succeed: the
 // unrotated head (zero and kind 1 before the count test, ring base rebuilt each pass) only
@@ -856,6 +856,11 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // Round 22 (one-file harness with src/unknown_199560.cpp, exact): `header.size = 0;` or
 // `header.offset = 0;` after the kind 14/14; the header value-initialised from a named type
 // (`= s_header()`, declared or assigned) 24/24; `= { 0, 0, 0 }` then the kind 117.
+// Round 84: the terminal arm written first 14; memset and kind 1 in each arm 74; a value-initialised
+// header (`= s_header()`) 24 (410 bytes); the clamp as `remaining < 1024 ? remaining : 1024` 17; a
+// do/while under `if (result)` 14. Compile-only probes (a constructor, a constant zero header copy,
+// a memset of a copy, bitfield or union kinds, `*(char *)&kind`, a pointer memset) all store both
+// zeros before the kind; no other retail function stores between an 8-byte memset's two halves.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {
@@ -1017,6 +1022,9 @@ bool function_68670(byte *source, long size, void *block);
 // Distinct native byte-buffer class with ordinary/inline/noinline/both reader knowledge:
 // 97/352/97/97; with the occupied-span subexpression 135/353/135/135. Original class identity,
 // all member declarations, caller body and window form restored; reload/count-update gap remains.
+// Round 222: connection-ready bool/byte/short/long on original entry, each 97; each with named
+// occupied span 135. Original body restored; reader visibility, cursor reloads and count updates
+// remain.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {

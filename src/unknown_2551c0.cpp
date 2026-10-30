@@ -602,6 +602,10 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // existing in-place planar setter 196 (963 bytes), direct planar setter inputs 224;
 // existing side/reverse/both-with-planar setters 157/141/224; late zeros plus side/reverse setters 157.
 // Native producer contracts do not remove the extra fallback home; original vector producers restored.
+// Round 44: late fallback with the post-projection radius expression repeated 95 at 964 bytes (diagnostic);
+// named post-projection sum in either operand order 211 each; request stores in disassembly order on the
+// repeated form 94; direction-length name 94; forward/remaining distance names 94 each; timing outputs
+// declared before geometry 94; first-length local reused for adjusted distance 95. Opening body restored.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {
