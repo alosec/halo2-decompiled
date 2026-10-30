@@ -51,11 +51,13 @@ static __forceinline long floor_to_long_inline(real value)
 
 // score 46 (was 46): packed-word load order, intensity spill and final word home.
 // packed-word load order (ours reads the old word first), the intensity
+// packed-word load order (ours reads the old word first), the intensity
 // spill (ours in level's dead slot, retail in outside's: retail's callers push level as a
 // word, BLOCKED-BY 0x133390 and 0x133520, whose file holds the byte declaration) and the new kind word
 // (retail builds it in esi and stores it after the push). The field-bit test of bit 6 is
 // not retail's code (retail: test al, 0x40); `& 0x40` gives it at 80 (1033 bytes), but the
 // kind-word block is then two instructions short and the tail shifts.
+// packed-word load order, intensity spill and final word home.
 // Separate allocation increment, entry reference, position memcpy and early
 // group-pointer scope 80; object-tag result first 97; object-index guard first
 // 175; separate inline floor results 80; missing-geometry guard first 276.
@@ -69,6 +71,8 @@ static __forceinline long floor_to_long_inline(real value)
 // bitfield view of the word (kind only / all fields) 80/84 on the `& 0x40` form;
 // word and both bools before the store 46; old word read through the global
 // array in the first/kind word 47/57.
+// Earlier: a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Round 409: All eight ordinary/inline/separate-noinline section/kind declaration pairs 46 (1036/1033); no gain. Original contracts restored. Retained-word load order, intensity slot, final word carrier and shifted flag test remain.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,

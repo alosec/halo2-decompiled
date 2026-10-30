@@ -104,6 +104,17 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // 492 bytes); entries indexed by the counter 164; separate cursor pointer 54; with the
 // current stored first 140; block pointer declared inside the if 151; index head with the
 // block pointer only for the loop 155; count read once into a short local 177 (480 bytes).
+// Round 35, all on the indexed form: the cursor set after the selection with the copy source
+// indexed 164 (retail's loop, saves and reload at the join, but both parameters on the stack);
+// one variable for first and the loop index 159 (retail's head exactly: index in edx, count in
+// ax/eax, zero in ecx, entries in edx; the index then lives in ebp and mode is spilled, where
+// retail spills first and keeps mode in ebp); `first + n` with `entries[n]` 158; first by a
+// chained assignment 158; the copy's destination through the stored current 164; the loop
+// index set before the selection 162 (cache index in ecx); the selection as if/else or as the
+// reversed ternary 164/164; selection, n/index, cursor or first declared early 164 each; the
+// cursor before the copy with one index variable 163; the count in a short local read before
+// the clears 164. The two g_4c1a80 statements (the same field as g_4c1a48[2].flags) removed:
+// same code.
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {
@@ -113,7 +124,6 @@ void function_402b0(long cache_index, long mode)
     g_4c1a48[2].count = 0;
     g_4c1a48[2].first = 0;
     g_4c1a48[2].flags = 0;
-    g_4c1a80 = 0;
     s_render_index_cache_block const *block = &g_4c62f8.records.blocks[cache_index + 1];
     if (block->count > 0)
     {
@@ -159,7 +169,6 @@ void function_402b0(long cache_index, long mode)
             ++index;
             ++entries;
         }
-        g_4c1a80 = g_4c1a48[2].flags;
     }
 }
 
