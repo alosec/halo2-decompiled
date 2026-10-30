@@ -1367,6 +1367,10 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // J199: direct slot fields with early/use-point counter 71/71; original graph
 // with default availability/amount/both 42/82/86; direct final disjunction 12;
 // default-true/default-false final results 40/40. Counter load still sinks; restored.
+// Round 20: the counter read at the storage block top with the set at the arm top 6 (the load
+// sinks), read before the storage test 6; written inside the bitset test 72 (the load stays, the
+// divide moves after the clamp); the bit test through function_0bfe60 90; the bit test before
+// the clamp 79.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {

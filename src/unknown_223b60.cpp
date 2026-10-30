@@ -50,6 +50,10 @@ __int64 timing_counter_resume(timing_counter *c)
 // default/cdecl/stdcall reader 77/77/77 (resume loses its match). Original restored.
 // Scoped stop stdcall/cdecl 4/4; unsigned result with default/stdcall/cdecl 4/4/4;
 // only the queued signature and its existing caller declaration changed, then restored.
+// zero dwords. The permuter found no better variant. The tick local zeroed by
+// memset 50 (stores dropped); a volatile double 10; a volatile LARGE_INTEGER
+// `= { 0 }` 50; total and stopped declared volatile in the struct 34 (push esi
+// first, then a push edi); stopped alone 4; total alone 34.
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {
