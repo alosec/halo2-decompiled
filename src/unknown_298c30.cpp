@@ -389,6 +389,9 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 // frame/radius and trace/pivot/result homes remain.
 // Round 249: Consistent side/whole-angle/both/bool-side+angle observations 781/767/755/813;
 // on the split-output planar frame 756/786/805/806. Original reads, frame and helpers restored.
+// Round 217: existing in-place normalized vector scale alone/with shared difference 749/749;
+// plus reverse scale 742/742 (3374 bytes, seven-point gain rejected); planar pivot with those
+// four forms 755/755/769/769. Frame and eager radius remain; all helpers and body restored.
 // @retail 0x299460
 bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,

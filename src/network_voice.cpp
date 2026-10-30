@@ -1243,7 +1243,7 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 	return result;
 }
 
-// score 225 (was 255): scratch 0x10 versus retail 4; absolute-span inner traversal
+// score 225 (was 225): scratch 0x10 versus retail 4; absolute-span inner traversal
 // remains rolled, 225/347 bytes.
 // Earlier: sixteen-step rolled loop versus four-by-four unrolling;
 // expanded loop changes the entry convention and loses the matched caller.
@@ -1308,6 +1308,9 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 // pointer spans 249 each (four forms); outer/inner counter domains 254/225/244/244;
 // identity width/opposite/direct and unsigned span domains 225/245/244/225/225/225/225/225.
 // Short group start with long absolute channel ordinal retained; every 0x54990 loss rejected.
+// Round 217: forward group-end ownership, outer/inner short-long, short-short, long-long,
+// long-short with post/pre-tested inner spans 224/222, 258/237, 236/240, 260/260. Tiny gains
+// rejected; other forms lose 0x54990 or regress. Original grouped traversal restored.
 // @retail 0x56220
 long voice_channels_get_bandwidth(s_voice_channels *channels, long player)
 {
