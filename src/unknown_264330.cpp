@@ -532,6 +532,9 @@ void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *samp
 // workspaces 420. All original types, declarations, fields, qualifier and directives restored.
 // Round 250: dispatch release bool/byte/short/long at dispatch entry 420/420/420/420;
 // node entry 420/420/420/420. All exact-only result flags restored; frame and actor homes remain.
+// Round 41: Joint reset/eligibility/tracking predicate declarations, all eight ordinary
+// inline/noinline combinations, 420 each. Callees remain matched; frame 0xa4 and stacked
+// actor input remain. Every separate declaration and complete original body restored.
 // @retail 0x262ba0
 void function_262ba0(long actor_index)
 {
