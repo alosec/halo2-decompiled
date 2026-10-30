@@ -1684,9 +1684,10 @@ static __forceinline bool function_65341(c_class_58d20 **out)
  return result;
 }
 
-// score 114 (was 120): retail picks the observer pointer with a conditional move
+// score 118 (was 118): retail picks the observer pointer with a conditional move
 // after the flag test; ours computes the same value with a negation and a test.
-// score 118 (was 118): retail builds this body with SSE (cmovne, movss, cvttss2si), which this
+// Earlier retained form counted 114 (was 120).
+// Earlier: retail builds this body with SSE (cmovne, movss, cvttss2si), which this
 // file lacks, and inlines the session-a/b getters there (their static inline bodies live in
 // unknown_058ee0.cpp). In a new /arch:SSE file: as written 136; if-form state with the variant
 // getter 142 at retail's length; existing getters with forceinline declarations 162 (kept out of
@@ -1696,6 +1697,8 @@ static __forceinline bool function_65341(c_class_58d20 **out)
 // the reset alone 136; early variant plus reset 138; nested success guards 146;
 // zero-then-assign state 145; ordinary inline selector 238 (398 bytes); state/result
 // declarations swapped 145; pointer-terminated user loop 145. Original restored.
+// Round 256: Actual selector state-test result in bool/byte/short/long, conditional/guarded state
+// acquisition 135/139/135/139/152/153/153/153. All restored.
 // @retail 0x65340
 void function_065340(void)
 {
