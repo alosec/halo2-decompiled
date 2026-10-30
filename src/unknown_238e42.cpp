@@ -380,6 +380,11 @@ extern long g_51ec0c;
 // Explicit unsupported-state exit, actual squad predicate and both 80/80/80;
 // leave action from original inputs with neither/either/both boundaries 104 each at 479 bytes;
 // precomputed complete leave expression 147 at 495 bytes.
+// Round 93 (plain checks; --fast builds this one differently): leave code written in both mode arms
+// 104 (479 bytes, merged into the mode-one arm); explicit else around the mode-not-one call 80;
+// squad test merged into the first condition 80; join part after the switch with cases 6-8 and
+// default returning 80 (same layout); the last two mode arms swapped (mode != 3 first) 78 (wrong
+// arm order, aligned worse).
 // @retail 0x2395dc
 void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, long mode)
 {

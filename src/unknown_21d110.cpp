@@ -752,6 +752,11 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // exactly (32 at 823 bytes; not kept: a record that only groups locals). The 'lsnd' case still
 // holds the entry flags in eax and the tag base in ecx (retail the reverse). Tried: the tag lookup
 // before the entry flags 78 (fast; baseline fast 67); alternate as an if/else-if chain 133; state
+// before alternate in the looping arm 67; the group switch as if/else-if 114; renaming either
+// local 67 (no slot moves: names do not order this frame); the two declared the other way round
+// 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry
+// flags read at each use 78. Screened (one-file LTCG): declared at the top, the definition or tag
+// index declared earlier, the definition read at each use: the bool stays at the bottom.
 // before alternate in the looping arm 67; the group switch as if/else-if 114.
 // DL180 fast previews: dword flags/long state 199; dword flags/char state 192; word flags/long
 // state 151; word flags/char state 162; byte flags/long state 193; byte flags/char state 195;

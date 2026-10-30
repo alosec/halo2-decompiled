@@ -75,6 +75,11 @@ struct s_11c1b0
 // Round 406: Initial index/zero registers and saved-index publication remain. Consistent unsigned-
 // word current/saved/request equality with 0xffff sentinel, parameter-read ordering, saved entry
 // lifetime and byte late-success combinations. Scores 75/75/133/133/91/91/137/137. All restored.
+// Round 93: the saved index already shares arg_0's slot; left are local_0/zero in di/ebx (retail
+// bx with xor ebx, ebx / edi) and the slot store after the range test (retail: before it, as only
+// a reassigned parameter gives). Both NULL-clear blocks as one inline helper 50; early return false
+// for the range test 122; saved index declared at function scope 50; early true test on the saved
+// copy 50; unload argument written in the call 50.
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {
