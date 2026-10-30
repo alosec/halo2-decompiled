@@ -177,6 +177,9 @@ static __forceinline long floor_to_long_inline(real value)
 // Round 421: shared masked input 110; uniform record indexing 374; masked/indexed record 364; short record index
 // 36; masked/short index 110; indexed/short index 375; all record inputs 364; entry-scope masked input/all record
 // inputs 394.
+// Round 51: clamp/scaled declarations swapped 36; scaled/clamped role names 36/36; combined names and
+// order 36; kind declared before object tag 36; kind result renamed 36; first word flags/category/old 36;
+// two-use kind word 80 (1033 bytes); its shift split from the OR 79 (1033 bytes). Original restored.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,
