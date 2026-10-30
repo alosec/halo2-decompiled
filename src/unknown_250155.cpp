@@ -1957,6 +1957,9 @@ extern dword g_54d5b8;
 // source order).
 // Round 186: dialog result at entry long/int/dword/unsigned-int, native-scope int/dword/unsigned-int
 // 36 each; full unsigned state 36. Original body restored; shared tail placement remains.
+// Round 76: case 4 outside 55; its timestamp copy 48; case 4 after the switch 57; case 4 with case 5
+// or the high cases outside 55/55; early guarded case 4 71; entry dialog with case 4 outside 55;
+// case 4 outside with its timestamp 60. Original body restored.
 // @retail 0x250804
 void c_session_lobby_screen::show_session_state()
 {
