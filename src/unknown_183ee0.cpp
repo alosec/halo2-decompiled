@@ -83,7 +83,9 @@ static inline byte *bsp_bit_vector(long index)
 // apart. dword, short and byte indices, do/while, a post-increment, a counter
 // in a struct, inline read, clear and release helpers, and a plain global array
 // keep the byte offset or score worse; the 600 s permutation run found no
-// improvement.
+// improvement. Kimi 2 r41: an if/else after the loop whose two branches both clear the active
+// slot count keeps the index live and matches; not kept (identical branches that only steer
+// registers).
 // @retail 0x185a30
 void function_185a30(void)
 {
