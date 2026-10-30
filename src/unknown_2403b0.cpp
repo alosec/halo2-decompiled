@@ -107,6 +107,9 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // 186.
 // Round 289: Terminal query completion/non-special-first/blocked completion subsets; full graph with final team result arms:
 // [95, 111, 111, 131, 131, 131, 131, 130]. All executable source and temporary types restored.
+// Complete object-data, object-pointer and object-index ownership: seven subsets 95 each;
+// complete graph with native short slot 237/922. Original pool observations, identifiers
+// and pointer lifetimes restored.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {

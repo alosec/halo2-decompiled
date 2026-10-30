@@ -95,6 +95,8 @@ PRIVATE __forceinline real function_22aff5(real arg_0)
 // Matched selection/transform separate declaration states default/inline/noinline,
 // all eight nondefault pairs 121 each; caller frame homes and rounded-offset memory/XMM
 // residency remain. Original helper declarations and complete body retained.
+// Entry validity, bitmap admission and completed-draw terminal guard graphs: eight forms
+// all 121; original nested admission lifetimes restored.
 // @retail 0x22aff1
 void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real const *arg_3)
 {

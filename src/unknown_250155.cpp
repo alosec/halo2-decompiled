@@ -2126,6 +2126,9 @@ void function_1905bf(long controller, bool flag);
 // Parameter-2 early valid-team exit long/bool 93/106, with directional guards 99/107;
 // availability-owned callback long/bool 93/106, with directional guards 99/107. Original result
 // and callback joins restored.
+// Conditional outer/inner dispatch 133/119, both 121; their unsigned-first
+// combinations 163/126/144; complete Boolean-result graph 122, entry result 127.
+// Original dispatcher and result restored.
 // @retail 0x250b1e
 bool c_session_lobby_screen::v10(s_widget_event *event)
 {
@@ -2450,6 +2453,7 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Promoted first-loop team with numeric/reverse and absent-first/last switch cases 238 at 915 bytes
 // in all four orders; default-result initialization on each 234 at 913. Scalar homes stay
 // displaced; original short team and switch restored.
+// Complete four-output publication schedules 182/192/114/151/184/158/192/182; original helper stores restored.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {
