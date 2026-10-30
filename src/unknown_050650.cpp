@@ -532,7 +532,7 @@ static inline void actor_looking_rotate(vector3f *vector, vector3f const *axis, 
 	actor_looking_rotate_in_place(vector, axis, sine, cosine);
 }
 
-// score 333 (was 343): the frame remains 0x98 versus 0xa8; axis, random/trig and vector schedules differ.
+// score 333 (was 333): the frame remains 0x98 versus 0xa8; axis, random/trig and vector schedules differ.
 // Tried: direct collision Boolean 355; initial best vector before normalization 356; result declared first 354;
 // long sample counter 355; axis/sample/range names 355; shared normalizer 330 (sum order changed, restored);
 // shared random-range helper 360; one result return 377; paired span names 355; names plus one return 377;
@@ -568,6 +568,9 @@ static inline void actor_looking_rotate(vector3f *vector, vector3f const *axis, 
 // the yaw bounds on the stack, 52 -> 19), one range only 313/313.
 // Round 97: one exit with `result = true` for the best-direction tail 333 (kept: the collision flag now
 // stays on the stack as in retail, which matched 0x297660); with `clear` set first in each pass as a bool 349.
+// Round 433: Single-exit success stored as byte/char/short/long 370/370/382/383;
+// without the dead entry collision-state value 370/370/382/383. All restored;
+// native success widths do not recover the 0xa8 frame or initial CL zero store.
 // @retail 0x296e60
 PRIVATE bool function_296e60(point3f const *origin, vector3f const *forward, bool test_collision,
 	real yaw_lower, real yaw_upper, real pitch_lower, real pitch_upper, vector3f *direction)
