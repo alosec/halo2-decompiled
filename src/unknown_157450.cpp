@@ -500,6 +500,11 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // operands swapped 78, without the store's cast 77; word old playing mask too 59; word
 // mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
 // the bit from `player->team` 46.
+// computed before the branch 133; union plus carrier 91; word mask with the field stored
+// directly and the OR uncast (either operand order) 77, the word mask read straight from the
+// field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
+// loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
+// first on the word form 77, carrier on the word form 78.
 // @retail 0x158140
 void function_158140(void)
 {

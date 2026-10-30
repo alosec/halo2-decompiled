@@ -132,15 +132,18 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 	return destination;
 }
 
-// score 40 (was 40): the string pointer and the character counter are kept in different registers
-// here, and an extra register is pushed and restored around the copy loop. Tried: count before
-// start in the parameter list 40; the length in a named local after the sign tests 40;
-// string + start with start unmodified 28 but start then arrives in edx (0xb5f10 differs);
-// that with a plain string parameter 41; start = string + start 40.
-// Cursor displacement with fixed/explicit maximum, unequal/ordered end tests and signed/unsigned
-// returns: eight forms 36 each; threshold rejected, shared find changed.
-// that with a plain string parameter 41; start = string + start 40; a local copy of the start
-// 28, but the start then arrives in edx and the matched caller 0xb5f10 differs.
+// score 40 (was 40): retail moves the start from ECX into EDI at entry so the inlined length scan
+// counts in ECX and walks in EDX (as matched 0xb61d0 does); ours keeps the start in ECX, counts in
+// EDX and walks in EDI, so EDI is saved with EBX around the scan. Tried: count before start in the
+// parameter list 40; the length in a named local after the sign tests 40; string + start with start
+// unmodified 28 but start then arrives in edx and the matched caller 0xb5f10 differs (also as
+// `&string[start]`); that with a plain string parameter 41; start = string + start 40; cursor
+// displacement with fixed/explicit maximum, unequal/ordered end tests and signed/unsigned returns:
+// eight forms 36 each (shared find changed). Round 35, one-file harness (aligned/positional,
+// current 16/40): early returns 21/42 (--fast 48); nested length test 16/40 (--fast 40);
+// `length >= start + count` 17/40; all 23 other parameter orders 16-17/40; a const method of the
+// text struct, with or without noinline, 18/41 (0xb5f10 then differs); no `volatile` with a
+// noinline declaration 22/34 (0xb5f10 differs).
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {

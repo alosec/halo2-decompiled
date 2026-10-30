@@ -74,7 +74,10 @@ PRIVATE inline byte const *material_parameters(long tag)
     return *(byte **)(g_4e3b44[tag & 0xffff].bytes + 0x24);
 }
 
-// score 47 (was 47): BLOCKED-BY 0x18a90 (retail passes the state in EBX, ours pushes it; the later calls
+// score 47 (was 47): restore entry-load order (retail reloads the table field before the entry store) and
+// BLOCKED-BY 0x18a90 (src/unknown_01cf50.cpp, contributor file: retail passes the state in ebx, ours
+// pushes it; that tail is about 42 of the 47 lines and the extra byte).
+// BLOCKED-BY 0x18a90 (retail passes the state in EBX, ours pushes it; the later calls
 // then shift by one instruction) and the `second` load of the restore block, scheduled after the table
 // loads in retail and right after the entry `lea` here; frame, entry and logarithm agree.
 // Earlier 95 from 132: frame four, the logarithm and the tail agree; left are the restore block (retail reloads
@@ -172,6 +175,9 @@ PRIVATE inline byte const *material_parameters(long tag)
 // Round 155: entry table from the local 151; entry stored to its field directly 47 (table reload in place,
 // the second index load hoists instead); plus range stored directly 163; entry local reused 183;
 // direct entry store with swapped index sum 47.
+// Round 34: table field through a reference for all three reads 47; entry word read inside the index 47;
+// direct entry store 47 (table reload as retail; the second-index load then hoists above the store);
+// direct store with `second + (packed & 0x1ff)` 47; direct store read back through a const reference 293.
 // @retail 0x16b90
 void __stdcall function_16b90(byte *state, long tag, long first, long second,
     long third, long fourth, real scale)
@@ -1021,7 +1027,7 @@ void function_176a0(byte *state, s_packed_shader_range const *range)
 }
 
 // @retail 0x1b2c0
-bool function_1b2c0(byte const *state, long index, long component, long texture, long mode, real *out)
+bool function_1b2c0(byte const *state, real *out, long index, long component, long texture, long mode)
 {
     if (component < 4)
     {
@@ -1287,31 +1293,17 @@ void __stdcall function_1ab50(byte *state, s_packed_shader_range const *range)
 }
 
 
-// score 54 (was 54): the two arguments land in different registers (retail uses ebp for the
-// second and ecx for the first) and the bit-field extraction order differs.
-// Frame 0x10 agrees; state EBP/range-slot reload and the stacked evaluator component still differ.
-// score 54 (was 54): external packed-word reference 54; explicit output/mask/both banks 72/78/91;
-// input count once 60; inline depth one/two 54/54; plain while scan 54.
-// Frame 0x10 agrees; state/range and evaluator component registers still differ.
-// Unsigned range accessors 54; output/mask/both bank predicates 54;
-// byte component 51 (193 bytes), byte kind 73, both byte inputs 60; output fields 54.
-// state stays in EBX and range in EBP; retail keeps state in EBP
-// and reloads range. The evaluator component is stacked instead of EDI;
-// packed-field extraction order still differs.
-// const pointer tables 54; vector bank elements 54; packed record fields 54.
-// byte record fields 75; frame pointer 71; global optimization 153.
-// size preference 77; float consistency 54.
-// @retail 0x19be0 standard
+// @retail 0x19be0
 void __stdcall function_19be0(byte *state, word const *range)
 {
     real *values[2] = { (real *)(state + 0x1530), (real *)(state + 0x1630) };
     dword *masks[2] = { (dword *)(state + 0x1730), (dword *)(state + 0x1734) };
     byte const *entry = *(byte **)(*(byte **)(state + 0x20) + 0x3c) + (*range & 0x1ff) * 4;
-    for (unsigned long i = 0; i < (*range >> 9); ++i)
+    for (long i = 0; i < (*range >> 9); ++i)
     {
         word packed = *(word const *)entry;
-        function_1b2c0(state, entry[3], (packed >> 5) & 31, packed >> 13, 0,
-            values[(packed >> 4) & 1] + (packed & 15) * 4);
+        function_1b2c0(state, values[(packed >> 4) & 1] + (packed & 15) * 4, entry[3],
+            (packed >> 5) & 31, packed >> 13, 0);
         packed = *(word const *)entry;
         *masks[(packed >> 4) & 1] |= 1 << (packed & 15);
         entry += 4;
@@ -1465,7 +1457,7 @@ void function_19ca0(byte *state, word const *range)
         {
             long component = entry[2] & 7;
             dword mask = g_467068[component];
-            function_1b2c0(state, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7, values);
+            function_1b2c0(state, values, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7);
             if (*(word const *)entry & 0x800)
                 for (long j = 0; j < 4; ++j) values[j] = (values[j] + 1.0f) * 0.5f;
             values[0] = values[0] < 0.0f ? 0.0f : values[0] > 1.0f ? 1.0f : values[0];
@@ -1494,7 +1486,7 @@ void function_19ca0(byte *state, word const *range)
             }
             long component = entry[2] & 7;
             dword mask = g_467068[component];
-            function_1b2c0(state, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7, values);
+            function_1b2c0(state, values, entry[3], entry[2] & 7, 0, (entry[2] >> 3) & 7);
             if (*(word const *)entry & 0x800)
                 for (long j = 0; j < 4; ++j) values[j] = (values[j] + 1.0f) * 0.5f;
             values[0] = values[0] < 0.0f ? 0.0f : values[0] > 1.0f ? 1.0f : values[0];

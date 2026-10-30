@@ -571,6 +571,10 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // J185: signed-word first/second/conflict ordinal subsets 291/257/292/179/281/288/313;
 // byte conflict ordinal 196. Native narrow counters grow the body; original counters, source observations,
 // exact key/copy expressions, call roles and all helper declarations restored.
+// Round 35 (one-file harness, exact; aligned/positional 9/16): `++*count;` before the swap call 9/16;
+// `&updates[(*count)++]` 16/20; the occupant key via `(&collection->players[i])->key` 9/16; the four
+// loop-top declarations in the other 11 orders 9/16; all 23 other parameter orders of the swap
+// callee (it stays matched) 9-17; the player as `&collection->players[i]` 153 (mask too 120).
 // Round 5: the occupied record's key address is one byte shorter here ((offset + cursor) + collection
 // with add/lea against retail's (collection + offset) + cursor with lea/lea), which shifts every later
 // jump and call by a byte up to the loop pad. The swap's count increment as its own statement 32 and
