@@ -108,6 +108,11 @@ struct s_spawn_scenario_23aea0
 // reference local, while loop, `<= 13`, zero-based ordinal, struct copy (not unrolled).
 // Screens show VC keeps an integer offset only when two different global symbols share the
 // induction, and then rebases it to start at 0; retail's starts at 0x18 (12 * type, not rebased).
+// DL200: Overlap-safe default/override/both tuple copies 258/146/282, each with a new reduced
+// caller loss at 0x1574c0; all rejected. Consistent tuple byte-field orders 0/8/4, 4/0/8, 4/8/0,
+// 8/0/4 and 8/4/0 give 117/117/111/111/117. Original two-by-six copies, real field values, scalar
+// overrides, signed guards and includes restored at 105. Integer destination induction and
+// definition receiver remain.
 // @retail 0x23aea0
 void function_23aea0()
 {

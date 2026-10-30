@@ -344,6 +344,10 @@ PRIVATE inline bool append_save_entry_2164c0(s_save_list_2164c0 *list, s_save_en
 // list->count++;`, `index = list->count; list->count++;` and a count local with `list->count = count
 // + 1` first each give retail's increment/store/shift order but no count copy (count EAX, result CL)
 // 51/51/51; the helper as a plain static function 32 (same code); the copy then `list->count++` 57.
+// DL200: Native byte/signed-byte completion 32/32; short/word completion 46/46; real shared file-
+// reference workspace 32; overlap-safe append copy 52; coordinated matched-name-helper inline
+// contract 32; byte helper return 32. Original append, workspace, copy and all game-call values
+// restored; matching 0x8ac frame and scratch/append register gap remain.
 // @retail 0x2164c0
 void function_2164c0(long memory_unit, s_save_list_2164c0 *list)
 {
