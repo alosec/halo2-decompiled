@@ -179,7 +179,25 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 	}
 }
 
-// score 38 (was 38): four-byte frame and both-logs-first scheduling remain unresolved.
+// score 38 (was 38): frame 8 versus 4 and the log scheduling: retail computes both logarithms
+// before either product, keeps the upper one on the x87 stack until the division (FILD n + FDIVP,
+// then fstp st(0)) and stores the integer weights in the dead lo/hi argument slots (PUSH ECX frame);
+// ours multiplies the lower product before the upper log, divides with FIDIV and needs a second
+// slot for n. Tried: implicit integer weights 43 (FIMUL); one expression with the log calls 43;
+// named exponent with inline conversions 43; weights before the logs 38; named exponent 38; double
+// intrinsics 41; the blend as an inline helper taking the logs 38; n declared after the logs 38;
+// upper-first logs, real weighted sum/exponent, entry log homes and reader declarations 38; explicit
+// log/weight locals with one result 64; positive interior admission 49; double logs 38; upper double
+// log 38; lower/upper/both products reversed 38/38/38; integral lower/upper weight 44/44; direct
+// interior return 36; limit before compare/read/call 41/44/60; limit/log local renames 38; earlier
+// weight declarations 38; integer weights 43; named weighted logs 38; double weight pair and double
+// logs/weights 38/38; complete double products, sum and exponent with real or double logs 38 each;
+// float logs/exponent/both 38/38/38; accumulated exponent 43; logs and exponent in an inner block 43;
+// upper log and term first, accumulated 43; exp of a double argument 43; exp guarded by an implied
+// n > 0 test 35 (a redundant test, not kept); the parameters holding their own logs 38; the logs
+// in a two-element array 43; integer lower weight named before the logs 43; division by a double n
+// 38; single exit with a result local 62.
+// four-byte frame and both-logs-first scheduling remain unresolved.
 // retail computes both logarithms before either product, keeps
 // the upper one on the x87 stack until the division (FILD n + FDIVP) and stores the
 // integer weights in the dead lo/hi argument slots (PUSH ECX frame); ours multiplies

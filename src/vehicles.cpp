@@ -4080,13 +4080,13 @@ bool __stdcall function_f7ca0(long *vehicle_index)
 {
 	long unit_indices[16];
 	point3f centers[16];
-	s_record_pool_iterator player_iterator;
+	s_record_pool_iterator iterator;
 	byte *player;
 	long count = 0;
 
-	player_iterator.data = g_4e8c24;
-	player_iterator.index = NONE;
-	while ((player = data_iterator_next_inlined(&player_iterator)) != NULL)
+	iterator.data = g_4e8c24;
+	iterator.index = NONE;
+	while ((player = data_iterator_next_inlined(&iterator)) != NULL)
 	{
 		if (*(long *)(player + 0x2c) != NONE)
 		{

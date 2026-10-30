@@ -262,6 +262,9 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 // Round 403: native cache 136; existing cache method 136; method root value 144; method mask at use
 // 164; method chained zeros 156; method zero boundary 156; method native context 136; method search
 // output 159. Opening body restored.
+// score 117 (was 136): the else path's tag index is zero-extended into a fresh register instead of
+// masked in place, and the loaded tag pointer is defined in ECX instead of EDX; the group test's
+// instance address is materialized and the first 13 instructions now match.
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)
@@ -270,11 +273,13 @@ void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long a
 	s_2243c1 local_1;
 	byte *local_2 = (byte *)arg_0;
 	long const *local_5;
-	if (*(dword const *)g_4e3b44[(short)*(long const *)(local_2 + 0x1c)].unknown00 == 0x5052544d ||
-		*(dword const *)g_4e3b44[(short)*(long const *)(local_2 + 0x1c)].unknown00 == 0x70727433)
-		local_5 = function_137bd0(*(long const *)(local_2 + 0x1c))->function_x947334();
+	long const local_tag = *(long const *)(local_2 + 0x1c);
+	s_tag_instance *local_instance = &g_4e3b44[(short)local_tag];
+	if (*(dword const *)local_instance->unknown00 == 0x5052544d ||
+		*(dword const *)local_instance->unknown00 == 0x70727433)
+		local_5 = function_137bd0(local_tag)->function_x947334();
 	else
-		local_5 = *(long const *const *)(g_4e3b44[*(long const *)(local_2 + 0x1c) & 0xffff].bytes + 0x24);
+		local_5 = *(long const *const *)(g_4e3b44[(word)local_tag].bytes + 0x24);
 	byte const *local_6 = *(byte const *const *)(g_4e3b44[*local_5 & 0xffff].bytes + 0x5c);
 	long local_7 = *(word const *)block_element_224db0(local_6, 0, 2) & 0x1ff;
 	long local_8 = *(word const *)block_element_224db0(local_6 + 8, local_7 + arg_3, 2) & 0x1ff;

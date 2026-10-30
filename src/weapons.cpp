@@ -1603,25 +1603,6 @@ static inline bool weapon_state_replaceable(long current, long state)
 }
 
 /* puts a weapon in a state and plays the state's animation */
-// score 67 (was 67): BLOCKED-BY 0xc9d00: every difference is its call, whose register
-// convention (from its own body) differs from retail's all-stack one; retail keeps the
-// result constant 1 in bl as the in-inventory test mask.
-// forced replacement 69; long replacement 115; complete predicate arms 69; predicate tests 136;
-// state-selected flags 96; case-selected flags 137; const animation receiver 69;
-// wide predicate and case flags 128.
-// nested retry 69; animation failure-first 76; nested inventory gates 69; direct predicate returns 69;
-// role-based selection names 69; short animation offset 129; complete mask arms 117; shared case pairs 129.
-// success-byte scheduling and final call argument registers still differ.
-// Byte outcome 67; short/word outcomes 87; actual object references and nested scope 69;
-// signed-word mask 83; owner-first test 68.
-// wide set/flags/class 67; single played result 130; unit lookup before flags 75;
-// replaceable-first gate 111; nested class gate 67; wide unit index 67;
-// class-by-default test 67; class ternary 75.
-// Round 194: shared entry/eligibility/notification/all getters 134/137/67/118;
-// late animation receiver 130; class before mask 75; both 132; all getters with both 145.
-// Notification argument registers and success scheduling remain.
-// Lane 3 round 156: a stack-argument (varargs) forwarder for the notification call (diagnostic)
-// gives retail's code to the end but its own stack cleanup; the rest is 0xc9d00's register convention.
 // @retail 0x1058b0
 bool function_1058b0(long weapon_index, long state, bool force)
 {
