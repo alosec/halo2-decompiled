@@ -593,6 +593,8 @@ long function_189400(s_sound_position const *position, long object_index, long t
 // retail's eax/ecx inputs and only the second scan differs (short/word 56, dword/long 70).
 // Callee entry index through its address 77; volatile effect read 90 (retail inputs);
 // aggregate effect point 77; typed effect-direction local 77; point and description first 77.
+// Round 94 (lane 6): with 0x1883e0's parameters as c_type_47f957 (held to 2026-11-02) and the
+// second scan on a 32-bit index, 77 -> 46.
 // @retail 0x188180
 void function_188180(point3f const *point, vector3f const *forward, long tag_index, long object_index, long index, long variant,
 	long entry_element_index, long effect_value, s_location const *location, real scale)

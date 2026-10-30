@@ -484,6 +484,11 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // the compare but is still not shared with the update); two-width union view of the mask 90;
 // union with a named wide copy 90; word local with a promoted copy 134; updated mask
 // computed before the branch 133; union plus carrier 91.
+// Round 94: a plain `word old_team_mask` gives retail's entry (`mov cx`, word store), but the compare
+// then reads the mask from memory where retail reloads it into ECX before the first branch and
+// shares it with the update (one instruction short, the rest shifts) 77; with the team-bit carrier 83;
+// the mask read and stored through globals 129; `*team_mask |= present` 130; compares as
+// old != new 33.
 // @retail 0x158140
 void function_158140(void)
 {
