@@ -2236,6 +2236,9 @@ static __forceinline long real_to_long(real value);
 // Round 271: native trigger bits with byte/char age, nested/direct equality result,
 // and long/short threshold: 89/113/125/131/87/116/125/131. The two-point
 // signed-byte form is restored; timing homes and released/age/delta registers remain.
+// J197: short/int ordinal contract 144/89; short with native bits/char clamp/both
+// 144/143/143; int with native bits/char clamp/both 89/87/87.
+// Timing homes and released/age registers remain.
 // @retail 0x1027b0
 void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool *held, bool *released)
 {

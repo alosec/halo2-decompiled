@@ -1998,6 +1998,10 @@ bool function_f5d70(long vehicle_index);
 // with full gear / requested direction first / live gear 182/152/197; word delay 155, with full
 // gear 184, with limited result 151. Uniform shift phase byte/word/long 156/154/183; limited
 // result with word phase 150; limited result with word delay and word phase 181. All restored.
+// J197: early direction-result lifetime after current/ratio 166/156;
+// long/byte result 204/166; result from tests 166;
+// complete direction operands 166; early native gear 157;
+// early direction with separate limited result 162. Entry spill/shift-byte home remain.
 // @retail 0xf1950
 void __stdcall function_f1950(long vehicle_index, real throttle_input, short new_gear)
 {
@@ -3414,6 +3418,10 @@ extern byte g_5107ee;
 // countdown/facing+midpoint 153; countdown/reflection setter 158; countdown/facing+reflection
 // 153; countdown/midpoint+reflection 158; positive word countdown 159; positive dword countdown
 // 165. Original executable body restored.
+// J197: existing complete initializer, ordinary/inline/forced 330/276/159;
+// request construction before vector helpers, forced/inline/ordinary 181/316/333;
+// forced initializer with bounded strength 177, with native countdown 166.
+// Count/marker/strength homes and reflection schedule remain.
 // @retail 0xf62f0
 void __stdcall function_f62f0(long vehicle_index)
 {
@@ -4058,23 +4066,17 @@ bool __stdcall function_f7a60(long *vehicle_index)
 	return false;
 }
 
+/* an eight-byte vehicle seat-state entry; the occupancy word is at +4 */
+struct s_vehicle_seat_state
+{
+    byte unknown00[4];
+    word flags;
+    word unknown06;
+};
+typedef char assert_vehicle_seat_state_size[(sizeof(s_vehicle_seat_state) == 8) ? 1 : -1];
+
 /* whether an occupied vehicle (one with its flag 2 at +0x10a set) is within
    ten world units of a player on foot, and which */
-// score 124 (was 142): the seat loop differs (retail zero-extends the seat word into EBP and tests it
-// with `test ebp, 0xfff8; ja`, so the iterator's object index is re-read in the inner loop where ours
-// keeps it in EBP). Round 31: retail's own player scan has no on-foot filter and no 16 cap (the shared
-// collector's form was wrong here): its own scan with a unit local 144, reading the unit field at
-// each use 124 (kept, the scan is byte-equal to retail); with the vehicle iterator struct (current
-// vehicle before the iterator, retail's frame 0x118 and vehicle slot) as 0xf7a60; a center pointer
-// changes nothing (144 with the unit local, 124 with per-use reads; not kept).
-// Outer declarations, const vehicle, loop scope, single result, shared center and
-// point-difference helper all 142; indexed seats 156; native unsigned seat mask
-// with plain pointer stepping 140 at 561/549 (-2, restored).
-// Y405: the shared collector reading the unit at every use moves this to 150 (not kept); own body restored. Positive
-// word return with short/long/word/byte ordinal and plain seat stepping 170/164/170/172; long
-// return 167/162/167/169. Occupied-mask result dword/long/word/short at entry/after collection
-// 215/177/215/177/179/158/180/157; raw seat-word result dword/long at entry/after collection
-// 200/158/198/152. Frame 0x114 versus 0x118 and returned-object home remain.
 // @retail 0xf7ca0
 bool __stdcall function_f7ca0(long *vehicle_index)
 {
@@ -4109,19 +4111,20 @@ bool __stdcall function_f7ca0(long *vehicle_index)
 			{
 				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.iterator.object_index)
 				{
-					real dx = iterator.vehicle->center.x - centers[i].x;
-					real dy = iterator.vehicle->center.y - centers[i].y;
-					real dz = iterator.vehicle->center.z - centers[i].z;
+					point3f const *center = &centers[i];
+					real dx = iterator.vehicle->center.x - center->x;
+					real dy = iterator.vehicle->center.y - center->y;
+					real dz = iterator.vehicle->center.z - center->z;
 
 					if (100.0f > dz * dz + dy * dy + dx * dx && TEST_FIELD_BIT(VEHICLE_WORD_BITS(iterator.vehicle->flags_10a)->bit2))
 					{
 						long seat_count = (unsigned long)iterator.vehicle->unknown120 >> 3;
-						word const *seat = (word const *)((byte *)iterator.vehicle + iterator.vehicle->unknown122 + 4);
+						s_vehicle_seat_state const *seat = (s_vehicle_seat_state const *)((byte *)iterator.vehicle + iterator.vehicle->unknown122);
 						long j;
 
-						for (j = 0; j < seat_count; j++, seat += 4)
+						for (j = 0; j < seat_count; j++)
 						{
-							if (*seat & 0xfff8)
+							if ((seat[j].flags & 0xfff8u) > 0)
 							{
 								*vehicle_index = iterator.iterator.object_index;
 								return true;

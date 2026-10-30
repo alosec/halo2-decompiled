@@ -1335,7 +1335,7 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 
 long __stdcall function_3bf20(s_slot *slot, byte *data);
 
-// score 6 (was 71): only the frame counter load differs: retail loads it after the global test
+// score 6 (was 6): only the frame counter load differs: retail loads it after the global test
 // and before the slot pointer, ours after the slot's valid test (our build moves a load to its
 // only use). Retail keeps the clamped amount in the dead key's second field with a store in each
 // clamp arm, which a direct field store gives (the union member) and a reference to the field
@@ -1350,6 +1350,10 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // Lane 8 r79: key and query as inline helpers 96-117; plain amount local 86 (frame 0x1c); with
 // this body: the frame computed before the slot pointer 75, the counter read first 72, read as an
 // __int64 copy, after the slot pointer, reassigned, 64-bit add or `+ 1` first: 6 each; permuter 6.
+// J197: validity from admission, ordinary/before-slot/early-row/after-slot: 78/78/74/78;
+// byte/long/short validity 78/103/106; default-false availability 79. Shared inline bit
+// test on the direct-key graph 6; with early counter capture 6, row at helper argument 73,
+// capture before global admission 6. Counter-load scheduling remains; opening body restored.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
