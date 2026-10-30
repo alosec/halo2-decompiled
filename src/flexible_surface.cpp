@@ -506,6 +506,9 @@ static inline dword surface_random()
 // Round 216: existing in-place scale of direction/axis/both 180/188/191; cross alone 174;
 // direction-cross/axis-cross/all 188/194/181; direction scale and shared partial-sum producer 179.
 // Original workspaces, snapshots, three row trees and all publications restored.
+// Round 221: j/k projection pair 160, uniform direction-first factors 178; either projection before
+// shared cross 176/176; existing dot-helper orders before cross 179/179; named cosine complement
+// 176, with direction-first factors and staged cross 176. Original body restored; frame 0x28 remains.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {

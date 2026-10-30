@@ -1959,6 +1959,9 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 271: consistent header-data snapshot with retained/live handle, entry/gate
 // counter and short/long reserve values: 182/221/191/217/201/234/184/211.
 // All restored; magazine/availability and receiver homes still differ.
+// Round 221: complete success/failure result assignments 124; first/other/both magazine
+// array roots on that graph 123/123/122; entry-first result declaration with no/first/other/both
+// roots 124/123/123/122. One/two-point gains rejected; original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -2236,6 +2239,9 @@ static __forceinline long real_to_long(real value);
 // Round 271: native trigger bits with byte/char age, nested/direct equality result,
 // and long/short threshold: 89/113/125/131/87/116/125/131. The two-point
 // signed-byte form is restored; timing homes and released/age/delta registers remain.
+// Round 221: current/previous/paired analog snapshots on the byte-clamp graph 125/136/148;
+// transition snapshot 132, with current/previous/both 141/114/158; all three with age-first
+// lifetime 158. Original body restored; timing homes and released/age/delta registers remain.
 // @retail 0x1027b0
 void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool *held, bool *released)
 {

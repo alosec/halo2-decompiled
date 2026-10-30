@@ -386,6 +386,9 @@ void __stdcall function_115220(long machine_index)
 // pure component lookup after selection 297; complete at-use flag observations with selection 396.
 // Actual position mask in word/dword storage 463/453, with separate minimum 462/452.
 // Original predicate, clamp, flag observations, every operand and complete body restored.
+// Round 221: native word flags with short/word/long/dword/byte/char position predicates
+// 438/438/334/334/286/286; signed-halfword flags with short/word predicates 438/438.
+// Original predicate and complete body restored; eager flag carrier and initial clamp spill remain.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
