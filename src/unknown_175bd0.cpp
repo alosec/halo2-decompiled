@@ -1773,6 +1773,13 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // with the matrix local inside the branch 107; marker forward value copy 166; marker forward
 // fields read directly 139; forward locals named x/y/z or forward_i/j/k 107/107; declarations
 // forward/position/up or up/forward/position 107/107.
+// Product order inside each forward row (any of six per row) 77 (identical code); the
+// tail as matched 0x1420f0's body (scale, forward, two-step cross, up, zeroed position,
+// position) through a forceinline copy 137 (its extra tuples flip the magnitude's sum
+// order and move 1.0 out of xmm7), with the node copied first 149, with a direction
+// pointer for the forward rows 158, the zero position or the inverse scale through the
+// existing setters 137/137; `up` declared just before the 0x11d000 call 77; branches
+// swapped (`if (!matrix)`) 163.
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
