@@ -2931,6 +2931,11 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // Round 83: animation chosen by a ternary 189; the action short declared first 218; the no-overlay and
 // overlay-busy exits as `return false` 225/225; the animation default before the table reads with both flags
 // cleared before the lookup's `if` 232 (the clears then sit where retail has them, but NONE goes to EDI).
+// Round 36 (plain checks; --fast builds this function differently, 219 on unchanged source): the
+// action short declared after the overlay pointer 52 (identical); the action query in an inline
+// bool helper owning the short 167 (stays a call; frame 0x38), force-inlined 145 (frame 0x38, flags
+// still at +2/+3, and LTCG then inlines 0xe70b0, which retail calls). Declared first, between or
+// before the flags: identical under --fast.
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)
