@@ -195,6 +195,12 @@ __forceinline bool function_184448(long arg_0)
 // scored 1097/1070. Full-width low endpoints 976 (one-point gain rejected);
 // high/both 1009; row combinations 1020/1004/1035; selectors 1038/1017.
 // Scalar-capture/endpoint combinations scored 992/1005/979/1014.
+// Existing in-place point/plane transforms with complete scalar input capture: point 1045,
+// plane 1024, both 1093; point scalar capture/native publication 984; plane 979; both 989;
+// point staged/plane direct 1027, point direct/plane staged 1028. All original helpers restored;
+// frame excess and initial surface/geometry homes remain.
+// Plane scalar capture alone recovers frame 0x11cc at 1024 (4538 bytes, first +0x1d);
+// staged point publication with that capture 1027. Both remain rejected.
 // @retail 0x184440
 void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, long arg_3)
 {

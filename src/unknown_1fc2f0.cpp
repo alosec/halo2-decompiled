@@ -281,6 +281,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // tick products j, i, k 73; one `scale` local for rate then ticks 66. The subtraction fused into
 // the tick product (`velocity.i = (velocity.i - p0.x) * tick_scale;`) scales in place in XMM3
 // but loses the j-first schedule: 66; with chain/product/delta orders 48/54/71 (best at 366 bytes).
+// DL192: Common native velocity publication 61; scaled add 96; in-place scale/add 50; reused squared length
+// 77; late tick conversion 45; with native input copy 137, squared length 54, squared length/scaled add 95.
+// Late ticks move first difference to +0x5a but enlarge by four bytes; all restored.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

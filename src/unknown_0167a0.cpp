@@ -941,6 +941,9 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
 // bank returns 170/170. Original complete writer and both live-bound walks restored.
 // Round 289: Actual external descriptor bitfield subsets (direct destination, mapped source slot, mapped source kind); complete native entry cursor:
 // [155, 155, 155, 155, 155, 155, 155, 155]. All executable source and temporary types restored.
+// Round 220: Whole four-byte descriptor values in direct/mapped/both paths, native or memcpy,
+// 180/191/186 each; one complete refill workspace, native/memcpy 186/186. All regress; original
+// descriptor observations, live bounds, entry steps, helper, calls and complete body restored.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {
@@ -1449,6 +1452,9 @@ void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 // seven subsets, then all at function entry, 267 each. Original producer points,
 // scopes, shared writer and complete body restored; descriptor/index schedule remains.
 // Round 293: Shared writer common output/dirty completion, category/bank branch-or-conditional trees with bit/ordinal results: 444/471/438/447/465/475/456/457. Exact-only pointer forms all regress and lose a matched writer sibling; complete original helper and body restored.
+// Round 428: actual mapping rows as signed-word pairs, long/short slot and mapped ordinal,
+// rejection-first 267/267/266/266; positive admission 267/267/266/266. One-point
+// bounded-ordinal forms rejected; original byte cursor, source, guard, writer and body restored.
 // @retail 0x19ca0
 void function_19ca0(byte *state, word const *range)
 {

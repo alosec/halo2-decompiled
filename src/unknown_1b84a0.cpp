@@ -142,6 +142,9 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // NONE epilogue with state ESI and actor EDI, but the index then stays on the stack and the node takes EBX:
 // 69; the same with the slot parameter typed `s_slot_23 *` (table cast) 69, node/view declared first 69,
 // NONE arm first 91; that store on the current body 97.
+// Round 429: complete readiness arms/path-owned completion/both/separate release/
+// readiness-release/completion-release/all/all with one actor acquisition
+// 104/104/94/47/104/104/94/101 fast; all restored.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {
@@ -289,6 +292,9 @@ bool function_1f4a20(s_1f4a20_entry const *entries, long actor_index, s_referenc
 // DH round 257: Marker readiness byte/short/long 212/279/283; selection result byte/short/long
 // 212/240/243; long-ready with byte-result 283, byte-ready with long-result 243; concrete slot
 // input/native payload member 212. All restored.
+// Round 429: ordinary result/location-index value/both/actor-reference value/result-reference/
+// location-reference/all/direct true with both values 289/214/289/258/294/257/294/294.
+// Separate invalid-search graph preserved; every new form restored.
 // @retail 0x1b85a0
 bool __stdcall function_1b85a0(long actor_index, s_slot *slot)
 {

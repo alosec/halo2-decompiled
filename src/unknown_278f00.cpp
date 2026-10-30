@@ -158,6 +158,9 @@ bool function_a7670(long object_index);
 // with indexed cleanup 194/288/194/288. Original observations and complete body restored.
 // Round 211: completed first-membership long/dword ordinal, direct/named result, cursor/indexed
 // cleanup, scores 182/197/259/263/182/197/259/263. Original executable form restored.
+// Round 428: live list-array/list-bound/body-array field references, seven nonempty
+// combinations 181/181/181/181/181/181/181; all three by field pointers 181. Exact-only forms
+// restored; original field observations, both eager scans, retries and release graph retained.
 // @retail 0x278f00
 void function_278f00()
 {

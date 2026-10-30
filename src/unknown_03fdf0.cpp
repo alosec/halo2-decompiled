@@ -226,6 +226,13 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // the loop 164 and the cursor defined after the copy 164 (the scaled index then takes EBP in LTCG's
 // first pass and both parameters go to the stack); one variable for first and the loop index 163
 // (stack convention too). The block as a reference 54 (the same code).
+// Also: metadata pointer plus entry-table expression and early index 154; shared-scale entries 159;
+// first address direct/reference 163 each; early selection 169.
+// Round 99 (lane 6), indexed form (block field read at each use): plain 144 (492 bytes; 30 aligned
+// differences against 55 for the block form: the param/zero/count registers rotate, first is kept
+// in a register where retail loads it into EDI and spills it, and the entries cursor is spilled at
+// once); a long count named at the block top 140 (29 aligned), before the `if` 165, as a short
+// before the `if` 177 (480 bytes), named after first 166.
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {
