@@ -1903,6 +1903,8 @@ struct s_session_map_view
    5 the members' status, 6 ready, 7 the wrong players, 8 to 10 the host's
    states; the members' progress goes to progress. Retail keeps progress on
    the stack: reading it through its address keeps it there */
+// score 0 (was 21): the map limit starts at one and the setting test overwrites it only in
+// range, so the lower setting bound compares against the immediate one; the body matches.
 // score 21 (was 21): progress/session/result homes and map limit/iterator registers now agree;
 // the lower setting test (EDI versus immediate one) differs, 576/577; chained zeros recover the data-test schedule.
 // Earlier: ours holds progress in EDI; retail reads it from its stack home at both
@@ -2009,7 +2011,7 @@ long function_19a2ce(real *progress)
 
 			if (data && (*(dword *)(data + 0x48) & 1))
 			{
-				long maximum;
+				long maximum = 1;
 				long count;
 				dword teams;
 				count = teams = 0;
@@ -2024,12 +2026,13 @@ long function_19a2ce(real *progress)
 				{
 					long setting = *(long *)(data + 0x44);
 
-					maximum = setting >= 1 && setting <= 9 ? map->maximum_players[setting] : 1;
-					if (maximum <= 1)
-						maximum = 1;
+					if (setting >= 1 && setting <= 9)
+					{
+						maximum = map->maximum_players[setting];
+						if (maximum <= 1)
+							maximum = 1;
+					}
 				}
-				else
-					maximum = 1;
 				for (index = 0; index < 16; index++)
 				{
 					if (function_19a951(index))
