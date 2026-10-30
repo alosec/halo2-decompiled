@@ -212,19 +212,20 @@ void function_07b3e0(void)
 	g_4cf8d8 = data_new_inlined("transport qos attempts", 0x20, 8, 0, g_468758);
 }
 
-// score 39 (was 39): the scan uses the pool's own index search and datum index,
-// so it keeps retail's do-while shape and the hoisted count and bitmap; what
-// is left is the register allocation (retail holds the pool in ebp and the
-// bitmap bit in ebx, ours holds the pool in ebx and copies it to ebp), the
-// loop padding and retail's zero-tail stores.
-// bitmap scan, ebp for the datum address) and aligns the scan loop; ours uses
-// one register and no loop padding (the 11 missing bytes).
-// Earlier iterator form 58. Round 415: direct scan/identifier/both forced declarations
-// 39/39/39; outlined declarations 74/44/91; live pool 45, captured tail 42.
-// Original helper declarations, pool snapshot, loop and final global stores restored.
-// Kimi lane 2 round 37 also reached 39 by scanning by absolute index with the salted-index helper
-// (pool in EBP rather than EBX/EBP). Its other forms: direct expression 39; copied/independent/const
-// scan pools 39/64/39; counted for scan 121; refreshed pool 39; absolute-datum getter 71; split pools 39.
+// score 39 (was 39): the scan uses the pool's own index search and datum index, so it keeps
+// retail's do-while shape and the hoisted count and bitmap; retail keeps the pool in two registers
+// (ebx for the scan, a hoisted `mov ebp, ebx` copy for the datum), lays the found path out after
+// the exit and pads the scan loop; ours holds the pool in ebp only and lays the found path first.
+// Tried: earlier iterator form 58. Round 415: direct scan/identifier/both forced declarations
+// 39/39/39; outlined declarations 74/44/91; live pool 45, captured tail 42. Kimi lane 2 round 37:
+// absolute-index scan with the salted-index helper 39; direct expression 39; copied/independent/
+// const scan pools 39/64/39; counted for scan 121; refreshed pool 39; absolute-datum getter 71;
+// split pools 39.
+// Round 17: s_record_pool_iterator with data_iterator_next_inlined (as ai.cpp's player walk) 58:
+// 120 bytes, retail's block layout, found-path compare, dead datum add and immediate final
+// stores exactly; only the second pool register (push ebx, mov ebp, ebx) and the loop padding
+// are missing; without the datum_index init 58; the pool through a local 58;
+// data_iterator_next_calling 94 (0x16bc00 stays a call); data_next_absolute_index_inlined scan 39.
 // @retail 0x7b430
 void function_07b430(void)
 {

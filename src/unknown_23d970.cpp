@@ -568,11 +568,20 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 	return result;
 }
 
-// score 58 (was 338): camera-basis scheduling/register allocation still differs.
+// score 58 (was 58): camera-basis scheduling/register allocation still differs.
 // Retail loads previous_up.k after storing distance and holds right.i/j/k in
 // xmm2/xmm1/xmm0; ours uses xmm2/xmm0/xmm1. Retail's second cross product copies
 // registers and addresses forward through ecx; ours mixes ecx/edi and stores up.i early.
 // The else branch stores forward.j/k through ecx in retail and through edi here.
+// Round 97: cross3f_staged for the second product 217 (1270 bytes; its reads/stores as retail's);
+// both products staged 221; previous_up read after the forward copy 268, before the distance 241;
+// direction_from_angles in the else branch 224, with the staged product 220.
+// Round 17 (aligned counts in brackets, base 44): a `forward` pointer local in the else branch
+// 225 [43] (its stores become retail's ecx+4/ecx+8 exactly, but the if branch's colours move);
+// with the staged product 217 [35: only previous_up.k's register is left, retail loads it into
+// xmm0 after the distance store]; the pointer local in both branches with the staged product
+// 221; on that, right declared first 217 [35], direction declared first 217 [35], both products
+// staged 221 [37], the first product reading direction 223 [48].
 // @retail 0x23de50
 void __stdcall function_23de50(void *state, void *input, s_observer_command *output)
 {
