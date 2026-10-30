@@ -1404,6 +1404,7 @@ struct s_rating_summary
 // inputs with ordinal+fields, dword/word character 188/174. On fields alone, actual 0..64
 // name budget word/short/byte/dword 174/181/230/170; word/short/byte budget with word character
 // 170/174/211. Seven-point leads rejected; original types, loops and complete body restored.
+// DL190: Native status alone/statistics/both with aggregate zero 177/170/365; status with aggregate zero 365; status with word character 183, with statistics 176, with statistics/aggregate 369; statistics/aggregate without status 365. Native full-width unsigned-long/int/unsigned-int count results on status/statistics 170 each. Seven-point best rejected; original types, loops and body restored.
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {

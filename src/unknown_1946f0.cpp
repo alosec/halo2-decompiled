@@ -146,6 +146,7 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 // Plain component loops (rows/normalization/output in seven subsets) 114/96/114/96/96/96/96; all
 // with complete normalized value 155 at 489 bytes. Row/output forms are 440 bytes; no count gain or
 // missing store/reload recovery. Original body and normalizer restored.
+// DL190: Whole face value/native output stores, setter, aggregate 175/175/205; memcpy face with the same boundaries 175/175/205. Original face with setter/aggregate 96/136. Complete face snapshot adds spills; grid reciprocal, last-component reload and output carriers remain. All restored.
 // @retail 0x195070
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {
