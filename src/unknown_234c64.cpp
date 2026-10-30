@@ -280,6 +280,9 @@ void c_window_channel::v9()
 // Round 78: type-field callback address 3; shared request pointer/reference 3/3;
 // message-cast callback 3; result before builder/at function scope 3/3; type-field
 // builder and callback 3; shared message pointer 3. Original body restored.
+// Round 206: pending-record pointer/reference bound at entry/in branch 3/3/3/3;
+// complete pending-record snapshot with live callback 47, with retained callback 47,
+// at entry 47, after type clear 43. Snapshots add a 0x40 frame; original restored.
 // @retail 0x23531c
 void c_window_channel::v10()
 {

@@ -519,6 +519,8 @@ PRIVATE __forceinline void physics_mass_copy(byte const *body, s_physics_mass_ar
 // loads the allocator global before it stores the centre; ours does both the other way round.
 // Vector set 454; repeated zero intrinsic 4; explicit quad stores 197; direct lane stores 4;
 // explicit centre store 4; centre memcpy 125; plain copy inline 4; const centre 4; transform set 4.
+// Round 206: shared allocator interface at first/list/both/all sites 4/4/4/4;
+// shared allocator getter at all sites 4; block allocator interface at first/list/all 4/4/4.
 // @retail 0x1d5ec0
 c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *component,
     s_physics_model_owner *owner, char const *kinds, char *output, long *output_count,
