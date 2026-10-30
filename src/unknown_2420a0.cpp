@@ -1117,7 +1117,12 @@ void c_game_engine_markers::v21(long object_index)
 // the options pointer kept in EDX from entry, which moves the type test to ESI/EDI): the flag as a
 // byte mask 119; an empty `do {} while (false)` after the type test 119 or before the engine-type
 // test 119 (no reload); the unit's player index read at each use 93; the flag in a named bool before
-// the player pointer 119.
+// the player pointer 119. Round 117: the flag as `!(flags[slot] & 1)` 40 (same code); on the team at
+// each call: the flag mask 119, the player pointer before the absolute index 119, the engine type read
+// into a local before the flag test 119, the unit looked up inside the slot test 129, the absolute index
+// written at each call 119, the unit looked up before the slot 119 (428 bytes; the options pointer is
+// reloaded as retail and the middle is retail's, but the object is no longer fetched again after the
+// type test and the flag is loaded into cl), with the flag mask 119; the unit first alone 120.
 // @retail 0x240ff0
 void c_game_engine_markers::v23(long object_index, long unit_index)
 {
@@ -1871,6 +1876,12 @@ long function_242ef0(s_242ef1 arg_0, long team)
 // code); the out-of-line initializer 103, with the out-of-line cause-player setter 129 (both stay
 // calls), the inline initializer with that setter 75. EBP is used for the engine type alone; ruled out
 // as a cause: the final table store merged with the first table read across the event call.
+// Round 117: the type ternary inverted 53 (aligned 42); the time test with its operands swapped 55; the
+// subtype ternary inverted 53; the final sum as game time plus the rounded product 53; a subtype local
+// for the initializer 53; an options pointer local for the mode and type 60 (aligned 38: retail's
+// event slots, but the options pointer in ecx and the player index in edi, still ebp for the type).
+// Diagnostic only (reverted): the table read through a volatile pointer at the final store or at the
+// time test keeps ebp, so the table web is not what takes ebx.
 // @retail 0x2430a0
 void function_2430a0(long player_index, bool flag)
 {
@@ -2031,22 +2042,12 @@ PRIVATE __forceinline short function_244301(short arg_0)
 	return arg_0 == 8 ? NONE : arg_0;
 }
 
-// score 68 (was 68): the record pool's pointer is loaded into EDX where retail loads it into ECX, and
-// the products of the dot product are computed in the other order. Round 70: the delta vector in a
-// loop local with the header from-points/length helpers gives retail's z,y,x products (68, the pad
-// shift remains); with it: constants getter 68; slot before the square 68; result after the point 68;
-// do-while loop 68; dword slot 68. A 600 s permuter run reached 13 only through volatile stores.
-// Round 19: on the delta form only the entry (constants and pool data in EDX, retail ECX) and the
-// iterator's pool load into EDX (retail EAX, a byte shorter, which is also the loop pad shift) remain,
-// aligned 17. The slot read before the radius 79; the iterator declared at function scope 68; on the
-// delta form: the team after the first position call 108, the iterator's index stored before its
-// absolute index 70, early returns in place of the result flag 69.
 // @retail 0x244300
 bool function_244300(long object_index, long *player_index)
 {
 	bool result = false;
-	real radius = mp_globals_block()->constants->pickup_radius;
-	real radius_squared = radius * radius;
+	s_ctf_constants *constants = mp_globals_block()->constants;
+	real radius_squared = constants->pickup_radius * constants->pickup_radius;
 	long slot = slot_object_get(object_index)->slot;
 	long team = function_244301((short)slot);
 	point3f position;
@@ -2068,9 +2069,11 @@ bool function_244300(long object_index, long *player_index)
 			if ((ctf_options()->engine_type != 9 && player_team != team) || (ctf_options()->engine_type == 9 && player_team == team) || ctf_options()->team_mode == 2)
 			{
 				point3f unit_position;
+				vector3f delta;
 
 				function_b9dd0(unit_index, &unit_position);
-				if (distance_sq3f(&unit_position, &position) < radius_squared)
+				vector3d_from_points3d(&unit_position, &position, &delta);
+				if (length_sq3f(&delta) < radius_squared)
 				{
 					result = true;
 					if (player_index)
