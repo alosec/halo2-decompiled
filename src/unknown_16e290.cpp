@@ -1466,6 +1466,8 @@ void function_170630(long player_index);
 // diagnostic only), so the fix is the callee's consistent (second, first, out) reorder.
 // Real-element receiver 7; forceinline (second, first, out) forwarder 7; timer cursor from the
 // element with state inside the guard 7; named delta 7; state-taking inline call helper 7.
+// Round 25 (0x170bb0's file held): real-pointer base with indices 7; pointer-add element 7; byte
+// base from the global 36; flag test through the state pointer 28; timer cursor in the guard 18.
 // @retail 0x16fe90
 void function_16fe90(long user_index)
 {

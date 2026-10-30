@@ -223,22 +223,17 @@ __declspec(noinline) void __stdcall function_b9b90(long object_index, bool disab
 // component data loads into eax after index scaling, retail ecx before it.
 // Signed bitset 11; unsigned bitset 11; external object reference 4; object reference/bitset 11.
 // External header reference 18; header reference/bitset 20; type read first 4; bitset before object reference 11.
+// The view's own physics bits 4; the tail written out in both arms 106; disable tested first 4;
+// both index reads through the havok object getter 51; a word index 14; in a one-file LTCG
+// build the data stays in eax for every lookup spelling, even with the update tail deleted.
 // @retail 0xb9b90
 void __stdcall function_b9b90(long object_index, bool disable)
 {
-	struct s_physics_flags
-	{
-		unsigned short : 6;
-		word active : 1;
-		unsigned short : 1;
-		word disabled : 1;
-		unsigned short : 7;
-	};
 	s_object_view *object = OBJECT_GET(object_index);
 	long type = OBJECT_HEADER_GET(object_index)->type;
 
 	if (((1 << type) & 0x1883) &&
-		TEST_FIELD_BIT(((s_physics_flags *)((byte *)object + 0xc0))->active) &&
+		TEST_FIELD_BIT(object->physics_active) &&
 		object->havok_component_index != NONE)
 	{
 		if (!disable)
@@ -250,10 +245,10 @@ void __stdcall function_b9b90(long object_index, bool disable)
 	}
 	else if (disable)
 	{
-		((s_physics_flags *)((byte *)object + 0xc0))->disabled = true;
+		object->physics_disabled = true;
 		goto update;
 	}
-	((s_physics_flags *)((byte *)object + 0xc0))->disabled = false;
+	object->physics_disabled = false;
 	function_b7360(object_index);
 
 update:

@@ -153,75 +153,48 @@ c_button_widget_45d5d0::c_button_widget_45d5d0(short valuef8, word user_flags) :
 {
 }
 
-/* the next sibling, or the first after the last */
-static __forceinline c_class_1a2c81 *widget_get_next_wrapped(c_class_1a2c81 *widget)
+/* the first of the widget's siblings */
+static __forceinline c_class_1a2c81 *widget_first_sibling(c_class_1a2c81 *widget)
 {
-	c_class_1a2c81 *result = widget->next;
-	if (result) return result;
-	result = widget;
-step:
-	c_class_1a2c81 *cursor = result->previous;
-	if (cursor)
+	while (widget->previous)
 	{
-		result = cursor;
-		goto step;
+		widget = widget->previous;
 	}
-	return result;
+	return widget;
 }
 
-/* the previous sibling, or the last before the first */
-static __forceinline c_class_1a2c81 *widget_get_previous_wrapped(c_class_1a2c81 *widget)
+/* the last of the widget's siblings */
+static __forceinline c_class_1a2c81 *widget_last_sibling(c_class_1a2c81 *widget)
 {
-	c_class_1a2c81 *result = widget->previous;
-	if (result) return result;
-	result = widget;
-step:
-	c_class_1a2c81 *cursor = result->next;
-	if (cursor)
+	while (widget->next)
 	{
-		result = cursor;
-		goto step;
+		widget = widget->next;
 	}
-	return result;
+	return widget;
 }
 
-// score 20 (was 20): entry/repeated traversal registers and early ESI save differ;
-// entry field walk 20; repeated field walk 20; both field walks 20; entry helper only 43; shared edge cursor
-// 20; earlier entry edge lifetime 20; widget edge iteration 20; nested eligibility 20.
-// separate eligibility inline 46, noinline 20; focus inline/noinline 20; success break 20;
-// entry origin result 45; focus after search 49; complete eligibility 20.
-// entry ESI save and wrapping result registers differ;
-// both wrapped helpers 54; helper search for 45; helper cursor while 45;
-// edge-field walk 47; common-return edge walk 44; scoped edge iterator 45;
-// ordinary inline helper 54; helper selection-first search 42. Body restored.
-// initial traversal uses esi and saves it early; retail uses eax then saves esi.
-// Earlier owner snapshot and tail update 20; step helper shared return 40, same-parameter cursor 28,
-// assigned-result links and predicate 21. Link for walks 20; repeated-step helper 49; search for 43;
-// eligibility loop 43; selected result 20; rejection continue 20; local names 20; entry scope 43.
-// Separate entry/step results with for-walks 44 (loop body as retail; the entry result joins the
-// widget in ESI and the head test is copied); with cursor walks 44; existing wrapped helper for the
-// entry, step in place 42 (92 bytes); one candidate for both scans 20; original head with for-walks 20.
-// The body's uses of the widget are copy-propagated to the candidate, so the candidate
-// lives across the call in ESI; retail keeps the candidate in EAX and the widget in ESI.
-// Out-pointer step helper 20 (identical code); single-exit forceinline next-or-first
-// helper for entry and step 44 (96 bytes), plain inline 74 (61 bytes); widget local at
-// the loop top 28; head test with a do-while 28; forceinline eligibility helper 20.
+// score 12 (was 20): only the entry differs: retail finds the first widget in EAX/EDX, saves ESI after it
+// and joins the loop's `mov esi, eax; test esi, esi` tail; ours finds it straight into ESI (push first).
+// Forms with the old candidate copied at the loop head (all 20 unless given): entry/repeated/both field
+// walks; entry helper only 43; shared edge cursor; earlier entry edge lifetime; widget edge iteration;
+// nested eligibility; separate eligibility inline 46, noinline 20; focus inline/noinline; success break;
+// entry origin result 45; focus after search 49; complete eligibility; both wrapped helpers 54; helper
+// search for 45; helper cursor while 45; edge-field walk 47; common-return edge walk 44; scoped edge
+// iterator 45; ordinary inline helper 54; helper selection-first search 42; owner snapshot and tail
+// update; step helper shared return 40; same-parameter cursor 28; assigned-result links and predicate 21;
+// link for walks; repeated-step helper 49; search for 43; eligibility loop 43; selected result; rejection
+// continue; local names; entry scope 43; separate entry/step results with for-walks or cursor walks 44;
+// goto-walk wrapped helper for the entry, step in place 42 (92 bytes); one candidate for both scans;
+// original head with for-walks 20; out-pointer step helper 20; single-exit forceinline next-or-first helper
+// for entry and step 44 (96 bytes), plain inline 74 (61); widget local at the loop top 28; head test
+// with a do-while 28; forceinline eligibility helper 20.
+// The ternary step (`widget = next ? next : first sibling`) keeps the body as retail: 12; the same through a
+// next-or-first ternary helper 12.
 // @retail 0x2c8f56
 void c_button_widget_45d5d0::v8()
 {
-	c_class_1a2c81 *candidate = next;
-	if (!candidate)
-	{
-		c_class_1a2c81 *cursor = previous;
-		candidate = this;
-		while (cursor)
-		{
-			candidate = cursor;
-			cursor = candidate->previous;
-		}
-	}
-	c_class_1a2c81 *widget;
-	while ((widget = candidate) != 0)
+	c_class_1a2c81 *widget = next ? next : widget_first_sibling(this);
+	while (widget)
 	{
 		if (widget->has_valid_type() && widget->value6e)
 		{
@@ -229,58 +202,32 @@ void c_button_widget_45d5d0::v8()
 			widget->function_22ecb4_2(true);
 			return;
 		}
-		candidate = widget->next;
-		if (!candidate)
-		{
-			c_class_1a2c81 *cursor = widget->previous;
-			candidate = widget;
-			while (cursor)
-			{
-				candidate = cursor;
-				cursor = candidate->previous;
-			}
-		}
+		widget = widget->next ? widget->next : widget_first_sibling(widget);
 	}
 }
 
-// score 20 (was 20): entry/repeated traversal registers and early ESI save differ;
-// entry field walk 20; repeated field walk 20; both field walks 20; entry helper only 43; shared edge cursor
-// 20; earlier entry edge lifetime 20; widget edge iteration 20; nested eligibility 20.
-// separate eligibility inline 46, noinline 20; focus inline/noinline 20; success break 20;
-// entry origin result 45; focus after search 49; complete eligibility 20.
-// entry ESI save and wrapping result registers differ;
-// both wrapped helpers 54; helper search for 45; helper cursor while 45;
-// edge-field walk 47; common-return edge walk 44; scoped edge iterator 45;
-// ordinary inline helper 54; helper selection-first search 42. Body restored.
-// initial traversal uses esi and saves it early; retail uses eax then saves esi.
-// Earlier owner snapshot and tail update 20; step helper shared return 40, same-parameter cursor 28,
-// assigned-result links and predicate 21. Link for walks 20; repeated-step helper 49; search for 43;
-// eligibility loop 43; selected result 20; rejection continue 20; local names 20; entry scope 43.
-// Separate entry/step results with for-walks 44 (loop body as retail; the entry result joins the
-// widget in ESI and the head test is copied); with cursor walks 44; existing wrapped helper for the
-// entry, step in place 42 (92 bytes); one candidate for both scans 20; original head with the step in
-// its own result copied to the candidate 44.
-// The body's uses of the widget are copy-propagated to the candidate, so the candidate
-// lives across the call in ESI; retail keeps the candidate in EAX and the widget in ESI.
-// Out-pointer step helper 20 (identical code); single-exit forceinline previous-or-last
-// helper for entry and step 44 (96 bytes), plain inline 74 (61 bytes); widget local at
-// the loop top 28; head test with a do-while 28; forceinline eligibility helper 20.
+// score 12 (was 20): only the entry differs: retail finds the first widget in EAX/EDX, saves ESI after it
+// and joins the loop's `mov esi, eax; test esi, esi` tail; ours finds it straight into ESI (push first).
+// Forms with the old candidate copied at the loop head (all 20 unless given): entry/repeated/both field
+// walks; entry helper only 43; shared edge cursor; earlier entry edge lifetime; widget edge iteration;
+// nested eligibility; separate eligibility inline 46, noinline 20; focus inline/noinline; success break;
+// entry origin result 45; focus after search 49; complete eligibility; both wrapped helpers 54; helper
+// search for 45; helper cursor while 45; edge-field walk 47; common-return edge walk 44; scoped edge
+// iterator 45; ordinary inline helper 54; helper selection-first search 42; owner snapshot and tail
+// update; step helper shared return 40; same-parameter cursor 28; assigned-result links and predicate 21;
+// link for walks; repeated-step helper 49; search for 43; eligibility loop 43; selected result; rejection
+// continue; local names; entry scope 43; separate entry/step results with for-walks or cursor walks 44;
+// goto-walk wrapped helper for the entry, step in place 42 (92 bytes); one candidate for both scans;
+// original head with the step in its own result copied to the candidate 44; out-pointer step helper 20; single-exit forceinline previous-or-last helper
+// for entry and step 44 (96 bytes), plain inline 74 (61); widget local at the loop top 28; head test
+// with a do-while 28; forceinline eligibility helper 20.
+// The ternary step (`widget = previous ? previous : last sibling`) keeps the body as retail: 12; the same through
+// a previous-or-last ternary helper 12.
 // @retail 0x2c8fb4
 void c_button_widget_45d5d0::v9()
 {
-	c_class_1a2c81 *candidate = previous;
-	if (!candidate)
-	{
-		c_class_1a2c81 *cursor = next;
-		candidate = this;
-		while (cursor)
-		{
-			candidate = cursor;
-			cursor = candidate->next;
-		}
-	}
-	c_class_1a2c81 *widget;
-	while ((widget = candidate) != 0)
+	c_class_1a2c81 *widget = previous ? previous : widget_last_sibling(this);
+	while (widget)
 	{
 		if (widget->has_valid_type() && widget->value6e)
 		{
@@ -288,17 +235,7 @@ void c_button_widget_45d5d0::v9()
 			widget->function_22ecb4_2(true);
 			return;
 		}
-		candidate = widget->previous;
-		if (!candidate)
-		{
-			c_class_1a2c81 *cursor = widget->next;
-			candidate = widget;
-			while (cursor)
-			{
-				candidate = cursor;
-				cursor = candidate->next;
-			}
-		}
+		widget = widget->previous ? widget->previous : widget_last_sibling(widget);
 	}
 }
 

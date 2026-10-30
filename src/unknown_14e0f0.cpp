@@ -158,6 +158,12 @@ static inline void transform_offset_point(transform4x3f const *frame, real scale
 // Trigger test through 0x11c5b0 20 (trigger loop exact, first direction products flip);
 // that plus one exit 16; plus result in the loop condition 207; plus a yaw/pitch helper 16;
 // unqualified pool pointer 131 (data kept across 0xbaf80, retail re-reads it).
+// The existing facing setter 0x1874b0 248 and velocity update 0xb77d0 665 stay
+// out of line (their files are /Ob1); trigger test through 0x11c5b0 with one
+// exit 20, also with random_index 20; random_index alone 26. Compile-only: the
+// first test's product order flips with the 0x11c5b0 call, random_index or
+// reading target_index directly; only a pointer local to the direction gives
+// retail's order in both the first test and the pitch.
 // @retail 0x14e200
 bool __stdcall function_14e200(long player_index, long target_index, point3f const *position, bool detach)
 {

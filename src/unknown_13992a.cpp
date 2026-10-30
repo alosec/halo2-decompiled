@@ -58,8 +58,8 @@ bool function_100f70(long arg_1);
 bool function_15fef0(long arg_1);
 bool function_15eb20(long arg_1);
 real function_c53c0(long arg_1);
-long function_22bfc0(char arg_1, s_22bfc0_definition const *arg_2);
-long function_22bff0(short arg_1, s_22bff0_definition const *arg_2, char arg_3);
+long function_22bfc0(s_22bfc0_definition const *arg_1, char arg_2);
+long function_22bff0(s_22bff0_definition const *arg_1, short arg_2, char arg_3);
 void function_13afa9(long arg_1, long *arg_3, s_hud_weapon_record *arg_2);
 short function_cfe40(long arg_1);
 long function_cbe60(long arg_1);
@@ -74,8 +74,17 @@ long function_14de70(long arg_1);
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-// score 113 (was 113): frame 0x120 and scalar homes agree; the first branch span and
-// mask/player register roles still differ. Word lookup index 580; byte slot counter 314;
+// score 48 (was 64): frame 0x120, scalar homes and both definition-call setups agree. Left: the
+// parent index (+0x14) is held in a register from its NONE test into the parent lookup, where retail
+// compares it in memory and reads it again after the seat test (one byte longer), so every later call
+// and global field sits a byte off. Round 27: 0x22bfc0's and 0x22bff0's parameters put in the order
+// retail's caller sets them up, definition first (64 -> 48, both callees still match); before that the
+// tests nested 64 and the parent index read as dword 64. On the kept form (fast screens, which show the
+// same parent register): the test read as dword or as `((long const *)local_3)[5]`, the parent lookup
+// declared before the test, the 0x22bfc0 result through a local: the parent stays in a register each
+// time; the seat flag stored before the parent lookup reloads both fields (fast 521); a bool helper for
+// the two tests (fast 418).
+// Earlier (113): the first branch span and mask/player register roles. Word lookup index 580; byte slot counter 314;
 // short suppression 173; cached seat selector 152; missing-player return 134 (plain).
 // caller depth 1/2/0 134/134/651; global optimization off 1911; const lookup 134;
 // typed lookup through getter / directly / depth one 134/113/134 (plain).
@@ -157,16 +166,16 @@ void function_13992a(byte *arg_1, long arg_2)
             arg_1[0x3f] = function_15fef0(local_1);
             arg_1[0x40] = function_15eb20(local_1);
             *(real *)(arg_1 + 0x44) = function_c53c0(*(long *)(local_2 + 0x2c));
-            *(long *)arg_1 = function_22bfc0(g_4e6948->state == 2,
-                (s_22bfc0_definition const *)g_4e3b44[*(long *)local_3 & 0xffff].bytes);
+            *(long *)arg_1 = function_22bfc0((s_22bfc0_definition const *)g_4e3b44[*(long *)local_3 & 0xffff].bytes,
+                g_4e6948->state == 2);
             if (*(long *)(local_3 + 0x14) != NONE && *(short *)(local_3 + 0x1fc) != NONE)
             {
                 byte const *local_7 = (byte const *)OBJECT_DATUM_GET(*(long *)(local_3 + 0x14));
                 byte const *local_8 = g_4e3b44[*(long *)local_7 & 0xffff].bytes;
                 byte const *local_9 = *(byte *const *)(local_8 + 0x1cc) + *(short *)(local_3 + 0x1fc) * 0xb0;
                 arg_1[0x48] = true;
-                *(long *)(arg_1 + 4) = function_22bff0(*(short *)(local_3 + 0x1fc),
-                    (s_22bff0_definition const *)g_4e3b44[*(long *)local_7 & 0xffff].bytes, g_4e6948->state == 2);
+                *(long *)(arg_1 + 4) = function_22bff0((s_22bff0_definition const *)g_4e3b44[*(long *)local_7 & 0xffff].bytes,
+                    *(short *)(local_3 + 0x1fc), g_4e6948->state == 2);
                 if (!(bool)((*(dword *)local_9 >> 5) & 1)) local_5 = true;
                 if ((bool)((*(dword *)local_9 >> 3) & 1))
                 {

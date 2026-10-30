@@ -125,40 +125,48 @@ void c_widget::v15(c_widget *widget)
 	}
 }
 
-// score 20 (was 20): candidate/current allocation and delayed ESI save differ;
-// shared widget view 20; immutable current 26; initial/later/both reverse for 20/20/20;
-// current initially empty 20; direct existing predicate/focus 20/20.
-// inline/noinline eligibility declarations 44/20; focus declarations 20/20;
-// single search cursor 41; proven initial candidate do-while 37;
-// eligibility in loop admission 47; named eligibility result 20.
-// shared success exit/current for 20/20; selection/reverse role names 20/20;
-// separate entry result and entry-for 42/42; failure continue 20; for plus break 20.
-// candidate uses ESI before the first scan; retail delays ESI and uses EAX.
-// Initial result arms 20; both result arms 21; entry reverse lifetime 20; scoped widget 26;
-// scoped result arms 21; scoped reverse lifetimes 26; selected-widget success tail 47;
-// initial result arms with success tail 47.
-// Copy before the loop and at its tail 20; for-walks to the first sibling 20/20 (one candidate);
-// forceinline next-or-first helper in a for loop 42 (out of line 72); helper with the head copy 42;
-// one cursor stepped at the loop top 64; separate entry/step results 42, with for-walks 42 (the loop
-// body then matches retail; the entry result still joins the widget in ESI and the test is copied).
-// Candidate-tested while with a body widget 26; one stepping loop from this 64; break then focus
-// under if (widget) 47; widget assigned before the loop and at its end 20; first-sibling walk local 20.
+/* the first of the widget's siblings */
+static __forceinline c_widget *widget_first_sibling(c_widget *widget)
+{
+	while (widget->prev)
+	{
+		widget = widget->prev;
+	}
+	return widget;
+}
+
+/* the last of the widget's siblings */
+static __forceinline c_widget *widget_last_sibling(c_widget *widget)
+{
+	while (widget->next)
+	{
+		widget = widget->next;
+	}
+	return widget;
+}
+
+// score 12 (was 20): only the entry differs: retail finds the first widget in EAX/EDX, saves ESI after it
+// and joins the loop's `mov esi, eax; test esi, esi` tail; ours finds it straight into ESI (push first).
+// Forms with the old candidate copied at the loop head (all 20 unless given): shared widget view; immutable
+// current 26; initial/later/both reverse for; current initially empty; direct existing predicate/focus;
+// inline/noinline eligibility declarations 44/20; focus declarations; single search cursor 41; proven
+// initial candidate do-while 37; eligibility in loop admission 47; named eligibility result; shared success
+// exit/current for; role names; separate entry result and entry-for 42/42; failure continue; for plus
+// break; initial/both result arms 20/21; entry reverse lifetime; scoped widget 26; scoped result arms 21;
+// scoped reverse lifetimes 26; selected-widget success tail 47 (with initial result arms 47); copy before
+// the loop and at its tail; for-walks to the first sibling; forceinline next-or-first helper in a for
+// loop 42 (out of line 72); helper with the head copy 42; one cursor stepped at the loop top 64.
+// The ternary step (`widget = next ? next : first sibling`) keeps the body as retail: 12; the same as a for
+// loop, through a next-or-first ternary helper, with an if/do-while entry guard, or `widget = this` first 12;
+// a named entry result 35 (entry as retail, but the inverted loop tests the name, so no shared tail).
+// From another lane (all with the old candidate copy): candidate-tested while with a body widget 26; one
+// stepping loop from this 64; break then focus under if (widget) 47; widget assigned before the loop and at
+// its end 20; first-sibling walk local 20.
 // @retail 0x22ebc3
 void c_widget::v16()
 {
-	c_widget *candidate = next;
-	if (!candidate)
-	{
-		c_widget *p = prev;
-		candidate = this;
-		while (p)
-		{
-			candidate = p;
-			p = candidate->prev;
-		}
-	}
-	c_widget *widget;
-	while ((widget = candidate) != 0)
+	c_widget *widget = next ? next : widget_first_sibling(this);
+	while (widget)
 	{
 		if (widget->function_22e37f())
 		{
@@ -166,50 +174,32 @@ void c_widget::v16()
 			widget->function_22ecb4(true);
 			return;
 		}
-		candidate = widget->next;
-		if (!candidate)
-		{
-			c_widget *p = widget->prev;
-			candidate = widget;
-			while (p)
-			{
-				candidate = p;
-				p = candidate->prev;
-			}
-		}
+		widget = widget->next ? widget->next : widget_first_sibling(widget);
 	}
 }
 
-// score 20 (was 20): entry candidate still uses ESI before its save; entry/repeat/both link cursors 20/20/20;
-// entry/repeat/both last-widget results 20/20/20; link for scans 20; selected declaration first with link scans 20.
-// entry scan saves ESI early and carries its candidate there; retail uses EAX/EDX before the save.
-// Link for scans 20; transient entry scope 42; eligibility condition 44; rejection arm 20; previous branch 21; one search cursor 21; traversal role names 20; fallback declaration order 20.
-// Entry candidate still occupies ESI before the fallback scan; the existing
-// native object type and direct method boundaries do not recover the delayed save; native
-// traversal 20; native entry scan 42; native repeat scan 20; native next cursors 20; native
-// candidate 20; direct existing methods 20; native selected lifetime 26; native success tail 47.
-// score 20 (was 20): the head copy is propagated into the body, so the candidate takes ESI.
-// Walk from a widget = this cursor with separate entry/step results 42 (90 bytes); prev link per
-// branch 21; NULL-initialized widget 20; own prev local with the scan in the entry variable 21;
-// forceinline previous-or-last helper at entry and step 42 (90 bytes).
-// Eligibility used for admission and focus: bool/byte/short/long at iteration 20/20/42/40;
-// the same carriers at entry 20/20/42/40. Delayed ESI save still differs.
+// score 12 (was 20): only the entry differs: retail finds the first widget in EAX/EDX, saves ESI after it
+// and joins the loop's `mov esi, eax; test esi, esi` tail; ours finds it straight into ESI (push first).
+// Forms with the old candidate copied at the loop head (all 20 unless given): entry/repeat/both link
+// cursors; entry/repeat/both last-widget results; link for scans; selected declaration first; transient
+// entry scope 42; eligibility condition 44; rejection arm; previous branch 21; one search cursor 21; role
+// names; fallback declaration order; native traversal/entry scan 42/repeat scan/next cursors/candidate;
+// direct existing methods; native selected lifetime 26; native success tail 47; walk from `widget = this`
+// with separate entry/step results 42 (90 bytes); prev link per branch 21; NULL-initialized widget; own
+// prev local 21; forceinline previous-or-last helper at entry and step 42 (90), plain inline 72 (55);
+// eligibility as bool/byte/short/long 20/20/42/40; base-class candidate with a cast copy; prev read
+// before the eligibility call 20; `while (c_widget *widget = candidate)` 20; helper in the loop
+// condition from `widget = this` 64 (63); single-variable do/while walk as 0x2b41ea 69 (58).
+// The ternary step (`widget = prev ? prev : last sibling`) keeps the body as retail: 12; the same as a for
+// loop, through a previous-or-last ternary helper, with an if/do-while entry guard, `widget = this` first
+// or a named previous 12; a named entry result 35 (92: entry as retail, but the inverted loop tests the
+// name, so no shared tail); ternary into the head-copy candidate 39 (92); last-sibling helper with its own
+// next cursor 21; early-return helper 43; eligibility in the loop condition with focus after 44 (92).
 // @retail 0x22ec1b
 void c_widget::v17()
 {
-	c_widget *candidate = prev;
-	if (!candidate)
-	{
-		c_widget *p = next;
-		candidate = this;
-		while (p)
-		{
-			candidate = p;
-			p = candidate->next;
-		}
-	}
-	c_widget *widget;
-	while ((widget = candidate) != 0)
+	c_widget *widget = prev ? prev : widget_last_sibling(this);
+	while (widget)
 	{
 		if (widget->function_22e37f())
 		{
@@ -217,17 +207,7 @@ void c_widget::v17()
 			widget->function_22ecb4(true);
 			return;
 		}
-		candidate = widget->prev;
-		if (!candidate)
-		{
-			c_widget *p = widget->next;
-			candidate = widget;
-			while (p)
-			{
-				candidate = p;
-				p = candidate->next;
-			}
-		}
+		widget = widget->prev ? widget->prev : widget_last_sibling(widget);
 	}
 }
 
