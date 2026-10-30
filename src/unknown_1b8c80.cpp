@@ -1421,30 +1421,6 @@ s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
 void function_1e3400(long actor_index, short squad_index);
 void function_201ad0(long squad_index, long object_index);
 
-// score 28 (was 216): 1200 bytes against 1198. The event block and the tail colour their
-// temporaries differently: retail loads the seat's object into EAX (ours EDX), the root vehicle
-// for 0x1fb7e0 into EDX (ours EAX), the time globals into EAX (ours ECX; one byte longer twice)
-// and the rounded ticks into DX (ours AX).
-// Round 103: squad pointer NULL then assigned; both 0x1df560 calls with retail's team order (the
-// other team first, as the file's matched callers); the vehicle's squad field read at each use;
-// the seat count read once into a short bound with a short index (retail's down-counter); the
-// unit's actor index read at each use; `previous` before `count`; the existing real_to_long for
-// the hand-written fld/fistp (216 -> 28). Then: the event test in one if 28; the definition
-// inline 28; the actor getter at each use in the last two statements 39; the product without the
-// real cast 28; a fresh actor pointer for the last two statements 28.
-// frame 0x32c and length agree; the driver byte spills
-// where retail retains BL, the squad pointer uses EBX instead of EDI, and the
-// seat walk and conversion homes differ.
-// Current-vehicle/root-index and seat-count/total-seats home names, each with
-// driver or complementary passenger ownership: eight forms, all 218.
-// Native byte/signed-byte driver state, mutable/const 218/218 each;
-// native short/word driver state, mutable/const 318/318 each. Original Boolean restored.
-// Round 400: Consistent per-use vehicle squad field with native count/root-input/seat-array
-// scope in masks 0-7: 256/256/285/285/256/256/285/285. Original field snapshot, roots and seat
-// walk restored.
-// Round 420: Existing child-iterator initializer with native short squad-call conversions in masks 0-7: eight
-// forms, all 216. Original handwritten initialization, casts and declarations restored; driver/squad and
-// seat/conversion homes remain.
 // @retail 0x1bb570
 void __stdcall function_1bb570(long vehicle_index, long actor_index)
 {
@@ -1501,9 +1477,7 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
         {
             s_object_seat seats[0x40];
             long previous = NONE;
-            long count = 0;
-            function_c8a40(root_vehicle, seats, (short *)&count, 0x40);
-            short seat_count = (short)count;
+            short seat_count = function_c8b80(root_vehicle, seats, 0x40);
             for (short i = 0; i < seat_count; ++i)
             {
                 if (seats[i].object_index != previous)
@@ -1531,11 +1505,11 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
         }
 event:
         {
-            short seat_index = object_get(actor->unknown018)->unknown1fc;
-            if (seat_index != NONE)
+            s_slot_object_view *unit = object_get(actor->unknown018);
+            if (unit->unknown1fc != NONE)
             {
                 s_vehicle_tag_view *definition = (s_vehicle_tag_view *)g_4e3b44[*(long *)vehicle & 0xffff].bytes;
-                if (!TEST_FIELD_BIT(definition->seats[seat_index].flags.bit11))
+                if (!TEST_FIELD_BIT(definition->seats[unit->unknown1fc].flags.bit11))
                     function_1fb7e0(0x66, actor_index, 0, root_vehicle, NONE);
             }
         }

@@ -400,47 +400,22 @@ struct s_2f6b0_point
 	short x, y;
 };
 
-// score 29 (was 29): frame 0x18 and the incoming contract agree; retail loads the
-// rectangles' high halves first, reads the horizontal origin back from the copied
-// bounds (EDI) and keeps the copy's low dword (ECX) for the vertical origin; ours
-// shifts the horizontal origin out of the bounds register and adds the vertical
-// one in 16 bits. Earlier at 94: frame 0x1c versus 0x18; position/output argument
-// homes and rectangle loads differ. Rectangle/origin names 94/94;
-// horizontal/vertical/both origins in place 100/92/115; native step initializer 94;
-// shared output assignment 94; workspace names plus short origin 113; native frame
-// with scalar steps 118, short origin 91. At 29: direct horizontal/vertical/both
-// origins 99/29/102; output readback/native 94/94. Both direct origins with
-// readback/native/late full 102/102/102; on vertical-direct, rectangles swapped/late
-// full/global vertical value/global horizontal value 101/102/67/101. Separate short
-// steps 109; const short steps 109; early/late step names 29/29; const full snapshot
-// 29; const native step 29; both const 29; early horizontal origin 29. Horizontal
-// pipeline 102; vertical step first 102; vertical coordinates first 38; shared
-// column/row/both 29/29/29; horizontal origin consumed 78; vertical pipeline 100.
-// Full/bounds/both library copies 29/29/29; native edge construction 129; snapshot
-// vertical origin 105; recovered-frame rectangle names 29; short horizontal origin
-// 113; native step construction 29. Both origins as long/short/word locals from the
-// bounds 105/113/113; both origins read before the steps and used by them, short or
-// long, 106/102. Product operand order, sum order, step declared first, const
-// origins and the edge sums swapped make no difference.
 // @retail 0x2f6b0
 void function_2f6b0(s_2f6b0_point const *position, s_2f6b0_point const *grid,
 	s_2f6b0_point const *span, short_rect *outer, short_rect *inner)
 {
-	(void)&grid;
-	(void)&span;
-	(void)&outer;
 	short_rect full = g_485a8a.a;
 	short_rect bounds = g_485a8a.b;
 	s_2f6b0_point step;
 	step.x = (bounds.v3 - bounds.v1) / grid->x;
 	step.y = (bounds.v2 - bounds.v0) / grid->y;
-	long x = bounds.v1;
-	bounds.v1 = x + (word)position->x * step.x;
-	bounds.v3 = x + (word)(span->x + position->x) * step.x;
-	bounds.v0 = g_485a8a.b.v0 + (word)position->y * step.y;
-	bounds.v2 = g_485a8a.b.v0 + (word)(span->y + position->y) * step.y;
-	*outer = bounds;
-	*inner = bounds;
+	short_rect cell;
+	cell.v1 = bounds.v1 + position->x * step.x;
+	cell.v3 = bounds.v1 + (span->x + position->x) * step.x;
+	cell.v0 = bounds.v0 + position->y * step.y;
+	cell.v2 = bounds.v0 + (span->y + position->y) * step.y;
+	*outer = cell;
+	*inner = cell;
 	if (position->x == 0)
 		outer->v1 = full.v1;
 	else
@@ -722,38 +697,32 @@ struct s_tag_data;
 dword function_13bc00(s_tag_data const *function, real input);
 color3f *unpack_color3f(dword pixel, color3f *color);
 
-// score 22 (was 22): Frame and calls agree; zero/one/bound registers and remap spill remain.
-// Earlier: Frame and calls agree; zero/one/bound registers and remap spill differ.
-// Interpolation arms 76; lower/both field observations 136/136; trig/all arms 203/203;
-// shared trig clamp/arms 219/219; named clamped input 66.
-// zero/one and interval SSE carriers, then remap-spill scheduling differ;
-// bound declaration order 22; lower/upper names 22; sample name 22; named span 22;
-// bounds after clamp 25; reversed remap cases 231; separate remap result 22; color first 154.
-// Native color library/record copies 109/109; remap case orders 23451/12435/24135/35124
-// 229/30/81/81; shared data-field reference 22; data before component dispatch 70.
-// Existing shared interpolation/trig/all clamps 66/203/195; staged interpolation 22;
-// native bound record 136; readonly data 22; upper-first endpoints 22; sequential endpoints 22.
-// Entry color/interval/data declarations, paired/all scopes and entry sample: eight forms 22 each.
-// Inline range-map helper modifying/returning its value 146/149; switch in a shared inline
-// helper with 0x1b2c0 22; sibling statement clamp 76; sibling named clamp 66.
+/* a shader curve's value mapped into the curve's [low, high] range, unless the
+   curve's flags say it is already in range */
+PRIVATE __forceinline real shader_curve_remap(s_1b230_function const *curve, real value)
+{
+    byte const *data = curve->data;
+    if (!(data[1] & 0xf0))
+    {
+        real low = *(real const *)(data + 4);
+        real high = *(real const *)(data + 8);
+        value = PIN(value, 0.0f, 1.0f);
+        return (high - low) * value + low;
+    }
+    return value;
+}
+
 // @retail 0x1b580
 bool function_1b580(long unused, byte const *definition, long component, long mode, real *out)
 {
     long const *unused_reference = &unused;
     (void)unused_reference;
     s_1b230_function const *curve = (s_1b230_function const *)(definition + 0xc);
-    real value = function_1b230(curve, *(long const *)definition,
+    real sample = function_1b230(curve, *(long const *)definition,
         *(long const *)(definition + 4), *(real const *)(definition + 8));
     if (component != 4)
     {
-        byte *data = curve->data;
-        if (!(data[1] & 0xf0))
-        {
-            real low = *(real *)(data + 4);
-            real high = *(real *)(data + 8);
-            value = PIN(value, 0.0f, 1.0f);
-            value = (high - low) * value + low;
-        }
+        real value = shader_curve_remap(curve, sample);
         switch (mode)
         {
         case 1: value = 1.0f - value; break;
@@ -776,7 +745,7 @@ bool function_1b580(long unused, byte const *definition, long component, long mo
     {
         color3f color;
         if (curve->data && curve->size > 0)
-            unpack_color3f(function_13bc00((s_tag_data const *)curve, value), &color);
+            unpack_color3f(function_13bc00((s_tag_data const *)curve, sample), &color);
         else
             color = *(color3f const *)&g_4686cc->red;
         out[0] = color.red;
@@ -824,15 +793,7 @@ void __stdcall function_17960(byte *state, word const *range)
                     *(long const *)(parameter + 4), *(real const *)(parameter + 8));
                 if (mode != 4)
                 {
-                    byte const *data = curve->data;
-                    if (!(data[1] & 0xf0))
-                    {
-                        real low = *(real const *)(data + 4);
-                        real high = *(real const *)(data + 8);
-                        real clamped = 0.0f > value ? 0.0f : value > 1.0f ? 1.0f : value;
-                        value = (high - low) * clamped + low;
-                    }
-                    out[mode] = value;
+                    out[mode] = shader_curve_remap(curve, value);
                 }
                 else
                 {
