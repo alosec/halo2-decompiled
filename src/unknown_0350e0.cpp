@@ -1707,6 +1707,7 @@ real function_2f2d0(vector3f const *direction, point3f const *position, long mod
 
 extern real g_5234c8;
 byte g_4c19c0, g_55e6c6;
+extern dword g_4b8438;
 struct s_2e9e0_saved { long tag; point3f position; };
 s_2e9e0_saved g_4c19c4[4];
 dword g_4c1a04;
@@ -1723,6 +1724,15 @@ PRIVATE inline real clamp_2e9e0(real value)
     return value < 0.0f ? 0.0f : value > 1.0f ? 1.0f : value;
 }
 
+// score 508 (was 594): draft passed (cosine * size, sine * size, x_scale, y_scale) to function_480a0; retail passes
+// (x_scale * size, y_scale * size, cosine, sine) (0x2f209-0x2f247: edx=sine and [0x2c]=cosine pushed as args 4 and 5, the
+// scales multiplied by size into the two float args). Retail also re-reads the entry flags from memory after function_47fd0
+// (test byte [edi], 8), recomputes the opacity expression in each PIN arm, reads far_angle straight from the definition, and
+// loops with the count guard kept. What still differs: retail inlines D3DDevice_SetVertexData2f (0x2f17c-0x2f1ba) but the reduced
+// image calls it (full build may differ); ebx and ebp swapped (retail definition in ebx, NONE/time in ebp); stack slot order;
+// the time/hash sum is emitted h1 first (retail h0*k + time + h1); 0.0/1.0 are reloaded instead of kept in xmm5/xmm6.
+// Tried: far_distance read in place (552), all clamps as PIN (543), declaration order of the out locals (no change),
+// attenuation/animated hoisted above delta (576 / 548), several spellings of the hash sum (548).
 // @retail 0x2e9e0
 long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
 {
@@ -1745,6 +1755,7 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
     real context_alpha = 1.0f;
     if ((context[4] & 2) && (context[4] & 1))
         context_alpha = clamp_2e9e0(context[3] * g_5234c8);
+    color3f animated = { 1.0f, 1.0f, 1.0f };
     vector3f delta;
     delta.i = position.x - g_4b9da0.x;
     delta.j = position.y - g_4b9da0.y;
@@ -1758,12 +1769,12 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
     real near_distance = *(real *)(definition + 0x18), far_distance = *(real *)(definition + 0x1c);
     if (near_distance != far_distance)
         attenuation = clamp_2e9e0((forward - far_distance) / (near_distance - far_distance));
-    real near_angle = *(real *)(definition + 8), far_angle = *(real *)(definition + 0xc);
-    if (near_angle != far_angle)
+    real near_angle = *(real *)(definition + 8);
+    if (near_angle != *(real *)(definition + 0xc))
     {
-        real inverse = 1.0f / (near_angle - far_angle);
+        real inverse = 1.0f / (near_angle - *(real *)(definition + 0xc));
         real projection = delta.i * direction.i + direction.j * delta.j + direction.k * delta.k;
-        attenuation *= clamp_2e9e0(0.0f - far_angle * inverse - projection * inverse);
+        attenuation *= clamp_2e9e0(0.0f - *(real *)(definition + 0xc) * inverse - projection * inverse);
     }
     attenuation *= clamp_2e9e0(alpha);
     real unoccluded_alpha = context_alpha * attenuation;
@@ -1783,22 +1794,22 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
             *(short *)(definition + 0x2c), *(real *)(definition + 0x30));
         real camera_angle = (real)atan2((double)delta.j * g_4b9e4c.j + (double)delta.i * g_4b9e4c.i + (double)delta.k * g_4b9e4c.k,
             (double)delta.j * g_4b9e58.j + (double)delta.i * g_4b9e58.i + (double)delta.k * g_4b9e58.k);
-        color3f animated = { 1.0f, 1.0f, 1.0f };
         if (*(long *)(definition + 0x54) > 0)
         {
             s_tag_data *curve = (s_tag_data *)*(byte **)(definition + 0x58);
-            function_13be80(curve, function_13b390(curve, time, 0.0f), &animated);
+            color3f sampled;
+            function_13be80(curve, function_13b390(curve, time, 0.0f), &sampled);
+            animated = sampled;
         }
         if (*(long *)(definition + 0x5c) > 0)
             base_angle += function_13bb90((s_tag_data *)*(byte **)(definition + 0x60), time, 0.0f) * 3.1415927410125732f;
-        long i = 0;
-        do
+        for (long i = 0; i < *(long *)(definition + 0x40); ++i)
         {
             byte *entry = *(byte **)(definition + 0x44) + i * 0x30;
-            word flags = *(word *)entry;
-            real opacity = clamp_2e9e0((*(real *)(entry + 0x1c) - *(real *)(entry + 0x18)) * amount + *(real *)(entry + 0x18));
+            word const *flags = (word const *)entry;
+            real opacity = PIN((*(real *)(entry + 0x1c) - *(real *)(entry + 0x18)) * amount + *(real *)(entry + 0x18), 0.0f, 1.0f);
             real size = ((*(real *)(entry + 0x14) - *(real *)(entry + 0x10)) * amount + *(real *)(entry + 0x10)) * scale;
-            opacity *= (flags & 0x20) ? unoccluded_alpha : attenuation;
+            opacity *= (*flags & 0x20) ? unoccluded_alpha : attenuation;
             if (opacity > 0.0f && size > 0.0f)
             {
                 real angle = *(real *)(entry + 0xc) * 0.01745329238474369f;
@@ -1813,15 +1824,15 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
                 selected.red = *(real *)(entry + 0x24) * animated.red;
                 selected.green = *(real *)(entry + 0x28) * animated.green;
                 selected.blue = *(real *)(entry + 0x2c) * animated.blue;
-                if (!(flags & 0x10))
+                if (!(*flags & 0x10))
                 {
                     selected.red *= color.red;
                     selected.green *= color.green;
                     selected.blue *= color.blue;
                 }
-                if (flags & 1) angle += camera_angle;
-                if (flags & 4) size *= clamp_2e9e0((visibility + 1.0f) * 0.5f);
-                if (flags & 2) size *= forward;
+                if (*flags & 1) angle += camera_angle;
+                if (*flags & 4) size *= clamp_2e9e0((visibility + 1.0f) * 0.5f);
+                if (*flags & 2) size *= forward;
                 real displacement = *(real *)(entry + 8);
                 point3f point;
                 point.x = displacement * reflected.i + position.x;
@@ -1829,32 +1840,37 @@ long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
                 point.z = reflected.k * displacement + position.z;
                 if (!function_47fd0(*(long *)(definition + 0x24), 0, *(short *)(entry + 4), 0))
                 {
-                    if ((flags & 8) && !g_4c19c0)
+                    if (*flags & 8)
                     {
-                        function_0222d0(D3DRS_ZENABLE, 2);
-                        g_4c19c0 = true;
+                        if (!g_4c19c0)
+                        {
+                            g_4b8438 = 2;
+                            D3DDevice_SetRenderState(D3DRS_ZENABLE, 2);
+                            g_4c19c0 = true;
+                        }
                     }
-                    else if (!(flags & 8) && g_4c19c0)
+                    else if (g_4c19c0)
                     {
-                        function_0222d0(D3DRS_ZENABLE, 0);
+                        g_4b8438 = 0;
+                        D3DDevice_SetRenderState(D3DRS_ZENABLE, 0);
                         g_4c19c0 = false;
                     }
                     D3DDevice_SetVertexData2f(8, clamp_2e9e0(1.0f - *(real *)(entry + 0x20)), 0.0f);
                     real sine = angle == 0.0f ? 0.0f : (real)sin((double)angle);
                     real cosine = angle == 0.0f ? 1.0f : (real)cos((double)angle);
-                    function_480a0(&point, cosine * size, sine * size, x_scale, y_scale,
+                    function_480a0(&point, x_scale * size, y_scale * size, cosine, sine,
                         function_131f40(opacity, &selected));
                 }
             }
-            ++i;
-        } while (i < *(long *)(definition + 0x40));
+        }
     }
     if (definition[0x28] & 1)
     {
         if (g_4c1a04 < 4)
         {
-            g_4c19c4[g_4c1a04].tag = tag;
-            g_4c19c4[g_4c1a04++].position = position;
+            s_2e9e0_saved *saved = &g_4c19c4[g_4c1a04++];
+            saved->tag = tag;
+            saved->position = position;
         }
         else if (!g_55e6c6) g_55e6c6 = true;
     }
@@ -2452,10 +2468,10 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 }
 
 
-PRIVATE __forceinline real motion_random_step(real value, real step)
+PRIVATE __forceinline real motion_random_step(double value, double step)
 {
-    double random = (double)random_next(&g_4e7408->seed) * (1.0f / 65535.0f);
-    real next = (real)((random + random - 1.0f) * step + value);
+    double random = random_unit_fraction(g_4e7408);
+    real next = (real)(step * (random + random - 1.0f) + value);
     return next < -1.0f ? -1.0f : next > 1.0f ? 1.0f : next;
 }
 
@@ -2474,6 +2490,15 @@ PRIVATE __forceinline point2f motion_project_point(point3f const *point)
     return result;
 }
 
+// score 529 (was 561): the logic matches retail block by block; what is left is register allocation and scheduling.
+// Retail's loop keeps one pointer per (base, stride) group starting at state+0x18, view+0x104, view+0x120 (offset[1]),
+// view+0x158 and state+0x2c; we start at state+0x88, view+0xec and view+0x11c, so the whole loop differs in registers
+// and spill slots (frame 0x60 vs 0x38). Retail also reads the velocity back from memory for the speed limit (we reuse
+// the registers and spill them), keeps the random step and the old value alive on the x87 stack (fmul st(2) / fadd st(1)
+// where we copy and pop), computes dz, dy, dx before the three products, and reads the flags byte at state+0x94 for
+// the cycle bit (a byte read scores 538 but is a type pun, not kept). Tried: a speed-limit helper (560, same code),
+// factor order in the random step (no change), the lane order of offset and of the view fields (no change), dz/dy/dx
+// from the stored position (587), phase read before the cycle test (+7 over the per-branch read).
 // @retail 0x37260
 bool __stdcall function_37260(byte *state, real step, byte const *parameters)
 {
@@ -2489,7 +2514,8 @@ bool __stdcall function_37260(byte *state, real step, byte const *parameters)
     real dx = g_485618.position.x - previous.x;
     real delta = g_485618.forward.k * dz + g_485618.forward.j * dy + g_485618.forward.i * dx;
     real range = *(real *)(state + 0x7c) - *(real *)(state + 0x78);
-    if (flags & 2)
+    bool reset_times = ((flags >> 1) & 1) != 0;
+    if (reset_times)
     {
         *(real *)(state + 0x18) = 0.25f;
         *(real *)(state + 0x1c) = 0.5f;
@@ -2505,9 +2531,10 @@ bool __stdcall function_37260(byte *state, real step, byte const *parameters)
     long i = 0;
     do
     {
-        real phase = *(real *)(state + 0x18 + i * 4);
+        real phase;
         if (cycle)
         {
+            phase = *(real *)(state + 0x18 + i * 4);
             if (*(real *)(view + 0x140) > phase) phase += 1.0f;
             phase -= *(real *)(view + 0x140);
             *(real *)(view + 0x104 + i * 4) = phase;
@@ -2516,11 +2543,12 @@ bool __stdcall function_37260(byte *state, real step, byte const *parameters)
         }
         else
         {
+            phase = *(real *)(state + 0x18 + i * 4);
             *(real *)(view + 0x104 + i * 4) = phase;
             *(real *)(view + 0xec + i * 4) = *(real *)(state + 0x88 + i * 4);
         }
         real distance = phase * range + *(real *)(state + 0x78);
-        real radius = (real)(tan((double)g_485640 * 0.5f) * distance);
+        real radius = (real)(tan(g_485640 * 0.5f) * distance);
         point3f old = *(point3f *)(view + 0xc8 + i * 12);
         real x = 0.0f, y = 0.0f, z = 0.0f - distance;
         if (g_48568c[13] != 1.0f)
@@ -3745,9 +3773,9 @@ void __stdcall function_352e0(long target, bool multiple);
 void __stdcall function_44c90(long group, dword selection_mask, long level,
     dword and_mask, dword or_mask, dword fallback_and_mask, dword fallback_or_mask, bool force);
 
-PRIVATE __forceinline void draw_selected_source_pass(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
+PRIVATE __forceinline void draw_selected_source_pass(long group, long mode, byte extra_enabled, bool depth, bool normal_cull, long target, bool filter)
 {
-    bool enabled = (g_4c1a48[group].flags >> mode) & 1;
+    byte enabled = (g_4c1a48[group].flags >> mode) & 1;
     if (enabled) enabled = extra_enabled;
     if (enabled)
     {
@@ -3935,44 +3963,31 @@ void function_020770();
 void __stdcall function_13870(bool finish, bool blur);
 bool function_13630();
 
-PRIVATE __forceinline void draw_orchestration_source_pass(long group, long mode, bool extra_enabled, bool depth, bool normal_cull, long target, bool filter)
-{
-    bool enabled = (g_4c1a48[group].flags & (1 << mode)) && extra_enabled;
-    if (enabled)
-    {
-        g_467130 = mode;
-        g_467134 = (void *)group;
-        g_467138 = &g_4c1a48[group];
-        g_4858b4 = target;
-        function_14bc0((short)target, 0, true);
-        if (mode == 1 && !g_485a75 && !g_485a76) function_14b60(1, 0, 0.0f, 0);
-        function_15680(normal_cull && (g_485898 < 4 || g_485898 > 7) ? 1 : 0);
-        if (filter) function_0496f0();
-        function_15370(depth ? 1 : 0);
-        function_44550();
-        function_445d0();
-    }
-    else
-    {
-        g_467130 = 0;
-        function_15370(depth ? 1 : 0);
-    }
-}
-
-PRIVATE __forceinline s_depth_parameters_13450 zero_orchestration_parameters()
-{
-    s_depth_parameters_13450 parameters = {0};
-    return parameters;
-}
-
+// score 327 (was 453; the fast check's score counts every line after a one-instruction shift, so most of it is
+// shift): the prologue now matches to +0x48 (memset of the parameters, the identifier read first); draw_ui and
+// finish are bool (caller 0x13680 pushes raw bools: 103 -> 16); the calls of 0x2c370 for 2..6 are
+// written out as retail has them (a loop kept 0x1595d0 and 0x14ddc0 inlined); the 0x25dc0 call, the scale test and the
+// tail match. Still different: (1) retail stores the constant 1 into the pass flag late, only after the
+// cull call of pass 3; passes 1, 5, 20 have no such store, ours stores early in all of them (a
+// helper variant without the extra gate for 1/5/20 removes those stores but then ours is 20 bytes short and
+// the shift raises the score to 411-437); (2) the passes that never cull keep a dead load of g_485898 in
+// retail (3 loads, same cause as 0x423c0); (3) function_14b60 takes its first argument in eax in retail
+// (callee not matched); (4) the second 0x25dc0 call: retail builds the first flag with a branch diamond
+// (mov dl,1 / jle / xor cl,cl / jmp / mov cl,1), ours folds it (setle 356; bool/byte/long locals,
+// if-else, ternaries, two calls (447, tail duplicated) 273-357); (5) 0x3ba90 returns long here but retail
+// stores only its al (bool), which needs the definition in unknown_03bcb0.cpp changed to bool
+// (-1 instruction, 2bcd0 354 only because the shift moves). Tried: a plain {0} parameter block (398, dead
+// zero stores dropped), the helper-returned block (320 before the memset form).
 // @retail 0x2bcd0
-void __stdcall function_2bcd0(long frame_mode, long draw_ui, bool world_effects, long finish,
+void __stdcall function_2bcd0(long frame_mode, bool draw_ui, bool world_effects, bool finish,
     long context_mode, long filter_mode, real transition)
 {
-    s_depth_parameters_13450 parameters = zero_orchestration_parameters();
-    parameters.distance = transition;
+    long identifier = ++g_4ba03c;
+    s_depth_parameters_13450 parameters;
+    memset(&parameters, 0, sizeof(parameters));
+    parameters.identifier = identifier;
     parameters.mode = filter_mode;
-    parameters.identifier = ++g_4ba03c;
+    parameters.distance = transition;
     function_13450(&parameters);
     if (!function_289e0() && !function_159610())
     {
@@ -3988,18 +4003,22 @@ void __stdcall function_2bcd0(long frame_mode, long draw_ui, bool world_effects,
             }
             else
             {
-                draw_orchestration_source_pass(0, 1, true, true, true, 1, false);
-                draw_orchestration_source_pass(0, 3, true, true, true, g_4858b8, false);
-                draw_orchestration_source_pass(0, 5, true, false, false, g_4858b8, false);
-                draw_orchestration_source_pass(0, 8, g_4ba022 != 0, false, false, g_4858b8, false);
-                draw_orchestration_source_pass(0, 20, true, false, false, g_4858b8, false);
+                draw_selected_source_pass(0, 1, true, true, true, 1, false);
+                draw_selected_source_pass(0, 3, true, true, true, g_4858b8, false);
+                draw_selected_source_pass(0, 5, true, false, false, g_4858b8, false);
+                draw_selected_source_pass(0, 8, g_4ba022, false, false, g_4858b8, false);
+                draw_selected_source_pass(0, 20, true, false, false, g_4858b8, false);
                 function_2c370(0);
                 function_335e0(filter_mode);
                 draw_configured_pass_r18(7);
                 function_31c80();
                 function_2c370(1);
                 draw_configured_pass_r18(2);
-                for (long pass = 2; pass <= 6; ++pass) function_2c370(pass);
+                function_2c370(2);
+                function_2c370(3);
+                function_2c370(4);
+                function_2c370(5);
+                function_2c370(6);
             }
             if (frame_mode != 2)
             {
@@ -4034,10 +4053,15 @@ void __stdcall function_2bcd0(long frame_mode, long draw_ui, bool world_effects,
             draw_configured_pass_r18(15);
             function_1595d0();
             function_42b20(-13);
-            if ((byte)draw_ui) function_1e370();
+            if (draw_ui) function_1e370();
             if (frame_mode != 2)
             {
-                if (filter_mode != 2 && !g_4b9f88) function_25dc0(g_4c19ac <= 0, true);
+                if (filter_mode != 2 && !g_4b9f88)
+                {
+                    bool first = true;
+                    if (g_4c19ac > 0) first = false;
+                    function_25dc0(first, true);
+                }
                 g_485a76 = 1;
                 long local_player = g_4b9ed8;
                 if (local_player != NONE && !function_155760(local_player) && function_14ddc0(local_player))
@@ -4054,8 +4078,9 @@ void __stdcall function_2bcd0(long frame_mode, long draw_ui, bool world_effects,
                             long tag = *(long *)local_ec1b9c;
                             if (tag != NONE)
                             {
-                                point2f *scale = (point2f *)(g_4e3b44[tag & 0xffff].bytes + 0x314);
-                                if (scale->x != 0.0f && scale->y != 0.0f) function_2afa0(scale);
+                                byte *definition = g_4e3b44[tag & 0xffff].bytes;
+                                if (*(real *)(definition + 0x314) != 0.0f && *(real *)(definition + 0x318) != 0.0f)
+                                    function_2afa0((point2f *)(definition + 0x314));
                             }
                         }
                     }
@@ -4063,14 +4088,14 @@ void __stdcall function_2bcd0(long frame_mode, long draw_ui, bool world_effects,
                 function_3fdf0(context_mode, false);
                 function_404b0(context_mode);
                 function_3fdf0(context_mode, true);
-                if ((byte)draw_ui) function_40870();
+                if (draw_ui) function_40870();
                 g_485a76 = 0;
                 if (filter_mode != 2 && world_effects) function_2dd30();
+                if (finish && filter_mode != 2) draw_configured_pass_r18(17);
                 if (filter_mode != 2)
                 {
-                    if ((byte)finish) draw_configured_pass_r18(17);
                     function_020770();
-                    function_13870(world_effects, (byte)finish != 0);
+                    function_13870(world_effects, finish);
                 }
             }
         }
