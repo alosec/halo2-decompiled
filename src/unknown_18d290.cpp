@@ -152,6 +152,10 @@ bool function_14ddc0(long local_player_index);
 // Round 113: `exists && split` 44; split declared first 44; shared local_player_exists 44; it
 // twice with a split flag 96 (retail's BL re-test, split materialised); split test plus a
 // local_player_exists unit ternary 89. All restored.
+// Round 30 (0xbafb0's file is on another lane's list, so its parameters stay): two existence
+// tests with the player getter in the unit ternary 89 (our second call sets ESI before EAX, so
+// the unit cannot stay in ESI); player getter then NONE-test ternary 42; that with the unit test
+// nested 42; the first form with the hierarchy test nested 89; `exists && split` 44. Restored.
 // @retail 0x18d4f0
 void function_18d4f0(long object_index, char *audible, long *local_player_index)
 {

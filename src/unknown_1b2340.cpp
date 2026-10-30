@@ -151,6 +151,9 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // Round 415: complete prop handle 318; view at every field use 428; both 428; attachment handle
 // 305; prop/attachment 321; view/attachment 435; all three 435; all with native category 442.
 // Original body restored; typed slot data retained.
+// Bounded distance in the actual trace result: native field alone 144; native category 190; entry trace
+// lifetime 144/190; shared squared length 144/190; both lifetime and shared length 144/190. Original body
+// restored.
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {

@@ -2792,6 +2792,8 @@ struct s_unit_flags_14d8b0
 // 150/150/151/151; tag value after scratch store 17. Original executable body restored.
 // Round 164: separate root handle, branch-local short expiry result, tick/result/rate names,
 // all three names, joined slot result and root+slot result: 17 each. Original body retained.
+// Kimi lane 2 r37 (on the 17 body): typed time receiver with the else arm rereading the rate 11;
+// late rate with a second low-time use 13; in-place multiply 205; tag-list pointer 145.
 // Round 415: first/second/both byte countdown results 9/9/9; paired acquisition 16; long/short
 // results 114/114; byte results with short reset result/native reset flag 9/9. Original body
 // restored.

@@ -1402,6 +1402,9 @@ int __cdecl matchmaking_compare_value(void const *a, void const *b)
 // J185: existing query noinline boundary, alone/shared output/indexed tails/both 116/123/162/161;
 // native byte query return at all declarations, same four forms 116/123/162/161.
 // All query declarations, provider source and original target body restored; no new checked loss beyond the preview.
+// Round 256: Compaction candidate before predicate in first/second/both scans 119/118/121; with shared
+// mode-one query 127/125/129; both scans with indexed tails, separate/shared query 160/159. All
+// restored.
 // @retail 0x2514fd
 void c_matchmaking_list::v3()
 {
@@ -2441,6 +2444,9 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Round 184: shared count 301; result-first voice 129; native team byte 165; count/voice 307;
 // scoped text/all receivers 111/111; late team-result constants 171; complete combined graph 307.
 // Original count, receivers, widths and outputs restored.
+// Promoted first-loop team with numeric/reverse and absent-first/last switch cases 238 at 915 bytes
+// in all four orders; default-result initialization on each 234 at 913. Scalar homes stay
+// displaced; original short team and switch restored.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {
