@@ -431,13 +431,12 @@ PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_lookup_view *lookup = (s_path_lookup_view *)state;
 	s_path_input_view const *input = (s_path_input_view *)&state->source;
 	long edge_indices[40];
-	short count = 0;
 	short previous_index = NONE;
 	s_path_node_key_view *previous = NULL;
+	short count = 0;
 	long link_count = 0;
 	bool complete = true;
-	s_path_node_key_view *initial_node = &lookup->nodes[node_index];
-	long initialize_count = initial_node->depth + 1;
+	long initialize_count = lookup->nodes[node_index].depth + 1;
 	if (initialize_count > maximum_steps)
 		initialize_count = maximum_steps;
 	s_path_step_view *initialize_step = steps;
@@ -1124,6 +1123,13 @@ struct s_flag_word_bits
 // local homes now agree with ours, and the length matches retail's 1760 bytes; the frame is 0x30
 // against retail's 0x34, the flag mask and the edge index still use different registers, and the
 // two edge endpoints are not kept in retail's stack homes.
+// Coordinator review of the score-256 round: kept at 383 fast (main 452): the flat pathfinding fields (no stack copy
+// of the pointer), the do/while with the count test first, the signed char edge flags (retail loads them with movsx,
+// shr 7) and the shared vertex pointers. Case 0 must still write unknown2d = true and unknown2e = false: retail jumps
+// to the shared tail at 0x27258b that stores them, and callers read both. The round's form with those two writes added
+// back scores 256, but it hand-copies vector3d_from_points3d for the flag0d distance (three named components summed
+// z, y, x) and adds one-use segment_start/segment_end (declared end first) and link_end pointers; those are not kept
+// without a match. The swapped facing branch in 0x263810 alone scores 150 (was 152), not kept.
 // @retail 0x272020
 PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 	s_path_node_key_view const *node, s_path_link_view *links, s_type_f17a25 const *state)
@@ -1165,6 +1171,8 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 						link->point.output_index = output_index;
 						vector3d_from_points3d(start_vertex, end_vertex, &link->vector);
 						link->unknown2c = ((dword)edge->flags >> 7) & 1;
+						link->unknown2d = true;
+						link->unknown2e = false;
 						++count;
 					}
 					break;
@@ -1190,22 +1198,19 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					short flags = nodes[next_node].flags;
 					if (node->flag0d)
 					{
-						point3f const *delta_vertex = &pathfinding->vertices[surface->unknown04];
-						real delta_x = node->entry_point.point.x - delta_vertex->x;
-						real delta_y = node->entry_point.point.y - delta_vertex->y;
-						real delta_z = node->entry_point.point.z - delta_vertex->z;
-						if (delta_z * delta_z + delta_y * delta_y + delta_x * delta_x > 0.09f)
+						vector3f delta;
+						vector3d_from_points3d(&pathfinding->vertices[surface->unknown04],
+							&node->entry_point.point, &delta);
+						if (delta.k * delta.k + delta.j * delta.j + delta.i * delta.i > 0.09f)
 						{
 							break;
 						}
 					}
 					if (!(surface->unknown0c & 1) && surface->unknown10 != surface->unknown12)
 					{
-						point3f const *segment_end = &pathfinding->vertices[surface->unknown08];
-						point3f const *segment_start = &pathfinding->vertices[surface->unknown04];
 						point3f start, end;
-						function_2104b0(surface->unknown10, segment_start, &start);
-						function_2104b0(surface->unknown12, segment_end, &end);
+						function_2104b0(surface->unknown10, &pathfinding->vertices[surface->unknown04], &start);
+						function_2104b0(surface->unknown12, &pathfinding->vertices[surface->unknown08], &end);
 						bool traversable = false;
 						for (short type = 0; type < 6; ++type)
 						{
@@ -1227,7 +1232,6 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					}
 					s_path_link_view *link = &links[count];
 					point3f const *link_point = &pathfinding->vertices[surface->unknown08];
-					point3f const *link_end = &pathfinding->vertices[surface->unknown0a];
 					*(short *)&link->type = surface->type;
 					link->index = surface_index;
 					link->node_index = surface->unknown0e;
@@ -1237,7 +1241,7 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					link->point.point = *link_point;
 					link->point.output_index = surface->unknown12;
 					link->unknown2e = surface->type == 6;
-					vector3d_from_points3d(link_point, link_end, &link->vector);
+					vector3d_from_points3d(link_point, &pathfinding->vertices[surface->unknown0a], &link->vector);
 					++count;
 					break;
 				}

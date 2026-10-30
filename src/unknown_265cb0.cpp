@@ -500,10 +500,13 @@ real function_30bf0(vector3f *vector);
 // score 144 (was 152): the facing branch is entered on retail's negated condition and the cross
 // product's multiply operands now follow retail's order; the result, range and delta stack homes
 // and the delta/motion SIMD register blocks still differ.
+// Coordinator review: the facing branch on the negated condition with the volatile result kept scores 150 (was 152);
+// with int result as well 150. Neither meets the 8-point bar, so main's code stays; the 144 above also had the cross
+// product's operand order, which is not in this file.
 // @retail 0x263810
 short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
-	int result = 0;
+	volatile long result = 0;
 	if (mode == 0 || mode == 1)
 	{
 		s_actor_view *actor = actor_get(actor_index);
@@ -555,12 +558,7 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 				if (scaled_range * scaled_range > distance_squared)
 				{
 					real secondary, primary;
-					if (actor->unknown007 || !use_facing)
-					{
-						primary = scaled_range;
-						secondary = scaled_range * 0.7f;
-					}
-					else
+					if (!actor->unknown007 && use_facing)
 					{
 						real facing_secondary, facing_primary;
 						function_263740(actor_index, &delta, (vector3f *)((byte *)actor + 0x2a8),
@@ -596,6 +594,11 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 						}
 						secondary = facing_secondary;
 						primary = facing_primary;
+					}
+					else
+					{
+						primary = scaled_range;
+						secondary = scaled_range * 0.7f;
 					}
 					if (mode == 0 && secondary * secondary > distance_squared)
 					{
