@@ -1124,6 +1124,9 @@ void c_game_engine_markers::v21(long object_index)
 // written at each call 119, the unit looked up before the slot 119 (428 bytes; the options pointer is
 // reloaded as retail and the middle is retail's, but the object is no longer fetched again after the
 // type test and the flag is loaded into cl), with the flag mask 119; the unit first alone 120.
+// Round 119: the inlined type test's own body (0x101280, matched; also inlined by the matched v24)
+// spelled with the index first, a header pointer, one expression or a definition local: 40 each
+// (identical code); the second player index read at each use 40.
 // @retail 0x240ff0
 void c_game_engine_markers::v23(long object_index, long unit_index)
 {
@@ -1860,6 +1863,12 @@ long function_242ef0(s_242ef1 arg_0, long team)
 // event slots, but the options pointer in ecx and the player index in edi, still ebp for the type).
 // Diagnostic only (reverted): the table read through a volatile pointer at the final store or at the
 // time test keeps ebp, so the table web is not what takes ebx.
+// Round 119: BLOCKED-BY 0x19ebb0. Retail makes the subtype before the type (a call's argument order),
+// so the initializer is the out-of-line 0x19ebb0 inlined by the linker, which its /Ob1 file prevents
+// here; with the header inline every spelling makes the type first and keeps the engine type in ebp.
+// One-file harness: the time test's table read is what takes ebx from the engine type (without it ours
+// reuses ebx); ternaries inverted, cause/team order, final sum order, subtype/type locals: identical
+// code (53 each with --fast); team before cause with the subtype ternary inverted 56.
 // @retail 0x2430a0
 void function_2430a0(long player_index, bool flag)
 {
