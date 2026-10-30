@@ -436,12 +436,9 @@ bool function_80660(void)
 struct s_profile_record;
 void function_1537f0(s_profile_record *record);
 
-// score 67 (was 67): frame 0x90 versus 0xa0: the three identity words fold away (retail keeps
-// them on the stack and reloads them), packed source-byte carriers and initialization homes differ.
-// Frame 0x90 versus 0xa0; identity words still fold and source bytes spill.
-// frame 0x90 versus 0xa0; identity homes and packed source-byte carriers remain.
-// Earlier: Frame 0x90 vs 0xa0; identity slots and initialization homes still differ; signed array-end comparison recovered.
-// Frame 0x90 vs 0xa0; identity slots and initialization homes still differ; signed array-end comparison recovered.
+// score 67 (was 67): frame 0x90 versus 0xa0: the three identity words fold away (retail stores them at
+// +0x10 and reads them back for the copy, with the source record right after at +0x1c); packed
+// source-byte carriers and initialization homes differ; signed array-end comparison recovered.
 // Forward entry pointer 133; chained source resets 149; link-word fill 157; signed byte sentinel 149; unsigned entry index 133 (plain).
 // Existing record initializer with zero tail 130; short/word counters 133/133;
 // counters-before-version stores 132; separate link stores 133; initializer and store order 129 (plain).
@@ -475,6 +472,12 @@ void function_1537f0(s_profile_record *record);
 // Round 146: identity byte/word/signed-word/signed-dword/header/byte-identity/word-flags/byte-
 // flags views 67 each.
 // Complete shared view library/native copies 128/128; per-visit library/native copies 128/128; shared-view array-end 126; ended input scopes 128; contiguous links 130; complete destination clear 148. Original body retained.
+// Round 76 (a one-file harness with the record initializer's file reproduces this listing exactly):
+// tail clear and sentinel removed 78 (238 bytes); source 64-bit field as two dwords 67 (the frame still
+// realigns); identity zeroed after the record initializer 67; a one-element identity array 67; identity
+// declared before the loop and zeroed in it 67; harness only: `= { 0 }`, XUID-based identity types,
+// identity zeroed by its XUID fields (only the flags word stays in memory, its store hoisted) - none
+// keeps the identity in memory.
 // @retail 0x7f930
 void function_7f930(void)
 {

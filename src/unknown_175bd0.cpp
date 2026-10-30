@@ -2296,6 +2296,9 @@ event_done:
 // Round 147: update mask 202; response masks 167; both masks 215; admission returns 201;
 // returns/update 215; returns/response 200; returns/both 228; shared admission/root handle 198.
 // All executable forms restored; sources and comparisons saved.
+// Round 282: tag acquired before root query, after query and after root copies
+// 85/113/89, each with ordinary/read-only inputs; external tag references before query
+// and after copies 85/89. All restored; cached object across validity query remains.
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {

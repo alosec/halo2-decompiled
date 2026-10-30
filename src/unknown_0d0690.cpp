@@ -51,7 +51,11 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 93 (was 93): at retail's length; frame, sky/count homes, trig temporaries, blend registers
+// score 93 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the three x87 direction adds load the direction first where retail adds
+// it as the memory operand, 0x131c20's `&color` is formed in edi and copied to ecx where retail
+// forms it in ecx and then edi, and the collision test's sete. The fast check also leaves two of
+// retail's global references unresolved in the reduced image, so part of this diff may be noise.
 // and the color0 store now match. Left: the three x87 direction adds load the direction first
 // (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
 // (retail ecx, then edi), and the collision test's sete.
