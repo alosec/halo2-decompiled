@@ -531,6 +531,9 @@ void function_117dd0(long index, vector3f *wind)
 // Round 425: projected normal and early weights with shared tangent scale 104; force loop 112;
 // paired weighted-point loop 118; tangent/force 114, tangent/weights 119, force/weights 118, all 119;
 // all with final position loop 119. Five-point best rejected; all original source restored.
+// Round 311: native projection/early weights with history scope, projection-consumer scope,
+// paired point-role names and their combinations 102/102/102/102/102/102/102;
+// all with history-branch cursor 112. Seven-point gains rejected; original body restored.
 // @retail 0x118140
 void function_118140(long index)
 {
