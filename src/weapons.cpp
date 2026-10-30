@@ -2571,7 +2571,8 @@ long __stdcall function_fda00(long weapon_index, s_scenario_weapon_view *placeme
 // inlined reset's two word stores; retail after them. Tried: the reset storing value250 before
 // value258 3 (0x105be0 2); the reset's animation as one default object 18; 0x105be0 defined
 // after this function 3; one short index for all three loops 3; the definition read after the
-// field resets 110.
+// field resets 110. A true result declared first 3, or just before the reset 3; loop indices
+// declared at the top 3; the +0x17e word as a named field 3; magazine index declared in its loop 3.
 // @retail 0xfdad0
 bool __stdcall function_fdad0(long weapon_index, void *placement, bool *flag)
 {
