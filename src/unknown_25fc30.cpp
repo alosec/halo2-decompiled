@@ -953,7 +953,7 @@ void __stdcall function_25eea0(
 			return;
 		}
 
-		function_d0620(actor->unknown26c, &iterator);
+		function_d0620(&iterator, actor->unknown26c);
 		while (function_d0690(&iterator))
 		{
 			long unit_index = iterator.child_index;

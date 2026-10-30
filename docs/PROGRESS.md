@@ -2,6 +2,86 @@
 
 The newest entry comes first.
 
+## 2026-10-30: 10021 functions match
+
+```
+matched 10021 of 11326 game functions (1679862 of 2786206 bytes, 60.29%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+1 new matches, none lost:
+- @coldspear's #927: `0xcf040` match.
+
+## 2026-10-30: 10020 functions match
+
+```
+matched 10020 of 11326 game functions (1678953 of 2786206 bytes, 60.26%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+0 new matches, none lost:
+- @coldspear's #923: closer scores and notes, no new match.
+
+## 2026-10-30: 10020 functions match
+
+```
+matched 10020 of 11326 game functions (1678953 of 2786206 bytes, 60.26%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+0 new matches, none lost:
+- @coldspear's #921: closer scores and notes, no new match.
+
+## 2026-10-30: 10020 functions match
+
+```
+matched 10020 of 11326 game functions (1678953 of 2786206 bytes, 60.26%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+0 new matches, none lost:
+- @coldspear's #918: closer scores and notes, no new match.
+
+## 2026-10-30: 10020 functions match
+
+```
+matched 10020 of 11326 game functions (1678953 of 2786206 bytes, 60.26%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+0 new matches, none lost:
+- @coldspear's #916: closer scores and notes, no new match.
+
+## 2026-10-30: 10020 functions match
+
+```
+matched 10020 of 11326 game functions (1678953 of 2786206 bytes, 60.26%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+0 new matches, none lost:
+- @coldspear's #908: closer scores and notes, no new match.
+
+## 2026-10-30: 10020 functions match
+
+```
+matched 10020 of 11326 game functions (1678953 of 2786206 bytes, 60.26%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+13 new matches, none lost:
+- Machine 3's batch 156 (#907): `0x72540`, `0xc9200`, `0xdb670`, `0xe8b20`, `0xf7a60`, `0x1058b0`, `0x155810`, `0x1ba4e0`, `0x1baae0`, `0x1bbcc0`, `0x242660`, `0x2466b0` and `0x267370` match.
+
+## 2026-10-30: 10007 functions match
+
+```
+matched 10007 of 11326 game functions (1672839 of 2786206 bytes, 60.04%)
+matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
+```
+
+2 new matches, none lost:
+- @coldspear's #902, #906: `0xd9640` and `0xda860` match.
+
 ## 2026-10-29: 10005 functions match
 
 ```

@@ -208,6 +208,12 @@ owner_selected:
 // Round 248: Per-use reference handle, late/early headers 67/110;
 // typed counterparts 67/110; wide narrowed category 76/77, typed 76/77.
 // All restored; header-base retention and the second object lookup still differ.
+// Round 96: the second lookup's address as headers + 8 + i * 12, &headers[i * 12] + 8 or an
+// element-pointer index 67/67/67 (VC folds them into one address); the facing copied field by
+// field 102; the else branch re-reading g_4e0300->data into headers 96. Diagnostic (reverted):
+// calling 0x264260 or 0x30bf0 through a function pointer makes ours reload the object pointer
+// but keep the element address (lea esi), not retail's header base; BLOCKED-BY 0x264260's
+// side-effect summary (it reads only through its pointers) in part.
 // Round 78: a compile-only build of this body (every callee opaque) keeps the header base and
 // fetches the object again after the calls exactly as retail; only LTCG's knowledge that
 // function_30bf0 and function_264260 write no object memory merges the second lookup into the
