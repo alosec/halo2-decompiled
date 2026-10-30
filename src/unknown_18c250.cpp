@@ -118,6 +118,9 @@ static inline vector3f *function_x84d9e8(vector3f *vector, vector3f const *axis,
 // code or worse). Axis/vector pointer aliases in the helper 11 (fixes those two, flips the k-row
 // second product), vector alias first 12; axis local before the call 39; point-typed helper 6;
 // input alias 13; cross/rotation statement orders 7-39; helper in another file 6; angle wrapper 38.
+// Round 26: components computed k, j, i into locals before the stores 6; both helpers forceinline 6;
+// axis/vector aliases in the cross helper 11 (only the k-row second product then loads the axis),
+// with that product's operands swapped 11; aliases for the i and j rows only 46.
 // @retail 0x18c250
 bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {

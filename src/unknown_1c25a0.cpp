@@ -44,6 +44,8 @@ public:
 
 struct s_contact_body_view
 {
+	/* the shape at this level of the body */
+	c_contact_shape_view *get_shape() const { return shape; }
 	c_contact_shape_view *shape;
 	long key;
 	long unknown08;
@@ -141,12 +143,12 @@ PRIVATE __forceinline long contact_metadata_pin(long value, long lower, long upp
 
 PRIVATE __forceinline bool contact_shape_has_material(s_contact_body_view const *body)
 {
-	if (body->shape->type() == 0x18)
+	if (body->get_shape()->type() == 0x18)
 		return false;
-	long metadata = body->shape->metadata;
+	long metadata = body->get_shape()->metadata;
 	if (!metadata)
 		return false;
-	if (contact_metadata_pin(body->shape->metadata, 1, 16) == metadata)
+	if (contact_metadata_pin(body->get_shape()->metadata, 1, 16) == metadata)
 		return false;
 	return *(byte *)(metadata + 0x1e) != 0xff;
 }
@@ -160,9 +162,9 @@ PRIVATE __forceinline long function_1d4884(long arg_0)
 
 PRIVATE __forceinline bool function_1d4885(s_contact_body_view const *arg_0)
 {
- if (arg_0->shape->type() == 0x18)
+ if (arg_0->get_shape()->type() == 0x18)
   return false;
- long local_0 = arg_0->shape->metadata;
+ long local_0 = arg_0->get_shape()->metadata;
  if (!local_0)
   return false;
  long bounded = function_1d4884(local_0);
@@ -1407,21 +1409,6 @@ PRIVATE __forceinline hkBool contact_metadata_flag(long metadata)
  return result;
 }
 
-// score 4 (was 4): retail joins the two child-shape arms in EAX and copies the
-// shape into ESI there, ours assigns ESI in each arm. Kept: the flag through an
-// hkBool helper 14 (it replaced a volatile byte copy), the root's rigid body as
-// `type == 1 ? entity : NULL` 4. Shape join tried: if/else 14 (before the rigid
-// body form), inverted if/else 19, default shape then child 80, inline shape helper
-// 4, inline unwrap helper 4, child copy 13, inverted ternary 9.
-// Round 166: Native full-width key/filter-child/readonly receiver contracts, all seven subsets 4;
-// one hidden result on the recovered flag/rigid-body graph 65. Original contracts and body
-// restored.
-// Round 213: native aligned scratch
-// vector/renamed-vector/real/renamed-real/long/renamed-long/renamed-byte/renamed-SIMD [4, 4, 4,
-// 4, 4, 4, 4, 4]. Child-result join remains.
-// Round 70: selected-shape copy 13; shared root walk forced 4, plain 69; key predicate 4;
-// reduced if/else 4; forced walk with if/else 4; forced walk with key predicate 4;
-// initial forced walk only 4. Original body restored.
 // @retail 0x1c32d0
 hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view const *a, s_contact_body_view const *b,
  c_contact_shape_container *container, long key)
@@ -1432,7 +1419,7 @@ hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view con
   root = root->parent;
  if ((hkEntity *)g_47f048 == root->entity)
  {
-  c_contact_shape_view *shape = key != NONE ? container->child(key, buffer) : b->shape;
+  c_contact_shape_view *shape = key != NONE ? container->child(key, buffer) : b->get_shape();
   if (shape->type() == 0x15)
    shape = *(c_contact_shape_view **)((byte *)shape + 0xc);
   if (shape->type() == 0x17)
