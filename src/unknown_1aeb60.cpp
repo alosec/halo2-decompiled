@@ -332,16 +332,11 @@ bool function_1af530(long actor_index, long *b, long *a)
 static __forceinline long real_to_long(real value);
 short *function_e70b0(long unit_index, short *value);
 
-// score 49 (was 49): Frame agrees; actor/index ECX/EDX and final call setup differ.
-// Frame four agrees; actor/index ECX/EDX and final argument setup still differ.
-// actor/index ECX/EDX and final setup remain; existing state query
+// score 49 (was 49): frame agrees; ECX and EDX are swapped through the whole body (retail: index EDX,
+// actor ECX), down to the final call's argument setup. Existing state query
 // ordinary/inline/forced 138 each; query with long timer 143; timer/mode 143; mode 137; readonly actor
 // 138; readonly records 138.
-// Earlier: Frame agrees; actor/index ECX/EDX and final call setup differ.
-// Frame agrees; actor/index ECX/EDX roles and final setup still differ.
-// Earlier: the argument is read into ECX and the other value into EDX; retail reads them
-// in the opposite order.
-// Earlier: ecx and edx are swapped through the whole body (retail: index edx, actor ecx);
+// Earlier:
 // retail also keeps the random scale and the range as two fmuls. Slot view first 79; one actor
 // pointer for the last test 138; marker local in the last block 80; `--timer == 0` 79; prop index
 // local 79.
@@ -351,7 +346,6 @@ short *function_e70b0(long unit_index, short *value);
 // pointer/reference 127/127. Timer test combined as in 0x1b7c70 49; `--state->ticks <= 0` 49;
 // slot cast declared first 49; constant first in the time test 49; timer record by pointer
 // addition 49 (the same code each time).
-// pointer/reference 127/127.
 // Nested prop/clock/tick names singly, in all pairs and together 49 each; early uninitialized tick declaration 49.
 // Actor getter boundary 49; getter observations at timer/prop/both 117/115/140;
 // unit/timer-unit/prop-unit/all phases 120/117/117/132; all computed receiver forms rejected.
@@ -361,6 +355,9 @@ short *function_e70b0(long unit_index, short *value);
 // Round 404: Native slot data block, then countdown/mode/elapsed combinations and entry cast order, all
 // eight 49 at 443/443. Data block canonicalizes unchanged; complete original body and type restored.
 // Actor/index and final-call allocation remain.
+// Round 7 (lane 15): random scale times the tick rate 49; `(real)` tick rate 49; action local at function
+// scope 49; slot cast before the actor 49 (identical code each time); a permuter run ended at its
+// 2400 s timeout with no result (its full-image baseline takes most of that).
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {

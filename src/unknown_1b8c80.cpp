@@ -1046,23 +1046,9 @@ s_slot_handler_2x g_47e9d0 =
 	1, 10, 1.5f, 0x5b
 };
 
-// score 1 (was 47): only the vehicle-less exit's `je` target differs: retail jumps to the epilogue
-// after the vehicle status's `mov ax, di`, ours to the one after the failure's `mov ax, [g_46fbe4]`
-// (retail lays the failure return out after that epilogue).
-// Earlier: prior narrow status 60 at 212 bytes; slot data block (retail addresses the slot itself, no
-// +0xc base): actor-first long/short status with nested or rejection guards 47/47 and 60/60; block-first
-// long 63/63; block-first short 45/45 at 214/212; single-observation continuation selected by
-// complementary tests, slot-data view with long if/ternary result 86/86 and short result 77/77;
-// whole-slot receiver with the same choices 86/86/77/77.
-// Round 93: the vehicle arm's own short status, returned from the arm, with the result declared first
-// 47 -> 1; that status assigned to the result instead 7; vehicle-less exit first 73 (status taken
-// from the result 1); early returns for the NONE tests and the timer 1; three separate early returns
-// 25; failure assignments to the result with one final return 3; else-arm and inner failure returns
-// 1/1; one combined condition 1; long result 47; a status initialized from the result 55.
-// Native pool/status carriers and the shared status load width remain.
-// Round 155, short status: early return at the actor test 73; status assigned in both arms 77; status
-// declared first/after actor/element first 61/61/48; global returned at the actor test with a block status 73;
-// element first with long status 67, with short status before the actor 47.
+/* slot type 0x4c's evaluate: fails when the element or its target is gone or ten seconds
+   have passed; an actor in a vehicle finishes, unless the element has more than one member
+   and the actor's +0x266 flag is set */
 // @retail 0x1ba4e0
 short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 {
@@ -1072,35 +1058,29 @@ short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 	s_4c_element *element = (s_4c_element *)element_502424_get(state->element_index);
 
 	state->unknown24++;
-	if (element->object_index != NONE && state->unknown1c != NONE)
+	if (element->object_index == NONE || state->unknown1c == NONE ||
+		state->unknown24 > real_to_long(g_510c54->field_2_3 * 10.0f))
 	{
-		if (state->unknown24 <= real_to_long(g_510c54->field_2_3 * 10.0f))
+		result = g_46fbe4;
+	}
+	else if (actor->unknown26c != NONE)
+	{
+		result = g_46fbe4;
+		if (element->unknown7c > 1)
 		{
-			if (actor->unknown26c != NONE)
-			{
-				short status = g_46fbe4;
-
-				if (element->unknown7c > 1)
-				{
-					if (actor->unknown266)
-						status = g_46fbe8;
-					if (!element->unknown84)
-						function_1fb7e0(0x39, actor_index, NULL, NONE, NONE);
-				}
-				return status;
-			}
-			return result;
+			if (actor->unknown266)
+				result = g_46fbe8;
+			if (!element->unknown84)
+				function_1fb7e0(0x39, actor_index, NULL, NONE, NONE);
 		}
 	}
-
-	return g_46fbe4;
+	return result;
 }
 
 long __stdcall function_c7160(long unit_index, short seat_index, long marker_position, long vehicle_index, long position);
 bool function_cc750(long unit_index, short seat_index);
 bool function_cc7b0(long unit_index, short seat_index);
 real normalize2d(point2f *vector);
-real distance3d_fast(point3f const *a, point3f const *b); /* unknown_1bbf40.cpp */
 
 /* the distance between two points on the ground plane */
 static inline real distance2d(point2f const *a, point2f const *b)
@@ -1121,29 +1101,8 @@ struct s_seat_approach_result
 	bool approaching;
 };
 
-// score 147 (was 147): the vertical x87 square operands and the final delta pop differ;
-// retail pops before the arm's jump, ours shares that pop at the distance join, shifting
-// the following comparison. Round 70: the existing 3D distance
-// the vertical square operands and x87 cleanup differ. Retail pops
-// the vertical arm's last delta before its jump; ours shares that pop at the distance join.
-// Round 70: the existing 3D distance
-// (0x1bbf40's) for the vertical case, a 2D point distance through the existing vector
-// helpers for the nearest seat point (retail recomputes the nearer distance in two arms), the
-// vehicle tag flag as a bitfield and bonus declared before the direction gave retail's x87
-// code, frame 0x2c and slots (176 -> 143). Harness: the 2D distance with scalar locals 163
-// (frame 0x24), selected-pointer form 148, compare reversed 171, if/else or full ternary or
-// arms swapped 152/152/168, vertical deltas written out or as a vector or 0x3ea30's own body
-// 152; out-of-line 0x3ea30 not inlined, even with __forceinline. Real: one ternary 143,
-// else-if chain 143, distance at function scope 143, arms swapped 178, (actor, point) helper 143.
-// Round 270: eligibility/marker rejection guards and direct success exits, seven
-// subsets 198/189/223/216/216/216/223; full guards with null-output exit 223.
-// Existing helpers and complete floating trees restored.
-// Round 272: actual shared difference/magnitude, difference/length-square/root and
-// squared-distance/root graphs 191/214/243/231/143/237/180/180. Native helper return boundaries
-// do not recover the vertical cleanup; all original geometry and helpers restored.
-// Round 252: inline/forceinline 3D helper declarations 147/147; whole actor point 273;
-// shared planar direction helper 147; branch-owned bonus alone/with direction 194/194;
-// external position reference with both 218; whole point with both 274. All restored.
+/* whether the actor can take the seat, with the seat's entry point, the
+   approach direction and a score for choosing between seats */
 // @retail 0x1baae0
 bool function_1baae0(long actor_index, long object_index, short seat_index, bool ignore_bonus,
 	bool ignore_reserved, bool vertical, s_seat_approach_result *out)
@@ -1165,7 +1124,11 @@ bool function_1baae0(long actor_index, long object_index, short seat_index, bool
 				direction = actor->unknown290;
 			real distance;
 			if (vertical)
-				distance = distance3d_fast(&position, &actor->position);
+			{
+				vector3f offset;
+				vector3d_from_points3d(&actor->position, &position, &offset);
+				distance = sqrtf(length_sq3f(&offset));
+			}
 			else
 			{
 				distance = distance2d((point2f const *)&position, (point2f const *)&actor->position) >
