@@ -813,6 +813,9 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 // Round 199: consistent per-use unit, iterator-player and both observations 55/55/55; each with
 // retained ancestry pointer 113/113/113 (414 bytes); unsigned parent with unit/both observations
 // 55/55. Original body restored; datum/unit roles and root-walk entry remain.
+// Round 294: Selected-handle/return-result common output, signed/unsigned handle, entry/late
+// storage and positive/failure completion, all eight 86 (404 bytes). Exact-only
+// output copies and complete body restored; player/unit roles and walk entry remain.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {

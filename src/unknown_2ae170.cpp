@@ -822,6 +822,9 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // Round 269: shared bit-domain sums for buffer pairs 348; front/rear pairs 380; both 442; mode tails 332;
 // buffer/tail 310; front-rear/tail 443; all 507; all with the native alternate-routing field 507.
 // Every lower-scoring form loses the dispatcher; original arithmetic and executable body restored.
+// Round 294: Entry left/right gain and send-level storage, seven nonempty subsets, all 370;
+// all with offset storage 370. All producers, helper boundaries and the complete
+// body restored; frame 0xc agrees, selected-level and integer/SSE staging remain.
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {

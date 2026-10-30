@@ -978,6 +978,9 @@ real function_30bf0(vector3f *v);
 // All restored; frame 0x28/0x30, rounded horizontal root and separate divisions remain.
 // Round 269: squared-distance workspace 232; root workspace 232; both 232; default flight time 266;
 // distance/default 266; root/default 266; all 266; all with the twice-used time square 266. Original body restored.
+// Round 294: Entry a/two_a/discriminant-base storage, seven nonempty subsets, all 232;
+// all with b storage 232. Every original producer and complete body restored;
+// frame 0x28/0x30, rounded-root scheduling and separate divisions remain.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1495,6 +1498,9 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 402: native projectile timer/ownership/forward field observations, seven subsets,
 // all 332; complete native fields with both twelve-byte library copies 332. Restored;
 // slot/input allocation and expanded speed update remain, frame four agrees.
+// Round 294: Entry ticks/arming-ticks/speed storage, seven nonempty subsets, all 332;
+// all with owner-index storage 332. All producers and the complete callback restored;
+// frame four agrees, slot/input allocation and speed-update expansion remain.
 // @retail 0xf8200
 bool __stdcall function_f8200(long projectile_index, byte const *data, long unused)
 {
@@ -1667,6 +1673,9 @@ real function_17c900(short function_type, real input);
 // DH round 236: lead/turn/drift vector storage promoted without moving their input reads,
 // all seven subsets 348 each; complete promoted graph with role-based point/vector names 348.
 // Original branch storage and complete body restored; input transport and vector homes remain.
+// Round 294: Unsigned word/dword salt 360/371; paired word/dword phase counters 354/371;
+// word-word/dword-word/word-dword/dword-dword 354/354/371/371. Complete body
+// restored; stacked-index/output-EBX transport and vector homes remain.
 // @retail 0xf87f0
 void function_f87f0(long projectile_index, point3f *aim_point)
 {
