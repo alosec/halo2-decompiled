@@ -561,7 +561,7 @@ long function_cbd50(long unit_index, short weapon_index);
 struct s_collision_result_1697c0;
 bool function_16a040(long flags, point3f const *point0, point3f const *point1, long ignore_object_index,
 	long ignore_unit_index, s_collision_result_1697c0 *result);
-void object_get_root_location(long object_index, s_location *location);
+s_location *object_get_root_location(long object_index, s_location *location);
 long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 short *function_1886d0(long object_index, short *material_type);
 struct s_globals_element;

@@ -1977,20 +1977,20 @@ void function_d9e70(long object_index, s_damage_owner const *owner, long definit
 	byte unknown)
 {
 	s_object_marker marker;
-	short marker_count = function_b8d30(object_index, marker_name, &marker, 1, false);
+	long marker_count = function_b8d30(object_index, marker_name, &marker, 1, false);
 
 	if (marker_name == NONE || marker_name == 0 || marker_count)
 	{
 		s_type_1e6529 data;
 
-		function_d6660(&data, definition_index);
 		data.unknown7c = NONE;
+		function_d6660(&data, definition_index);
 		data.owner = *owner;
 		*(byte *)&data.unknown84 = unknown;
 		data.unknown54 = 1.0f;
 		object_get_root_location(object_index, (s_location *)&data.unknown1c);
-		data.position = marker.matrix.position;
 		data.origin = marker.matrix.position;
+		data.position = marker.matrix.position;
 		data.direction = marker.matrix.forward;
 		data.unknown18 = object_index;
 		function_d6c80(&data, NONE);
