@@ -929,6 +929,9 @@ void function_1d1540(s_havok_component *component);
 // the whole body inside a force-inline helper (diagnostic) 88. The same 88 result without 0x1d5120
 // in the image; a /Gd compile loads the component once into EBX. Matched 0x1c59a0, 0x1cbf50 and
 // 0x136860 take EBX arguments with self-aligned frames, so the alignment alone is not the cause.
+// Round 431: Library transform copies with original/fixed-first body receiver: memcpy and memmove, then
+// both with the inverse reserved at entry: 81/85/77/76/81/85/77/76. The 76 forms are five-point gains
+// only; both 77 forms lose matched 0x1d1b60 at 60. Original executable body restored.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
@@ -1415,31 +1418,35 @@ PRIVATE __forceinline real const &component_time_step()
 	return g_510c54->rate;
 }
 
-// score 26 (was 43): Acceleration XMM0/memory timestep prefix and stop-test schedule still differ;
+// score 26 (was 26): earlier 43; Acceleration XMM0/memory timestep prefix and stop-test schedule still differ;
 // negative-target guard 50; stopping branch first 106; step predicate first 26 (kept, plain 26);
 // negative guard with step predicate 32; independent/eager stop decisions 129/124;
 // explicit fraction branches 43; velocity input/output lifetime 219.
-// score 26 (was 26): acceleration/timestep registers and stop scheduling remain; direct stopping decision 106;
+// acceleration/timestep registers and stop scheduling remain; direct stopping decision 106;
 // conditional/stopping-first results, stopping ticks, squared speed, limit magnitude, normalized speed
 // and captured step decision 26 each. Original body retained.
-// score 26 (was 26): acceleration/timestep allocation remains; assigned correction and positive clamp 26;
+// acceleration/timestep allocation remains; assigned correction and positive clamp 26;
 // nonpositive/all assigned clamps 45; shared velocity clamp 148; shared bounds 148 (449/450 bytes).
 // acceleration register, memory timestep multiply and stop-test schedule differ.
 // Ordinary acceleration/magnitude/time inline contracts and paired forms 26;
 // completed clamp before ratio 82; accelerated candidate default 114.
-// score 26 (was 26): the time step is still loaded before its product; retail multiplies from memory
+// the time step is still loaded before its product; retail multiplies from memory
 // and keeps the step's address. Step on the left of both products 26; direct field reads 26;
 // one-expression step 26; address-taken target 26; step pointer first 142; direct reads with the
 // stopping test first 43; product inside the scale helper 26; per-arm mass step 135.
 // acceleration/timestep allocation and stopping schedule remain.
 // Combined forced/stopping step-first, distance-first, eager distance, conditional result,
 // named decision and stopping guard 106 each; merged default/return scaling 140/110.
-// score 26 (was 26): isolated mass return 113; threshold-first return 121; returned
+// isolated mass return 113; threshold-first return 121; returned
 // selection/nested return/power selection 113 each; direct/default/assigned magnitude
 // results with mass return 113/127/113. XMM0 prefix improves; memory timestep still differs.
-// score 26 (was 26): acceleration/timestep allocation and stopping order remain.
+// acceleration/timestep allocation and stopping order remain.
 // Mass eligibility early scale/mass-first 164/166, late 26/120; selected divisor early/late 143/114;
 // early eligibility with selected normalization scale/mass-first 164/166. Original helper retained.
+// Round 15: stop distance tested before the step 43 (retail's test order, zero register rotated);
+// the same with the step on the right of both products 43; time-step reference declared first 142,
+// with the stop-first test 142; time step copied into a value local 99 (acceleration in xmm0 as
+// retail, but the step stays in a register instead of the memory multiply).
 // @retail 0x1d2280
 real function_1d2280(bool allow_reverse, bool scale_by_mass, real mass, real target, real acceleration,
 	real velocity, real limit, real position, real exponent, bool force_acceleration, real *ratio)
@@ -2203,12 +2210,15 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 184: Native contact/material/both add boundaries 157/162/210; reversed complete inputs
 // 157/162/210; existing vector assignment at contact/material sums 144/114. Original sums and
 // matched sample boundary restored.
-// Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
-// at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
-// Original normalization and fallback restored.
 // Round 426: complete normal/velocity/final scaled-product staging, all seven
 // subsets, 109 each; complete staged outputs through the existing vector setters 127.
 // Original products, j/k/i normal publication and matched sample boundary restored.
+// Round 193: Magnitude pointer inline and vector-reference forced/ordinary inline 109/109/109; vector-value
+// forced/ordinary inline 490/490; scalar-value forced/ordinary inline 193/193; scalar-reference input 109.
+// Original helper contract restored; first normal XMM ownership and velocity preloads remain.
+// Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
+// at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
+// Original normalization and fallback restored.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {

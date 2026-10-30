@@ -635,6 +635,33 @@ struct s_device_machine_view
 #define DEVICE_PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
 // score 42 (was 42): the group-flag test is two bytes longer than retail's: ours shifts the flags byte
+// down by one before the second test (`shr al, 1; test al, 1`), retail tests bit 2 directly; retail
+// also clears the result in case 0x1200055f where ours does not (`function_value = 0.0f;` first in
+// the velocity block is retail's store, but alone it shifts every later instruction: 656 bytes, 114,
+// so it stays out until the bit test is solved). Every form whose second test is a condition on the
+// flags (masks, shifts in the condition, nested ifs, direct `group->flags` reads as in the matched
+// 0x107870) gives retail's `mov ax, [ptr+2]; test al, 1; test al, 2` but keeps the group pointer in
+// a shrink-wrapped pushed ESI (live past the load); every form that makes a bool of the second bit
+// keeps the pointer in EAX as retail but shifts.
+// Tried (with the zero store unless noted): masks 122; a word getter by group index 123; an inline
+// group-pointer getter 122; the machine test as a named bool 124; actual signed group flags with
+// Boolean/masks/early load/default 43/120/54/122; actual group bitfields with direct/second/both/
+// default tests 50/50/50/122; the group flags read at each use 120, with the machine flags first
+// 116; the zero store alone 114; a word parameter of an inline both-bits test 120 (diagnostic); a
+// bool of both tests 120; nested ifs 120; two bools 42 (no zero store); `(group_flags & 3) == 3` 52;
+// the group pointer formed in the flags read 53/53, with the flags read first 117; `== 2` /
+// `== 1 && == 2` / a bool from `== 2` 120 each; a bool from the bare mask or its cast 42/42 (no zero
+// store); masks on the word local 120; a bool for bit 0 and a mask for bit 1 120; a const group
+// pointer with masks 120; no group pointer (the address folded into the load) 115; the pointer
+// formed in the read of the word local with masks 53; machine and group flags each read at each use
+// 122. The zero store mirrors case 0xf00055e, where MSVC keeps the same redundant copy. Screened
+// (one-file LTCG): word/long `flags & 2` locals, `!!`, a ternary, bit-test helpers taking the mask, a
+// named group condition before/after the machine test, `||` with the machine test, `!(!a || !b)`,
+// the pointer declared after the machine flags, a named `both` or `first` bool, the group read at
+// its test, the flags read at the declaration: all the shift or the pushed ESI.
+// Round 100: `(group_flags >> 1) & 1` in the condition 122 (test al, 2, pushed ESI); a bool of
+// `(group_flags >> 1) & 1` 114 and its (bool) cast in the condition 114 (the shift); a const word
+// local with masks 122; the machine flags read before the group pointer, with masks 127.
 // down by one before the second test, retail tests bit 2 directly; retail also clears the result in
 // case 0x1200055f where ours does not (`function_value = 0.0f;` first in the velocity block gives it,
 // 656 bytes 114, kept out until the bit test is solved; it mirrors case 0xf00055e, where MSVC keeps the

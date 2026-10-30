@@ -2,53 +2,16 @@
 /* UNKNOWN_2CB5B0.CPP: the inflate side of the zlib 1.1.4 copy the game links
    (built with the game's link-time code generation, so it takes its arguments
    in registers): unpacking a whole block with caller-supplied allocators, and
-   setting up an inflate stream. zlib is (C) 1995-2002 Jean-loup Gailly and
+   setting up, resetting and ending an inflate stream, and the block
+   decoder's allocation and reset (inflating itself is in
+   src/unknown_2cc9d0.cpp). zlib is (C) 1995-2002 Jean-loup Gailly and
    Mark Adler, under the zlib license; these bodies are rebuilt from the
    game's binary */
 
-#include "unknown_11c920.h"
+#include "unknown_2cb5b0.h"
 #include <stdlib.h>
 
-typedef void *(__stdcall *block_allocate)(void *, long, long);
-typedef void (__stdcall *block_free)(void *, void *);
-typedef dword (*block_checksum)(dword checksum, byte const *buffer, dword size);
-
-/* the private state of an inflate stream */
-struct s_inflate_state
-{
-	long mode;
-	dword sub[2];
-	long raw;
-	dword window_log;
-	void *blocks;
-};
-
-/* the stream an inflate works on */
-struct s_inflate_stream
-{
-	byte const *input;
-	dword input_left;
-	dword total_input;
-	byte *output;
-	dword output_size;
-	dword total_output;
-	char const *message;
-	s_inflate_state *state;
-	block_allocate allocate;
-	block_free release;
-	void *opaque;
-	long content_kind;
-	dword checksum;
-	dword reserved;
-};
-typedef char assert_inflate_stream_size[(sizeof(s_inflate_stream) == 0x38) ? 1 : -1];
-typedef char assert_inflate_state_size[(sizeof(s_inflate_state) == 0x18) ? 1 : -1];
-
-long function_2cc9d0(s_inflate_stream *stream, long flush);
-long function_2cc890(s_inflate_stream *stream);
-long function_2cc850(s_inflate_stream *stream);
-void *function_2ce950(s_inflate_stream *stream, block_checksum checksum, dword window_length);
-dword function_2ce7b0(dword checksum, byte const *buffer, dword size);
+dword __stdcall function_2ce7b0(dword checksum, byte const *buffer, dword size);
 
 /* the default allocator of a stream that brings none */
 // @retail 0x2ce780
@@ -64,11 +27,91 @@ void __stdcall function_2ce7a0(void *opaque, void *address)
 	free(address);
 }
 
+/* returns the block decoder to the start of a block, freeing what its mode
+   holds; checksum (if not NULL) gets the check of the output so far */
+// @retail 0x2ce8e0
+void function_2ce8e0(s_block_state *blocks, s_inflate_stream *stream, dword *checksum)
+{
+	if (checksum != NULL)
+		*checksum = blocks->checksum;
+	if (blocks->mode == _block_bit_tree || blocks->mode == _block_distance_tree)
+		stream->release(stream->opaque, blocks->sub.trees.lengths);
+	if (blocks->mode == _block_codes)
+		stream->release(stream->opaque, blocks->sub.decode.codes);
+	blocks->mode = _block_type;
+	blocks->bit_count = 0;
+	blocks->bit_buffer = 0;
+	blocks->read = blocks->write = blocks->window;
+	if (blocks->checksum_function != NULL)
+		stream->checksum = blocks->checksum = blocks->checksum_function(0, NULL, 0);
+}
+
+/* allocates a block decoder with a window of window_length bytes; NULL when
+   out of memory */
+// @retail 0x2ce950
+s_block_state *function_2ce950(s_inflate_stream *stream, block_checksum checksum_function, dword window_length)
+{
+	s_block_state *blocks;
+
+	if ((blocks = (s_block_state *)stream->allocate(stream->opaque, 1, sizeof(s_block_state))) == NULL)
+		return blocks;
+	if ((blocks->tables = stream->allocate(stream->opaque, 8, 1440)) == NULL)
+	{
+		stream->release(stream->opaque, blocks);
+		return NULL;
+	}
+	if ((blocks->window = (byte *)stream->allocate(stream->opaque, 1, window_length)) == NULL)
+	{
+		stream->release(stream->opaque, blocks->tables);
+		stream->release(stream->opaque, blocks);
+		return NULL;
+	}
+	blocks->window_end = blocks->window + window_length;
+	blocks->checksum_function = checksum_function;
+	blocks->mode = _block_type;
+	function_2ce8e0(blocks, stream, NULL);
+	return blocks;
+}
+
+/* frees a block decoder and everything it holds */
+// @retail 0x2cf480
+long function_2cf480(s_block_state *blocks, s_inflate_stream *stream)
+{
+	function_2ce8e0(blocks, stream, NULL);
+	stream->release(stream->opaque, blocks->window);
+	stream->release(stream->opaque, blocks->tables);
+	stream->release(stream->opaque, blocks);
+	return 0;
+}
+
+/* starts a stream over at its header (or at its blocks, without one) */
+// @retail 0x2cc850
+long function_2cc850(s_inflate_stream *stream)
+{
+	if (stream == NULL || stream->state == NULL)
+		return -2;
+	stream->total_input = stream->total_output = 0;
+	stream->message = NULL;
+	stream->state->mode = stream->state->raw ? _inflate_block_data : _inflate_method;
+	function_2ce8e0(stream->state->blocks, stream, NULL);
+	return 0;
+}
+
+/* frees a stream's state; 0, or a negative error */
+// @retail 0x2cc890
+long function_2cc890(s_inflate_stream *stream)
+{
+	if (stream == NULL || stream->state == NULL || stream->release == NULL)
+		return -2;
+	if (stream->state->blocks != NULL)
+		function_2cf480(stream->state->blocks, stream);
+	stream->release(stream->opaque, stream->state);
+	stream->state = NULL;
+	return 0;
+}
+
 /* sets up a stream for inflating with a window of 2^window_log bytes
    (negative: no header or checksum); 0, or a negative error */
-// score 90 (was a stub): the convention is retail's (stream esi, window bits ecx, version eax,
-// size on the stack), but its callees are stubs: retail passes 0x2cc890/0x2cc850 the stream in
-// eax and 0x2ce950 the stream in eax and the window size in ebx.
 // @retail 0x2cc8d0
 long function_2cc8d0(s_inflate_stream *stream, long window_log, char const *version, long stream_size)
 {
@@ -111,8 +154,6 @@ long function_2cc8d0(s_inflate_stream *stream, long window_log, char const *vers
 
 /* inflates source into destination in one pass; destination_size is the room
    on entry and the size produced on return; 0, or a negative error */
-// score 14 (was a stub): only the calls to the stubbed 0x2cc9d0/0x2cc890 differ (retail passes
-// them the stream in eax; the stubs take it in ecx), and with them the tail layout.
 // @retail 0x2cb5b0
 long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte const *source, long source_size,
 	block_allocate allocate, block_free release, void *opaque)
