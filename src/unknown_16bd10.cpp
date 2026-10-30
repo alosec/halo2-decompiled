@@ -917,6 +917,9 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 // Round 425: Existing vector setter for the complete plane normal, alone and with
 // projection/offset/pan setters in all combinations, 443/447/443/447/448/456/448/456 fast.
 // Original normal copy, all parallel rows, float groups and complete body restored.
+// Round 434: native pan quaternion/transform/animation output entry lifetimes,
+// seven subsets 236/236/236/236/236/236/236; complete graph with role names 236.
+// Original workspace scopes, projection, helpers and complete body restored.
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
 {

@@ -1039,21 +1039,6 @@ bool __stdcall function_be8e0(long object_index);
 struct s_havok_component;
 void function_1ced00(s_havok_component *component);
 
-// score 1 (was 122): inactive return XOR AL versus retail MOV AL,BL; matching delayed EBP and object/header homes retained.
-// register (`mov al, bl`); retail saves ebp only after the two header gates, as ours now does.
-// Round 50: object read through the table before the flags clear (object in ebp, header in the
-// parameter slot) 123; with the result returned at the end of the awake branch 1 (kept); not-awake
-// test as an early return 114; result declared before the header or assigned after its declaration 1;
-// result declared inside the awake branch 30; inverted final test with an early return 122.
-// Awake-predicate bool/byte/char/short results 127/132/132/164; native byte/char/short/word
-// accumulators with common result exits 17/17/100/100. All restored.
-// Countdown common/separate/paired result exits 27/28/28; reused countdown predicate 43;
-// countdown activity accumulation 41; one done exit 27; positive call contributions 148;
-// positive contributions with countdown result 145. Original body retained.
-// Round 34: both activity exits returning active 1; one fallthrough activity return or an explicit
-// done join 123 each; countdown assignment-return with one activity return 123; inactive result
-// ORed with the awake bit, logically or bitwise, 1 each; inactive result ANDed with that bit 1;
-// double-negated inactive result 1.
 // @retail 0xbc470
 bool __stdcall function_bc470(long object_index)
 {
@@ -1062,41 +1047,43 @@ bool __stdcall function_bc470(long object_index)
     if (header->flags & 2)
     {
         if (header->flags & 0x20)
-            return true;
-        s_post_physics_object_ab *object = ((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
-        header->flags &= ~4;
-        if (TEST_FIELD_BIT(object->flag2))
-            function_bba20(object_index);
-        long mode = g_4e6948->mode;
-        if (mode >= 4 && mode <= 5 && (((byte *)object)[0xd8] & 1))
-            function_a9570(object_index);
-        if (*(short *)((byte *)((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object + 0x12a) != NONE)
+            active = true;
+        else
         {
-            s_animation_state *animation = (s_animation_state *)((byte *)object + *(short *)((byte *)object + 0x12a));
-            if (animation->graph_tag_index != NONE)
-                active = animation->blend_counters_update();
+            s_post_physics_object_ab *object = ((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
+            header->flags &= ~4;
+            if (TEST_FIELD_BIT(object->flag2))
+                function_bba20(object_index);
+            long mode = g_4e6948->mode;
+            if (mode >= 4 && mode <= 5 && (((byte *)object)[0xd8] & 1))
+                function_a9570(object_index);
+            if (*(short *)((byte *)((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object + 0x12a) != NONE)
+            {
+                s_animation_state *animation = (s_animation_state *)((byte *)object + *(short *)((byte *)object + 0x12a));
+                if (animation->graph_tag_index != NONE)
+                    active = animation->blend_counters_update();
+            }
+            active |= object_dispatch_update(object_index);
+            active |= function_d5de0(object_index);
+            active |= function_be8e0(object_index);
+            long child = object->child;
+            while (child != NONE)
+            {
+                active |= function_bc470(child);
+                child = ((s_post_physics_header_ab *)g_4e0300->data)[child & 0xffff].object->sibling;
+            }
+            if (object->component != NONE && TEST_FIELD_BIT(object->flag6))
+                function_1ced00((s_havok_component *)(g_51e9b8->data + (object->component & 0xffff) * 0xa0));
+            if (object->awake_countdown > 0)
+            {
+                object->awake_countdown--;
+                active = true;
+            }
+            else if (!active && !(header->flags & 4))
+                header->flags &= ~2;
         }
-        active |= object_dispatch_update(object_index);
-        active |= function_d5de0(object_index);
-        active |= function_be8e0(object_index);
-        long child = object->child;
-        while (child != NONE)
-        {
-            active |= function_bc470(child);
-            child = ((s_post_physics_header_ab *)g_4e0300->data)[child & 0xffff].object->sibling;
-        }
-        if (object->component != NONE && TEST_FIELD_BIT(object->flag6))
-            function_1ced00((s_havok_component *)(g_51e9b8->data + (object->component & 0xffff) * 0xa0));
-        if (object->awake_countdown > 0)
-        {
-            object->awake_countdown--;
-            return true;
-        }
-        if (!active && !(header->flags & 4))
-            header->flags &= ~2;
-        return active;
     }
-    return false;
+    return active;
 }
 
 

@@ -143,7 +143,6 @@ struct s_placement_2bc1
 // Unconditional event with options pointer 32; byte mode before event 31; mode against event type 31;
 // mode declaration before team 31; object result before query 16; creation condition assignment 16;
 // function-scope object result 16; combined result/mode lifetimes 31; event before mode declaration 31.
-// event before team 63; early event plus sender 63; event before creation 63; returning initializer before creation 90;
 // event filled before the mode test 32 (stores now precede the test but the mode load folds into the
 // compare after them, 223 bytes); test result as a bool before the fill 76; fill then send helper 32;
 // mode read into a local before the fill 31 (load order right, constant 4 not shared in eax);
@@ -153,6 +152,10 @@ struct s_placement_2bc1
 // test); named marker-test bool 5.
 // Marker-query inline declarations 5; native tag hierarchy 5; creation/announcement/both names 5/5/5;
 // missing-tag return 5; tag field at both uses 50; direct tag receiver 5; native tag with both names 5.
+// Round 123: const object result 5; early return without an engine 5; team passed without
+// its short cast 5; position pointer local for the marker query 5; creation pointer local 5. Diagnostics:
+// without the team call 38 (the copy then uses EDX), without the event 142, without the final
+// call 39: the copy's register follows the allocation of the whole tail.
 // @retail 0x2bc1f0
 void function_2bc1f0(long team)
 {
