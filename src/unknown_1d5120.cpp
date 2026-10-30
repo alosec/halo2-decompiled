@@ -13,7 +13,7 @@ __declspec(noinline) void function_1d4360(s_havok_component *component, transfor
 struct s_havok_transform;
 void function_181f80(s_havok_transform *result, transform4x3f const *matrix);
 bool function_f1320(long object_index);
-bool function_205510(void *buffer, void const *definition_physics, s_havok_component *component);
+bool function_205510(s_havok_component *component, void const *definition_physics, void *buffer);
 
 class c_1d56f0_shape
 {
@@ -74,7 +74,7 @@ void function_1d56f0(s_havok_component *component)
             if (skip || !function_f1320(component->object_index))
             {
                 real bounds[6];
-                if (function_205510(bounds, physics, component))
+                if (function_205510(component, physics, bounds))
                 {
                     c_contact_query_bounds_info info;
                     info.lower.set(bounds[0], bounds[2], bounds[4]);
