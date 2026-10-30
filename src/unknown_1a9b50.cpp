@@ -517,6 +517,9 @@ extern point2f *g_468778;
 // Round 399: Native slot callback input, original/actor-first lookup, with entry/late result defaults,
 // constant-return exits and early rejection: 375/413/409/426/425/393/440/413. Body and declaration
 // restored.
+// Round 38: Common result set by independent final failure tests, all six field orders 375
+// each fast; nested success assignment 380; failure-result ladder 373, all 1549 bytes.
+// Two-point best rejected; original result expression, defaults and complete body restored.
 // @retail 0x1aa0d0
 bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 {

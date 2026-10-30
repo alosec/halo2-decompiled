@@ -1284,6 +1284,9 @@ struct s_actor_looking_turn_request
 // DH round 239: Native marker/movement/turn-request record-name subsets 506 each;
 // all three with the uninitialized marker workspace at entry also 506. Original
 // names, workspace scope and whole body restored; frame 0xd0/0xc8 remains.
+// DH round 252: One sequential aiming/looking validity result, native long/short/byte/bool
+// with long idle, then each with short idle
+// 506/549/522/522/540/547/524/524. Original complete executable body restored.
 // @retail 0x298370
 void function_298370(long actor_index)
 {
