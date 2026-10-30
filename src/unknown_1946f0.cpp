@@ -61,14 +61,18 @@ void function_194c10(s_bitstream *stream, vector3f const *vector, real lo, real 
 }
 
 /* the direction an index names: a 64 x 64 grid point on one face of the
-   direction table */
-static __forceinline void decode_direction_194d30(long index, vector3f *direction)
+   direction table, then that face's scale, axes and origin applied to it */
+static __forceinline void decode_direction(long index, vector3f *direction)
 {
-	real x = (real)(index & 0x3f) * (1.f / 63.f);
-	real y = (real)((index >> 6) & 0x3f) * (1.f / 63.f);
-	x = x * 2.f;
-	y = y * 2.f;
-	real z = 0.f;
+	point3f grid;
+	grid.x = (real)(index & 0x3f) * (1.f / 63.f);
+	grid.y = (real)((index >> 6) & 0x3f) * (1.f / 63.f);
+	grid.x = grid.x * 2.f;
+	grid.y = grid.y * 2.f;
+	grid.z = 0.f;
+	real x = grid.x;
+	real y = grid.y;
+	real z = grid.z;
 	s_direction_face const *face = &g_475480[index >> 12];
 	if (face->scale != 1.f)
 	{
@@ -81,13 +85,14 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 	direction->k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
 }
 
-// score 61 (was 62): two causes. (1) The decoder's constants: retail makes the zero first (xmm3)
-// and loads 2.0 and 1.0 into xmm2 at their uses; ours loads 2.0 early into xmm3 and makes the zero
-// late. Retail's decoder acts as if a block ends after the two 1/63 products: a one-pass loop around
-// them (diagnostic only, not kept) gives retail's schedule, 51. (2) Ours keeps the decoded k on x87
-// (fst) and squares it first; retail pops it and sums j*j, k*k, then i*i from memory. A block boundary
-// before the normalization (diagnostic branch) makes ours reload in retail's order. These sum orders
-// follow VC's tuple numbering, not the source order.
+// score 47 (was 61): what still differs is the normalization: ours keeps the decoded k on the x87
+// stack (fst) and squares it first; retail pops it and sums j*j, k*k, then i*i from memory, as if a
+// block ended after the decode (a diagnostic branch there gives retail's order). These sum orders
+// follow VC's tuple numbering, not the source order. Round 13: the decoder builds its grid point
+// as a point3f and reads it back into x, y and z (and 0x195070 shares it): its constants now
+// match retail (the zero made first in xmm3, 2.0 and 1.0 loaded into xmm2 at their uses), 61 -> 47.
+// Before that (cause 1), retail's decoder acted as if a block ended after the two 1/63 products: a
+// one-pass loop around them (diagnostic only) gave retail's schedule, 51.
 // Round 78: the rounding through the existing real_to_long (forceinline declaration, as ai.cpp does)
 // in place of the hand-written fld/fistp block 62 -> 61 (kept: the sum is now k, j, i and j scales as
 // retail's j * inv); on it: a two-pass grid loop 124 (VC keeps the loop); normalize_inline 61;
@@ -109,6 +114,12 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // `do {} while (false)` between the decode and the normalization 62 (identical code: no join); zero
 // after y / between x and y / after the face pointer 73/81/62; the decoder returning its output
 // pointer into the normalization 62.
+// Round 13, on the grid decoder (harness, the region scored alone): normalize_inline (sums k, i,
+// then j) and normalize_decoded_direction no gain; the rows into scalars, a result local copied
+// out, a pointer return into the normalizer, a caller-side copy of the decoded vector, an axis
+// loop for the rows, the rows reordered: none reloads; the decoder as an address-less plain or
+// `inline` function in unknown_195720.cpp is not inlined (393, two callers lost; `inline` leaves an
+// unresolved call); `__forceinline` there is untested (its reduced image lacked that file).
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
@@ -124,7 +135,7 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 			csprintf_256(message, "%u exceeds max value of %u", index, k_direction_limit);
 		}
 		function_195720(stream, index, k_direction_bits);
-		decode_direction_194d30(index, &direction);
+		decode_direction(index, &direction);
 		normalize3d(&direction);
 	}
 	else
@@ -136,16 +147,15 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 	function_195720(stream, real_to_long((angle - -k_pi) * 40.42535400390625f), 8);
 }
 
-// score 96 (was 96): retail keeps 1/63 in xmm2 and 2 in xmm3 and finishes x (both products) before
-// converting y; ours keeps 1/63 in xmm0 and scales x and y by two late. Retail also pops the decoded k
-// and sums i, k, j from memory (a block boundary before the normalization), and scales the normalized
-// vector in place. Single-expression grid values 126 (1/63*2 folds into one constant); x finished
-// before y 96; `vector3f_scale` with the magnitude call 96; the existing decode_direction_194d30
-// helper 114 (aligned 34 -> 26: the final scale then matches retail and the hand-written decode copy
-// goes; the decode registers and x87 reload remain); that helper as plain inline 344 (not inlined).
-// Plain component loops (rows/normalization/output in seven subsets) 114/96/114/96/96/96/96; all
-// with complete normalized value 155 at 489 bytes. Row/output forms are 440 bytes; no count gain or
-// missing store/reload recovery. Original body and normalizer restored.
+// score 56 (was 96): only the normalization differs, as in 0x194d30: ours keeps the decoded k on
+// the x87 stack and squares it first; retail pops it and sums i, k, j from memory (a block boundary
+// before the normalization), then scales the normalized vector in place. Round 13: the shared grid
+// decoder in place of this function's hand-written copy of it, 96 -> 56. Earlier, on that copy:
+// single-expression grid values 126 (1/63*2 folds into one constant); x finished before y 96;
+// `vector3f_scale` with the magnitude call 96; the old decoder helper 114 (aligned 34 -> 26); that
+// helper as plain inline 344 (not inlined). Plain component loops (rows/normalization/output in
+// seven subsets) 114/96/114/96/96/96/96; all with complete normalized value 155 at 489 bytes.
+// Row/output forms are 440 bytes; no count gain or missing store/reload recovery.
 // @retail 0x195070
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {
@@ -153,23 +163,7 @@ void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long 
 	{
 		long index = (long)function_1959c0(stream, k_direction_bits);
 		vector3f direction;
-		{
-			real x = (real)(index & 0x3f) * (1.f / 63.f);
-			real y = (real)((index >> 6) & 0x3f) * (1.f / 63.f);
-			x = x * 2.f;
-			y = y * 2.f;
-			s_direction_face const *face = &g_475480[index >> 12];
-			real z = 0.f;
-			if (face->scale != 1.f)
-			{
-				x = face->scale * x;
-				y = face->scale * y;
-				z = face->scale * z;
-			}
-			direction.i = z * face->axes[2].i + y * face->axes[1].i + x * face->axes[0].i + face->origin.i;
-			direction.j = z * face->axes[2].j + y * face->axes[1].j + x * face->axes[0].j + face->origin.j;
-			direction.k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
-		}
+		decode_direction(index, &direction);
 		normalize_decoded_direction(&direction);
 		real magnitude = function_194ff0(stream, lo, hi, bits);
 		out->i = magnitude * direction.i;

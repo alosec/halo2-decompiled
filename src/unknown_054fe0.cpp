@@ -1153,6 +1153,11 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // else`, and as a guarded do loop; the getter alone 100. With those stores ahead of the
 // observer branch (retail's order) the cursor keeps the register in every form screened:
 // getter after the counters, helper parameter orders, qos scope, times position, while loop.
+// Round 13: retail also re-reads member_count inside the member check (ours reuses the loop
+// condition's load in eax: a CSE across the back edge retail does not make). The host read after
+// the observer selection alone 86 (callers 0x658c0 and 0x65770 lose their match); the existing
+// observer getter with the host after it 100; the member check through the existing member-state
+// getter 95; qos declared before the loop 67; the observer chosen in an if/else 103 (same callers).
 // @retail 0x64480
 void network_session_get_member_latency(s_session_member_latency *latency, c_class_58d20 *session)
 {
@@ -1687,6 +1692,10 @@ static __forceinline bool function_65341(c_class_58d20 **out)
 // declarations swapped 145; pointer-terminated user loop 145. Original restored.
 // Round 256: Actual selector state-test result in bool/byte/short/long, conditional/guarded state
 // acquisition 135/139/135/139/152/153/153/153. All restored.
+// Round 13: variant_index declared first 128; status and variant_index first 146; session first
+// 146; variant_index set in each else 138; the user loop indexing g_4cd868.users[i] directly 122
+// (aligned 45 -> 38: it gives retail's loop exactly, esi stepping to the array's end address and
+// edi the index, but the positional count rises; keep it in mind once the rest aligns).
 // @retail 0x65340
 void function_065340(void)
 {

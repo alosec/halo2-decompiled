@@ -270,7 +270,13 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // the literal 0.f (0x45dbd8 is the 0.0 constant) 57. Compile-only (no gain):
 // the sphere helper's 24 parameter orders and __forceinline; statement differences x,z,y; scalar
 // component locals; radius square first; a 72-form screen of the squared-distance, scale, unit-z
-// and dot helpers.
+// and dot helpers. Round 13 (exact LTCG harness, ~250 forms): the squared distance in every flat,
+// parenthesized and statement order 57-61; the squared-length/self-dot/reverse-dot helpers with
+// either plane-dot order, the reciprocal in the call and separate unit-z zeros 150-152 (aligned
+// lower, but the difference is then computed i, j, k); the pointer local (diagnostic) leaves only
+// the plane dot's i product, as the dot swap fixes; a single-exit result 57; the test inverted 58;
+// a center pointer used twice 170 (669 bytes); single exit with length_sq3f 150; x and z summed
+// before y 59; the difference written out as plain assignments (diagnostic) 57-61 in every order.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -318,7 +324,7 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 	return a->k * b->k + a->j * b->j + a->i * b->i;
 }
 
-// score 4 (was 40): only b's sum order differs: retail adds the k product before the j product
+// score 4 (was 4): only b's sum order differs: retail adds the k product before the j product
 // (i, k, j, each a copy of the difference times the direction's memory operand); ours sums i, j, k.
 // The discriminant is compared with the literal 0.f (retail's 0x45dbd8 is the 0.0 constant), which
 // gave retail's radius/c/zero registers (40 -> 4).
@@ -337,6 +343,14 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 // flat term order, every dot helper and five spellings before the sum give i, j, k; extra
 // arithmetic before the sum rotates it only among i,j,k / j,i,k / j,k,i; the difference computed
 // j, i, k by hand (diagnostic) gives i, k, j but moves other registers (13).
+// Round 13 (exact LTCG harness, ~800 forms): b and a parenthesized `(i + k) + j` and `(j + k) + i`
+// give retail's b order but the j product then loads direction->j (a byte longer) 7; so do
+// `j + (i + k)` and `b = i + k; b += j` 7; product parentheses and operand orders, c's statement
+// orders and groupings, parenthesized c, plane-dot forms 2-14 in the harness; dot3f(&d, direction)
+// with dot3f(&plane->n, center) 4; a center pointer local used twice 8; radius local 105;
+// declaration and comparison spellings 4; the difference helper with a pointer return, forced
+// inline, output first 4 (by value 121). Only the three differences written out as plain
+// assignments (diagnostic) give retail's whole b block. Permuter (68 tries): 4.
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
