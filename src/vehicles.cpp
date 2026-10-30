@@ -533,6 +533,9 @@ PRIVATE inline void vehicle_normalize2d(point2f *v)
 // Round 77: the reversing bit written as bit 9 of the flags word (word_flags_set) 314: the writer is
 // then retail's (`or/and byte ptr [esi+0x349]`, one exit each; ours split it into load/op/store), and
 // only its position against the longer retail body moves the count. Restored on that count.
+// Round 425: one velocity/direction workspace 321; one heading/blend workspace 307; both 322;
+// complete 2D role names alone/with either/both 306/321/307/322; both with long reverse result 319.
+// All original source restored; the 0x28 frame and entry magnitude remain unresolved.
 // @retail 0xef070
 void function_ef070(long vehicle_index)
 {
@@ -788,6 +791,8 @@ __forceinline long vehicle_round(real value)
 // form flips three more products; the helper's component order (all six, staged or not), operand text
 // order, inline/forceinline, local declaration order, the if/else inverted and the rate computed first
 // never give the first cross's f.i load, which moves only when the side block is removed.
+// Round 425: native rate clamp 12; strength if/else 140; writable flag bit 15; shared byte clear 12;
+// clamp/strength 140, clamp/bit 15, strength/bit and all 140. All original source restored.
 // @retail 0xef870
 bool function_ef870(long vehicle_index)
 {
@@ -3518,10 +3523,13 @@ long function_189060(long object_index, short value, real scale, point3f const *
    pushes it (every fourth tick, a spread of the vehicles' work, else the
    last one), which sets the function's value; a hard landing plays the
    definition's sound */
-// score 316 (was 374): frame 0xe0 versus 0xec, iterator/scalar homes and final flag stores remain.
+// score 316 (was 316): frame 0xe0 versus 0xec, iterator/scalar homes and final flag stores remain.
 // Native point copy 350; up copy 341; both 333; both with long quantization 328;
 // both with post-search scalar selection 321; all three 316 (kept); scalar selection alone 362;
 // native ray setters 333; ray/marker/both at entry and complete workspace names 316 each.
+// Round 425: point before up 317; shared word flag writer 316, with point first 317; long sound
+// result 319, with point first 319, with writer/everything 341/341; both long decisions with all 344.
+// All original source restored; missing twelve frame bytes and iterator/scalar homes remain.
 // @retail 0xf6670
 bool __stdcall function_f6670(long vehicle_index, bool update)
 {
