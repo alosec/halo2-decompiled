@@ -220,6 +220,12 @@
 // N226: Complete linear/quadratic/cubic product-stage band subsets
 // 59/59/59/139/139/139/139; all with constant root-five/root-seven initialization
 // at declaration 139. Original complete body, precision and expression trees restored.
+// Round 84: all cubic roots double with a double final accumulator 79; two-stage zz5 79;
+// early coefficient 15 151; independent cubic X/Y accumulators 42; in-place depth polynomial 53;
+// native linear/quadratic roots on that graph 37; original/renamed in-place depth 49/49;
+// direct coefficient 11 37; direct final chain 39; inline declaration target 37 but sibling 169 fast;
+// band3_35 before zz5 36; band3_21 before zz5 49; only sqrt2 double 30; early zz5/band3_21
+// declarations 30 each. Best 30 plain at 660/660 but sibling 0x146020 scores 11; original body restored.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {
