@@ -302,6 +302,11 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // plus dot(normal, center) 57, plus vector3f_assign unit z 61; length_sq3f with the reciprocal
 // passed to shape_scale3d 152; a 72-form compile screen of these helpers (squared distance,
 // scale, unit-z arm, dot order) found none below 57.
+// Round 7 (lane 14): fast MATCH with a one-caller helper returning the x and z squares (statements,
+// through its pointer) plus `+= d.j * d.j`, with the unit-z zeros stored separately or chained j
+// first (not kept: a new one-caller helper only steering the products); that helper alone 2 (the
+// unit-z zero stores in the other order), with the dot inputs swapped 2; every square through a
+// pointer local plus the dot swap 148; products written by fields after an x,z,y statement sum 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -365,6 +370,10 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 // for c 55; dot3f for b with dot3f for a 40, reverse dot for b with dot3f for a 40; reversed
 // one-expression c with reverse dot b 49; a 60-form compile screen of c, b and a through the
 // existing helpers or one expression found none below 40.
+// arms swapped 63. Round 7 (lane 14): b's retail order i,k,j comes from statements, but the last
+// term then loads first (compile-only); b as i,k statements plus j 46, i plus k,j 46, three
+// statements 42 (434 bytes each), through the existing reverse dot 42; the radius-square
+// declaration at any of five places gives the same code (compile-only).
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,

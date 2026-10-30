@@ -593,6 +593,7 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // Round 30: named result with one return 51; velocity/root/point/compression 52;
 // point/velocity/root/compression 49; compression/velocity/point/root 52;
 // point/root/velocity/compression 52. Restored; still BLOCKED-BY 0xba300's convention.
+// Round 7 (lane 14): velocity first 52; named result 51; play fields through `(*play).` 51.
 // @retail 0x189210
 long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
 {
