@@ -20,6 +20,8 @@
 // entry index 24/12; count from those indices 28/19; signed results 18/24; post-
 // conversion index with live/index-based count 24/28; void stdcall/cdecl 8/11;
 // entry-index result stdcall/cdecl 12/12. Original void interface and body restored.
+// Round 46: volume store before bin store 22; bin-index postincrement and separate increment before
+// volume 25 each; preincrement/+=/count+1/1+count 8 each; const scalar input 8. Original body restored.
 // @retail 0x21e230
 void sound_mixbins_add(s_mixbin_settings *settings, long mixbin, real decibels)
 {

@@ -701,6 +701,9 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 424: selected-type-derived point presence in short/word/long/dword at entry
 // 384/384/387/387; consumed directly at successful normalization 392/392/394/394.
 // All restored; native result/point-valid homes and case-specific point transport remain.
+// Round 436 (fast control 301, full 290): point-presence assigned after each successful
+// point producer, bool/byte/word/long 310/310/368/364; assigned at the two
+// geometry consumers 372/372/393/393. All nonexact presence-lifetime forms restored.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)
@@ -1277,6 +1280,10 @@ struct s_actor_looking_turn_request
 // Y423: High aiming case block first 536; looking case 2 first 525; both 536;
 // those orders with sequential validity 536/525/536; high aiming with outer
 // validity scope, alone/with looking order 536/536 fast (control 525). Restored.
+// Existing validity defaults produced by marker/combat/aiming decoder success tests,
+// subsets 1-7, 530/528/530/535/551/535/551; all plus looking decoder tests 526
+// (fast control 525, full 506). All reserve 0xcc versus retail 0xc8; exact-match-only
+// forms restored, preserving original result storage, scopes, queries and complete body.
 // @retail 0x298370
 void function_298370(long actor_index)
 {

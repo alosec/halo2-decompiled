@@ -119,7 +119,10 @@ short __stdcall function_272af0(s_match_globals *structure, point3f const *point
 // or outer choice, the copy through a cast 2/2/2/2/2; choice read at each
 // use 33; the request's +4 store before +8 5; a pointer to the destination
 // point 2; choice or view renamed to sort after/before the other 2/2; choice or
-// view declared first 2/2; point copy before the state store 140.
+// view declared first 2/2; point copy before the state store 140; point copied
+// with memcpy 2; const choice through a const pointer 2; +0x74 stored before
+// +0x72 6; result set first in the success block 118; type NONE first in the
+// success block 92.
 // @retail 0x1b69e0
 bool __stdcall function_1b69e0(long actor_index, long prop_index)
 {
