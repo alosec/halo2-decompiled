@@ -609,6 +609,10 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // What the 95 form still lacks is mostly scratch rotation from the 0x110ab0 argument (ECX for
 // retail's EAX), the sum's operand order, the length/projection slots and the timing call's pushes.
 // The guard split into two nested ifs 141 (on the 95 form 95); the target read before the guard 233.
+// Round 44: late fallback with the post-projection radius expression repeated 95 at 964 bytes (diagnostic);
+// named post-projection sum in either operand order 211 each; request stores in disassembly order on the
+// repeated form 94; direction-length name 94; forward/remaining distance names 94 each; timing outputs
+// declared before geometry 94; first-length local reused for adjusted distance 95. Opening body restored.
 // Both native copies before planar zeros 141; opposite independent copy order 142;
 // existing in-place planar setter 196 (963 bytes), direct planar setter inputs 224;
 // existing side/reverse/both-with-planar setters 157/141/224; late zeros plus side/reverse setters 157.
