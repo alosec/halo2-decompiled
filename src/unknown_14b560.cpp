@@ -1982,26 +1982,21 @@ struct s_player_creation_record
 };
 #pragma pack(pop)
 
-// score 33 (was 33): the value that is handed to the call is read into EDI
-// here and into EDX in retail, so the register that carries the argument
-// differs; the rest of the call is the same. Retail inlines 0x14f270 for the
-// variable controller here (only the inner NONE reset stays a call). Tried: a
-// plain call with an inline declaration of 0x14f270 267; with
-// inline_recursion pragmas or a reworded 0x14f270 the call is still kept.
-// differs; the rest of the call is the same.
-// Frame 0x10 agrees; the controller reset expands on the opposite arm.
-// Caller depth 1/2 33/33; size preference 335; common reset 55;
-// auto-inline off 33; global optimization off 395; depth 0 305;
-// common reset with size preference 343.
-// Retail looks like function_14f270(index, record->value04) inlined one level
-// (its NONE arm inline, its recursive NONE call kept), as 0x152f80 also
-// shows; our build does not inline that call (267, also with
-// inline_recursion(on) around this function). Written in function_14f270's
-// arm order, the NONE call in the other arm inlines instead (49).
+// score 33 (was 33): retail inlines function_14f270(index, record->value04) here one level (its NONE
+// arm inline, its recursive NONE call kept); our link keeps that variable-argument call out of line
+// (it inlines only constant-NONE calls), so the tail is written out and differs from +0x1f6.
+// Tried: a plain call with an inline declaration of 0x14f270 267; with inline_recursion pragmas or a
+// reworded 0x14f270 the call is still kept. Frame 0x10 agrees; the controller reset expands on the
+// opposite arm. Caller depth 1/2 33/33; size preference 335; common reset 55; auto-inline off 33;
+// global optimization off 395; depth 0 305; common reset with size preference 343. Written in
+// function_14f270's arm order, the NONE call in the other arm inlines instead (49).
 // Round 199: direct previous-controller comparison on the current partial-helper graph, with
 // native current-player fields, requested-field observations and assignment-first arms:
-// 33/33/198/198/47/47/195/195. All restored; requested-value/register roles and selective
-// recursive expansion remain.
+// 33/33/198/198/47/47/195/195. All restored.
+// Round 98: plain call 267; with 0x14f270 reading player_get 267; `inline` on 0x14f270's definition
+// 267; an old-controller local in 0x14f270, alone/with `inline` 267/267; 0x14f270 __forceinline
+// (definition, or a later declaration in this file) MATCHES here but also inlines 0x14c880's
+// variable call (278), so it is not kept: retail inlines the call here and not in 0x14c880's loop.
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
@@ -2801,6 +2796,10 @@ struct s_unit_flags_14d8b0
 // Round 415: first/second/both byte countdown results 9/9/9; paired acquisition 16; long/short
 // results 114/114; byte results with short reset result/native reset flag 9/9. Original body
 // restored.
+// Round 98: mode and reset countdown as one condition 9; reset countdown through a short reference 9;
+// the two byte countdowns through a signed char pointer 9; short slot index local in both slot
+// blocks 9; flag bytes through the player's flags word 9. Retail also splits the global/data
+// registers in the callee 0x1521d0 (ecx/edx where ours reuses one).
 // @retail 0x14d8b0
 void function_14d8b0(void)
 {

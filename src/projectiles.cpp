@@ -607,7 +607,14 @@ s_projectile_material_response g_547660;
 // counted response loop 56 (alone: retail's guard/counter shape, but index EDI, material ECX and the
 // response ESI where retail has ESI/EDI/EDX), NULL-default getter with it 56, while-counted 56,
 // tail-recursive call on the parent 72 (made a loop, result dropped), counted without the reference
-// 64, walk local read through the reference 34.
+// 64, walk local read through the reference 34. Round 101: a word parameter with short-cast range
+// tests 56 (146 bytes, movzx); `return` of the call on the parent when nothing matched 69 (VC makes
+// a rotated loop, still a dword load); the counted loop reading the element through the index at
+// each use 56 (140 bytes); the counted loop testing the definition's count at each pass 70; the
+// parent read only when nothing matched 74. Screened alone (synthetic shapes too): every loop form
+// over a short index, with the index read through the parameter's address or not, loads a dword;
+// the read through the address gives the word load only when the value is not loop-carried
+// (0x1ed70). A scan of the matched functions finds no word-loaded parameter that a loop reassigns.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)

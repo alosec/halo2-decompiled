@@ -568,11 +568,22 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 	return result;
 }
 
-// score 58 (was 338): camera-basis scheduling/register allocation still differs.
+// score 57 (was 58): camera-basis scheduling/register allocation still differs.
 // Retail loads previous_up.k after storing distance and holds right.i/j/k in
-// xmm2/xmm1/xmm0; ours uses xmm2/xmm0/xmm1. Retail's second cross product copies
-// registers and addresses forward through ecx; ours mixes ecx/edi and stores up.i early.
-// The else branch stores forward.j/k through ecx in retail and through edi here.
+// xmm2/xmm1/xmm0; ours uses xmm2/xmm0/xmm1. Retail computes the second cross product
+// staged (all products, then the stores through eax), copying right's components
+// (movaps, then a memory multiply) where ours loads forward's; the source operand order
+// of the products makes no difference. The else branch stores forward.j/k through ecx
+// in retail and through edi here.
+// cross3f_staged for the second product 217 (aligned 37 from 44: retail's ecx reads
+// and eax stores, but 6 bytes longer: u.k/right.i colours swapped); both products
+// staged 221; previous up read after the forward copy 268, before the distance
+// 241; direction_from_angles in the else branch 224 (angles read once), with
+// cross3f_staged 220. Kept: cross3f for the second product 57 (was written out by hand).
+// On that: a forward pointer for the else branch's stores 55 (the else branch is then
+// retail's; only the camera basis differs); with cross3f_staged 217; staged first
+// product 222; direction_from_angles 221; direction declared before previous_up 57;
+// the first product taken from the direction local 217 (1261 bytes).
 // @retail 0x23de50
 void __stdcall function_23de50(void *state, void *input, s_observer_command *output)
 {
@@ -629,14 +640,7 @@ void __stdcall function_23de50(void *state, void *input, s_observer_command *out
 		command->forward = direction;
 		vector3f right;
 		cross3f(&previous_up, &command->forward, &right);
-		{
-			real k = command->forward.i * right.j - command->forward.j * right.i;
-			real j = command->forward.k * right.i - command->forward.i * right.k;
-			real i = right.k * command->forward.j - right.j * command->forward.k;
-			command->up.i = i;
-			command->up.j = j;
-			command->up.k = k;
-		}
+		cross3f(&command->forward, &right, &command->up);
 		function_30bf0(&command->up);
 		command->field_of_view = observer->field_of_view;
 		command->offset = *g_4687a4;

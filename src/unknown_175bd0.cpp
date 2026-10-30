@@ -1790,6 +1790,12 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // Round 165: the five other position/forward/up declaration orders 77 (identical); forward rows before the
 // position block 198; cross product from the stored output forward 169 (758 bytes); forward rows with `+=`
 // 77 (identical); node matrix read through the source at each use 202 (caller 0x178360 86).
+// 236 (795 bytes). Round 99: the xmm rotation is one joint choice: retail's normalize puts up.i/up.j
+// in xmm5/xmm1, leaving xmm2-4 for forward across 0x11d000; ours puts them in xmm1/xmm2, forward in
+// xmm3-5. Cross product reading the stored forward field 169 (758 bytes, forward reloaded); up
+// declared first 77 (same code); normalize3d on 0x11d000's returned pointer 187; forward stored
+// before the 0x11d000 call 111; node copied first with the matrix read from the source at each use
+// 202 (768 bytes).
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -2334,6 +2340,9 @@ event_done:
 // index and the tail field 130; outer `NONE || valid` test with the deletion in the else arm 63. Probe: the
 // second if, root index and 0x1794a0's index through a fresh datum lookup 177 but aligned 23, the head's
 // reloads then match exactly, so 0xbadc0/0xbaf80 being read-only to LTCG here is the blocker.
+// (src/unknown_0bad50.cpp, avoid-listed this round). Round 99: from the 0x1794a0 call to the end
+// ours and retail agree instruction for instruction; every difference is the cached object index
+// across 0xbadc0 (no new forms: its file was avoid-listed again).
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {

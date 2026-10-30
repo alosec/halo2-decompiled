@@ -245,6 +245,12 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // 105, one six-term sum 95, squares grouped t * (t * k) 86; the arrays in one local struct 88;
 // peaks filled by a chained assignment 114 (both peaks one register, no frame). The preloads keep
 // four coefficients in xmm4-7 in every form; retail spills the peaks and the acceleration.
+// Round 98 (retail's memory operands for rates[1], rates[2] and accelerations[0] look like array homes
+// that were never scalar-replaced): PIN clamps into a long segment-ticks array summed in a three-pass
+// loop 88 (aligned 82); the same with the casts at each use 88 (287 bytes); the two peak rates filled
+// by a loop 100 (aligned 31; 271 bytes), the loop after the other fills 100; the three segment
+// products summed in a loop over the arrays 106; PIN + two arrays + separate += 90 again. A
+// compile-only screen of 34 array/fill/sum forms never kept those three in memory.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

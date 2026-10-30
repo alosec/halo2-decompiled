@@ -231,6 +231,28 @@ void __stdcall function_bc820(long object_index);
 void function_109660(long object_index, long entry_index);
 void function_fd910();
 
+/* the data iterator's step over the object headers (g_4e0300) as retail
+   inlines it in this file: the next-used-index scan in its do/while form */
+static __forceinline s_object_visibility_header_ab *object_header_iterator_next(s_record_pool_iterator *iterator)
+{
+    s_record_pool *data = iterator->data;
+    long index = data_find_index(data, iterator->index + 1);
+    s_object_visibility_header_ab *result;
+    if (index != NONE)
+    {
+        result = (s_object_visibility_header_ab *)(data->data + data->size * index);
+        iterator->index = index;
+        iterator->datum_index = (result->salt << 16) | index;
+    }
+    else
+    {
+        iterator->index = data->maximum_count;
+        iterator->datum_index = NONE;
+        result = 0;
+    }
+    return result;
+}
+
 // score 2 (was 2): the two values are copied into EAX and ECX in the opposite order.
 // Unsigned callee parameter declarations 2 each; reversed snapshot declarations 2;
 // predeclared loop index 2; header before iterator 2; read-only headers 2; inline depth zero 91.
@@ -255,7 +277,7 @@ void function_b7060()
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = (s_object_visibility_header_ab *)data_iterator_next_inlined(&iterator)) != 0)
+    while ((header = object_header_iterator_next(&iterator)) != 0)
     {
         if ((header->flags & 4) && !(header->flags & 8) &&
             !TEST_FIELD_BIT(((s_object_tick_flags_ab *)header->object)->in_list))
@@ -271,45 +293,6 @@ void __stdcall function_b83b0(long object_index, bool flag);
 void __stdcall function_b8460(long object_index, bool flag);
 void function_bf380();
 
-/* a flag field read as word bits: retail reads these flags with a load, a
-   shift and a test of the low bit */
-struct s_flag_word_bits
-{
-	word bit0 : 1;
-	word bit1 : 1;
-	word bit2 : 1;
-	word bit3 : 1;
-	word bit4 : 1;
-	word bit5 : 1;
-	word bit6 : 1;
-	word bit7 : 1;
-	word bit8 : 1;
-	word bit9 : 1;
-	word bit10 : 1;
-	word bit11 : 1;
-	word bit12 : 1;
-	word bit13 : 1;
-	word bit14 : 1;
-	word bit15 : 1;
-};
-
-// score 66 (was 78): in the second pass retail tests the header's flag byte directly (test cl, 8)
-// while ours reads flag 3 through a word bitfield view (shr al, 3; test al, 1). The inlined
-// iterator's exits also differ: retail gives the start-past-high-water exit its own epilogue copy,
-// so its jge is a near jump and the scan loop's head gets six bytes of padding, while ours merges
-// that exit with the scan-exhausted one and is eleven bytes shorter.
-// the high bits in place and masks it there.
-// scan-exhausted and found-index-NONE exits one epilogue copy and the negative-start and
-// start-past-high-water exits their own, ours shares the exhausted exit with the high-water one,
-// so its early jge is a short jump and the scan loop's head needs 10 bytes of padding, which VC
-// doesn't add (it aligns at 9 or fewer, as in 0xb7150 and 0xb6df0). Nested flag tests 78; one header
-// for both passes 78; the iterator declared at the top 78; a named object index 78; one combined
-// condition 78; the datum iterator helper isn't inlined here (89 instructions).
-// Round 15 (lane 11): the flag 3 test written `!(header->flags & 8)` (no word-bitfield view) makes the
-// second pass retail's instruction for instruction (aligned 94 -> 1), but the score rises to 78 (the
-// iterator exit layout shifts the tail), so main's form stays; on that form the existing datum iterator
-// for the second pass, the failing tests as a `continue`, nested flag tests, iterator fields set
-// index-first and the datum index left unset were no better.
 // @retail 0xb6f10
 void function_b6f10()
 {
@@ -332,9 +315,9 @@ void function_b6f10()
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = (s_object_visibility_header_ab *)data_iterator_next_inlined(&iterator)) != 0)
+    while ((header = object_header_iterator_next(&iterator)) != 0)
     {
-        if ((header->flags & 1) && (header->flags & 2) && !TEST_FIELD_BIT(((s_flag_word_bits *)&header->flags)->bit3))
+        if ((header->flags & 1) && (header->flags & 2) && !(header->flags & 8))
         {
             s_object_tick_flags_ab *object = (s_object_tick_flags_ab *)((s_object_visibility_header_ab *)g_4e0300->data)[iterator.datum_index & 0xffff].object;
             if (!TEST_FIELD_BIT(object->in_list))
@@ -353,7 +336,7 @@ void function_b7150()
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = (s_object_visibility_header_ab *)data_iterator_next_inlined(&iterator)) != 0)
+    while ((header = object_header_iterator_next(&iterator)) != 0)
     {
         header->flags &= ~0x20;
         if ((header->flags & 8) && (header->flags & 1) && (header->flags & 2) && !(header->flags & 0x10))
@@ -368,7 +351,7 @@ void function_b7150()
     iterator.data = g_4e0300;
     iterator.index = NONE;
     iterator.datum_index = NONE;
-    while ((header = (s_object_visibility_header_ab *)data_iterator_next_inlined(&iterator)) != 0)
+    while ((header = object_header_iterator_next(&iterator)) != 0)
     {
         if (header->flags & 0x10)
         {
@@ -395,7 +378,7 @@ void __stdcall function_b6df0(dword const *previous, dword const *current, long 
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = (s_object_visibility_header_ab *)data_iterator_next_inlined(&iterator)) != 0)
+    while ((header = object_header_iterator_next(&iterator)) != 0)
     {
         if (header->flags & 0x40)
         {
