@@ -227,7 +227,11 @@ void c_turret_entity_definition::v21(s_entity *entity)
 	}
 }
 
-// score 49 (was 77): retail holds a bool result in BL from before the creation call, saves
+// score 49 (was 49): false BL lifetime, temporary EBP save and independent header/object lookups remain.
+// retail holds a bool result in BL from before the creation call, saves
+// retail holds a bool result in BL from before the creation call, saves
+// EBP only around the header test and loads the header and the object separately; ours keeps
+// a long result in EBP and shares one header address.
 // EBP only around the header test and loads the header and the object separately; ours
 // keeps a long result in EBP and shares one header address. Incoming output flags 87; later
 // result 80; both 89; invalid header first 75; shared header 77; incoming flags and header
@@ -254,9 +258,31 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // native header acceptance 65; native rejection first 52; combined native acceptance 67.
 // Signed-byte/unsigned-word/unsigned-native validity 76/52/49; shared success exit bool/long/byte
 // 75/67/70; shared validity exit native/word 52/55.
-// score 49 (was 49): EBP result, early false lifetime and shared header lookup remain.
+// EBP result, early false lifetime and shared header lookup remain.
 // Result declaration first, output role name, both, native-result header record 49 each;
 // shared header/object/both getters 49/49/49; both getters with early Boolean success 77.
+// Success-default bool/native/byte at entry 72/49/72; after creation 70/52/70;
+// created-index validity return 70; actual attached-index result 72.
+// retail holds a bool result in BL from before the creation call, saves
+// EBP only around the header test and reloads the table's data and recomputes the index for the
+// object (the table global stays in EDX); ours keeps a long result in EBP and shares one header
+// address. With the bool result every header/object spelling still shares the address, so EBP is
+// free and caches the last argument across both virtual calls (160 bytes). Zero frame agrees.
+// Tried: incoming output flags 87; later result 80; both 89; invalid header first 75; shared
+// header 77; incoming flags and header 87; guard exits 77; result from validity 69;
+// byte/native/short result 76/49/52; published index 70; full acceptance 73; incoming flags with
+// byte/native result 64/69; early long/byte/short/signed-byte success result 67/70/65/70; byte
+// after notification 70; native header acceptance 65; native rejection first 52; combined native
+// acceptance 67; early bool result set after the attach 77, with the header or the object read
+// through the entity's stored index 77/77, with the result declared after the in/out value 77;
+// native result with the header read through the entity's index 49; signed-byte/unsigned-word/
+// unsigned-native validity 76/52/49; shared success exit bool/long/byte 75/67/70; shared validity
+// exit native/word 52/55; result declaration first, output role name, both, native-result header
+// record 49 each; shared header/object/both getters 49/49/49; both getters with early Boolean
+// success 77. Bool result with: a local for the object table 78; forceinline header-test and
+// object getters 77; a named flag-test bool 77; the NONE test repeated in an else-if 75; header
+// and object through the entity's stored index 77; cross-file getters, guard returns and
+// == 0 test (screened) still share the address.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {

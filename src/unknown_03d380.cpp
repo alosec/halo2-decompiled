@@ -314,7 +314,7 @@ void __stdcall function_124750(dword flags)
 
 void function_125a90(long value);
 
-// score 46 (was 46): the address of the record is built here with an imul
+// score 47 (was 47): the address of the record is built here with an imul
 // into ESI and an add; retail multiplies into EAX and forms the address with a
 // lea, so the type byte that is tested afterwards is compared in another value.
 // Retail also falls from the type test into the special-type arm, then the
@@ -322,6 +322,10 @@ void function_125a90(long value);
 // special arm as `type != 0x26 || a` 88; as `type == 0x26 && !a` 88; the kind
 // tests joined with && 46; the type test negated, kind arm first 46; removal
 // first with an if/else special arm 50.
+// Round 411: Existing calling iterator with returned/salted receivers and remove/keep
+// decisions 115/110/168/177; existing fully inlined iterator with the same four forms
+// 115/110/168/177. Original traversal restored; the early policy load, ESI multiply
+// and special/remove/ordinary/keep ordering remain.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {
@@ -561,7 +565,14 @@ void __stdcall function_1889d0(dword flags)
 	}
 }
 
-// score 62 (was 62): retail loads the flag word whole into bx (ours a masked byte), reloads the
+// score 61 (was 109): the flag word is masked down to the two bits the tests use, so the word
+// stays in a register across the query call and the value is kept in the stack slot.
+// Left: the load is a byte load (retail loads the word into bx); the tag lookup and the final
+// global still pick other registers.
+// New this run: dword mask 61; the word read then masked 61; the mask as int/long 61; the mask
+// with direct bit tests 61; the word mask 130; the wide masks 118; the value read at the call
+// 109; the tag entry through a pointer local 61; the final global through the local 99;
+// the value read before the flag word 128.
 // value into ecx (ours eax) and picks other scratch registers in the sound-tag loop and the final
 // flag test; without the 0x60 mask the flags and the value swap ebx and the stack slot.
 // Tried: flags/tag names 110; positive/rejection tests 110; direct parameter 160; early flag 42
@@ -634,7 +645,7 @@ void __stdcall function_188ac0(dword flags)
 			record_pool_release(array, datum);
 		else
 		{
-			word flags5 = *(word const *)&element->flags & 0x60;
+			dword flags5 = *(word const *)&element->flags & 0x60;
 			if ((bool)((flags5 >> 5) & 1))
 			{
 				long value = element->value;
