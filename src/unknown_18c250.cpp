@@ -651,6 +651,10 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 // Round 217: native root output at query/entry scope via aggregate/library copy 305 each; with
 // native velocity output 337 each. Frame 0x8c and datum/tag homes remain. Root-location callee
 // now matches and uses object ECX/output EAX; original body restored.
+// DL201: effect/audibility ordinary, inline and force-inline contracts, all eight pairs
+// 279/556/279/492/279/492/556/756. Ordinary inline forms tie; forced audibility expansion
+// loses seven matched callers. All original declarations, definitions and body restored.
+// Root-location query now matches; datum/tag homes and the constant-one spill remain.
 // @retail 0x18cbc0
 void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 {

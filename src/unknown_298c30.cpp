@@ -156,6 +156,10 @@ __forceinline void function_2992ba(short arg_0, bool arg_1, real arg_2, point2f 
 // Round 424: candidate snapshot with helper-owned point/returned point/scalar evaluation
 // 445/445/431; each with void normalizer 445/445/431; point/scalar with ordinary inline
 // emitter 713/431. All restored; nullable-input residency, XY homes and cleanup remain.
+// DL201: optional scoring-input point captured at entry/after projection, by aggregate or
+// library copy, direct selection 474/455/474/455; meaningful shared input receiver
+// 445/466/445/466. All actual inputs, candidate order, helpers, source fields and
+// inherited formal storage restored; entry/XY homes and 0x18/0x1c cleanup remain.
 // @retail 0x298d90
 void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f const *arg_3,
 	point2f const *arg_4, point2f const *arg_5, real arg_6, point2f const *arg_7, point2f const *arg_8)
