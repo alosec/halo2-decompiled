@@ -128,6 +128,8 @@ __forceinline void function_180d83(transform4x3f const *arg_0, point3f *arg_1)
 // exits 106; short count/result before array 648; short count/result after array 648; short count/result
 // after guard 668; short count/result at exits 546. early mesh receiver, count/counter homes and
 // creation-call setup remain.
+// Typed tag/output/both 94/94/94; complete direct tag raw/typed 661/661; complete direct output
+// 608; both direct raw/typed 698/698. Original observations and record layouts restored.
 // @retail 0x180d80
 long __stdcall function_180d80(s_180d84 const *arg_0, transform4x3f const *arg_1, long arg_2, s_cluster_query const *arg_3, bool arg_4, s_180d81 const *arg_5, s_180d83 *arg_6)
 {

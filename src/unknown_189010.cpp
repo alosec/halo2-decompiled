@@ -149,7 +149,7 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 	return ticks;
 }
 
-// score 109 (was 110): the priority now reads the request's own audible field, as retail does.
+// score 110 (was 110): Frame 0xa8 and request EAX agree; first class-query expansion and header homes differ.
 // BLOCKED-BY 0x21d110 and 0x221810 (their tag/state registers): retail homes the request in EBX and
 // reloads the state flags after the first 0x221810 call, ours forwards them in a callee-saved
 // register across it, and retail builds the flag word in eax where ours builds it in edx.
@@ -203,6 +203,9 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 // snapshots 110/110/110/110; each with priority from the request 109/109/109/109 (472 bytes).
 // Reduced-image context differs; all one-point gains are rejected. All restored; first class-query
 // expansion, header homes and playback convention remain.
+// Round 194: native source-location mutable/const with source/copied priority 181/181/110/110;
+// the same four with library publication 181/181/110/110. Original location-first
+// body restored; input ownership regresses, and single-consumer copies only tie.
 // @retail 0x189fe0
 long function_189fe0(s_sound_request const *request, long tag_index)
 {
@@ -593,6 +596,7 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // Round 30: named result with one return 51; velocity/root/point/compression 52;
 // point/velocity/root/compression 49; compression/velocity/point/root 52;
 // point/root/velocity/compression 52. Restored; still BLOCKED-BY 0xba300's convention.
+// Round 7 (lane 14): velocity first 52; named result 51; play fields through `(*play).` 51.
 // @retail 0x189210
 long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
 {

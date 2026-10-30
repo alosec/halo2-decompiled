@@ -913,6 +913,8 @@ static inline XUID *message_entry_get_xuid(s_entry *entry)
 // Plain message read 145; that with an if-set exclusion 150; if-set exclusion alone 113; the count
 // renamed result/sender_count/added 81 each; a message pointer stepped at the body's end 157.
 // Shared sender across allocation on cumulative exclusions 135; plain getter 145; literal success 138, plain/literal 150; library copy 135, plain/library 145; readonly/named shared sender 135 each.
+// Round 292: Existing equality/membership declarations, ordinary/inline/separate-noinline in all eight
+// nonoriginal pairs, 81 each; every provider declaration and body restored.
 // BLOCKED-BY 0x63d00: our LTCG knows xuid_equal never writes EDX and keeps the exclusion
 // cursor there across the call (sender in EDI); retail reloads `mov edx, edi` each pass and
 // spills the sender, as at all 21 retail calls of 0x63d00 (retail does rely on a preserved

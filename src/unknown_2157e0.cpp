@@ -78,6 +78,10 @@ static inline long file_handle_build_2170e0(long generation, short index, bool f
 // comparison inputs with those four forms 133/133/116/133.
 // Record constructor/native-field constructor 91/91; per-iteration record/constructor 91/91;
 // overlap-safe library copy/native fields 123/123; unsigned-word/full index helper 94/133.
+// Round 75: location declared before table 91; existing record constructor with aggregate copy 91;
+// native fields with byte-table aggregate copy 91; native fields with byte-table library copy 91;
+// native table/location library copy 91; byte location with native-table library copy 91; force-inline
+// whole scan 150; existing record constructor with library copy 91. Original types and body restored.
 // @retail 0x2170e0
 long function_2170e0(long file_index)
 {

@@ -81,6 +81,9 @@ static __forceinline long real_to_long(real value);
 // terms 378; both 373; complete cosine products and unscaled terms in all six rows 381;
 // squares/final-point helper, terms/helper and both/helper 384/384/384; complete cosine
 // products with squares/helper 387. Five-count best fails the retention threshold; restored.
+// Round 292: Staged cross and complete first/second output-scale boundaries, all seven subsets
+// 378/455/451/428/424/441/437; complete graph with timed scaling 437. Original arithmetic and vector
+// operations restored.
 // Round 414: Frame 0x4c and third-input/random-state homes remain. Existing vector assignment at
 // side/first-output/second-output construction masks 1-7 scored 373/378/373/404/397/404/397; all
 // constructions with in-place sign assignment 397. Five-count best is below the eight-count retention

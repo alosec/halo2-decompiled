@@ -1783,7 +1783,10 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // order and move 1.0 out of xmm7), with the node copied first 149, with a direction
 // pointer for the forward rows 158, the zero position or the inverse scale through the
 // existing setters 137/137; `up` declared just before the 0x11d000 call 77; branches
-// swapped (`if (!matrix)`) 163.
+// swapped (`if (!matrix)`) 163. Round 7 (lane 14): the staged cross product 77 (same code); node copy
+// first 107 (758 bytes; aligned 66, the markers base then stays in EBX); the cross product before
+// the forward copy 85; scale stored last 101 (766 bytes); forward locals read before the scale test
+// 236 (795 bytes).
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -2315,6 +2318,10 @@ event_done:
 // Round 95: root index (0xbaf80's result) as 0x1794a0's first argument 197 (585 bytes; the index
 // stays in ESI); location stores cluster first 63, with the root index 197; chained NONE location
 // stores 63, with the root index 197. Original body restored.
+// Round 7 (lane 14): root index named and passed first 197 (585 bytes; aligned 72 -> 48), named
+// without the argument change 63, with the entry index local 176 (579 bytes); entry index local
+// alone 198 (571 bytes); validity result compared with 0 63. BLOCKED-BY 0xbadc0/0xbaf80
+// (src/unknown_0bad50.cpp, avoid-listed this round).
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {

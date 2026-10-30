@@ -145,6 +145,9 @@ struct s_24e9c7_bounds
 // Entry declarations with in-place assignments: across carriers 125; metadata carriers 125;
 // both pairs 125; bounds workspace 125; three displacement workspaces 125; all geometry
 // workspaces 125; reversed geometry declarations 125; coupled scalar role names 125.
+// Round 193: complete per-use kind/bitmap/group observations 207/182/205;
+// kind+bitmap/kind+group/bitmap+group/all 225/223/201/225;
+// all with per-use sequence field 326. All original observations restored.
 // @retail 0x24e9c7
 real function_24e9c7(s_24e9c7_marker const *marker, s_24e9c7_placement const *placement)
 {

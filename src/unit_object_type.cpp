@@ -1767,7 +1767,7 @@ bool __stdcall function_c9200(long unit_index, short value)
 	bool result = false;
 	s_object_child_iterator iterator;
 
-	function_d0620(unit_index, &iterator);
+	function_d0620(&iterator, unit_index);
 	while (function_d0690(&iterator) && !result)
 	{
 		if (iterator.child_value == unit_index && iterator.child_short != NONE)
@@ -2966,34 +2966,40 @@ void __stdcall function_ced30(long unit_index, long object_index)
 
 /* the request a weapon event sends the unit holding the weapon (and the
    unit +0x24c names): by the event type, for its first or second hand */
+// score 127 (was 131): retail reloads the pool's data and the unit for the second hand's lookup,
+// keeping g_4e0300 in EDI and the type on the stack; ours reuses the first lookup's unit, so the
+// registers differ (with the second lookup's data read through a volatile pool, a diagnostic
+// only: 28). The existing weapon getter for both hands and retail's case order (3, 4, 1, 2, 7, 8)
+// give retail's lookups and its switch layout; the address read keeps the weapon index on the
+// stack, which matched 0x1058b0. Tried: the weapon indices compared after both lookups 147; a
+// unit local per hand, the masked-index getter for one or both hands, the slot read into a
+// short first, the existing current-weapon header helper and action declared first: 131 each.
 // @retail 0xc9d00
 void __stdcall function_c9d00(long unit_index, long weapon_index, long type)
 {
+	// Retail keeps this argument on the stack.
+	long const *weapon_reference = &weapon_index;
 	if (type)
 	{
-		s_unit *unit = UNIT_GET(unit_index);
-		short index = unit->current_weapon_index;
-		bool first = weapon_index == (index != NONE ? unit->weapon_object_indices[index] : NONE);
-		unit = UNIT_GET(unit_index);
-		index = unit->next_weapon_index;
-		bool second = weapon_index == (index != NONE ? unit->weapon_object_indices[index] : NONE);
+		bool first = *weapon_reference == function_cbd50(unit_index, UNIT_GET(unit_index)->current_weapon_index);
+		bool second = weapon_index == function_cbd50(unit_index, UNIT_GET(unit_index)->next_weapon_index);
 		long action;
 
 		if (first)
 		{
 			switch (type)
 			{
-			case 1:
-				action = 2;
-				break;
-			case 2:
-				action = 3;
-				break;
 			case 3:
 				action = 4;
 				break;
 			case 4:
 				action = 5;
+				break;
+			case 1:
+				action = 2;
+				break;
+			case 2:
+				action = 3;
 				break;
 			case 7:
 				action = 6;
@@ -3009,17 +3015,17 @@ void __stdcall function_c9d00(long unit_index, long weapon_index, long type)
 		{
 			switch (type)
 			{
-			case 1:
-				action = 0xc;
-				break;
-			case 2:
-				action = 0xd;
-				break;
 			case 3:
 				action = 0xe;
 				break;
 			case 4:
 				action = 0xf;
+				break;
+			case 1:
+				action = 0xc;
+				break;
+			case 2:
+				action = 0xd;
 				break;
 			case 7:
 				action = 0x10;
@@ -3420,7 +3426,7 @@ void function_c6990(long unit_index)
 	short other_team = NONE;
 	s_object_child_iterator iterator;
 
-	function_d0620(unit_index, &iterator);
+	function_d0620(&iterator, unit_index);
 	if (function_d0690(&iterator))
 	{
 		do
@@ -5438,7 +5444,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 		result = false;
 	}
 	s_object_child_iterator iterator;
-	function_d0620(vehicle_index, &iterator);
+	function_d0620(&iterator, vehicle_index);
 	while (function_d0690(&iterator))
 	{
 		s_unit *rider = UNIT_GET(iterator.child_index);
