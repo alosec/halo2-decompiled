@@ -240,6 +240,13 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
 // stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
 // (394 bytes); the rate read from the global at each use 99 (375 bytes).
+// Round 37 (lane 16): the tick conversion after the chains gives retail's first 22 instructions
+// (j, i, k chains, ticks in xmm3) but the tick products then take the ticks as their left operand
+// (copies) 64; the same with the tick stage through local_scale3d, also with (real)ticks passed
+// directly, 64/64; conversion at the top with local_scale3d for the tick stage 43 (same code);
+// the conversion after each of the first nine chain statements 72 each; the chains written stage
+// by stage (all rate products, then all adds, then all subtractions) with the conversion before
+// the rate stage/after it/after the adds/after the subtractions 107/115/106/106.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {
