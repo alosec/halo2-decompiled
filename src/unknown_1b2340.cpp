@@ -111,7 +111,7 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 /* slot type 0x24's update: moves the actor to its prop (to the point the
    prop names, or along its direction) and flags the slot when it is there
    or cannot get there (always returns true) */
-// score 50 (was 123; fast, 1077 bytes = retail): lane 10 round 25 (cut off by a usage limit; kept state checked
+// score 50 (was 50; 1077 bytes = retail): lane 10 round 25 (cut off by a usage limit; kept state checked
 // by the coordinator): type arms as if (type == 0) / else if (type == 1) / else {0x1f4280; result = true} so the
 // unsupported type falls into the result test (retail's block layout; plain 67 alone); state declared first (65);
 // the 0x1f86f0 success sets state->unknown00 and shares the query path's state test (same calls and result).
@@ -173,6 +173,12 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // the field tests 190. On the kept form: field tests 194; short type 194; a guard return for the
 // inactive actor 123 (identical); type declared at its read 123; result declared before the type
 // arms 123.
+// Round 43: the node through its own actor_get(actor_index) 26 (the entry registers and the 0x1f86f0
+// arm's store order then agree; only the three 16-bit type tests remain, but it mixes reads, so match
+// only); with it, a short type, the field tests, the rows through vector3f_add_scaled or result declared
+// first 143 each (any 16-bit type folds direction j/k into mulss in the type-0 rows; the compile-only
+// screen shows the same, and only dropping the magnitude test undoes it); short type alone 167;
+// magnitude3d in place of the hand sqrt 50 (identical), with a short type 167.
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {

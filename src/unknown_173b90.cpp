@@ -528,6 +528,10 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // Round 307: Complete per-emitter alpha/color/scale policy subsets 248/267/261/255/246/241/282;
 // one raw flag observation 260. Policy homes enlarge the frame; original property observations
 // and shared in-place rotations restored.
+// Round 43: indexed definitions 115 and with scale first 113 again (the rotation sums reorder in every row;
+// the compile-only screen reproduces it, and 50 placements of the index, copies, result pointers and the
+// next-index read keep it); the next index read after the callback 231, on the indexed form 218;
+// rotation result pointers declared first 42 (identical).
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
@@ -1359,6 +1363,12 @@ bool function_17afd0(long effect_index, long value);
 // existing calling iterator with aggregate/field initialization 252/252 (exact-only). Coordinated
 // cluster-provider inline alone/pool/iterator/advance 102/102/252/150. All provider declarations
 // and the original body restored.
+// Round 43: bit 9 as (bool)(((dword)word >> 9) & 1) gives retail's movzx/shr/test 128 (491 bytes); with
+// the view global read at each use 124 (retail length, and retail's view reload after 0x17afd0); plus
+// the availability as one `g != NONE && !query` 123 plain (aligned 63 -> 51; NONE/owner in ebx/esi
+// against ebp, availability in al against bl, same-view in bl against its stack byte remain); with
+// false-then-set availability 138 (508 bytes) or same-view 122 (499); view global alone 143; attached
+// computed only when not same-view 163 (retail computes it on both paths), with the forms above 121-152.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {

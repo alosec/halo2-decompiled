@@ -130,6 +130,8 @@ struct c_aggregate : c_child
 // N227: Published absolute child origin at capacity/output-address/completion consumers,
 // seven subsets 45 each; complete graph with final boundary as cleanup limit 45. Original
 // produced output, cumulative publications, dispatch and release graph restored.
+// Round 43: produced renamed count/added/block_count and the dispatch cursor renamed cursor/slot/entry
+// 45 each (frame 0x8024 unchanged); one function-scope child cursor walked in both loops 56.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {
