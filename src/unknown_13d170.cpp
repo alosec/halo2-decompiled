@@ -231,6 +231,7 @@ struct s_block_candidate
 // declarations (fast) 369-383; default case first 370 (our case 0/1 bodies stay at the function's
 // end, retail keeps them in the loop); case 1 as `if (...) better = true;` 382. Retail keeps the
 // offset in EBX through the scan and spills `next` (+0x4c); ours keeps `next` and the tail.
+// DL190: Existing calling iterator with fields/aggregate 424/424; direct step 418/418; native datum iterator 409/404 (frame 0x1054, but out-of-line). Allocated lookup/absolute getter 367/367 at retail length (three-point gains rejected). Original iteration, allocation and body restored; page/ring carriers remain.
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {

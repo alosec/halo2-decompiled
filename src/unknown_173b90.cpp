@@ -1349,6 +1349,10 @@ bool function_17afd0(long effect_index, long value);
 // Round 290: Complete effect observations, pass-selected draw and shared cluster-bit boundary
 // subsets 106/143/144/102/106/143/144; complete pass result arms 144. Original executable source
 // restored.
+// Round 189: Complete pool-global observations 102; implied back-edge NONE arm removed 150;
+// existing calling iterator with aggregate/field initialization 252/252 (exact-only). Coordinated
+// cluster-provider inline alone/pool/iterator/advance 102/102/252/150. All provider declarations
+// and the original body restored.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {

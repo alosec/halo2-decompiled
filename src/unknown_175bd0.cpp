@@ -2958,6 +2958,12 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // read through its address with mode per call 127; early `return next_index;` 97; next index read after
 // the definition call 98; color B declared first 93 (color A then spills as in retail); an inline color
 // helper shared with 0x178c80 93 (identical); a 32-combination screen of these found none below 93.
+// Round 186: Getter definition/member declaration inline with bool/bool, byte/bool, byte/byte, bool/byte
+// query results: 96/95/93/96; all lose matched 0x247470 and are rejected. With separate noinline member
+// declaration preserving retail calls: 96/95/93/96, no checked match loss. One- and three-point reductions
+// fail retention. Original getter definition/declaration, query types, successor qualifier, mode, every
+// call tuple and executable body restored. Frame 0x50 versus 0x54, system/color homes and color-call
+// staging remain.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3159,6 +3165,12 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 // Round 165: point transform from the location's position 403 (callers 0x176bb0/0x176cb0 lose); scale after
 // the node transform 430; the shared point transform as `y * scale`, through a scale local, or with `*=` 88
 // each (identical in all four users).
+// Round 186: Immutable coordinate sources with two-arm scaled outputs 140; separate source/scaled
+// coordinates 105; one matrix-scale observation 88; immutable sources plus one scale 184. With the known
+// default-before-color prefix: 282/266/270/283. Every coordinate-ownership form loses matched 0x179fb0;
+// native scale-only forms preserve it but give no gain. All original point/normal helpers, scale selection,
+// source observations, in-place behavior and call tuples restored. Original 88 retained; contributor-owned
+// 0x2dba0 contract remains untouched.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {

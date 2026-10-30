@@ -1711,6 +1711,9 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // receiver/bounds scheduling remain.
 // Round 413: actual text receiver/word buffer/color/text bounds as the single member base
 // 150 each; each with indexed team traversal 148. All are 1863/1851; original helper and body restored.
+// Round 189: Actual widget/validity and validity/widget pointer contracts 172/172; sole validity
+// member base in both orders 156/156; indexed team fields with all four contracts 154 each.
+// Bounds/receiver scheduling and team induction remain. Original helper and body restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

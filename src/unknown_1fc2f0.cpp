@@ -245,6 +245,11 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // Earlier: forms that give retail's first 0x5a bytes (rate kept in xmm3, the three components
 // loaded first) put the tick products in fresh registers and move the correction's last
 // product late, one instruction long: rate local with long ticks 64;
+// extends the word into EDI, while ours writes the word with a 16-bit store
+// to DI and loads the float into xmm0.
+// retail's first 0x5a bytes (rate kept in xmm3, the three components loaded
+// first) but the tick products land in fresh registers and the correction's
+// last product moves late, one instruction long: rate local with long ticks 64;
 // with the tick scale through local_scale3d 64; tick product and delta per
 // component 64; ticks read first 64; the limit test as !(limit * limit > ...) 56.
 // `long ticks` and a `rate` local give retail's first 21
