@@ -1272,6 +1272,10 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 // Round 191: Persistent-result admission 828; with immutable candidate 978, late candidate 996,
 // paired native transfers 988, iterator-owned request keys 1016, native iterator 826, direct result
 // 978, retained lookup name 828. Two-point gain rejected; original body restored.
+// DL199: Member stdcall, fastcall and inline with member/native iterator give 828/826 each; cdecl
+// gives 839/839 and loses twelve checked matches. Two-point reductions rejected. Inline trials
+// recover all controls. Return/candidate/output homes and late zero carrier remain; original body
+// and declaration restored.
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

@@ -833,9 +833,9 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // separate three actual sum results 370; early special sum storage 370; entry special scalar storage 370;
 // secondary-first acquisition on the copied-bit graph 374; one phase-disjoint sum workspace 370.
 // All original scalar producers, names, scopes and arithmetic restored.
-// Round 294: Entry left/right gain and send-level storage, seven nonempty subsets, all 370;
-// all with offset storage 370. All producers, helper boundaries and the complete
-// body restored; frame 0xc agrees, selected-level and integer/SSE staging remain.
+// DL199: Member stdcall/fastcall/inline with bool/word route give 370/371 each; cdecl gives
+// 383/387 and loses the dispatcher. Inline trials recover it. Original body, bool route and both
+// declarations restored; selected-level/right-destination homes and integer/SSE staging remain.
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {
