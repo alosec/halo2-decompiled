@@ -219,6 +219,9 @@ void function_07b3e0(void)
 // loop padding and retail's zero-tail stores.
 // bitmap scan, ebp for the datum address) and aligns the scan loop; ours uses
 // one register and no loop padding (the 11 missing bytes).
+// Kimi lane 2 round 37 also reached 39 by scanning by absolute index with the salted-index helper
+// (pool in EBP rather than EBX/EBP). Its other forms: direct expression 39; copied/independent/const
+// scan pools 39/64/39; counted for scan 121; refreshed pool 39; absolute-datum getter 71; split pools 39.
 // @retail 0x7b430
 void function_07b430(void)
 {

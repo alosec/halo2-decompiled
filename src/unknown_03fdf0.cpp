@@ -115,6 +115,10 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // cursor before the copy with one index variable 163; the count in a short local read before
 // the clears 164. The two g_4c1a80 statements (the same field as g_4c1a48[2].flags) removed:
 // same code.
+// score 54 (was 54): count, mode and first-index homes conflict across the inline copy.
+// Metadata pointer plus entry-table expression and early index 154; shared-scale entries 159;
+// direct metadata with early index 159; const first 146; direct copy with late entries 163;
+// first address direct/reference 163 each; early selection 169. Original block body restored.
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {
