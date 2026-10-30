@@ -69,6 +69,9 @@ struct s_shader_cache;
 void function_1c590(s_shader_cache *state, long tag, long index);
 void __stdcall function_1c710(void *state);
 
+// MiniMax D (10-30): the stage states through the existing sampler_state_write plus one more
+// inline_depth(0) pair around the (3, 1, 0) vertex call matched (full check); new in-body pragmas
+// are not kept, so the pair was dropped at review: 188 (fast, 1457 bytes, retail 1422; main 316).
 // @retail 0x46230
 void __stdcall function_46230(short target, real const *bounds)
 {
@@ -127,9 +130,7 @@ void __stdcall function_46230(short target, real const *bounds)
     D3DDevice_Begin(D3DPT_TRIANGLEFAN);
     D3DDevice_SetVertexData2s(3, 0, 0);
     D3DDevice_SetVertexData4f(0, 0.53125f, 0.53125f, 16777215.0f, 16777215.0f);
-#pragma inline_depth(0)
     D3DDevice_SetVertexData2s(3, 1, 0);
-#pragma inline_depth()
     D3DDevice_SetVertexData4f(0, 64.53125f, 0.53125f, 16777215.0f, 16777215.0f);
 #pragma inline_depth(0)
     D3DDevice_SetVertexData2s(3, 1, 1);
