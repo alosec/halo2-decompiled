@@ -11335,7 +11335,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 002cb4a2,64,game,size,packed,,,0014800c 00153850,src/unknown_2c4e9c.cpp,matched
 002cb4e2,38,game,size,packed,,,0022e391 0024c447,src/unknown_2c4e9c.cpp,matched
 002cb510,157,other:library,speed,a16 pad,,,002cb640 002cb960 002cbbf0,,todo
-002cb5b0,134,other:library,speed,a16 pad,,,002cc890 002cc8d0 002cc9d0,src/unknown_2cb5b0.cpp,todo
+002cb5b0,134,other:library,speed,a16 pad,,,002cc890 002cc8d0 002cc9d0,src/unknown_2cb5b0.cpp,matched
 002cb640,519,other:library,speed,a16 pad,,,002cb850 002cbbf0,,todo
 002cb850,104,other:library,speed,a16 pad,,,002cbd00 002ccdc0,,todo
 002cb8c0,39,xdk:d3dx,speed,a16 pad,,,,,todo
@@ -11349,10 +11349,10 @@ va,size,owner,style,evidence,name,object,calls,source,status
 002cc020,321,xdk:d3dx,speed,a16 pad,,,002cb8f0 002cbf00 002cdf70,,todo
 002cc170,758,xdk:d3dx,speed,a16 pad,,,002cb8f0 002cbd90 002cbf00 002cdf70,,todo
 002cc470,987,xdk:d3dx,speed,a16 pad,,,002cb8f0 002cbd90 002cbf00 002cdf70,,todo
-002cc850,63,xdk:d3dx,speed,a16 pad,,,002ce8e0,,todo
-002cc890,64,xdk:d3dx,speed,a16 pad,,,002cf480,,todo
-002cc8d0,243,xdk:d3dx,unknown,a16,,,002cc850 002cc890 002ce950,src/unknown_2cb5b0.cpp,todo
-002cc9d0,1004,xdk:d3dx,speed,a16 pad,,,002ce8e0 002ce9e0,,todo
+002cc850,63,xdk:d3dx,speed,a16 pad,,,002ce8e0,src/unknown_2cb5b0.cpp,matched
+002cc890,64,xdk:d3dx,speed,a16 pad,,,002cf480,src/unknown_2cb5b0.cpp,matched
+002cc8d0,243,xdk:d3dx,unknown,a16,,,002cc850 002cc890 002ce950,src/unknown_2cb5b0.cpp,matched
+002cc9d0,1004,xdk:d3dx,speed,a16 pad,,,002ce8e0 002ce9e0,src/unknown_2cc9d0.cpp,matched
 002ccdc0,96,xdk:d3dx,speed,a16 pad,,,002cce20,,todo
 002cce20,100,xdk:d3dx,unknown,a16,,,,,todo
 002cce90,202,xdk:d3dx,speed,a16 pad,,,,,todo
@@ -11374,10 +11374,10 @@ va,size,owner,style,evidence,name,object,calls,source,status
 002ce780,21,xdk:d3dx,speed,a16 pad,,,00328283,src/unknown_2cb5b0.cpp,matched
 002ce7a0,14,xdk:d3dx,speed,a16 pad,,,00324c91,src/unknown_2cb5b0.cpp,matched
 002ce7b0,299,xdk:d3dx,speed,a16 pad,,,,,todo
-002ce8e0,99,other:library,speed,a16 pad,,,,,todo
-002ce950,132,other:library,speed,a16 pad,,,002ce8e0,,todo
+002ce8e0,99,other:library,speed,a16 pad,,,,src/unknown_2cb5b0.cpp,matched
+002ce950,132,other:library,speed,a16 pad,,,002ce8e0,src/unknown_2cb5b0.cpp,matched
 002ce9e0,2720,other:library,speed,a16 pad,,,002cf9e0 002cfa80 002cfbf0 002cfd30 002cfd70,,todo
-002cf480,109,other:library,unknown,a16,,,,,todo
+002cf480,109,other:library,unknown,a16,,,,src/unknown_2cb5b0.cpp,matched
 002cf4f0,1260,other:library,speed,a16 pad,,,,,todo
 002cf9e0,146,other:library,speed,a16 pad,,,002cf4f0,,todo
 002cfa80,355,other:library,speed,a16 pad,,,002cf4f0,,todo
