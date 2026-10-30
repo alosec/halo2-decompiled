@@ -571,6 +571,12 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // J185: signed-word first/second/conflict ordinal subsets 291/257/292/179/281/288/313;
 // byte conflict ordinal 196. Native narrow counters grow the body; original counters, source observations,
 // exact key/copy expressions, call roles and all helper declarations restored.
+// Round 35: the swap callee declared (collection, player, update, other) with its definition and
+// this call, 36 (the swap call becomes retail's row for row: slot pushed before the updates load;
+// the swap callee still matches; the last record's two source reads then trade registers and the
+// occupied key address keeps its order); on it the last record's reads swapped 47, read before the
+// count increment 40, the occupied key through `collection->players + i` 36, its index stored
+// before its type 38.
 // Round 35 (one-file harness, exact; aligned/positional 9/16): `++*count;` before the swap call 9/16;
 // `&updates[(*count)++]` 16/20; the occupant key via `(&collection->players[i])->key` 9/16; the four
 // loop-top declarations in the other 11 orders 9/16; all 23 other parameter orders of the swap

@@ -955,6 +955,27 @@ real function_21f650(long channel_index, long mode);
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
 // score 2 (was 2): only function_219290's two arguments differ: they load group-first (retail
+// index-first), BLOCKED-BY 0x219290 (a contributor's matched function; its parameters swapped would fix
+// it, and caller 0x21c400 calls the present order). Naming the voice's chunk (released,
+// then the queued one requested) fixed the rest. Tried: a function-wide channel_index local 113; the last
+// block's locals folded into one expression 42; elapsed_time read into a local before the rate call 42; a
+// stream pointer for the last state test 42; the table pointer declared at the outer scope 42; a named
+// rate 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
+// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42.
+// function_219290's two arguments load group-first (retail index-first; its
+// parameters swapped would fix it, but contributor caller 0x21c400 calls the present order), one
+// store sits after the permutation copy, the second release hoists the chunk-table load, and the
+// last block swaps ecx/edx with the post-call SOUND_SYSTEM load in edx (retail eax). Tried: a
+// function-wide channel_index local 113; the last block's locals folded into one expression 42;
+// elapsed_time read into a local before the rate call 42; a stream pointer for the last state
+// test 42; the table pointer declared at the outer scope 42.
+// Round 181: per-use chunk table 42; retained chunk base 85; per-use voice array 180; native
+// loaded-field comparison 66; early queued-pointer clear 42; exact-size transfer memcpy 42;
+// queued/current permutation lifetimes 74/102. EAX global-load allocation remains.
+// Round 192: twice-used current ordinal short/long 93/92;
+// ordinal plus permutation short/long 127/115; native query-result comparison 17;
+// conditional time publication short/long query 83/76;
+// short ordinal plus native comparison 92. All restored; the two argument-load orders remain.
 // index-first). BLOCKED-BY 0x219290 (a contributor's matched function): with its parameters declared
 // (group, index) at the definition and both calls, this function and 0x219290 both match; contributor
 // caller 0x21c400 calls the present order. Naming the voice's chunk (released, then the queued one
@@ -1264,6 +1285,9 @@ long function_2197f0(real gain);
 // store and EDI reload appear); plus the raw class index for the lookup 165 (678 bytes); plus a guard
 // return/`else return gain` for the flag test 171/174 (retail's late ESI save); returned sums as real
 // results 174. Shifts dominate: aligned counts 91 -> 77/75/70/69/73. All restored.
+// Round 193: branch-local/shared active/entry interpolation outputs 149/174/174;
+// each with distinct final result 157/165/165; distinct result alone 157;
+// shared entry outputs/result with role home names 165. All restored.
 // @retail 0x127010
 long function_127010(short class_index)
 {
@@ -2697,6 +2721,9 @@ static inline short sound_voice_find_available_channel(char type)
 // exit reads the entry true from a slot); bool with `return true` on success 139 (result in BL from entry);
 // plus `return result` in the failure block 131 (retail roles, frame 8, false after the calls); failure
 // default after the search with success flag/`return true` 132/134.
+// Round 193: failure-scoped byte with shared/direct true exits 134/131;
+// those exits with low-byte complemented status 133/135; entry byte result 96;
+// published-channel/per-use system/both commit observations 96/96/96. All restored.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3093,6 +3120,9 @@ long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 // Original conditional mode and loop restored; playback/clock schedule still differs.
 // Round 161: reason/playback/voice index at function scope 86/86/86; mode switch with an empty case 1 and
 // `default: __assume(0)` 86 (the empty case is dropped: still `test ax, ax`); empty case 1 alone 86.
+// Round 193: callback procedure alone/with source receiver 86/86;
+// one class-record observation short/with callback 105/105; long/with callback 171/171;
+// readonly class with short/long plus callback 105/171. All restored.
 // @retail 0x1282d0
 void function_1282d0(void)
 {
@@ -3717,6 +3747,9 @@ PRIVATE inline void function_1275d8(quaternionf const *arg_0, vector3f const *ar
 // complete reuse with native output-pointer return 1020. Original distinct workspaces restored.
 // Round 259: existing rotation output pointer/reference results, pointer/reference output
 // formals and ordinary/forced expansion: eight forms 535 each. Original helper restored.
+// Round 194: shared zone result/local/direct/entry 555/554/555; native player-state member 535;
+// shared zone plus native member 555; with complete blend reads 582; with source-state reads 836;
+// both complete observations 799. Original result, source pointer and body restored.
 // @retail 0x127400
 void function_127400(bool arg_0)
 {

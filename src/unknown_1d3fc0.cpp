@@ -47,6 +47,10 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
 // at function scope instead of the array (same frame and slots, identical code) 149.
 // Round 36: separate remaining-axis k-square helper 152; remaining terms reversed 152; k/j square pair 152;
 // pair declarations swapped 152; k-first sum 152; paired k/j-first sum 152; grouped j/i 149; named j/i subtotal 149.
+// Round 418 on the j-square graph: complete scalar inputs, magnitude return,
+// both, native reference output, reference/scalars, reference/magnitude, all,
+// and scalar/reference receiver return 149/149/149/149/149/149/149/149. All restored;
+// first reciprocal/component carriers and later magnitude schedules remain.
 // @retail 0x1d3fc0
 void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
 {

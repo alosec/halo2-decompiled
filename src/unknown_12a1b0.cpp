@@ -1207,6 +1207,9 @@ struct s_looping_detail_request
 };
 
 // score 138 (was 138): return result first restores entry load allocation; source-copy scheduling and first-player expansion remain.
+// Round 8: the first-player query stays inlined whatever the else arm's shape: the next-player step
+// through the out-of-line 0x14de10 (diagnostic) 97 with the query still inlined; the skip loop as a
+// for, `while (skip-- > 0)`, an inverted count test and a guarded do-while all unchanged (154 fast).
 // Shared offset 170f; direct source 192f; memcpy 170f; tag first 192f; mode arms/type last 168f;
 // offset publication last 167f; camera-position receiver 169f. Fast control 170, result first 154f/138 plain.
 // Round 178: native short selection/count/both and unsigned selection 146/140/147/146;
