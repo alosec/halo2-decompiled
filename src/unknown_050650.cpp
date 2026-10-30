@@ -1301,6 +1301,9 @@ struct s_actor_looking_turn_request
 // DH round 252: One sequential aiming/looking validity result, native long/short/byte/bool
 // with long idle, then each with short idle
 // 506/549/522/522/540/547/524/524. Original complete executable body restored.
+// Y423: High aiming case block first 536; looking case 2 first 525; both 536;
+// those orders with sequential validity 536/525/536; high aiming with outer
+// validity scope, alone/with looking order 536/536 fast (control 525). Restored.
 // @retail 0x298370
 void function_298370(long actor_index)
 {
