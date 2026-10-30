@@ -137,125 +137,52 @@ short __stdcall function_1bef40(long actor_index)
 	return result;
 }
 
-PRIVATE __forceinline void function_1befd1(long arg_0)
-{
-    s_actor_view *local_0 = actor_get(arg_0);
-    *(bool volatile *)&local_0->unknown50c = false;
-    *(short volatile *)&local_0->unknown5b4 = 0;
-    *(short volatile *)&local_0->unknown5b6 = 0;
-    *(long volatile *)&local_0->unknown5ac = NONE;
-    *(short volatile *)&local_0->unknown5b0 = NONE;
-    local_0->unknown4ac = 0;
-    local_0->unknown504 = 0;
-}
-
 static __forceinline long real_to_long(real value);
 
-// score 35 (was 35): our frame reserves eight bytes where retail reserves four, so the two temporaries
-// sit four bytes higher; retail also stores the actor's 0x5b0 field before its 0x4ac and 0x504 fields
-// and loads the tick source after the slot reference. Retail's x87 order is the inlined seconds-to-ticks
-// body on each draw: the first draw finished before the second starts and kept on the FPU (fild ticks;
-// fmul st(1); fstp st(0)), the second scaled late and spilled to the frame's one slot just before the
-// first fld/fistp. Named reals give retail's frame but finish the first draw late and spill the second
-// unscaled right after it is drawn (then fimul): reals 53, doubles 39, double/real 49, real/double 52;
-// the header random-range helper 55 (57 in the pair); the reset without its volatile casts 43 in either
-// store order (40 now); named reals through a seconds-to-ticks inline 53 (also with the parameter scaled
-// in place as 0x1469f0 does, 53); the existing actor_reset_state for the reset 40 (0x5ac/0x5b0 stores
-// after the zero stores), with named reals 55, doubles 41, double/real 51, real/double 54; named reals
-// declared first/at the top/wait first 55; product operands swapped, an explicit (real) tick conversion
-// or the seconds-to-ticks inline 55 each; the slot data block through slot->unknownc 80 (retail folds
-// +0xc into each access); the existing out-of-line reset called 115 (its file is /Ob1, so it stays a
-// call); named reals with the reset's plain stores in the out-of-line order 55, with the products
-// written seconds first 53; existing reset call with native payload and original/scalar delay storage,
-// ordinary/forced reset declaration 121/126/121/126; whole slot 115/125/115/125 (219/211 or 213/205
-// bytes); the aggregate draws through a seconds-to-ticks inline (parameter scaled in place) 35
-// (identical code); an in-file forceinline/inline copy of the range helper with named reals 53 (55
-// with actor_reset_state). Lead, not kept: named reals drawn as `(real)(3.0 + 2.0 * <random>)` and
-// `(real)(0.5 * <random>)` from the raw generator give retail's first-draw x87 variable and frame
-// (26; 24 with actor_reset_state or the reset's plain stores, which also drops the draw struct and the
-// volatile casts), but their double constants load as qword where retail's are dword, and the second
-// draw is scaled and spilled before the reset (retail: just before the first fld/fistp); float
-// constants (`3.0f + 2.0f * <random>`, also `(5.0f - 3.0f)`) fold or substitute: 49 (270 bytes),
-// `(double)` on the random alone 26 (still qword).
-// our frame reserves eight bytes where retail reserves four, so the two
-// temporaries sit four bytes higher; retail also scales the first draw before it converts the
-// second one, loads the tick source after the slot reference (which puts the reference in ECX, not
-// EDX; ours hoists that global above the reference store) and stores the actor's 0x5b0 field
-// before its 0x4ac and 0x504 fields. Named reals give retail's frame but finish both range products
-// late (second draw spilled unscaled): reals 53, doubles 39, double/real 49, real/double 52; the
-// header random-range helper 55 (57 in the pair); the reset without its volatile casts 43 in either
-// store order; named reals through a seconds-to-ticks inline 53. Existing reset call with native
-// payload and original/scalar delay storage, ordinary/forced reset declaration: 121/126/121/126;
-// whole slot 115/125/115/125 (219/211 or 213/205 bytes). Round 74: the slot data block through
-// slot->unknownc 80 (retail folds +0xc into each access); the existing out-of-line reset called 115
-// (its file is /Ob1, so it stays a call); named reals 53, with the reset's plain stores in the
-// out-of-line order 55, with the products written seconds first 53. The named reals' first draw
-// sinks to the reset (fimul), where the aggregate field keeps it early. Round 5: the record's two
-// fields declared the other way round 39 (284 bytes); the time globals in a local used twice 35;
-// the products written value first 35; the reference stored before the reset 71 (290 bytes); the
-// 0x5b0 store without its volatile cast 36, the 0x5ac and 0x5b0 stores without theirs 38.
-// our frame reserves eight bytes where retail reserves four, so the two temporaries
-// sit four bytes higher; retail also scales the first draw before it converts the second one, loads
-// the tick source after the slot reference (which puts the reference in ECX, not EDX) and stores the
-// actor's 0x5b0 field before its 0x4ac and 0x504 fields. Named reals give retail's frame but finish
-// both range products late (second draw spilled unscaled): reals 53, doubles 39, double/real 49,
-// real/double 52; the header random-range helper 55 (57 in the pair); the reset without its volatile
-// casts 43 in either store order; named reals through a seconds-to-ticks inline 53. Round 74: the slot
-// data block through slot->unknownc 80 (retail folds +0xc into each access); the existing out-of-line
-// reset called 115 (its file is /Ob1, so it stays a call); named reals 53, with the reset's plain
-// stores in the out-of-line order 55, with the products written seconds first 53. The named reals'
-// first draw sinks to the reset (fimul), where the aggregate field keeps it early.
-// our frame reserves eight bytes where retail reserves
-// four, so the two temporaries sit four bytes higher; retail also scales the
-// first draw before it converts the second one, loads the tick source after
-// the slot reference (which puts the reference in ECX, not EDX) and stores the
-// actor's 0x5b0 field before its 0x4ac and 0x504 fields. Named reals give
-// retail's frame but finish both range products late (second draw spilled
-// unscaled): reals 53, doubles 39, double/real 49, real/double 52; the header
-// random-range helper 55 (57 in the pair); the reset without its volatile
-// casts 43 in either store order; named reals through a seconds-to-ticks
-// inline 53; the existing actor_reset_state for the reset 40 (0x5ac/0x5b0
-// stores after the zero stores); with named reals 55, doubles 41, double/real
-// 51, real/double 54; named reals declared first/at the top/wait first 55;
-// product operands swapped, an explicit (real) tick conversion or the
-// seconds-to-ticks inline 55 each. Named reals spill the second draw before
-// the reset where retail keeps both draws on the FPU stack until the first
-// conversion.
-// inline 53.
-// Existing reset call with native payload and original/scalar delay storage, ordinary/forced
-// reset declaration: 121/126/121/126; whole slot 115/125/115/125 (219/211 or 213/205 bytes).
-// The reset stays out of line; every existing reset store and the opening body are restored.
-// our frame reserves eight bytes where retail reserves four, so the two temporaries
-// our frame reserves eight bytes where retail reserves four, so the two
-// temporaries sit four bytes higher; retail also scales the first draw before it converts the
-// second one, loads the tick source after the slot reference (which puts the reference in ECX, not
-// EDX; ours hoists that global above the reference store) and stores the actor's 0x5b0 field
-// before its 0x4ac and 0x504 fields. Named reals give retail's frame but finish both range products
-// late (second draw spilled unscaled): reals 53, doubles 39, double/real 49, real/double 52; the
-// header random-range helper 55 (57 in the pair); the reset without its volatile casts 43 in either
-// store order; named reals through a seconds-to-ticks inline 53. Existing reset call with native
-// payload and original/scalar delay storage, ordinary/forced reset declaration: 121/126/121/126;
-// whole slot 115/125/115/125 (219/211 or 213/205 bytes). Round 74: the slot data block through
-// slot->unknownc 80 (retail folds +0xc into each access); the existing out-of-line reset called 115
-// (its file is /Ob1, so it stays a call); named reals 53, with the reset's plain stores in the
-// out-of-line order 55, with the products written seconds first 53. The named reals' first draw
-// sinks to the reset (fimul), where the aggregate field keeps it early. Round 5: the record's two
-// fields declared the other way round 39 (284 bytes); the time globals in a local used twice 35;
-// the products written value first 35; the reference stored before the reset 71 (290 bytes); the
-// 0x5b0 store without its volatile cast 36, the 0x5ac and 0x5b0 stores without theirs 38.
+// score 19 (was 35): the frame and the x87 code agree. Left: the first draw's doubling and +3 sit
+// one slot later in retail (after the seed store and the conversion store); retail stores the reset's
+// NONE fields after its first three zero stores and before 0x4ac/0x504 (ours after all five); and
+// our build loads the time-globals pointer above the reset's NONE stores and the reference store
+// (a test build with that global's address taken keeps it below, as retail does, but retail's image
+// holds no address use of it), which also moves the second draw's scale.
+// The two draws are a [0, 1] sample each with its own scale and offset (the range helper gave an
+// 8-byte two-real record or the wrong x87 schedule). Range-helper forms: named reals 53, doubles 39,
+// double/real 49, real/double 52; the header random-range helper 55 (57 in the pair); the reset
+// without its volatile casts 43 in either store order; named reals through a seconds-to-ticks inline
+// 53 (parameter scaled in place 53); the existing actor_reset_state 40, with named reals 55, doubles
+// 41, double/real 51, real/double 54; named reals declared first/at the top/wait first 55; product
+// operands swapped, an explicit (real) tick conversion or the seconds-to-ticks inline 55 each; the
+// slot data block through slot->unknownc 80; the existing out-of-line reset called 115 (its file is
+// /Ob1); named reals with the reset's plain stores in the out-of-line order 55, products seconds
+// first 53; existing reset call with native payload and original/scalar delay storage, ordinary/
+// forced reset declaration 121/126/121/126; whole slot 115/125/115/125; aggregate draws through a
+// seconds-to-ticks inline 35; an in-file forceinline/inline range helper with named reals 53 (55 with
+// actor_reset_state); raw-generator `(real)(3.0 + 2.0 * <random>)` forms 26 (qword constants; 24 with
+// actor_reset_state), float constants 49, `(double)` on the random alone 26; the record's fields
+// swapped 39; the time globals in a local used twice 35; products value first 35; the reference
+// stored before the reset 71; the 0x5b0 store without its volatile cast 36, 0x5ac and 0x5b0 38.
+// Round 20 (sample form): with the hand-written reset 14, with actor_reset_state 19 (kept); the
+// samples inside the expressions 54; products value first 19; the state pointer set at the reset 19;
+// the reference stored before the reset 60; the existing 0x1469f0 body for the conversions 19.
+// Screened (one-file LTCG): every spelling of the scales and offsets gives the same code; both
+// samples drawn first 19; the tick count in a local 43; the random step or the sample conversion
+// through a local 87/23. Round 22: the second scale after the reference store 35; the second draw
+// and its scale after the reset 75; the slot written through the parameter 19; the existing
+// slot_random() for both draws 61; double delay/wait 45.
 // @retail 0x1befd0
 bool __stdcall function_1befd0(long actor_index, s_slot *slot)
 {
-	struct s_1befd4 { real field_0; real field_4; } local_0;
 	s_slot_0a *state = (s_slot_0a *)slot;
-	local_0.field_4 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 3.0f, 5.0f);
-	local_0.field_0 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 0.0f, 0.5f);
+	real sample = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+	real delay = 3.0f + 2.0f * sample;
+	real sample2 = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+	real wait = 0.5f * sample2;
 
-	function_1befd1(actor_index);
+	actor_reset_state(actor_index);
 	state->reference = g_470fa0;
 
-	state->unknown10 = (short)real_to_long(g_510c54->field_2_3 * local_0.field_4);
-	state->unknown12 = (short)real_to_long(g_510c54->field_2_3 * local_0.field_0);
+	state->unknown10 = (short)real_to_long(g_510c54->field_2_3 * delay);
+	state->unknown12 = (short)real_to_long(g_510c54->field_2_3 * wait);
 	return true;
 }
 

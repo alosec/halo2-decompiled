@@ -452,6 +452,9 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // (not a keepable form): the subtraction written through a pointer local to the direction 12 (ours
 // then keeps k on x87 and squares it first, as retail; sum i before j, the scale's inverse-times-i
 // load and the BSP index word load remain).
+// early default length 34. Round 10 (lane 14): normalize3d 79 (the sum stays i, k, j); the direction
+// declared first 108; the BSP pointer declared first 36; the length declared before the direction 34; the
+// step and distance declared after the normalize 116.
 // @retail 0xc0840
 bool function_c0840(point3f const *start, point3f const *end, point3f *out, real *distance)
 {
@@ -1224,6 +1227,32 @@ point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *p
 // is removed; the rotations written out in the arm give both retail's form apart from the fold; helper
 // parameter orders, reference parameters, by-value components or results, an orientation helper and
 // the existing vector3f_rotate_into_axes change nothing or lose more.
+// only the node arm's two rotations differ: retail compiles both alike (sum up*k + left*j,
+// then forward*i, the matrix element loaded first; vector loaded j, k, i); ours folds the first one's forward.i
+// product (`movaps; mulss [m + 4]`) and orders the second one i, k, j (the one-byte shift also flags the later
+// jumps and calls). The ranks are function-wide: in a compile-only screen the second rotation turns retail's
+// when the point transform call before it is removed or the matrix comes back from the out-of-line 0xb8bd0
+// (diagnostics only; that is a call, and 0xb8bd0's file is /Ob1). Round 141: the partition as the global itself,
+// the rotations through matrix_transform_vector, the node matrix through object_node_matrix(object_get()) and
+// the far point through point_add_scaled_c35a0 in each arm (once after the marker test 295; a new two-pointer
+// add helper 70). Node matrix through the out-of-line 0xb8bd0 aligned 71 but stays a call (/Ob1 file;
+// inline/forceinline redeclarations ignored); position/forward/up pointer locals aligned 127/114; named rotation
+// outputs/inputs 88/157; const matrix 72; the helper's sums in up-first text order 70 (canonicalised). Round
+// 143: diagnostics on the shared header (restored): vector-first products 70 (identical), components read at
+// each use 153; const vector arguments 70; a file-private up-first normal transform returning its output (the
+// form other files keep) 70 (identical); the parameter alias dropped 158. Round 147: whichever rotation comes
+// second gets the other order (diagnostics: the two swapped, or a call between them); the arm's locals declared
+// at the top 70 (identical); a named object pointer 72; a named node index 72; the axes as two-element vector
+// arrays 86; a `__forceinline` redeclaration of the rotation helper 70 (identical). Round 81: the marker local
+// scoped to its arm 78; the overflow flag declared first 70 (same code); forward/up output pointer locals 86;
+// the location pointer taken at the top 155; the marker flag tested as a byte 70 (same code); diagnostics on
+// the shared header (restored): the helper's components loaded j,k,i / k,j,i / i,k,j / j,i,k / k,i,j
+// 78/76/78/75/81 (i,j,k stays best). Round 38: an explicit final return and the marker after the early guard 70
+// each; a rotation for loop 158 (1005 bytes); a local matrix 306 (1067); rotations before the point transform
+// 124 (1027); the returned position 77; the existing scaled rotation callee 391 (893); a rotation do loop 286
+// (890). Round 10 (lane 14): the file's s_light_ab type for the light 38; const matrix with the definition
+// flag as a byte 38; the word flag tests as bytes 46; the existing function_2477b1 rotation 306; an
+// s_light_frame_ab pointer for the frame fields 352. Original body restored.
 // @retail 0xc2d00
 void __stdcall function_c2d00(long light_index)
 {
@@ -1461,6 +1490,10 @@ extern s_object_list *g_4de2f4;
 // pointer declared with the colours 88. Round 80: the four alpha stores chained in one assignment 51
 // (in reverse order 49); a const fraction pointer 49; the tint declared after the colours 49; the
 // definition's function flags named for both calls 377.
+// pointer declared with the colours 88. Round 10 (lane 14): the tint read through a `color3f const *`
+// local 49; the four definition colours (0x40, 0x4c, 0x58, 0x64) as one `color3f *` array for the copies
+// 417, and in every arm 370; `real *const fraction` 49; the function flags as a named local for both
+// calls 399.
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {

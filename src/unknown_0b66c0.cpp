@@ -156,7 +156,12 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // current 16/40): early returns 21/42 (--fast 48); nested length test 16/40 (--fast 40);
 // `length >= start + count` 17/40; all 23 other parameter orders 16-17/40; a const method of the
 // text struct, with or without noinline, 18/41 (0xb5f10 then differs); no `volatile` with a
-// noinline declaration 22/34 (0xb5f10 differs).
+// noinline declaration 22/34 (0xb5f10 differs). Round 11 (relink screen, current form 42 there,
+// 0xb5f10 0): `string + start` or `&string[start]` 28 (start arrives in EDX, 0xb5f10 6); that body in
+// all 24 parameter orders with matching calls 28 each (0xb5f10 5-37, never 0); `start += string`
+// before the count clamp 38 (aligned 14, start in EDX again, 0xb5f10 6); `result` assigned after its
+// declaration 42 (same code); the clamped size as a ternary or a separate size local 53 (0xb5f10 104).
+// Retail evicts start to EDI so the scan counts in ECX, as 0xb61d0 does with its start in EAX.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -357,6 +362,43 @@ bool function_7af40(s_type_99af70 const *address);
 // store differs (after the call, retail before it): 15 at 245 bytes, but the mixed reads can only
 // be kept with a match. Other orders of the counter, state and copy 35/35/37/111; the flag alone
 // re-read 42; the open alone re-read 109; `= count + 1` 111.
+// tried the flag bit set through a byte cast of the flags word, as retail
+// sets it in the low byte, 30 (an address cast for 2 points: not kept); the flag is still read
+// before the three field stores instead of after them, the endpoint pointer is kept in a register
+// here instead of being reloaded from the connection, and the attempt counter is incremented in a
+// register instead of in place. Earlier: the connection state is cleared with the three field
+// stores in a different order here, the flag is written as a word here and or-ed into the field in retail, and the two
+// calls take their arguments in a different order.
+// DL180: open inline 32; open noinline 32; valid inline 32; valid noinline 90; both inline 32;
+// open inline/valid noinline 90; open noinline/valid inline 32; both noinline 90. Original
+// executable body restored.
+// Round 35: an early invalid-address exit with the failed open closing and returning first 35 at
+// 245 bytes (the open test inverts; the false exits then go to the close path's return); the copy
+// helper as plain inline 32 (identical); the state stored before the counter 33; the flag and the
+// open call reading the connection's endpoint again 111 (the split counter takes ebx, the address
+// then arrives in eax and 0xb40b0 stops matching). A compile-only copy without link-time code
+// generation splits the counter even with the copy written out, so it cannot screen this.
+// Round 5: retail reads connection->endpoint once for the three clearing stores and again for the
+// flag (`or byte`, as `flags |= 0x40` on the word gives) and for the open call. Those reads with
+// the existing copy 111 (the counter's split temporary takes EBX and the address then arrives in
+// EAX; 0xb40b0 61); the state store first, `++`, `+= 1` and member spellings 111 each; the copy
+// before the counter 35; with strncpy and the terminator written out the counter stays an in-place
+// `inc` and the convention holds: 17 (the copy's destination is then ECX and the terminator
+// `[edi + 0xb3]`, retail ESI and `[esi + 0x7f]`; and the address check's false exits take a long
+// jump to the final return, where retail's go to the check's own return after its loop: 249
+// bytes); with that form an early `return false` 17, an inner `return false` 17, an else around the
+// close 17, a single result 106; the address check's loop with a single exit 17 (0x7aec0 breaks).
+// strncpy alone 36. A compile-only probe splits the counter whenever the destination survives the
+// call in a callee-saved register (existing copy, a local pointer, an inline wrapper, a separate
+// block), so retail's in-place `inc` with an ESI destination still needs its source form.
+// Lane 8 r79: an early `return false` for a bad address 32; `count = count + 1` 32; the failed
+// open closing and returning first 33; `connection->endpoint` read at each use 119 (0xb40b0 61);
+// the endpoint read before the address check 64.
+// Round 33: with retail's endpoint reads (one read for the three stores, re-reads for the flag and
+// the open call) the body is retail's except the counter, split into load/inc/store in EBX, which
+// moves the address to EAX (111, 0xb40b0 lost); a compiled-out `do {} while (false)` after the
+// increment 32, with the reads 111; the copy helper with a dword size and the reads 111; the
+// failed open closing and returning first with the reads 101.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

@@ -893,7 +893,7 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
     s_pathfinding_node const *node = &data->nodes[index];
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
-// score 347 (was 385): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
+// score 347 (was 347): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
 // direction.x and the first offset's y, where retail clobbers its xmm0 zero with 0 - radius and
 // re-zeroes it for the compares; the edge pointer then sits in ebx (retail esi) and the vertex in
 // memory (retail ebx). Retail's crossing test is one byte set three times (`xor dl, dl` before the
@@ -982,6 +982,9 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
 // word index in the open test 409; portal loop stepping through the portal pointer, source edge
 // before the side test, vertex selected by value 432 (data to ebx); first_vertex without volatile
 // 404 (aligned diff 500 -> 461, convention kept); that with the indexed pair 433.
+// Round 420: Incoming edge used as mutable working index, with iteration/traversal receiver and short/word bounded
+// ring counts: 415 each; the same four with early ring anchor 361 each (1295 bytes). Original input copy,
+// receiver/count and anchor lifetimes restored; frame remains 0x30 versus 0x28.
 // @retail 0x2c3030
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)
@@ -1214,6 +1217,9 @@ real function_11cc90(vector2f const *a, vector2f const *b);
 // Round 79: length test `!(0.0f < length)` 172 (same code); side directions by direct initialisers
 // 380 (aligned 74 -> 70: forwarding, no y preload); both 380; plus no first-side volatile 365;
 // `0.0f <` test with no first-side volatile 379.
+// Round 301: Existing shared magnitude inside the retained normalizer, with distance roots,
+// side dots, both, ordinary first side, ordinary/distance, ordinary/dots and all:
+// 172/172/372/372/379/379/363/363. Original magnitude graph, qualifier, projections and body restored.
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
@@ -1438,6 +1444,10 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // frame 0x104, aligned unmatched 442 -> 317); both 517; no output_index volatile (retail: di) 486,
 // with the step pointer 541 (aligned 308); no source-radius volatile 469/498; source pointer before
 // the loop identical code.
+// Round 301: Full count / named terminal ordinal / both 496/474/500;
+// with paired word corner results 490/472/491; complete bound graph
+// with ordinary radius, without/with word corners 500/491. Original count,
+// ordinal expressions, Boolean corner carriers, radius qualification and body restored.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)

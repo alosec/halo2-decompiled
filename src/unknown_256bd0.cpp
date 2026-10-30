@@ -221,6 +221,9 @@ struct s_object_flags_256bd0
 // active-ternary/combined-ternary entries, byte/native records each 194/262/290/262.
 // Nested forms recover frame 0x110 at 1070 bytes but gain seven only; all declarations,
 // iterator body, native receivers and complete function restored.
+// Round 211: complete iterator reference input with byte/native entry, default/complete test
+// result and original/recovered initializer-datum boundaries, scores
+// 201/262/201/262/194/262/194/262. Original executable form restored.
 // @retail 0x256bd0
 short __stdcall function_256bd0(long actor_index, s_slot *slot, bool active)
 {

@@ -967,11 +967,18 @@ void sound_playback_set_chunk(long sound_index, long definition_index, char pitc
 long __stdcall function_125e60(s_looping_track_sound *sound);
 
 // score 77 (was 77): Float/result/random spill homes and initialization scheduling differ.
+// Round 76: bounds pointer 74; with mask 132; direct previous 80; initialization swap 77; result name 74;
+// distance name 74; declarations swapped 188; split result 74; the pitch bounds read through a pointer to
+// the modifier's lower field indexed [0]/[1] with an entry NONE result and one return 68 (not kept: the
+// field-indexed pointer reads past the field it names); the entry result alone 71; entry mask 127.
 // Earlier field-bit mask form 77 (from 132).
 // Float/result/random homes and initialization scheduling remain. Entry result 71; available-mask name 77;
 // entry mask workspace 77; table reads at use 77; full-width track slot 231; playback record name 77; direct
 // distance expression 194; entry result with full-width slot 231. All restored; six-count result gain below
 // threshold.
+// Round 421: native short/real repeated class pitch 77/183; complete modifier copy 190;
+// shared lower pitch 74 (three-point gain rejected); short with record 190; real with lower 183;
+// scoped listener distance with record/real-and-lower 190/183. Original body restored.
 // @retail 0x21b940
 long function_21b940(long looping_sound_index, long definition_index, long pitch_range_index, short track_index, short state, dword *seed)
 {
@@ -1464,6 +1471,10 @@ long function_125f70(long definition_index, s_looping_detail_request *request, l
 // track definition 478f; class at each use 476f; tag and class 537f; ring for 358f; header memset 457f; all tags
 // with ring for 566f.
 // Original body retained; frame 0x11c versus 0x128 and index/tag/ring homes remain. No reduced-only gain selected.
+// Round 421: track/detail count snapshots and shared range ordinal, seven subsets:
+// reduced 513/510/474/401/407/520/474; all with full-width selection 511. Reduced
+// control 521/1908 differs from full 457/1923. Shared ordinal plain 457 (tie);
+// all executable forms restored. Frame and index/range/ring homes remain.
 // @retail 0x21b0e0
 void function_21b0e0(bool update)
 {
@@ -1777,7 +1788,7 @@ void function_12a1b0(short voice_index, s_looping_track_sound *sound, s_looping_
 void function_21f8a0(long channel_index, s_looping_channel_properties const *properties, s_looping_effect_playback const *effects);
 void __stdcall function_21f720(s_looping_impulse_parameters const *parameters);
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties, s_looping_effect_playback const *effects, bool force);
-// score 414 (was 414): frame 0x4b4 versus 0x4bc; initial scalar homes and class-query expansion remain.
+// score 345 (was 414): frame 0x4b4 versus 0x4bc; initial scalar homes and class-query expansion remain.
 
 // Earlier: frame 0x4b4 versus 0x4bc, entry snapshots and the class lookup expansion still differ.
 // frame 0x4b4 versus 0x4bc, entry snapshots and the class lookup expansion still differ.
@@ -1803,6 +1814,9 @@ void function_21fa80(long channel_index, s_looping_channel_properties const *pro
 // decrement count 414; headers plus gain 534; headers plus count 534; all producers 534; consumer-owned pitch
 // 498; controller property arms 414; pitch plus property arms 498.
 // Original body retained; frame 0x4b4 versus 0x4bc, initial scalar homes and class-query expansion remain.
+// Round 421: continuation before terminal stop 345 (plain kept), 1936/1929 bytes; on it,
+// short permutation/long chunk/both 450/422/461; effect receiver alone/with those
+// 345/450/422/461. Original widths, effects and call tuples retained.
 // @retail 0x21c400
 void function_21c400(short voice_index, real gain, s_looping_channel_spatialization const *spatialization)
 {
@@ -1900,20 +1914,23 @@ void function_21c400(short voice_index, real gain, s_looping_channel_spatializat
 				}
 				else if (last_chunk)
 				{
-					if (definition->flags & 2)
+					if (!(definition->flags & 2))
+					{
+						dword permutations = primary ? looping_sound_get_permutations(sound, definition, playback, playing->loop.track_index, playing->pitch_range_index, false) : playing->loop.permutations;
+						permutation_index = function_219110((s_set_ref *)playback, playing->pitch_range_index, &permutations, playing->permutation_index, seed, NULL, false);
+						if (primary)
+							looping_sound_set_permutations(sound, definition, playback, playing->loop.track_index, playing->pitch_range_index, permutations, permutation_index);
+						else
+							playing->loop.permutations = permutations;
+						next_chunk = 0;
+					}
+					else
 					{
 						playing->state = 4;
 						if (primary)
 							sound->flags |= 8;
 						goto stop_channel;
 					}
-					dword permutations = primary ? looping_sound_get_permutations(sound, definition, playback, playing->loop.track_index, playing->pitch_range_index, false) : playing->loop.permutations;
-					permutation_index = function_219110((s_set_ref *)playback, playing->pitch_range_index, &permutations, playing->permutation_index, seed, NULL, false);
-					if (primary)
-						looping_sound_set_permutations(sound, definition, playback, playing->loop.track_index, playing->pitch_range_index, permutations, permutation_index);
-					else
-						playing->loop.permutations = permutations;
-					next_chunk = 0;
 				}
 				if (permutation_index != NONE)
 				{
@@ -1968,7 +1985,7 @@ real function_192d70(real minimum, real maximum, real distance);
 point3f *function_142700(transform4x3f const *matrix, point3f const *point, point3f *out);
 real function_30bf0(vector3f *vector);
 void function_192ce0(point3f const *direction, real *gains, bool linear);
-// score 723 (was 748): frame 0x3c agrees; definition/identifier, result and alternate homes still differ.
+// score 723 (was 723): frame 0x3c agrees; definition/identifier, result and alternate homes still differ.
 
 // Earlier: frame 0x3c and retail length recovered by the availability guard join;
 // definition/identifier carriers and flag/result lifetimes still differ.
@@ -1987,6 +2004,9 @@ void function_192ce0(point3f const *direction, real *gains, bool linear);
 // J185: per-track signed byte/short/long/dword 748/723/763/763; corresponding outer+track widths 748/756/773/773.
 // Signed short per-track truth kept at full 723. On it, word result/combine/created subsets 773/768/737/769/738/728/770;
 // complete word truth carriers 778. Original result/combine/created/outer widths, all producers, calls and loops restored.
+// Round 189: Entry-only true exit join 764; delayed initial state result 766; fallback-only state
+// result 764 (loses a caller); joined result-home names 764. Existing guarded/direct old-end fade
+// helper 824/722; with entry join 815/764. One-point gain rejected; original body restored.
 // @retail 0x21a250
 bool function_21a250(long definition_index, dword sound_flags, long identifier, long controller_definition_index,
 	s_type_99c531 *source, long state, dword flags, real fade_duration)

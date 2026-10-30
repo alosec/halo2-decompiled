@@ -113,6 +113,18 @@ void c_animation_channel::clear()
 // too): on retail's order, graph copied to a local first, the parameter set to NONE when the id
 // is NONE, the last flags bits from the stored field, the frame store before graph 51 each in
 // the build (126 bytes, the matched callers lose); the current form with the last flags bits
+// from the stored field 36.
+// Round 30: retail's store order read from its listing (retail's clear()/reset() keep source
+// order) 51 (graph in ESI, five matched callers break); default-constructed id for the two NONE
+// stores 62 (dropped as dead); that order with unknown0e after unknown0d 51; unknown0e after
+// the id copy 36; flags stored next to the derived byte 36. Retail hoists the unknown0e load
+// above the graph store, which is what leaves ESI for the id copy. All restored.
+// Round 118 (one-file harness): all 120 orders of the graph/frame/id/rate/unknown0e stores after
+// unknown0d pass graph in ESI; so do the stores through a forced-inline initializer taking every
+// parameter (its argument copies are propagated) and the id NONE words and/or unknown0c/unknown0d
+// stored through pointers (as reset()/clear() do), which on retail's order give 43 in the build
+// (the matched callers lose). On the current order: the id words through a pointer 36; unknown0c/
+// unknown0d through a char pointer 34; both 34 (two-point gains, pointer locals: not kept).
 // from the stored field 36. Round 118 (one-file harness): all 120 orders of the late
 // graph/frame/id/rate/unknown0e stores pass graph in ESI, as do a forced-inline initializer taking
 // every parameter and pointer stores for the id words.
@@ -714,6 +726,10 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // 133; channel read directly for the byte clear 97, also for the first flags 97 (same code); the
 // volatile read moved to the second dispatch 97 (same code); volatile read at the third dispatch only
 // 141 (callback in EBX from entry, frame 0x10).
+// Round 419: end failure exit 97; loop failure exit 97; both later failure exits 97; first/end failure
+// exits 97; first/loop failure exits 97; all dispatch failure exits 97; all failures with direct final
+// update 109; native events with direct final update 109. Word-load/state-clear scheduling and second
+// callback reload remain. Original body restored.
 // @retail 0x1c66a0
 void __stdcall c_animation_channel_advance(c_animation_channel *channel, real frame, s_animation_state *state,
 	animation_event_callback callback, long user)
