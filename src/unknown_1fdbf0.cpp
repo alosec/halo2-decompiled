@@ -332,33 +332,26 @@ bool function_1fef40(s_type_c3b527 const *target, long actor_index)
 real function_30bf0(vector3f *v);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
 
-// score 57 (was 57): only the final rotation differs: retail loads axis k/j into xmm1/xmm2 and
-// d.j/d.i into xmm3/xmm4 (ours xmm3/xmm4 and xmm1/xmm2) and scales axis j/k by the parallel part in
-// place, where ours copies it for j (three bytes longer). The block's code is the same for every
-// spelling tried: products swapped (axis * parallel) 57; the four scalars declared before or after
-// the axis or at the top 57; the rotation as 0x11d3b0 writes it, or through an inline
-// (axis, sine, cosine) helper 57; valid flag declared first 57; valid as an expression 86;
-// member-wise forward copy 88; negated cosine test 100. Round 76 (retail multiplies axis j/k by
-// the parallel part in place but the parallel part by axis i through a copy): the shared cross3f
-// for the rotation's cross terms 69, for the axis and the rotation 70 (with every row as
-// direction * cosine + axis * parallel 70), for the axis only 64 (retail's in-place j/k products,
-// axis i/j ranks swapped), the same with the cross k term first 60. A compile-only screen that
-// reproduces this block exactly found no closer form among: the axis statements in all six orders
-// or through cross3f, the four rotation scalars in all 24 orders or a cross3f/struct cross, named
-// const sine/cosine, the parallel part accumulated or through a named dot, and an inline
-// (vector, axis, sine, cosine) helper in either parameter order (93/97: the axis pointer forces
-// reloads after each row's store).
-// member-wise forward copy 88; negated cosine test 100.
-// Perpendicular/forward query inline and noinline declarations, singly/together 57 each; fallback
-// normalization via returned output pointer 71, with both inline declarations 71.
-// member-wise forward copy 88; negated cosine test 100. Only the declaration order of the four
-// scalars changes the block (all 24 orders compiled; this one is closest): operand and term orders
-// are canonicalised. Axis by cross3f 64; parallel scale written into each row 78; local_3 declared
-// before local_2 59; rows i, k, j 59; an inline rotate helper with named parallel/cross scalars 57
-// (with a cross vector, worse).
-// member-wise forward copy 88; negated cosine test 100.
-// Perpendicular/forward query inline and noinline declarations, singly/together 57 each; fallback
-// normalization via returned output pointer 71, with both inline declarations 71.
+// score 43 (was 57): only the final rotation differs, and only in register colours: retail loads
+// axis k/j into xmm1/xmm2 and d.j/d.i into xmm3/xmm4 (ours xmm3/xmm4 and xmm1/xmm2) and scales axis
+// j/k by the parallel part in place, where ours copies the part for j (three bytes longer). The rows
+// as accumulated sums (round 35) give retail's i row and tail. Tried: products swapped (axis *
+// parallel) 57; the four scalars declared before or after the axis or at the top 57, in all 24
+// orders (one compile-only screen, again on the accumulated rows: none closer); the rotation as
+// 0x11d3b0 writes it, or through an inline (axis, sine, cosine) helper 57; valid flag declared first
+// 57; valid as an expression 86; member-wise forward copy 88; negated cosine test 100; the shared
+// cross3f for the rotation's cross terms 69, for the axis and the rotation 70, for the axis only 64,
+// the same with the cross k term first 60; parallel scale written into each row 78; local_3 before
+// local_2 59; rows i, k, j 59; an inline rotate helper with named parallel/cross scalars 57;
+// perpendicular/forward query inline and noinline declarations 57; fallback normalization via the
+// returned output pointer 71. Screened compile-only (no closer form): the axis statements in all six
+// orders or through cross3f, a cross3f/struct cross, named const sine/cosine, the parallel part
+// accumulated or through a named dot, an inline (vector, axis, sine, cosine) helper in either
+// parameter order (93/97). Round 35: the other seven accumulated term orders (the cosine term first
+// in the i row, or the parallel term first in the j/k rows) 43-50 aligned in the harness (current
+// 34 aligned), every row computed into locals before the stores 45, the dot accumulated 34, the
+// first two terms of a row as one expression 34 (all three rows 35), the sine term second 41, a
+// named cross vector 48, a by-value axis helper 42, an axis-pointer helper 35.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)
@@ -417,9 +410,18 @@ bool function_1fddd0(long actor_index, point3f const *origin, vector3f *directio
                 real local_1 = direction->j * axis.k - direction->k * axis.j;
                 real local_2 = direction->k * axis.i - direction->i * axis.k;
                 real local_3 = direction->i * axis.j - direction->j * axis.i;
-                direction->i = direction->i * 0.8660253882408142f + local_0 * axis.i - local_1 * 0.5f;
-                direction->j = local_0 * axis.j + direction->j * 0.8660253882408142f - local_2 * 0.5f;
-                direction->k = local_0 * axis.k + direction->k * 0.8660253882408142f - local_3 * 0.5f;
+                real i = local_0 * axis.i;
+                i += direction->i * 0.8660253882408142f;
+                i -= local_1 * 0.5f;
+                direction->i = i;
+                real j = direction->j * 0.8660253882408142f;
+                j += local_0 * axis.j;
+                j -= local_2 * 0.5f;
+                direction->j = j;
+                real k = direction->k * 0.8660253882408142f;
+                k += local_0 * axis.k;
+                k -= local_3 * 0.5f;
+                direction->k = k;
             }
         }
         *arg_c9241c = *(real *)(actor + 0x7bc);

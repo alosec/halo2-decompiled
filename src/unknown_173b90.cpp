@@ -1155,6 +1155,11 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
 // forms are below threshold and restored. Callback inline/noinline/both 125/135/125;
 // the inline-only declaration of the external 0x1e4e0 (125) is not kept: no definition in this
 // file; complete original body and shared lookup linkage restored.
+// Round 35 (lane 9): the camera rotation through the shared vector3f_rotate_into_axes (accumulated rows,
+// which match 0x248450) 137: retail's x-row pair order (y * left, then z * up) is right, but the three
+// z * up products load the matrix operand first (retail loads z first). One grouped pair then
+// accumulated 135, operands written matrix first 137, `t + i` sums 137, column-wise accumulation 137.
+// The file-local expression-row helper (135) is kept.
 // @retail 0x174420
 void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
 {

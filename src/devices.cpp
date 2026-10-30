@@ -643,9 +643,13 @@ struct s_device_machine_view
 // bool 124. Screened (one-file LTCG): word/long `flags & 2` locals, `== 2`, `!!`, a ternary,
 // bit-test helpers taking the mask, a named group condition before/after the machine test,
 // `||` with the machine test: all the shift or the pushed esi.
-// case 0x1200055f where ours does not.
 // Actual signed group flags with Boolean/masks/early load/default; actual group bitfields with
-// direct/second/both/default tests 43/120/54/122/50/50/50/122. Original executable source restored.
+// direct/second/both/default tests 43/120/54/122/50/50/50/122. Round 35 (harness, every form with
+// the zero store): plain mask tests on the word local, direct `group->flags` tests (0x107870's
+// form), nested ifs, `!(!a || !b)`, the pointer declared after the machine flags, the machine flags
+// read at each use: `test al, 2` but the pointer in a pushed ESI (--fast 122); a named `both` or
+// `first` bool, the group read at its test, the flags read at the declaration: the pushed ESI or the
+// shift; no group pointer (the address folded into the load) 115; the zero store alone 114.
 // @retail 0x106d70
 bool __stdcall device_export_function(long device_index, long name, real *value, bool *active)
 {
