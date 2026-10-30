@@ -259,6 +259,7 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // distance (reciprocal inside it) with length_sq3f gets the in-place products (compile-only xmm
 // diff 13) but swaps x/y and folds the last dot term, 129 (and a one-caller helper).
 // the sphere test's normal: retail multiplies the x and z
+// the sphere test's normal: retail multiplies the x and z
 // differences in place (normal x/y/z in xmm1/xmm3/xmm2) and loads 1.0 in each arm;
 // ours multiplies copies of the scale and hoists 1.0 into xmm0 before the fsqrt.
 // The unit-z arm's zero stores chained (y first, then x) 57 (each order with y or z
@@ -294,6 +295,8 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // 456/678 (sphere helper outlined). Existing helper forced inline on the same eight graphs:
 // 235/235/244/244/257/257/262/262. Original helper/query restored; displacement/normal homes
 // and reciprocal-one hoisting remain.
+// Scale helper with the factor as its first parameter 57; unit-z through vector3f_assign 61;
+// arms swapped 170; depth stored before the normalization branch 173; sqrtf 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -342,9 +345,14 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 }
 
 // score 40 (was 40): the float is loaded into XMM1 and moved to XMM0; retail loads it into XMM0 and
-// moves XMM5 into XMM1.
+// moves XMM5 into XMM1 (retail: radius, zero and a in XMM0, c in XMM1, b in XMM2; ours c XMM0,
+// radius and b XMM1, zero and a XMM2; instructions otherwise identical).
 // Existing offset/scale/plane-product force-inline declarations, all seven combinations 40;
-// native result byte 69.
+// native result byte 69. c as one expression 53; radius square in the subtraction 51;
+// length_sq3f/dot3f for c 55/57; radius square after the sum, c <= 0, length_sq3f for a, radius
+// local, named distance square, radius square first, result before *t: 40 (same code);
+// dot3f for b 42; reverse dot for b/a 42/42; result declared late 67 (caller 0x2469b0 170);
+// arms swapped 63.
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
@@ -521,7 +529,11 @@ bool function_246360(
 // Round 184: Complete named/start-direction product phases, six-product ownership, interleaved
 // components, array products and interleaved products 157/113/157/157/112/113/189/157; existing
 // add-scaled direction/start/both 84/84/83; existing projection inline/forced 53/53. All
-// restored.
+// restored. Retail: start-point products all load the plane field first, direction products
+// fold only the first (the edge loop folds d2.x into edge.y's copy); direction point computed
+// first 83; edge before offset 53; numerator before denominator 125; current vertex indexed
+// from i - 1 instead of the walking pointer 205 (caller 0x2469b0 139); start point projected
+// before the direction point is built 138 (0x2469b0 2).
 // @retail 0x2466b0
 bool function_2466b0(
 	point3f const *start,
