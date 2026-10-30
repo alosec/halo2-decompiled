@@ -90,7 +90,7 @@ void __stdcall function_bef30(long object_index, long remove, long add, long sib
 void function_b8b70(long object_index);
 void __stdcall function_b9a50(long object_index);
 bool __stdcall function_c5460(long object_index, long ignore_index, point3f const *position,
-    point3f *result, long unknown, real radius, long mode);
+    point3f *result, long unknown, real radius, bool mode);
 real function_30bf0(vector3f *vector);
 __declspec(noinline) void function_1420f0(transform4x3f *out, point3f const *position,
     vector3f const *forward, vector3f const *up);
