@@ -73,6 +73,10 @@ void function_16e2c0(long arg_0);
 // a reassigned parameter gives). Both NULL-clear blocks as one inline helper 50; early return false
 // for the range test 122; saved index declared at function scope 50; early true test on the saved
 // copy 50; unload argument written in the call 50.
+// Round 38 (lane 9): a named `arg_0 == NONE` part with the saved index defined after it at the top
+// 130 (own slot, push ecx); early true test operands swapped 50; `0 <= arg_0` 50; the saved index
+// declared at the top and assigned in the block 50. The reused-parameter form (saved index in arg_0,
+// a requested copy tested everywhere) 30 here, not kept (a reused parameter).
 // Round 100: one index variable assigned after a range guard that jumps to the single exit 142 (the
 // load follows the test and the success flag takes a stack byte); saved index declared after the
 // callback loop 87; success flag declared before the dispose test 127; the early true through the

@@ -1935,7 +1935,11 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 
 /* drops the biped out of a vehicle: level and upright, at a clear spot
    by the vehicle (or anywhere clear) */
-// score 76 (was 76): frame 0x1c versus 0x20 and input/ignore ESI/EDI homes are exchanged.
+// score 76 (was 76): frame 0x1c versus 0x20 and input/ignore ESI/EDI homes are exchanged. Round 12 (lane 14):
+// a found flag set from each query and tested in the loop condition instead of the breaks scored 34 (homes as
+// retail; left: retail keeps a dead store of the vehicle radius, the inlined 0x30c60 centre/radius read, in its
+// own slot, then pushes a copy) and took caller 0xea8e0 68 -> 9; not kept (coordinator: a test-set flag is kept
+// only with a match). Finish this function or 0xea8e0 to a match with it and it can stay.
 // Complete bool retry result 134; iteration-local result 76; long result 109; capsule/fallback
 // role names 76; names with bool result 134; fallback-only point scope 76; function-scoped
 // workspaces 76; those workspaces with bool result 134. Original body restored.
@@ -1951,6 +1955,8 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 // Round 237: physical header type/fallback geometry/both 76/76/76; typed first/fallback/both
 // successful-query returns 76/76/76; typed failed-query arm 76; typed root-header receiver 76.
 // All declarations, snapshots and original body restored; frame/input homes remain.
+// Round 12 (lane 14): on the old loop 0x30c60 called 110, inlined (`inline` on its definition) 74; with the
+// found loop, 0x30c60 inlined with a real/long output 41/41.
 // Round 162: the vehicle's position/radius through the existing out-parameter getter 0x30c60 gives retail's 0x20 frame
 // (its radius out-local is retail's dead store) but stays out of line here: 110 (307 bytes). Diagnostic only: an
 // inline real-typed copy of that getter 70, plus a success-controlled attempt loop (`!success && attempt < 2`,

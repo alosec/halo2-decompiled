@@ -254,6 +254,9 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
 // Round 267: positive admission partitions 620/638/620/638/620/638; actual
 // admission result 657, with unit-presence result 853. Original admission,
 // cases, local qualifiers and complete executable body restored.
+// Round 193: Existing masked-index domains word/short/dword 659/659/620; with Boolean slots 661/661/665;
+// word/short indices with short slots 661/661. Original accessor domains, all case bodies, inherited
+// qualifiers and matched sibling restored; state/player/unit residency remains.
 // Y423: All 32 cases return the completed result, ordinary player/child flags
 // and native long eligibility subsets 830/795/871/815/723/828/736/846 fast;
 // control 620. All shorten away from retail; complete original body restored.
