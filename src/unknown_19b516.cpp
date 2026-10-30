@@ -375,6 +375,9 @@ static __forceinline void draw_element_24bda2(s_sprite_element *element, long le
 // order 89; height before width 91; right edge re-derived from the placement after the left offset
 // 108; the base edges kept in named locals in both blocks 92; the conversions moved before the
 // right edge's base 91; the two blocks' offsets swapped 89.
+// Round 189 (on main's written-out form, 89): placement index at use 89; tag at use 155; both metadata
+// observations 163; byte alpha 98; short alpha 98; dword alpha 89; read-only metadata 89; both observations
+// with byte alpha 165.
 // @retail 0x24bda2
 void c_widget::v12(long a)
 {
