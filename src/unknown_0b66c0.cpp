@@ -327,6 +327,19 @@ bool function_7af40(s_type_99af70 const *address);
 // DL180: open inline 32; open noinline 32; valid inline 32; valid noinline 90; both inline 32;
 // open inline/valid noinline 90; open noinline/valid inline 32; both noinline 90. Original
 // executable body restored.
+// Round 5: retail reads connection->endpoint once for the three clearing stores and again for the
+// flag (`or byte`, as `flags |= 0x40` on the word gives) and for the open call. Those reads with
+// the existing copy 111 (the counter's split temporary takes EBX and the address then arrives in
+// EAX; 0xb40b0 61); the state store first, `++`, `+= 1` and member spellings 111 each; the copy
+// before the counter 35; with strncpy and the terminator written out the counter stays an in-place
+// `inc` and the convention holds: 17 (the copy's destination is then ECX and the terminator
+// `[edi + 0xb3]`, retail ESI and `[esi + 0x7f]`; and the address check's false exits take a long
+// jump to the final return, where retail's go to the check's own return after its loop: 249
+// bytes); with that form an early `return false` 17, an inner `return false` 17, an else around the
+// close 17, a single result 106; the address check's loop with a single exit 17 (0x7aec0 breaks).
+// strncpy alone 36. A compile-only probe splits the counter whenever the destination survives the
+// call in a callee-saved register (existing copy, a local pointer, an inline wrapper, a separate
+// block), so retail's in-place `inc` with an ESI destination still needs its source form.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

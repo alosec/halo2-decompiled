@@ -483,6 +483,11 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // engine lookup hoisted 29; carrier with the mask compare swapped 29 (the mask load leads
 // the compare but is still not shared with the update); two-width union view of the mask 90;
 // union with a named wide copy 90; word local with a promoted copy 134; updated mask
+// computed before the branch 133; union plus carrier 91; word mask with the field stored
+// directly and the OR uncast (either operand order) 77, the word mask read straight from the
+// field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
+// loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
+// first on the word form 77, carrier on the word form 78.
 // computed before the branch 133; union plus carrier 91.
 // Retail reloads the word mask once into ecx before the first test and ORs present into
 // it for the store. `*team_mask |= present_teams` (the old mask then only compared, word
