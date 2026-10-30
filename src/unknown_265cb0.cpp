@@ -492,6 +492,8 @@ real function_30bf0(vector3f *vector);
 // DH round 252: Existing staged cross at side/up/both; both with later up, seat-scope outputs,
 // both scopes, corresponding basis/output names, both scopes and long ordinal
 // 152/152/152/152/152/152/152/183. Original complete executable body restored.
+// Round 214: existing dot/basis-dot plane producers, both operand orders: copied normal 150 each; native normal 290 each.
+// Exact-only sum forms restored; no gain meeting the margin, result/range/amount homes and inverse SIMD groups remain.
 // @retail 0x263810
 short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
