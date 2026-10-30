@@ -459,9 +459,8 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 	vector->k = axis->k * along + k * cosine - (axis->j * i - axis->i * j) * sine;
 }
 
-// score 90 (was 90): frame 0xd8 agrees; ring conversion (fild where retail converts in SSE) and the
-// frame 0xd8 agrees; x87 ring conversion and rotation component spill/register scheduling remain.
-// rotation schedule (one spilled component) differ; 1085 bytes against 1089.
+// score 90 (was 90): frame 0xd8 agrees; the ring conversion (fild where retail converts in SSE) and the
+// rotation schedule (one spilled component, register homes) differ; 1085 bytes against 1089.
 // Round 53: ring phase named in the outer loop before/after the distance 143/143 (SSE ring
 // conversion as retail, but frame 0xdc and the radius copied through integer registers);
 // all three cross terms named, j and k first 90 (forwarded back); a vector3f cross filled j, k, i
@@ -545,6 +544,14 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // conditional, 163/247/153/246/281/281/147/241. All exact-only; no match. Original query
 // observation, rotation helper, input copies, inherited local qualifier and complete body restored.
 // Round 255: unsigned-word ring with short/word/byte/char spokes 117/117/246/246; signed-byte ring with short/word/byte/char spokes 130/130/247/247. All restored; x87 ring conversion and rotation spill remain.
+// Round 121: the missing frame slot is retail's SSE ring conversion temp (cvtsi2ss, a store, fld). The
+// rotation helper in the form that took 0x29c860 to 2 (j and k cross terms in a vector first, the i
+// cross term in the i row; in place) gives retail's rotation structure but 100 (frame 0xd4); with the
+// ring phase named before the distance as well 96 (frame 0xd8, SSE ring conversion and rotation core as
+// retail; the radius copy then moves to integer registers and the dot's sum order and integer register
+// names differ); with 0x29c860's operand orders 100/96; on that: angle terms swapped, dot written j/i/k,
+// phase after the distance 96 each; a named (real)ring 100/96 (with the phase); plain radius 222;
+// sector index before the radius 263.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
