@@ -2185,6 +2185,7 @@ static __forceinline long function_9d453(long arg_0, short arg_1)
 // Round 215: original bit ordinal at short/word/byte widths, with long or short positive-four
 // countdown: 210/210/231/231/210/210/231/231. Original ordinal and countdown restored; frame 0x1c
 // agrees, object/offset homes and low-mask allocation remain.
+// Round 441: Boolean fixed request groups parent/position/both/tail/parent-tail/position-tail/all 285/271/289/178/286/272/290; both dynamic child predicates 223. Original request tests, observations and executable body restored; object/offset and low-mask homes remain.
 // @retail 0x9d450
 long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 {
