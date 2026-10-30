@@ -6,6 +6,16 @@ The newest entry comes first.
 
 ```
 matched 10021 of 11326 game functions (1679862 of 2786206 bytes, 60.29%)
+matched 1267 of 1436 Havok functions (174339 of 290362 bytes, 60.04%)
+```
+
+8 new matches, none lost:
+- @Roasted-Codes's #895: `0x2deda0`, `0x2dfbc0`, `0x2dfcc0`, `0x2dfdc0`, `0x2ea640`, `0x2ea940`, `0x2f0f70` and `0x303110` match.
+
+## 2026-10-30: 10021 functions match
+
+```
+matched 10021 of 11326 game functions (1679862 of 2786206 bytes, 60.29%)
 matched 1259 of 1436 Havok functions (171591 of 290362 bytes, 59.10%)
 ```
 
