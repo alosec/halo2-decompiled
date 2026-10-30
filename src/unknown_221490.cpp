@@ -151,7 +151,8 @@ void function_221490(
     function_221491(1, 0, buffer_reference);
 }
 
-// score 83 (was 83): the prologue and the loop's registers differ: retail pushes ebp, esi
+// score 83 (was 83): Frame 0xdc agrees; list EAX/ECX, settings-side induction, seen/output-count registers and descriptor homes differ.
+// Earlier: the prologue and the loop's registers differ: retail pushes ebp, esi
 // and edi first and keeps the pair count in ebp and the pair pointer in ebx, ours loads the
 // pointer into ebx before the pushes and counts in ecx.
 // Round 81: retail strength-reduces &settings->pairs[i].lVolume into the pointer (esi) and
@@ -167,6 +168,10 @@ void function_221490(
 // in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
 // initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
 // read after the mixbin compare 135.
+// Round 216: SDK descriptor initializer 83; append-local count 87; later mask zeros 98;
+// direct SDK count 87; completed-result descriptor via aggregate/fields/DWORD count 88/88/88
+// (281 bytes, frame 0xd8); early descriptor initializer with DWORD count 83.
+// Original descriptor, scalar mirror, input observations and all output updates restored.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,
@@ -248,6 +253,10 @@ set_all:
 // Native desired-pair reference, alone/both element references and nested/combined
 // duplicate guards 102/102/96/96; complete pair snapshots 104/104/104/104.
 // Settings/list induction and mask/count homes remain; all executable forms restored.
+// Round 189: Complete volume/bin/both field observations 107/106/86; read-only input contracts
+// alone/volume/bin/both 83/107/106/86; both with native output-pair assignment 112. Both
+// observations recover length but shrink the frame and change cleanup to four bytes. Every body
+// and declaration restored.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,
@@ -534,6 +543,9 @@ bool sound_driver_voice_create_buffer(
 // Round 208: disjoint native descriptor phases, shared/per-phase mixbins,
 // pair arrays at success/phase entry and both descriptor name orders: 98 in all eight.
 // Original storage and body restored; conditional saves and zero/input residency remain.
+// Round 219: Native descriptor phases with direct success short/long/no sentinel result 178/178/178;
+// test-assigned result 181; common short/long exit 149/180; direct success and early count,
+// with/without sentinel 179/179. All restored; early saves and zero/input scheduling remain.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,

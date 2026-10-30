@@ -111,6 +111,19 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // pointer into the normalization 62. Round 20: constant-first doubling 61; `x *= face->scale` 61;
 // face pointer before the grid values 81; the equal-direction arm first 61; zero between the grid
 // products and the doubling 72; the rows written in both scale arms 224 (no tail merge).
+// pointer into the normalization 62.
+// Round 119: the 0x195070 decoder (same decode, retail hoists 2.0 there and makes the zero late, as
+// ours does here) shows the block after the 1/63 products is particular to this caller. A two-pass
+// grid loop shifting the index by six, the zero first 130; the same with `index >> (6 * n)` 134; the
+// face transform as a three-component loop 172 (not unrolled); the grid through an inline
+// `(real)value / 63.f` helper 114 (599 bytes); the zero first and the face pointer before the
+// doubling 87.
+// pointer into the normalization 62. Round 80: the file's decoded-direction normalizer with its sum in
+// i, j, k order (here and/or in 0x195070) 61 (the reduced build keeps the decoded k on x87 either way;
+// an LTCG harness of the file alone popped it); the face pointer before the grid 81; y before x 75;
+// compound face scaling 61.
+// Round 34: face pointer and zero before the grid values 87; the three rows into locals, then the
+// stores 61; constant-first grid products and doubling 61; y before x 71; `1.f != face->scale` 61.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
@@ -148,6 +161,7 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 // Plain component loops (rows/normalization/output in seven subsets) 114/96/114/96/96/96/96; all
 // with complete normalized value 155 at 489 bytes. Row/output forms are 440 bytes; no count gain or
 // missing store/reload recovery. Original body and normalizer restored.
+// DL190: Whole face value/native output stores, setter, aggregate 175/175/205; memcpy face with the same boundaries 175/175/205. Original face with setter/aggregate 96/136. Complete face snapshot adds spills; grid reciprocal, last-component reload and output carriers remain. All restored.
 // @retail 0x195070
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {

@@ -96,7 +96,12 @@ static inline s_model_object *model_object_get(long object_index)
 // mov cl, byte ptr [ecx + edx], ours with [edx + ecx]; only the encoding
 // differs. Subscript, integer-sum, struct, declaration-order and clamp
 // variants stayed at 1; advancing the pointer scored 18, forming it later 58.
-// The 600 s permutation run found no improvement.
+// The 600 s permutation run found no improvement. Round 80: the count, then
+// `long i = 0;`, then the pointer (from a named offset or directly) 29 (base-first
+// load, but the offset load sinks below the size load and the loop takes
+// esi/ecx); the counter zeroed after the stores with the pointer formed after it
+// 69; the byte read as the object's bytes at offset + i 67 (78 with a named
+// offset); the byte read at the clamped index 24.
 // @retail 0x181cf0
 void function_181cf0(long model_index, long object_index, long *region_index, long region_name, long permutation_name, long *permutation_index)
 {

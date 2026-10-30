@@ -156,7 +156,12 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // current 16/40): early returns 21/42 (--fast 48); nested length test 16/40 (--fast 40);
 // `length >= start + count` 17/40; all 23 other parameter orders 16-17/40; a const method of the
 // text struct, with or without noinline, 18/41 (0xb5f10 then differs); no `volatile` with a
-// noinline declaration 22/34 (0xb5f10 differs).
+// noinline declaration 22/34 (0xb5f10 differs). Round 11 (relink screen, current form 42 there,
+// 0xb5f10 0): `string + start` or `&string[start]` 28 (start arrives in EDX, 0xb5f10 6); that body in
+// all 24 parameter orders with matching calls 28 each (0xb5f10 5-37, never 0); `start += string`
+// before the count clamp 38 (aligned 14, start in EDX again, 0xb5f10 6); `result` assigned after its
+// declaration 42 (same code); the clamped size as a ternary or a separate size local 53 (0xb5f10 104).
+// Retail evicts start to EDI so the scan counts in ECX, as 0xb61d0 does with its start in EAX.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -368,6 +373,11 @@ bool function_7af40(s_type_99af70 const *address);
 // open call reading the connection's endpoint again 111 (the split counter takes ebx, the address
 // then arrives in eax and 0xb40b0 stops matching). A compile-only copy without link-time code
 // generation splits the counter even with the copy written out, so it cannot screen this.
+// Round 33: with retail's endpoint reads (one read for the three stores, re-reads for the flag and
+// the open call) the body is retail's except the counter, split into load/inc/store in EBX, which
+// moves the address to EAX (111, 0xb40b0 lost); a compiled-out `do {} while (false)` after the
+// increment 32, with the reads 111; the copy helper with a dword size and the reads 111; the
+// failed open closing and returning first with the reads 101.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

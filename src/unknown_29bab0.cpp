@@ -120,6 +120,9 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 // Round 417: direct input, per-use heading/up receivers and planar-normalizer inline
 // declaration, seven subsets then all with staged cross: 903/803/891/803/903/803/891/803.
 // All executable source, helper calls and declarations restored.
+// Round 425: Direct input with collision-output flag/flag/vector lexical homes, all seven
+// subsets 803 each; all three with the false flag initialized at first use 805. Original
+// input access, query homes, initialization, helpers and complete body restored.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

@@ -108,6 +108,8 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // Negating the first -1 product 105f (2416 bytes, but retail multiplies there, not kept); `2 - x * (2/3)`
 // 145f; `/ 3.0f` 118f; contribution through the existing vector3f_add 141f, through vector3f_add_scaled
 // 139f; case-five dot3f arguments swapped 118f.
+// Tried (MiniMax B run 19): the case-four NONE store reached by a goto into the else branch's
+// clear 76; not kept (a goto is kept only with a byte match).
 // Earlier 138 (was 140): alignment/clear-join/contribution schedules remain; fast preview 144.
 // Read-only forward 144f; alignment snapshot 414f; named alignment 144f;
 // marker failure break 185f; in-place contribution 204f; scale result 149f;

@@ -671,11 +671,14 @@ bool function_c4970(long unit_index)
 }
 
 /* plays one of the globals' sounds at the object's marker 0x4000095 */
-// score 10 (was 10): BLOCKED-BY 0x189210, whose retail form takes the play record in edi
+// score 2 (was 2): only marker-immediate/play-address setup order differs; frame and callee registers agree.
+// Earlier at 10: BLOCKED-BY 0x189210, whose retail form takes the play record in edi
 // (ours pushes it); play fields tag first 10; named globals pointer 10; 0x189210 parameter
 // orders play first/middle 10/10; 0x189210 reading the play fields at entry 16 (80 bytes).
 // Full/partial/const aggregate records 10/10/10; entry record 10; lookup assigned in the test 10;
 // 0x189210 inline with test assignment/original body 10/10; noinline declaration 10.
+// Eight alternate label/tag/scale/variant schedules 2/4/5/4/5/4/5/4; direct tag-field lookup 11,
+// with scale/variant/label order 14; absent-tag early return 2, with scale/variant/tag/label order 5. Restored.
 // @retail 0xc5890
 void function_c5890(long object_index, short index)
 {
@@ -1569,21 +1572,13 @@ void function_ce470(long mode, long unit_index, long object_index)
    when the weapon has zoom levels (0x100fd0), else, unless the weapon's
    flag 0 at +0x12e forbids it, the next of the globals' count (NONE past
    the last) */
-// score 37 (was 37): Extra saved EBX/result carrier and unit/weapon/header scheduling remain.
-// Long result 38; entry short/long result 40/39; late result 45; explicit weapon arms 37;
-// byte flag 37; one result exit 44; long result plus explicit arms 38.
-// Masked unit/weapon/both lookups 37/37/37; masked unit/both with long result 38/38;
-// masked unit with late short/long result 45/44; both masked lookups plus byte flag 37;
-// explicit weapon arms with late short/long result 54/53, also 54/53 through masked unit lookup.
-// Original body restored.
 // @retail 0xc8960
 short function_c8960(long unit_index, short value)
 {
 	s_unit *unit = UNIT_GET(unit_index);
-	short index = unit->current_weapon_index;
-	short result = NONE;
 	bool flag = false;
-	long weapon_index = index != NONE ? unit->weapon_object_indices[index] : NONE;
+	long weapon_index = function_cbd50(unit_index, unit->current_weapon_index);
+	short result = NONE;
 
 	if (weapon_index != NONE)
 	{
@@ -1592,7 +1587,8 @@ short function_c8960(long unit_index, short value)
 		flag = *(definition + 0x12e) & 1;
 		if (function_100fd0(weapon_index))
 		{
-			return function_101010(weapon_index, value);
+			result = function_101010(weapon_index, value);
+			goto done;
 		}
 	}
 	if (!flag)
@@ -1604,6 +1600,7 @@ short function_c8960(long unit_index, short value)
 			result = value + 1;
 		}
 	}
+done:
 	return result;
 }
 
@@ -1682,39 +1679,29 @@ struct s_unit_flags_10a_view
 	word bit0 : 1;
 	word bit1 : 1;
 	word bit2 : 1;
-	word unknown3 : 5;
+	word unknown3 : 4;
+	word bit7 : 1;
 };
 
 /* the unit's death outside mode 4: clears its flags, applies the globals'
    damage at +0x144 to it and, unless flag 2 at +0x10a, marks it */
-// score 35 (was 35): retail clears flags 21 and 5 of +0x134 with two stores (the second from the
-// first's register) and flag 7 of +0x10a in memory, before it reads the globals; ours merges the
-// two clears. Flag 2 of +0x10a read through a word bitfield view gives retail's load and shift
-// (37); the globals read after the first clear 35. No effect: the clears through a dword or long
-// bitfield view (37); worse: the first clear through a fresh lookup 39, the second 67, all three 63.
-// Round 410: Shared bit-setter combinations for flags21/5/7 41/41/41/35/41/41/41; all setters with
-// globals first 38. Real primary-field bit views for the same seven combinations
-// 35/35/35/33/33/33/33; all with globals first 39 (172 bytes). The 33/180-byte forms gain only two
-// and are rejected. All bodies and primary field declarations restored; flag store/register order
-// and material publication remain.
 // @retail 0xcffc0
 void function_cffc0(long unit_index)
 {
 	if (g_4e6948->mode != 4)
 	{
 		s_unit *unit = UNIT_GET(unit_index);
-
-		unit->flags_134 &= ~0x200000;
 		byte *globals = *(byte **)((byte *)g_4e034c + 0x144);
 
-		unit->flags_134 &= ~0x20;
-		unit->flags_10a &= ~0x80;
+		bit_vector_set(&unit->flags_134, 21, false);
+		bit_vector_set(&unit->flags_134, 5, false);
+		((s_unit_flags_10a_view *)&unit->flags_10a)->bit7 = false;
 		if (globals && *(long *)(globals + 0x48) != NONE)
 		{
 			s_type_1e6529 damage;
 
-			function_d6660(&damage, *(long *)(globals + 0x48));
 			damage.material_index = NONE;
+			function_d6660(&damage, *(long *)(globals + 0x48));
 			function_d7b80(&damage, unit_index, NONE, NONE, NONE, 0);
 		}
 		if (!TEST_FIELD_BIT(((s_unit_flags_10a_view *)&unit->flags_10a)->bit2))
@@ -2325,7 +2312,8 @@ bool function_c7750(s_unit_motion const *motion, real position, real velocity, r
 
 /* once: sets the unit's flag 21 and a random angle at +0x2d8 around its
    actor's direction (or its own facing) */
-// score 5 (was 20): Frame 0xc versus 0x10 (retail keeps the atan2 temp in the query buffer's first dword,
+// score 5 (was 5): only frame 0xc versus retail 0x10 and the angle temporary home remain; x87 adds now agree.
+// Earlier at 20: Frame 0xc versus 0x10 (retail keeps the atan2 temp in the query buffer's first dword,
 // ours with range) and the last two x87 adds (retail adds the bound before the angle) differ; the query
 // writes a 12-byte vector, which the 8-byte buffer only gets away with here. Native vector, 12-byte scratch
 // and real[3] 23; bool flag 60; native/bool 60; outer workspace 23; field angle 57; random-first native/bool
@@ -2336,6 +2324,8 @@ bool function_c7750(s_unit_motion const *motion, real position, real velocity, r
 // declared at the top 5 each; range assigned before the atan2/store 50/53/38. Round 89: the buffer as a
 // vector3f/real[3]/point3f 10/10/10 (frame 0x14: no temp packs into a 12-byte local); vector3f with the
 // locals renamed four ways 10; the query test inverted 7; the angle wrap as a ternary 7.
+// Common selected-angle publication with byte/native-vector output, zero-angle initialization and fallback-range
+// initialization combinations 53/53/74/74/60/60/75/76. Original query buffer and body restored.
 // @retail 0xcfec0
 void function_cfec0(long unit_index)
 {
@@ -3300,8 +3290,10 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 
 /* the state of a unit's weapon use: 6 or 5 for the flags when asked, 7
    past the definition's limit at +0x114, else 3; otherwise 0xc96b0's
-   range (2 when forced, at most 1 when asked), held to 1 for players */
-// score 64 (was 64): Frame and lookups agree; first +0x2f has flag/b register roles and ret 0x14/0x18.
+   range (2 when forced, at most 1 when held), clamped to 1 for players */
+// score 58 (was 64): Frame and lookups agree; first +0x2f has flag/b register roles and ret 0x14/0x18.
+// Round 11 (lane 15): the range is clamped when held, as retail tests its third stack argument
+// (`[esp + 0x14]` after the pops), not b: 64 -> 58 (a behaviour fix; 0xc9e70 128 -> 121).
 // Round 175: held clamp 58 (possible operand fix; exact-only, restored); existing bit view 74;
 // common zero result 87; held/bit 58, held/result 92; actual bit/result 97, all three 88;
 // all test-derived results 89 at 292 bytes. Two duplicate generated forms excluded;
@@ -3345,7 +3337,7 @@ long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, bool h
 	else
 	{
 		result = range;
-		if (b && result > 1)
+		if (held && result > 1)
 		{
 			result = 1;
 		}
@@ -3420,13 +3412,6 @@ bool __stdcall function_cc460(long object_index)
 /* the unit's team (+0x138): its player's, else its actor's, else for a
    vehicle the team its riders share (riders in seats with bit 11 count
    apart; any disagreement leaves it NONE) */
-// score 14 (was 14): retail lays the final team test out with the team == NONE store first; the
-// tests nested or reordered stay at 14. Flag 2 of +0x10a through the word bitfield view 14 (the
-// earlier TEST_FIELD_BIT on it 111); flag 11 of the seat as a field bit.
-// Round 410: Final publication outside iterator admission: conditional value, disagreement
-// invalidation, branch-defined output and ordinary-first output 81/82/63/144; with both team
-// accumulators full width 86/88/78/148. All restored; final no-team publication/exit layout
-// remains.
 // @retail 0xc6990
 void function_c6990(long unit_index)
 {
@@ -3455,38 +3440,41 @@ void function_c6990(long unit_index)
 	s_object_child_iterator iterator;
 
 	function_d0620(&iterator, unit_index);
-	if (function_d0690(&iterator))
+	while (function_d0690(&iterator))
 	{
-		do
+		if (team != NONE && other_team != NONE)
 		{
-			if (team != NONE && other_team != NONE)
-			{
-				break;
-			}
-			s_unit *rider = UNIT_GET(iterator.child_index);
+			break;
+		}
+		s_unit *rider = UNIT_GET(iterator.child_index);
 
-			if (iterator.child_short != NONE && iterator.child_value != NONE)
-			{
-				s_unit_seat_definition *seat =
-					&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(iterator.child_value)))[iterator.child_short];
-
-				if (TEST_FIELD_BIT((*(dword *)&seat->flags >> 11) & 1))
-				{
-					other_team = rider->unknown138;
-				}
-				else
-				{
-					team = rider->unknown138;
-				}
-			}
-		} while (function_d0690(&iterator));
-		if (team != NONE && (team == other_team || other_team == NONE))
+		if (iterator.child_short != NONE && iterator.child_value != NONE)
 		{
-			unit->unknown138 = team;
-			return;
+			s_unit_seat_definition *seat =
+				&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(iterator.child_value)))[iterator.child_short];
+
+			if (TEST_FIELD_BIT((*(dword *)&seat->flags >> 11) & 1))
+			{
+				other_team = rider->unknown138;
+			}
+			else
+			{
+				team = rider->unknown138;
+			}
 		}
 	}
-	unit->unknown138 = NONE;
+	if (team == NONE)
+	{
+		unit->unknown138 = NONE;
+	}
+	else if (team == other_team || other_team == NONE)
+	{
+		unit->unknown138 = team;
+	}
+	else
+	{
+		unit->unknown138 = NONE;
+	}
 }
 
 /* the entry animation (of five) whose end point on the vehicle's seat is
@@ -5484,19 +5472,14 @@ void function_ce0c0(long unit_index)
    marker 0x500000a (type 0, when clear of the world), slightly above its
    center (type 1) or its center; then plays the impact sounds of what it
    hit */
-// score 1 (was 195): the whole function agrees except the operand order of the first unit lookup (retail
-// [ebx+edx+8] offset first, ours [edx+ebx+8]; the second lookup is pointer first in both). Case 1 of the
-// second switch placed before case 0, whose failed-marker path falls through into default (909 bytes, as
-// retail), the seat and weapon flag tests as field bits, the material word stored before 0xd6660 (which
-// then sets its default; behaviour change) and the cone direction copied after the event byte and
-// source index (5 without that) took it from 195. Tried for the lookup: headers in a local
-// (offset first for both lookups, 1), pointer-arithmetic and address-of forms (1), slot in a local (1),
-// second lookup written as byte arithmetic (1), a discarded extra lookup (1). Case orders of the old
-// switch had no effect (195); a `none` local for the sentinel had none (195).
 // @retail 0xcf040
 void function_cf040(long unit_index, short type)
 {
-	if (g_4e6948->mode == 4)
+	/* a volatile read of the mode: retail loads it into a register first, which sets the operand order
+	   of the unit lookup below */
+	char mode = *(char volatile *)&g_4e6948->mode;
+
+	if (mode == 4)
 	{
 		return;
 	}
@@ -6992,7 +6975,7 @@ struct s_unit_turn_state_view
 // schedulings. Tried: early returns instead of the nesting (411, the nested form 384 before the state view),
 // `volatile bool moved` (397: stack slot and frame match, but stores/loads are not retail's), scale*rate
 // operand order (no change), declaring old_flat/new_flat in the other order or at function scope (no change;
-// swapping the 11ce20 arguments moves the two flat vectors' slots to retail's).
+// 0x11ce20 takes the new aim first, as retail passes it in ECX at 0xc63be; the other order also scores 401).
 // @retail 0xc60c0
 bool __stdcall function_c60c0(long unit_index)
 {
@@ -7055,7 +7038,7 @@ bool __stdcall function_c60c0(long unit_index)
 			new_flat.k = 0.0f;
 			function_1201a0(&old_flat, g_4687b0);
 			function_1201a0(&new_flat, g_4687b0);
-			pitch_share = unit_turn_share(function_11ce20(&old_flat, &new_flat), step);
+			pitch_share = unit_turn_share(function_11ce20(&new_flat, &old_flat), step);
 		}
 		unit->unknown243 = (byte)(long)(yaw_share * 255.0f);
 		unit->unknown1f8 = (byte)(long)(pitch_share * 255.0f);
@@ -7132,6 +7115,10 @@ static void unit_vector_from_frame(vector3f *out, transform4x3f const *frame, ve
    a frame, when given), keeping an angular velocity: plans both angles'
    motions under a speed limit and an acceleration (0xc7300), evens them
    (0xc75d0), steps them (0xc7750), snapping when both are done */
+// score 700 (was 723): frame 0x94 versus retail 0x80, input staging, vector homes and prediction/call scheduling remain.
+// Paired role names 723; angular-velocity value 700 (kept); complete direction values 653; shared axes rotation 697;
+// shared final cross 723; direction plus velocity values 628 (rejected: lose matched 0x1e5af0), with names 628 (unconfirmed);
+// parallel predicted-angle results 723. The angular-velocity value alone preserves all matches.
 // @retail 0xc7840
 void function_c7840(vector3f const *desired, vector3f *current, transform4x3f const *frame, real rate, vector3f *velocity,
 	real const *limits, real max_speed, real acceleration)
@@ -7208,7 +7195,8 @@ void function_c7840(vector3f const *desired, vector3f *current, transform4x3f co
 	}
 	real yaw_speed = 0.0f;
 	real pitch_speed = 0.0f;
-	real speed = (real)sqrt(velocity->i * velocity->i + velocity->k * velocity->k + velocity->j * velocity->j);
+	vector3f angular_velocity = *velocity;
+	real speed = (real)sqrt(angular_velocity.i * angular_velocity.i + angular_velocity.k * angular_velocity.k + angular_velocity.j * angular_velocity.j);
 	if (!(0.0001f > (real)fabs(speed)) && speed != 0.0f)
 	{
 		real inverse = 1.0f / speed;
@@ -7218,9 +7206,9 @@ void function_c7840(vector3f const *desired, vector3f *current, transform4x3f co
 		real sine = (real)sin(angle);
 		real cosine = (real)cos(angle);
 
-		axis.i = inverse * velocity->i;
-		axis.j = velocity->j * inverse;
-		axis.k = velocity->k * inverse;
+		axis.i = inverse * angular_velocity.i;
+		axis.j = angular_velocity.j * inverse;
+		axis.k = angular_velocity.k * inverse;
 		real along = (axis.i * local_263186.i + axis.k * local_263186.k + axis.j * local_263186.j) * (1.0f - cosine);
 		predicted.i = local_263186.i * cosine + along * axis.i -
 			(local_263186.j * axis.k - local_263186.k * axis.j) * sine;

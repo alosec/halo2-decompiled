@@ -622,6 +622,9 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // Round 262: complete vector setter at requested direction/turn input/both
 // 176/147/168; completed output workspace 130; workspace plus requested/turn/both
 // 176/147/168; direct final setter 147 (828 bytes). Original body restored.
+// Round 77: horizontal array view 130; facing array fields 130; turned array stores 130; direct array output 147;
+// combined array views 130; horizontal pointer 137; immutable magnitude 130; immutable normalized scalars with
+// direct output 147. Original body restored.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {
