@@ -254,6 +254,23 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // keeps retail's EDI node and EDX source only when its node read re-derives the buffer base
 // (the full base expression at each access, or the node read through it) instead of keeping
 // base and index live.
+// indexed/pointer 175/62; with format 4 indexed, the format read into a local 175, one node store after the switch 187, the index read directly 175 (the source still arrives
+// on the stack, the switch index in EDI, the node in EBX); the buffer pointer read at each use 190;
+// the index read through its own address (index_reference) dropped 62 (index stays on the stack: kept);
+// format 3 indexed 60 (retail's format-3 code exactly, EBX for the offset); a shared node store after
+// the switch with formats 3/4 returning 172, with format 4 indexed 175. One-file LTCG harness: only the
+// format-4 form decides the convention (removing any other case never flips it); format 4 keeps
+// retail's EDI node and EDX source only when its node read re-derives the buffer base (the full base
+// expression at each access, or the node read through it) instead of keeping base and index live.
+// Round 38 (lane 9), format 4 indexed through a `vertices` local (175: switch temp/base in EDI, node
+// in EBX, source on the stack): the base read through `source->buffer` 97 (node back in EDI, source
+// and buffer then in EBP/ESI); a byte base pointer cast per access 175; the node read through a
+// re-derived `buffer` base 192 (636 bytes) or `source->buffer` base 175.
+// Round 120 (format 3 indexed in each): format 4 with the full base expression at each access 105 (636
+// bytes: the base is re-derived after the point stores); a byte data local cast to the record array
+// 175; the node read with a long cast 175; `node != NULL` 175 (each with the node in EBX and the source
+// on the stack); formats 2 and 3 indexed with the format-4 pointer 60. Parameter reorders need the
+// caller in src/structures.cpp.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)

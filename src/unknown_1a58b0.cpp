@@ -852,6 +852,12 @@ void function_25aba0(long actor_index);
 // Diagnostics: a different state-one decrement leaves kind-2 fused on the chain, and a different
 // kind-2 decrement leaves state-one fused on the continue form, so the two pops aren't merged; the
 // choice looks like the allocator's (a temporary register or a memory operand for the decrement).
+// Round 99 (lane 6), on the kept body: the first enabled test through the handler local, as the
+// next-handler test is written, 69 (identical); kind-2 failure with the state store first 69 (aligned
+// 18: only that arm's store order moves, the state-one pop stays `dec [mem]`); the state-one stamp
+// through the table 69; `current` from `&owner->slots[level]` 69; `current` declared before the
+// handler 159 (966 bytes). The entry registers follow 0x1a7b30's own ESI/EDI colouring (its result
+// pointer arrives in ESI, retail EDI).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
@@ -1854,7 +1860,8 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 	return (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 }
 
-// score 85 (was 85): frame 0xf0 and prefix through +0x102 agree; query carriers, optional transform and exits differ.
+// score 85 (was 85): Frame 0xf0 and prefix agree; query address/name ranks, optional matrix conversion and count/exit homes remain.
+// Earlier: frame 0xf0 and prefix through +0x102 agree; query carriers, optional transform and exits differ.
 // Earlier: frame 0xf0 agrees; the marker loop's query carriers and the optional second
 // matrix (retail: a nullable marker selected before the capacity test, then null-tested) differ.
 // With a selector local (allowed only with a match) 13, plus a marker list local 11 at 565 bytes;
@@ -1908,6 +1915,9 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 // Descriptor reference across nullable conversion: pointer/reference table, mutable/readonly
 // descriptor and iteration/entry query output all 13 at 565 bytes. Exact-only selectors restored;
 // query and count ranks remain.
+// Round 223: one metadata bound on the original indexed loop plus nullable second record; long/short query
+// 108/96, also with readonly descriptor, earlier index declaration and both 108/96 each. All exact-only
+// forms restored; query/count ranks and nullable conversion remain.
 // Round 418: initial test count 111; marker test count 164; both test counts 166; both result count 166;
 // nullable initial count 111; nullable marker count 145; nullable both counts 152; nullable result count
 // 152. query/name carriers, optional matrix conversion and count/exit allocation remain.

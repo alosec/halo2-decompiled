@@ -34,13 +34,17 @@ __int64 timing_counter_resume(timing_counter *c)
 }
 
 // score 4 (was 4): identical body and length; our prologue stores the first delta
+// zero before pushing esi, while retail pushes esi first and then stores both
+// zero dwords. The permuter found no better variant. The tick local zeroed by
+// memset 50 (stores dropped); a volatile double 10; a volatile LARGE_INTEGER
+// `= { 0 }` 50; total and stopped declared volatile in the struct 34 (push esi
+// first, then a push edi); stopped alone 4; total alone 34.
 // identical body and length; our prologue stores the first
 // delta zero before pushing esi, while retail pushes esi first and then stores
 // both zero dwords. Every spelling of the reader and of the caller ties at 4,
 // and the permuter found no better variant; only a barrier or a volatile
 // anchor gives retail's order, and both are barred.
 // score 4: identical body and length; our prologue stores the first delta
-// zero before pushing esi, while retail pushes esi first and then stores both
 // zero dwords. The permuter found no better variant.
 // Round 41: reversed total addition 4; branch-duplicated totals 26; branch-duplicated
 // total/stopped stores 24; explicit false guard 4; const pointer formal 4; entry total
@@ -50,6 +54,10 @@ __int64 timing_counter_resume(timing_counter *c)
 // default/cdecl/stdcall reader 77/77/77 (resume loses its match). Original restored.
 // Scoped stop stdcall/cdecl 4/4; unsigned result with default/stdcall/cdecl 4/4/4;
 // only the queued signature and its existing caller declaration changed, then restored.
+// zero dwords. The permuter found no better variant. The tick local zeroed by
+// memset 50 (stores dropped); a volatile double 10; a volatile LARGE_INTEGER
+// `= { 0 }` 50; total and stopped declared volatile in the struct 34 (push esi
+// first, then a push edi); stopped alone 4; total alone 34.
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {

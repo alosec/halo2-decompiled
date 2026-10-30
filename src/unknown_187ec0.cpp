@@ -246,6 +246,14 @@ struct s_seat_animations
 // 0x188130 17); with animation read once through its address 52 (retail's code with animation/count/element
 // in EBX/EBP/EAX for retail's EBP/EAX/EBX; no declaration order, counter or flag type, compare order or loop
 // spelling rotates them); with the guard 76 (0x188130 17), with count first 79, its if/else spelling 79.
+// Round 120: ours computes the getter's element address in ECX (`add ecx, esi`) and copies it out; retail
+// forms it in element's register (`lea ebx, [ecx + esi]; test ebx, ebx`), as in 0x1882d0. Getter shapes
+// (byte offset, elements local, inverted early return or ternary, else arm, long index, index + elements)
+// keep the add. `while (s_globals_element *element = ...)` with the per-arm entry and the guard 79
+// (155 bytes: animation in EBP, element spilled, result in EAX); that with the address read and no guard
+// 52; the getter in a for loop's init and step 164 (243 bytes); the while declaration with the entries
+// pointer, no guard and the break before the parent step 63 (185 bytes); animation before type in the
+// parameter list with the address read 52.
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, c_type_47f957 element_index)
 {
@@ -456,7 +464,9 @@ bool function_172750(long mode, point3f const *point, real radius);
 /* element_index starts the parent walk of 0x1882d0's fallback lookup, and
    entry_element_index (the fifth argument, which retail reads into esi) is
    the element whose values and seat entries are looked up */
-// score 118 (was 118): frame 0x1c agrees; tag/remapped-index ownership and the dead-argument output home remain.
+// score 118 (was 118): frame 0x1c agrees; tag/remapped-index ownership and the dead-argument output home remain
+// (ret 0x28 against 0x30: the entry index arrives in eax, the tag index on the stack; retail passes only the
+// tag index, in ebx).
 // Earlier: frame 0x1c agrees; tag/remapped-index registers and output homes remain.
 // Earlier forms and observations:
 // Defaults before element 175; index before element 165; both before element 151;
@@ -481,6 +491,10 @@ bool function_172750(long mode, point3f const *point, real radius);
 // existing material class for the 4th/5th parameters (and 0x1882d0's) it matches (fast;
 // tag index in EBX, first index on the stack): BLOCKED-BY the declarations in src/impacts.cpp
 // and src/projectiles.cpp, which name the old parameter types.
+// Round 21: in the all-stack first pass the entry index is loaded once at entry into a free register (so
+// LTCG makes it the register argument) in every source order tried: element lookup moved to its use 191;
+// both entry pointers declared at the top 170; second entry declared first 118; first index as an if
+// statement 118; first index computed inside the distance arm 124.
 // Round 420: first payload defaults 193; second payload defaults 151; both payload defaults 176; variant
 // defaults 184; first payload and variants 175; second payload and variants 175; all defaults 193; all
 // defaults and type outcomes 172. Original body restored.

@@ -2961,6 +2961,10 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // bool helper owning the short 167 (stays a call; frame 0x38), force-inlined 145 (frame 0x38, flags
 // still at +2/+3, and LTCG then inlines 0xe70b0, which retail calls). Declared first, between or
 // before the flags: identical under --fast.
+// Round 85: flags cleared before a ternary animation lookup 210; force then result between the NONE
+// default and the lookup's test 207; only the result declared first 207; the lookup table read at each use
+// 44 (same code); the overlay pointer declared before the flags 44 (same code). The return-type fix stays
+// blocked: 0xe70b0's caller 0xc98a0 is contributor code.
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)

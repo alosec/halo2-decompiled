@@ -68,7 +68,8 @@ static __forceinline void capsule_update_1e55d0(c_z_shape_view *shape, byte *com
 	else *(dword *)out &= ~2;
 }
 
-// score 319 (was 319): retail's aligned frame (and esp, -16; 0x94) and prologue. Left: the move and
+// score 319 (was 319): Aligned 0x94 frame agrees; move/input register ownership, physics reloads and velocity null test remain.
+// Earlier: retail's aligned frame (and esp, -16; 0x94) and prologue. Left: the move and
 // input pointers trade EBX and EDI (retail move EBX, input EDI, physics read from its stack slot at
 // each use; ours keeps physics in ESI), and the inlined 0xb77d0 lacks retail's velocity null test
 // (1176 bytes against 1164).
@@ -134,6 +135,9 @@ static __forceinline void capsule_update_1e55d0(c_z_shape_view *shape, byte *com
 // component-shape/flags-shape/all/output-first contracts 319/319/319/319/319/319/319/319.
 // All original contracts restored; aligned frame retained, move/input/physics
 // ownership and the velocity null test remain.
+// Round 223: existing complete velocity updater on the aligned-helper graph, with fallback-kind/step/both,
+// 374/386/370/382; each with direct state/input parameters 374/386/370/382. Updater stays out of line;
+// original aligned capsule helper, expanded motion update and complete body restored.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {

@@ -147,6 +147,9 @@ static __forceinline void world_vector_to_view(real arg_0, vector3f const *arg_1
 // Round 205: scale-output-input and output-scale-input helper orders, each
 // void/returned-output/output-reference/both-reference contracts, all eight 221.
 // All existing helper formals and both real calls restored; extra frame dword remains.
+// Round 304: complete camera ownership, separate/camera-owned scale: helper-local 334/375;
+// by-value 334/375; caller pointer 361/344; caller reference 361/344.
+// Original camera observations, helper and body restored; extra frame dword remains.
 // @retail 0x501e0
 void function_501e0(s_501e0 const *arg_0, bool arg_1, s_501e0 *arg_2)
 {
