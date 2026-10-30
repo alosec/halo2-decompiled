@@ -495,6 +495,9 @@ static inline dword surface_random()
 // Round 401: uniform seed receiver, time receiver and both 160/160/160; projection before cross on
 // shared-random graph 174, with seed/time/both 174/174/174; both receivers and commuted time
 // factors 174. Original complete body restored; frame and rotation scheduling remain.
+// Round 412: Staged cross 160; native old-direction setter 187; native axis setter 199; staged/old
+// 187; staged/axis 199; both setters 208; all producers 208; all with alternate random contract
+// 208. All restored.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {

@@ -667,6 +667,10 @@ bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center,
 // Round 191: native byte success with completion/ordinal/segment scalar identity groups,
 // all eight subsets 754 each. Lexical scalar identities do not recover the byte/word
 // homes; original dword success and all original identities restored.
+// Round 203: Actual geometry producers: existing point setter, all complete point memcpy transfers,
+// prior-direction memcpy, and all seven nonempty combinations 675 each; complete memmove graph 779/2942
+// bytes. Geometry transfers canonicalize without recovering byte success, radius/pathfinding ownership or
+// scalar homes. Original body, helpers, copies and all five native forward indices restored.
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,

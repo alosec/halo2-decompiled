@@ -752,6 +752,11 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // exactly (32 at 823 bytes; not kept: a record that only groups locals). The 'lsnd' case still
 // holds the entry flags in eax and the tag base in ecx (retail the reverse). Tried: the tag lookup
 // before the entry flags 78 (fast; baseline fast 67); alternate as an if/else-if chain 133; state
+// before alternate in the looping arm 67; the group switch as if/else-if 114; renaming either
+// local 67 (no slot moves: names do not order this frame); the two declared the other way round
+// 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry
+// flags read at each use 78. Screened (one-file LTCG): declared at the top, the definition or tag
+// index declared earlier, the definition read at each use: the bool stays at the bottom.
 // before alternate in the looping arm 67; the group switch as if/else-if 114.
 // DL180 fast previews: dword flags/long state 199; dword flags/char state 192; word flags/long
 // state 151; word flags/char state 162; byte flags/long state 193; byte flags/char state 195;
@@ -762,6 +767,15 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry
 // flags read at each use 78. Screened (one-file LTCG): declared at the top, the definition or tag
 // index declared earlier, the definition read at each use: the bool stays at the bottom.
+// Round 5 (fast previews; baseline fast 67): the bool renamed to sort first or last 67 each (same
+// frame); a byte flag 140; a char repeat state 190; the existing sound-system availability helper
+// for the three locals of the 'snd!' case 156 (816 bytes); the definition read from the effect at
+// each use 188. A compile-only frame listing reproduces our slot order (bool at the bottom, then
+// sound flags, effect, state, controller, index, rate stage, definition, listener, repeat state,
+// tag) and shows it unchanged under the bool's declaration order, initialisation, `!= 0` or ternary
+// spellings and statement orders; only dropping the definition local moves the bool among the
+// dwords. Retail's order: sound flags, effect, entry offset, controller, state, index, rate stage,
+// repeat state, bool, listener, tag, definition.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {
