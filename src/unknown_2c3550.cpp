@@ -447,6 +447,11 @@ short __stdcall avoidance_expand_obstacle(s_pathfinding_data const *pathfinding,
 // Left: the movement x product (retail copies the distance and folds direction.x; ours loads
 // direction.x). Tried: the scale helper with the distance by reference or pointer and x first 22;
 // the trace declared first or before the direction pointer 21; `&node->direction` passed to it 21.
+// The movement scaled in place from a copy of the direction 162; the point moved through
+// avoidance_point_along2d in place 134; a named distance local with the two products written
+// out 21; the products added straight into the point 134; the helper scaling its output in
+// place 134. A compile-only build gives our load forms for every helper and statement
+// spelling; matched 0x25eea0 gets the copy form from a computed local (`nt * direction->k`).
 // @retail 0x2c3d40
 bool avoidance_search_step(s_avoidance_search *search, s_pathfinding_data const *pathfinding, bool allow_partial)
 {
