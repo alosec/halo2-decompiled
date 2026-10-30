@@ -166,6 +166,8 @@ static inline real interpolate_linear(real a, real b, real t)
 	return (b - a) * t + a;
 }
 
+// score 96 (was 96): the advance loop still rotates the direction, frame and flags through
+// EAX, ECX, EDX and EDI where retail keeps its own order; the else branch matches exactly.
 // score 96 (was 96): Frame 0x10 and timing setup agree; the advance loop is retail's with EAX, ECX and
 // EDX rotated (direction EAX for ECX, frame/flags ECX for EDX, the flag-2 test EDX for EAX), and retail
 // divides the fraction before the key differences. Round 87: fraction before the keys/between keys and
@@ -224,6 +226,9 @@ static inline real interpolate_linear(real a, real b, real t)
 // Round 79: fraction-first with outer next time 206; active fraction scope 206; outer elapsed 206;
 // outer frame time 206; outer next with active fraction 206; all outer timing 206;
 // sum-only/full per-iteration direction on that graph 206/206. Original 96 body restored.
+// Round 233: native full-width signed count/current/both/direction/count-direction/current-
+// direction/all three/all plus duration fields: 96/96/96/96/96/96/96/96. Original shared field
+// declarations and body retained; direction/frame and lookahead/fraction homes remain.
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {

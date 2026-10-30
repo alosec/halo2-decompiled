@@ -8,6 +8,7 @@
 #include "unknown_1a58b0.h"
 #include "object_markers.h"
 #include "vector_products.h"
+#include "squads.h"
 
 /* ---- views of the data used below ---- */
 
@@ -57,6 +58,14 @@ struct s_definition_view
 	byte unknown8c[0xd4 - 0x8c];
 };
 
+/* the tag that holds a set of 0x83 slot types (the definition's tag_index88,
+   a tag element's tag_index, a character's +0x20) */
+struct s_type_mask_definition
+{
+	byte unknown00[0x38];
+	dword enabled_types[5];
+};
+
 struct s_sort_element
 {
 	long identifier;
@@ -76,7 +85,7 @@ struct s_sort_element
 
 /* ---- callees ---- */
 
-void bit_vector_intersect(long bit_count, dword *a, dword *b, dword *result);
+void bit_vector_intersect(dword *result, dword *a, dword *b, long bit_count);
 
 /* ---- globals ---- */
 
@@ -634,6 +643,9 @@ void function_1a6d80(void)
 // const node-list pointer/handler local 6/6.
 // Count at each use 53; table value snapshot 27; validity from a false-default test 52;
 // success/failure output arms 15/15; native group snapshot 26; word count 6; true-default test 79.
+// Round 88: call result local with the count stored first 6 (retail's ECX/EDX pointer registers,
+// but the count store comes first); count stored before the call 12; handler index read in the
+// call 26; output pointer locals 6; forceinline output setter 6.
 // @retail 0x1a73c0
 s_action_node **function_1a73c0(long owner_index, short id, bool *valid, short *count)
 {
@@ -735,45 +747,23 @@ dword function_1a7ad0(long owner_index)
 	return (1 << owner->unknown086_byte) | ((1 << (byte)shift) << 10);
 }
 
-// score 96 (was 96): owner/output register ranks, fallback base and first intersection setup still differ.
-// Earlier: Owner/output register ranks, fallback base and intersection schedule still differ;
-// aggregate selection 119; initial/default bitset values 190/167; shared intersection 109;
-// aggregate plus shared intersection 144; common return, fallback handle, phased table 96 each.
-// owner/output register ranks, fallback-base LEA and intersection setup differ.
-// Nullable definition 81 (adds a null branch); typed fallback 96; both 81;
-// const owner, definition, source, tags and object/element views 96 each;
-// ordinary shared source copy 143; shared copy with owner tag 143.
-// BLOCKED-BY 0x1c2330 (its parameter order sets the first intersect call's set-up);
-// the two tail-merged copies swap the owner/result registers and the squad element is one lea.
-// Owner definition read once 94 (390 bytes); squad arm and default arm swapped 101; copies without
-// the source local 153; nullable definition pointer tested 123; source/definition declarations
-// swapped 96; both declared before the owner 96.
-// Every-use tag table with indexed/direct definition, native/library copy and primary/fallback-first region: eight combinations 96 each.
-// Overlap-safe primary/fallback/both transfers 165/166/140; both with every-use tags, readonly
-// source, separate primary scope, default-first fallback or indexed definition 138/140/140/121/140.
-// Original transfers restored.
-// Round 418: actor record 96; primary bits record 96; actor/primary records 96; fallback bits record 96;
-// actor/fallback records 96; both bits records 96; all records 96; readonly all records 96. owner/output
-// ranks, separate fallback base and intersection setup remain.
 // @retail 0x1a7b30
-void function_1a7b30(s_flag_bits *result, long owner_index)
+void function_1a7b30(long owner_index, s_flag_bits *result)
 {
 	s_actor_view *owner = actor_get(owner_index);
 	s_tag_instance *tags = g_4e3b44;
-	s_flag_bits *source;
 	s_definition_view *definition;
 	long index = owner->unknown858;
 
 	if (index != NONE && (definition = (s_definition_view *)(g_502408->data + (index & 0xffff) * sizeof(s_definition_view)))->unknown86)
 	{
-
-		source = (s_flag_bits *)(tags[definition->tag_index88 & 0xffff].bytes + 0x38);
-		*result = *source;
+		s_type_mask_definition *mask = (s_type_mask_definition *)tags[definition->tag_index88 & 0xffff].bytes;
+		memcpy(result, mask->enabled_types, sizeof(*result));
 	}
 	else if (owner->unknown030 != NONE)
 	{
-		source = (s_flag_bits *)(g_51e9d8->data + (owner->unknown030 & 0xffff) * 0x98 + 0x84);
-		*result = *source;
+		s_squad_datum *squad = squad_get(owner->unknown030);
+		memcpy(result, squad->enabled_types, sizeof(*result));
 	}
 	else
 	{
@@ -787,26 +777,26 @@ void function_1a7b30(s_flag_bits *result, long owner_index)
 
 		if (element && element->tag_index != NONE)
 		{
-			bit_vector_intersect(0x83, (dword *)(tags[element->tag_index & 0xffff].bytes + 0x38), result->d, result->d);
+			bit_vector_intersect(result->d, ((s_type_mask_definition *)tags[element->tag_index & 0xffff].bytes)->enabled_types, result->d, 0x83);
 			return;
 		}
 	}
 
-	long other = *(long *)(tags[owner->unknown054 & 0xffff].bytes + 0x20);
+	byte *owner_definition = tags[owner->unknown054 & 0xffff].bytes;
 
-	if (other != NONE)
+	if (*(long *)(owner_definition + 0x20) != NONE)
 	{
-		bit_vector_intersect(0x83, result->d, (dword *)(tags[other & 0xffff].bytes + 0x38), result->d);
+		bit_vector_intersect(result->d, result->d, ((s_type_mask_definition *)tags[*(long *)(owner_definition + 0x20) & 0xffff].bytes)->enabled_types, 0x83);
 	}
 }
 
-short actor_behavior_get_insert_level(short type, short slot, s_slot_owner_entry *entry);
+short actor_behavior_get_insert_level(short type, s_slot_owner_entry *entry, short slot);
 bool function_1a80e0(long index, short type, s_slot *data, short slot);
 void function_25aba0(long actor_index);
 
 
 
-// score 69 (was 69): frame 0x4c agrees; actor/result ESI/EDI (0x1a7b30's result arrives in ESI,
+// score 58 (was 58): only the state-one pop and the `= {0}` workspace remain (aligned 7); earlier: actor/result ESI/EDI (0x1a7b30's result arrives in ESI,
 // retail EDI), the state-one level pop (ours `dec [mem]`, retail load/dec/store around the handler
 // store), the `= {0}` workspace (retail clears it as a memset, rep stosd x16) and 0x1a8080's argument
 // set-up order differ. memset plus 0x1a8080 as (type, owner, level) leave only the entry registers and
@@ -858,6 +848,18 @@ void function_25aba0(long actor_index);
 // through the table 69; `current` from `&owner->slots[level]` 69; `current` declared before the
 // handler 159 (966 bytes). The entry registers follow 0x1a7b30's own ESI/EDI colouring (its result
 // pointer arrives in ESI, retail EDI).
+// Round 88: 0x1a7b30 now matches with retail's owner ESI / result EDI, and the entry follows it
+// (69 -> 62); 0x1a7b30 as (owner_index, result) and 0x1a8080 as (type, owner, level), each consistent,
+// give retail's set-up order at both calls (58). With the memset workspace on top: 957/957, aligned 8,
+// only the state-one pop left (positional 134). On that base, the pop-or-stamp-first order of the
+// state-one, kind-2 failure, choice failure and next-handler failure arms (16 combinations tried, 9
+// measured): the state-one arm splits as retail only when another arm fuses or a choice-failure pop
+// splits too (43-137); stamping through the handler table in each arm 81-314; `--level`, `level = level - 1`,
+// kind-2 state store first and the else-if chain 134 each.
+// DL199: Shared parent-level short/int/long/dword gives 321/285/285/285; with the library
+// workspace clear 330/292/292/292. The common value changes loop and frame allocation; original
+// 0x4c frame, six pops and aggregate workspace restored. State-one split decrement and zero-fill
+// remain.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
@@ -865,7 +867,7 @@ void __stdcall function_1a7cc0(long actor_index)
 	short level = 0;
 
 	g_46f348++;
-	function_1a7b30((s_flag_bits *)g_557c40, actor_index);
+	function_1a7b30(actor_index, (s_flag_bits *)g_557c40);
 	g_4ee4ec = function_1a7ad0(actor_index);
 	memset(g_4f0a4c, 0, sizeof(g_4f0a4c));
 	for (short i = 0; i < 3; i++)
@@ -979,7 +981,7 @@ void __stdcall function_1a7cc0(long actor_index)
 			continue;
 		}
 
-		short local_0 = actor_behavior_get_insert_level(choice, level, (s_slot_owner_entry *)owner);
+		short local_0 = actor_behavior_get_insert_level(choice, (s_slot_owner_entry *)owner, level);
 
 		if (local_0 != NONE && function_1a80e0(actor_index, choice, &data, local_0))
 		{
@@ -1215,7 +1217,7 @@ PRIVATE __forceinline void function_1a68a2(vector3f const *arg_0, real arg_1, ve
     arg_2->k = arg_0->k * arg_1;
 }
 
-// score 2 (was 18): the returned point is copied from EAX before the body load;
+// score 2 (was 2): the returned point is copied from EAX before the body load;
 // retail loads the body and then copies the point from ESI. The frame and projection agree.
 // Sampling name 18; vector names 18; vectors declared first 18; const unit 18;
 // saved body count 124; workspace memcpy 18; indexed output 23; const component 18.
@@ -1233,9 +1235,13 @@ PRIVATE __forceinline void function_1a68a2(vector3f const *arg_0, real arg_1, ve
 // Round 127: validated query index 99; sampled-point result 128; both 136;
 // enclosing point lifetime 128; branch-local last body 2; last body with query index 99;
 // named validation 2; validation with query index 99.
-// score 2 (was 2): returned EAX/body-load order remains; const point 18; returned reference 128;
+// Later: const point 18; returned reference 128;
 // address of returned point/direct body 2/2; clamped body 99; early normal 2; workspace fields 5;
 // samples name 2; early normal with const point/direct body 18/18.
+// Round 88: BLOCKED-BY 0x1d0a20 (its parameter order: with velocity before point, retail's
+// `mov ecx, esi` follows; its file is held this round). Statement point query with the
+// address 18; point pointer local 18; body re-read at the call 2; statement query plus body
+// re-read 18; velocity pointer local 2.
 // @retail 0x1a68a0
 void function_1a68a0(long object_index, vector3f *velocity)
 {
@@ -1860,67 +1866,6 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 	return (s_target_link_definition *)g_4e3b44[object->definition_index & 0xffff].bytes;
 }
 
-// score 85 (was 85): Frame 0xf0 and prefix agree; query address/name ranks, optional matrix conversion and count/exit homes remain.
-// Earlier: frame 0xf0 and prefix through +0x102 agree; query carriers, optional transform and exits differ.
-// Earlier: frame 0xf0 agrees; the marker loop's query carriers and the optional second
-// matrix (retail: a nullable marker selected before the capacity test, then null-tested) differ.
-// With a selector local (allowed only with a match) 13, plus a marker list local 11 at 565 bytes;
-// left: the marker address (retail [base+offset] load, then an in-place add) and count loaded into
-// ecx before the selector. Earlier: the first candidate named inside the count test kept (98 -> 85
-// with candidate indexed by accepted count); positive-count guard around the loop 93 (not kept).
-// Direct count increment 121; native short query 129; shared exit 131; direct optional transform
-// 115; positive marker count 129; combined increment/transform 113; combined short query 114;
-// direct count cleanup 113; two-phase candidate cursor 125; marker/table/both records 113 each;
-// cursor with marker record 125; cursor with native query 129; cursor with positive table 126;
-// separate count result 169; initial candidate lifetime 98; marker presence 113; weighting value
-// 120; optional matrix value 173; readonly tag/capacity value/scalar names 113 each; initialized
-// marker output 209; initial candidate plus weighting 109; post-query candidate 85; native query
-// there 86; existing tag helper 161; first candidate record 98; post-query marker
-// record/workspace 85 each; tag helper plus post-query candidate 161; selector branches/before
-// presence 80/80; native query count 73; index name/shared marker buffer 13/13; weight result 67;
-// combined eligibility 80; accepted-count snapshot after/before query 13/13; query name first/with
-// count 12/12; native marker value before/after query 100/110; library copies 100/110; native
-// query width 126/128; shared descriptor 100; late copy with shared outputs 110; name local before
-// the marker 12; marker after the query 11; marker by pointer arithmetic 85 (with selector 13: the
-// in-place add appears, offset/name in ecx/edx); if-assigned selector 80; matrix local 85;
-// capacity tested before the selector 85; named candidate before/after the selector 13/13.
-// call argument setup, marker-loop homes and terminal epilogues still differ.
-// Kept: the first candidate named inside the count test (98); with a repeated positive-count guard
-// around the marker loop 93 (not kept: a test the loop already makes).
-// Direct count increment 121; native short query 129; shared exit 131; direct optional transform 115.
-// Positive marker count 129; combined increment/transform 113; combined short query 114; direct count cleanup 113.
-// Two-phase candidate cursor 125; marker/table/both records 113 each; cursor with marker record 125;
-// cursor with native query 129; cursor with positive table 126; separate count result 169.
-// Existing helper argument setup, marker-loop homes and terminal exits still differ.
-// Initial candidate lifetime 98; marker presence 113; weighting value 120; optional matrix value 173;
-// readonly tag/capacity value/scalar names 113 each; initialized marker output 209.
-// Initial candidate plus positive table 93 kept; initial candidate plus weighting 109.
-// Initial helper setup now agrees through +0x102; marker call setup and exits still differ.
-// marker setup, optional transform and exits still differ after +0x102.
-// Candidate indexed by accepted count 85 plain kept; post-query candidate 85; native query there 86;
-// existing tag helper 161; first candidate record 98; post-query marker record/workspace 85 each;
-// tag helper plus post-query candidate 161.
-// Round 277: nullable second-marker base 13 at retail length; branches/before presence 80/80;
-// native query count 73; index name/shared marker buffer 13/13; weight result 67; combined eligibility 80.
-// Accepted-count snapshot after/before query 13/13; query name first/with count 12/12; selectors require a match.
-// frame 0xf0 agrees; query carriers and optional matrix conversion remain;
-// native marker value before/after query 100/110; library copies 100/110; native query width
-// 126/128; shared descriptor 100; late copy with shared outputs 110.
-// query base/offset and accepted-count/selector registers remain.
-// Complete query inline 85; nullable-record query inline/outlined, geometry/weight/both/all/outlined contracts 13 each;
-// loop/iteration list 165/11; shared candidate 13; iteration/loop list with candidate 11/165; const/native query list 11/11; native query candidate 13;
-// list accepted count after/before 11/11; list next count 127; post-query marker advance 11, with accepted counts 11/11;
-// marker advance with next count/candidate-next 123/127. Loop-wide lists lose the matched caller; every nullable selector remains exact-only and is rejected.
-// Actual descriptor cursor with nullable record: native/short query [165, 168]; shared output [165, 168]; metadata bound [169, 171]; both [169, 171]. All exact-only forms restored.
-// Descriptor reference across nullable conversion: pointer/reference table, mutable/readonly
-// descriptor and iteration/entry query output all 13 at 565 bytes. Exact-only selectors restored;
-// query and count ranks remain.
-// Round 223: one metadata bound on the original indexed loop plus nullable second record; long/short query
-// 108/96, also with readonly descriptor, earlier index declaration and both 108/96 each. All exact-only
-// forms restored; query/count ranks and nullable conversion remain.
-// Round 418: initial test count 111; marker test count 164; both test counts 166; both result count 166;
-// nullable initial count 111; nullable marker count 145; nullable both counts 152; nullable result count
-// 152. query/name carriers, optional matrix conversion and count/exit allocation remain.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)
@@ -1945,12 +1890,14 @@ long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool 
 		for (long marker_index = 0; marker_index < table->count; marker_index++)
 		{
 			s_target_marker *marker = &table->markers[marker_index];
+			long name = marker->name;
 			s_object_marker markers[2];
-			long marker_count = function_b8d30(object_index, marker->name, markers, 2, false);
+			long marker_count = function_b8d30(object_index, name, markers, 2, false);
 			if (marker_count != 0)
 			{
+				s_object_marker *second = marker_count == 2 ? &markers[1] : NULL;
 				if (count < 64 && function_1a5e40(object_index, alternate, marker_index, marker,
-					&markers[0].matrix, marker_count == 2 ? &markers[1].matrix : NULL,
+					&markers[0].matrix, second ? &second->matrix : NULL,
 					origin, direction, &candidates[count]) &&
 					function_1a60f0(&candidates[count], weights, marker->field_10 * scale))
 				{
@@ -2100,8 +2047,9 @@ PRIVATE inline long function_1a67f1(long arg_0)
 	return local_0;
 }
 
+/* the target's radius is passed but not used */
 // @retail 0x1a67f0
-byte function_1a67f0(point3f const *arg_0, point3f const *arg_1, long arg_2, long arg_3)
+byte function_1a67f0(real radius, point3f const *arg_0, point3f const *arg_1, long arg_2, long arg_3)
 {
 	s_1a67f0 local_0;
 	local_0.field_24 = NONE;
@@ -2128,17 +2076,10 @@ struct s_1a5370
 	s_1a5371 *field_30;
 };
 
-// score 10 (was 10): the local record sits at a different stack address and its fields are read
-// from different offsets.
-// Retail bases the induction cursor at candidate+0x14, not +0; after-sort and full-lifetime aliases 10;
-// radius-origin parent, pointer arithmetic, indexed/const/array views, index/count lifetimes and output
-// indexing 10 each.
 // @retail 0x1a5370
 bool __stdcall function_1a5370(s_sort_weight_view const *arg_0, point3f const *arg_1,
 	vector3f const *arg_2, long arg_3, short arg_4, s_sort_candidate_view *arg_5)
 {
-	/* the weights stay in their stack slot, as in retail */
-	s_sort_weight_view const *const *local_9 = &arg_0;
 	bool local_0 = false;
 	s_sort_candidate_view local_1[0x40];
 	long local_2 = function_14a280(g_4e033c, 0, (point3f *)arg_1);
@@ -2147,7 +2088,7 @@ bool __stdcall function_1a5370(s_sort_weight_view const *arg_0, point3f const *a
 		short local_3 = ((s_1a5370 *)g_4e0348)->field_30[local_2].field_0;
 		if (local_3 != NONE)
 		{
-			long local_4 = function_1a54a0(*local_9, local_3, arg_1, arg_2, arg_3, arg_4, local_1);
+			long local_4 = function_1a54a0(arg_0, local_3, arg_1, arg_2, arg_3, arg_4, local_1);
 			if (local_4 > 0)
 			{
 				g_51e99c = (s_sort_globals *)arg_0;
@@ -2155,7 +2096,7 @@ bool __stdcall function_1a5370(s_sort_weight_view const *arg_0, point3f const *a
 				for (long local_5 = 0; local_5 < local_4; local_5++)
 				{
 					s_sort_candidate_view *local_8 = &local_1[local_5];
-					if (function_1a67f0(arg_1, &local_8->point, arg_3, local_8->object_index))
+					if (function_1a67f0(local_8->radius, arg_1, &local_8->point, arg_3, local_8->object_index))
 					{
 						*arg_5 = local_1[local_5];
 						local_0 = true;
@@ -2206,7 +2147,7 @@ bool function_1a6a80(s_object_marker_target const *target, point3f const *origin
 						candidate->secondary_score = 0.0f;
 					}
 					candidate->scaled_score = 0.0f;
-					if (function_1a67f0(origin, &candidate->point, excluded_index, candidate->object_index))
+					if (function_1a67f0(candidate->radius, origin, &candidate->point, excluded_index, candidate->object_index))
 						result = true;
 				}
 			}

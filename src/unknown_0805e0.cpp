@@ -89,6 +89,8 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // local with early returns 49; the XDK `XOnlineIsUserGuest` on the flags dword 43, with the
 // do-while 49; harness only: the guest test twice (merged before hoisting), dword and byte forms
 // together (both stay), a use of 3 outside the loop (no hoist).
+// Round 311: trailing name/exclusion/online/identity tests produce the actual result
+// 42/42/42/54; native full-width result 57/52/54/56. No match; original body restored.
 // @retail 0x805e0
 bool player_configuration_cache_next_recent_player(s_recent_player *player, long *iterator)
 {
@@ -516,6 +518,9 @@ void function_1537f0(s_profile_record *record);
 // byte is forwarded as retail does) 78 at 238 bytes (aligned 43 against 51); with the flags as two
 // stores / links as separate statements / the 64-bit field as two dwords 80 each at 236; the entry
 // pointer declared first 67, with the tail removed 78.
+// DL199: Signed high header bytes separately/pair, low pair and their three-group combinations all
+// 67; all four signed bytes plus a signed first word 67. Missing identity homes and frame 0x90
+// remain. Every real source type, initializer, initialized byte and all 350 visits restored.
 // @retail 0x7f930
 void function_7f930(void)
 {

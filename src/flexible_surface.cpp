@@ -443,6 +443,10 @@ static inline dword surface_random()
 // Round 221: j/k projection pair 160, uniform direction-first factors 178; either projection before
 // shared cross 176/176; existing dot-helper orders before cross 179/179; named cosine complement
 // 176, with direction-first factors and staged cross 176. Original body restored; frame 0x28 remains.
+// Round 49: old snapshot before axis/before trigonometry on the current shared graph 164/164;
+// const old/both inputs/staged cross with both const 160 each; post-cross dot3f in either input order
+// on the const staged graph 181 each; const staged inputs with shared random_index draws 160.
+// Original body restored.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {
@@ -512,6 +516,9 @@ void function_117dd0(long index, vector3f *wind)
 // Round 425: projected normal and early weights with shared tangent scale 104; force loop 112;
 // paired weighted-point loop 118; tangent/force 114, tangent/weights 119, force/weights 118, all 119;
 // all with final position loop 119. Five-point best rejected; all original source restored.
+// Round 311: native projection/early weights with history scope, projection-consumer scope,
+// paired point-role names and their combinations 102/102/102/102/102/102/102;
+// all with history-branch cursor 112. Seven-point gains rejected; original body restored.
 // @retail 0x118140
 void function_118140(long index)
 {

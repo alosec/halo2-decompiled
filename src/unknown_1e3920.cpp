@@ -766,29 +766,6 @@ short ai_player_index_get(long player_index);
 void function_10e9f0(long object_index, short channel, real value, real time);
 bool function_1a8220(long index, short a, short b, long unknown, short c, short d, short e);
 
-// score 17 (was 17): Frame four and prefix agree; actor pool ECX/later LEA schedule remains.
-// Earlier 32 (was 32): actor-base LEA and child scratch allocation differ; amount admission 239;
-// amount-phase pool ESI/ADD versus ECX/LEA remains.
-// Earlier score 32 (was 32): actor-base LEA and child scratch allocation differ; amount admission 239;
-// actor-base LEA and child scratch allocation differ; amount admission 239;
-// independent refresh 32; combined admission 239; child receiver 32/32; timestamp result 234; first-definition capture 32; refresh/timestamp 234.
-// actor-base LEA and child lookup scratch remain; native timestamp/amount/interval/all
-// fields 32/32/32/32; clock object 32; count/limit/first-child homes 32/32/32.
-// actor base construction at +0x1bc and child traversal registers remain;
-// typed actor 32; earlier actor workspace 32; both 32; native tick interval 36;
-// shared rounding helper 215; typed child cursor 32; attachment scalar homes 66;
-// complete optional view selection 186.
-// Earlier 17 (was 32): the unit field read twice through the actor pointer fixed the type-11 block (32 -> 17); left: the amount block loads the pool base into ESI and adds where retail loads ECX and forms `lea esi, [ecx+ebx]` after the comparison. Actor inside the amount block 241/239 (frame 8); typed-pointer getter 17; separate refreshed actor 17; `0.0f < amount` 17; 600 s permuter 37 tries, none below 17.
-// Round 152: Independent damage/event phases 17; final event admission 17; both 17; phases/admission/both with read-only classification 17/17/17; complete accumulated amount with phases/all boundaries 17/17.
-// Earlier score 17 (was 32): the unit field read twice through the actor pointer fixed the type-11 block (32 -> 17); left: the amount block loads the pool base into ESI and adds where retail loads ECX and forms `lea esi, [ecx+ebx]` after the comparison. Actor inside the amount block 241/239 (frame 8); typed-pointer getter 17; separate refreshed actor 17; `0.0f < amount` 17; 600 s permuter 37 tries, none below 17.
-// Amount predicate 112; actor fields at use 280; pooled actor references 17;
-// direction inline/noinline 17/17; channel/activation/reference inline-noinline 17 each.
-// the unit field read twice through the actor pointer fixed the type-11 block (32 -> 17); left: the amount block loads the pool base into ESI and adds where retail loads ECX and forms `lea esi, [ecx+ebx]` after the comparison. Actor inside the amount block 241/239 (frame 8); typed-pointer getter 17; separate refreshed actor 17; `0.0f < amount` 17; 600 s permuter 37 tries, none below 17.
-// Previous timestamp 17; event unit 17; both 17; recent timestamp test 17; snapshot recent test 17;
-// early event unit 98; early unit and timestamp 98; complete interval predicate 22.
-// Shared actor offset 67; amount actor offset 17; amount pool record 17;
-// delayed actor formation 241; prop-view getter 17; amount snapshot 17;
-// actor-index snapshot 17; amount parameter pointer 17.
 // @retail 0x1e2570
 void __stdcall function_1e2570(long actor_index, word type, long object_index, real amount, long direction)
 {
@@ -853,7 +830,9 @@ void __stdcall function_1e2570(long actor_index, word type, long object_index, r
 	if (amount > 0.0f)
 	{
 		long time = g_510c54->game_time;
-		if (*(long *)(actor + 0x308) == NONE || time - *(long *)(actor + 0x308) > g_510c54->field_2_3)
+		/* the interval test looks the actor up again (retail forms the actor pointer with a lea) */
+		if (*(long *)((byte *)actor_get(actor_index) + 0x308) == NONE
+			|| time - *(long *)((byte *)actor_get(actor_index) + 0x308) > g_510c54->field_2_3)
 		{
 			if (*(long *)(actor + 0x18) != NONE)
 				function_20ba60(3, *(long *)(actor + 0x18), object_index, NONE, type, NULL);
@@ -1282,6 +1261,11 @@ void function_1e3b60(long actor_index);
 // inline/noinline callee declaration 26; noinline declaration 26;
 // unsigned callee input 26; inline unsigned callee declaration 26;
 // unsigned caller input 26; inline caller 26; inline depth two 26; depth three 26.
+// Round 41: the written 0x1f38c0 and 0x1f6090 bodies enabled 90 (a frame slot; 0x1e2f50
+// and 0x1c83c0 stop matching); in 0x262ba0, which spills the actor because a loop bool
+// takes EBX: 0x2641c0 inlinable 26 (0x264210 lost), plain maximum word 26, call result
+// only clearing the sample flag 26, sample/update flags at the loop top 26.
+// BLOCKED-BY 0x262ba0 (stacked actor) and 0x1f38c0 (stub until #581 is solved).
 // @retail 0x1e34e0
 void function_1e34e0(long actor_index)
 {

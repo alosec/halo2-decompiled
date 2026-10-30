@@ -44,6 +44,11 @@ static inline long unit_get_current_weapon(long unit_index)
 // object input 37; readonly object input 37; object reference input 37; native slot 44;
 // reference and native slot 44; object result arms 47; object result first 37;
 // reference result first 37.
+// Round 39, all with ordinary (non-volatile) reads, fast checks listing 0xcbd50 too (without it the
+// reduced image leaves that query out, which is where round 129's 60-68 came from): ordinary reads 37
+// (plain check: actor in EDI, table in EBX); query with its own NONE guard 48; actor fetched again
+// for the fallback 34; early returns 46; nested fallback 37; one reassigned unit local 50; every read
+// through the getter 38; result first 44; refetch first/at the test only 39/43; ternary unit 37/37.
 // @retail 0x1e1f20
 long function_1e1f20(long actor_index)
 {
@@ -64,6 +69,9 @@ PRIVATE inline long secondary_weapon_get(long unit_index)
 }
 
 // score 12 (was 12): separate outer sentinel register and exit remain; the actor-base prefix agrees.
+// Retail keeps the unit in EDX and the outer NONE in ECX, and copies the unit to EAX for the query
+// (`mov eax, edx`): the form of a second field read still alive at register allocation. Two-read
+// result forms here fold the first read (`mov ecx, [eax+edx+0x18]`) ahead of a dead `add eax, edx`.
 // Earlier: with the slot query through 0xcbd50 (inlined) the actor-base add,
 // the masked-index copy and the inner sentinel are retail's; retail still keeps a separate
 // Frameless; independent outer sentinel and unit EDX lifetime still differ.
@@ -104,6 +112,8 @@ PRIVATE inline long secondary_weapon_get(long unit_index)
 // field two result arms 12; result goto done 20; field pointer result/early return 20/17;
 // direct else 12; success guard 20; conditional return 12; field reference 17;
 // repeated actor query 22.
+// Round 44: field read at each use with 0xcbd50 called directly 20; unit index local with direct
+// 0xcbd50 20; ternary result 20; unit object pointer local 20; NONE-first if/else result 12.
 // @retail 0x1e1fd0
 long function_1e1fd0(long actor_index)
 {
@@ -524,6 +534,8 @@ s_node_view *function_26be30(s_iterator *iterator);
 // native prop result 7; actor/iterator 157.
 // actor/native prop 157; iterator/native prop 7.
 // all three receivers 157; all three/nested view validity 157.
+// Round 39: plain while loop 7; post-increment 7; `callback != NULL` 7; type in a short local 7;
+// type through the element with the slot pointer passed 10.
 // @retail 0x1e23c0
 void function_1e23c0(long actor_index)
 {

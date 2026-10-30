@@ -2863,6 +2863,9 @@ PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
 // map widget or explicit heading receiver 237 each. Original field, helpers and complete body restored.
 // Round 303: shared nullable map-name publication, four acquisition graphs 271 each;
 // each with the generic row query 273. All original map publications, lookups and body restored.
+// Round 313: Child-domain 4 with original/shared bitmap/generic text/both queries 112/104/116/110;
+// child-domain 5 with those four APIs 112/104/120/112. Receiver, bitmap and animation gaps remain;
+// original body restored.
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {

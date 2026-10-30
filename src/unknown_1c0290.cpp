@@ -192,6 +192,8 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// Round 19: unchanged; the frame (0xa0 against 0xb0) and the collision output size still
+// differ; no new form was found.
 // score 143 (was 143): frame 0xa0 versus 0xb0 (the 0x1697c0 collision output is 0x5c bytes; the
 // shared header type is 0x4c), then the scratch registers are rotated by one from the 0x110ab0
 // argument on (eax/ecx/edx), which also moves the request/collision arguments, the target copy and
@@ -305,6 +307,10 @@ bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 // Round 70: array-index actor lookup 26; slot declared first 26; reset stores in retail's
 // order 26 (identical code: the order is the scheduler's); existing reset function through a
 // forceinline declaration 85 (stays a call: its file is /Ob1); prop copy first 37.
+// Round 89: the reset's actor address offset-first, as an array element or through actor_get 26 each;
+// bool result single exit 26; const state/actor 26; chained time stores 34. Matched 0x1b4490 has the
+// same head without the reset and gets retail's eax/ecx: the offset's life into the reset decides it.
+// BLOCKED-BY 0x1f86a0 (retail inlines it at link time; its /Ob1 file keeps ours out of line).
 // @retail 0x1c0430
 bool __stdcall function_1c0430(long actor_index, s_slot *slot)
 {

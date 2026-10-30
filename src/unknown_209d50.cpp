@@ -66,7 +66,11 @@ static inline void *function_xc5914d(long thread_index, short size)
 }
 
 // score 12 (was 12): retail copies the argument pointer into EAX and returns it in a
-// register, ours reloads the result from the stack.
+// register, ours reloads the result from the stack. Tried: no volatile 95 (one register for
+// both, no spill); result NULL first and set on the else path 90; result declared first
+// and assigned after the allocation 95; the slot address passed straight to the call 21;
+// the result cleared before the call 31. Retail stores the pointer to its slot and copies
+// the live register, as for an address-taken local.
 // @retail 0x209d50
 long *__stdcall function_209d50(long thread_index, short parameter_count, short const *parameter_types, bool initialize)
 {

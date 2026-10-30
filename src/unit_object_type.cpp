@@ -641,7 +641,7 @@ struct s_sound_label_play
 	char const *variant;
 };
 
-long function_189210(long object_index, long marker_name, s_sound_label_play const *play);
+long function_189210(long object_index, s_sound_label_play const *play, long marker_name);
 
 /* sends the unit request 8 between two updates of the unit */
 // @retail 0xc4820
@@ -672,14 +672,8 @@ bool function_c4970(long unit_index)
 }
 
 /* plays one of the globals' sounds at the object's marker 0x4000095 */
-// score 2 (was 2): only marker-immediate/play-address setup order differs; frame and callee registers agree.
-// Earlier at 10: BLOCKED-BY 0x189210, whose retail form takes the play record in edi
-// (ours pushes it); play fields tag first 10; named globals pointer 10; 0x189210 parameter
-// orders play first/middle 10/10; 0x189210 reading the play fields at entry 16 (80 bytes).
-// Full/partial/const aggregate records 10/10/10; entry record 10; lookup assigned in the test 10;
-// 0x189210 inline with test assignment/original body 10/10; noinline declaration 10.
-// Eight alternate label/tag/scale/variant schedules 2/4/5/4/5/4/5/4; direct tag-field lookup 11,
-// with scale/variant/label order 14; absent-tag early return 2, with scale/variant/tag/label order 5. Restored.
+// The last two instructions to match were the marker immediate (eax) and the play record's address (edi):
+// callers set up register arguments last to first, so 0x189210 takes the play record before the marker name.
 // @retail 0xc5890
 void function_c5890(long object_index, short index)
 {
@@ -693,7 +687,7 @@ void function_c5890(long object_index, short index)
 		play.tag_index = tag_index;
 		play.scale = 1.0f;
 		play.variant = 0;
-		function_189210(object_index, 0x4000095, &play);
+		function_189210(object_index, &play, 0x4000095);
 	}
 }
 
@@ -3099,7 +3093,7 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 49 (was 78): the team test and the notify loads now agree. Left: the pool and time pointers
+// score 49 (was 49): the team test and the notify loads now agree. Left: the pool and time pointers
 // sit in EBX/EBP (retail EBP/EBX), retail keeps 0.0 in XMM1 and 1.0 in XMM2 (ours the other way:
 // the register follows which constant the source names first), the two notify copies are only
 // partly cross-jumped, and the bit-4 test is `test byte` (retail load and shift).
@@ -3110,6 +3104,9 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
 // notify through a fresh unit local as 0xd0e60 49 (kept); bit 4 as TEST_FIELD_BIT 83 alone, 63
 // with both (pool/time registers right); the 2b0 branches swapped 65 (constants right, branch
 // order wrong); `value < 0.0f` 63; notify index in a long local 69; existing 0x2ac270 flag getter 49.
+// Round 228: computed primary/secondary/both fade values 49/49/49; shared progression
+// steps alone/with primary/with secondary/with both 96/96/96/96; all with Boolean
+// fourth bit 91. Original body restored; pool/time and constant-register roles remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
@@ -3175,6 +3172,8 @@ void function_c6810(long unit_index)
 // address. Tried: both branches calling 0xe6900 179 (second also inlined); a noinline declaration of 0xe6900 150
 // (not honoured); the call sites reordered 179; a shared request local 179; the player slot as a local byte
 // pointer, a struct view or an array element 60 (same); the requester unit and its player index re-read 60.
+// @coldspear (#104, 2026-10-30): reading the request definition g_4677c8[9] through a volatile pointer gives 26,
+// not kept (no match), but it shows retail re-reads the definition there.
 // @retail 0xce520
 void function_ce520(long weapon_index, long unit_index, bool flag)
 {
@@ -3278,7 +3277,7 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 /* the state of a unit's weapon use: 6 or 5 for the flags when asked, 7
    past the definition's limit at +0x114, else 3; otherwise 0xc96b0's
    range (2 when forced, at most 1 when held), clamped to 1 for players */
-// score 58 (was 64): Frame and lookups agree; first +0x2f has flag/b register roles and ret 0x14/0x18.
+// score 58 (was 58): Frame and lookups agree; first +0x2f is flag stack/BL, cleanup 0x1c/0x18.
 // Round 11 (lane 15): the range is clamped when held, as retail tests its third stack argument
 // (`[esp + 0x14]` after the pops), not b: 64 -> 58 (a behaviour fix; 0xc9e70 128 -> 121).
 // Round 175: held clamp 58 (possible operand fix; exact-only, restored); existing bit view 74;
@@ -3288,6 +3287,9 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 // Round 179: one shared range/result with bit/result-arm/definition-scope combinations
 // 64/70/80/87/74/81/64/76. Blocked return from initialized range, with native bit and
 // terminal result clamp, 64/64/74/74; with held operand 58/58/58/58 (exact-only, restored).
+// Round 230: flat flag/a and flag/b cases, then native frozen-bit view, blocked-range return, both,
+// held-test result and its three combinations: 58/58/58/58/58/58/58/58.
+// Original threshold observations, held operand, argument roles and body restored.
 // @retail 0xc9770
 long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, bool held, bool force, real c, real d)
 {
@@ -3477,6 +3479,9 @@ void function_c6990(long unit_index)
 // match); a 600 s permuter run reached 34 only by swapping the label and table arguments (wrong
 // call). Retail stores the seat bit before reading the marker name; ours keeps it in AL until the
 // call, and every later temporary then takes the next register (EAX/ECX/EDX rotated).
+// Round 228: winning table ordinal long/short 91/101; entry long/short 90/100;
+// missing-result-first comparison with the same four lifetimes 109/117/108/116.
+// Original result value, complete spatial arithmetic and body restored.
 // @retail 0xc7160
 long __stdcall function_c7160(long unit_index, short seat_index, long a, long vehicle_index, long b)
 {
@@ -3741,7 +3746,7 @@ void function_d03e0(long unit_index, long definition_index)
 
 /* applies the unit's melee damage to what it hit (a device of type 7 with
    bit 5 at +0x1cc is triggered first), then ends its state +0x2bc */
-// score 57 (was 61): the second object lookup (type 7, then bit 5 of +0x1cc) is merged into the first;
+// score 57 (was 57): the second object lookup (type 7, then bit 5 of +0x1cc) is merged into the first;
 // retail repeats it (the pool pointer shared in EDX, index and element reloaded), so all after it shifts.
 // Retail's NONE material store before 0xd6660 and the 0x184060 arguments as retail passes them (the
 // field at +8 as the index in EAX, the one at +4 as the bit) are kept; the tail is then retail's.
@@ -3755,6 +3760,8 @@ void function_d03e0(long unit_index, long definition_index)
 // either/both lookups, no object local, nested ifs, a byte pointer to the machine, a named index,
 // dword-cast mask, dword flag word: lookup still merged; a word-cast index at the second lookup
 // gives retail's registers but movzx.
+// Round 230: complete target handle, native header table, both, header element, element/handle,
+// readonly table, readonly table/handle, readonly element: 117/55/117/58/115/55/117/58. Original body restored.
 // @retail 0xcfc90
 void __stdcall function_cfc90(long unit_index, long definition_index, s_unit_melee_hit const *hit)
 {
@@ -5604,6 +5611,9 @@ void function_cf040(long unit_index, short type)
 // array, two lookups, a volatile read of the weapon index (all 1); a short hand counter 180, a char
 // weapon slot 71. Before the tail change: a while or a for for the root walk 24, a copy of the vehicle
 // index 24, an explicit offset for the header 24, the two tail conditions swapped 20.
+// @coldspear (#104, 2026-10-30): the remaining difference is the order of an address's two registers on a byte array
+// (ours [index + pointer], retail [pointer + index]), as in 0x4c450, 0x181cf0, 0x23600, 0x1988e0 and 0x194710. About 20
+// forms tried on two of them (index spelling, declaration order, pointer formation, char and const types): none changed it.
 // @retail 0xc92c0
 bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_index, long *blocker_index, bool *grouped)
 {
@@ -6849,7 +6859,7 @@ bool __stdcall function_c58f0(long unit_index)
 				play.tag_index = sound;
 				play.scale = scale;
 				play.variant = 0;
-				function_189210(unit_index, 0x4000095, &play);
+				function_189210(unit_index, &play, 0x4000095);
 			}
 		}
 	}
