@@ -1903,8 +1903,8 @@ struct s_session_map_view
    5 the members' status, 6 ready, 7 the wrong players, 8 to 10 the host's
    states; the members' progress goes to progress. Retail keeps progress on
    the stack: reading it through its address keeps it there */
-// score 29 (was 103): progress/session/result homes and map limit/iterator registers now agree;
-// the early EBX-zero/data-test schedule and lower setting test (EDI versus immediate one) differ, 576/577.
+// score 21 (was 29): progress/session/result homes and map limit/iterator registers now agree;
+// the lower setting test (EDI versus immediate one) differs, 576/577; chained zeros recover the data-test schedule.
 // Earlier: ours holds progress in EDI; retail reads it from its stack home at both
 // uses, keeps the limit in EDI, the team mask in EBX and the count in progress's home.
 // Volatile reads of progress at both uses 195 (aligned 40 of 50: progress stays home, but a
@@ -1918,6 +1918,9 @@ struct s_session_map_view
 // status/readiness results 138; map/readiness results 88; all outcomes 179; all outcomes/selected map limit 185;
 // selected limit alone 29; setting fields each-use 88; unsigned limit 88; outer limit declaration 88; count after
 // map 199; teams after map 29; both after map 197; both after limit 201.
+// Round 423: zeros chained 21 (plain); mask/count/both after output query 29/198/199;
+// zeros chained after query 199; signed-zero/invalid-range bounds 29/29; delayed zeros/zero bound 199;
+// chained zeros with zero bound/nested minimum/default-first/invalid branch 21/79/33/80.
 // @retail 0x19a2ce
 long function_19a2ce(real *progress)
 {
@@ -2004,8 +2007,9 @@ long function_19a2ce(real *progress)
 			if (data && (*(dword *)(data + 0x48) & 1))
 			{
 				long maximum;
-				long count = 0;
-				dword teams = 0;
+				long count;
+				dword teams;
+				count = teams = 0;
 				long a;
 				long b;
 				s_session_map_view *map;
