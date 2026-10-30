@@ -2395,11 +2395,15 @@ PRIVATE __forceinline real vehicle_friction(real speed, real friction, real scal
    desired speeds along the facing, its left and its up, friction where a
    control is idle, and a torque that turns the vehicle to face its
    facing, banked into its turns */
-// score 773 (was 830): Frame 0x10c versus 0xfc; scalar and matrix homes still differ.
+// score 728 (was 773): frame 0xd4 versus 0xfc; controls and transform/scalar homes remain.
 // Shared cross products 830 kept; shared friction/bank sums 879; both 867; shared
 // normalize/mass scales 861; cross/scales 836; sums/scales 865; all 846; all with
 // both point setters 846. Plain confirms four existing cross3f calls, unchanged call roles.
 // Round 426: facing-at-use/boost-default/mass subsets 895/835/905/794/874/803/882, matrix homes 882; facing after boost/velocity 806/846, with default boost 833/860; each with mass 773 (kept)/821/803. Frame 0x10c remains; plain confirms 773.
+// DL196: current-output/response/normalization subsets 773/775/744/759/728/759/744;
+// desired output 773. Complete facing before/after velocity 856/856; complete
+// force products 728, with late facing 856. Keep only current-output ownership
+// and the normalization result; original facing reads and response observations retained.
 // @retail 0xf2360
 void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -2455,7 +2459,11 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	real left_mass = mass * (left_fraction * left_fraction);
 	real length = (real)sqrt(up.k * up.k + up.j * up.j + up.i * up.i);
 
-	if (!(0.0001f > (real)fabs(length)))
+	if (0.0001f > (real)fabs(length))
+	{
+		length = 0.0f;
+	}
+	else
 	{
 		real inverse = 1.0f / length;
 
@@ -2463,7 +2471,7 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 		up.j = inverse * up.j;
 		up.k = inverse * up.k;
 	}
-	if (0.0001f > (real)fabs(length) || length == 0.0f)
+	if (length == 0.0f)
 	{
 		up.i = 1.0f;
 		up.j = 0.0f;
@@ -2566,20 +2574,19 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	banked.j = cosine * up.j + axis.j * sine;
 	banked.k = cosine * up.k + axis.k * sine;
 
-	transform4x3f current;
+	transform4x3f transform;
 	transform4x3f desired;
-	transform4x3f difference;
 	quaternionf rotation;
 	vector3f rotation_axis;
 	real rotation_angle;
 
-	current.scale = 1.0f;
-	current.forward = vehicle->forward;
-	cross3f(&vehicle->up, &vehicle->forward, &current.left);
-	current.up = vehicle->up;
-	current.position.x = 0.0f;
-	current.position.y = 0.0f;
-	current.position.z = 0.0f;
+	transform.scale = 1.0f;
+	transform.forward = vehicle->forward;
+	cross3f(&vehicle->up, &vehicle->forward, &transform.left);
+	transform.up = vehicle->up;
+	transform.position.x = 0.0f;
+	transform.position.y = 0.0f;
+	transform.position.z = 0.0f;
 	desired.scale = 1.0f;
 	desired.forward = *facing;
 	cross3f(&banked, facing, &desired.left);
@@ -2587,9 +2594,10 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	desired.position.x = 0.0f;
 	desired.position.y = 0.0f;
 	desired.position.z = 0.0f;
-	function_141590(&current, &current);
-	function_142a60(&desired, &current, &difference);
-	function_141f60(&difference.rotation, &rotation);
+	function_141590(&transform, &transform);
+	// Reuse the inverse transform workspace for the relative transform.
+	function_142a60(&desired, &transform, &transform);
+	function_141f60(&transform.rotation, &rotation);
 	function_11d790(&rotation, &rotation_axis, &rotation_angle);
 
 	real rate = PIN(rotation_angle * maximum_turn_rate * 0.95492965f, 0.0f - maximum_turn_rate, maximum_turn_rate);
@@ -3481,6 +3489,9 @@ extern byte g_5107ee;
 // request construction before vector helpers, forced/inline/ordinary 181/316/333;
 // forced initializer with bounded strength 177, with native countdown 166.
 // Count/marker/strength homes and reflection schedule remain.
+// DL196: endpoint/request-owned strength/projection-product subsets
+// 161/181/169/165/162/184/163; native full-width count 160.
+// Original executable body and all supporting contracts restored.
 // @retail 0xf62f0
 void __stdcall function_f62f0(long vehicle_index)
 {
@@ -4307,13 +4318,21 @@ PRIVATE inline void vehicle_transpose(matrix3x3 *matrix)
    start, thrust toward the speed along the facing (faster diving, with
    boost), strafing, lift against gravity, and a torque that turns the
    vehicle toward its facing, pitched and banked into its turns */
-// score 1166 (was 1429): Frame 0x104 versus 0xd8; index/offset and vector/rotation homes remain.
+// score 1134 (was 1166): Frame 0x104 versus 0xd8; index/offset and vector/rotation homes remain.
 // Pitch magnitude 1375; scalar control magnitudes with original steering fabs and
 // desired-up add-scaled 1166; the flip-output matrix workspace 1181 (frame 0xdc).
 // Repeated compound argument: controls/normalization/all magnitudes/target scales
 // 1142/1142/1163/1162; force/brake/up/all vector forms 1142/1142/1108/1124 restored.
 // Three-use steering ratio 1168; fraction with separate magnitude assignment 1163,
 // a three-point incremental gain rejected. Keep original steering fabs and matrix homes.
+// DL196: current-output/state-workspace/normalization subsets
+// 1184/1165/1177/1198/1193/1177/1222. Original sum interactions
+// 1135/1165/1135/1182/1167/1186/1166/1198 had a one-use input alias; restored.
+// Desired output 1134, also 1134 with original names (kept); clean sum interactions
+// 1135/1165/1135/1182/1166/1186/1166. Facing/flip scopes and normalizer/vector
+// interactions 1166/1166/1166/1177/1177/1177/1135/1166, all restored.
+// Desired with sum/normalizer/both/shared crosses 1129/1145/1135/1129; the five-point
+// sum additions are rejected. Keep only the consumed desired-matrix output.
 // @retail 0xf4800
 void __stdcall function_f4800(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -4617,13 +4636,12 @@ void __stdcall function_f4800(long vehicle_index, s_vehicle_physics_state *state
 	vehicle_cross(&desired.up, &desired.forward, &desired.left);
 	vehicle_transpose(&current);
 
-	matrix3x3 difference;
 	quaternionf rotation;
 	vector3f axis;
 	real length;
 	real angle;
 
-	function_141f60(function_142eb0(&desired, &current, &difference), &rotation);
+	function_141f60(function_142eb0(&desired, &current, &desired), &rotation);
 	length = (real)sqrt(rotation.k * rotation.k + rotation.j * rotation.j + rotation.i * rotation.i);
 	if (0.0001f > (real)fabs(length))
 	{

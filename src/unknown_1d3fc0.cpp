@@ -28,6 +28,9 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
  }
 }
 
+// Round 19: unchanged; the forward normalisation's reciprocal and component carriers (retail
+// preloads j and i, divides 1/m into xmm6 and multiplies k from memory) still differ; the
+// operand-order-only forms of the helper give 149.
 // score 149 (was 149): magnitude order, reciprocal/SSE carriers and projection schedule remain.
 // Retail sums the forward magnitude j,i,k (k loaded late, reloaded on the short-vector path) and the
 // other three k,j,i; in this /Ob1 file every sum compiles i,j,k whatever the source order (dot3f,

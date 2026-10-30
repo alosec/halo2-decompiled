@@ -3099,7 +3099,7 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 49 (was 78): the team test and the notify loads now agree. Left: the pool and time pointers
+// score 49 (was 49): the team test and the notify loads now agree. Left: the pool and time pointers
 // sit in EBX/EBP (retail EBP/EBX), retail keeps 0.0 in XMM1 and 1.0 in XMM2 (ours the other way:
 // the register follows which constant the source names first), the two notify copies are only
 // partly cross-jumped, and the bit-4 test is `test byte` (retail load and shift).
@@ -3110,6 +3110,9 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
 // notify through a fresh unit local as 0xd0e60 49 (kept); bit 4 as TEST_FIELD_BIT 83 alone, 63
 // with both (pool/time registers right); the 2b0 branches swapped 65 (constants right, branch
 // order wrong); `value < 0.0f` 63; notify index in a long local 69; existing 0x2ac270 flag getter 49.
+// Round 228: computed primary/secondary/both fade values 49/49/49; shared progression
+// steps alone/with primary/with secondary/with both 96/96/96/96; all with Boolean
+// fourth bit 91. Original body restored; pool/time and constant-register roles remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
@@ -3477,6 +3480,9 @@ void function_c6990(long unit_index)
 // match); a 600 s permuter run reached 34 only by swapping the label and table arguments (wrong
 // call). Retail stores the seat bit before reading the marker name; ours keeps it in AL until the
 // call, and every later temporary then takes the next register (EAX/ECX/EDX rotated).
+// Round 228: winning table ordinal long/short 91/101; entry long/short 90/100;
+// missing-result-first comparison with the same four lifetimes 109/117/108/116.
+// Original result value, complete spatial arithmetic and body restored.
 // @retail 0xc7160
 long __stdcall function_c7160(long unit_index, short seat_index, long a, long vehicle_index, long b)
 {
@@ -5595,15 +5601,15 @@ void function_cf040(long unit_index, short type)
    free, its seat group's partner friendly and willing, no enemy riding
    (outside state 2), and for players a clear line to the vehicle; also
    the seat's occupant and whether the seat is grouped */
-// score 17 (was 274): what is left is the scratch registers of the last block: retail reads the
-// unit's +0x13c through ECX/EDX where ours uses EAX/ECX (and so the lea/push pairs of the call
-// rotate), and the header lookup of the weapon loop has its address operands swapped
-// ([edi+eax+8] versus [eax+edi+8]). Fixes made: the team test takes the unit's team first, the bit 16
-// and 17 tests are two separate ifs, the seat flags are read in place, the group flag is declared
-// after the result (274 -> 24), the root walk is a guarded do-while with its index declared first
-// (24 -> 17). Tried: a while or a for for the root walk 24, a copy of the vehicle index 24,
-// unit_at_masked_index or an explicit offset for the weapon loop's header 24, the two tail
-// conditions swapped 20.
+// score 1 (was 274): what is left is the header lookup of the weapon loop, whose address operands are
+// swapped (ours [eax+edi+8], retail's [edi+eax+8]). Fixes made: the team test takes the unit's team first,
+// the bit 16 and 17 tests are two separate ifs, the seat flags are read in place, the group flag is
+// declared after the result (274 -> 24), the root walk is a guarded do-while with its index declared
+// first (24 -> 17), a blocked line of sight clears the result instead of returning false (17 -> 1).
+// Tried for the lookup: unit_at_masked_index, the holder declared before the loop, a local header
+// array, two lookups, a volatile read of the weapon index (all 1); a short hand counter 180, a char
+// weapon slot 71. Before the tail change: a while or a for for the root walk 24, a copy of the vehicle
+// index 24, an explicit offset for the header 24, the two tail conditions swapped 20.
 // @retail 0xc92c0
 bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_index, long *blocker_index, bool *grouped)
 {
@@ -5739,7 +5745,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 		if (function_1697c0(0x80080d, &origin, &direction, unit_index, vehicle_index,
 			(s_collision_result_1697c0 *)collision))
 		{
-			return false;
+			result = false;
 		}
 	}
 	return result;
