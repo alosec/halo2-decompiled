@@ -1972,6 +1972,11 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 221: complete success/failure result assignments 124; first/other/both magazine
 // array roots on that graph 123/123/122; entry-first result declaration with no/first/other/both
 // roots 124/123/123/122. One/two-point gains rejected; original body restored.
+// Round 2 of lane 18 (plain checks; the count stays in EDX across the slots where retail rereads it
+// from its slot, which leaves no register for the pool): volatile count reads in the loop 416 (loop
+// no longer unrolled, 348 bytes); count's address taken 124; count read through its address in the
+// loop 124 (same code); taken starting at the count with an if clamp 182; long first-magazine
+// rounds 123 (586 bytes). Original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {

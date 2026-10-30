@@ -944,6 +944,9 @@ bool __stdcall function_2399da(long controller_index)
 // Round 439: complete selected-identity copies before lookup/after membership, native/library
 // copies at producer/entry lifetimes, 174/174/174/174 and 147/147/147/147. Exact-only snapshots
 // regress and grow the frame; original producer pointer and all callees restored.
+// Round 2 of lane 18: validity test through an inline helper (as 0x24b5bc's file has it) 90; flat
+// dispatch (remove, deny, rank 3, set) 90; set-rank first with deny and rank-3 returns 95; removal
+// re-deriving the identity from the selection 147; one shared controller-mask local 176.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

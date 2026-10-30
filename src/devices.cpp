@@ -926,6 +926,13 @@ bool function_108530(long device_index, long name)
 // Isolated ramp-down zero/min/both if-clamps 121/121/121; const initial velocity 121;
 // all-read/all-read-write ramp-down references 121/130; shared velocity with stored initial 125;
 // entry velocity copy plus reused parameter 152. Original body restored.
+// Round 2 of lane 18, on the per-branch cruise-velocity store (134, exact tail blocks): no remaining
+// local 134; remaining clamp as an if 134; up-time clamps before the down-time zero clamp 134; no delta
+// local 163; fresh pinned-target local 134; fresh down-time local 144 (callers 26/28); initial before
+// final velocity 134 (caller 33); fresh locals for all four clamped values 110, but it passes the
+// duration and ramp times in xmm1-3 (ret 0xc) and 0x108670 13 -> 42. That last form shows LTCG passes
+// an unmodified float in a register only when the callee holds it from entry: retail spends no
+// register on the ramp-down time in the clamp phase, which frees xmm6 for the initial velocity.
 // @retail 0x107ab0
 void device_motion_start(s_device_motion *motion, real target, real duration, real ramp_up_time,
 	real ramp_down_time, real final_velocity, real initial_velocity)

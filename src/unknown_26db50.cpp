@@ -559,6 +559,10 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // Round 200: output-pointer rotation with four formal priorities 90/90/90/90;
 // with native phase before distance 143/143/143/143 (frame 0xdc). Original void helper,
 // input copies and complete body restored; output-result lifetime does not resolve the spill.
+// Round 2 of lane 18, on the 96 form (j/k cross terms first, ring phase named before the distance;
+// there only the direction components' registers, the radius copy and the sector load differ):
+// plain radius 222 (repeats the listed form on this base); radius as a reference into the object 264;
+// components read before the dot from locals 96; dot3f(vector, axis) 96; components before the dot 96.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
