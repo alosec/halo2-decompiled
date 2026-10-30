@@ -74,6 +74,7 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // all 91, native output loop 122; basic product controls 82/80/84. Zero/axis/trig homes remain.
 // Native vector return with component output, original/dot/cross/both 78/74/82/89;
 // aggregate output counterparts 78/74/82/89. Original helper and all game-call inputs restored.
+// Round 255: two-use previous-angle snapshot with gain/both-bound/native-delta subsets 104/112/114/112/104/111/114/108. All restored; original observations, signed-angle call, rotation helper and callers retained.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)
