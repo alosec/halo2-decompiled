@@ -1912,7 +1912,10 @@ struct s_filter_rows
 // out of line); a slot pointer local 17; an index local 17; a slot row
 // pointer 17; with `inline` on 0x1cc30's definition it is inlined but its
 // constant index still folds, 17. BLOCKED-BY 0x1cc30: the unfolded add needs
-// a helper from another file, taking the slot pointer, inlined at link time
+// a helper from another file, taking the slot pointer, inlined at link time.
+// Round 40: same-file forceinline/inline helper taking the slot pointer 17/17,
+// with only the 0x1c590 call 17; `__forceinline` declaration of 0x1cc30 at file
+// or block scope with function_1cc30(12) 28/28 (not inlined).
 // @retail 0x26880
 bool __stdcall function_26880(void *context)
 {
