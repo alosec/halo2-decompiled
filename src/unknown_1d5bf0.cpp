@@ -126,16 +126,24 @@ PRIVATE __forceinline bool function_1d6d04(long arg_0)
  return arg_0 == 4 || arg_0 == 5;
 }
 
-// score 49 (was 49): the outgoing call to 0x1d70d0 sets up the transform and
+// score 49 (was 49): one instruction: for the rotation argument of the 0x1d70d0
+// call retail computes the transform's address again (lea ecx, [esp + 0x8c]),
+// where ours pushes ecx, still holding it from the transform argument (7 bytes;
+// the rest is the shift).
+// Rotation stores through a pointer 49; transform stores through a pointer 49;
+// both store pointers 49; derived transform 49; late transform pointer 49;
+// both late pointers 49; split result 49; result before selection 49;
+// body group 49; center pointer 49; the rotation argument cast from the
+// transform's address, or from its first column 49; the transform argument cast
+// from the rotation's address 49; the rotation through an inline accessor
+// (reference or pointer) 49; component stores spelled m_quad.m128_f32[n] 49.
+// the outgoing call to 0x1d70d0 sets up the transform and
 // its rotation as two separate address calculations in retail (lea ecx,
 // [esp + 0x80] and, three pushes later, lea ecx, [esp + 0x8c] for the same
 // address), while ours computes the address once and reuses the register, so
 // seven bytes are missing and every following instruction is displaced.
 // order: retail pushes the address of the local, then 0, then the float, while
 // ours pushes 0 first and reloads the float out of the stack.
-// Rotation stores through a pointer 49; transform stores through a pointer 49;
-// both store pointers 49; derived transform 49; late transform pointer 49;
-// both late pointers 49; split result 49; result before selection 49;
 // body group 49; center pointer 49; the rotation argument cast to
 // hkRotation const * 49; cast to the rotation's first column 49; cast to the
 // column's quad 49; both arguments through pointer locals 49; the rotation argument cast to

@@ -574,7 +574,7 @@ __forceinline void sound_stream_append_mixbin(s_mixbin_settings *settings, long 
 	settings->mixbins.dwMixBinCount++;
 }
 
-// score 336 (was 336): frame 0x130 versus 0x94; our LTCG CSEs and hoists the identical 0x12aff0(-64, 0, -64)
+// score 328 (was 336): frame 0x130 versus 0x94; our LTCG CSEs and hoists the identical 0x12aff0(-64, 0, -64)
 // conversions (6 calls versus retail's 15; BLOCKED-BY 0x12aff0: retail's callers treat it as opaque).
 // Round 75: SetMixBins (retail calls 0x37c5e4) for SetMixBinVolumes 449 (kept); the existing 0x2216f0 with a
 // NULL list for the three submissions 393 (kept); explicit sends, one object 613, three objects 544; set-2 rear
@@ -671,16 +671,18 @@ __forceinline void sound_stream_append_mixbin(s_mixbin_settings *settings, long 
 // 316/332/318/333/332/333/336/336 fast; first-only 335 plain, first-second 329 plain. On first-second,
 // table after copy/first use/word/byte 317/330/347/341 fast; after-copy 329 plain. One/seven-point
 // gains rejected below margin; original zero phases, table, shared helpers and all API inputs restored.
+// Round 285: complete member-record memmove on complete-zero descriptors, original/first/second/first-second/third/first-third/last-two/all scopes
+// 315/315/321/378/320/353/361/402 fast (control 334). Original-scope memmove 338 plain;
+// third initialized scope with memmove 328 plain at 1015/1071, kept. Frame and conversion reuse remain.
 // @retail 0x2aeb20
 void c_sound_effects::initialize(s_sound_effect_settings *settings, s_sound_effect_buffers *buffers, bool rear)
 {
 	long const muted_mixbins[4] = {6, 8, 7, 9};
 	s_mixbin_settings mixbins = {0};
 	s_mixbin_settings second = {0};
-	s_mixbin_settings third = {0};
 
 	m_buffers = buffers;
-	m_settings = *settings;
+	memmove(&m_settings, settings, sizeof(m_settings));
 
 	sound_mixbins_initialize(&mixbins);
 	c_sound_effects::add_send(6, 0, m_settings.level00, &mixbins);
@@ -703,13 +705,16 @@ void c_sound_effects::initialize(s_sound_effect_settings *settings, s_sound_effe
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer10, 0);
 	IDirectSoundBuffer_SetVolume(m_buffers->buffer1c, -6400);
 
-	sound_mixbins_initialize(&third);
-	for (word mixbin_index = 0; mixbin_index < 4; ++mixbin_index)
-		c_sound_effects::add_send(muted_mixbins[mixbin_index], 0, -64.0f, &third);
-	c_sound_effects::add_send(10, 0, 0.0f, &third);
-	function_2216f0(NULL, &third, m_buffers->buffer20);
-	IDirectSoundBuffer_SetVolume(m_buffers->buffer20, 0);
-	IDirectSoundBuffer_SetVolume(m_buffers->buffer14, -6400);
+	{
+		s_mixbin_settings third = {0};
+		sound_mixbins_initialize(&third);
+		for (word mixbin_index = 0; mixbin_index < 4; ++mixbin_index)
+			c_sound_effects::add_send(muted_mixbins[mixbin_index], 0, -64.0f, &third);
+		c_sound_effects::add_send(10, 0, 0.0f, &third);
+		function_2216f0(NULL, &third, m_buffers->buffer20);
+		IDirectSoundBuffer_SetVolume(m_buffers->buffer20, 0);
+		IDirectSoundBuffer_SetVolume(m_buffers->buffer14, -6400);
+	}
 }
 
 /* the level of the effect sends: none in mode 0 */
@@ -720,7 +725,7 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 	return effects->m_settings.level2c;
 }
 
-// score 370 (was 428): frame 0xc agrees; retail copies the input level into a dead argument slot through a
+// score 370 (was 370): frame 0xc agrees; retail copies the input level into a dead argument slot through a
 // frame 0xc agrees; retail copies the input level into a dead argument slot through a
 // Frame 0xc agrees; selected-primary storage, destination construction and integer-bit/SSE staging differ.
 // Earlier: frame 0xc agrees; retail copies the input level into a dead argument slot through a
@@ -811,6 +816,9 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // Round 224: Coupled left short/right word-short-long-dword 450/450/451/451;
 // left long/right word-short-long-dword 451/451/452/452, all on the retained word route.
 // Original word/byte destinations, selector, gains and append boundaries restored; dispatcher exact.
+// Round 269: shared bit-domain sums for buffer pairs 348; front/rear pairs 380; both 442; mode tails 332;
+// buffer/tail 310; front-rear/tail 443; all 507; all with the native alternate-routing field 507.
+// Every lower-scoring form loses the dispatcher; original arithmetic and executable body restored.
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {

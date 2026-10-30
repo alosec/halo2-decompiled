@@ -1202,12 +1202,6 @@ done:
 	return actor_index;
 }
 
-// score 38 (was 38): retail keeps the new index in ESI where ours keeps it in
-// EDI, and the branch that follows goes to another place, so the calls after
-// it land at different offsets. The seed store and count addition also differ.
-// Shared random-index 48; implicit count conversion 38; shared random-index with
-// implicit conversion 48; full-width upper 59; split/reversed bounds 38;
-// inline depth zero 60; global optimization off 684.
 // @retail 0x1e04a0
 void function_1e04a0(long primary_tag, long character_index, long unit_index, long secondary_tag, short grenade_type)
 {
@@ -1281,7 +1275,7 @@ void function_1e04a0(long primary_tag, long character_index, long unit_index, lo
 			short lower = *(short *)(settings + 0x34);
 			short upper = (short)(*(short *)(settings + 0x36) + 1);
 			long count = ((random_next(&g_4e7408->unknown0) * (upper - lower)) >> 16) + lower;
-			function_cccd0(unit_index, grenade_type, (char)count);
+			function_cccd0(unit_index, grenade_type, count);
 		}
 	}
 }
