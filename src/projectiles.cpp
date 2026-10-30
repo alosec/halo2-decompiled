@@ -1350,6 +1350,10 @@ void function_fcea0(long effects_index, point3f const *point, vector3f const *di
 // separate direct-counter table initialization loops 249. Original body restored.
 // Round 408: native definition pointer/reference with neither, fallback, alternate
 // or both tag snapshots 115 each. Original record layout and body restored.
+// Round 30: BLOCKED-BY 0xfd740: its unmatched body takes a pointer argument in EBX, so ours
+// cannot keep retail's zero in EBX across that call (the point then takes EBX). Flag-bit
+// member for both `|= 4` 115 (same code); tag before the flag 115 (same code); markers
+// before the scales 115; compression before the point copy 117; velocity copy first 178.
 // @retail 0xfd0e0
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
 	point3f const *point, vector3f const *normal, word index, bool attached, long object_index,

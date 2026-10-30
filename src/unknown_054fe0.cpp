@@ -1145,6 +1145,14 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // declared before the loop 67; `count != 0` 67.
 // Round 198: guarded-result graphs at the existing channel/observer/member QoS helpers, seven
 // combinations 67 each; all three with late host read 86.
+// Round 29: the observer through the existing observer getter gives retail's allocation
+// once the host is read after it and the mask is also written in a host arm (frame 0x78,
+// latency ebp, session ebx, the cursor spilled to retail's slot), but the count/maximum/
+// minimum stores sink past the memset, the check still reuses the loop's member_count
+// and the loop head gets a pad: 99 with `continue`, as `else if`, as `if (i != host) ...
+// else`, and as a guarded do loop; the getter alone 100. With those stores ahead of the
+// observer branch (retail's order) the cursor keeps the register in every form screened:
+// getter after the counters, helper parameter orders, qos scope, times position, while loop.
 // @retail 0x64480
 void network_session_get_member_latency(s_session_member_latency *latency, c_class_58d20 *session)
 {
