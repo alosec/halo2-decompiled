@@ -1279,6 +1279,13 @@ bool function_1112f0(long unit_index)
 bool function_c70b0(long unit_index);
 long function_cbd50(long unit_index, short weapon_index);
 
+// score 164 (was 164): this round found no gain - retail keeps index*12 as a value (lea/shl) and re-reads
+// the unit through that offset for both depletion queries, and it writes the first depletion with setle;
+// the byte-offset entry with re-derived queries gives 325 and the if-form depletion gives 330.
+// score 164 (was 164): this round found no gain - retail keeps the pool pointer in EAX and the data in
+// EBP, materialises index*12 and rematerialises the unit pointer for the first query, while ours keeps
+// the unit in EAX, folds index*3 with a scale of 4 and builds the result with a branch instead of setle;
+// the byte-offset header, a pool local, re-read queries and retail-shaped flag joins all score the same or worse.
 // score 164 (was 164): frame eight agrees; entry pool/state registers, signed-count joins and result
 // Round 141: retail returns the result byte unnormalised (a bool) and keeps the depletion in BL with the
 // interruptibility in memory; round 75's first-sets/second-clears depletion 330, with a bool result
@@ -1458,6 +1465,13 @@ bool __stdcall function_110ab0(long unit_index)
 }
 
 
+// score 450 (was 450): this round found no gain - retail keeps the result byte in the first argument's dead
+// slot (round 85's `bool result = true;` with no default arm is the spelling that lands it there) and holds
+// index*12 in EDX so the unit is re-derived for the query; ours keeps the unit in a register.
+// score 450 (was 450): this round found no gain - retail keeps the pool pointer live in ECX and the data in
+// ESI, rematerialises the unit pointer for the query, reloads the data from the pool and writes the
+// depletion with setle into the flag slot, while ours keeps the unit in a register and initialises the
+// result byte differently; the retail-shaped query joins score 330 or worse.
 // score 450 (was 450): Frame eight versus twelve, requested/state ownership and result joins remain.
 // Earlier 453 (was 478): frame 8 versus 12 and requested/state registers still differ.
 // Predicate names 478; byte result 538; byte depleted/overlay 453; global optimization off 1195;
@@ -2455,6 +2469,13 @@ PRIVATE inline bool function_111651(c_animation_channel const *arg_0)
     return arg_0->graph_tag_index != NONE && arg_0->animation_id.index != NONE;
 }
 
+// score 666 (was 666): this round found no gain - the request pointer's three stack re-reads need a
+// pointer-to-parameter or volatile spelling the lane rules do not allow, and the const-reference spelling
+// (663) costs both callers in other lanes' files.
+// score 666 (was 666): this round found no gain - retail re-reads the request pointer from the stack three
+// times and never registers it, spills the control pointer to [esp+0x24] and keeps the state in EBP, while
+// ours caches the request pointer in EBP and the state in ESI, giving a 0x88 frame; spelling the argument as
+// a const reference gains 3 but costs the two callers, so it was dropped.
 // score 666 (was 666): Frame 0x80 agrees; request/control homes, validity expansion and ret 4 versus ret 8 remain.
 // Earlier: frame 0x80 agrees; request/control homes, selected validity calls and ret 4 versus ret 8 differ.
 // frame 0x80 agrees; request/control homes, selected validity calls and ret 4 versus ret 8 differ.
