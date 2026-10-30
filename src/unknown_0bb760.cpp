@@ -690,6 +690,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // operations, observations and pointer traversal restored; current/base register roles remain.
 // Complete scalar bounds with overlap-safe input/output reference reach first +0x66
 // at 152/580, but introduce an out-of-line transfer and worsen the total; rejected.
+// Round 212: complemented bool/byte/short/long return on plain pointer-body traversal 159/159/131/132;
+// with admitted current lifetime 158/158/129/130 (fast control 91). Original return, pointer lifetimes
+// and traversal restored; saved receiver roles remain.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {

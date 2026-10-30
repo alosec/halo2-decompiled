@@ -152,6 +152,9 @@ void c_animation_channel::clear()
 // reset() or clear() inlined first, then retail's assignments with or without frame/rate 51 (the
 // unknown10 clear is dropped, flags move to ECX); the graph/frame/id/rate/unknown0e/flag-bit stores
 // in a forced-inline helper taking unknown0e as a short (call-site conversion) 42.
+// Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
+// lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
+// frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)

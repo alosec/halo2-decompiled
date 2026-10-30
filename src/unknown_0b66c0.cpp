@@ -156,6 +156,13 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // current 16/40): early returns 21/42 (--fast 48); nested length test 16/40 (--fast 40);
 // `length >= start + count` 17/40; all 23 other parameter orders 16-17/40; a const method of the
 // text struct, with or without noinline, 18/41 (0xb5f10 then differs); no `volatile` with a
+// noinline declaration 22/34 (0xb5f10 differs). Round 37 (real builds): the walk vs start
+// competition decides it (retail: walk EDX, start moved to EDI; whenever ours moves start out of
+// its incoming register, LTCG passes it in EDX and 0xb5f10 differs): plain parameter 41; a
+// volatile read of the plain parameter at the add 40; `string + start` with the volatile
+// parameter 28 (0xb5f10 6); a const method of the text struct (also reading bytes directly)
+// 48/48 (0xb5f10 82); start added before the clamp 36, between the increment and the clamp 32
+// (0xb5f10 6 each); `length >= start + count` 40.
 // noinline declaration 22/34 (0xb5f10 differs). Round 11 (relink screen, current form 42 there,
 // 0xb5f10 0): `string + start` or `&string[start]` 28 (start arrives in EDX, 0xb5f10 6); that body in
 // all 24 parameter orders with matching calls 28 each (0xb5f10 5-37, never 0); `start += string`
@@ -336,6 +343,8 @@ bool function_b51b0(s_transport_endpoint *endpoint, s_type_99af70 const *address
 bool function_7af40(s_type_99af70 const *address);
 
 // score 32 (was 32): the flag is read before the three endpoint field stores instead of after
+// tried the flag bit set through a byte cast of the flags word, as retail
+// the flag is read before the three endpoint field stores instead of after
 // them, the endpoint pointer is kept in a register here instead of being reloaded from the
 // connection, and the attempt counter is incremented in a register instead of in place. Retail
 // reads connection->endpoint once for the three clearing stores and again for the flag (`or
