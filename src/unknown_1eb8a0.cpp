@@ -268,6 +268,10 @@ void function_1eb6f0(s_ease_input *input, s_ease_state *state, s_ease_output *ou
 // shared output dot 670/670/672/668. Original observations, math and counter result restored.
 // Round 290: Native dword/word/byte/signed-byte completion fields with original result arms all
 // 642; direct ordered completion stores 744/648/646/646. Original executable source restored.
+// Round 427: reuse the existing capped length for distance publication, with shared-cap
+// predicate/complete step arms/complete count arms masks 0..7: 667/705/671/711/701/722/704/708.
+// Original selection, predicates, count producers, observations and complete body restored;
+// exact caller preserved in all eight trials; direction/sample homes remain.
 // @retail 0x1eb8a0
 long function_1eb8a0(
 	s_ease_state *s,
