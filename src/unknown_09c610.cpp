@@ -24,38 +24,26 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
     return local_0;
 }
 
-// score 29 (was 57): left are the frame (sub esp, 8: the object index gets its own slot, where
-// retail keeps a 4-byte frame and the object index in arg_1's slot and the permutation in arg_3's)
+// score 29 (was 29): left are the frame (sub esp, 8: the object index gets its own slot, where
+// retail keeps a 4-byte frame and the object index in arg_1's home and the permutation in arg_3's)
 // and the call setup, BLOCKED-BY 0xdb760 (contributor; retail takes the permutation in ebx and the
-// object on the stack, ours the object in ebx). Kept (round 78): the clamp as if/else-if/else
-// (retail's unthreaded `cmp; mov ecx, 1; jg; mov ecx, esi`), the mode read at each use, the
-// permutation read into its local before the parameter store (no `lea edi, [esi + 4]`: table in
-// esi, event in edi as retail) and no false assignments (result reloaded from its slot).
-// Earlier: clamp of a re-read mode 84 (310 bytes, retail's unthreaded clamp); with a plain
-// permutation local 110; no false assignments 107 (result only on the stack), inner one removed
-// 58, outer one removed 68; the member's fields copied in the other order (store of the second
-// field before the comparison in ours, after it in retail). Round 78: event pointer declared at
-// the top 82; the clamp helper plain static/extern 57/57; a named tag table local 57; the
-// permutation re-read at each use 57; the original parameter order with the new clamp/reads 86,
-// without false assignments 84; a plain permutation local with them 109; the parameter store at
-// the call 120, inside the range test 29, the range test on the parameter 84; locals renamed 31;
-// result declared after the object index 51.
-// retail keeps the definition table in esi and the event pointer in edi,
-// ours the other way round; the final call setup is BLOCKED-BY 0xdb760 (contributor-owned),
-// which takes the permutation index in ebx and the object on the stack in retail.
-// (retail esi/edi); the clamp's equality test is threaded away; the call setup
-// is BLOCKED-BY 0xdb760 (contributor; retail takes the permutation in ebx and
-// the object on the stack, ours the object in ebx). Clamp of a re-read mode 84
-// (310 bytes, retail's unthreaded clamp); with a plain permutation local 110;
-// no false assignments 107 (result only on the stack), inner one removed 58,
-// outer one removed 68.
-// Earlier: the member's fields are copied in the other order and the store of
-// the second field sits before the comparison in ours and after it in retail
-// Lane 11 r12, aligned counts (base 48 at 308 bytes): a plain permutation local
-// instead of the reused parameter 74 (280 bytes; the object index then stays in
-// ebx, as 0xdb760 takes it), with no false assignments 70; no false assignments
-// alone 59; PIN(mode, 0, 1) for the clamp 66 (301 bytes), with no false
-// assignments 75.
+// object on the stack, ours the object in ebx). Everything between agrees. The frame follows from
+// the blocker: the permutation stored back into arg_3 is a new web that takes arg_1's dead home
+// first, and the object index (defined before arg_3's first read) has no other home it may use.
+// Kept (round 78): the clamp as if/else-if/else (retail's unthreaded `cmp; mov ecx, 1; jg; mov ecx,
+// esi`), the mode read at each use, the permutation read into its local before the parameter store
+// (table in esi, event in edi as retail) and no false assignments (result reloaded from its slot).
+// Tried: clamp of a re-read mode 84 (310 bytes); a plain permutation local 110 (lane 11: 74, the
+// object index then stays in ebx as 0xdb760 takes it; with no false assignments 70); no false
+// assignments 107 (result only on the stack), inner one removed 58, outer one removed 68; PIN(mode,
+// 0, 1) for the clamp 66, with no false assignments 75; the member's fields copied in the other
+// order; event pointer declared at the top 82; the clamp helper plain static/extern 57/57; a named
+// tag table local 57; the permutation re-read at each use 57; the original parameter order with the
+// new clamp/reads 86, without false assignments 84; a plain permutation local with them 109; the
+// parameter store at the call 120, inside the range test 29, the range test on the parameter 84;
+// locals renamed 31; result declared after the object index 51; object index declared before the
+// result (defined after it) 29; the object index stored into arg_1 and passed from it (diagnostic,
+// copy-propagated away) 29.
 // @retail 0x9c910
 bool c_damage_section_response_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {

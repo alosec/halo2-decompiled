@@ -201,16 +201,19 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // into a local for every case with format 4 indexed 175; indexed format 4 with node declared
 // before point (definition, declaration and call) 175; node before point alone 62 (caller +2);
 // formats 2, 3 and 4 all indexed 175; format-4 record as a packed position member plus node,
-// indexed/pointer 175/62.
-// into a local for every case with format 4 indexed 175; with format 4 indexed, the format read into a
-// local 175, one node store after the switch 187, the index read directly 175 (the source still arrives
-// on the stack, the switch index in EDI, the node in EBX); the buffer pointer read at each use 190;
-// the index read through its own address (index_reference) dropped 62 (index stays on the stack: kept);
-// format 3 indexed 60 (retail's format-3 code exactly, EBX for the offset); a shared node store after
-// the switch with formats 3/4 returning 172, with format 4 indexed 175. One-file LTCG harness: only the
-// format-4 form decides the convention (removing any other case never flips it); format 4 keeps
-// retail's EDI node and EDX source only when its node read re-derives the buffer base (the full base
-// expression at each access, or the node read through it) instead of keeping base and index live.
+// indexed/pointer 175/62; with format 4 indexed, the format read into a local 175, one node
+// store after the switch 187, the index read directly 175; the buffer pointer read at each use
+// 190; the index read through its own address (index_reference) dropped 62 (kept); a shared
+// node store after the switch with formats 3/4 returning 172, with format 4 indexed 175.
+// One-file LTCG harness: only the format-4 form decides the convention (removing any other case
+// never flips it); format 4 keeps retail's EDI node and EDX source only when its node read
+// re-derives the buffer base or comes before the decode, instead of keeping base and index live.
+// Round 99 (harness, then real build): every one of the 120 parameter orders flips the same way
+// with formats 3/4 indexed (the signature is not the lever); a caller-shaped harness entry flips
+// too; 256 combinations of formats 2/3 indexed, an inline node-store helper, default first/last,
+// break/return, buffer at each use, `!= NULL` and data+offset order all flip; formats 3/4
+// indexed with the node-store helper 175 (real); the node stored before the decode 73 (real,
+// convention kept, harness aligned 19).
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)
