@@ -76,6 +76,10 @@ void function_213970(void);
 // Round 193: On complete payloads: seven nonzero ownership combinations 131 each; NONE/zero/both chains 131
 // each; query before all resets 128 (three-point gain dropped), between payloads and state 131. Retain only
 // the complete-payload form at 131.
+// Round 40: the two blocks need structs, but block A's globals are also used by src/unknown_214c30.cpp and
+// block B's g_55bd04/g_55bd08 are defined in src/unknown_12be90.cpp. Without the size pragma 158 (language
+// inlined, its read hoisted above the clears); with stores in address order/language first/NONE stores first
+// 161/170/161; NONE stores first with the pragma 131.
 // Round 79: enum language result 145; first-element array clears 145; reversed progress fields 145;
 // existing language wrapper 145; query after file/copy clears 144/144; version validation first 141;
 // joint preference guard 158. All gains below the retention threshold; original body restored.

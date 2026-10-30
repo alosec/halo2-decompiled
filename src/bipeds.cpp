@@ -1967,6 +1967,8 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 // inline real-typed copy of that getter 70, plus a success-controlled attempt loop (`!success && attempt < 2`,
 // first query assigned to success, second under `if (!success)`) MATCH under --fast; the loop fixes the input homes.
 // Needs 0x30c60 inline with a real out (its declarations in other files say long); not applied.
+// Round 312: full forward/up/fallback-point CRT copy families, seven subsets, and all with
+// the computed capsule diameter: 76 each. Frame 0x1c/0x20 and input homes remain; all original copies restored.
 // @retail 0xe0070
 void function_e0070(long arg_159e6d, long vehicle_index)
 {
@@ -2032,6 +2034,8 @@ void __stdcall function_1c3770(long object_index, dword flags);
 // Round 162: the count re-read at the call through a second biped lookup gives retail's byte test and re-read but
 // keeps the extra EBP: with the shared getter/explicit body 91 (265 bytes)/68. Signed-char count field, bitfield or
 // one-bit-at-a-time flag clears, settlement declared first, short index: no change or worse (harness). Restored.
+// Round 312: admitted computed duration with explicit/promoted-shared/native-shared/native-explicit body,
+// in-place/named computed offset 66/66/83/98/75/88/66/66. All restored; extra EBP, body transport and flag stores remain.
 // @retail 0xe0c70
 void function_e0c70(long arg_159e6d)
 {
@@ -3200,6 +3204,8 @@ void function_e4300(long arg_159e6d)
 // Round 237: reset-inline/first-call-inline/both declarations 91/91/91; queued caller
 // noinline alone/with reset/with first/with both 91/91/91/91; all three inline 91.
 // All temporary declarations restored; the reset dispatch still expands.
+// Round 312: actual post-reset predicate bool/byte/short/long with mutable/read-only object
+// receiver 101/101/101/101/104/104/104/104. All restored; reset expansion, entry saves and input home remain.
 // @retail 0xe4bd0
 void function_e4bd0(long arg_159e6d)
 {

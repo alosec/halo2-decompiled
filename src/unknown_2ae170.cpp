@@ -1081,6 +1081,11 @@ void c_sound_effects::set_i3dl2(s_sound_i3dl2_parameters *parameters, long unuse
 	IDirectSoundBuffer_SetFilter(m_buffers->buffer10, &filter);
 }
 
+// Tried (MiniMax R run 12): retail reads the settings gain again for each mode-one send (movss xmm0,
+// [edi+0x18] twice) and adds the GPR-held gain through its slot with SSE. m_settings.gain read into a named
+// local per send 44 (retail's 279-byte length), not kept (one-use copies, as round 44 of lane 8); one copy
+// for both sends 79, a copy for the first send only 52, the gain pun on the parameter 86, the sums assigned
+// to the parameter 44, the pun hoisted above the switch 44.
 // score 55 (was 55): our body is 12 bytes shorter: retail adds the gain with
 // SSE (the gain's bits copied through ebx into a stack temp) while our
 // union pun makes MSVC use x87; five more rewrites of the pun scored 55 or
@@ -1222,6 +1227,8 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 	}
 }
 
+// Tried (MiniMax R run 12): add_send's settings gain read into a named local per send 177 (retail's
+// 606-byte length; not kept, one-use copies); the frame 0x10 versus consumed incoming homes and the tail sums remain.
 // score 200 (was 200): Frame 0x10 versus consumed incoming homes; inherited send x87 sums remain.
 // Round 55: retail copies parameters->level into the dead parameters slot with an integer move and adds it
 // to the offset at entry (xmm0 = offset + slot) before the appends; the inlined add_send then copies the sum

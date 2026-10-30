@@ -233,6 +233,9 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // in a register where retail loads it into EDI and spills it, and the entries cursor is spilled at
 // once); a long count named at the block top 140 (29 aligned), before the `if` 165, as a short
 // before the `if` 177 (480 bytes), named after first 166.
+// Plain group reset loops count/first/flags, count/flags/first, first/count/flags,
+// flags/count/first with block and indexed receivers 54/54/54/54/144/144/144/144. Scaled-index
+// and copy/count homes remain; original body restored.
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {

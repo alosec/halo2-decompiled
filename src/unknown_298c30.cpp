@@ -319,7 +319,7 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 	arg_3->y = arg_1 * arg_2->y + arg_0->y;
 }
 
-// score 733 (was 749): frame 0x120 versus retail 0x114; radius and trace/pivot homes differ.
+// score 733 (was 733): frame 0x120 versus retail 0x114; radius and trace/pivot homes differ.
 // Frame 0x11c versus 0x114, early radius retention and trace/pivot/result homes remain.
 // Earlier: frame 0x11c versus 0x114; radius caching and trace/point homes differ.
 // Shared endpoint setters 767; center CRT copy 767; step CRT copies 767;
@@ -403,6 +403,9 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 // Six-point isolated gain rejected. Shared sine/cosine plus existing in-place normalization
 // and reverse-vector scale 734/733 fast; cosine form kept 733 plain at 3383/3372.
 // Original magnitude tree, real trig rounding, trace calls, values and short loops retained.
+// Round 313: Separate transform output, original/ordinary result 733/730; with shared difference
+// 733/730. Planar pivot 762/761, with shared difference 762/761. Three-count ordinary-result gain
+// rejected; frames 0x124/0x118 still differ from 0x114. Original helpers and body restored.
 // @retail 0x299460
 bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,

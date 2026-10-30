@@ -150,6 +150,9 @@ static __forceinline void world_vector_to_view(real arg_0, vector3f const *arg_1
 // Round 304: complete camera ownership, separate/camera-owned scale: helper-local 334/375;
 // by-value 334/375; caller pointer 361/344; caller reference 361/344.
 // Original camera observations, helper and body restored; extra frame dword remains.
+// Independent scale overwrite orders ikj/jik/jki/kij with original ijk captures 244/222/222/244;
+// with live forward coefficient stream 250/241/250/250. Extra frame word and coefficient/result
+// overlap remain; original helper/body restored.
 // @retail 0x501e0
 void function_501e0(s_501e0 const *arg_0, bool arg_1, s_501e0 *arg_2)
 {
