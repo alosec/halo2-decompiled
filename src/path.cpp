@@ -381,7 +381,7 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 	return result;
 }
 
-// score 315 (was 332): Frame 0xe8 versus retail 0xe4, acquisition, flags and scalar homes remain; geometry now uses shared differences.
+// score 315 (was 315): Frame 0xe8 versus retail 0xe4, acquisition, flags and scalar homes remain; geometry now uses shared differences.
 // Earlier: Frame 0xe8 versus retail 0xe4; maximum/node acquisition, scalar homes, flags and vector scheduling differ.
 // Earlier: the 0xe4 frame and state register now agree; initial load order, clearing, flag width and vector scheduling differ.
 // Tried: pathfinding field at each use 459; bounded short initialization count 406; both 451; edge memset 408;
@@ -417,6 +417,8 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 // DH round 254: entry edge/offset, delta and converted-point workspace subsets 315/332/315/332/315/332/315;
 // all with a long step count 378. Shared differences at original scopes 315 plain, 1388/1388 bytes, kept;
 // all entry-scope changes restored. Initial frame and indexed link transport still differ.
+// DH round 257: Short/word link count with first/second point homes and both delta helpers, eight
+// combinations 368 each at 1368 bytes; frame recovers but traversal worsens. Original body restored.
 // @retail 0x270d90
 PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_result_view const *result, short node_index, short maximum_steps,

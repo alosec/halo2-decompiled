@@ -689,6 +689,8 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 248: Common actor/weapon origin workspace with native/setter producer
 // 322/314; with early point 322/314, early origin 322/314, both 322/314.
 // All restored; fast control 301, plain baseline 290. Boolean roles and point/case transport remain.
+// DH round 257: Shared case handle/receiver/both 301/301/301; byte result on each 310/310/310; both with
+// short/long result 330/322. All restored; reduced control 301, full baseline 290.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)
