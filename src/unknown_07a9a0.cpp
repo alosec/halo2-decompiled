@@ -216,6 +216,12 @@ void function_07b3e0(void)
 // retail's do-while shape and the hoisted count and bitmap; retail keeps the pool in two registers
 // (ebx for the scan, a hoisted `mov ebp, ebx` copy for the datum), lays the found path out after
 // the exit and pads the scan loop; ours holds the pool in ebp only and lays the found path first.
+// (ebx for the high-water/bitmap scan, ebp, copied from ebx before the loop, for the datum's size
+// and data), lays the found path out after the exit with a dead datum `add`, stores immediate zeros
+// at the end and pads the scan loop; ours holds the pool in ebp only, NONE in edx and lays the found
+// path first. The iterator form (data_iterator_next_inlined, as ai.cpp's player walk) gives 58 at
+// 120 bytes: retail's block layout, found-path compare, dead datum add and immediate final stores
+// exactly; only the second pool register (push ebx, mov ebp, ebx) and the loop padding are missing.
 // Tried: earlier iterator form 58. Round 415: direct scan/identifier/both forced declarations
 // 39/39/39; outlined declarations 74/44/91; live pool 45, captured tail 42. Kimi lane 2 round 37:
 // absolute-index scan with the salted-index helper 39; direct expression 39; copied/independent/
@@ -246,6 +252,23 @@ void function_07b3e0(void)
 // Round 20 (iterator form unless noted): the datum through data_datum_index on the iterator's
 // pool 57, on the global 69 (both pool registers and the pad appear, the datum pointer spills),
 // on a pool local 57; index set before the pool 58; this form with the scan on the global 64.
+// split pools 39. Round 17 / lane 11 r17 (iterator form): without the datum_index init 58; the pool
+// through a local 58; data_iterator_next_calling 94 (0x16bc00 stays a call); pool local assigned to
+// the iterator 58; data_next_absolute_index_inlined scan 39. Round 20 (iterator form): the datum
+// through data_datum_index on the iterator's pool 57, on the global 69 (both pool registers and the
+// pad appear, the global is reloaded after the call and the datum pointer spills), on a pool local
+// 57; index set before the pool 58; the scan on the global 64. Lane 14 r10: data_datum_iterator_
+// next_inlined 58; the scan reading the global with the datum from the local 64, the reverse 65; the
+// iterator's own fields with data_find_index/data_datum_index 60. Lane 13 r18: iterator form in
+// network_qos.cpp 58, kept body there 39 (file flags change nothing); out-of-line 0x16bb70 86 and
+// 0x16bb50 44 (stay calls); one pool local also for the final store 64. Lane 18 r1 (iterator form):
+// a step reading the iterator's pool at each use 58, scan on the iterator's field with the datum on
+// the step's local copy 58, the loop in a forceinline helper taking the pool as a parameter 58 (all
+// three: the copies coalesce into one pool register); iterator at function scope with the pool
+// stored last 58; the step called before the loop and at its end 53 (135 bytes; the first step
+// becomes a constant-start scan). The copy looks like an uncoalesced parameter copy from LTCG
+// inlining the real step/scan (0x16bb70/0x16bc00), which /Ob1 on unknown_16b570.cpp keeps out of
+// line here.
 // @retail 0x7b430
 void function_07b430(void)
 {

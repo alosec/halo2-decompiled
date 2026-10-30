@@ -374,6 +374,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // (dot * c) per row 43, the i projection before the cross terms 43, parallel first in j/k 57;
 // harness only: scalar axis locals in any order, all six dot orders as one expression (43) or
 // accumulated (ds_kji 43, the others worse), product operands swapped per row (no change).
+// Lane 18 r1: the first cross term written in the i row (retail computes it last) 43 (same code); the
+// cross terms computed 2, 3, 1 as retail schedules them 43 (same code); the rotation reading the forward
+// copy instead of the direction 86; the cross terms named with their 0.5 scale 75; the rows accumulated
+// in place in the direction (i as one expression) 57.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

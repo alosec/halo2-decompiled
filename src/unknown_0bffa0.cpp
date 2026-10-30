@@ -459,6 +459,14 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // 36 (retail's word load, but in BX with the BSP pointer in EBP); with the BSP pointer at its use too 37;
 // with the structure at its use 36; all three globals at their use 37; the BSP pointer alone at its use 34;
 // the result declared after travelled/step 34.
+// Lane 18 r1: the magnitude's three terms are reordered by rank whatever the text (all 12 sum spellings
+// give the same code; a parenthesised pair is summed first); the direction written k, j, i by hand 94
+// (then i is kept on x87), through a pointer local 80 (k kept, sum k, i, j). Scale as `(1.0f / m) * i`
+// then `j * inverse`, `k * inverse` (another file's normalize) 94: retail's scale block and loop-entry
+// jump exactly, but the sum j, i, k; the scale statements in all six orders with either operand order
+// 34-37; the BSP index read at its use with the BSP pointer declared first 37 (word load, in BX); the BSP
+// pointer a local with the index and structure read at use 36 (DI); BSP pointer and index locals with the
+// structure at use 36 (index back to a dword load).
 // @retail 0xc0840
 bool function_c0840(point3f const *start, point3f const *end, point3f *out, real *distance)
 {
@@ -1203,6 +1211,8 @@ void function_11bed0(s_location *location, point3f const *point);
 point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *point, point3f *out);
 
 // score 38 (was 231): only the node-matrix arm's rotations differ. Ours folds the forward.i load into
+// score 40 (was 38): the node-matrix arm's rotations differ, and (new at 40) the else arm reloads ebx
+// before ebp after the marker call where retail reloads ebp first. Ours folds the forward.i load into
 // the i product of both (`movaps; mulss [m + 4]`, a byte shorter each, which shifts every later jump and
 // call by two bytes) and sums the second rotation's rows in another order (its vector loaded i first);
 // retail compiles both rotations alike (up*k + left*j, then forward*i; vector loaded j, k, i). Round 141:
@@ -1262,6 +1272,10 @@ point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *p
 // through one `vector3f const *` axes pointer 40; the light re-read for the second rotation 266; the node
 // matrix fetched again for the second rotation 304. Compile-only screens (no gain): second output via a
 // local, second input copied first, both inputs copied before the point call, both outputs via locals.
+// Lane 18 r1: the light index read through the alias at every later use (16a8e0, 1cac60 too) 38 (gives
+// retail's ebp/ebx reload order; a 2-point gain, not kept); c28b0 called with the parameter itself 154;
+// the second rotation through function_2477b1 256, the first 243; the point transform between the two
+// rotations 54.
 // @retail 0xc2d00
 void __stdcall function_c2d00(long light_index)
 {
@@ -1505,6 +1519,9 @@ extern s_object_list *g_4de2f4;
 // calls 399. Round 12 (lane 14): the fraction pointer at the function top 93 (computed at entry in EDI),
 // also for the arm's later reads 93; at the arm's top with every read through it 88; every arm read through
 // it 49 (same code); the four alpha stores before the copies 49 (same code).
+// Lane 18 r1 (statement orders of the block, the rest unchanged): alphas between the tint and the copies
+// 49; pair copies first with the tint after them 65; tint after the four copies 65; copies 2, 1, 4, 3 with
+// alphas likewise 58; copies 1, 3, 2, 4 55; the fraction pointer before the copies 75; alphas reversed 51.
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {
