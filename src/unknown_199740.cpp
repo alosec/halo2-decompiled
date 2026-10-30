@@ -17,7 +17,9 @@ typedef void *(__stdcall *block_allocate)(void *, long, long);
 typedef void (__stdcall *block_free)(void *, void *);
 long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte const *source, long source_size, block_allocate allocate, block_free release, void *opaque);
 
-// score 52 (was 52): BLOCKED-BY 0x2cb5b0: retail passes it source in eax, source size in ecx,
+// score 3 (was 3): the low timestamp-zero store precedes PUSH EDI and the false-result
+// store; the frame, timestamp halves, retry body and decompressor setup now agree.
+// Earlier call graph at 52: 0x2cb5b0: retail passes it source in eax, source size in ecx,
 // destination in edx and the destination size in edi (three pushes); its stub is built without
 // /GL, so ours pushes all seven, and the argument loads after the pool setup differ. Retail also
 // keeps the low half of the start time in ebp and the high half in edi (ours the other way round)
@@ -41,6 +43,11 @@ long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte c
 // Round 96: result declared after the allocation 89; the retry loop with break/continue (the
 // matched 0x194260 form) 52; the allocator local before the pool setup 57; elapsed as a read
 // then `-= start` 52; the timestamp read before the result default 52.
+// Native byte/char/short success 105/105/106; direct success 54; allocation-derived
+// success 66; inverse failure 120; final-only result 124; entry callback storage 22.
+// Pool itself as callback context 74; native numeric/raw storage receivers 3/3;
+// immutable pool pointer 3; callback context after header read 15; scoped context 3;
+// success published after release from Boolean/native error 48/11.
 // @retail 0x199740
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
 {
