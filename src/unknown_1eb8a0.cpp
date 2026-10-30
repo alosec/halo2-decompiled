@@ -93,6 +93,9 @@ PRIVATE __forceinline void rotate_direction(vector3f *vector, const vector3f *ax
 // score 120 (was 120): Frame 0x18 agrees; rotation axis products and cosine/projection homes still differ.
 // Round 263: aggregate/sequential/setter/partial-sum publication with projection first
 // 209/209/120/149; with cross first 218/218/138/125. All helper and caller source restored.
+// Round 194: complete normalized-axis input/native-library/original-entry storage 184/184/184/184;
+// those four with the shared cross constructor 188/188/188/188. Input copies add 0xc
+// to the frame and do not recover axis loads or cosine reuse; original axis, helper and body restored.
 // Round 256: Staged axis construction original/angle/entry storage with named/direct normalization
 // 141/170/141/170/141/170; native aggregate axis with named/direct normalization 120/160. All
 // restored.
