@@ -626,7 +626,7 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
         }
 }
 
-// score 27 (was 77): the code is retail's apart from one alignment pad: retail pads the label after
+// score 27 (was 27): the code is retail's apart from one alignment pad: retail pads the label after
 // the 0x3800 pass (2 bytes), which also changes the final loop's pad (ours jumps over a longer one).
 // The group helper with a trailing loop removed by a constant false argument matches byte for byte
 // (not kept: that argument and loop exist only for the pad, and the helper would have one call).
@@ -647,6 +647,9 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
 // Round 421 (at 77, before the group helper): first/third packed fields 77; filtered packed fields 225; all helper packed fields 225; final packed
 // fields 77; first/third/final fields 77; filtered/final fields 225; all packed fields 225; all fields/ascending
 // runtime publication 225.
+// Round 309: On split constant/runtime helpers, byte/short/word/long runtime controls
+// 27 each; with complete Boolean source-bit producers 213 each. Original controls,
+// producer, helpers and whole executable body restored; final-section pad remains.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)

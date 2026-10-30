@@ -2015,6 +2015,9 @@ bool function_f5d70(long vehicle_index);
 // long/byte result 204/166; result from tests 166;
 // complete direction operands 166; early native gear 157;
 // early direction with separate limited result 162. Entry spill/shift-byte home remain.
+// Round 309: Normalized-speed result, consistent speed-limit read and disjoint shift-priority
+// subsets 1-7: 156/215/215/167/167/211/211; all with separate final limited result 204.
+// Original scalar stages, field reads, state branches and whole body restored; initial phase spill remains.
 // @retail 0xf1950
 void __stdcall function_f1950(long vehicle_index, real throttle_input, short new_gear)
 {
