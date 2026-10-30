@@ -70,6 +70,9 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
     return local_0;
 }
 
+// score 408 (was 408): retail's frame is 0x34 and it holds `this` in edi, forming the channel
+// pointer as observer + index*0x528 with the 0xa8 folded into every field displacement; ours has a
+// 0x3c frame, spills `this` and adds 0xa8 to the channel base, and composes the counter's halves.
 // score 408 (was 408): frame 0x3c/0x34; channel/result homes and the counter copy remain.
 // Native channel 434; primary/both counter products 448/419; native products 446/423;
 // native live flag/callback/both 441/439/432; direct counter product 419;
