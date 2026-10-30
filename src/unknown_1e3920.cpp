@@ -603,6 +603,12 @@ real function_267370(long object_index);
 // Round 46: both NONE resets delayed across carrier selection 420 fast; unknown26c alone 415 fast/372 plain;
 // unknown274 alone 416 fast; the whole reset group 421 fast; initial/parent/held header getters and
 // bool held bit 416 fast each (reduced control 416). Original body restored.
+// Lane 17 round 2 (plain checks; the fast image gives 416 for the unchanged body): retail inlines 0x11c120
+// here only (five other callers call it), so the plane compares stay immediates there; our header copy is
+// optimized with this body and shares the resets' -1 in EDI. A swapped-operand staged cross (diagnostic)
+// compiles to the same products (canonicalised). Parent through an if 352; the later class test through
+// `type` 242; carrier chosen before the resets 376; type read after the plane test 127; point declared at
+// the top of the block 98.
 // @retail 0x1e3b60
 void function_1e3b60(long actor_index)
 {
