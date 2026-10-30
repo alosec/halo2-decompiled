@@ -283,6 +283,9 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // (stays a call, 772 bytes); the sphere helper __forceinline 57 (same code); j + (i + k) grouping (the
 // inline normalize's) 59; the scale helper __forceinline 57 (same code); the point copied by value
 // 397 (helper outlined, 456 bytes).
+// Round 27 (lane 11, real builds): the sphere helper forced inline 57; its parameters (point, sphere,
+// plane, depth) 57, (sphere, point, depth, plane) 57, (point, sphere, depth, plane) 57; the sphere
+// passed as `shapes->spheres + index` 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {

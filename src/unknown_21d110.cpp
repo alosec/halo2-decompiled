@@ -748,6 +748,33 @@ PRIVATE long const g_44a200[] = { 0, 1, 2 };
 PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
 // score 30 (was 30): every remaining difference is a stack offset. Retail keeps the loop bool
+// every remaining difference is a stack offset. Retail keeps the loop bool in a
+// dword-aligned unit (its low byte) just above repeat_state; ours is a one-byte home in the lowest unit,
+// which shifts the lighter dwords by four and reorders the heavier ones. Retail's order: sound flags,
+// effect, entry offset, controller, state, index, rate stage, repeat state, bool, listener, tag,
+// definition. Holding repeat_state and the bool in one 8-byte local record matches byte for byte
+// (diagnostic only: a record that only groups locals is not kept). Any size-1 local takes the lowest
+// unit (one-element array, one-member struct, address taken); a size-4 bitfield struct moves it but
+// changes the code. The 'lsnd' state/alternate as two ternaries on one named condition gave retail's
+// register roles (60 -> 30).
+// Tried (fast previews, fast baseline 58-67): the record before the ternaries 32; the tag lookup before
+// the entry flags 78; the entry flags read at each use 78; alternate as an if/else-if chain 133; state
+// before alternate in the looping arm 67; alternate before state in the other arm 136, with a long flag
+// 137, with a short flag 194; the group switch as if/else-if 114; renaming either local, or five locals
+// to either end of the alphabet (no slot moves); the two declared the other way round 67; both
+// initialised 92; the bool initialised 201-202; defaults in an else arm 208 (839 bytes); `(flags & 0x10)
+// != 0` 58; listener/rate stage declared the other way round 58; a byte flag 140; a long flag 148; a
+// short flag 129; a char repeat state 190; dword/word/byte flags with long/char/short state 151-199; a
+// complete looping snapshot 226; the existing sound-system availability helper for the 'snd!' case's
+// three locals 156 (816 bytes); the definition read from the effect at each use 188; the controller
+// chosen with a ternary 77; direct alternate in SET_BIT 139; function-scope looping pointer 58; the
+// looping datum through datum_get_inlined 259 (856 bytes); the looping pointer as a function-scope
+// ternary tested for NULL 197; repeat_state read before the bool 192; the pair declared at the top 58;
+// use_loop_state const 58. Screened (one-file LTCG and compile-only frame listings, which reproduce our
+// slot order): bool types long/dword/short/word/char/byte, an inline out-parameter helper, the loop in an
+// inline helper taking the pair as parameters, const definition, entry pointer arithmetic, the tag read
+// after its test, the controller lookup in its own scope or through 0x2198f0, the loop in its own scope,
+// the definition or tag index declared earlier: the bool stays at the bottom.
 // Round 48 (Kimi 2): repeat_state and loop_alternate held in one named 8-byte record matched byte for byte
 // (0 at 823); not kept, a struct that only groups locals to move their stack homes.
 // score 30 (was 60): every remaining difference is a stack offset. Retail keeps the loop bool
