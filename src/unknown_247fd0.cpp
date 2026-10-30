@@ -158,6 +158,9 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // Round 402 on the expanded-lookup graph: declared cache-record type, direct four
 // random returns, both, combined initial flags, flags/type and flags/direct draws
 // 70 each; declared type with retail timestamp order 133, with all three forms 133.
+// Round 6: field_10 stored after the field_14/field_16/field_18 samples 184/168/152; field_50
+// read into a named pointer before the compare 70; retail order with the compare operands
+// swapped 133.
 // All restored; timestamp/sample order and later scratch registers remain.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,

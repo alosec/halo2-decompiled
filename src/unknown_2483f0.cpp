@@ -180,6 +180,15 @@ static inline void particle_cross_product3d(vector3f const *a, vector3f const *b
 // publication before cross 137/137/137.
 // Complete cross first/second/both inputs by value 111/107/141; both with translation setter 141;
 // existing translation setter 53; paired matrix/point names 52; entry workspaces 52; native cross references 52.
+// Round 6: the sums do not associate as retail's: ours canonicalises all three as
+// (forward + up) + left, retail has (left + up) + forward for x and (forward + left) + up for y/z,
+// and retail multiplies the point components register-first and in place at their last use
+// (expression-like loads) where ours treats them as named scalars (memory-first, never in place).
+// A transform helper reading the point through a pointer gives retail's cross schedule, XMM3/XMM4
+// point homes and register-first products but canonicalises every sum order alike (76, 472
+// bytes; with an existing vector add for the translation 76); flat point-first sums 59; each
+// coordinate grouped `a + (b + c)` (64 combinations) 51-59 positional, luf 59; staged shared
+// cross product 52; a separate left vector copied into the matrix 99 positional.
 // @retail 0x248450
 void function_248450(matrix3x3 *rotation, s_particle_frame const *frame, point3f *position, matrix3x3 const **rotation_result, point3f const **position_result, bool field_b4)
 {
