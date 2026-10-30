@@ -186,6 +186,8 @@ static __forceinline real avoidance_normalize2d(point2f *direction)
 // Round 191: shared subtraction with original/shared/captured/native-real-root normalizer
 // 91/92/155/155; complete native point with the same boundaries 92/92/156/156. One-point
 // gain rejected; original point, private normalizer and body restored. Early Y preload remains.
+// Round 232: Once-read node/goal/node-goal/heap/node-heap/goal-heap/all search scalars, then all with full-width captured counts
+// 170, 175, 175, 92, 170, 175, 175, 167. Original executable source restored.
 // @retail 0x2c3680
 short avoidance_add_node(s_avoidance_search *search, point2f const *point, bool side, long value08, short obstacle,
 	short value1a, real cost, short parent)
@@ -680,6 +682,8 @@ bool obstacle_list_add(s_obstacle_list *list, word flags, point2f const *center,
 // complete graph with Boolean success 754. Original body, includes, layout assertions and search
 // declaration restored. Reduced control 2c39f0 already differs in the unchanged preview; no full-
 // image loss accepted.
+// Round 232: Once-read radius/options/both, per-use flags alone/with radius/with options/with both, then all with Boolean success
+// 754, 748, 773, 675, 754, 768, 773, 786. Original executable source restored.
 // @retail 0x2c41b0
 bool __stdcall function_2c41b0(long actor_index, s_type_f17a25 *state, short count,
  s_path_step_view const *steps, bool avoid, short *out_count,
