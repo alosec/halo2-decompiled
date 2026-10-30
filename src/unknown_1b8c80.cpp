@@ -237,6 +237,8 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 // Round 252: eligibility accumulated with logical OR 43, bitwise OR 31, conditional 3;
 // named eligibility 3; actor at every use 116 (matched caller lost); read-only actor,
 // read-only flags, both 3/3/3. Original complete body restored.
+// Round 42: unit/seat/object/paired field-address locals 3/3/3/3; const actor pointer 3;
+// read-only full definition 3; separate occupied flag 62; read-only count 3. Restored.
 // @retail 0x1b8f30
 bool function_1b8f30(long actor_index, long object_index)
 {

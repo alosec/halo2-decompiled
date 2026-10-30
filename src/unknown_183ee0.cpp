@@ -86,6 +86,8 @@ static inline byte *bsp_bit_vector(long index)
 // improvement. Kimi 2 r41: an if/else after the loop whose two branches both clear the active
 // slot count keeps the index live and matches; not kept (identical branches that only steer
 // registers).
+// Round 42: completed index with bound-i 8, i-i 6, last-iteration reset 14, i-bound 5,
+// index mask 5, modulo 5, xor 6; external declaration alone 6. Original body restored.
 // @retail 0x185a30
 void function_185a30(void)
 {

@@ -1598,6 +1598,9 @@ struct s_camera_clip_reference_16ebf0
 // Round 261: separate out-of-line validation/mode/location declaration subsets, all seven
 // 209; separate composition declaration 209. Original declarations and complete body restored.
 // Round 409: Staged cross with direct or retained matrix inputs, each with/without the inner position alias, 144/144/144/144; genuine reused state-field receivers on those four graphs 209/209/209/209. State/forward/point homes and held clipping convention remain. Original cross, copies, aliases and complete body restored.
+// Round 42: position declared after directions 249; forward/up full state receivers 119/119;
+// working matrix inputs both/forward-only 120/120; early matrix declaration 120; const position
+// pointer 120; two-read forward receiver 120. One-point gains rejected; original body restored.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {
