@@ -123,8 +123,11 @@ struct s_free_state_23d260
 	real pitch;
 	real roll;
 };
-
-// score 110 (was 110): the rest is register allocation in the side vector
+// score 110 (was 110): Zero/side XMM roles and speculative normalization remain; frame 0x4c agrees. Complete
+// axial/cosine-normal/affine vector contributions, masks 1/2/3/4/5/6/7, scored
+// 281/281/335/313/314/329/332; existing add-scaled affine assembly 313. Original normalizer,
+// projection, roll rows and movement restored.
+// Earlier: the rest is register allocation in the side vector
 // block: retail keeps zero in xmm1 (ours xmm3) and the side vector in
 // xmm2/xmm3/xmm4 (ours xmm1/xmm2/xmm0, retail moves side.k out of the inverse's
 // register), divides before the lahf, and stores up as k, j, i (ours k, i, j);
