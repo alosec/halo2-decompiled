@@ -141,6 +141,10 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // returns: eight forms 36 each; threshold rejected, shared find changed.
 // that with a plain string parameter 41; start = string + start 40; a local copy of the start
 // 28, but the start then arrives in edx and the matched caller 0xb5f10 differs.
+// Lane 8 r79: `string + start` gives retail's loop registers (the compile-only /Gd body is
+// retail's: start EDI, walk EDX, length ECX) but LTCG passes start in EDX, not ECX: 28 with
+// 0xb5f10 6; with count before start in every declaration and call 28; the length test nested
+// 28; a plain string parameter 41; early returns 48.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -337,6 +341,9 @@ bool function_7af40(s_type_99af70 const *address);
 // strncpy alone 36. A compile-only probe splits the counter whenever the destination survives the
 // call in a callee-saved register (existing copy, a local pointer, an inline wrapper, a separate
 // block), so retail's in-place `inc` with an ESI destination still needs its source form.
+// Lane 8 r79: an early `return false` for a bad address 32; `count = count + 1` 32; the failed
+// open closing and returning first 33; `connection->endpoint` read at each use 119 (0xb40b0 61);
+// the endpoint read before the address check 64.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {
