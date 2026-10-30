@@ -989,6 +989,10 @@ real function_30bf0(vector3f *v);
 // Round 222: found byte/short/long/dword with result first at entry, all 245; arc-only result,
 // all 257. Original body restored; frame 0x28/0x30, rounded horizontal root and separate
 // divisions remain.
+// Lane 14 r16: double -1.0 with an uncast t2 root together 273; two_a written out at both
+// divisions 248 (no reciprocal: both become x87 fdiv as in retail, frame 0x2c), that with
+// `root * (-1.0f / two_a)` 248 (retail's fld -1/fdiv/fmul order); the named two_a with that
+// order 232 (the SSE reciprocal returns); sqrtf for the horizontal length 232. Body restored.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1518,6 +1522,10 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 222: shared zone predicate 346, with shared scaled sum 332; both library copies tie each
 // form. Shared zone with cached tag, with/without scaled sum or copies, 381 each. Original
 // body/include restored; slot/input allocation and speed-update expansion remain.
+// Lane 14 r16: BLOCKED-BY 0xfbfd0 (contributor code): retail expands it inline after 0xfbd40, which
+// keeps index * 12 in EBP and the definition in EDI from entry. A definition local at entry 364
+// (EDI as retail, 1176 bytes), with the bitfield test 395, with `(flags >> 2) & 1` 363; that last
+// with `inline` on 0xfbfd0 (diagnostic only, not kept) 313 at 1248 bytes. Body restored.
 // @retail 0xf8200
 bool __stdcall function_f8200(long projectile_index, byte const *data, long unused)
 {
@@ -1696,6 +1704,15 @@ real function_17c900(short function_type, real input);
 // Round 294: Unsigned word/dword salt 360/371; paired word/dword phase counters 354/371;
 // word-word/dword-word/word-dword/dword-dword 354/354/371/371. Complete body
 // restored; stacked-index/output-EBX transport and vector homes remain.
+// Lane 14 r16: retail writes the output in each of three exits (two point setters and a plain copy)
+// and reads the index again for the salt: late named salt with the three exits 382 (the index stays
+// an EAX argument copied to EBX, the output goes to EBP); parameters swapped 382 (same code); a
+// target pointer local 382; `(void)&projectile_index` 382; the salt written at both uses 328 (retail's
+// convention: index on the stack, frame 0x30, first difference +0x4f; aligned difference 263 -> 162,
+// not kept as it is a value written out at each use); without the target local 328; that with
+// normalize_inline 326 (aligned 168); with a wander direction vector 362 (aligned 150). Remaining:
+// retail's zero register in XMM4 from the to_target block and the normalized components kept in
+// XMM1-3. Body restored.
 // @retail 0xf87f0
 void function_f87f0(long projectile_index, point3f *aim_point)
 {

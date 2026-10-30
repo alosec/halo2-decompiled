@@ -236,6 +236,9 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // second/update 221; all 230; direct-cross/update 214. CRT output copies rotating/nonrotating/both:
 // memcpy 10/10/10; memmove 195/194/226; both copies with second shared math 170/237.
 // All complete output locals, CRT calls, includes and math boundaries restored.
+// Round 16: the change through the existing in/out scale helper 10; the delta negation through it 10;
+// both 172; the object velocity written out without its pointer local 238; the output copy read from
+// the object 10. The same point-velocity helper loads the linear x first in matched 0x109e00.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {

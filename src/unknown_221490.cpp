@@ -695,7 +695,11 @@ void function_220fd0(
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
 // score 21 (was 21): the truncated float is kept in ecx where retail keeps it in edx, and
-// the flag byte follows it.
+// the flag byte follows it. All four places are one scratch rotation that starts at the
+// decibels push (ours ecx, retail eax). Tried: the room clamp as if/else if 90 (it
+// branches); attenuation initialised at its declaration 21; the first barrier after the
+// three float stores 27; lDirectHF after the barrier and first zero 143; the buffer in a
+// local for both calls 42.
 // @retail 0x2211e0
 void sound_driver_voice_environment_set(
 	long voice_index,

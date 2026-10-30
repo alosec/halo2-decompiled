@@ -32,7 +32,11 @@ PRIVATE __forceinline void direction_face_point(s_direction_face const *face, ve
 // top as retail but in xmm2 and stored first); reading z first (47) or z
 // multiplied first (39); x*= vs scale*x forms (19); a plain inline helper (not
 // inlined, 217); a vector3f local copied to the direction (125); a set helper
-// for the three stores (68); /O2 /Ob1 flags (60).
+// for the three stores (68); /O2 /Ob1 flags (60). Round 89: a long low coordinate with the scale read
+// from the face at each use is retail's code with the zero and z in xmm2/xmm3 swapped (37); on it, z
+// read first 47, z/y/x reads 43, `z *= scale` 37, z scaled first 39, `x * (2/63)` or `x * (1/63) * 2`
+// products 37; scale local after the reads 64/65 or inside the test 63; the point read into a vector3f
+// local 102 (copy) or 37 (member-wise); `x * (2/63)` products here 19.
 // @retail 0x24f6b0
 real __fastcall function_24f6b0(dword index, vector3f *direction)
 {

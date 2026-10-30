@@ -298,7 +298,11 @@ void motion_sensor_blip_set_position(point2f const *point, s_motion_sensor_blip 
 // 26; conditional pool refresh with header reference 24, with absolute slot 24.
 // the sensor table pointer is kept in ECX, retail keeps it in EAX. Tried (r27b): the
 // mask written inline at each test 26; the friendly-team test as `!= NONE && call` with
-// the rider branch in the else 26.
+// the rider branch in the else 26. The rider lookup in both arms of the friendly test through a
+// forceinline vehicle-type helper 261 (480 bytes: no cross-jump; the no-call arm also keeps
+// the data pointer, which retail re-reads); one pool local for both lookups 108 (pool in EBX,
+// NONE no longer a register); rider index as a ternary 26; no-rider arm first 60 (366); a named
+// rider pointer 26.
 // @retail 0x1a1e49
 char motion_sensor_object_type(long local_player_index, long object_index)
 {
