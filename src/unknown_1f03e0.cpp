@@ -601,7 +601,8 @@ PRIVATE __forceinline byte function_1f1462(dword arg_0)
 	return (arg_0 >> 3) & 1;
 }
 
-// score 182 (was 182): frame 0x28 and state/output registers agree; the initial state-dot
+// score 182 (was 182): Frame 0x28 and retained EDI/EBX convention agree; initial dot displacement bytes and rotation SIMD scheduling remain.
+// frame 0x28 and state/output registers agree; the initial state-dot
 // displacement bytes (retail reads the old up through the ESI address it keeps, ours folds
 // [EDI+0x108]/[EDI+0x104]: the six extra bytes) and the rotation SSE schedule remain.
 // Tried: the state dot through dot3f 262 / through a branch-local pointer 206 (both break caller
@@ -707,6 +708,7 @@ PRIVATE __forceinline byte function_1f1462(dword arg_0)
 // Round 170: complete three-row axial/retained/swept product groups in three schedules
 // 180/180/180; row schedule 181; coordinate schedule 180; complete initial products 180;
 // cosine complement 183; both 182. Two-point gains rejected; original full body restored.
+// Round 188: Branch-owned original-up/input-setter/output-setter subsets 1-7 score 296/297/306/362/384/352/365; all with named cosine complement 362. Every form loses the matched caller in the reduced image and is rejected; original whole body restored.
 // @retail 0x1f1460
 void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *up_result, vector3f *forward_result)
 {
@@ -1266,7 +1268,8 @@ PRIVATE inline real contact_normalize(vector3f *vector)
     return length;
 }
 
-// score 421 (was 421): Frame 0x64 agrees; persistent zero and count/component homes remain.
+// score 421 (was 421): Frame 0x64 agrees; persistent zero, count/component homes and direction residency remain.
+// Frame 0x64 agrees; persistent zero and count/component homes remain.
 // Frame 0x64 agrees; persistent zero and count/component homes remain.
 // Frame 0x64 agrees; persistent zero, count/component homes and direction residency remain.
 // Earlier 428 from 489: frame now 0x64; count/component and vector homes still differ.
@@ -1333,6 +1336,7 @@ PRIVATE inline real contact_normalize(vector3f *vector)
 // desired/direction clones 584/511/615/428; input+direction/desired+direction/
 // all/all plus fallback direction clone 585/509/616/615. All restored; original
 // copies, qualified count, candidate cursor, outputs and arithmetic retained.
+// Round 188: Single-exit desired/tangent normalization and existing in-place difference producers in subsets 1-7 score 422/421/422/421/422/421/422; all with test-produced success 523. Original helpers, count qualification, cursor and full body restored.
 // @retail 0x1f2250
 bool function_1f2250(vector3f const *velocity, byte const *request, vector3f const *input,
     bool moving, vector3f *out, long *surface, real *speed, long *object_index)
@@ -1489,7 +1493,8 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
 real function_1201a0(vector3f *vector, vector3f const *fallback);
 bool havok_component_any_rigid_body_active(s_havok_component *component);
 
-// score 230 (was 230): Frame 0x28 agrees; zero-load width, reset/selection homes and material-call
+// score 230 (was 230): Frame 0x28 agrees; movement zero width, reset/selection homes, cold arms and second material-call expansion remain.
+// Frame 0x28 agrees; zero-load width, reset/selection homes and material-call
 // expansion remain. Our build inlines 0x1f1df0 at the second call (after 0x1f2250) where retail
 // calls it at both sites; retail also lays the not-supported arms of the contact loop out after the
 // first post-loop call block, keeps the supported flag in its stack byte and compares the movement
@@ -1525,6 +1530,7 @@ bool havok_component_any_rigid_body_active(s_havok_component *component);
 // 257/266/285/293; stationary+unflagged/unsupported+unflagged/all/all with
 // native magnitude 286/293/286/287. Complete original magnitude, positive
 // current/saved predicates, observations, selection and calls restored.
+// Round 188: Existing reset/selected-normal/final-vector setters in subsets 1-7 score 292/247/304/241/297/256/309; all with real magnitude 308. Original copies, magnitude, input timing and calls restored.
 // @retail 0x1f19c0
 void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
 {

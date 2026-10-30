@@ -65,6 +65,15 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // strength declared first 59; a named power local for the test, divide and add 171.
 // The direction adds follow first-assignment order: retail's form needs direction's fields assigned
 // before the contribution's. Earlier (93 form and before):
+// frame 0x8c and first trig/product sum agree; two x87 add operands, blend address ownership, strength-add destination/copy and collision normalization remain.
+// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the three x87 direction adds load the direction first where retail adds
+// it as the memory operand, 0x131c20's `&color` is formed in edi and copied to ecx where retail
+// forms it in ecx and then edi, and the collision test's sete. The fast check also leaves two of
+// retail's global references unresolved in the reduced image, so part of this diff may be noise.
+// and the color0 store now match. Left: the three x87 direction adds load the direction first
+// (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
+// (retail ecx, then edi), and the collision test's sete.
 // Round 69: `direction.i = contribution.i + direction.i` written out, or contribution declared
 // before direction, 93/93 (identical code: the add operands are reordered); the collision test as
 // an inline/forceinline bool helper (call && no-object) 93/93 (folded); the per-light count test as
@@ -124,6 +133,13 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
 // in double scalar carriers 186. Original contribution and color ownership restored.
 // Round 183: shared vector add, either input owner, and unit add-scaled in place 93/93/93/93; separate native sum output, plain/scaled and either owner, 188/188/188/188. Original accumulation restored.
+// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the strength is loaded, added and copied back where retail adds the
+// entry's strength to it in place, the two remaining x87 direction adds load the direction where
+// retail loads the contribution, 0x131c20's `&color` is formed in edi and copied to ecx where retail
+// Round 187: widened compound accumulation/immutable contribution/strength-first/direct clamp/
+// clamp plus strength/relative-strength part/light-divisor part/all scalar parts with compound
+// accumulation 56/56/56/56/56/56/140/56. Original executable source restored.
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {

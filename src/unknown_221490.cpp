@@ -244,6 +244,10 @@ set_all:
 // Native desired-pair reference, alone/both element references and nested/combined
 // duplicate guards 102/102/96/96; complete pair snapshots 104/104/104/104.
 // Settings/list induction and mask/count homes remain; all executable forms restored.
+// Round 189: Complete volume/bin/both field observations 107/106/86; read-only input contracts
+// alone/volume/bin/both 83/107/106/86; both with native output-pair assignment 112. Both
+// observations recover length but shrink the frame and change cleanup to four bytes. Every body
+// and declaration restored.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,

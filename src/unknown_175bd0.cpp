@@ -3019,6 +3019,12 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // byte/byte 93, byte/long 124, long/bool 135, long/byte 124, long/long 138. One- and three-point reductions
 // are rejected. Frame 0x50, system/color registers and call staging remain; original query types and body
 // restored.
+// Round 186: Getter definition/member declaration inline with bool/bool, byte/bool, byte/byte, bool/byte
+// query results: 96/95/93/96; all lose matched 0x247470 and are rejected. With separate noinline member
+// declaration preserving retail calls: 96/95/93/96, no checked match loss. One- and three-point reductions
+// fail retention. Original getter definition/declaration, query types, successor qualifier, mode, every
+// call tuple and executable body restored. Frame 0x50 versus 0x54, system/color homes and color-call
+// staging remain.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3218,6 +3224,12 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 // setter alone/with normal setter/with named normal rows 94/88/187; named point rows alone/with normal
 // setter/with named normal rows 169/168/187. The two 1525-byte forms regress. Scale prefix, point Y-source
 // copy and render-call roles remain; original helpers and body restored.
+// Round 186: Immutable coordinate sources with two-arm scaled outputs 140; separate source/scaled
+// coordinates 105; one matrix-scale observation 88; immutable sources plus one scale 184. With the known
+// default-before-color prefix: 282/266/270/283. Every coordinate-ownership form loses matched 0x179fb0;
+// native scale-only forms preserve it but give no gain. All original point/normal helpers, scale selection,
+// source observations, in-place behavior and call tuples restored. Original 88 retained; contributor-owned
+// 0x2dba0 contract remains untouched.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {

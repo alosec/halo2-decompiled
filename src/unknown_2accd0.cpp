@@ -784,7 +784,8 @@ struct s_signed_file_write_parameters
 };
 #pragma pack(pop)
 
-// score 134 (was 134): retail keeps every `parameters` load after the scratch getter's
+// score 134 (was 134): frame 0x18 and length agree; scratch-owner versus header/minimum scheduling, opposite buffer/count homes and extension I/O residency remain.
+// Earlier: retail keeps every `parameters` load after the scratch getter's
 // stores, as if the scratch object were address-taken (its 0x8000-byte storage at
 // 0x4fa0c8 sits right before the owner/pointer/size words and the flag byte); ours
 // hoists the loads. Storage as the object's first member, init `pointer = storage`
@@ -796,6 +797,10 @@ struct s_signed_file_write_parameters
 // DL180: case order 2013 324; case order 3012 331; case order 0213 192; case order 0312 273; case
 // order 1203 313; case order 2103 314; case order 2301 332; case order 3210 328. Original
 // executable body restored.
+// Round 187: body I/O fields at each use/parallel remaining-byte parts/both native API result
+// carriers/fields plus parts/fields plus carriers/parts plus carriers/all three/all plus native
+// signature value clear 261/271/163/275/269/279/283/340. Original getter, storage, observations,
+// success types, library clears, zero-capacity loop and complete body restored.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

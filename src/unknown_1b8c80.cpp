@@ -707,7 +707,8 @@ long function_1e4a50(long character_index);
 void __stdcall function_26c2d0(long prop_index);
 void function_270590(s_path_source *source, s_type_c3b527 const *point, long node_index);
 
-// score 160 (was 160): frame 0xb4 and a common result exit agree; the signed-word
+// score 160 (was 160): frame 0xb4 and common result exit agree; signed-word default load, byte flag extraction, source/output scheduling and later register homes remain.
+// Earlier: frame 0xb4 and a common result exit agree; the signed-word
 // default load, field tests, output scheduling and later register homes still differ.
 // Earlier: the shared default loads as a signed word rather than a dword; frame homes differ.
 // Unsigned-word/dword result 306/225; byte preparation with long/word/dword result 225/306/225;
@@ -720,6 +721,9 @@ void function_270590(s_path_source *source, s_type_c3b527 const *point, long nod
 // 210/210; plain 210, 1188/1177 bytes. Keep only positive admission and one result exit;
 // temporary payload types restored.
 // Round 183: short/word/dword result 250/250/160; word/scalar-word flags 266/266; selection at entry/after result 248/248; preparation after acquisition 162, with early selection 249; short plus word flags 251; early selection plus word flags 191; middle-phase selection 244, with either word view 220/220; shared candidate state 160; named weighted distance 160. All restored.
+// Round 187: byte flag scalar/native bool bitfields/value-initialized source/point library copy/
+// scalar plus initialization/scalar plus copy/initialization plus copy/all three
+// 160/160/162/160/162/160/162/162. Original byte flags, zeroing, copies and body restored.
 // @retail 0x1b99d0
 short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 {
@@ -1289,7 +1293,8 @@ struct s_1ba091
     s_slot_entry_iterator field_4;
 };
 
-// score 198 (was 198): frame 0x14 agrees; incoming actor ECX/EDX, early object-header
+// score 198 (was 198): frame 0x14 agrees; early object-header acquisition, incoming actor, mask/entry/result carriers and reusable homes remain.
+// Earlier: frame 0x14 agrees; incoming actor ECX/EDX, early object-header
 // acquisition, selection-mask storage and iterator/result homes differ.
 // Earlier slot-data form 198; raw-mask and independent iterator variants 202/207;
 // Result-first 190; explicit same-object result 230; cleanup result 258.
@@ -1313,6 +1318,10 @@ struct s_1ba091
 // positive admission, data member and default-owned code 211. Original restored.
 // Round 272: native header getter and parent field with payload/iterator/result
 // lifetime subsets 198/198/202/202/198/198/202/202. Original body and types restored.
+// Round 187: consistent selection-field observations with member payload, result/iterator names
+// and combinations, eight at 249 (frame 0x18, 874 bytes); actual iterator aggregate construction
+// with member payload, ordinary returned-entry for loop, byte bit fields or all three, five at 260
+// (885 bytes). Indexed member-data form tried first on both new graphs; original body/types restored.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {
