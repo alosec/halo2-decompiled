@@ -273,6 +273,9 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 // 0xffff`, but the tag table moves from EDI to ECX, loaded before the frame); the flags field read just
 // before function_173ba0 149 (arg_0 becomes a stack parameter), both 156; the second and third block
 // elements through named element pointers 117 each (identical code).
+// Round 31: flags read just before function_173ba0 149 (arg_0 then lives in EBP and goes on the stack);
+// the first cache zero store moved down with the other three 120 (retail's grouping); that with the
+// fallback index masked 149; flags late with the grouped zeros 151; flags late with no byte alias 149.
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)
