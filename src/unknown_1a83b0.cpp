@@ -476,6 +476,8 @@ s_1a8a10 g_4453c0[] =
 // order [3], [1], [2], [0] 21; the pragma replaced by a noinline declaration of
 // 0x1f57a0 here 214 (more gets inlined). Retail reads j again after the y store
 // of the rotated point, as if that store could alias the actor.
+// The actor index comes before the point: retail's 0x1a8c30 loads the point (eax) before the index (ebx), and
+// callers set up register arguments last to first.
 // Round 24: the rotation as a forceinline helper (the pragma keeps it out of line)
 // 164; the facing copy before the rotation 54; the facing copied as one 2D struct
 // 118 (the j re-read appears, the copy goes through integer moves); a 2D reference

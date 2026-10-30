@@ -21,7 +21,10 @@ void function_3e4e0(dword *current, dword const *target, real step);
 // force 0x10), update's false store sits after the force test, and special takes esi for edi.
 // update = false before force 218 (homes as retail, sample/update timestamps swap esi/edi);
 // that plus update elapsed after the object 186; update before the object 216;
-// object, update, update elapsed, force 186; an inline object getter for both lookups 27.
+// object, update, update elapsed, force 186; an inline object getter for both lookups 27;
+// force/object renamed (reset, stale; entity, body) 27; special declared before type 26 (tail
+// order as retail, special still in esi); named sample/update timestamps 27, with update first
+// 218; the other entry orders of update elapsed/object/force/update 169-240.
 // @retail 0x3dfe0
 void function_3dfe0(long cache_index, long object_index, real priority)
 {

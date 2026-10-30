@@ -371,7 +371,8 @@ void __stdcall function_115220(long machine_index)
 	}
 }
 
-// score 286 (was 286): Frame 0xc8 agrees; early flag carriers, the initial clamp spill and later float/portal/movement scheduling differ.
+// score 273 (was 286): frame 0xc8 and early flag acquisition agree through +0x5f; the initial
+// clamp spill and later float/portal/movement scheduling remain.
 // Earlier: its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // Frame 0xc8 agrees; early flag carriers, the extra clamp spill, floating schedule and portal/movement homes remain.
 // Round 269: motion workspace 368; position snapshot 455; both 455; shared ordinal 368;
@@ -395,6 +396,10 @@ void __stdcall function_115220(long machine_index)
 // Round 221: native word flags with short/word/long/dword/byte/char position predicates
 // 438/438/334/334/286/286; signed-halfword flags with short/word predicates 438/438.
 // Original predicate and complete body restored; eager flag carrier and initial clamp spill remain.
+// Round 314: Native field/animation lifetime forms 286/368/399/389/286/368/399/389; guarded
+// bool/byte/short/long predicate 273/273/435/321. Keep only the guarded bool, ordinary full 273,
+// 1899/1887, first +0x5f; all baseline matches preserved. Both predicate uses stay inside the enable
+// block; the word snapshot, every call, field read and floating group are unchanged.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
@@ -404,18 +409,21 @@ bool __stdcall function_1152e0(long machine_index)
 	bool animated = false;
 	bool changed = false;
 	word object_flags = machine->flags_c0;
-	bool full_position = TEST_FIELD_BIT((object_flags >> 10) & 1);
 
-	if ((TEST_FIELD_BIT((object_flags >> 12) & 1)) && (!(0.0001f > (real)fabs(machine->position)) || (full_position)) &&
-		machine->havok_component_index != NONE)
+	if (TEST_FIELD_BIT((object_flags >> 12) & 1))
 	{
-		s_havok_component *component = havok_component_get(machine->havok_component_index);
-		real position = (full_position) ? 1.0f : 0.0f;
+		bool full_position = TEST_FIELD_BIT((object_flags >> 10) & 1);
+		if ((!(0.0001f > (real)fabs(machine->position)) || (full_position)) &&
+			machine->havok_component_index != NONE)
+		{
+			s_havok_component *component = havok_component_get(machine->havok_component_index);
+			real position = (full_position) ? 1.0f : 0.0f;
 
-		if (machine->position > position)
-			position = machine->position;
-		function_1d24a0(component, position);
-		changed = true;
+			if (machine->position > position)
+				position = machine->position;
+			function_1d24a0(component, position);
+			changed = true;
+		}
 	}
 
 	if (MACHINE_GET(machine_index)->animation_state_offset != NONE && machine->channels[0].graph_tag_index != NONE &&

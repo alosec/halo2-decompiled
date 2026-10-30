@@ -96,6 +96,9 @@ static __forceinline long real_to_long(real value);
 // DL190: Side/motion/both native real roots 378/378/378; native absolute magnitude 378; both roots plus absolute magnitude 373 (five-point gain rejected). Both complete double squared-length identities alone/absolute/root APIs 378/378/378. Frame and early input/state ownership remain; all restored.
 // DL192: Genuine magnitude/reciprocal/displacement workspace reuse, subsets 1-7: 378/404/404/390/390/408/408;
 // complete reuse with fallback point setter 466. Frame and early input/state ownership remain; all restored.
+// Round 314: Adjustment distance snapshot with bool/byte/short/long outcomes, without/with motion-
+// scale snapshot: 437/433/437/433/448/444/452/448. Short and long recover frame 0x48 but retain wrong
+// third-input ownership and regress. Original frame 0x4c body restored at 378.
 // @retail 0x1fe620
 void function_1fe620(long arg_0, byte const *arg_1, byte const *arg_2)
 {
