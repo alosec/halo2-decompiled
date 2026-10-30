@@ -81,6 +81,13 @@ void c_animation_channel::clear()
 // the animation id is copied through ECX (retail: ESI, while CX holds unknown0e from an early load and
 // a late store), so ESI is never modified and LTCG passes graph straight in ESI (retail: ECX, then
 // push esi; mov esi, ecx); the four matched callers break. Early frame-position store kept (36).
+// store order (graph after unknown0d) and the byte-pointer clear the body equals retail except
+// that the animation id is copied through ECX (retail: ESI, while CX holds unknown0e), so ESI is
+// never modified and LTCG passes graph straight in ESI (retail: ECX, then push esi; mov esi, ecx);
+// the four matched callers break (only their graph argument register differs). Retail hoists the
+// unknown0e load above the graph store, which is what leaves ESI for the id copy; ours hoists the
+// id copy instead (its store moves above the graph and frame stores). Early frame-position store
+// kept (36).
 // Forms: sentinel/word/byte clear chains 41/41/43; two-byte memset 43; stored flags 41; stored-ID
 // result 76; renamed late graph 42; dword/long flags plus early frame 36/37; paired defaults 42;
 // identifier memcpy 36; metadata before resets 42; trailing defaults 41; redundant byte clear
@@ -136,6 +143,12 @@ void c_animation_channel::clear()
 // Round 83: retail order 42 (callers lose); unknown0e stored right after unknown0d 42 (stored at
 // once, ECX free for the id copy); the two NONE id words as one chained assignment, retail
 // order/current 41/36; the two zero words chained 38.
+// the id copy 36; flags stored next to the derived byte 36.
+// Round 42 (all with graph in ESI and the six matched callers off by 1-68): retail order with
+// unknown0e stored first/before unknown0d 40/42, graph stored last 42, id stored last 44; existing
+// reset() or clear() inlined first, then retail's assignments with or without frame/rate 51 (the
+// unknown10 clear is dropped, flags move to ECX); the graph/frame/id/rate/unknown0e/flag-bit stores
+// in a forced-inline helper taking unknown0e as a short (call-site conversion) 42.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)

@@ -799,6 +799,28 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // spellings and statement orders; only dropping the definition local moves the bool among the
 // dwords. Retail's order: sound flags, effect, entry offset, controller, state, index, rate stage,
 // repeat state, bool, listener, tag, definition.
+// so every load and store of a local uses a different offset. Retail keeps the bool loop_alternate in a
+// dword slot just above repeat_state and leaves four bytes unused at the frame bottom; ours gives the bool
+// a byte slot at the bottom. Holding the two in one 8-byte record gives retail's frame exactly (32 at 823
+// bytes; not kept: a record that only groups locals). The 'lsnd' case still holds the entry flags in eax
+// and the tag base in ecx (retail the reverse). Retail's slot order: sound flags, effect, entry offset,
+// Tried (fast previews, fast baseline 67): the tag lookup before the entry flags 78; alternate as an
+// if/else-if chain 133; state before alternate in the looping arm 67; the group switch as if/else-if 114;
+// renaming either local 67 (no slot moves: names do not order this frame); the two declared the other way
+// round 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry flags
+// read at each use 78; the bool renamed to sort first or last 67 each; a byte flag 140; a char repeat state
+// 190; the existing sound-system availability helper for the three locals of the 'snd!' case 156 (816
+// bytes); the definition read from the effect at each use 188; dword/word/byte flags with long/char/short
+// state 199/192/151/162/193/195/152; complete native looping snapshot 226. Screened (compile-only frame
+// listing, which reproduces our slot order): declared at the top, the definition or tag index declared
+// earlier, the definition read at each use, the bool's declaration order, initialisation, `!= 0` or
+// ternary spellings and statement orders: the bool stays at the bottom; only dropping the definition local
+// moves the bool among the dwords.
+// Round 37: defaults in an else arm 208 (839 bytes); `bool loop_alternate = false;` 201; the 'lsnd' else
+// arm computing alternate before state 136; `alternate` declared before `state` 67; the controller chosen
+// with a ternary 77. Screens: renaming definition/repeat_state/tag_index moves no slot; initialising
+// repeat_state reorders several slots but the bool stays a byte; the looping state fetched through an
+// inlined helper with out-parameters leaves the frame unchanged.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

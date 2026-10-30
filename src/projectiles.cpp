@@ -621,6 +621,11 @@ s_projectile_material_response g_547660;
 // without the reference 51/65 (the index then arrives in EDX); a pointer to the index walked from
 // the parameter to each parent field 49 (word loads, but at the loop head), with the counted loop
 // 47; the existing global_material_get (inline in damage.cpp) for the lookup 34 (same code).
+// Round 12: a counted scan gives retail's shape but colours index/material/counter/pointer EDI/ECX/
+// EDX/ESI (retail ESI/EDI/ECX/EDX) with the dword entry load: a named response base indexed 54,
+// the element indexed off the definition 56, a walk local read through the reference 56, the
+// material declared before the loop 56; the pointer scan with a walk local read through the
+// reference 34 (same code). A read through the reference loads a word only when no loop carries it.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -976,6 +981,9 @@ real function_30bf0(vector3f *v);
 // Round 294: Entry a/two_a/discriminant-base storage, seven nonempty subsets, all 232;
 // all with b storage 232. Every original producer and complete body restored;
 // frame 0x28/0x30, rounded-root scheduling and separate divisions remain.
+// Round 222: found byte/short/long/dword with result first at entry, all 245; arc-only result,
+// all 257. Original body restored; frame 0x28/0x30, rounded horizontal root and separate
+// divisions remain.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1499,6 +1507,9 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 294: Entry ticks/arming-ticks/speed storage, seven nonempty subsets, all 332;
 // all with owner-index storage 332. All producers and the complete callback restored;
 // frame four agrees, slot/input allocation and speed-update expansion remain.
+// Round 222: shared zone predicate 346, with shared scaled sum 332; both library copies tie each
+// form. Shared zone with cached tag, with/without scaled sum or copies, 381 each. Original
+// body/include restored; slot/input allocation and speed-update expansion remain.
 // @retail 0xf8200
 bool __stdcall function_f8200(long projectile_index, byte const *data, long unused)
 {
@@ -2473,7 +2484,7 @@ real function_1201a0(vector3f *v, vector3f const *fallback);
 void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *seed, real min_angle, real max_angle);
 struct s_globals_element;
 s_globals_element *function_188690(short index);
-void function_184060(long unknown3c, byte unknown59, s_type_1e6529 *data, long unknown50);
+void function_184060(long unknown3c, long unknown59, s_type_1e6529 *data, long unknown50);
 void function_a85c0(long projectile_index, s_collision_result_1697c0 const *collision, vector3f const *direction,
 	bool unknown, real scale_a, real scale_b);
 

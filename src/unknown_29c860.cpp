@@ -107,6 +107,9 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // the source point for both uses 78.
 // at the definition and both calls 71.
 // Round 255: two-use previous-angle snapshot with gain/both-bound/native-delta subsets 104/112/114/112/104/111/114/108. All restored; original observations, signed-angle call, rotation helper and callers retained.
+// Round 12 (lane 13): the rotation helper's dot and cross through the existing dot3f and
+// cross3f_staged / cross3f (either dot argument order) 84 each; the source vector built with
+// vector3f_assign 88; the source vector declared before the result vector 67.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)

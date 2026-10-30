@@ -340,6 +340,12 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // producer forwarding 138/134/137; immediate element-validity result 115 (exact-only); ordinary
 // private-producer inline 115; conditional all-valid accumulation 215. Original validator declarations,
 // private helper, both qualified pointer-slot reads and complete body restored.
+// Lane 14 r11: retail keeps both cursors and the counter in memory (load, add, store, then the
+// loop top reloads) with this/request/handle/index in EBX/EBP/EDI/ESI; every natural form splits
+// the handle (spilled at entry, reloaded after the loop) and gives a cursor EDI. Plain pointer
+// cursors 207; for loop over the parallel items/b arrays with the direct call 207; helper taking
+// the cursors by const reference 207; the volatile read on the data cursor only 207, on the items
+// cursor only 210; cursors grouped in a local struct (diagnostic) 210.
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {

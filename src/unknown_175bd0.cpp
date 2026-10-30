@@ -3054,6 +3054,9 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 // Original ordinal, result, receivers and complete executable body restored.
 // Round 417: external effect/player/unit record references, subsets 1-7:
 // 176/176/176/176/176/184/184; readonly complete records 184. All restored.
+// Round 303: raw first-query slot owns empty admission, signed-long failure-first/
+// test-produced conversion/conversion-first/positive admission 250/176/269/246;
+// unsigned-long equivalents 269/265/269/267. Original salted-handle entry and body restored.
 // @retail 0x1778d0
 bool function_1778d0(void)
 {

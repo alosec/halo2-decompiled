@@ -1296,6 +1296,9 @@ bool network_message_read_header(s_bitstream *stream, long *type, c_type_659ceb 
 // scan/all/copy with byte result 259/178/261; scan/all with Boolean result 281/199.
 // Shared empty-window exit, long/Boolean/byte/short result 260/242/224/259.
 // All restored; oldest/false carriers, nullable copy lookup and allocator save remain.
+// Round 80: result-first Boolean 234; separate Boolean/long availability 225/162;
+// two long results 162; force-inline count 141; oldest reference 141;
+// addressed Boolean empty/final exits 234/234. Original long-result body restored.
 // @retail 0x95840
 bool __stdcall function_095840(s_network_stream_header *header, long *message_type, long *message_size, void *message_data)
 {
