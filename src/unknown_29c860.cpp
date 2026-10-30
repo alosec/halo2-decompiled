@@ -64,6 +64,10 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // all 91, native output loop 122; basic product controls 82/80/84. Zero/axis/trig homes remain.
 // Native vector return with component output, original/dot/cross/both 78/74/82/89;
 // aggregate output counterparts 78/74/82/89. Original helper and all game-call inputs restored.
+// Round 80: 0x11cc90's cross term with either product's operands swapped 67 (canonicalised);
+// that term in a named local 78; the rotation's cross product as three named scalars in any
+// order, with this output form or `v * cos + projection * axis - cross * sin`, 91; a 600 s
+// permuter run found nothing (reduced-image scores do not follow the full image).
 // The first difference is in the inlined 0x11cc90: retail loads a->j and
 // folds b->i in the cross term (the standalone 0x11cc90 and ours do the
 // reverse). Rotation in place on the source vector 67; the helper in

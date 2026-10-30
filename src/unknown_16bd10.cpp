@@ -245,6 +245,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // 105, one six-term sum 95, squares grouped t * (t * k) 86; the arrays in one local struct 88;
 // peaks filled by a chained assignment 114 (both peaks one register, no frame). The preloads keep
 // four coefficients in xmm4-7 in every form; retail spills the peaks and the acceleration.
+// Round 80 (plain clamps): the zero acceleration assigned just before the sum 49; the fills in
+// retail's load order (peaks, start, deceleration, acceleration, zero) 53, with the late zero 53;
+// the sum as six += statements in retail's add order 55; the last two terms as separate += 53
+// (272 bytes).
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {
