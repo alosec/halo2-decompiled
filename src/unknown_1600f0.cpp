@@ -1698,6 +1698,8 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 262: non-template rectangle/widget-prefix text contracts 122/122;
 // with indexed team traversal 148/148; widget-prefix byte/short validity offsets
 // 122/122; ordinary inline prefix and invalid-widget exit 122/122. Restored.
+// Round 413: actual text receiver/word buffer/color/text bounds as the single member base
+// 150 each; each with indexed team traversal 148. All are 1863/1851; original helper and body restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

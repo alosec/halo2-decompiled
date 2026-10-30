@@ -59,6 +59,11 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // Round 292: Native duplicate search: pointer cursor/ordinal result 205/216; ordinal cursor/pointer
 // result 150/187; pointer cursor/null result 217/221; pointer cursor/end result 208/218 (duplicate/new
 // first); original search restored.
+// (not kept: gain under 8). Round 38: the loop outside success 127; early token 147 (EBP moves out,
+// with extra address setup); token as read destination 144; separate read size with it 164; early cursor
+// 127; early token with read size 155; loop with read size 216; role-named size 147; early token and
+// cursor 172; nested early token 128; reversed read outputs 128; early token with reversed outputs 147.
+// Original body restored.
 // @retail 0x121fc0
 void function_121fc0(void)
 {

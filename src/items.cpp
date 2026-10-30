@@ -1371,6 +1371,9 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // Round 259: Complete contact/event/owner/impulse workspace-name families, eight
 // lexical home orders 154 each. Original helper and all workspaces restored; release
 // byte RMW/tail and event-point homes remain.
+// Round 205: immutable addressed impulse output, with none/rate/gain/both/
+// direction/direction-rate/direction-gain/all input snapshots 154/200/200/200/194/194/194/194.
+// Original mutable output and input graph restored; release-byte RMW/tail and event homes remain.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {
