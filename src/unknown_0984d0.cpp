@@ -99,6 +99,10 @@ bool function_986d0(c_handle_table_450cd0 *self, long index, s_bitstream *stream
 // assignment 18; index declaration initializer 18. All restored.
 // Round 136, natural spill graph: bool/long/short/byte callback outcomes 18,18,18,18;
 // callback outcome with entry/owner/long-entry/both snapshots 18,18,18,18. All nonmatching exact-only forms restored.
+// Round 44: retail's entry index uses ECX (`lea ecx, [eax+eax*4]`), which keeps its receiver loads
+// after the entry value; ours uses EAX and hoists them. `if (result && call)` without the outer else
+// 113; inner update false-first 18; receiver through `peers` 108; `handles[i]` at each use 18;
+// permuter 56 tries, best 18.
 // @retail 0x98750
 bool function_98750(c_handle_table_450cd0 *self, s_bitstream *stream, long index, long a3, long reserved_bits)
 {

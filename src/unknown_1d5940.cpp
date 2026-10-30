@@ -1,5 +1,6 @@
 #include "unknown_11c920.h"
 #include "unknown_1cec30.h"
+#include "bit_vector.h"
 #include <string.h>
 // @flags /O2 /arch:SSE /Gr
 
@@ -52,9 +53,11 @@ void __cdecl function_2d9160(void *arg_0, long arg_1, long arg_2);
 void function_1d0080(hkRigidBody *arg_0, s_havok_component *arg_1, byte const *arg_2, long arg_3, bool arg_4);
 void function_1d6ad0(s_havok_component *arg_0, s_physics_model_owner *arg_1);
 
-#pragma inline_depth(0)
 // score 9 (was 9): retail zeroes the eight words of the mask with eax and
-// ours with ecx, so the zeroing and the eight stores differ.
+// ours with ecx, so the zeroing and the eight stores differ (retail picks ecx
+// only where eax holds a live value; nothing visible is live in eax here).
+// Tried: field read through the owner at each use 9; mask declared first 9;
+// existing bit_vector_fill 9 (188 under the old inline_depth(0) pair, now removed).
 // @retail 0x1d5940
 long __stdcall function_1d5940(s_havok_component *arg_0, bool arg_1, bool arg_2, bool arg_3)
 {
@@ -103,7 +106,7 @@ long __stdcall function_1d5940(s_havok_component *arg_0, bool arg_1, bool arg_2,
    local_0 = local_1;
   for (long local_13 = 0; local_13 < ((s_1d5943 *)local_3.field_48)->field_c8; ++local_13)
   {
-   if (!(local_2[local_13 >> 5] & (1 << (local_13 & 31))))
+   if (!bit_vector_test(local_2, local_13))
    {
     local_1 = 0;
     if (function_1d5bf0(arg_0, (s_physics_model_owner *)&local_3, local_4, arg_3,
@@ -167,4 +170,3 @@ void function_1d6ad0(s_havok_component *arg_0, s_physics_model_owner *arg_1)
  function_1d77d0(arg_0, arg_1);
 }
 
-#pragma inline_depth(255)
