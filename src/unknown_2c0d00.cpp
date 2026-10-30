@@ -1010,19 +1010,19 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         }
         long vertex0 = edge->vertices[0];
         long vertex1 = edge->vertices[1];
-        long start_vertex, end_vertex;
+        long from_vertex, to_vertex;
         if (first_open)
         {
-            start_vertex = vertex1;
-            end_vertex = vertex0;
+            from_vertex = vertex1;
+            to_vertex = vertex0;
         }
         else
         {
-            start_vertex = vertex0;
-            end_vertex = vertex1;
+            from_vertex = vertex0;
+            to_vertex = vertex1;
         }
-        point2f const *start = (point2f const *)&data->vertices[start_vertex];
-        point2f const *end = (point2f const *)&data->vertices[end_vertex];
+        point2f const *start = (point2f const *)&data->vertices[from_vertex];
+        point2f const *end = (point2f const *)&data->vertices[to_vertex];
         point2f direction;
         vector2d_from_points2d(start, end, &direction);
         point2f normal = { direction.y, 0.0f - direction.x };
