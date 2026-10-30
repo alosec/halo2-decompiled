@@ -2292,6 +2292,10 @@ void *actor_get_character_situation_entry(long actor_index);
 // Round 391: Loop-local produced object pointers in plain for initializers/steps,
 // cluster/marking/prop in seven subsets 397/389/439/401/478/458/573;
 // all three with the object query 653. All step returns tested; original body restored.
+// Round 74: live admission 293; entry reset 348; post-clear reset 284; both-loop
+// recomputation with live admission 318; selection-only 325 and cleanup-only 287 with live
+// admission; both-loop recomputation with entry reset 353; adding live admission 316.
+// Original executable body restored.
 // @retail 0x269870
 void function_269870(long clump_index)
 {
