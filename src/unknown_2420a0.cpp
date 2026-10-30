@@ -1106,6 +1106,10 @@ void c_game_engine_markers::v21(long object_index)
 // Round 149: the absolute index inside the flag test 93; the team read before the flag test 89; the
 // flag in a named bool 40; the slot read before the type test 117 (428 bytes); the type test written
 // in this function instead of the inlined 0x101280 40 (the entry swap is not from that inlining).
+// Round 16 (lane 10): the player pointer before the absolute index 40; on the team-per-call form, the
+// mode read through g_4e6948's own view 119 and the absolute index inside the flag block 119; guard
+// returns for the mode, type and slot tests 40; the object fetched before the type test as in the
+// matched v24 119 (the object is then kept, where retail reloads it).
 // Round 77: the team at each call again 119 (the options pointer then stays in EDX from entry and the
 // type lookup takes ESI/EDI); a short slot 93, with the team at each call 93 (438 bytes); the unit
 // looked up before the type test 119, with the team at each call 132; an object pointer after the

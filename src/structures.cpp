@@ -171,7 +171,22 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
-// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL, so
+// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL, so the
+// collision lives in its parameter slot: stored after the requery, reloaded after the model
+// query). Read-only object 68; unsigned object handle 68; word query buffer 68; native collision
+// record 71; external triangle reference 68; source publication 68; byte result merge 68; query
+// workspace names 68; model inline/noinline 68/68; state inline 68; both contracts 68; probe
+// result 68; model result 68; final found result 111; triangle inline 68; the collision re-read
+// from the parameter at the join 68 (with a block-local flag 68); the flag as one && expression
+// tested twice, with returns 68; the same with an else-if tail and a final else for the no-object
+// case 71 (286 bytes); assigned with the && expression, tests unchanged 68; an inline helper for
+// the scenery test stays out of line and is threaded 113/111; a switch on the object type with
+// the scenery case falling into the general case 68, or the flag set in a one-case switch 68; the
+// flag from the && expression with the model query nested under `if (!excluded)` 68; the requery
+// in an inline helper that updates the collision through its address 90; found cleared in the
+// scenery arm with no flag 68.
+// Exclusion BL and source-slot join still differ. Read-only object 68;
+// VC threads the exclusion flag on every edge (retail keeps it in BL, so
 // &triangle->c takes EDI and the source slot is reloaded after 0xbf9a0), and the byte result
 // is converted with setne. Read-only object 68; unsigned object handle 68; word query buffer 68;
 // native collision record 71; external triangle reference 68; source publication 68; byte

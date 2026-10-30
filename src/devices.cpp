@@ -636,6 +636,13 @@ struct s_device_machine_view
 
 // score 42 (was 42): the group-flag test is two bytes longer than retail's: ours shifts the flags byte down by
 // one before the second test, retail tests bit 2 directly; retail also clears the result in
+// case 0x1200055f where ours does not (`function_value = 0.0f;` first in the velocity block gives
+// it, 656 bytes 114, kept out until the bit test is solved). Plain mask tests keep the group
+// pointer live to the second test (pushed esi). Tried with that zero store: masks 122; a word
+// getter by group index 123; an inline group-pointer getter 122; the machine test as a named
+// bool 124. Screened (one-file LTCG): word/long `flags & 2` locals, `== 2`, `!!`, a ternary,
+// bit-test helpers taking the mask, a named group condition before/after the machine test,
+// `||` with the machine test: all the shift or the pushed esi.
 // case 0x1200055f where ours does not.
 // Actual signed group flags with Boolean/masks/early load/default; actual group bitfields with
 // direct/second/both/default tests 43/120/54/122/50/50/50/122. Original executable source restored.
@@ -1295,6 +1302,9 @@ bool function_0b6760(s_index_pair const *pair);
 // Round 190: shared motion completion in bool/byte/short/long, before/after activity by name,
 // 294/294/406/402 each. Refresh/event ordinary-inline-noinline pairs 294 each;
 // the refresh-inline forms also lose two matched callers. Original body and declarations restored.
+// Round 285: actual repeated power-target/position-target/both/delay/power-delay/position-delay/
+// all field lvalues, then all with result-first storage: 296/295/297/296/298/297/299/299 fast.
+// Original complete body, observations and inherited qualifiers restored; frame/index/state homes remain.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {

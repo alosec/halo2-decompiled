@@ -4001,12 +4001,12 @@ PRIVATE inline void vehicle_iterator_new(s_type_f1af8e *iterator)
 
 /* whether a moving vehicle is within ten world units of a player on foot,
    and which */
-// score 110 (was 131): frame 0x114 agrees; player-scan allocation and scheduling still differ.
+// score 102 (was 110): frame 0x114 agrees; player-scan allocation and scheduling still differ.
 // Bounded short/word/char/byte player counts 137/130/134/129;
 // those four with result-first common exit 137/130/134/129;
 // existing velocity magnitude helper 131, native difference with/without it
 // 135/135 (match-only), plain vehicle for loop 131.
-// Original body restored.
+// Earlier body restored.
 // Y405: kept the full-width result set after the collection with one exit, 110. The collector
 // reading the unit field at every use as well gives 85 at 569/562, but 0xf7ca0 shares the
 // collector and goes 142 -> 150, so not kept.
@@ -4015,7 +4015,8 @@ PRIVATE inline void vehicle_iterator_new(s_type_f1af8e *iterator)
 // Per-use unit with positive bool/byte/word/long return 124/117/90/93;
 // existing typed player with early/bool/word/long return 124/124/90/93.
 // Word/long return name ordering at entry and after collection 90/96/93/85.
-// Current-vehicle stack home and center-address scale remain.
+// Earlier current-vehicle stack home and center-address scale differed.
+// Round 409: Three-use center pointer with short ordinal 102 (556/562, plain); complete squared-component names also 102, not kept. Long/word/byte ordinal with or without complete squared components 163/103/107; seven- and three-point forms restored. Scaled center loads and LEA now agree. Player-pool/current-vehicle/result allocation remains; collector and all call arguments unchanged.
 // @retail 0xf7a60
 bool __stdcall function_f7a60(long *vehicle_index)
 {
@@ -4038,9 +4039,10 @@ bool __stdcall function_f7a60(long *vehicle_index)
 			{
 				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.object_index)
 				{
-					real dx = vehicle->center.x - centers[i].x;
-					real dy = vehicle->center.y - centers[i].y;
-					real dz = vehicle->center.z - centers[i].z;
+					point3f const *center = &centers[i];
+					real dx = vehicle->center.x - center->x;
+					real dy = vehicle->center.y - center->y;
+					real dz = vehicle->center.z - center->z;
 
 					if (100.0f > dz * dz + dy * dy + dx * dx &&
 						vehicle->linear_velocity.i * vehicle->linear_velocity.i +

@@ -40,6 +40,22 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
 // without false assignments 84; a plain permutation local with them 109; the parameter store at
 // the call 120, inside the range test 29, the range test on the parameter 84; locals renamed 31;
 // result declared after the object index 51.
+// retail keeps the definition table in esi and the event pointer in edi,
+// ours the other way round; the final call setup is BLOCKED-BY 0xdb760 (contributor-owned),
+// which takes the permutation index in ebx and the object on the stack in retail.
+// (retail esi/edi); the clamp's equality test is threaded away; the call setup
+// is BLOCKED-BY 0xdb760 (contributor; retail takes the permutation in ebx and
+// the object on the stack, ours the object in ebx). Clamp of a re-read mode 84
+// (310 bytes, retail's unthreaded clamp); with a plain permutation local 110;
+// no false assignments 107 (result only on the stack), inner one removed 58,
+// outer one removed 68.
+// Earlier: the member's fields are copied in the other order and the store of
+// the second field sits before the comparison in ours and after it in retail
+// Lane 11 r12, aligned counts (base 48 at 308 bytes): a plain permutation local
+// instead of the reused parameter 74 (280 bytes; the object index then stays in
+// ebx, as 0xdb760 takes it), with no false assignments 70; no false assignments
+// alone 59; PIN(mode, 0, 1) for the clamp 66 (301 bytes), with no false
+// assignments 75.
 // @retail 0x9c910
 bool c_damage_section_response_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
