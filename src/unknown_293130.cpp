@@ -117,11 +117,19 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // rotation then ranks j where retail ranks i); on that: dot3f(vector, axis) 78,
 // the rotated vector in a local copy 193, the angle passed straight 87, the
 // angle read after the copy 87, cosine before sine 84.
+// four causes. Frame: retail packs the random-to-float temp at +8 and the
 // result, conversion and sine stack homes differ; rotation
 // registers also differ.
 // Transient creation handle with range result, trig input and shared cross boundaries:
 // 361/358/360/357/360/357/359/364. Result, conversion and sine homes plus rotation registers
 // remain.
+// The shared random helpers (function_259d0 for the four draws, function_x82e52f for the
+// fraction, random_index for both index draws) 68 at 1409 bytes: the three draw sums then
+// add as retail, but the rotation's dot turns j,i,k (retail i,k,j). On that form: angle
+// passed straight 79; fraction without its local 125 (dot as retail, fraction product
+// reassociated); (1 - cos) first 68; count inline 68; dot operands swapped 68; named
+// 1 - cos 68; named dot 126; the z flag inlined 325; the handler pointer through an if 111;
+// the slot pointer as a sum 68; descriptive helper names 68 (also on the old form, 68).
 // four causes. Frame: retail packs the random-to-float temp at +8 and the
 // four causes. Frame: retail packs the random-to-float temp at +8 and the
 // result at +0xc (the sine temp shares +0 with the first sum), ours the result at +8 (sharing it
