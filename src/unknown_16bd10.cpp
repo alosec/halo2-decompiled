@@ -245,6 +245,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // 105, one six-term sum 95, squares grouped t * (t * k) 86; the arrays in one local struct 88;
 // peaks filled by a chained assignment 114 (both peaks one register, no frame). The preloads keep
 // four coefficients in xmm4-7 in every form; retail spills the peaks and the acceleration.
+// Round 22 (lane 10): ours homes only rates[2] and keeps the accelerations out of the frame. Both
+// arrays at function scope 49; the two peak elements swapped in the sum 52; the tick conversions as
+// locals declared at the sum 83 (289 bytes); the peaks filled by a loop over segments 1..2 56; a named
+// peak rate for both peak elements 112 (263 bytes).
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {
