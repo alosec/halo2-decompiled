@@ -634,27 +634,26 @@ struct s_device_machine_view
 
 #define DEVICE_PIN(x, lo, hi) ((x) < (lo) ? (lo) : (x) > (hi) ? (hi) : (x))
 
-// score 42 (was 42): the group-flag test is two bytes longer than retail's: ours shifts the flags byte down by
-// one before the second test, retail tests bit 2 directly; retail also clears the result in
-// case 0x1200055f where ours does not (`function_value = 0.0f;` first in the velocity block gives
-// it, 656 bytes 114, kept out until the bit test is solved). Plain mask tests keep the group
-// pointer live to the second test (pushed esi). Tried with that zero store: masks 122; a word
-// getter by group index 123; an inline group-pointer getter 122; the machine test as a named
-// bool 124. Screened (one-file LTCG): word/long `flags & 2` locals, `== 2`, `!!`, a ternary,
-// bit-test helpers taking the mask, a named group condition before/after the machine test,
-// `||` with the machine test: all the shift or the pushed esi.
-// case 0x1200055f where ours does not.
-// Actual signed group flags with Boolean/masks/early load/default; actual group bitfields with
-// direct/second/both/default tests 43/120/54/122/50/50/50/122. Original executable source restored.
-// Round 35: the group flags read at each use as in the matched 0x107870, 120 (pointer in a
-// shrink-wrapped esi); the same with the machine flags first 116; the zero store in case
-// 0x1200055f (it mirrors case 0xf00055e, where MSVC keeps the same redundant copy) with masks 122,
-// alone 114 (both 656 bytes: the zero store is retail's, the shift is the only extra code); a
-// word parameter of an inline both-bits test 120 (diagnostic); a bool of both tests 120; nested
-// ifs 120; two bools 42; `(group_flags & 3) == 3` 52; the group pointer formed in the flags read
-// 53/53, with the flags read first 117; `== 2` / `== 1 && == 2` / a bool from `== 2` 120 each;
-// a bool from the bare mask or its cast 42/42. Every form whose second test is a mask keeps the
-// pointer live past the load; every bool form gives the shift.
+// score 42 (was 42): the group-flag test is two bytes longer than retail's: ours shifts the flags byte
+// down by one before the second test, retail tests bit 2 directly; retail also clears the result in
+// case 0x1200055f where ours does not (`function_value = 0.0f;` first in the velocity block gives it,
+// 656 bytes 114, kept out until the bit test is solved). Every mask form gives retail's `mov ax,
+// [ptr+2]; test al, 1; test al, 2` but keeps the group pointer in a pushed esi (it is treated as live
+// to a second read of the flags); every bool form keeps the pointer in eax but shifts. Tried with the
+// zero store: masks 122; a word getter by group index 123; an inline group-pointer getter 122; the
+// machine test as a named bool 124. Screened (one-file LTCG): word/long `flags & 2` locals, `== 2`,
+// `!!`, a ternary, bit-test helpers taking the mask, a named group condition before/after the machine
+// test, `||` with the machine test: all the shift or the pushed esi. Actual signed group flags with
+// Boolean/masks/early load/default; actual group bitfields with direct/second/both/default tests
+// 43/120/54/122/50/50/50/122. Round 35: the group flags read at each use as in the matched 0x107870,
+// 120; the same with the machine flags first 116; the zero store (it mirrors case 0xf00055e, where
+// MSVC keeps the same redundant copy) with masks 122, alone 114; a word parameter of an inline
+// both-bits test 120 (diagnostic); a bool of both tests 120; nested ifs 120; two bools 42;
+// `(group_flags & 3) == 3` 52; the group pointer formed in the flags read 53/53, with the flags read
+// first 117; `== 2` / `== 1 && == 2` / a bool from `== 2` 120 each; a bool from the bare mask or its
+// cast 42/42. Round 37: masks on the word local 120 (122 with the zero store); a bool for bit 0 and a
+// mask for bit 1 120; the pointer formed in the read of the word local with masks 53; machine and
+// group flags each read at each use with the zero store 122; a const group pointer with masks 120.
 // @retail 0x106d70
 bool __stdcall device_export_function(long device_index, long name, real *value, bool *active)
 {
