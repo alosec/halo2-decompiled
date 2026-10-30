@@ -1347,6 +1347,10 @@ void __stdcall function_205320(long group_index)
 // Round 42: named scaled offset signed/unsigned 18/18; const squad, then both pointers 18/18;
 // identifier as a real short field 18; low-word helper 44; typed pointer increment/address-of-element 18/18;
 // low-word equality 21; early high-bits predicate 18. The pool/index registers and three-address lea remain.
+// Round 15: a link pointer to the first vehicle (0x201a50's form) 18; byte pointer squad 18; old squad
+// index in a local 18; header pointer local 19; high-word test by shift 18. Compile-only screens
+// reproduce ours exactly and ~20 squad/header/test forms (helper return, NULL-initialized squad, pool
+// local) all keep add eax,ecx; retail's other two sites of this lea (0x1f3430, 0x20d570) are unmatched.
 // @retail 0x201ad0
 void function_201ad0(long squad_index, long object_index)
 {
@@ -1858,6 +1862,13 @@ PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definiti
 // Round 176: Native player record 257; datum iterator 262; both 262; native squad state 257;
 // squad/player 257; squad/datum 262; all three 262; all/shared actor walk 262.
 // Datum storage grows the frame to 0x40; original records and both private helpers restored.
+// Round 201: Size4/alignment2 packed view: best/actor/both 243/248/258; native index 254;
+// best/index 255; actor/index 242 kept; both/index and word init 260/260. Guard-owned index 235,
+// entry index 242; count or best/point homes retain those scores. Long/short/signed-byte/byte
+// validation on the guard graph 235 each. Seven-point guard gain is below threshold. Keep native
+// actor equality and the three-use signed index, plain-confirmed with no other measurement change.
+// Coordinator review: the 242 needs a union/pragma-pack view of the shared s_reference type in globals.h;
+// a shared-header layout change for one compare is not kept. Body restored (257).
 // @retail 0x204450
 void function_204450(long definition_index, long squad_index)
 {
@@ -1996,6 +2007,12 @@ bool function_1e11b0(long actor_index, bool active);
 // splits the squad pointer around the loop (ESI outside, reloaded from the index's home at the
 // loop's back edge); ours keeps the pointer in EBX across the loop and reads the index from its
 // home inside it.
+// Round 86: existing squad_actor_next_inline step with 0x203d70's statement-level inline-depth pair
+// around the 0x203f60 call (function-level pragma dropped) 78 at 184 bytes (retail's unrotated loop and
+// `or byte` flag store), with the return as 0x203d70's `(((dword)*(short *)(squad + 2)) >> 7) & 1` 71
+// (retail's full-width return exactly); on that body squad_get, parameter address taken, parameter read
+// through its address, squad re-fetched after the loop, extra parameter uses 71-95: the parameter never
+// gets a callee-saved register, so the pointer is never split.
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
 {
@@ -2064,6 +2081,10 @@ bool function_1df5d0(short team_a, short team_b);
 // Round 179: Actual first iterator initialization before disjoint header resets, with
 // receiver/hostility lifetimes and chained zeroes, 228/228/227/227/234/234/237/237.
 // Original begin order and complete body restored; cursor/contribution homes remain.
+// Round 201: Independent marked aggregation/centroid begin boundaries 266/238/281; next boundaries
+// 250/259/249; whole aggregation/centroid boundaries 284/249. Shared byte setter at opening/every
+// bit store 218/179. Original complete body and include set restored; cursor/contribution homes
+// remain.
 // @retail 0x203360
 void function_203360(long squad_index)
 {
@@ -2243,6 +2264,11 @@ PRIVATE __forceinline long squad_tick_round(real ticks)
 // Round 176: Complemented squad/overlap/both/actor/squad-actor/overlap-actor/all carriers
 // 330/307/316/322/345/336/330; all with shared raised-point scaled add 330.
 // Original complete result graph and every eager call restored.
+// Round 201: Native area result/resolved point/both 294/281/291; direct iterator handle 275; handle
+// with area/point/both 294/281/291; complete graph with word flag 293. Private iterator
+// inline/ordinary 432; forced cdecl/stdcall 275/275; inline or ordinary cdecl/stdcall 432 each,
+// losing matched 200d80/201df0/204ca0. Original target and both private helper declarations
+// restored. Public area contracts were blocked by a held declaration file.
 // @retail 0x201ea0
 void function_201ea0(void)
 {

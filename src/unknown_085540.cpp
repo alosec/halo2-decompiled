@@ -853,6 +853,9 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // the same `lea ecx`; 0x869a0 2 -> 99); harness: byte source, forceinline copy, position local,
 // size local, kind cast, `memset(&header, 0, 8)`, header declared outside the loop, word kind,
 // a pointer-based kind store, `0 < remaining`, a long flag: no change.
+// Round 22 (one-file harness with src/unknown_199560.cpp, exact): `header.size = 0;` or
+// `header.offset = 0;` after the kind 14/14; the header value-initialised from a named type
+// (`= s_header()`, declared or assigned) 24/24; `= { 0, 0, 0 }` then the kind 117.
 // Round 84: the terminal arm written first 14; memset and kind 1 in each arm 74; a value-initialised
 // header (`= s_header()`) 24 (410 bytes); the clamp as `remaining < 1024 ? remaining : 1024` 17; a
 // do/while under `if (result)` 14. Compile-only probes (a constructor, a constant zero header copy,

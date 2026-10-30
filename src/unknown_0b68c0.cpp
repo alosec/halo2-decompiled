@@ -256,6 +256,9 @@ static __forceinline s_object_visibility_header_ab *visibility_header_step(s_rec
 // score 2 (was 2): the two values are copied into EAX and ECX in the opposite order.
 // Unsigned callee parameter declarations 2 each; reversed snapshot declarations 2;
 // predeclared loop index 2; header before iterator 2; read-only headers 2; inline depth zero 91.
+// BLOCKED-BY 0x109660: its body takes the entry index in EAX and the object in ECX whatever
+// the declared order. Callee forms: pool local 2; entries + index 2; header pointer 2;
+// entry before object 2; that plus both parameters swapped at all three places 2.
 // @retail 0xb7060
 void function_b7060()
 {

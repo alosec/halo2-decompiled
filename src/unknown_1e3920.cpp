@@ -1656,6 +1656,8 @@ PRIVATE inline long equipment_secondary_weapon_r21(long unit_index)
 // Round 414: current loop weapon captured 263; short/long scalar ammunition count 266/265;
 // weapon plus those counts 266/265; private output clear before draw, alone/with weapon/with
 // weapon and short count 263/263/266. Original producers, clear order and complete body restored.
+// Tried (MiniMax I run 17): 0x1e5240's body (weapon index, record lookup, 0x1e5280) and ai_object_get's pool
+// indexing written out by hand 231; hand copies of existing functions are not kept without a match.
 // @retail 0x1e2a90
 void function_1e2a90(long actor_index)
 {

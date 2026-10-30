@@ -95,6 +95,8 @@ PRIVATE __forceinline real function_22aff5(real arg_0)
 // Matched selection/transform separate declaration states default/inline/noinline,
 // all eight nondefault pairs 121 each; caller frame homes and rounded-offset memory/XMM
 // residency remain. Original helper declarations and complete body retained.
+// Entry validity, bitmap admission and completed-draw terminal guard graphs: eight forms
+// all 121; original nested admission lifetimes restored.
 // Round 78: point pointer stores/loads 450; read-only point pointer 121; indexed real offset 121;
 // destination vertical staging 480; axis initialization order 122; with axis declarations 122;
 // component order 120; plus early vertical-scale declaration 120. Original body restored.

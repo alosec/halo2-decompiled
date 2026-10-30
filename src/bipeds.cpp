@@ -635,6 +635,11 @@ struct s_biped_flags_10a_view
 	word unknown3 : 5;
 };
 
+// score 281 (was 281): frame 0x16c agrees; early EBX save, state/change homes and Boolean tail differ.
+// Array zero initialization 300; long parent type 286; native byte flags/Boolean shifts 283;
+// array/type 301; array/bits 299; type/bits 282; all 300; Boolean result 281;
+// all/result 300; entry array with all/result 307; guarded exit 295; all/guard 300;
+// array/guard 300; Boolean result/guard 295. Original array, field view, body and exits restored.
 // @retail 0xdd360
 bool __stdcall function_dd360(long arg_159e6d)
 {

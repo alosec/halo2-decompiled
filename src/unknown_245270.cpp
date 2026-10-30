@@ -276,6 +276,21 @@ void function_245400(s_source_245400 const *source, long index,
 	function_244ca0(height, radius, list, field_00, field_04, surface->field_08,
 		material->field_04, material->field_05, point, material->field_06);
 }
+// score 203 (was 203): the transform block is the only place left where retail's arithmetic
+// differs from the shared helpers: retail's point transform sums (forward.*x + up.*z) + left.*y
+// + position.*, where the shared point transform sums (up.*z + left.*y) + forward.*x, and an
+// inline expression written in retail's order reproduces retail's point-transform instructions
+// one for one (only the matrix base register and the frame offsets differ); retail's direction
+// rows are (forward.*x + left.*y) + up.*z for the i and k rows but (up.*z + forward.*x) +
+// left.*y for the j row, an order no shared helper has. The score does not move with either
+// order (203 in all three combinations tried), because retail's frame (0x2c against our 0x24)
+// and its source receiver (ECX, copied to ESI at entry, against our EDX) misalign the whole
+// listing: 203 of the 210 instruction pairs differ whatever the body is. Retail's source
+// arrives in ECX and its matrix is the first stack argument, so retail declares 0x245540 as
+// (index, matrix, source, height, radius, a5, a6, collection); ours is (index, source, matrix,
+// ...), and that declaration and its call live in src/unknown_245850.cpp. Retail's 0x244de0
+// takes the direction vector in EAX and the transformed point in ECX, ours takes the point in
+// EAX and the vector in EDX; per the parameter-order rule neither is changed.
 // score 203 (was 203): frame 0x24 versus 0x2c; source receiver and side-byte homes remain.
 // Earlier: Frame 0x24 versus 0x2c, source receiver and independent side homes remain;
 // frame 0x24 versus 0x2c. Retail receives the source in ecx and keeps it in esi
@@ -441,6 +456,10 @@ void function_245400(s_source_245400 const *source, long index,
 // Round 13 (lane 14): second code and plane table ahead of the first code 203; plane table first
 // 203; early return on equal materials 203; point transform before the vector transform 203; edge
 // vector after the side flags 202 (not kept). Source still arrives in EDX.
+// Round 203: destructive plane-code decoding, paired/sequential long 204/206, dword 203/205,
+// short 206/206, word 206/206; the independent side spill reuses the matrix argument home.
+// Actual marked point transform, return/native output 405/405; scaled-vector/both calls 386/582;
+// each with a force-inline declaration 405/405/386/582. Original body and declarations restored.
 // @retail 0x245540
 void function_245540(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
