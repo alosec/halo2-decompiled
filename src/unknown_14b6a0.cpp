@@ -118,7 +118,7 @@ void function_14bac0()
 	s_record_pool_iterator *iterator_reference = &iterator;
 	players_pending_creation_process(iterator_reference);
 }
-// score 230 (was 230): Frame 0x44 versus 0x3c; centre/second-iterator slot sharing, readiness homes and the second scan's call remain.
+// score 222 (was 230): Frame 0x50 (original 0x44) versus retail 0x3c; centre/second-iterator slot sharing, readiness homes and the second scan's call remain.
 // Round 9 (lane 11, fast): second loop through data_datum_iterator_next as retail calls it 257 (frame 0x44:
 // center 0x10, destination 0x1c, alternate 0x28, second iterator 0x34; retail packs the iterator over the
 // probe point at 0x1c); plus a bare block around the probe/center code 257 (identical code); per-marker
@@ -265,6 +265,12 @@ void function_14bac0()
 // out-of-line 0x6b380 for the second scan 0x44/0x48; all of those score 233-262 against the
 // retained 230, so the original body stands. What is left is the frame size itself and the
 // point/destination slot order, which our compiler keeps the other way round.
+// Returned relocation output 243; paired initial marker snapshots 230; both 243;
+// selected-unit reuse alone 245; returned output plus unit reuse 222 kept (1036 bytes);
+// marker/unit snapshots 245; complete graph 222; with native recipients 228. Four complete
+// returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
+// identities retained; selected-unit value begins at its original bounds read and serves every
+// subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
 // @retail 0x14b6a0
 void function_14b6a0()
 {
@@ -312,12 +318,12 @@ void function_14b6a0()
 					if (g_4de300[root & 0xffff] != g_4de2fc)
 					{
 						g_4de300[root & 0xffff] = g_4de2fc;
-						point3f position;
-						function_b9dd0(root, &position);
-						position.x += offset.i;
-						position.y += offset.j;
-						position.z += offset.k;
-						function_b75a0(root, &position, NULL, NULL, NULL, false);
+						point3f translated;
+						point3f *position = function_b9dd0(root, &translated);
+						position->x += offset.i;
+						position->y += offset.j;
+						position->z += offset.k;
+						function_b75a0(root, position, NULL, NULL, NULL, false);
 					}
 					players = g_4e8c24;
 				}
@@ -348,7 +354,8 @@ void function_14b6a0()
 			}
 			point3f center;
 			real height, radius;
-			function_df5f0(*(long *)(player + 0x2c), &center, &height, &radius);
+			long target_unit = *(long *)(player + 0x2c);
+			function_df5f0(target_unit, &center, &height, &radius);
 			if (have_destination)
 				destination.z += radius;
 			else if (!function_168f40(0x800005, (s_vehicle_ray const *)&center, NONE, NONE))
@@ -366,7 +373,7 @@ void function_14b6a0()
 					if (iterator.datum_index != *(long *)((byte *)g_4e8c20 + 0xa8))
 					{
 						function_1c7e70(iterator.datum_index, g_4686c4);
-						function_14e0f0(iterator.datum_index, *(long *)(player + 0x2c), &destination,
+						function_14e0f0(iterator.datum_index, target_unit, &destination,
 							have_alternate ? &alternate : NULL);
 					}
 				}

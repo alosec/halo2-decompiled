@@ -189,6 +189,41 @@
 // Round 10 (statement orders, real builds): natural 9-15 69; 15 first 147; 15 right after band3_21
 // 149; 9 first 67; 10 and 14 before 9 81. All three roots double rebuilt: 77 (sqrt(2) kept on the
 // x87 stack like retail, but the 0.5/0.25 factors of the sqrt(105)/sqrt(7) products turn double).
+// result[0]'s x87 product), the shared cubic product, the spill homes and the root lifetimes differ.
+// Ours canonicalises result[11] and result[13] into one shared zz5_1 * band3_21 * inverse_sqrt_pi
+// product (every operand order compiles the same way), which is the six bytes; retail computes every
+// chain in source order with nothing shared, computes coefficient 15 right after band3_35 (-0.125 in
+// xmm3), keeps zz*5 in zz's slot, band3_35 in sqrt(15)'s and band3_21 in a new one, and never consumes
+// sqrt(2) or sqrt(105) at their last use (fmul st(1)/st(2), two fstp st(0) before the return).
+// Tried (59 where no score is given): outer/cubic order return 123/123; roots before inputs 137; early
+// (0x146020 then differs); first-band, first-Y, square-difference and quadratic mixed-product stagings
+// 123; cubic Y staging 129; mixed-root staging 123; final-root product chain 113 (kept, 651/660);
+// linear plus final chain 113; XZ product chain (kept); second cubic root chain, coefficient
+// 8/12/9/5/6 chains, root/edge combination 113; repaired XZ plus early coefficient 15 147/148; cubic X
+// chain 139; first cubic root chain; linear Y/Z/X/all values; late root-five/depth square; linear
+// scope; later common root; isotropic result lifetime, band-two normalization, Z-square, cubic-axis/
+// polynomial accumulators; repaired XZ plus cubic-Y chain 137; external direction reference; both
+// double root chains; per-use common root; per-use mixed/both roots 78/78; completed cubic X/Y/paired
+// results; paired results with per-use root; complete mixed result; first Y store before isotropic;
+// linear factor after isotropic 143; quadratic root after squares 138; axis-root scope; depth/edge/
+// axis/joint scalar homes; double or unrounded common root 158 (keeps band3_35 on x87); root rounded
+// per factor 158; plus early coefficient 15 140; early coefficient 15 alone 147; retail store order
+// 144; native float roots common/mixed/both 59/59/59, linear/quadratic 56/57, axis pair 59, cubic
+// factor pair 158, every root 156, linear plus quadratic 54 (float constants, not retail's double
+// ones), other rounded roots added 54; both early root boundaries with four/six cubic product chains
+// 139/139; all three roots double 77 (x87 root code retail's, slots rotate, -0.125 loads late);
+// sqrt(105) and sqrt(7) double 66; sqrt(105) double 73; zz scaled in place 70; all double with
+// coefficient 15 ahead of 9 150 (645 bytes); double roots with `(real)` casts at both/one/other
+// sqrt(105) use 80/82/82; double sqrt(2)/sqrt(105) with real sqrt(7) 82; coefficient 15 recomputing
+// the root product 130; result[0] after result[3]; double sqrt(105)/sqrt(7) with real sqrt(2) 66;
+// result[0] in double 64; renamed spilled locals; statement orders natural 9-15 69, 15 first 147, 15
+// right after band3_21 149, 9 first 67, 10 and 14 before 9 81; result[13] before result[11] (same
+// code); `zz5 - 1.0f` at both uses 90; result[14] as one chain 69; result[13] staged 139; band3_21
+// set at its declaration (same code).
+// Round 12 (lane 15): result[11] staged 69 (retail's 660 bytes, a product still shared); band3_21's
+// product written at both uses 176; xx - yy unnamed 133; all roots double with `zz5 - 1.0f` at both
+// uses 97, plus result[11] staged 94; operand-order respellings of 18 other statements, one at a
+// time, all the same code.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

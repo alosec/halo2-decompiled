@@ -409,6 +409,10 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // record/search body record 112; object record/physics record/search body record/existing center
 // conversion 149. Entry register pair, physics-record spill and center/projection scheduling remain.
 // Original body restored.
+// Complete previous-state library transfers: transform 112, three vectors 116, both 114;
+// with existing center conversion 151/154/149. Existing staged cross alone 112, with complete
+// transfers and center conversion 149. Original copies, search, products and caller restored;
+// object/entry input registers, physics-record spill and center/projection schedule remain.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {

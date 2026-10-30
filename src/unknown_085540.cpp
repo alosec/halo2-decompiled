@@ -1019,6 +1019,9 @@ bool function_68670(byte *source, long size, void *block);
 // Distinct native byte-buffer class with ordinary/inline/noinline/both reader knowledge:
 // 97/352/97/97; with the occupied-span subexpression 135/353/135/135. Original class identity,
 // all member declarations, caller body and window form restored; reload/count-update gap remains.
+// Round 222: connection-ready bool/byte/short/long on original entry, each 97; each with named
+// occupied span 135. Original body restored; reader visibility, cursor reloads and count updates
+// remain.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {

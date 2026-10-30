@@ -542,6 +542,8 @@ static inline word font_character_pixel(long alpha, long color)
 // Round 209: Split alpha/parity helper inputs: numeric and doubled numeric 200/200, Boolean and doubled
 // Boolean 90/90; long-return counterparts 212/212/194/194. All restored; dword alpha parity, literal
 // assembly and run-two reuse remain.
+// Remainder alpha parity: signed OR/add 185/191; unsigned OR/add 204/228;
+// each with one run workspace 185/191/204/228. Helper and decoder restored.
 // @retail 0x122610
 long function_122610(long size, void const *pixels, void *destination)
 {

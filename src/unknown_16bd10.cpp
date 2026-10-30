@@ -267,6 +267,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // arrays at function scope 49; the two peak elements swapped in the sum 52; the tick conversions as
 // locals declared at the sum 83 (289 bytes); the peaks filled by a loop over segments 1..2 56; a named
 // peak rate for both peak elements 112 (263 bytes).
+// Round 42: arrays and tick locals at function scope 49 (identical); short tick locals 119; the
+// conversions written in the sum 83; PIN + 2x3 with the segment times in a float array 88, with
+// per-segment {rate, acceleration} pairs 88; compile-only, all 720 orders of the six 2x3 fills, a
+// time array, a time loop and factored per-segment terms keep the same single spilled peak.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

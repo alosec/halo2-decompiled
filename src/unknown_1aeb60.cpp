@@ -374,6 +374,9 @@ short *function_e70b0(long unit_index, short *value);
 // (inlined as in retail, its other callers unchanged) 49 (the same code); with the slot cast first 49;
 // with the action state read after the call 49; the time read before the lookups 97; the node getter
 // at both uses 54. Retail's coloring looks as if ECX were taken at entry (index EDX, data ECX).
+// Round 99 (lane 6): the tick store through the existing 0x1aefc0 helper (fistp into a short) 49
+// (identical code); `rate * elapsed` 49; slot cast first with the actor assigned separately 49; a
+// unit-index local for the action-state read 49; the prop stamp before the event call 133.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {

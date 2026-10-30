@@ -363,6 +363,7 @@ bool function_7af40(s_type_99af70 const *address);
 // be kept with a match. Other orders of the counter, state and copy 35/35/37/111; the flag alone
 // re-read 42; the open alone re-read 109; `= count + 1` 111.
 // tried the flag bit set through a byte cast of the flags word, as retail
+// tried the flag bit set through a byte cast of the flags word, as retail
 // sets it in the low byte, 30 (an address cast for 2 points: not kept); the flag is still read
 // before the three field stores instead of after them, the endpoint pointer is kept in a register
 // here instead of being reloaded from the connection, and the attempt counter is incremented in a
@@ -399,6 +400,33 @@ bool function_7af40(s_type_99af70 const *address);
 // moves the address to EAX (111, 0xb40b0 lost); a compiled-out `do {} while (false)` after the
 // increment 32, with the reads 111; the copy helper with a dword size and the reads 111; the
 // failed open closing and returning first with the reads 101.
+// the flag is read before the three endpoint field stores instead of after
+// them, the endpoint pointer is kept in a register here instead of being reloaded from the
+// connection, and the attempt counter is incremented in a register instead of in place. Retail
+// reads connection->endpoint once for the three clearing stores and again for the flag (`or
+// byte`, as `flags |= 0x40` on the word gives) and for the open call.
+// Tried: the flag bit set through a byte cast of the flags word 30 (an address cast: not kept);
+// open inline 32; open noinline 32; valid inline 32; valid noinline 90; both inline 32; open
+// inline/valid noinline 90; open noinline/valid inline 32; both noinline 90; an early
+// invalid-address exit with the failed open closing and returning first 35 (245 bytes); the copy
+// helper as plain inline 32 (identical); the state stored before the counter 33; the endpoint read
+// for the flag and the open call with the existing copy 111 (the split counter takes EBX, the
+// address then arrives in EAX; 0xb40b0 61); with that, the state store first, `++`, `+= 1` and
+// member spellings 111 each, the copy before the counter 35; with strncpy and the terminator written
+// out the counter stays an in-place `inc` and the convention holds 17 (destination ECX and the
+// terminator `[edi + 0xb3]`, retail ESI and `[esi + 0x7f]`; 249 bytes), and on that an early
+// `return false` 17, an inner `return false` 17, an else around the close 17, a single result 106,
+// the address check's loop with a single exit 17; strncpy alone 36; an early `return false` for a
+// bad address 32; `count = count + 1` 32; the failed open closing and returning first 33;
+// `connection->endpoint` read at each use 119 (0xb40b0 61); the endpoint read before the address
+// check 64. A compile-only copy splits the counter whenever the copy's destination survives the
+// call in a callee-saved register, so it cannot screen this.
+// Round 84: the endpoint local for the clears with `connection->endpoint` for the flag and the
+// open call gives retail's endpoint code exactly but splits the counter into EBX (111, 0xb40b0 61);
+// with the copy before the state store the counter is retail's in-place `inc` and only the state
+// store differs (after the call, retail before it): 15 at 245 bytes, but the mixed reads can only
+// be kept with a match. Other orders of the counter, state and copy 35/35/37/111; the flag alone
+// re-read 42; the open alone re-read 109; `= count + 1` 111.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

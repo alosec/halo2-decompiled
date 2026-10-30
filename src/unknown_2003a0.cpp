@@ -67,6 +67,9 @@ extern short const g_44aee8[20] =
 // DH round 257: Typed 0x74 input record with native source bits and first/second output bitfields, eight
 // combinations 90/90/90/90/94/94/94/94. All record, interface, caller and body changes restored; flag
 // mask/store gaps remain.
+// Round 200: shared byte/word second-bit setters 92/92; word first bit with original/byte/word
+// second bit 103/107/103; byte first bit with original/byte/word second bit 106/106/106.
+// Shared setters do not recover the word mask or per-arm memory stores; original body restored.
 // @retail 0x200c20
 void function_200c20(byte const *definition)
 {
@@ -485,6 +488,8 @@ s_squad_definition_entry *function_203330(s_squad_definition_view const *squad);
 // DH round 257: Reused flag/mode carriers in parameter/word/long domains, eight non-original pairs
 // 92/92/160/160/158/92/92/92. Every carrier and body restored; parent registers and persistent zero
 // remain.
+// Round 200: getter inline/cdecl/stdcall/inline-cdecl/inline-stdcall contracts 92 each;
+// inline/cdecl/stdcall with branch-owned next 89 each. Original getter and iterator restored.
 // @retail 0x204ec0
 void function_204ec0(s_squad_iterator *iterator, short squad_index, short flags, short mode)
 {
@@ -3066,6 +3071,9 @@ void function_2011f0(long arg_0);
 // Round 179: Natural short attempt counter on recovered category/seat-output frame 338;
 // with promoted difficulty/signed placement/both 344/359/357; full-width fallback on
 // those four graphs 354/359/354/359. Frame 0x134 and original body retained.
+// Round 200: native creation/request/final-chain getter subsets 355/338/355/338/355/338/355;
+// all with first cached squad receiver 403. Creation subsets reach 1328 bytes but worsen
+// instruction allocation. Original lookup producers, narrowed values and complete body restored.
 // @retail 0x201520
 void function_201520(short arg_0, long arg_1, long arg_2, long arg_3, long arg_4)
 {

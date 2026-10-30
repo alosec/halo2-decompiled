@@ -67,6 +67,9 @@ void function_213970(void);
 // query before all resets 142 (three-point gain dropped), after first bulk clears 144;
 // requested-value-first comparisons and explicit void tail return 145/145. Original body restored;
 // the separate allocations still prevent both complete bulk clears.
+// Round 79: enum language result 145; first-element array clears 145; reversed progress fields 145;
+// existing language wrapper 145; query after file/copy clears 144/144; version validation first 141;
+// joint preference guard 158. All gains below the retention threshold; original body restored.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

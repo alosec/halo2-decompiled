@@ -544,6 +544,26 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // `present = present | bit` 32; the bit from `player->team` 46; an early return when nothing
 // changed 32 (77 with the word mask); a char team local 32; signed long masks 32; a 600 s
 // permuter run (50 variants), none below 32.
+// counter loop uses different ones too. Retail keeps the word mask in a register after the loop
+// (reloaded into ecx before the first test, shared by the compare and the OR for the store);
+// every word-mask form here reads it from memory at each use.
+// engine lookup hoisted 29; carrier with the mask compare swapped 29 (the mask load leads the
+// compare but is still not shared with the update); two-width union view of the mask 90; union
+// with a named wide copy 90; union plus carrier 91; word local with a promoted copy 134; updated
+// mask computed before the branch 133; a plain `word old_team_mask` 77 (retail's entry: `mov cx`,
+// word store); team-bit carrier on the word form 78/83; word mask with the field stored directly
+// and the OR uncast (either operand order) 77; the word mask read straight from the field 129
+// (re-read after the loop); the mask read and stored through globals 129; `*team_mask |=
+// present_teams` (the old mask then only compared, word or dword, or the field re-read in the
+// test) 130; present not volatile 102 (63 with the word mask); the loop as a force-inlined helper
+// writing through mask pointers 139; the engine lookup named first on the word form 77; word mask
+// with the tests' operands swapped 78, without the store's cast 77; word old playing mask too 59;
+// `present = present | bit` 32 (identical); the bit from `player->team` 46; compares as old != new
+// 33.
+// Round 84: a word `team_mask` copy of the field, updated with `|=` and stored back 129 (375
+// bytes: the copy folds into field reads, frame 0xc); the word mask read through the field
+// pointer, updated with `|=` and stored through it 77; with that, compares as old != new 78, a
+// bit local for the present update 78, a dword cast in the compare 77.
 // @retail 0x158140
 void function_158140(void)
 {

@@ -97,7 +97,7 @@ struct s_184256
 void voice_fpu_enter(void);
 void voice_fpu_leave(void);
 long function_184000(long index, long bit);
-void function_184060(long arg_0, unsigned char arg_1, s_type_1e6529 *arg_2, long arg_3);
+void function_184060(long arg_0, long arg_1, s_type_1e6529 *arg_2, long arg_3);
 
 // @retail 0x184250
 void __stdcall function_184250(s_type_1e6529 const *arg_0)
@@ -142,7 +142,7 @@ void __stdcall function_184250(s_type_1e6529 const *arg_0)
 					long local_10 = local_9->field_0;
 					if ((bool)(byte)function_184000(local_10, local_11))
 					{
-						function_184060(local_10, (byte)local_11, (s_type_1e6529 *)arg_0, local_9->field_4);
+						function_184060(local_10, local_11, (s_type_1e6529 *)arg_0, local_9->field_4);
 						local_3 = true;
 					}
 				}
@@ -247,16 +247,8 @@ void function_a87a0(long first, long second, long third, byte const *input);
 void function_a8ee0(long first, long second);
 void function_1c55e0(real const *bounds);
 
-// score 33 (was 33): byte bit argument load versus a retail dword, then
-// material/probability and scale occupy opposite dead parameter homes.
-// Retained input handle with current bit-word/mask staging scored 33;
-// the same forms with a named bit-word index scored 62 (all 495 bytes).
-// A long bit parameter matches, but 0x1d96d0's file declares it byte
-// (BLOCKED-BY 0x1d96d0). Renamed material, probability or scale 33;
-// the byte parameter used directly 42; probability in one expression
-// 71; a bit-word pointer 33.
 // @retail 0x184060
-void function_184060(long index, byte bit, s_type_1e6529 *input_data, long surface_index)
+void function_184060(long index, long bit, s_type_1e6529 *input_data, long surface_index)
 {
 	long bit_index = bit;
 	s_184061 const *input = (s_184061 const *)input_data;

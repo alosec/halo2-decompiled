@@ -231,6 +231,10 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 // the other two inside and `result = true` 60; the outer test on 0x58d20 and 0x6e720 with `result =
 // 6e6b0` 65; an early `return result` after 0x6dfa0 54 (183 bytes); an early return on a false result
 // in the type-2 arm 55 (same code).
+// Round 84 (BLOCKED-BY 0x6e720, whose file another lane holds): the type 2 arm first 95 (156
+// bytes); `if (!result)` split from the live test 65; `bool result;` declared first 65; the
+// 0x6e6b0 test as its own `if (result)` 69; one early `return result` for the three guards 63 (183
+// bytes, the same plan with `xor bl, bl; mov al, bl` exits).
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -790,6 +794,11 @@ void c_session_client::function_06dbc0()
 // use (no local) worse (this in eax). Compile-only, all with this in edx: 32 combinations of the
 // condition shape (also the type test first), truthy memcmp, a copy of this as the call argument and
 // grouped or separate case 7/8; an inline copy of 0x58d90's body gives retail's direct table only.
+// Round 84: an early return on the mode and type 43; session read in the switch and the local
+// after it 43; the type tested before the mode 43; memcmp operands swapped 47; a return after the
+// call 43; harness: one && condition with the memcmp, cases 3 and 5 left to the default, an id
+// copy: no change. Calling the existing busy-state test out of line puts this in ebx (as any call
+// before the compare does), but retail has that switch inline.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {

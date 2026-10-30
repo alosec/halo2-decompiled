@@ -1054,6 +1054,7 @@ bool __stdcall function_111650(long unit_index, long *names);
 // Physics-state branch scope, separate velocity outputs and both 715 each; final default-array
 // initialization alone or with either/both workspace changes 723 each; all with native flag tests 753.
 // Original scopes, scalar observations, default stores and existing local qualifier retained.
+// Round 426: names/damage/buffer lexical-home subsets and all with the matrix renamed 715 in all eight forms; original body restored, aligned frame unchanged.
 // @retail 0xefde0
 bool __stdcall function_efde0(long vehicle_index)
 {
@@ -1412,10 +1413,11 @@ PRIVATE __forceinline real vehicle_speed_fraction(real speed, byte const *defini
    sideways drift, speed, forward speed and two engine overlays, the
    graph's function animations and the three aiming overlays) to the
    callback with its value */
-// score 409 (was 622): frame 0x88 versus 0x9c, returned-id temporaries and channel/count homes differ.
+// score 409 (was 409): frame 0x88 versus 0x9c, returned-id temporaries and channel/count homes differ.
 // Existing speed helper forced inline 468; with cross helper 470; channel role names 468/470;
 // single final speed clamp 472, with cross 450, role names 472/450. Both directional limits
 // retained at entry: original/clamp 446/424; with cross 409 (kept)/412.
+// Round 426: separate returned-id values for each of the six overlays 408 each; all six 408; all with the loop id 434. Original body restored; frame remains 0x88.
 // @retail 0xf0760
 void __stdcall function_f0760(long vehicle_index, vehicle_animation_value_callback callback, void *user)
 {
@@ -2383,10 +2385,11 @@ PRIVATE __forceinline real vehicle_friction(real speed, real friction, real scal
    desired speeds along the facing, its left and its up, friction where a
    control is idle, and a torque that turns the vehicle to face its
    facing, banked into its turns */
-// score 830 (was 872): Frame 0x10c versus 0xfc; scalar and matrix homes still differ.
+// score 773 (was 830): Frame 0x10c versus 0xfc; scalar and matrix homes still differ.
 // Shared cross products 830 kept; shared friction/bank sums 879; both 867; shared
 // normalize/mass scales 861; cross/scales 836; sums/scales 865; all 846; all with
 // both point setters 846. Plain confirms four existing cross3f calls, unchanged call roles.
+// Round 426: facing-at-use/boost-default/mass subsets 895/835/905/794/874/803/882, matrix homes 882; facing after boost/velocity 806/846, with default boost 833/860; each with mass 773 (kept)/821/803. Frame 0x10c remains; plain confirms 773.
 // @retail 0xf2360
 void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -2398,7 +2401,6 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	real maximum_speed;
 	vector3f linear_velocity;
 	vector3f angular_velocity;
-	vector3f const *facing = &vehicle->local_velocity;
 
 	if (TEST_FIELD_BIT(VEHICLE_WORD_BITS(vehicle->flags348)->bit4))
 	{
@@ -2409,6 +2411,7 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 		boost = 1.0f;
 	}
 	maximum_speed = *(real *)(definition + 0x1f4) * boost;
+	vector3f const *facing = &vehicle->local_velocity;
 	function_ba1d0(vehicle_index, &linear_velocity, &angular_velocity);
 	if (TEST_FIELD_BIT(VEHICLE_DWORD_BITS(vehicle->flags_134)->bit23))
 	{
@@ -2435,9 +2438,11 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	up.j = -(facing->k * facing->j);
 	up.k = 1.0f - facing->k * facing->k;
 
-	real forward_mass = vehicle->unknown25c * (forward_fraction * forward_fraction);
-	real up_mass = vehicle->unknown25c * (up_fraction * up_fraction);
-	real left_mass = vehicle->unknown25c * (left_fraction * left_fraction);
+	real mass = vehicle->unknown25c;
+
+	real forward_mass = mass * (forward_fraction * forward_fraction);
+	real up_mass = mass * (up_fraction * up_fraction);
+	real left_mass = mass * (left_fraction * left_fraction);
 	real length = (real)sqrt(up.k * up.k + up.j * up.j + up.i * up.i);
 
 	if (!(0.0001f > (real)fabs(length)))
@@ -2584,12 +2589,12 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	torque.i = (rotation_axis.i * rate - vehicle->angular_velocity.i) * torque_scale;
 	torque.j = (rotation_axis.j * rate - vehicle->angular_velocity.j) * torque_scale;
 	torque.k = (rotation_axis.k * rate - vehicle->angular_velocity.k) * torque_scale;
-	force.i *= vehicle->unknown25c;
-	force.j *= vehicle->unknown25c;
-	force.k *= vehicle->unknown25c;
-	torque.i *= vehicle->unknown25c;
-	torque.j *= vehicle->unknown25c;
-	torque.k *= vehicle->unknown25c;
+	force.i *= mass;
+	force.j *= mass;
+	force.k *= mass;
+	torque.i *= mass;
+	torque.j *= mass;
+	torque.k *= mass;
 	function_2056e0(vehicle_index, state, 0.0f, &force, &torque);
 }
 
@@ -2618,11 +2623,15 @@ PRIVATE inline real vehicle_angle_fraction(real angle)
    toward the controls' speed in the facing's frame, a yaw torque toward the
    steering, torques that hold the vehicle upright while it is off the
    ground, and its boost */
-// score 1053 (was 1124): Frame 0x80 versus 0x74; velocity and force homes still differ.
+// score 1053 (was 1053): Frame 0x80 versus 0x74; velocity and force homes still differ.
 // Existing inverse transform 1137; forward transform and accumulation 1053 kept;
 // both 1238; shared cross products 1130; inverse/cross 1134; forward/cross 1056;
 // all three 1222; all with mass scales 1254. Plain confirms the shared in-place
 // forward transform and vector accumulation; original incoming-velocity calculation kept.
+// Round 304: scalar incoming velocity/shared yaw/shared airborne producers in seven
+// nonempty combinations 1094/1072/1064/1066/1062/1053/1089; all with force/velocity role names 1089.
+// Original-graph persistent/planar/later/all native frame-object name families 1053/1053/1053/1053.
+// Original body restored; the frame remains 0x80 versus 0x74.
 // @retail 0xf3010
 void __stdcall function_f3010(long vehicle_index, s_vehicle_physics_state *state, real steering)
 {
@@ -3800,6 +3809,8 @@ bool __stdcall function_f8070(long bit, word const *flags);
 // Complete definition snapshot, result-first, direct active predicate in seven nonempty
 // combinations 1006/864/1006/869/1002/869/1002; snapshot with numeric movement-case
 // source order 1006. Original observations, switch and body restored.
+// Round 304: entry-owned kind/angular-ceiling/engine subsets 1010/1010/1010/1010/1010/1010/1010;
+// complete families with staged cross 1010. Original body restored; definition and float-return boundaries remain.
 // @retail 0xf6d10
 bool __stdcall function_f6d10(long vehicle_index, long name, real *value, bool *active)
 {
