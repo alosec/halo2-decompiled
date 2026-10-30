@@ -76,13 +76,16 @@ PRIVATE __forceinline long function_2b2ed6(XUID const *xuid, bool *active)
  return result;
 }
 #pragma optimize("", on)
-// score 358 (was 728): the block order follows retail's apart from a few blocks, but stack offsets
+// score 358 (was 358): the block order follows retail's apart from a few blocks, but stack offsets
 // still differ: the widget pointers, several buffers and layout, notably the status text's message and
 // suffix (-0x2cc and -0x4cc against retail's -0x258 and -0x458). Retail places the loop's
 // friends == false shift out of line (still within the loop), clears ebx inside the received-invite
 // branch, branches directly to its later offline-text block, and has no NONE test after the last
 // title text. In the state == 1 suffix, retail loads each text and the suffix buffer in a different
 // order. And retail takes the suffix's address again for function_1630e0 where ours reuses esi.
+// Disjoint UI/final-item scopes, branch-owned text result, and independent child-pointer
+// declarations, seven nonempty combinations 358 each; all with online arm first 701/2373.
+// The 0xfd4 frame now agrees; scoped workspaces do not change the remaining buffer homes.
 // @retail 0x2b2ed4
 void __stdcall function_2b2ed4(c_y_menu_list *list, bool friends, bool empty,
     c_class_1a2c81 *item, s_friend *datum)

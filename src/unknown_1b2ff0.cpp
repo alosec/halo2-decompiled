@@ -126,6 +126,9 @@ s_slot_handler_2 g_47e1c0 =
 // changed-sum forms are also match-only. Restore the complete original executable body, loop domains,
 // recursive call, all vector operands, helper bodies and every external declaration. Frame 0x44 and the
 // direction XMM/reciprocal-copy gap remain.
+// Round 194: complete native origin/destination/both/facing inputs 245/218/316/154;
+// origin+facing/destination+facing/all inputs/shared subtraction 291/260/363/363.
+// Input snapshots enlarge the frame; all original per-use inputs and the in-place direction restored.
 // @retail 0x1b3070
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {

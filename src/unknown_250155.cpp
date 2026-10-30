@@ -2109,9 +2109,8 @@ long function_199fd6(void);
 long function_19a279(void);
 void function_1905bf(long controller, bool flag);
 
-// score 93 (was 93): the call at the top of the function goes to another
-// helper in ours and to retail's 0x14917c, and the branches around it land in
-// the other order
+// score 93 (was 93): the shared return follows the cold cases rather than the base call;
+// the inherited handler result is widened into EBX rather than assigned into BL.
 // with a bool result every instruction is retail's; retail's one exit
 // follows the base call and the not-signed-in block comes last, ours puts the exit last.
 // Base call after the if/else with the else returning 137; the base call in every
@@ -2121,6 +2120,9 @@ void function_1905bf(long controller, bool flag);
 // event index reads with those widths 153/142/143/154. Original result producer retained.
 // Negative outcome bool/long/signed-byte/unsigned-byte 146/138/146/146; with shared team-direction case
 // 126/147/126/126. Restored.
+// Parameter-2 early valid-team exit long/bool 93/106, with directional guards 99/107;
+// availability-owned callback long/bool 93/106, with directional guards 99/107. Original result
+// and callback joins restored.
 // @retail 0x250b1e
 bool c_session_lobby_screen::v10(s_widget_event *event)
 {
@@ -2827,6 +2829,10 @@ PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
 // appearances/teams 105; all three 107; all three plus destination cursor 294 at 889 bytes. The seven
 // source-only forms stay 876 bytes. Original indexed body, helper bodies and memcpy restored; receiver
 // reload, row/query and animation roles remain.
+// Round 75: typed appearance assignment 100; typed appearance cursor 105; separate display counter 100;
+// publication screen local 100; row-only generic query 235 (item reload, row registers and movsx agree;
+// the title constant carrier returns); with game-first, map generic query, moved title case 3, separate
+// map widget or explicit heading receiver 237 each. Original field, helpers and complete body restored.
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {

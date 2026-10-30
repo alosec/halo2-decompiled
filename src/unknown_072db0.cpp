@@ -1399,6 +1399,11 @@ struct s_rating_summary
 // entry table with 123/321 202/345. Round 194: on native fifteen-bit player statistics and a shared
 // pass ordinal, byte/short/word/dword group counters with dword or word characters all 311.
 // Round 187: Native indexed group pointer, array cursor, body-stepped cursor, record reference, each with dword/word character: 300/295, 321/322, 286/294, 300/295. All restored; key/statistics/change/group homes remain.
+// Round 417: on separate real team cases, shared ordinal/native fifteen-bit player fields/both
+// 195/170/188; ordinal+word character/fields+word/both+word 181/176/174; all stored summary
+// inputs with ordinal+fields, dword/word character 188/174. On fields alone, actual 0..64
+// name budget word/short/byte/dword 174/181/230/170; word/short/byte budget with word character
+// 170/174/211. Seven-point leads rejected; original types, loops and complete body restored.
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {

@@ -317,7 +317,7 @@ bool function_1fef40(s_type_c3b527 const *target, long actor_index)
 real function_30bf0(vector3f *v);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
 
-// score 43 (was 57): only the final rotation differs, and only in register colours: retail loads
+// score 43 (was 43): only the final rotation differs, and only in register colours: retail loads
 // axis k/j into xmm1/xmm2 and d.j/d.i into xmm3/xmm4 (ours xmm3/xmm4 and xmm1/xmm2) and scales axis
 // j/k by the parallel part in place, where ours copies the part for j (three bytes longer). The rows
 // as accumulated sums (round 35) give retail's i row and tail. Tried: products swapped (axis *
@@ -337,6 +337,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // 34 aligned), every row computed into locals before the stores 45, the dot accumulated 34, the
 // first two terms of a row as one expression 34 (all three rows 35), the sine term second 41, a
 // named cross vector 48, a by-value axis helper 42, an axis-pointer helper 35.
+// Round 418 on accumulated rows: staged axis/turn/both crosses 67/69/51; complete
+// direction scalars 74, with staged axis 81; complete direction value with staged
+// turn/both 196/219; both vector inputs as complete scalars 74. All restored;
+// final axis/direction carriers and the copied parallel product remain.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)
