@@ -89,6 +89,11 @@ PRIVATE __forceinline long function_2b2ed6(XUID const *xuid, bool *active)
 // Round 224: only final layout constructed after the null guard/child lookups/
 // before name publication/after status publication, with whole-word or native-bit
 // flag stores: 694/694/670/670/526/526/463/463. Original construction and body restored.
+// Round 47 (aligned count 56): retail's buffers run display_name, title, layout, suffix, message
+// upwards from -0x8cc; ours title, display_name, suffix, message, layout. suffix declared before
+// title, friend_ before them, title/suffix at the top of the status block, title at function
+// scope: 358 each (same code). The friends test as `!friends ? >> 10 : >> 12` 359; negated per arm
+// 605/607 (retail keeps the >> 10 arm out of line after the session lookup).
 // @retail 0x2b2ed4
 void __stdcall function_2b2ed4(c_y_menu_list *list, bool friends, bool empty,
     c_class_1a2c81 *item, s_friend *datum)

@@ -265,6 +265,13 @@ set_all:
 // all with SDK append count 75; output/scalars with late volume 131, SDK count 75.
 // Scoped output/scalars gives 75 plain (291/281, frame 0xd8), but regresses an
 // unmatched caller by 56; original output/state lifetimes restored.
+// Round 47: retail walks the settings pairs (ESI) and indexes the list pairs from a spilled
+// list+4; every form below still walks the list. Index initialised at its declaration 83
+// (same code); list-pairs base pointer before the loop 95, with the volume read late 97, declared
+// before `changed` 95; mixbin test on both fields first 115, both tests on the fields 96; a
+// per-entry list-pair pointer with the volume read late 88 (281/281, frame 0xd8); a per-entry
+// settings-pair pointer read at each use 102. Compile-only screens: load order (24 orders), loop
+// bound from the settings, unsigned index and every parameter order keep the list walk.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,

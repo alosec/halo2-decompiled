@@ -486,6 +486,12 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // Round 295: separate noinline declarations for count/total/rank query methods,
 // all seven nonempty subsets, 80 each; rank-only inline declaration 80. Every
 // declaration and body restored; count homes, inner party and query ownership remain.
+// Round 47: with the reference on the left (65) only the four count_spread calls differ (aligned
+// 8). Compile-only screens: a local candidate against a reference pointer calls the reference
+// first in every operand order, as LTCG does; only the candidate's spread named first calls it
+// first there (LTCG reorders that too, 74/80 above). Reference selected before the candidate copy
+// 128 (moves try_swap's register parameters, 0x91dd0 then 2), with the reference on the left 128;
+// selected at the top of the inner loop 121; `(improved ? best : current)` at each use 112.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {

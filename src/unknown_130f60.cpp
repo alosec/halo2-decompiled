@@ -190,6 +190,13 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 // N227: Complete color-by-value/accumulator/angle-copy subsets 571/947/1184/367/676/970/1197;
 // all with native input CRT copy 1197 (fast control 374). Seven-point preview lead below gate;
 // original helper and complete body restored.
+// Round 47: the entry ESI save comes from the rest of the image: a reduced image of this file,
+// 0x11ce20's file and globals.cpp saves ESI only around the loop as retail; adding
+// src/unknown_0350e0.cpp alone moves it to the entry (other large files do not). Reduced-image
+// forms (control 374): `opposite` renamed three ways 374; declared before `direction` 374; `j` at
+// function scope 374; sample/axis chosen per case (retail's constant-offset case blocks) 402, axis
+// first 484; the angle call with retail's argument order (axis in EDX) 374, plain 355; with
+// the per-case blocks 402, plain 444.
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {
