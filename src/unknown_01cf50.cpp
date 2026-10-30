@@ -73,27 +73,27 @@ void __stdcall function_1c710(void *state);
 void __stdcall function_46230(short target, real const *bounds)
 {
     function_14f60(0, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSU, 3);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ADDRESSV, 3);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAGFILTER, 2);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MINFILTER, 2);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MIPFILTER, 1);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAXANISOTROPY, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MIPMAPLODBIAS, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_MAXMIPLEVEL, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_COLORSIGN, 0);
-    D3DDevice_SetTextureStageState(0, D3DTSS_ALPHAKILL, 0);
+    sampler_state_write(0, D3DTSS_ADDRESSU, 3);
+    sampler_state_write(0, D3DTSS_ADDRESSV, 3);
+    sampler_state_write(0, D3DTSS_MAGFILTER, 2);
+    sampler_state_write(0, D3DTSS_MINFILTER, 2);
+    sampler_state_write(0, D3DTSS_MIPFILTER, 1);
+    sampler_state_write(0, D3DTSS_MAXANISOTROPY, 0);
+    sampler_state_write(0, D3DTSS_MIPMAPLODBIAS, 0);
+    sampler_state_write(0, D3DTSS_MAXMIPLEVEL, 0);
+    sampler_state_write(0, D3DTSS_COLORSIGN, 0);
+    sampler_state_write(0, D3DTSS_ALPHAKILL, 0);
     function_143c0(*(long *)(g_485a80 + 0x34), 0, 1, 0.0f);
-    D3DDevice_SetTextureStageState(1, D3DTSS_ADDRESSU, 3);
-    D3DDevice_SetTextureStageState(1, D3DTSS_ADDRESSV, 3);
-    D3DDevice_SetTextureStageState(1, D3DTSS_MAGFILTER, 2);
-    D3DDevice_SetTextureStageState(1, D3DTSS_MINFILTER, 2);
-    D3DDevice_SetTextureStageState(1, D3DTSS_MIPFILTER, 2);
-    D3DDevice_SetTextureStageState(1, D3DTSS_MAXANISOTROPY, 0);
-    D3DDevice_SetTextureStageState(1, D3DTSS_MIPMAPLODBIAS, 0);
-    D3DDevice_SetTextureStageState(1, D3DTSS_MAXMIPLEVEL, 0);
-    D3DDevice_SetTextureStageState(1, D3DTSS_COLORSIGN, 0);
-    D3DDevice_SetTextureStageState(1, D3DTSS_ALPHAKILL, 0);
+    sampler_state_write(1, D3DTSS_ADDRESSU, 3);
+    sampler_state_write(1, D3DTSS_ADDRESSV, 3);
+    sampler_state_write(1, D3DTSS_MAGFILTER, 2);
+    sampler_state_write(1, D3DTSS_MINFILTER, 2);
+    sampler_state_write(1, D3DTSS_MIPFILTER, 2);
+    sampler_state_write(1, D3DTSS_MAXANISOTROPY, 0);
+    sampler_state_write(1, D3DTSS_MIPMAPLODBIAS, 0);
+    sampler_state_write(1, D3DTSS_MAXMIPLEVEL, 0);
+    sampler_state_write(1, D3DTSS_COLORSIGN, 0);
+    sampler_state_write(1, D3DTSS_ALPHAKILL, 0);
     g_4b8448 = 0; D3DDevice_SetRenderState(D3DRS_CULLMODE, 0);
     g_4b8308 = 0x1010101; D3DDevice_SetRenderState(D3DRS_COLORWRITEENABLE, 0x1010101);
     g_4b82e8 = 0; D3DDevice_SetRenderState(D3DRS_ALPHABLENDENABLE, 0);
@@ -127,7 +127,9 @@ void __stdcall function_46230(short target, real const *bounds)
     D3DDevice_Begin(D3DPT_TRIANGLEFAN);
     D3DDevice_SetVertexData2s(3, 0, 0);
     D3DDevice_SetVertexData4f(0, 0.53125f, 0.53125f, 16777215.0f, 16777215.0f);
+#pragma inline_depth(0)
     D3DDevice_SetVertexData2s(3, 1, 0);
+#pragma inline_depth()
     D3DDevice_SetVertexData4f(0, 64.53125f, 0.53125f, 16777215.0f, 16777215.0f);
 #pragma inline_depth(0)
     D3DDevice_SetVertexData2s(3, 1, 1);
@@ -3452,42 +3454,39 @@ short __stdcall function_467c0(short first, short second, short count)
             1.0f,0.0f,0.0f,0.0078125f, 0.0f,1.0f,0.0f,-0.0078125f
         };
         D3DDevice_SetVertexShaderConstant(-78, constants, 8);
-        D3DPIXELSHADERDEF program;
-        memset(&program, 0, sizeof(program));
-        program.PSAlphaOutputs[0] = 0xc00;
-        program.PSRGBOutputs[0] = 0xc00;
-        program.PSRGBOutputs[1] = 0xc00;
-        program.PSTextureModes = 0x8421;
-        program.PSCombinerCount = 2;
-        program.PSConstant0[0] = 0xff000000;
-        program.PSAlphaInputs[0] = 0x08a009a0;
-        program.PSRGBInputs[0] = 0x0aa00ba0;
-        program.PSRGBInputs[1] = 0x1c110c11;
-        program.PSFinalCombinerInputsABCD = 0xc;
-        g_484f68 = program;
-        D3DDevice_SetPixelShaderProgram(&program);
+        memset(&g_484f68, 0, sizeof(g_484f68));
+        g_484f68.PSAlphaOutputs[0] = 0xc00;
+        g_484f68.PSRGBOutputs[0] = 0xc00;
+        g_484f68.PSRGBOutputs[1] = 0xc00;
+        g_484f68.PSTextureModes = 0x8421;
+        g_484f68.PSCombinerCount = 2;
+        g_484f68.PSConstant0[0] = 0xff000000;
+        g_484f68.PSAlphaInputs[0] = 0x08a009a0;
+        g_484f68.PSRGBInputs[0] = 0x0aa00ba0;
+        g_484f68.PSRGBInputs[1] = 0x1c110c11;
+        g_484f68.PSFinalCombinerInputsABCD = 0xc;
+        D3DDevice_SetPixelShaderProgram(&g_484f68);
         for (short i = 0; i < count; ++i)
         {
-            volatile short source = i & 1 ? second : first;
-            volatile short target = i & 1 ? first : second;
+            short source = i & 1 ? second : first;
+            short target = i & 1 ? first : second;
             for (short stage = 0; stage < 4; ++stage)
             {
                 function_14f60(stage, source);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_ADDRESSU, 4);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_ADDRESSV, 4);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_MAGFILTER, 2);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_MINFILTER, 2);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_MIPFILTER, 1);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
-                D3DDevice::SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
+                sampler_state_write(stage, D3DTSS_ADDRESSU, 4);
+                sampler_state_write(stage, D3DTSS_ADDRESSV, 4);
+                sampler_state_write(stage, D3DTSS_MAGFILTER, 2);
+                sampler_state_write(stage, D3DTSS_MINFILTER, 2);
+                sampler_state_write(stage, D3DTSS_MIPFILTER, 1);
+                sampler_state_write(stage, D3DTSS_MAXANISOTROPY, 0);
+                sampler_state_write(stage, D3DTSS_MIPMAPLODBIAS, 0);
+                sampler_state_write(stage, D3DTSS_MAXMIPLEVEL, 0);
+                sampler_state_write(stage, D3DTSS_COLORSIGN, 0);
+                sampler_state_write(stage, D3DTSS_ALPHAKILL, 0);
             }
             function_14bc0(target, 0, false);
-            program.PSConstant0[0] = (i > 0 ? 0x7fu : 0xffu) << 24;
-            g_484f68 = program;
-            D3DDevice_SetPixelShaderProgram(&program);
+            g_484f68.PSConstant0[0] = (i > 0 ? 0x7fu : 0xffu) << 24;
+            D3DDevice_SetPixelShaderProgram(&g_484f68);
             function_1cf50();
             D3DDevice_Begin(D3DPT_TRIANGLEFAN);
             D3DDevice_SetVertexData2s(3, 0, 0);
@@ -3564,6 +3563,9 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 long __stdcall function_2e540(s_slot *slot, byte *data);
 extern long g_485898;
 
+// score 285 (was 285): retail's frame is 0x34 bytes and ours 0x38, because retail reuses the
+// position's stack slots for the corner coordinates while we keep two slots of our own, and
+// retail tests the definition's flag byte where it lies while we copy the byte into bl.
 // @retail 0x2e540
 long __stdcall function_2e540(s_slot *slot, byte *data)
 {
@@ -4056,6 +4058,9 @@ void __stdcall function_484b0(point3f const *point, real depth, real width, real
     }
 }
 
+// score 152 (was 152): the instruction sequence is retail's, the same number of instructions, and
+// only the register allocation and the spill slots differ: retail loads cosine, width, height,
+// sine and screen[1] where we load width, cosine, height, screen[1] and screen[0].
 // score 152 (was 152): the four floats are loaded into the other XMM registers and the products
 // are formed in the other order.
 // @retail 0x480a0
@@ -4172,6 +4177,9 @@ extern dword g_4b82e8, g_4b82f4, g_4b82f8;
 dword g_4b8438, g_4b82e0, g_4b82fc, g_4b82ec;
 void function_48010(real const *color);
 
+// score 244 (was 244): retail copies the mode parameter into ebp in the prologue and keeps the
+// flag scratch in esi, while we keep the flag scratch in ebp and load the mode into esi later;
+// retail is also 17 instructions longer than ours, and the two drift apart in the mode branch.
 // @retail 0x47930
 void function_47930(word flags, long format, long mode)
 {
@@ -5289,7 +5297,8 @@ void __stdcall function_35b90(void *material)
     constants[19] = *(real *)(source + 0x34);
     constants[20] = *(real *)(source + 0x38);
     constants[21] = *(real *)(source + 0x3c);
-    constants[22] = constants[23] = 0.0f;
+    constants[22] = 0.0f;
+    constants[23] = 0.0f;
     D3DDevice_SetVertexShaderConstant(81, transform, 5);
     D3DDevice_SetVertexShaderConstant(86, constants, 6);
     short stage = 0;
@@ -5298,20 +5307,20 @@ void __stdcall function_35b90(void *material)
         byte *bitmap = *(byte **)(source + 0xc + stage * 4);
         if (!bitmap) break;
         g_51f3c8[1][stage] = function_12310((s_bitmap_view *)bitmap, 0.0f);
-        short texture_width = *(short *)(bitmap + 4);
-        short texture_height = *(short *)(bitmap + 6);
+        int texture_width = *(short *)(bitmap + 4);
+        int texture_height = *(short *)(bitmap + 6);
         g_485af4[stage] = texture_width;
         g_485b04[stage] = texture_height;
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSU, source[0x18 + stage] ? 1 : 3);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ADDRESSV, source[0x18 + stage] ? 1 : 3);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MAGFILTER, source[0x96] ? 1 : 2);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MINFILTER, source[0x96] ? 1 : 2);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MIPFILTER, source[0x96] ? 1 : 2);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MAXMIPLEVEL, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MAXANISOTROPY, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_MIPMAPLODBIAS, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_COLORSIGN, 0);
-        D3DDevice_SetTextureStageState(stage, D3DTSS_ALPHAKILL, 0);
+        sampler_state_write(stage, D3DTSS_ADDRESSU, source[0x18 + stage] ? 1 : 3);
+        sampler_state_write(stage, D3DTSS_ADDRESSV, source[0x18 + stage] ? 1 : 3);
+        sampler_state_write(stage, D3DTSS_MAGFILTER, source[0x96] ? 1 : 2);
+        sampler_state_write(stage, D3DTSS_MINFILTER, source[0x96] ? 1 : 2);
+        sampler_state_write(stage, D3DTSS_MIPFILTER, source[0x96] ? 1 : 2);
+        sampler_state_write(stage, D3DTSS_MAXANISOTROPY, 0);
+        sampler_state_write(stage, D3DTSS_MIPMAPLODBIAS, 0);
+        sampler_state_write(stage, D3DTSS_MAXMIPLEVEL, 0);
+        sampler_state_write(stage, D3DTSS_COLORSIGN, 0);
+        sampler_state_write(stage, D3DTSS_ALPHAKILL, 0);
         ++stage;
     } while (stage < 3);
     if (*(void **)(source + 0xc) && !source[0x97])
@@ -5325,11 +5334,12 @@ void __stdcall function_35b90(void *material)
             color3f const *color = *(color3f **)(source + 0x58 + i * 8);
             *(color3f *)&colors[i].red = color ? *color : *(color3f *)g_468710;
         }
-        for (long i = 0; i < 3; ++i)
-        {
-            real *alpha = *(real **)(source + 0x84 + i * 4);
-            colors[i].alpha = alpha ? *alpha : 1.0f;
-        }
+        real *alpha = *(real **)(source + 0x84);
+        colors[0].alpha = alpha ? *alpha : 1.0f;
+        alpha = *(real **)(source + 0x88);
+        colors[1].alpha = alpha ? *alpha : 1.0f;
+        alpha = *(real **)(source + 0x8c);
+        colors[2].alpha = alpha ? *alpha : 1.0f;
         g_484f68.PSConstant0[0] = pack_color4f(&colors[0]);
         g_484f68.PSConstant1[0] = pack_color4f(&colors[1]);
         g_484f68.PSConstant0[1] = pack_color4f(&colors[2]);
@@ -5462,13 +5472,19 @@ void function_151e0(long index);
 bool function_13d9f0(long type);
 extern dword g_4e6494;
 
+// score 241 (was 241): retail's frame is 0xac bytes and ours 0xb4, and our locals sit eight bytes
+// higher (the context buffer at [esp+0x44] against retail's [esp+0x3c], the indices at [esp+0x38]
+// against [esp+0x30]), so every reference in the body is at another offset.
+// score 241 (was 260): the length is retail's 877 bytes now, but retail keeps the tag-instance
+// pointer in ebp and saves ebx only where it starts to use it, while ours saves ebx in the
+// prologue and compares the handle against a zero register.
 // @retail 0x4c690
 void function_4c690(long tag, transform4x3f const *nodes)
 {
     byte context[0x78];
     signed char indices[16];
     long node_count;
-    byte *volatile definition = g_4e3b44[tag & 0xffff].bytes;
+    byte *definition = g_4e3b44[tag & 0xffff].bytes;
     D3DDevice_SetRenderState(D3DRS_DEPTHCLIPCONTROL, 16);
     function_2c3b0((s_interface_function_context *)context);
     function_3e420(tag, NONE, indices, 4);
@@ -6479,6 +6495,9 @@ PRIVATE __forceinline real callback_curve(byte const *curve, real time, real ran
     return value;
 }
 
+// score 312 (was 312): retail's frame is 0x1894 bytes and ours 0x1890, and our locals sit four
+// bytes higher than retail's (the fade at [esp+0x10] against our [esp+0x18], the direction
+// vector at [esp+0x6c] against our [esp+0x70]), so every reference in the body is at another offset.
 // @retail 0x4f010
 void __stdcall function_4f010(void *payload)
 {
