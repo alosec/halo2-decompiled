@@ -154,6 +154,8 @@ bool function_a7670(long object_index);
 // Round 176: Real pending field at +0xae as byte/signed-byte, each with Boolean/byte admission and
 // first-membership carriers, eight at 181. Native record offsets and all truth values preserved;
 // original pending field, flag carriers, signed bounds, both eager scans, retry and cleanup restored.
+// Round 249: Header pool/data observed at island/retry boundaries 181/281/181/281;
+// with indexed cleanup 194/288/194/288. Original observations and complete body restored.
 // @retail 0x278f00
 void function_278f00()
 {

@@ -149,6 +149,9 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
 // pointer-value, value-value, reference-pointer, pointer-reference, reference-reference and value-
 // reference: 450/448/558/556/450/450/450/448. Original scalar captures, two calls and complete
 // body restored.
+// Round 249: Complete scalar normalizer outputs vector/point/both 392/389/392;
+// native vector/point/both 462/428/480; scalar/native and native/scalar 410/462.
+// Original helper publications, contracts and matched sibling restored.
 // @retail 0x29b2e0
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
     vector3f const *arg_3, real arg_4, vector3f *arg_5)

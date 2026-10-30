@@ -121,17 +121,20 @@ void function_1a6340(vector3f const *b, vector3f const *a, point3f *out, point3f
 // score 32 (was 32): the arguments are pushed in a different order and one of the values is passed
 // in a register here and on the stack in retail.
 // Object-second/third interfaces 32/32; unsigned object index 32; original interface restored.
+// score 35 (was 42): early Boolean with a separate success exit 33/91 kept; early result
+// with one exit 36/95; result on both exits 33; bottom/axis/both output pointers 33/33/33;
+// radius pointer/value 33/33. Saved-register setup and the false-in-BL result still differ.
 // @retail 0x1a62e0
 bool function_1a62e0(long object_index, point3f const *origin, vector3f const *direction, point3f *out)
 {
 	struct s_1a62e1 { real field_0; point3f field_4; vector3f field_10; };
 	s_1a62e1 local_0;
-	function_df6c0(&local_0.field_4, &local_0.field_10, object_index, &local_0.field_0);
 	bool result = false;
+	function_df6c0(&local_0.field_4, &local_0.field_10, object_index, &local_0.field_0);
 	if (local_0.field_0 > 0.0001f)
 	{
 		function_1a6340(&local_0.field_10, direction, out, origin, &local_0.field_4, local_0.field_0);
-		result = true;
+		return true;
 	}
 	return result;
 }
@@ -819,6 +822,13 @@ void function_25aba0(long actor_index);
 // 134 (aligned 4); pop before the store 137; plus 0x1a8080 order 134 (aligned 2); without memset 58;
 // the two orders alone 67. Original body kept (the NULL preset is a tested sentinel; 0x1a7b30 rises to 100).
 // Enclosing enabled/state-one/choice dispatch arms in seven combinations 69 each; all three with current-slot at enabled use 69.
+// Round 93, on the NULL-preset + both reorders + memset base (957 bytes, only the state-one pop left):
+// `level -= 1` 134; pop first 137; state-one, kind-2 and choice arms as one if/else chain without
+// `continue` 119 (state-one pop now as retail, but the kind-2 failure pop becomes `dec [mem]`); chain with
+// `continue` in the kind-2 arm only 134, in the state-one arm only 119; kind-2 failure statements
+// reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
+// `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
+// takes the `dec [mem]` form in every arrangement.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

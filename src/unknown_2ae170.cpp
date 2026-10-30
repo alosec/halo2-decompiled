@@ -720,7 +720,7 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 	return effects->m_settings.level2c;
 }
 
-// score 370 (was 428): frame 0xc agrees; retail copies the input level into a dead argument slot through a
+// score 370 (was 370): frame 0xc agrees; retail copies the input level into a dead argument slot through a
 // frame 0xc agrees; retail copies the input level into a dead argument slot through a
 // Frame 0xc agrees; selected-primary storage, destination construction and integer-bit/SSE staging differ.
 // Earlier: frame 0xc agrees; retail copies the input level into a dead argument slot through a
@@ -811,6 +811,9 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // Round 224: Coupled left short/right word-short-long-dword 450/450/451/451;
 // left long/right word-short-long-dword 451/451/452/452, all on the retained word route.
 // Original word/byte destinations, selector, gains and append boundaries restored; dispatcher exact.
+// Round 269: shared bit-domain sums for buffer pairs 348; front/rear pairs 380; both 442; mode tails 332;
+// buffer/tail 310; front-rear/tail 443; all 507; all with the native alternate-routing field 507.
+// Every lower-scoring form loses the dispatcher; original arithmetic and executable body restored.
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {
@@ -1246,6 +1249,11 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 // every caller and the frame 0x10/x87 send graph restored.
 // Round 259: native output-reference append with six complete formal orders and
 // pointer/reference output results: eight forms 200 each. Original helper and all calls restored.
+// Round 267: retained append count dword/long 172/172; early level 177/177;
+// direct rear fields 154/154; early level/direct rear 177/177. Plain 154/606 loses
+// matched 0x2af7b0 (27); all count-retention forms restored. Actual pair pointer/reference
+// reservation before both stores 226/226, between bin and volume 218/218; each loses
+// the same caller. Original append producer and complete body restored.
 // @retail 0x2af920
 void c_sound_effects::add_sends(s_sound_send_parameters *parameters, long unused, long mode, s_mixbin_settings *mixbins)
 {

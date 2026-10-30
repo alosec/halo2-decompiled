@@ -323,6 +323,24 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // spelling tried: products swapped (axis * parallel) 57; the four scalars declared before or after
 // the axis or at the top 57; the rotation as 0x11d3b0 writes it, or through an inline
 // (axis, sine, cosine) helper 57; valid flag declared first 57; valid as an expression 86;
+// member-wise forward copy 88; negated cosine test 100. Round 76 (retail multiplies axis j/k by
+// the parallel part in place but the parallel part by axis i through a copy): the shared cross3f
+// for the rotation's cross terms 69, for the axis and the rotation 70 (with every row as
+// direction * cosine + axis * parallel 70), for the axis only 64 (retail's in-place j/k products,
+// axis i/j ranks swapped), the same with the cross k term first 60. A compile-only screen that
+// reproduces this block exactly found no closer form among: the axis statements in all six orders
+// or through cross3f, the four rotation scalars in all 24 orders or a cross3f/struct cross, named
+// const sine/cosine, the parallel part accumulated or through a named dot, and an inline
+// (vector, axis, sine, cosine) helper in either parameter order (93/97: the axis pointer forces
+// reloads after each row's store).
+// member-wise forward copy 88; negated cosine test 100.
+// Perpendicular/forward query inline and noinline declarations, singly/together 57 each; fallback
+// normalization via returned output pointer 71, with both inline declarations 71.
+// member-wise forward copy 88; negated cosine test 100. Only the declaration order of the four
+// scalars changes the block (all 24 orders compiled; this one is closest): operand and term orders
+// are canonicalised. Axis by cross3f 64; parallel scale written into each row 78; local_3 declared
+// before local_2 59; rows i, k, j 59; an inline rotate helper with named parallel/cross scalars 57
+// (with a cross vector, worse).
 // member-wise forward copy 88; negated cosine test 100.
 // Perpendicular/forward query inline and noinline declarations, singly/together 57 each; fallback
 // normalization via returned output pointer 71, with both inline declarations 71.

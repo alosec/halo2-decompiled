@@ -178,6 +178,14 @@ void function_265bb0(long actor_index);
 
 // score 60 (was 60): frame four versus retail zero (first tick in the frame, not the slot home);
 // slot, actor-table and object-table registers rotate and the mode is compared in memory.
+// Lane 11 r12: the second tick through local_1 (both ticks via the timer helpers) gives retail's
+// zero frame and 367-byte length, aligned 45 (was 77), but positional 94: restored on that count.
+// Retail loads the slot into ebx at entry, keeps the actor table in edx, the object table in
+// ebp and the unit index in edx for the else-arm call, and loads the mode into cx before testing
+// it; ours reads the slot per arm and compares the mode in memory. Lane 11 r12 (aligned counts):
+// unit index local 128 (382 bytes); for the mode and else-arm call only 44; state before the
+// actor/before the result/result last 45/45/48; a switch on the mode compiles as the if.
+// Earlier rounds, on the old form (frame four, the second tick written into the slot parameter):
 // Both timer helpers 85; add helper 68 plain kept; set helper 80; native tick outputs
 // both 72, first 70, second 80; shared random index 80; library slot copy 80.
 // Round 128: native slot data block/full native copy 91/91; data with second timer writer/native
@@ -318,7 +326,11 @@ short __stdcall function_1ac3f0(long actor_index)
 	return result;
 }
 
-// score 35 (was 35): frame four agrees; scale is popped at the first timer multiply and stores differ;
+// score 29 (was 34): both draws now precede the state stores (retail stores the seed once, after the
+// second draw) and the first timer keeps the scale on the x87 stack as retail; left are the seed store
+// between the draws, the scale's folded 2/65535 product (retail scales by 1/65535, then doubles) and the
+// last two stores of the short-delay path in the other order.
+// Earlier: frame four agrees; scale is popped at the first timer multiply and stores differ;
 // tried first timer shared conversion direct 114; first timer shared conversion named seconds 103;
 // second timer shared conversion 49; both timers shared conversion 121; integral tick rate 47;
 // shared timer homes at entry 49; scale first timer product 43; chained boolean resets 46;
@@ -341,6 +353,11 @@ short __stdcall function_1ac3f0(long actor_index)
 // Round 53: adjacent draws remove the seed store but the scale multiply pops (43); scale through
 // the file's random range 38, both draws 38; seconds-to-ticks inline 47 (named rate 43); scale-first
 // product 43; direct rate 47, flat scope 47; real_to_long 114, force-inlined 47; arms swapped 44.
+// Round 155, adjacent draws: scale through slot_random_range 29 (kept, with the rate local dropped: same
+// code); both draws through it 35; with 0x259d0 for both: the file's timer writer first/both 47/47, a
+// seconds-to-ticks helper first/both 47/47 (with a (real) rate 47, rate last 47), rate local before/after
+// the draws 76/37, no rate local 47, ticks declared first 43, scale declared first 43. On the kept form:
+// tail arms swapped 46, `delay < g_45dbd8` 29.
 // @retail 0x1ac430
 bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 {
@@ -350,10 +367,10 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 	if (!state->unknown0c)
 	{
 		real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->lower, character->upper);
+		real scale = slot_random_range(1.0f, 3.0f);
 
 		state->unknown0d = true;
 		state->unknown12 = false;
-		real scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 1.0f, 3.0f);
 		state->unknown10 = false;
 		state->unknown25 = false;
 		state->unknown3a = false;
@@ -361,8 +378,7 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 		state->unknown22 = 0;
 		state->unknown3b = false;
 		{
-			real rate = g_510c54->field_2_3;
-			real seconds = rate * scale;
+			real seconds = g_510c54->field_2_3 * scale;
 			long ticks;
 			__asm
 			{
@@ -685,7 +701,8 @@ bool __stdcall function_1ad590(long actor_index, s_slot *slot)
 	return true;
 }
 
-// score 58 (was 58): default reload and saved-register roles differ. Branch-assigned defaults,
+// score 58 (was 58): independent invalid default reload and slot/continuation register roles remain.
+// default reload and saved-register roles differ. Branch-assigned defaults,
 // valid object first: short result with entry/scoped state 76/76, long result 73/73; invalid
 // object first: short 80/80, long 77/77.
 // Object index once 58; element-first 58; property once 58; element-first 57; both
@@ -698,6 +715,9 @@ bool __stdcall function_1ad590(long actor_index, s_slot *slot)
 // inverted tick test 60.
 // Actor readonly/reference, element readonly/reference, readonly pair, native input
 // pair, state reference and all record references: 58 each; default reload and saved roles remain.
+// Native slot-data view 62; receiver before actor/after element 62/73; native result 65;
+// data view with completion return 88; native result plus completion return 86;
+// independent invalid exits 80; invalid exits plus completion return 70.
 // @retail 0x1ad5b0
 short __stdcall function_1ad5b0(long actor_index, s_slot *slot, bool active)
 {

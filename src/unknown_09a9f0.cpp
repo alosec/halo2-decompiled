@@ -227,7 +227,11 @@ void c_turret_entity_definition::v21(s_entity *entity)
 	}
 }
 
-// score 49 (was 77): retail holds a bool result in BL from before the creation call, saves
+// score 49 (was 49): false BL lifetime, temporary EBP save and independent header/object lookups remain.
+// retail holds a bool result in BL from before the creation call, saves
+// retail holds a bool result in BL from before the creation call, saves
+// EBP only around the header test and loads the header and the object separately; ours keeps
+// a long result in EBP and shares one header address.
 // EBP only around the header test and loads the header and the object separately; ours
 // keeps a long result in EBP and shares one header address. Incoming output flags 87; later
 // result 80; both 89; invalid header first 75; shared header 77; incoming flags and header
@@ -254,9 +258,11 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // native header acceptance 65; native rejection first 52; combined native acceptance 67.
 // Signed-byte/unsigned-word/unsigned-native validity 76/52/49; shared success exit bool/long/byte
 // 75/67/70; shared validity exit native/word 52/55.
-// score 49 (was 49): EBP result, early false lifetime and shared header lookup remain.
+// EBP result, early false lifetime and shared header lookup remain.
 // Result declaration first, output role name, both, native-result header record 49 each;
 // shared header/object/both getters 49/49/49; both getters with early Boolean success 77.
+// Success-default bool/native/byte at entry 72/49/72; after creation 70/52/70;
+// created-index validity return 70; actual attached-index result 72.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {

@@ -130,6 +130,8 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
 // Round 380: Native point bitmap unsigned/signed 456/456; unsigned group bitmap with array/unsigned/signed point bitmap 426/434/434; signed group bitmap 426/434/434. Original arrays restored.
 // Round 239: coherent validator/reference-provider ordinary, inline and noinline
 // declaration pairs (eight non-original combinations) 406 each. All restored.
+// score 398 (was 406): the selected point index is a byte, as retail stores it. The frame 0x68 versus
+// 0x64, the group and point bitmap homes and the remaining register rotations remain.
 // @retail 0x29e0f0
 bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg_2,
     s_29de21 *arg_3, s_29e0f9 *arg_4)
@@ -188,7 +190,7 @@ bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg
                         short local_28 = local_19;
                         for (short local_27 = 0; local_27 < 2; ++local_27)
                         {
-                            short local_29 = local_19;
+                            char local_29 = local_19;
                             point3f *local_30 = &local_22->field_4[local_19];
                             real local_31 = function_29e3b1(&marker_position, local_30);
                             bool local_32 = false;

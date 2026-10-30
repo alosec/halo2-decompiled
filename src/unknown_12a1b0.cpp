@@ -1210,6 +1210,9 @@ struct s_looping_detail_request
 // Round 398: input-source pointer/reference/value/const-value 157/157/194/194;
 // const pool receiver with source pointer 157; direct destination with input pointer/value/const-value
 // 188/184/184. Original complete source observations and body restored.
+// Round 186: caller-only query noinline/inline 138/138; mode predicate 138;
+// destination after copy/reference 138/138; offset workspace name 138;
+// caller noinline with later destination 138; mode with later destination 138.
 // @retail 0x21cc60
 bool looping_sound_prepare_detail(s_type_a82d9f const *detail, long looping_sound_index, s_looping_detail_request *request)
 {

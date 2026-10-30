@@ -328,6 +328,10 @@ extern "C" void _ReadWriteBarrier(void);
 // (frame 0x10); plus a pool local for the iterator and release 150 (frame 0x14); iterator from the
 // global, local only for the release 127; that local assigned after the iterator 124 (retail's
 // prologue; retail reads the copy for the element and releases through the global).
+// Round 406: shared absolute element getter, ordinary three/four-field iterator,
+// early/late saved pool and shared datum-index producer 166/157/166/157/163/156/166/157.
+// Four-field early pool reaches frame 0x14; getter checks and later allocation regress.
+// All unqualified/barrier-free trials restored.
 // @retail 0x1fb510
 void function_1fb510(void)
 {

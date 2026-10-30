@@ -636,6 +636,8 @@ short actor_behavior_find_level(long owner_index, short type);
 // Round 41: selected target-index snapshot 62; source-selected target index 62;
 // all-phase target index 85; candidate-selected target index 85; candidate-selected location 84;
 // all-phase location 84; source-selected location 62; source-selected target pointer 131.
+// Round 155: selected actor getter at each use 88; selected pointer at the top 59; inverted 0x1f4460
+// test 59; slot-state pointer local 59. BLOCKED-BY 0x270750 (its convention: target EAX, sector EDX, scratch ECX).
 // @retail 0x1b3fd0
 bool __stdcall function_1b3fd0(long actor_index, s_slot *slot)
 {
