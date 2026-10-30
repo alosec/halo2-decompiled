@@ -2722,7 +2722,7 @@ static inline short sound_voice_find_available_channel(char type)
 // score 96 (was 96): retail loads the voice index into ecx before the frame setup, keeps the `NONE` constant in
 // cx and the result in al/bl with an 8-byte frame; ours loads the index into eax and holds the result in a stack
 // byte with a 12-byte frame.
-// score 96 (was 96): playback/channel roles recovered; frame 12 versus 8, status test and failure
+// Earlier: playback/channel roles recovered; frame 12 versus 8, status test and failure
 // placement remain.
 // Validity result 135; assigned result
 // 135; playback handle 113; const playback 113; long buffer index 117; entry status 113;
@@ -2753,6 +2753,9 @@ static inline short sound_voice_find_available_channel(char type)
 // only the failure block's placement after the loop differs); result assigned on every path 135; that
 // with both NONE defaults between search and test 128 (retail's block order, not-found unthreaded);
 // driver default before/after the search 147/153; plus return-from-loop search 126.
+// Round 235: chained driver/buffer defaults inside/before test/before search 91/147/171;
+// with canonical success assignment 129/130/144; complemented status before test/inside
+// 122/127. The 91 form is below the minimum gain; original byte-result body restored.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3531,6 +3534,9 @@ struct s_128ca0
 // exact to +0x7e; the location field is still copied, retail loads it into XMM1 first); outer
 // decibels_sum over the by-value inner 214; operands swapped by value 286; first form plus a shared
 // scale local 255 (0x49c); both reference sums inner-first 255.
+// Round 235: native real incoming gain with direct/inner-part/location-value/both forms
+// 306/306/306/306; each with shared scale 295. Frame 0x494 recovered, gain and clamp
+// loads still differ; original signature, caller argument and executable body restored.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
@@ -3913,7 +3919,7 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
 // score 55 (was 55): statement clears give retail's 0x40-first, copy-free clears but force MSVC's 8-byte frame
 // realignment; the argument form keeps retail's frame but clears the 0x80 array first, with copies of memset's results.
-// score 55 (was 55): plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
+// Earlier: plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
 // memset's results (retail buffers-first, no copies), short restart cursor and loop padding remain.
 // Promoted voice limit 108; entry system
 // 108; direct elapsed 108; pending byte 108; frame input 108; short player cursor 122; short
@@ -3933,6 +3939,8 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 // Round 164: word restart cursor 114; statement clears realign in every form tried (compile-only:
 // split statement/argument clears, callee-owned arrays, short/char clear loops, pointer-local targets,
 // no system local, arrays at entry, player for loop).
+// Round 235: persistent buffer/channel clear return with the other clear still a call argument
+// 104/72; with long restart 60/86; entry declarations repeat 104/72/60/86. Original body restored.
 // @retail 0x125b40
 void function_125b40(void)
 {
