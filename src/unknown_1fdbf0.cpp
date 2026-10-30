@@ -347,6 +347,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // direction scalars 74, with staged axis 81; complete direction value with staged
 // turn/both 196/219; both vector inputs as complete scalars 74. All restored;
 // final axis/direction carriers and the copied parallel product remain.
+// Round 100: the existing cross-file forced-inline rotation helper (vector, axis, 0.5, 0.866) 69;
+// identical code at 43: axis-first products in the j/k rows, axis declared before forward, the
+// parallel part through dot3f, the i-row cross term computed last (the matched 0x11d3b0 colours
+// its axis the way ours does).
 // Round 119: retail multiplies axis j/k by the parallel part in their own registers (axis operand
 // first), so it frees a register, loads direction j/k before the i store and keeps the cosine in a
 // register; every source spelling of the product gives the parallel part first. Parallel term first

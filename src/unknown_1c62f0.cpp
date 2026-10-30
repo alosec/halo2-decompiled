@@ -6,6 +6,7 @@
 #include "unknown_1c62f0.h"
 #include "unknown_1cafc0.h"
 #include "unknown_0259d0.h"
+#include "normalize3d.h"
 #include "unknown_xd56787.h"
 #include "unknown_11cb00.h"
 #include <float.h>
@@ -822,9 +823,7 @@ bool c_animation_channel::velocity_get(vector3f *delta, vector3f *velocity) cons
 		vector3f position;
 
 		c_animation_channel_frame_sample(this, frame_position, &position, delta);
-		velocity->i = position.i * scale;
-		velocity->j = position.j * scale;
-		velocity->k = position.k * scale;
+		vector3f_scale(&position, scale, velocity);
 		result = true;
 	}
 	return result;
