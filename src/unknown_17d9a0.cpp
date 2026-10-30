@@ -169,6 +169,8 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // restored.
 // Round 288: complete shared corner-vector producers, forward/left affine and two-scale sums,
 // each with private/shared final projection 265, 250, 265, 250, 265, 241, 265, 241. Original body and helper restored.
+// Native side field byte/signed-char/char 142/142/142; with existing final projection 193/193/193;
+// byte/signed-char side with a reused short axis result 164/164. Original Boolean field, body and helper restored.
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {
