@@ -72,6 +72,11 @@ short __stdcall function_2551c0(long actor_index)
 }
 
 // score 43 (was 43): cross-product schedule and score-dot registers still differ.
+// Round 37 (lane 16): the rotation's dot as a named local before the projection 56 (gives
+// retail's early cross_j product a.k*v.i, but the dot then sums i, k); after the cross terms 70;
+// the named dot's terms in the 11 other orders 56 each; the named dot at each position among the
+// cross terms with all six cross orders 56-125; the score's dot through the file's accumulating
+// dot (0x255741's helper, either operand order) 72/72; the projection's dot through it 74/74.
 // Round 78: score as (1 + dot) 43; best_score < score 43; 0.2f * distance 43; angle as
 // 0.7853982f * i 43; distance * 0.2f * (dot + 1) without the grouping 118. A diagnostic no-op
 // product (not kept) reorders the projection dot and fixes the length (814) without touching the
@@ -598,6 +603,12 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // inside projection/reach 136/136; after lateral/adjusted distance 147/152;
 // projection/reach interval with later radius addition 139/141. Subthreshold forms restored.
 // Entry heading result 141; both normalization outputs 141; entry-declared heading 141; entry projection 141; both outputs with projection-boundary interval 136; sequential alignment helper 141; heading with entry displacement 141; heading with entry timing outputs 141. Restored.
+// Round 37 (lane 16): the round-72 95 form rebuilt (95, 964 bytes); on it the request stores
+// written short, long, type 94 (the scheduler keeps its own order; the 5ac load takes ECX where
+// retail reuses EAX); request store order alone 141; the else-arm default alone 205 (954 bytes).
+// What the 95 form still lacks is mostly scratch rotation from the 0x110ab0 argument (ECX for
+// retail's EAX), the sum's operand order, the length/projection slots and the timing call's pushes.
+// The guard split into two nested ifs 141 (on the 95 form 95); the target read before the guard 233.
 // Both native copies before planar zeros 141; opposite independent copy order 142;
 // existing in-place planar setter 196 (963 bytes), direct planar setter inputs 224;
 // existing side/reverse/both-with-planar setters 157/141/224; late zeros plus side/reverse setters 157.
