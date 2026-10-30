@@ -535,6 +535,9 @@ void function_3dd10(long object_index, bool force);
 // Round 212: carried eligibility bit with original/cursor first scan and independent second bit
 // 224/225/228/229; signed bounds on those graphs 599/544/639/529 (fast control 84). Signed scans still
 // unroll; original mask arithmetic and scans restored.
+// Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
+// variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
+// const choice count with the signed first bound 637 (unrolled). Original body restored.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {

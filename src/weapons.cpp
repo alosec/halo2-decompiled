@@ -3174,6 +3174,9 @@ struct s_ammo_conversion_entry
 // Real notification/updater ordinary, inline and noinline declaration pairs, excluding the
 // original pair: 190 each. Both complete defining files, all declarations and the transfer body restored;
 // destination/tag/search homes remain with the correct 0x20 frame and signed notification count.
+// Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
+// both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
+// with conditional minimum 196, plus direct destination 205. Original body and field type restored.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
