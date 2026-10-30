@@ -494,10 +494,16 @@ real function_30bf0(vector3f *vector);
 // 152/152/152/152/152/152/152/183. Original complete executable body restored.
 // Round 214: existing dot/basis-dot plane producers, both operand orders: copied normal 150 each; native normal 290 each.
 // Exact-only sum forms restored; no gain meeting the margin, result/range/amount homes and inverse SIMD groups remain.
+// score 150 (was 144): the volatile result anchor and the pointer-to-whole-local side
+// operand are gone, so the result, range and delta stack homes and the delta/motion SIMD
+// register blocks differ from retail again.
+// score 144 (was 152): the facing branch is entered on retail's negated condition and the cross
+// product's multiply operands now follow retail's order; the result, range and delta stack homes
+// and the delta/motion SIMD register blocks still differ.
 // @retail 0x263810
 short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
-	volatile long result = 0;
+	int result = 0;
 	if (mode == 0 || mode == 1)
 	{
 		s_actor_view *actor = actor_get(actor_index);
@@ -549,7 +555,12 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 				if (scaled_range * scaled_range > distance_squared)
 				{
 					real secondary, primary;
-					if (!actor->unknown007 && use_facing)
+					if (actor->unknown007 || !use_facing)
+					{
+						primary = scaled_range;
+						secondary = scaled_range * 0.7f;
+					}
+					else
 					{
 						real facing_secondary, facing_primary;
 						function_263740(actor_index, &delta, (vector3f *)((byte *)actor + 0x2a8),
@@ -585,11 +596,6 @@ short function_263810(point3f const *origin, long actor_index, point3f const *po
 						}
 						secondary = facing_secondary;
 						primary = facing_primary;
-					}
-					else
-					{
-						primary = scaled_range;
-						secondary = scaled_range * 0.7f;
 					}
 					if (mode == 0 && secondary * secondary > distance_squared)
 					{
