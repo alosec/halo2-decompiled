@@ -198,6 +198,10 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // node/packed/both record references 62/62/62; native coordinate loop 62; native range and
 // coordinate loops 62; format-3 sum written offset first 62; formats 3 and 4 indexed 175;
 // format-4 pointer for the coordinates with the node read by index 175; the index read once
+// into a local for every case with format 4 indexed 175; indexed format 4 with node declared
+// before point (definition, declaration and call) 175; node before point alone 62 (caller +2);
+// formats 2, 3 and 4 all indexed 175; format-4 record as a packed position member plus node,
+// indexed/pointer 175/62.
 // into a local for every case with format 4 indexed 175; with format 4 indexed, the format read into a
 // local 175, one node store after the switch 187, the index read directly 175 (the source still arrives
 // on the stack, the switch index in EDI, the node in EBX); the buffer pointer read at each use 190;
