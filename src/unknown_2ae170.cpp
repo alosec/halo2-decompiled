@@ -825,6 +825,9 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // Round 269: shared bit-domain sums for buffer pairs 348; front/rear pairs 380; both 442; mode tails 332;
 // buffer/tail 310; front-rear/tail 443; all 507; all with the native alternate-routing field 507.
 // Every lower-scoring form loses the dispatcher; original arithmetic and executable body restored.
+// Round 294: Entry left/right gain and send-level storage, seven nonempty subsets, all 370;
+// all with offset storage 370. All producers, helper boundaries and the complete
+// body restored; frame 0xc agrees, selected-level and integer/SSE staging remain.
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {
@@ -1004,6 +1007,9 @@ void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameter
 // Real gain-array loops front/rear/tail/front-rear/front-tail/rear-tail/all-long/all-word
 // 318/346/314/422/388/411/492/466; dispatcher 26 in every trial. Original fields, observations,
 // three local qualifications and body restored.
+// Round 301: Complementary primary-route word/bool/byte/long with conditional destinations
+// 244/249/249/247; independent complete destination producers 240/256/256/253.
+// Original routing, producers, observations and three local qualifications restored.
 // @retail 0x2af450
 void c_sound_effects::add_effect_sends_split(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {
@@ -1139,6 +1145,9 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // Round 414: joint front/rear/both endpoint producers 137/151/141; routing-result arms
 // alone/front/rear/both 137/137/152/142; routing default with both pairs 133 at 396/396
 // (gain four, below eight; test-produced routing also exact-only). Original complete body restored.
+// Round 421: signed-byte routing/pair/quad truth carriers, all seven nonempty subsets
+// 137 each; all three as signed short 144/404. Original Boolean carriers, real-bin
+// loops, gains and body restored. Source/bin homes and runtime zero remain.
 // @retail 0x2afb80
 void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rear, long mode, s_mixbin_settings *mixbins)
 {

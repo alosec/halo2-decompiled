@@ -539,6 +539,9 @@ PRIVATE inline void vehicle_normalize2d(point2f *v)
 // Round 77: the reversing bit written as bit 9 of the flags word (word_flags_set) 314: the writer is
 // then retail's (`or/and byte ptr [esi+0x349]`, one exit each; ours split it into load/op/store), and
 // only its position against the longer retail body moves the count. Restored on that count.
+// Round 425: one velocity/direction workspace 321; one heading/blend workspace 307; both 322;
+// complete 2D role names alone/with either/both 306/321/307/322; both with long reverse result 319.
+// All original source restored; the 0x28 frame and entry magnitude remain unresolved.
 // @retail 0xef070
 void function_ef070(long vehicle_index)
 {
@@ -794,6 +797,8 @@ __forceinline long vehicle_round(real value)
 // form flips three more products; the helper's component order (all six, staged or not), operand text
 // order, inline/forceinline, local declaration order, the if/else inverted and the rate computed first
 // never give the first cross's f.i load, which moves only when the side block is removed.
+// Round 425: native rate clamp 12; strength if/else 140; writable flag bit 15; shared byte clear 12;
+// clamp/strength 140, clamp/bit 15, strength/bit and all 140. All original source restored.
 // @retail 0xef870
 bool function_ef870(long vehicle_index)
 {
@@ -2174,6 +2179,10 @@ PRIVATE inline real vehicle_wheel_spin(real spin, real const *period)
 // Y405: Frame 0x14 versus 0x10 and zero/scalar homes remain;
 // gear-none/two-defaults/active-gear/sign-arm torque results 126/140/138/126; each with shared
 // straight-drive product 132/141/141/132.
+// r97: the turn product written at both uses (retail's xmm6 zero, xmm5 product) 113;
+// torque if/else with NONE first 138, with that 138; spin helper as one fmod of
+// `spin > 0 ? spin : spin + period` 112, with the product at both uses 149; spin
+// result local 134. The extra frame word is not 0x2056e0's (it aligns itself).
 // @retail 0xf1cd0
 void __stdcall function_f1cd0(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -3342,7 +3351,7 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 /* a hovering vehicle's wash: from each of its engine markers, a ray down a
    cone around the marker's forward, and the definition's effect where it
    hits, fading with the distance */
-// score 48 (was 53): from the marker count sum on, retail's scratch registers run one step
+// score 48 (was 48): from the marker count sum on, retail's scratch registers run one step
 // ahead of ours (retail `movsx ecx, ax; add edi, ecx`, ours `movsx eax, ax; add eax, edi`; in the
 // loop retail dx/eax/ecx where ours use cx/edx/eax; ours loads the definition first in the effect
 // block), plus the 0x146320 set-up pair (its declared order, BLOCKED-BY 0x146320: seed declared
@@ -3355,6 +3364,11 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 // pointer 129; the ray through vector3f_scale 48; facing declared with the loop locals 48; `long count`
 // declared before the first count 48; count from the second call, then `+= primary_count` 48 (the
 // 48s are the same code: the second count's sign extension stays preferenced to eax).
+// Round 420: native facing producer 67; native ray producer 48; native facing producer + native ray
+// producer 67; collision miss continue 48; native facing producer + collision miss continue 67; native
+// ray producer + collision miss continue 48; native facing producer + native ray producer + collision
+// miss continue 67; native facing producer + native ray producer + collision miss continue + readonly
+// marker 67; total owns first marker result 141. Original body restored.
 // @retail 0xf6060
 void __stdcall function_f6060(long vehicle_index)
 {
@@ -3549,10 +3563,13 @@ long function_189060(long object_index, short value, real scale, point3f const *
    pushes it (every fourth tick, a spread of the vehicles' work, else the
    last one), which sets the function's value; a hard landing plays the
    definition's sound */
-// score 316 (was 374): frame 0xe0 versus 0xec, iterator/scalar homes and final flag stores remain.
+// score 316 (was 316): frame 0xe0 versus 0xec, iterator/scalar homes and final flag stores remain.
 // Native point copy 350; up copy 341; both 333; both with long quantization 328;
 // both with post-search scalar selection 321; all three 316 (kept); scalar selection alone 362;
 // native ray setters 333; ray/marker/both at entry and complete workspace names 316 each.
+// Round 425: point before up 317; shared word flag writer 316, with point first 317; long sound
+// result 319, with point first 319, with writer/everything 341/341; both long decisions with all 344.
+// All original source restored; missing twelve frame bytes and iterator/scalar homes remain.
 // @retail 0xf6670
 bool __stdcall function_f6670(long vehicle_index, bool update)
 {
@@ -3735,6 +3752,12 @@ PRIVATE __forceinline real vehicle_larger(real a, real b)
 // Round 401: single-result case orders 012345867 143; 031425867 157; 013425867 156; 012345768 123;
 // 013482567 157; 013467825 129; 876543210 134; 258013467 162. All restored; lookup scheduling and
 // late tail merges remain.
+// Round 420: complete magnitude outcomes with entry result 117; complete magnitude outcomes with
+// lookup-time result 117; second magnitude default with entry result 117; second magnitude default with
+// lookup-time result 117; first magnitude default with entry result 119; first magnitude default with
+// lookup-time result 119; native double magnitudes and outcomes with entry result (wider frame/qword
+// spills; rejected) 101; native double magnitudes and outcomes with lookup-time result (wider
+// frame/qword spills; rejected) 101. Original body restored.
 // @retail 0xf78e0
 real __stdcall function_f78e0(long vehicle_index, long limit)
 {

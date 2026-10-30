@@ -68,6 +68,9 @@
 // entry/branch and entry/entry, each with default/eight-byte alignment:
 // 418/418/419/419/419/419/419/419 fast, all 1742 bytes. Branch/branch recovers frame 0x74a4;
 // three-point gain rejected. Original combined workspace and complete body restored.
+// Round 218: Live view source/direct ranges/both/both with native short view 481/474/453/450;
+// native eight-byte storage alignment on those graphs 481/473/453/449. List/plane and entry/table
+// homes remain; original header, observations and complete body restored.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {

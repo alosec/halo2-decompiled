@@ -6,7 +6,11 @@
 #include <math.h>
 #include "unknown_21e230.h"
 
-// score 8 (was 8): Decibel/bin scheduling and count-volume register roles remain; native pair aggregate/field
+// score 8 (was 8): retail stores the mix bin before it loads the decibels for the push and keeps
+// the count in eax and the volume in edx after the call; ours loads the decibels first (edx) and uses
+// ecx/eax after the call. Tried: the decibels read through a pointer 8; the volume in a local 8;
+// the conversion written out 8; a pairs pointer 8; a by-reference conversion helper 8.
+// Decibel/bin scheduling and count-volume register roles remain; native pair aggregate/field
 // production, with original/sampled index and postincrement publication, six forms 15 each; retained index
 // with live count increment 11; reservation before conversion 21. Original field-wise append and body
 // restored.

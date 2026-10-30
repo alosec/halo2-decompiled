@@ -243,6 +243,8 @@ struct s_flag_word_bits
 };
 
 // score 261 (was 261): Frame 0x1c versus 0x18; current/entry/status homes and next-group spill remain.
+// flag 1 read through a word bitfield view gives retail's load-and-shift;
+// frame 0x1c versus 0x18 and the current/entry roles and next-group spill still differ.
 // Round 9 (lane 11, fast): first body set in an if/else 300 (frame 0x18 and retail's out-of-line NONE store
 // with the re-tested next, but current moves to EDX and the entry index to ESI where retail has ESI/EDX);
 // with it: nested first-body skip test 300 (identical); `this` used directly for the component alias 300

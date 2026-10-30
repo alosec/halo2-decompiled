@@ -1195,6 +1195,10 @@ struct s_squad_tree_definition
 // by-reference parent getter 31 (diagnostic); test through the global getter with the pointer through the
 // local pool, and the reverse, 57/56 (two loads, memory compare); per-pass loop counters 31; parent getter
 // at each use in pass 3 34; pass-4 squad through the local pool 31.
+// Round 41: pass-3 parent through the local pool 103; pass-3 getter argument through a fresh
+// group getter 56; pass-4 call argument through a fresh squad getter 44 (the getter falls under
+// the depth-zero pragma and goes out of line); the pragma pair around the whole pass-4 test 31;
+// the pass-4 group index read once into a named local 42.
 // @retail 0x2009d0
 void function_2009d0(void)
 {
@@ -1992,10 +1996,16 @@ bool function_1e11b0(long actor_index, bool active);
 // re-fetched after the loop 76.
 // Round 407: uniform live squad lookup with native flag test/store and initializer-owned
 // handle combinations 84/89/78/83/88/93/82/87. Receiver refresh grows the body; all restored.
+// Round 41: the `(void)&squad_index;` statement removed 64 (identical code, so dropped), the
+// index read once through its address at the lookup or at the iterator call 64/64; the actor
+// index kept in the iterator as the header step does 64; the header step itself 97 (the
+// depth-zero pragma keeps it out of line). Retail gives the index EBP for the whole body and
+// splits the squad pointer around the loop (ESI outside, reloaded from the index's home at the
+// loop's back edge); ours keeps the pointer in EBX across the loop and reads the index from its
+// home inside it.
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
 {
-    (void)&squad_index;
     s_squad_datum *squad = (s_squad_datum *)g_51e9d8->data + (squad_index & 0xffff);
     if (*(short *)((byte *)squad + 0x7e) == g_4686c4)
     {
@@ -2677,6 +2687,13 @@ bool function_1fb8a0(long arg_0, short arg_1);
 // if/else 50.
 // Round 257: apply/event ordinary-inline-noinline boundary pairs on the recovered
 // pointer/result and actor-step graph 50 each (eight forms); EBP index reload remains.
+// Round 97: a named copy of the index for the trigger part 50 (identical); one read of the index through
+// its address for the trigger part 50 (identical); short trigger count 50; long entry ordinal 93; entry
+// word read at each use 50.
+// Round 41: the trigger part reading the squad index once through the parameter's address 50
+// (folded); a local copy of the index for the first part 50 (copy propagated); declaration
+// orders of the ticks/index, task/pending, threshold/count and the actor iterator 50 each; the
+// task pointer filled by an if 107 (the NULL test goes); permuter 600 s, no gain (49 = 49).
 // @retail 0x202be0
 void function_202be0(long arg_0, long arg_1)
 {

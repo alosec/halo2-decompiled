@@ -293,6 +293,9 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 // Round 188: native point/vector position with memcpy/memmove, original then entry
 // uninitialized declarations: 220/220/223/223/220/220/223/223. Memmove reaches retail
 // 1030-byte length but regresses; original position transfer and body restored.
+// Round 211: outgoing up/forward/turn overlap-safe transfers in all seven subsets, then all three
+// with the late position transfer, scores 224/223/233/223/233/230/241/251. Original executable
+// form restored.
 // @retail 0x1197b0
 void function_1197b0(long object_index)
 {

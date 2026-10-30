@@ -169,6 +169,8 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // restored.
 // Round 288: complete shared corner-vector producers, forward/left affine and two-scale sums,
 // each with private/shared final projection 265, 250, 265, 250, 265, 241, 265, 241. Original body and helper restored.
+// Native side field byte/signed-char/char 142/142/142; with existing final projection 193/193/193;
+// byte/signed-char side with a reused short axis result 164/164. Original Boolean field, body and helper restored.
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {
@@ -640,6 +642,12 @@ PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, v
 // Round 38: Staged cross product, with cross lifetime local/group and sign expression/branches,
 // 559/559/559/559 fast at 3631 bytes, frame 0x21e4; each with common angle result 618
 // at 3632 bytes. Five-point best rejected; original cross call, angle helper and body restored.
+// Round 420: present-first-face region 564; missing-candidate continue 564; present-first-face region +
+// missing-candidate continue 564; ordered geometry rejection guards 564; present-first-face region +
+// ordered geometry rejection guards 564; missing-candidate continue + ordered geometry rejection guards
+// 564; present-first-face region + missing-candidate continue + ordered geometry rejection guards 564;
+// present-first-face region + missing-candidate continue + ordered geometry rejection guards + single
+// angle result 564. Original body restored.
 // @retail 0x17fd20
 void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 	s_decal_output_17dd80 *output, s_decal_projection_17fd20 *projection, s_decal_placement const *placement)

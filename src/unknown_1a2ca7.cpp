@@ -1476,6 +1476,10 @@ void online_presence_get_latest(long task_index, DWORD group_id, DWORD count, XO
 // Round 14: retail's argument roles in the merge, friend-presence and player-presence calls
 // 159; that plus the friend count first 160; merge and player roles only 164; friend count
 // first 124; loop-scoped merge index 117.
+// Round 418: member count after user copy 124; friend count after user copy 118; both counts after user
+// copy 126; friend-first after user copy 126; named member after user 124; named friend after user 118;
+// named both after user 126; named friend-first after user 126. count homes, early count retention and
+// membership flag reloads remain.
 // @retail 0x1a3dfe
 void friends_lists_update_presence()
 {
