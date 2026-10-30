@@ -178,6 +178,11 @@ static __forceinline real avoidance_normalize2d(point2f *direction)
 // by value with pointer/reference outputs 216/216; scalar inputs with pointer/reference
 // outputs 156/156; distinct const-input/output pointers 156; const-reference input with
 // returned point 280. Original in-place normalizer restored.
+// Round 14: retail's early `movss xmm0, [y]` is the subtraction's y forwarded to both
+// normalize paths (y * inverse in place, and direction_y on the short path); x is re-read.
+// The existing normalize2d_fast through a cast 92 (arms swap); a vector2f direction with it
+// 177; y read into a local first in the normalizer 92 (same code); no direction locals 92;
+// x local first 92; cross term `direction_x * other.y` 92; dot terms local-first 92.
 // @retail 0x2c3680
 short avoidance_add_node(s_avoidance_search *search, point2f const *point, bool side, long value08, short obstacle,
 	short value1a, real cost, short parent)
