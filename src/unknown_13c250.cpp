@@ -81,9 +81,8 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 {
     return TEST_FIELD_BIT(arg_1->field_10a2);
 }
-// score 144 (was 144): frame 0xd8 agrees; carried-item receiver reloads, append-count observations and ranking handoff remain.
-
-// score 144 (was 144): carried-payload reloads, memory count and ranking handoff remain.
+// score 144 (was 144): frame 0xd8 agrees; carried-item receiver reloads, append-count observations and
+// ranking handoff remain (the carried-payload reloads, the memory count and the ranking handoff).
 // Earlier: receiver/count reloads and ranking dispatch remain; retail reads the
 // count once per append (no volatile re-read) yet keeps it in memory, and holds the found
 // candidate apart from the best-ranked one (0x5000720 is a switch case there).
@@ -116,6 +115,14 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // 183; indexed scan with the preferred case 176; indexed scan with the preferred pre-test 139 (subthreshold);
 // completed-count snapshot 165; known-zero carried append 196; known-zero fallback append 179;
 // one-observation second append 147. Opening body restored.
+// Round 28 (lane 10): retail's count is a non-volatile memory local (the first append and the
+// fallback's first append store the constant 1 after `count == 0`, each later append rereads it, and the
+// ranking loop reads it once into EBX), and retail does not merge the second and third unit lookups
+// (it reloads the pool data and reuses only index * 12). The existing unit_get_current_weapon for the
+// first carried item 144 (same code); the count as element 0 of a five-entry array (diagnostic) 209
+// (first appends fold, the count is cached in EBX); preferred tag as a switch case 176 (aligned 93 ->
+// 73: retail's compare tree, 841 bytes; same as the earlier native case); with a separate selected
+// result for it 179 (847 bytes); with a memset-zeroed plain count 276 (784 bytes).
 // @retail 0x13c250
 void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
 {
