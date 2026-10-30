@@ -1354,6 +1354,9 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 // copy alone/with collection/update/both 180/180/180/180, bounded short count 226. On that cache
 // graph, promoted team/direct current/direct cache observation subsets 183/237/240/180/183/216/220,
 // all with short count 220. Four-point form rejected; original full body restored at 184.
+// Round 219: Finite membership exhaustion with long/dword/short/word count, right shifts
+// 249/249/240/240 and ordinal-bit removal 262/262/245/245. All restored; owner/count/zero
+// allocation and requested-record induction remain.
 // @retail 0x65cb0
 void network_session_interface_update_player_properties(c_class_58d20 *session)
 {
@@ -1941,6 +1944,10 @@ struct s_summary_player_sort_entry
  byte properties[0x90];
 };
 
+// score 339 (was 339): Frame 0xa9c versus 0xaa8; type/membership/member-index homes and saved registers differ.
+// Round 216: complete state-field observations 378; with native membership/player/selected-member
+// references 378/378/377; membership-player/membership-member/player-member 378/377/377;
+// all three 377. Frame remains 0xa9c. Original complete body and external type declarations restored.
 // @retail 0x64d70
 bool __stdcall function_64d70(s_session_browser_summary *output)
 {

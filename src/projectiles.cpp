@@ -1189,6 +1189,9 @@ extern vector3f *g_4687ac;
 // consistent radius-field reads 198/193/179/185. Full-width result reaches 756 bytes but
 // regresses. Original result exits, cached radius, simultaneous endpoints and body restored;
 // frame/tag/query homes remain.
+// Round 213: existing staged cross with original/shared input differences and original/bounded
+// initial ray 163/163/165/165; consistent radius-field counterparts 181/188/173/180.
+// Original body restored; tag EBP and native frame 0x34 endpoint/query overlap remain.
 // @retail 0xfc030
 bool function_fc030(long projectile_index, point3f const *point, s_collision_result_1697c0 *collision)
 {
@@ -2525,6 +2528,9 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 // Round 284: Independent effect/sound long or dword counters at their producers, four
 // combinations 1162 each; those with the collision routine declared inline 1162 each.
 // Original shared counter and declaration restored; frame and velocity contract remain.
+// Round 213: existing final-velocity friction/noise/rest helper producers, seven subsets,
+// 1162 each; complete graph with reflected receiver setter 1162. Original body restored;
+// frame 0x220/0x218 and velocity/request homes remain.
 // @retail 0xfaa60
 void function_faa60(vector3f *velocity, long projectile_index, s_collision_result_1697c0 const *collision,
 	point3f *end_point, vector3f *displacement, short collision_count)

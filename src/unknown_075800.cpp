@@ -1154,6 +1154,9 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // orders (address, message, type) 198, (message, type, address)/(message, address, type) 201;
 // one retail-order switch with it 220, also with (type, address, message) 220 (fast; selector ecx,
 // message eax in every form). All restored.
+// Round 219: Residual singleton handlers 8/11/18 before the connection family, all six orders,
+// 191 each; split singleton placements 192/191 (reduced control 191, full 193). All restored;
+// incoming selector/message/sender allocation and dispatch root remain.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {

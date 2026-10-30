@@ -251,6 +251,9 @@ void function_14bac0()
 // Distinct native 16-byte iterator role names and entry recipient reservation, all seven
 // non-original subsets, 259 each; both named native workspaces at entry 259. Frame 0x48;
 // original iterator identities, reservation lifetimes and complete body restored.
+// Round 212: complete origin value with pointer/value destination and scalar/shared difference
+// 319/316/319/316; native recipient counterparts 318/361/318/361 (fast control 230). Original input
+// observations, points and both traversals restored; frame/readiness sharing remains.
 // @retail 0x14b6a0
 void function_14b6a0()
 {

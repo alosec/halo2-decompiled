@@ -306,6 +306,11 @@ __inline void transform_point(s_camera const *camera, point3f const *p, point3f 
 // DL175: Uniform transform term permutations, every parallel product named, early uninitialized
 // reversed-point scratch and direct inverse factors [195, 195, 195, 195, 195, 213, 195, 207]. All
 // arithmetic-order forms are exact-only; original helper and body restored.
+// Round 219: Native matrix-row loops long/dword/short/word 214/214/477/477;
+// with shared scale 258/258/495/495. Forced long/short, original/shared scale 214/405/258/410.
+// Long-row frame is retail 0x2c; inverse-order/direct factors/both/y-first/y-first with order/
+// y-first with direct factors/descending rows/descending with direct factors 213/262/261/214/213/254/231/218.
+// All restored; inverse/point homes and scaled-component allocation remain.
 // @retail 0x30830
 long function_30830(point3f const *a, s_camera const *camera, vector3f const *d, point2f const *scale, bool perspective, bool negate, point2f *out)
 {

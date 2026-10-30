@@ -1702,6 +1702,9 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
 // Round 414: actual request records/properties/admission domains short-long-long, long-short-long,
 // short-short-long, dword-long-long, long-dword-long, dword-dword-long, word-word-long and
 // short-short-dword 764/722/765/709/709/709/765/765. Original totals and complete body restored.
+// Round 217: completion mapping/received/clamped scalar role names, seven subsets, 709 each;
+// mapped output at completion-player scope 709. Initial cursor base/home and slot expansion
+// remain; original complete body restored.
 // @retail 0x74aa0
 void function_074aa0(void)
 {

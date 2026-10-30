@@ -498,6 +498,9 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // with the same value reaching that plane's transform 363 (was 399). The separate guard tests and
 // the result flag's declaration order were left alone.
 // Round 412: distance zeros before their normalizers, plane subsets 0/1/01/2/02/12/012, 548/400/523/523/551/536/526; all three before normal component stores 435. Original body, retained fourth-distance phase and every helper restored.
+// Round 215: identifier after depth/x0/x1/y0/y1 acquisition 368 each; after x0/x1/y1 with the real
+// copied-rectangle receiver 386 each. Original publication and receiver restored; camera/corner
+// register exchange and initial/normal-distance scheduling remain.
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {

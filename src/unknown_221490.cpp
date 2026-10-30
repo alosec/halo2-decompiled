@@ -151,7 +151,8 @@ void function_221490(
     function_221491(1, 0, buffer_reference);
 }
 
-// score 83 (was 83): the prologue and the loop's registers differ: retail pushes ebp, esi
+// score 83 (was 83): Frame 0xdc agrees; list EAX/ECX, settings-side induction, seen/output-count registers and descriptor homes differ.
+// Earlier: the prologue and the loop's registers differ: retail pushes ebp, esi
 // and edi first and keeps the pair count in ebp and the pair pointer in ebx, ours loads the
 // pointer into ebx before the pushes and counts in ecx.
 // Round 81: retail strength-reduces &settings->pairs[i].lVolume into the pointer (esi) and
@@ -163,6 +164,10 @@ void function_221490(
 // Round 276: Actual setting/previous/both pair values 104/96/108; native changed byte 83;
 // Round 276: the same pair values with byte state 104/96/108; complete graph with descriptor aggregate 108.
 // Round 276: Original scalars, array observations and descriptor restored; mirrored induction remains.
+// Round 216: SDK descriptor initializer 83; append-local count 87; later mask zeros 98;
+// direct SDK count 87; completed-result descriptor via aggregate/fields/DWORD count 88/88/88
+// (281 bytes, frame 0xd8); early descriptor initializer with DWORD count 83.
+// Original descriptor, scalar mirror, input observations and all output updates restored.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,
@@ -534,6 +539,9 @@ bool sound_driver_voice_create_buffer(
 // Round 208: disjoint native descriptor phases, shared/per-phase mixbins,
 // pair arrays at success/phase entry and both descriptor name orders: 98 in all eight.
 // Original storage and body restored; conditional saves and zero/input residency remain.
+// Round 219: Native descriptor phases with direct success short/long/no sentinel result 178/178/178;
+// test-assigned result 181; common short/long exit 149/180; direct success and early count,
+// with/without sentinel 179/179. All restored; early saves and zero/input scheduling remain.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,
