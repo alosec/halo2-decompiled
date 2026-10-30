@@ -666,6 +666,10 @@ struct s_1f9762
 // IL successor of the last arm's pointer store, with the approach (false arm, join and call) placed
 // just before the final return block, where VC puts blocks it creates late; no form moved it there
 // with the pointer in EAX.
+// Round 11 (lane 15): `bool use_approach = !last && direction_valid;` 67 (same code); the approach
+// inside the not-last arm's valid branch with a ternary reversed, if/else or nested `if
+// (direction_valid)` 104/104/104, with a default plus `if` 111. Compile-only: only `direction_valid
+// && !last` (listed) moves the approach after the first return, and it keeps the pointer in EDI.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)

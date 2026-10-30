@@ -3280,8 +3280,10 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 
 /* the state of a unit's weapon use: 6 or 5 for the flags when asked, 7
    past the definition's limit at +0x114, else 3; otherwise 0xc96b0's
-   range (2 when forced, at most 1 when asked), held to 1 for players */
-// score 64 (was 64): Frame and lookups agree; first +0x2f has flag/b register roles and ret 0x14/0x18.
+   range (2 when forced, at most 1 when held), clamped to 1 for players */
+// score 58 (was 64): Frame and lookups agree; first +0x2f has flag/b register roles and ret 0x14/0x18.
+// Round 11 (lane 15): the range is clamped when held, as retail tests its third stack argument
+// (`[esp + 0x14]` after the pops), not b: 64 -> 58 (a behaviour fix; 0xc9e70 128 -> 121).
 // Round 175: held clamp 58 (possible operand fix; exact-only, restored); existing bit view 74;
 // common zero result 87; held/bit 58, held/result 92; actual bit/result 97, all three 88;
 // all test-derived results 89 at 292 bytes. Two duplicate generated forms excluded;
@@ -3325,7 +3327,7 @@ long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, bool h
 	else
 	{
 		result = range;
-		if (b && result > 1)
+		if (held && result > 1)
 		{
 			result = 1;
 		}

@@ -412,6 +412,10 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // pointers 80 (the count references again); b declared before a 87; both absolute values as
 // ternaries 80; the reference picked by `= &current; if (improved) = &best;` 80. Compile-only
 // screen: the spread queries' order ignores the operands' order.
+// Round 11: outer party pointer declared in the outer loop 80; the new team counts as two named
+// locals 80; nested tests instead of the continues 80; candidate declared at function scope 184
+// (558 bytes); the candidate's spread named before the comparison 80 (the reference's query still
+// runs first: LTCG treats count_spread as pure and reorders the calls); permuter 58 tries, best 80.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
