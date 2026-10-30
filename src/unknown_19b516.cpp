@@ -336,23 +336,48 @@ void c_widget::v21()
 #include "slot_handler.h"
 static __forceinline long real_to_long(real value);
 
-// score 89 (was 89): the second block keeps the base edges in named locals, so the right edge's
-// base is one add into the width's register and the two offsets convert in retail's order.
-// The first block still adds the width to the left edge before the offset, which needs a copy of
-// the left edge, and both blocks still pick different registers for the same values.
-// y before x in the second block only 89 (homes right); in both blocks 93; width + left operand
-// order 89; height before width 91; right edge re-derived from the placement after the left offset
-// 108; the base edges kept in named locals in both blocks 92; the conversions moved before the
-// right edge's base 91; the two blocks' offsets swapped 89.
-// x + left (retail adds it into the width's register afterwards), and the two coordinate homes are
-// swapped (retail converts y first). y before x in the second block only 89 (homes right);
-// in both blocks 93; width + left operand order 89; height before width 91; right edge re-derived
-// from the placement after the left offset 108.
-// @retail 0x24bda2
-void c_widget::v12(long a)
+static __forceinline void draw_element_24bda2(s_sprite_element *element, long left, long top,
+	short x, short y, real scale, real opacity, short_rectangle2d const *screen)
 {
 	real offset_y;
 	real offset_x;
+	s_float_rect from;
+	s_float_rect to;
+	from.y0 = 0.0f;
+	from.x0 = 0.0f;
+	real width = (real)element->width;
+	from.y1 = (real)element->height;
+	to.x0 = (real)left;
+	to.y0 = (real)top;
+	real base_x = to.x0;
+	real base_y = to.y0;
+	to.y1 = base_y - from.y1;
+	offset_y = (real)y;
+	offset_x = (real)x;
+	to.x0 = base_x + offset_x;
+	from.x1 = width;
+	to.x1 = width + base_x;
+	to.y0 = base_y + offset_y;
+	to.x1 += offset_x;
+	to.y1 += offset_y;
+	function_23618e(&to, scale, screen);
+	opacity *= 255.0f;
+	long alpha = real_to_long(opacity);
+	function_235e5e(element, &from, &to, (alpha << 24) | 0xffffff, 0, 0);
+}
+
+// score 52 (was 89): coordinate homes and the shared draw schedule agree; dimension and edge XMM
+// allocation and the zero/conversion order still differ.
+// Round 75: full draw helper 123; two-use base edges 123; ordered helper 68; delayed conversions 52;
+// short dimensions 154; direct source width 52; long dimensions 139; long width only 138; computed
+// base parameters 52; no base temporaries 128; direct source height 52; width plus base 52.
+// Earlier: y before x in the second block only 89 (homes right); in both blocks 93; width + left operand
+// order 89; height before width 91; right edge re-derived from the placement after the left offset
+// 108; the base edges kept in named locals in both blocks 92; the conversions moved before the
+// right edge's base 91; the two blocks' offsets swapped 89.
+// @retail 0x24bda2
+void c_widget::v12(long a)
+{
 	short x;
 	short y;
 	s_bounds bounds;
@@ -385,26 +410,8 @@ void c_widget::v12(long a)
 		s_sprite_element *element = &tag->sprite->main;
 		if (tag->sprite)
 		{
-			s_float_rect from;
-			s_float_rect to;
-			from.y0 = 0.0f;
-			from.x0 = 0.0f;
-			from.x1 = (real)element->width;
-			from.y1 = (real)element->height;
-			to.x0 = (real)(placement->main_x + bounds.b);
-			to.y0 = (real)(placement->main_y + bounds.c);
-			to.y1 = to.y0 - from.y1;
-			to.x1 = to.x0 + from.x1;
-			offset_x = (real)x;
-			offset_y = (real)y;
-			to.x0 += offset_x;
-			to.y0 += offset_y;
-			to.x1 += offset_x;
-			to.y1 += offset_y;
-			function_23618e(&to, scale, (short_rectangle2d const *)a);
-			opacity *= 255.0f;
-			long alpha = real_to_long(opacity);
-			function_235e5e(element, &from, &to, (alpha << 24) | 0xffffff, 0, 0);
+			draw_element_24bda2(element, placement->main_x + bounds.b, placement->main_y + bounds.c, x, y, scale, opacity,
+				(short_rectangle2d const *)a);
 		}
 	}
 	if (function_24c676(this))
@@ -417,26 +424,8 @@ void c_widget::v12(long a)
 		s_sprite_element *element = &tag->sprite->second;
 		if (element)
 		{
-			s_float_rect from;
-			s_float_rect to;
-			from.y0 = 0.0f;
-			from.x0 = 0.0f;
-			from.x1 = (real)element->width;
-			from.y1 = (real)element->height;
-			to.x0 = (real)(placement->second_x + bounds.b);
-			to.y0 = (real)(placement->second_y + bounds.c);
-			to.y1 = to.y0 - from.y1;
-			to.x1 = to.x0 + from.x1;
-			offset_x = (real)x;
-			offset_y = (real)y;
-			to.x0 += offset_x;
-			to.y0 += offset_y;
-			to.x1 += offset_x;
-			to.y1 += offset_y;
-			function_23618e(&to, scale, (short_rectangle2d const *)a);
-			opacity *= 255.0f;
-			long alpha = real_to_long(opacity);
-			function_235e5e(element, &from, &to, (alpha << 24) | 0xffffff, 0, 0);
+			draw_element_24bda2(element, placement->second_x + bounds.b, placement->second_y + bounds.c, x, y, scale, opacity,
+				(short_rectangle2d const *)a);
 		}
 	}
 }
