@@ -981,6 +981,9 @@ real function_30bf0(vector3f *v);
 // Round 294: Entry a/two_a/discriminant-base storage, seven nonempty subsets, all 232;
 // all with b storage 232. Every original producer and complete body restored;
 // frame 0x28/0x30, rounded-root scheduling and separate divisions remain.
+// Round 222: found byte/short/long/dword with result first at entry, all 245; arc-only result,
+// all 257. Original body restored; frame 0x28/0x30, rounded horizontal root and separate
+// divisions remain.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1504,6 +1507,9 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 294: Entry ticks/arming-ticks/speed storage, seven nonempty subsets, all 332;
 // all with owner-index storage 332. All producers and the complete callback restored;
 // frame four agrees, slot/input allocation and speed-update expansion remain.
+// Round 222: shared zone predicate 346, with shared scaled sum 332; both library copies tie each
+// form. Shared zone with cached tag, with/without scaled sum or copies, 381 each. Original
+// body/include restored; slot/input allocation and speed-update expansion remain.
 // @retail 0xf8200
 bool __stdcall function_f8200(long projectile_index, byte const *data, long unused)
 {

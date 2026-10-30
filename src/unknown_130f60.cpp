@@ -122,17 +122,22 @@ struct s_fog_angles
 	real yaw;
 	real pitch;
 };
+struct s_fog_sample_set
+{
+	long count;
+	s_fog_direction_sample *entries;
+};
 struct s_fog_direction
 {
 	vector3f direction;
 	s_fog_angles angles;
 	byte unknown14[8];
-	long forward_count;
-	s_fog_direction_sample *forward;
-	long opposite_count;
-	s_fog_direction_sample *opposite;
+	s_fog_sample_set samples[2];
 	byte unknown2c[8];
 };
+typedef char assert_fog_sample_set_size[(sizeof(s_fog_sample_set) == 8) ? 1 : -1];
+typedef char assert_fog_direction_size[(sizeof(s_fog_direction) == 0x34) ? 1 : -1];
+typedef char assert_fog_sample_offset[(offsetof(s_fog_direction, samples) == 0x1c) ? 1 : -1];
 struct s_fog_base_layer
 {
 	color3f color;
@@ -170,13 +175,18 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
 
-// score 444 (was 444): Entry ESI save, direction/opposite homes and x87 normalization storage still differ.
+// score 355 (was 444): Entry ESI save, direction/opposite homes and x87 normalization storage still differ.
 // Round 291: Paired double-square terms, complete direction-square terms, both, ordered accumulator
 // clamp, and clamp combinations 410/414/420/402/410/414/420; all with disjoint clears before common
 // remaining initialization 454 (fast control 402; full 444).
 // Round 300: Existing vector setter for source/opposite/trigonometric constructions in seven
 // nonempty subsets 413/408/414/410/414/416/423; complete setter graph with readonly source/sample
 // records 423 (fast control 402; full 444). Original constructions and arithmetic restored.
+// Round 221: real paired descriptor table with original switch 402 fast; direct index 374;
+// descriptor pointer/reference 382/382; index after axis 501; null-first descriptor 318;
+// word side ordinal 441; readonly direct index 374 (unchanged fast control 402).
+// Plain direct index 355 at 1893/1892 kept; descriptor conditional 361 at 1888/1892,
+// null-first descriptor 433 at 1886/1892. Entry ESI save, vector homes and x87 storage remain.
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {
@@ -222,12 +232,12 @@ void function_131030(long tag_index, vector3f const *view_direction, s_fog_accum
 		{
 			for (long j = 0; j < 2; j++)
 			{
-				s_fog_direction_sample *sample;
+				s_fog_direction_sample *sample = source->samples[j].count > 0 ? source->samples[j].entries : NULL;
 				vector3f const *axis;
 				switch (j)
 				{
-				case 0: sample = source->forward_count > 0 ? source->forward : NULL; axis = &direction; break;
-				case 1: sample = source->opposite_count > 0 ? source->opposite : NULL; axis = &opposite; break;
+				case 0: axis = &direction; break;
+				case 1: axis = &opposite; break;
 				default: continue;
 				}
 				real angle = function_11ce20(view_direction, axis);

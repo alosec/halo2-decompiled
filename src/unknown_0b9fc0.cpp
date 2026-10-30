@@ -389,6 +389,9 @@ void __stdcall function_115220(long machine_index)
 // Round 426: shared completion exit, direct portal result, entry-first result and all
 // seven subsets 305/298/321/286/305/298/321; all with byte portal result 321.
 // Original result graph, initial clamp, two-use predicate and complete body restored.
+// Round 221: native word flags with short/word/long/dword/byte/char position predicates
+// 438/438/334/334/286/286; signed-halfword flags with short/word predicates 438/438.
+// Original predicate and complete body restored; eager flag carrier and initial clamp spill remain.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
