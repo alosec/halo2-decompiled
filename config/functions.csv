@@ -3144,7 +3144,7 @@ va,size,owner,style,evidence,name,object,calls,source,status
 000e0ef0,1908,game,speed,a16 pad,,,000259d0 00030bf0 000b67a0 000b77d0 000b9b90 000e0e00 000e16b0 000e18d0 000e1a80 000e4050 0010f720 00138fa0 00183c60 001c3770 001d0bb0 001d1010 001ecef0 001ed430,src/bipeds.cpp,todo
 000e1670,61,game,speed,a16 pad,,,001ec640,src/bipeds.cpp,matched
 000e16b0,533,game,speed,a16 pad,,,000b8840 000b9dd0 000e0e00 000e1b60 001c3770 001d1540,src/bipeds.cpp,todo
-000e18d0,421,game,speed,a16 pad,,,00030bf0 000b75a0 000b9b90 000ba1d0 000ba350 000bfa40 000c5460 000df5f0 0010f430 001c3770,src/bipeds.cpp,todo
+000e18d0,421,game,speed,a16 pad,,,00030bf0 000b75a0 000b9b90 000ba1d0 000ba350 000bfa40 000c5460 000df5f0 0010f430 001c3770,src/bipeds.cpp,matched
 000e1a80,213,game,speed,a16 pad,,,000e1b60 001d1230,src/bipeds.cpp,near
 000e1b60,224,game,speed,a16 pad,,,000e1c40 000e23e0 00181bd0,src/bipeds.cpp,todo
 000e1c40,1937,game,unknown,a16,,,00030bf0 000dc3a0 001417b0 00142eb0 00168f40 001697c0 001cff80 001d08e0 001d0c20,src/bipeds.cpp,todo
