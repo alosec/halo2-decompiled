@@ -66,19 +66,19 @@ PRIVATE __forceinline vector3f rotate_axis_vector(matrix3x3 const *matrix, vecto
     return result;
 }
 
+// score 356 (was 372): both axes are read straight from g_485618 as retail does (no local copies of
+// the axis, which was the whole 16 points). Retail interleaves the two matrices' sin/cos and spills
+// differently (frame 0x90 vs 0x98), and stores each rotated component to g_467104 straight from
+// xmm with the input vector copied component-wise; here the vectors are copied through integer
+// moves. Tried: rotating g_467104 in place (368), the vector by value into an out parameter
+// (386), in-place scalar locals (377), accumulating one sum variable (377), aliasing in/out (639,
+// wrong), both angles hoisted (361), second rotation first (372), sine before cosine (357).
 // @retail 0x39e50
 void __stdcall function_39e50(real step)
 {
-    real axis0_i = g_485618.forward.i, axis0_j = g_485618.forward.j, axis0_k = g_485618.forward.k;
-    vector3f axis0;
-    axis0.i = axis0_i;
-    axis0.j = axis0_j;
-    axis0.k = axis0_k;
-    vector3f axis1 = g_485618.up;
     matrix3x3 first, second;
-    rotation_from_axis(&axis0, step * 0.5f, &first);
-    axis0 = axis1;
-    rotation_from_axis(&axis0, step * 0.30000001192092896f, &second);
+    rotation_from_axis(&g_485618.forward, step * 0.5f, &first);
+    rotation_from_axis(&g_485618.up, step * 0.3f, &second);
     vector3f forward = g_467104.forward;
     vector3f left = g_467104.left;
     vector3f up = g_467104.up;
@@ -1910,6 +1910,22 @@ struct s_render_reset_state;
 void function_16b10(s_render_reset_state *state);
 vector3f *function_11d000(vector3f const *v, vector3f *out);
 
+PRIVATE __forceinline vector3f direction_from_angles(real heading, real elevation)
+{
+    vector3f result;
+    result.i = (real)(cos(elevation) * cos(heading));
+    result.j = (real)(cos(elevation) * sin(heading));
+    result.k = (real)sin(elevation);
+    return result;
+}
+
+// score 220 (was 298): the statements match retail (cos(elevation) is evaluated first, the entry's tag is read again at the
+// call instead of cached, `left` is built from g_4687b0 directly while `up` is a separate copy). What still differs: frame 0x7c
+// against retail's 0xc0 and 822 against 857 bytes. Retail builds `local` and `forward` straight into their slots (0x14, 0x20)
+// and then block-copies local, forward and up into one argument-like area (0x30, 0x3c, 0x54, with a slot for `left` at 0x48 that
+// is never stored); ours returns them by value, which adds a per-component temp, and has no copy of local or forward.
+// Tried: sin/cos without the (real) casts (223), out-pointer helper (284), by-value basis helper with `left` as a vector
+// (261) or as three reals (253), `left` from a returning cross helper (235).
 // @retail 0x3eec0
 void function_3eec0()
 {
@@ -1924,23 +1940,14 @@ void function_3eec0()
         for (long i = 0; i < *(long *)(definition + 0x78) && i < 64; ++i)
         {
             byte *entry = *(byte **)(definition + 0x7c) + i * 0x34;
-            long tag = *(long *)(entry + 0x18);
-            if (tag == NONE) continue;
-            real heading = *(real *)(entry + 0xc), elevation = *(real *)(entry + 0x10);
-            vector3f local;
-            local.i = (real)(cos(heading) * cos(elevation));
-            local.j = (real)(sin(heading) * cos(elevation));
-            local.k = (real)sin(elevation);
-            real angle = *(real *)(definition + 0x80);
-            vector3f forward;
-            forward.i = (real)(cos(angle) * cos(0.0));
-            forward.j = (real)(sin(angle) * cos(0.0));
-            forward.k = (real)sin(0.0);
+            if (*(long *)(entry + 0x18) == NONE) continue;
+            vector3f local = direction_from_angles(*(real *)(entry + 0xc), *(real *)(entry + 0x10));
+            vector3f forward = direction_from_angles(*(real *)(definition + 0x80), 0.0f);
             vector3f up = *g_4687b0;
             vector3f left;
-            left.i = up.j * forward.k - up.k * forward.j;
-            left.j = up.k * forward.i - up.i * forward.k;
-            left.k = up.i * forward.j - up.j * forward.i;
+            left.i = g_4687b0->j * forward.k - g_4687b0->k * forward.j;
+            left.j = g_4687b0->k * forward.i - g_4687b0->i * forward.k;
+            left.k = g_4687b0->i * forward.j - g_4687b0->j * forward.i;
             vector3f direction;
             direction.i = local.j * left.i + local.k * up.i + local.i * forward.i;
             direction.j = local.i * forward.j + local.j * left.j + local.k * up.j;
@@ -1959,7 +1966,7 @@ void function_3eec0()
                 basis[0].k = 0.0f - direction.k;
                 function_11d000(&basis[0], &basis[2]);
                 function_30bf0(&basis[2]);
-                function_2dba0(tag, basis, false, 3, 0, i, &position, (color3f const *)((byte const *)g_4686cc + 4), 1.0f - g_4b9f58, 1.0f, 1.0f);
+                function_2dba0(*(long *)(entry + 0x18), basis, false, 3, 0, i, &position, (color3f const *)((byte const *)g_4686cc + 4), 1.0f - g_4b9f58, 1.0f, 1.0f);
             }
         }
     }
@@ -2150,13 +2157,18 @@ bool function_39a80(byte *state)
 
 
 
+// score 193 (was 324): PIN reevaluates the clamped expression as retail does (the target's
+// sqrt is computed up to three times, with its x*x term hoisted and added last). Retail's
+// frame is one slot larger (0x38): its unclamped current length, the dot product, the angle
+// and the cosine share the slot at +0xc while the temporary at +8 stays separate; here the
+// length shares the slot of a. Tried: plain, reference and macro forms of the length (193-217),
+// first/second vectors in either order and operand order of the scalings (193-214), b before a (279),
+// the dot test last (205), angle and cosine spelled separately (193).
 // @retail 0x3e5a0
 void function_3e5a0(vector3f *current, vector3f const *target, real step)
 {
-    real const &name_734d0c = (real)sqrt((double)current->i * current->i + (double)current->j * current->j + (double)current->k * current->k);
-    real a = name_734d0c < 0.0001f ? 0.0001f : name_734d0c > 10.0f ? 10.0f : name_734d0c;
-    real target_size = (real)sqrt((double)target->i * target->i + (double)target->j * target->j + (double)target->k * target->k);
-    real b = target_size < 0.0001f ? 0.0001f : target_size > 10.0f ? 10.0f : target_size;
+    real a = PIN((real)sqrt((double)current->i * current->i + (double)current->j * current->j + (double)current->k * current->k), 0.0001f, 10.0f);
+    real b = PIN((real)sqrt((double)target->j * target->j + (double)target->k * target->k + target->i * target->i), 0.0001f, 10.0f);
     vector3f first, second;
     real inverse = 1.0f / a;
     first.i = current->i * inverse;
@@ -2209,7 +2221,7 @@ struct s_cached_input_entry
 {
     s_cached_input input;
     real elapsed;
-    dword initial;
+    real initial;
     dword last_seen;
     dword created;
 };
@@ -2273,13 +2285,17 @@ long __stdcall function_31910(s_cached_input *output)
     return function_4ac30(state, output, 3, 0.01f);
 }
 
+// Matches when function_117dd0's source (flexible_surface.cpp, which takes g_4ba034's address) is in the
+// image: retail reloads the frame count from memory, and the other sources only do the same once that
+// global is address-taken (check --fast 0x4a7c0 alone: 352). The simple counted loop is unrolled by the
+// compiler; written out by hand it scored 385.
 // @retail 0x4a7c0
 void function_4a7c0(s_cached_input_list *state, s_cached_input const *inputs, long count)
 {
-    dword volatile used = 0;
-    for (long i = 0; i < state->count; ++i)
+    dword used = 0;
+    s_cached_input_entry *entry = state->entries;
+    for (long i = 0; i < state->count; ++i, ++entry)
     {
-        s_cached_input_entry *entry = &state->entries[i];
         for (long j = 0; j < count; ++j)
         {
             if (entry->input.data[1] == inputs[j].data[1])
@@ -2300,65 +2316,20 @@ void function_4a7c0(s_cached_input_list *state, s_cached_input const *inputs, lo
             --k;
         }
     }
-    long n = 0;
-    for (long center = 2; n < count - 3; n += 4, center += 4)
-    {
-        if (state->count < 32 && !(used & (1 << (n + 0))))
-        {
-            state->entries[state->count].input = inputs[n + 0];
-            state->entries[state->count].last_seen = g_4ba034;
-            state->entries[state->count].created = g_4ba034;
-            state->entries[state->count].initial = state->entries[state->count].input.data[3];
-            state->entries[state->count].elapsed = 0.0f;
-            ++state->count;
-            used |= 1 << (n + 0);
-        }
-        if (state->count < 32 && !(used & (1 << (center - 1))))
-        {
-            state->entries[state->count].input = inputs[center - 1];
-            state->entries[state->count].last_seen = g_4ba034;
-            state->entries[state->count].created = g_4ba034;
-            state->entries[state->count].initial = state->entries[state->count].input.data[3];
-            state->entries[state->count].elapsed = 0.0f;
-            ++state->count;
-            used |= 1 << (center - 1);
-        }
-        if (state->count < 32 && !(used & (1 << center)))
-        {
-            state->entries[state->count].input = inputs[center];
-            state->entries[state->count].last_seen = g_4ba034;
-            state->entries[state->count].created = g_4ba034;
-            state->entries[state->count].initial = state->entries[state->count].input.data[3];
-            state->entries[state->count].elapsed = 0.0f;
-            ++state->count;
-            used |= 1 << center;
-        }
-        if (state->count < 32 && !(used & (1 << (center + 1))))
-        {
-            state->entries[state->count].input = inputs[center + 1];
-            state->entries[state->count].last_seen = g_4ba034;
-            state->entries[state->count].created = g_4ba034;
-            state->entries[state->count].initial = state->entries[state->count].input.data[3];
-            state->entries[state->count].elapsed = 0.0f;
-            ++state->count;
-            used |= 1 << (center + 1);
-        }
-    }
-    for (; n < count; ++n)
+    for (long n = 0; n < count; ++n)
     {
         if (state->count < 32 && !(used & (1 << n)))
         {
             state->entries[state->count].input = inputs[n];
             state->entries[state->count].last_seen = g_4ba034;
             state->entries[state->count].created = g_4ba034;
-            state->entries[state->count].initial = state->entries[state->count].input.data[3];
+            state->entries[state->count].initial = *(real *)&state->entries[state->count].input.data[3];
             state->entries[state->count].elapsed = 0.0f;
             ++state->count;
             used |= 1 << n;
         }
     }
 }
-
 
 
 struct s_unknown_13bf00;
@@ -2373,12 +2344,18 @@ static void swap_cached_input(s_cached_input_entry *a, s_cached_input_entry *b)
 
 static void clamp_cached_input(s_cached_input_entry *entry)
 {
-	real &value = *(real *)&entry->initial;
-	real maximum = *(real *)&entry->input.data[3];
-	if (value < 0.0f) value = 0.0f;
-	else if (value > maximum) value = maximum;
+	real *maximum = (real *)&entry->input.data[3];
+	entry->initial = entry->initial < 0.0f ? 0.0f : entry->initial > *maximum ? *maximum : entry->initial;
 }
 
+// score 405 (was 424): everything up to the first call to function_4b160 agrees except register homes (retail keeps
+// first in edx and the state in ebp, here the other way round). The decay loop is unrolled four times in both, but
+// the induction pointer here is biased one entry lower (retail: [eax-0x15] for the flag of the first copy, here
+// [eax+0xf]), which shifts every compare after it. Source order affects only some operands: "last > i" /
+// "last >= i" reproduce retail's cmp operand order in the first loop (the whole prefix then matches); "limit <= i"
+// stops the unrolling (802); a pointer loop (398); the flag tested after "initial > 0.0f" (389, wrong order);
+// entry->elapsed written through a local or as "initial += elapsed" (390-392, no change); register-order
+// permutations of first/last/requested/found/i (406-413). Without the "last >= i" forms 390.
 // @retail 0x4ac30
 long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output, long limit, real step)
 {
@@ -2390,10 +2367,10 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 		if (limit > state->count) limit = state->count;
 		bool found = false;
 		long i;
-		for (i = 0; i <= last; ++i)
+		for (i = 0; last >= i; ++i)
 		{
 			byte *flags = (byte *)&state->entries[i].input.data[0];
-			if (i < last && flags[0] && flags[1])
+			if (last > i && flags[0] && flags[1])
 			{
 				swap_cached_input(&state->entries[i], &state->entries[0]);
 				++first;
@@ -2414,12 +2391,12 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 		}
 		if (state->count > requested)
 		{
-			for (i = first; i <= last; ++i)
+			for (i = first; last >= i; ++i)
 			{
 				s_cached_input_entry *entry = &state->entries[i];
 				if (((byte *)&entry->input.data[0])[2] && entry->created == g_4ba034)
 				{
-					entry->initial = 0;
+					entry->initial = 0.0f;
 					swap_cached_input(entry, &state->entries[last--]);
 					--i;
 				}
@@ -2431,7 +2408,7 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 			s_cached_input_entry *entry = &state->entries[i];
 			if (i > 0 && entry->input.data[2] != -1 && entry->input.data[2] == state->entries[i - 1].input.data[2] && !((byte *)&entry->input.data[0])[3])
 			{
-				entry->initial = 0;
+				entry->initial = 0.0f;
 				entry->elapsed = 0.0f - step;
 				swap_cached_input(entry, &state->entries[last--]);
 			}
@@ -2442,10 +2419,10 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 			for (i = state->count - 1; i >= limit; --i)
 			{
 				s_cached_input_entry *entry = &state->entries[i];
-				if (!((byte *)&entry->input.data[0])[3] && *(real *)&entry->initial > 0.0f)
+				if (!((byte *)&entry->input.data[0])[3] && entry->initial > 0.0f)
 				{
 					entry->elapsed -= step;
-					*(real *)&entry->initial += entry->elapsed;
+					entry->initial = entry->elapsed + entry->initial;
 					clamp_cached_input(entry);
 				}
 				else entry->elapsed = 0.0f;
@@ -2456,10 +2433,10 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 			s_cached_input_entry *end = state->entries + limit;
 			for (s_cached_input_entry *entry = state->entries; entry != end; ++entry)
 			{
-				if (*(real *)&entry->input.data[3] > *(real *)&entry->initial)
+				if (*(real *)&entry->input.data[3] > entry->initial)
 				{
 					entry->elapsed += step;
-					*(real *)&entry->initial += entry->elapsed;
+					entry->initial = entry->initial + entry->elapsed;
 					clamp_cached_input(entry);
 				}
 				else entry->elapsed = 0.0f;
@@ -2469,7 +2446,7 @@ long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output
 	for (long i = 0; i < state->count; ++i)
 	{
 		output[i] = state->entries[i].input;
-		output[i].data[3] = state->entries[i].initial;
+		*(real *)&output[i].data[3] = state->entries[i].initial;
 	}
 	return state->count;
 }
@@ -3825,10 +3802,20 @@ void __stdcall function_15720(real x, real y);
 extern byte g_4ba018;
 extern dword g_4b843c;
 
+// score 278 (was 300): the camera is now a register parameter (the `&camera` alias that forced it onto the stack is gone, so the
+// stack arguments are retail's four and the epilogue is `ret 0x10`), the pass-13 test is retail's two separate bit tests and the
+// pass-30ed0 test is retail's `shr 2` form. What still differs: (1) retail keeps the stores to g_4ba014 that precede a conditional
+// branch (the initial 0, after the bit-1 step, after the 0x24 step) and tests the flags through `mov cl, al`, as if g_4ba014 could be
+// aliased by the indirect loads that follow; ours drops them. (Forcing that with `((byte *)&g_4ba014)[0]` scores 242, but that takes a
+// global's address as a trick and is not used.) (2) the four passes are 0x44370's body inlined in retail (dead g_485898 loads, the
+// `enabled = true` re-store after pass 11's cull call), BLOCKED-BY 0x44370 as in 0x404b0. (3) 0x4a1e0 takes its register arguments in a
+// different order (retail: camera in ecx, source in eax, resource in edx; callee not matched). (4) retail lays the `>` chain out as
+// ja, ja, jbe-to-else with the `or 2` falling through.
+// Tried: a local `flags` stored to g_4ba014 after each step (293: the compiler drops the intermediate stores), flags as a ternary or a
+// negated condition (289, same), `(byte)` / `!= 0` / bool casts on the first bit test (278, same).
 // @retail 0x31170
-void function_31170(long tag, s_view_camera *camera, long resource, s_view_source *source, bool special, real scale)
+void function_31170(long tag, s_view_camera *camera, long resource, s_view_source *source, bool enabled, real scale)
 {
-    bool &enabled = special;
     byte *definition = g_4e3b44[tag & 0xffff].bytes;
     function_40e90(0);
     if (enabled) enabled = (g_4c1a48[2].flags & 0x400) != 0;
@@ -3837,11 +3824,10 @@ void function_31170(long tag, s_view_camera *camera, long resource, s_view_sourc
     g_4ba014 = 0;
     if ((!g_510c50 || !((byte *)g_510c50)[5]) && *(short *)(definition + 4) == 0)
         g_485950.i = g_485950.j = g_485950.k = 0.0f;
-    s_view_camera *const *camera_home = &camera;
-    g_4ba014 = *(short *)*camera_home == 0 ? 1 : 0;
+    g_4ba014 = *(short *)camera == 0 ? 1 : 0;
     if (g_485950.i > 0.009999999776482582f || g_485950.j > 0.009999999776482582f || g_485950.k > 0.009999999776482582f) g_4ba014 |= 2;
     else g_4ba014 &= ~2;
-    if (enabled && !(g_4ba014 & 1))
+    if (enabled && !(bool)((g_4ba014 >> 0) & 1))
     {
         g_4ba014 |= 0x24;
         if (g_485a40 > 0.0f && *(short *)(definition + 0x14) != 2) g_4ba014 |= 8;
@@ -3856,10 +3842,10 @@ void function_31170(long tag, s_view_camera *camera, long resource, s_view_sourc
     }
     if ((bool)((g_4ba014 >> 2) & 1) || (bool)((g_4ba014 >> 1) & 1) || (definition[0] & 0x20))
         draw_light_source_pass(1, 11, true, false, false, g_4858b8, true);
-    if (g_510c50 && ((byte *)g_510c50)[5] && (g_4ba014 & 4) && g_4ba134 > 0) function_30ed0();
+    if (g_510c50 && ((byte *)g_510c50)[5] && (bool)((g_4ba014 >> 2) & 1) && g_4ba134 > 0) function_30ed0();
     draw_light_source_pass(1, 14, true, false, false, 1, false);
     draw_light_source_pass(1, 12, true, false, false, g_4858b8, false);
-    if ((g_4ba014 & 3) == 3) draw_light_source_pass(1, 13, true, false, false, g_4858b8, false);
+    if ((g_4ba014 & 1) && (bool)((g_4ba014 >> 1) & 1)) draw_light_source_pass(1, 13, true, false, false, g_4858b8, false);
     g_4858bc = 0;
     g_4b843c = 0;
     D3DDevice_SetRenderState(D3DRS_STENCILENABLE, FALSE);
