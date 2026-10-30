@@ -2990,6 +2990,10 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // definition lookup; same block in 0x178c80) 102, with the address-read effect index 92 (retail's
 // two exits; not kept without a match), with per-call mode 127, particle system declared first
 // 113, helper parameters reordered 92, helper fed from the color locals 93.
+// Round 204: Actual query-result carriers (tinted/multiplied): bool/byte 96, bool/long 119, byte/bool 95,
+// byte/byte 93, byte/long 124, long/bool 135, long/byte 124, long/long 138. One- and three-point reductions
+// are rejected. Frame 0x50, system/color registers and call staging remain; original query types and body
+// restored.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3183,6 +3187,10 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 // 361; spatial inputs 392; point/color 328; all inputs 396. All source/contracts restored.
 // Indexed point/directions/spatial/separate-spatial copies 323/331/352/511;
 // the same copies with native default-first scale 313/333/344/498. All restored.
+// Round 204: Complete transform-output boundaries: normal shared setter/named rows 88/187; point shared
+// setter alone/with normal setter/with named normal rows 94/88/187; named point rows alone/with normal
+// setter/with named normal rows 169/168/187. The two 1525-byte forms regress. Scale prefix, point Y-source
+// copy and render-call roles remain; original helpers and body restored.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {

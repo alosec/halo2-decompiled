@@ -1716,10 +1716,15 @@ void function_cffc0(long unit_index)
 }
 
 /* whether 0xc9040 holds for any of the seat's markers on the unit */
-// score 77 (was 99): retail takes unit_index in esi, keeps i in ebp and found in a stack byte,
+// score 56 (was 82): retail takes unit_index in esi, keeps i in ebp and found in a stack byte,
 // tests i < count at the loop's top and found at its bottom, after the increment. The loop as a
 // guarded do-while 77; !found first in the for 85; a do-while breaking on the count 85; a while
 // breaking at the end 106; a for breaking inside 103.
+// Round 203: Retail frame and ESI input recovered by the native short ordinal 56/196 bytes, plain
+// confirmed; count short 84, both native 85; marker cursor with result-first/long result/short result
+// 82/99/97; cursor for loop with bool/short success 102/97. Count/position-cursor allocation and
+// top-count/bottom-success loop layout still differ. Only the ordinal width is retained; all calls and
+// loop domains stay original.
 // @retail 0xc6fb0
 bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 {
@@ -1728,7 +1733,7 @@ bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 	s_object_marker markers[4];
 	long count = function_b8d30(unit_index, marker_name, markers, 4, false);
 
-	long i = 0;
+	short i = 0;
 
 	if (count > 0)
 	{
@@ -1885,6 +1890,11 @@ void __stdcall function_d0870(long weapon_index, long unit_index, long secondary
 
 /* drops every weapon the unit holds (mode 1: deletes them) */
 #pragma inline_depth(0)
+// score 105 (was 105): Existing slot-change expansion and header receiver still differ. Forced-inline
+// helper with body-stepped cursor 106; native short ordinal/slot 100, short ordinal with long slot 99
+// (gains below eight rejected); live indexed slots with forced/ordinary inline 130/130; unsigned ordinal
+// 106; existing complete slot service with cursor/index 190/171. Original helper, inherited scope and
+// body restored.
 // @retail 0xccf20
 void function_ccf20(long unit_index)
 {
@@ -3094,7 +3104,12 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 78 (was 92): its flag tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 78 (was 78): its flag tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// Round 203: Boolean fourth flag 83; retained time receiver 75 (three-count gain rejected); both 79;
+// masked lookup helper 79; flag/helper 84; time/helper 76; all 80; twice-used notification index 80.
+// Hostility result alone/flag/time/both 119/125/113/119; common notification alone/flag/hostility/both
+// 77/74/94/110, exact-only and restored. Early Boolean normalization, shared notification and
+// constant-register allocation remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {

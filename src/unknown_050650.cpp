@@ -1093,7 +1093,7 @@ struct s_actor_looking_structure_view
 };
 
 /* Name inferred from the path traces and the idle-direction caller. */
-// score 68 (was 80): counter homes, candidate cursor and expanded rotation scheduling differ.
+// score 68 (was 68): counter homes, candidate cursor and expanded rotation scheduling differ.
 // entry result order now agrees; loop homes, rotation scalar scheduling and return tail remain.
 // Result first 139; existing angular wrapper 468; vector producer 261; both 466;
 // native header/body induction with those producers 137/468/266/466.
@@ -1118,6 +1118,10 @@ struct s_actor_looking_structure_view
 // Round 246: Actual candidate workspace/staged candidate dot/staged selected dot, seven combinations: 211/68/215/84/215/150/211/226.
 // Eighth form adds native byte success storage to the complete candidate/score form.
 // Kept t02, plain 68; original helper bodies and logical call inputs retained.
+// Round 204: Rotation projection/cross producers: shared cross/staged cross 156/156; shared projection
+// alone/with cross/with staged cross 142/149/149; same-order staged projection alone/with cross/with staged
+// cross 139/82/82. Counter/cursor homes and scalar schedule remain; original helper, include set and body
+// restored.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {
