@@ -986,172 +986,191 @@ long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index)
 	return first_object_index != NONE ? first_object_index : last_object_index;
 }
 
+/* damages one object of the radius (and its children and siblings): the geometry to it, then the damage */
+// score 343 (was 705): size equals retail (1535). Left: the stack layout (retail keeps the object offset of
+// the second lookup at esp+0x20, the cone and node scalars in different registers), the NONE-node copy
+// (retail builds &node_direction with lea in the copy), the order of the negated-normal stores, and the dot
+// product's operand order (retail multiplies the cone first). Done: the sibling walk is the tail call retail
+// makes (a for(;;) with reassigned arguments made the inliner inline 0xd5b60 and 0xbaff0: 707 -> 407), cached
+// origin/direction/node_direction pointers, the negated normal stored back, the falloff computed once before
+// its PIN, the player-unit block looking the object up afresh. Tried: the centre as three real locals and
+// the cone's x87 tests as !(a > b) (retail's exact shapes: fxch, ja, and the direct loads with the leftover
+// `add eax, 0x70`) 362; each of those alone 372 and 356; the centre as a pointer to a stack copy 440; the
+// centre hoisted or declared in other orders 343; the negate and add per component 362.
 // @retail 0xd74e0
 void __stdcall function_d74e0(s_type_1e6529 *data, long object_index, bool child)
 {
-	for (;;)
+	s_damage_object *object = DAMAGE_OBJECT(object_index);
+	bool affects = function_d72e0(object_index, data);
+	bool instant_kill = function_d73c0(object_index, data, &affects);
+
+	if (affects)
 	{
-		s_damage_object *object = DAMAGE_OBJECT(object_index);
-		bool affects = function_d72e0(object_index, data);
-		bool instant_kill = function_d73c0(object_index, data, &affects);
+		long field_4_2 = function_d5b60(object_index);
+		s_damage_definition *definition = (s_damage_definition *)g_4e3b44[data->definition_index & 0xffff].bytes;
+		point3f const *origin = &data->origin;
+		vector3f *direction = &data->direction;
+		vector3f *node_direction = &data->node_direction;
+		point3f arg_149545;
+		vector3f normal;
+		bool outside = false;
+		real scale;
 
-		if (affects)
+		function_baff0(object_index, origin, &arg_149545, &normal);
+		direction->i = arg_149545.x - origin->x;
+		direction->j = arg_149545.y - origin->y;
+		direction->k = arg_149545.z - origin->z;
+		data->distance = function_30bf0(direction);
+
+		if (object->node_index == NONE)
 		{
-			long field_4_2 = function_d5b60(object_index);
-			s_damage_definition *definition = (s_damage_definition *)g_4e3b44[data->definition_index & 0xffff].bytes;
-			point3f arg_149545;
-			vector3f normal;
-			bool outside = false;
-			real scale;
+			*node_direction = *direction;
+		}
+		else
+		{
+			byte *node = g_51e9b8->data + (object->node_index & 0xffff) * 0xa0;
+			point3f center;
 
-			function_baff0(object_index, &data->origin, &arg_149545, &normal);
-			data->direction.i = arg_149545.x - data->origin.x;
-			data->direction.j = arg_149545.y - data->origin.y;
-			data->direction.k = arg_149545.z - data->origin.z;
-			data->distance = function_30bf0(&data->direction);
+			if (node && *(long *)(node + 0x74) && !function_d74b0(node))
+				center = *(point3f *)(*(byte **)(*(byte **)(*(byte **)(node + 0x70) + 0x40) + 0x3c) + 0x70);
+			else
+				center = object->field_x221477;
 
-			if (object->node_index == NONE)
+			node_direction->i = center.x - origin->x;
+			node_direction->j = center.y - origin->y;
+			node_direction->k = center.z - origin->z;
+			function_30bf0(node_direction);
+
+			real dx = origin->x - arg_149545.x;
+			real dy = origin->y - arg_149545.y;
+			real dz = origin->z - arg_149545.z;
+			if (0.05f * 0.05f > dz * dz + dy * dy + dx * dx)
 			{
-				data->node_direction = data->direction;
+				normal.i = 0.0f - normal.i;
+				normal.j = 0.0f - normal.j;
+				normal.k = 0.0f - normal.k;
+				node_direction->i += normal.i;
+				node_direction->j += normal.j;
+				node_direction->k += normal.k;
 			}
 			else
 			{
-				byte *node = g_51e9b8->data + (object->node_index & 0xffff) * 0xa0;
-				point3f center;
-
-				if (node && *(long *)(node + 0x74) && !function_d74b0(node))
-					center = *(point3f *)(*(byte **)(*(byte **)(*(byte **)(node + 0x70) + 0x40) + 0x3c) + 0x70);
-				else
-					center = object->field_x221477;
-
-				data->node_direction.i = center.x - data->origin.x;
-				data->node_direction.j = center.y - data->origin.y;
-				data->node_direction.k = center.z - data->origin.z;
-				function_30bf0(&data->node_direction);
-
-				real dx = data->origin.x - arg_149545.x;
-				real dy = data->origin.y - arg_149545.y;
-				real dz = data->origin.z - arg_149545.z;
-				if (0.05f * 0.05f > dz * dz + dy * dy + dx * dx)
-				{
-					data->node_direction.i += 0.0f - normal.i;
-					data->node_direction.j += 0.0f - normal.j;
-					data->node_direction.k += 0.0f - normal.k;
-				}
-				else
-				{
-					data->node_direction.i += data->direction.i;
-					data->node_direction.j += data->direction.j;
-					data->node_direction.k += data->direction.k;
-					function_30bf0(&data->node_direction);
-				}
+				node_direction->i += direction->i;
+				node_direction->j += direction->j;
+				node_direction->k += direction->k;
+				function_30bf0(node_direction);
 			}
+		}
 
-			if (definition->cone_outer_angle != 0.0f)
+		if (definition->cone_outer_angle != 0.0f)
+		{
+			vector3f *cone = &data->cone_direction;
+
+			if (fabs(1.0f - (cone->i * cone->i + cone->j * cone->j + cone->k * cone->k)) <= 0.0001f)
 			{
-				vector3f *cone = &data->cone_direction;
+				real dot = cone->k * data->direction.k + cone->j * data->direction.j + cone->i * data->direction.i;
+				real angle = (real)acos(PIN(dot, -1.0f, 1.0f));
 
-				if (fabs(1.0f - (cone->i * cone->i + cone->j * cone->j + cone->k * cone->k)) <= 0.0001f)
+				if (definition->cone_inner_angle + 0.0001f <= angle)
 				{
-					real dot = cone->k * data->direction.k + cone->j * data->direction.j + cone->i * data->direction.i;
-					real angle = (real)acos(PIN(dot, -1.0f, 1.0f));
-
-					if (definition->cone_inner_angle + 0.0001f <= angle)
+					if (definition->cone_outer_angle > angle)
 					{
-						if (definition->cone_outer_angle > angle)
-						{
-							data->unknown5c = PIN(1.0f - (angle - definition->cone_inner_angle) /
-								(definition->cone_outer_angle - definition->cone_inner_angle), 0.0f, 1.0f);
-						}
-						else
-						{
-							scale = 0.0f;
-							outside = true;
-							goto distance_done;
-						}
+						real cone_scale = 1.0f - (angle - definition->cone_inner_angle) /
+							(definition->cone_outer_angle - definition->cone_inner_angle);
+
+						data->unknown5c = PIN(cone_scale, 0.0f, 1.0f);
+					}
+					else
+					{
+						scale = 0.0f;
+						outside = true;
+						goto distance_done;
 					}
 				}
 			}
+		}
 
-			scale = 1.0f;
-			if (definition->radius04 - definition->minimum_radius > 0.0f)
+		scale = 1.0f;
+		if (definition->radius04 - definition->minimum_radius > 0.0f)
+		{
+			scale = 1.0f - (data->distance - definition->minimum_radius) / (definition->radius04 - definition->minimum_radius);
+			if (0.0f > scale)
 			{
-				scale = 1.0f - (data->distance - definition->minimum_radius) / (definition->radius04 - definition->minimum_radius);
-				if (0.0f > scale)
-				{
-					outside = true;
-					scale = 0.0f;
-				}
-				else if (scale > 1.0f)
-				{
-					scale = 1.0f;
-				}
+				outside = true;
+				scale = 0.0f;
 			}
-
-		distance_done:
-			data->distance_scale = scale;
-			data->unknown58 = scale;
-			if (outside)
+			else if (scale > 1.0f)
 			{
-				*(dword *)data->unknown04 |= 0x2000;
-				data->unknown5c = 0.0f;
+				scale = 1.0f;
 			}
-			if (!(definition->flags0c & 1))
-				data->unknown54 = scale;
+		}
 
-			if (definition->player_radius > 0.0f)
+	distance_done:
+		data->distance_scale = scale;
+		data->unknown58 = scale;
+		if (outside)
+		{
+			*(dword *)data->unknown04 |= 0x2000;
+			data->unknown5c = 0.0f;
+		}
+		if (!(definition->flags0c & 1))
+			data->unknown54 = scale;
+
+		if (definition->player_radius > 0.0f)
+		{
+			s_damage_object *unit = (s_damage_object *)function_badc0(object_index, 3);
+
+			if (unit && unit->player_index != NONE)
+				data->unknown58 = 1.0f - PIN(data->distance / definition->player_radius, 0.0f, 1.0f);
+			else
+				data->unknown58 = 0.0f;
+		}
+
+		data->in_unknown_radius = definition->radius68 > data->distance;
+		if (scale > 0.0f || data->in_unknown_radius || data->unknown58 > 0.0f)
+		{
+			if (!child && function_d6f90(object_index, &arg_149545, data))
+				return;
+
+			if (g_4e6948->mode == 4)
 			{
-				s_damage_object *unit = (s_damage_object *)function_badc0(object_index, 3);
+				long definition_index = data->definition_index;
 
-				if (unit && unit->player_index != NONE)
-					data->unknown58 = 1.0f - PIN(data->distance / definition->player_radius, 0.0f, 1.0f);
-				else
-					data->unknown58 = 0.0f;
-			}
-
-			data->in_unknown_radius = definition->radius68 > data->distance;
-			if (scale > 0.0f || data->in_unknown_radius || data->unknown58 > 0.0f)
-			{
-				if (!child && function_d6f90(object_index, &arg_149545, data))
-					return;
-
-				if (g_4e6948->mode == 4)
+				if (((1 << object->type) & 3) && definition_index != NONE)
 				{
-					long definition_index = data->definition_index;
+					s_damage_object *unit = DAMAGE_OBJECT(object_index);
 
-					if (((1 << object->type) & 3) && definition_index != NONE && unit_get_player_index(object_index) != NONE)
+					if (unit_get_player_index(object_index) != NONE)
 					{
 						long player_index = unit_get_player_index(object_index);
 						short team = *(short *)(g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x28);
 
 						if (team != NONE)
 						{
-							vector3f direction;
+							vector3f unit_direction;
 							s_damage_owner owner = { NONE, NONE, NONE };
 
-							direction.i = 0.0f - object->unknown168.i;
-							direction.j = 0.0f - object->unknown168.j;
-							direction.k = 0.0f - object->unknown168.k;
-							function_153d10(team, definition_index, &owner, &direction, 0, 1.0f, 1.0f, 0);
+							unit_direction.i = 0.0f - unit->unknown168.i;
+							unit_direction.j = 0.0f - unit->unknown168.j;
+							unit_direction.k = 0.0f - unit->unknown168.k;
+							function_153d10(team, definition_index, &owner, &unit_direction, 0, 1.0f, 1.0f, 0);
 						}
 					}
 				}
-				else
-				{
-					function_d7b80(data, object_index, NONE, NONE, NONE, NULL);
-					if (instant_kill)
-						*(dword *)data->unknown04 |= 0x40;
-					if (field_4_2 && (*(byte *)field_4_2 & 8) && object->first_child_object_index != NONE)
-						function_d74e0(data, object->first_child_object_index, true);
-				}
+			}
+			else
+			{
+				function_d7b80(data, object_index, NONE, NONE, NONE, NULL);
+				if (instant_kill)
+					*(dword *)data->unknown04 |= 0x40;
+				if (field_4_2 && (*(byte *)field_4_2 & 8) && object->first_child_object_index != NONE)
+					function_d74e0(data, object->first_child_object_index, true);
 			}
 		}
-
-		if (!child || object->next_object_index == NONE)
-			return;
-		child = true;
-		object_index = object->next_object_index;
 	}
+
+	if (child && object->next_object_index != NONE)
+		function_d74e0(data, object->next_object_index, true);
 }
 
 /* the material of one of an object's model regions */
@@ -2145,12 +2164,25 @@ struct s_unit_event
 /* destroys a permutation of a region: hides it, starts its effects and
    area damage, and applies its side effects to the object (depletes the
    body, drops weapons, ejects riders, destroys attached children) */
+// score 533 (was 624): the body is statement for statement retail's (same size, same block order). What is left is
+// the calling convention and the register allocation that follows from it: retail takes only the permutation index
+// in eax and leaves `info` on the stack (`ret 0x14`, frame 0x38); ours passes the index in ecx and `info` in edx
+// (`ret 0x10`, frame 0x3c, one spill slot more), so every [esp + N] is 4 off and the registers rotate. Retail also
+// keeps the constant 1 in esi (`or word ptr [x + 0x352], si`, `cmp [state], esi`) where ours uses immediates, and
+// calls 0xd9d60 with the flag in al; ours keeps passing it on the stack, because 0xd9d60 only takes retail's
+// convention when this call is left out (then 0xd9d60 scores 8). Tried, no gain: `info` read through a volatile
+// cast at every use (567, convention unchanged), a local for the bytes passed to 0xda860/0xdaa50 (534), the
+// destroy test as a result variable (576), as `!(a ? b : c)` (542), as two || arms (559), permutation read before
+// the object (546), the datum looked up afresh in the weapon blocks (571), the flag as `!= 0` or a bit-test local
+// (546, 534). The destroy test also differs by retail's one shared call to 0xdb110 and our `neg al; sbb; inc` on its
+// result; every form of it scored worse, and 0xdb110 itself does not match (187), so that part may follow from it.
 // @retail 0xda110
 void function_da110(long permutation_index, s_damage_info *info, long object_index, s_damage_owner const *owner,
 	long region_index, s_damage_region_accumulator *accumulator)
 {
 	s_damage_object *object = DAMAGE_OBJECT(object_index);
-	s_damage_info_permutation *permutation = &info->regions[region_index].permutations[permutation_index];
+	s_damage_info_region *region = &info->regions[region_index];
+	s_damage_info_permutation *permutation = &region->permutations[permutation_index];
 
 	if (g_4e6948->mode != 4)
 	{
@@ -2164,14 +2196,11 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 	((s_object_region_state *)((byte *)object + object->region_states_offset))[region_index].destroyed_permutations |=
 		1 << permutation_index;
 
-	short model_region_index = *(short *)((byte *)permutation + 0x22);
-	short model_state = *(short *)((byte *)permutation + 0x20);
-
-	if (model_region_index != NONE && model_state != NONE)
+	if (permutation->unknown22 != NONE && permutation->unknown20 != NONE)
 	{
 		function_b9b90(object_index, false);
-		function_ba6f0(object_index, *(short *)((byte *)permutation + 0x22), *(short *)((byte *)permutation + 0x20), false);
-		if (((1 << object->type) & 3) && *(short *)((byte *)permutation + 0x20) >= 3)
+		function_ba6f0(object_index, permutation->unknown22, permutation->unknown20, false);
+		if (((1 << object->type) & 3) && permutation->unknown20 >= 3)
 		{
 			byte *local_98b918 = g_4e3b44[object->tag_index & 0xffff].bytes;
 			s_unit_child_iterator iterator;
@@ -2183,7 +2212,9 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 				{
 					byte *seat = *(byte **)(local_98b918 + 0x1cc) + iterator.seat_index * 0xb0;
 
-					if (((*(dword *)seat >> 19) & 1) && *(long *)(seat + 0xac) == *(short *)((byte *)permutation + 0x22))
+					bool seat_ejects = (*(dword *)seat >> 19) & 1;
+
+					if (seat_ejects && *(long *)(seat + 0xac) == permutation->unknown22)
 						function_b9c60(iterator.unit_index, false);
 				}
 			}
@@ -2192,11 +2223,16 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 
 	if (permutation->unknown10 != NONE)
 	{
-		function_d9d60(permutation->unknown24, object_index, (permutation->flags >> 20) & 1, permutation->unknown10,
-			owner);
+		bool at_marker = (permutation->flags >> 20) & 1;
+
+		function_d9d60(permutation->unknown24, object_index, at_marker, permutation->unknown10, owner);
 	}
 	if (g_4e6948->mode != 4 && permutation->unknown18 != NONE)
-		function_d9e70(object_index, owner, permutation->unknown18, permutation->unknown28, info->unknown11 & 0x3f);
+	{
+		byte damage_source = info->unknown11 & 0x3f;
+
+		function_d9e70(object_index, owner, permutation->unknown18, permutation->unknown28, damage_source);
+	}
 
 	if (permutation->flags & 2)
 		object->unknown18[1] |= 1;
@@ -2213,12 +2249,12 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 
 	if (permutation->flags & 0x60)
 	{
-		bool drop = !((permutation->flags >> 5) & 1);
+		dword drop = !((permutation->flags >> 5) & 1);
 
 		if ((1 << datum->type) & 3)
 		{
 			byte *unit = (byte *)datum->object;
-			char field_x11c898 = *(char *)(unit + 0x212);
+			short field_x11c898 = *(char *)(unit + 0x212);
 
 			if (field_x11c898 != NONE)
 			{
@@ -2235,12 +2271,12 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 	}
 	if (permutation->flags & 0x300)
 	{
-		bool drop = !((permutation->flags >> 8) & 1);
+		dword drop = !((permutation->flags >> 8) & 1);
 
 		if ((1 << datum->type) & 3)
 		{
 			byte *unit = (byte *)datum->object;
-			char field_x11c898 = *(char *)(unit + 0x212);
+			short field_x11c898 = *(char *)(unit + 0x212);
 
 			if (field_x11c898 != NONE)
 			{
@@ -2266,20 +2302,20 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 	datum = &((s_damage_object_datum *)g_4e0300->data)[object_index & 0xffff];
 	if ((1 << datum->type) & 2)
 	{
-		word *vehicle_flags = (word *)((byte *)datum->object + 0x352);
+		byte *vehicle = (byte *)datum->object;
 
 		if (permutation->flags & 0x400)
-			*vehicle_flags |= 1;
+			*(word *)(vehicle + 0x352) |= 1;
 		if (permutation->flags & 0x800)
-			*(byte *)vehicle_flags |= 2;
+			vehicle[0x352] |= 2;
 		if (permutation->flags & 0x1000)
-			*(byte *)vehicle_flags |= 4;
+			vehicle[0x352] |= 4;
 		if (permutation->flags & 0x2000)
-			*(byte *)vehicle_flags |= 8;
+			vehicle[0x352] |= 8;
 		if (permutation->flags & 0x4000)
-			*(byte *)vehicle_flags |= 0x10;
+			vehicle[0x352] |= 0x10;
 		if (permutation->flags & 0x8000)
-			*(byte *)vehicle_flags |= 0x20;
+			vehicle[0x352] |= 0x20;
 	}
 
 	if ((permutation->flags & 1) ? !function_db110(object_index, false, false) :
@@ -2297,7 +2333,9 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 		{
 			s_damage_object *current = DAMAGE_OBJECT(object_index);
 
-			if (!(current->unknown04[0] & 1))
+			bool already_set = current->unknown04[0] & 1;
+
+			if (!already_set)
 			{
 				if (function_b9d20(object_index))
 					function_bef30(object_index, 1, 0, 0, false);
@@ -2317,7 +2355,9 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 		{
 			s_damage_object *child = DAMAGE_OBJECT(child_index);
 
-			if (TEST_FIELD_BIT(child->flags04.permutation_child))
+			bool is_child = TEST_FIELD_BIT(child->flags04.permutation_child);
+
+			if (is_child)
 				function_d6800(child_index, owner, true, false);
 			child_index = child->next_object_index;
 		}
@@ -2340,7 +2380,7 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 		}
 		if (section_index != NONE)
 		{
-			word kind = permutation->unknown02;
+			long kind = permutation->unknown02;
 
 			if (kind)
 			{
@@ -2354,18 +2394,22 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 		{
 			switch (permutation->unknown02)
 			{
-			case 1:
-				function_da860((byte const *)info, (byte const *)permutation, object->unknowne0, (word *)&accumulator->unknown2c);
+			case 0:
 				break;
 			case 2:
 				function_daa50((byte const *)info, (byte const *)permutation, object->unknowne0, (word *)&accumulator->unknown2c);
 				break;
-			case 3:
-				function_da860((byte const *)info, (byte const *)permutation, object->unknowne2, (word *)&accumulator->unknown2e);
-				break;
 			case 4:
 				function_daa50((byte const *)info, (byte const *)permutation, object->unknowne2, (word *)&accumulator->unknown2e);
 				break;
+			case 1:
+				function_da860((byte const *)info, (byte const *)permutation, object->unknowne0, (word *)&accumulator->unknown2c);
+				break;
+			case 3:
+				function_da860((byte const *)info, (byte const *)permutation, object->unknowne2, (word *)&accumulator->unknown2e);
+				break;
+			default:
+				__assume(0);
 			}
 		}
 	}
@@ -2953,8 +2997,41 @@ enum
 	k_maximum_damage_parents = 16
 };
 
+/* the damage info of an object's model (as 0xd5b60), which retail writes out inline in 0xd7b80's loop */
+PRIVATE inline s_damage_info *damage_object_model_info(long object_index, s_damage_object const *object)
+{
+	s_damage_info *info = NULL;
+
+	if (object_index != NONE)
+	{
+		byte *definition = g_4e3b44[object->tag_index & 0xffff].bytes;
+		long model_index = *(long *)(definition + 0x38);
+
+		if (model_index != NONE)
+		{
+			byte *model = g_4e3b44[model_index & 0xffff].bytes;
+
+			if (*(long *)(model + 0x60) > 0)
+				info = *(s_damage_info **)(model + 0x64);
+		}
+	}
+	return info;
+}
+
 /* damages an object, and the objects it rides in: for each, the shield
    first, then the body and regions, then the aftermath */
+// score 470 (was 661): close to retail's size (1907 bytes, retail 1880); what is left is the frame layout
+// (retail's bools sit at esp+0x13..0x17, then object, i, definition, info; ours orders them differently and
+// keeps region_absorbs in memory where retail holds it in bl), registers (retail's object_count is in edi, ours
+// esi) and the position of the 0xd5b60 call. Done: shield/body children flags were swapped (retail: body from
+// info bit 4, shield from bit 6); the loop's walk of 0xd5b60 is damage_object_model_info (retail inlines it
+// there but calls it at the first use). Retail calls 0xd5b60 after the parent walk, but there the link-time
+// inliner inlines it (1986 bytes, 661); called before the walk it stays a call (544, 470 with the original
+// nested unknown7c branch), which is the form kept. Tried: the unknown7c store as one else-if 5 worse than the
+// nested form (the compare is repeated); the walk's info/definition declared in the other order 517 on the
+// 544 tree (but it shares the tag lookup, which retail recomputes); i/object/info hoisted to function scope
+// 544; body/shield declared in the other order 544; the damage-info walk taking the datum index instead of
+// the object 666.
 // @retail 0xd7b80
 void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index,
 	vector3f const *unknown14)
@@ -2969,6 +3046,7 @@ void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node
 	long objects[k_maximum_damage_parents];
 	long object_count = 0;
 	bool reported = false;
+	s_damage_info *local_9127e6 = (s_damage_info *)function_d5b60(object_index);
 
 	if ((data->flags & 5) || (data->flags & 0x200))
 	{
@@ -2981,18 +3059,16 @@ void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node
 			objects[object_count++] = index;
 	}
 
-	s_damage_info *local_9127e6 = (s_damage_info *)function_d5b60(object_index);
-
 	if (local_9127e6)
 	{
-		shield_children = !((local_9127e6->flags >> 4) & 1);
-		body_children = !((local_9127e6->flags >> 6) & 1);
+		body_children = !((local_9127e6->flags >> 4) & 1);
+		shield_children = !((local_9127e6->flags >> 6) & 1);
 	}
 
 	for (long i = object_count - 1; i >= 0; i--)
 	{
 		s_damage_object *object = DAMAGE_OBJECT(objects[i]);
-		s_damage_info *info = (s_damage_info *)function_d5b60(objects[i]);
+		s_damage_info *info = damage_object_model_info(objects[i], object);
 		byte *object_definition = g_4e3b44[object->tag_index & 0xffff].bytes;
 		s_damage_region_accumulator accumulator;
 
