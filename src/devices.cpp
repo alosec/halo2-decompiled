@@ -1339,6 +1339,9 @@ bool function_0b6760(s_index_pair const *pair);
 // Round 285: actual repeated power-target/position-target/both/delay/power-delay/position-delay/
 // all field lvalues, then all with result-first storage: 296/295/297/296/298/297/299/299 fast.
 // Original complete body, observations and inherited qualifiers restored; frame/index/state homes remain.
+// Round 424: actual power/position/both group target snapshots 351/389/368;
+// each with ordinary index 312/349/392; both with ordinary saved pointer,
+// without/with ordinary index 388/425. All restored; frame/index/header/state homes remain.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {
