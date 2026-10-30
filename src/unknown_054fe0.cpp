@@ -1698,6 +1698,11 @@ static __forceinline bool function_65341(c_class_58d20 **out)
 // state production 143/148/146/141. Scalar-SSE on the new byte graph 129 (one diagnostic, target
 // regression); variant/status/both early defaults on it 124/132/149. All frame/default-output
 // forms rejected; original helper, body and flags restored.
+// Round 44, moved into a new /arch:SSE file (not kept): as written 136; state as `long state = 0; if (initialized)
+// state = ...` (retail's cmovne) 150, with the user loop indexing users[i] 145, the user loop alone 134; on cmov +
+// indexed users the variant as a ternary 139 (489 bytes), as a reset then conditional 139, declarations first
+// 150/145; per-case copies of the session-a/b getters 146 (session in a stack slot), without their NULL test 146,
+// per-case result 150; reset form with status/progress declared first 137 (aligned 32), variant first 145/145.
 // @retail 0x65340
 void function_065340(void)
 {
