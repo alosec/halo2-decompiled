@@ -989,6 +989,8 @@ real function_30bf0(vector3f *v);
 // Round 402: native double denominator/optimal-time/horizontal lifetimes and their pairs/all
 // 257/285/232/295/257/285/295; both native float division numerators named 232.
 // All restored; frame 0x28/0x30, rounded horizontal root and separate divisions remain.
+// Round 269: squared-distance workspace 232; root workspace 232; both 232; default flight time 266;
+// distance/default 266; root/default 266; all 266; all with the twice-used time square 266. Original body restored.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -2525,6 +2527,9 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 // Damage tag at every use with live mode/response flags, four subsets, 1203/1201/1203/1201;
 // those with native dword collision count 1201/1181/1201/1181. All restored;
 // frame 0x220/0x218, velocity contract and request homes remain.
+// Round 284: Independent effect/sound long or dword counters at their producers, four
+// combinations 1162 each; those with the collision routine declared inline 1162 each.
+// Original shared counter and declaration restored; frame and velocity contract remain.
 // @retail 0xfaa60
 void function_faa60(vector3f *velocity, long projectile_index, s_collision_result_1697c0 const *collision,
 	point3f *end_point, vector3f *displacement, short collision_count)

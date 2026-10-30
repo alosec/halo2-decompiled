@@ -85,6 +85,25 @@ void havok_entity_component_index_set(hkEntity *entity, s_havok_property_word co
 // forms 76 at 390 bytes; a long local passed through a property-word view 71; implicit conversion
 // from NONE 76; a static const property word 125; a plain temporary 71 (kept: same code without
 // the assignment inside the argument); a copy-initialised local 71.
+// 0x1cf3b0 does; a compile-only copy with a long stack parameter gives `push -1`). Unqualified
+// global 76; entry construction 124; construction before the final allocation 77; default
+// construction there 71; earlier/later local names and declaration before the descriptor 71
+// each; copy-initialised, member-assigned or const local 71/71/71; the local declared at entry
+// 124, after the global store 71. Round 218: property/descriptor/final-owner/shape-owner inline
+// and noinline declarations 71 each. Round 91: a long local passed through a property-word view
+// 71; implicit conversion from NONE 76; a static const property word 125; a plain temporary 71
+// (kept: same code without the assignment inside the argument); a copy-initialised local 71.
+// 0x1cf3b0 does). Unqualified global 76; entry construction 124;
+// construction before the final allocation 77; default construction there 71;
+// earlier/later local names and declaration before the descriptor 71 each; copy-initialised,
+// member-assigned or const local 71/71/71; the local declared at entry 124, after the global
+// store 71.
+// earlier/later local names and declaration before the descriptor 71 each.
+// Round 218: Property/descriptor/final-owner/shape-owner inline and noinline declarations:
+// 71/71/71/71/71/71/71/71 (fast control 71). Original restored.
+// Native reference-count receivers for initial/shape/optional owners, separately and together,
+// then a scoped property argument: eight forms 76 at 390 bytes, using an ordinary allocation store.
+// Aggregate immediate preparation persists; original owners, store and property contract restored.
 // @retail 0x1c3b70
 void function_1c3b70()
 {

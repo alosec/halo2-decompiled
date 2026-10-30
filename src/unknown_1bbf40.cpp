@@ -444,7 +444,8 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
-// score 166 (was 166): retail keeps the special-vehicle flag in CL at the shared tail (the
+// score 85 (was 166): entry NONE homes, predicate setup and proximity SSE scheduling differ.
+// Earlier: retail keeps the special-vehicle flag in CL at the shared tail (the
 // special path does `mov cl, 1; jmp tail`, the scan's exits reload it from the dead actor
 // argument slot) and lays the tail out after the passenger scan; ours reloads the flag from
 // memory there and places the tail right after the special test, so the lockstep compare is
@@ -469,6 +470,10 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // Round 273: complete separation from the existing header/native producers, each with
 // reverse sum/shared square/shared dot/all squared parts, 166/166/166/166 and
 // 200/200/200/200. Native producer grows the frame to 0x40; original graph restored.
+// Round 270 M: state-first conjunction with long/bool/byte/short special 213/213/213/215;
+// canonical bitwise conjunction with long/bool/byte/short special 152/85/85/201.
+// Boolean bitwise conjunction kept, 85/861 plain; the post-scan tail is shared.
+// Entry NONE EBP/EBX, predicate setup and separation SSE homes still differ.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {
@@ -477,7 +482,7 @@ short __stdcall function_1bbf40(long actor_index, s_slot *slot)
     if (actor->unknown858 == NONE && actor->unknown26c != NONE && !actor->unknown269)
     {
         byte *tag = g_4e3b44[object_get(actor->unknown26c)->tag_index & 0xffff].bytes;
-        long special = *(short *)(tag + 0x1f0) == 6 && actor->unknown268;
+        bool special = (*(short *)(tag + 0x1f0) == 6) & (actor->unknown268 != 0);
         if (!special)
         {
             if (function_1b8d40(actor->unknown26c) != NONE)

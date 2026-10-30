@@ -822,6 +822,13 @@ void function_25aba0(long actor_index);
 // 134 (aligned 4); pop before the store 137; plus 0x1a8080 order 134 (aligned 2); without memset 58;
 // the two orders alone 67. Original body kept (the NULL preset is a tested sentinel; 0x1a7b30 rises to 100).
 // Enclosing enabled/state-one/choice dispatch arms in seven combinations 69 each; all three with current-slot at enabled use 69.
+// Round 93, on the NULL-preset + both reorders + memset base (957 bytes, only the state-one pop left):
+// `level -= 1` 134; pop first 137; state-one, kind-2 and choice arms as one if/else chain without
+// `continue` 119 (state-one pop now as retail, but the kind-2 failure pop becomes `dec [mem]`); chain with
+// `continue` in the kind-2 arm only 134, in the state-one arm only 119; kind-2 failure statements
+// reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
+// `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
+// takes the `dec [mem]` form in every arrangement.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

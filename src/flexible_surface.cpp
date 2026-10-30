@@ -328,6 +328,12 @@ void function_117510(long index)
 // Round 196: retain only first endpoint with point/vertex/shared-difference/link-cursor forms
 // 179/179/179/173; retain only second 211/211/211/159. All restored; native entry/link
 // carriers, pin-word observations and correction scheduling remain.
+// Round 113: link->a/link->b read at each use (no endpoint locals) 154 at 742 bytes, but it gives retail's
+// prologue and outer loop (record EDI, iterations EBX; first difference +0x8 -> +0x8a; aligned 116 -> 77);
+// left: the link pointer is folded (`[edx+eax+4]`, retail `add eax,[esp+0x18]`), the first pin test reuses
+// the top read of link->a in EBX (retail re-reads it) and splits its test, a/link swap EAX/EDX. On it:
+// rest square before the clamp 155 (twice); shared point difference 154; long bits local 154;
+// short-parameter forceinline pin test 163; fields through definition->links[i] 220. All restored.
 // @retail 0x117790
 void __stdcall function_117790(long index)
 {
@@ -402,6 +408,10 @@ void __stdcall function_117790(long index)
 // Round 276: Shared translation 72; real attachment value 100; both 97; translation with element owner 74;
 // Round 276: with attachment value 97; translation with common ordinal 74; with attachment value 100;
 // Round 276: all ownership forms 101. Original body restored; pool-base and copy reload remain.
+// Round 113: attachment element pointer 85 (retail's +0x1230 walk and vertex re-read; the pin OR splits
+// and the copy takes src EDX/dest ECX, retail ECX/EAX); with bit_vector_set 82; with a vertex local
+// after the copy 82; element pointer plus i-first squared distance 103 (aligned 40 -> 30, the jump over
+// the loop pad returns), with length_sq3f 103. All restored.
 // @retail 0x117a80
 void function_117a80(long index)
 {

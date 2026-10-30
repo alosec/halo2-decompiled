@@ -3500,6 +3500,10 @@ struct s_128ca0
 // Round 224: Live definition/permutation/playback, definition-permutation/definition-playback/
 // permutation-playback/all/all-pitch-parameters 307/364/681/385/709/864/878/878. Definition-only
 // recovers frame 0x494 but regresses; original receivers, gain homes and complete countdown arms restored.
+// Round 270: actual signed-long location-gain field alone/outer reference sum/both
+// reference sums 215/256/306; outer/both with shared scale 257/295; both with scale
+// and native pitch bounds 295; both with early gain/early gain and scale 306/295.
+// Outer sum recovers frame 0x494 but regresses; original body and shared field restored.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
