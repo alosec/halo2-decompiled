@@ -51,11 +51,18 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 52 (was 56): the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
+// score 52 (was 52): the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
 // the blend registers and the color0 store match. Left: the strength add loads the entry's strength,
 // adds and copies back where retail adds it to xmm7 in place (its operands flip only when the strength
 // load comes before the color copy in the i == 0 block, which then changes that block), 0x131c20's
 // `&color` formed in edi and copied to ecx (retail: ecx, then edi), and retail's sete collision test.
+// Round 30 (fast): strength first in the i == 0 block 97 (the add goes in place and the length is
+// retail's, but the copy then advances ebp, `add ebp, 4`, since the entry pointer is dead after it;
+// with memcpy for the copy also 97); `visible = hit && no object` 52 (folded); one entry-color
+// pointer for the copy and the call 161 (821 bytes; it takes esi); the blend written in the call 52.
+// Diagnostic: a store through `record` after the call keeps the load-first add, so it is the add's
+// operand order, not a value reused across the call. Screened (compile-only): only a flag set in a
+// test (`visible = false; if (hit) visible = no object;`) gives retail's sete.
 // Round 38 (lane 9): the contribution through vector3f_assign and the sum through vector3f_add 52
 // (kept: the j/k adds load the contribution as retail, since the contribution's fields are written in
 // an inlined helper; replaces the hand-written double sums). On it: `strength = strength + power` 52;
