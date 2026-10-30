@@ -238,6 +238,10 @@ long g_55e6c0;
 // named byte pitch 87; all packing parts early 47; unsigned-int packing 29; shared clamped
 // count 154; selected packed result 119; linear-only packing 145. A compile-only screen folds
 // every shape of the packing (casts, 64-bit, helpers, multiplies) under /Og.
+// The D3D-style ((w*4/64 - 1) << 24) | ((h - 1) << 12) | (w - 1) keeps the pitch shr but factors
+// the shifts: 97 as one expression, three statements, height first or a dword width; minus-one
+// multiplies 97 again; plain multiplies with separate subtractions 28 (subtraction folded in);
+// the width term between or before the shift terms 97 (the ORs are reassociated).
 // @retail 0x1df20
 bool function_1df20(long index, long kind, long width, long height, bool alternate, bool linear, long count, void *data)
 {
