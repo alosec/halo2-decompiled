@@ -1405,6 +1405,9 @@ int __cdecl matchmaking_compare_value(void const *a, void const *b)
 // Round 256: Compaction candidate before predicate in first/second/both scans 119/118/121; with shared
 // mode-one query 127/125/129; both scans with indexed tails, separate/shared query 160/159. All
 // restored.
+// Round 303: branch-owned first/second/both working collection counts 153/153/158;
+// both with definite selected result 158, indexed tails 159, shared query 164,
+// indexed tails/shared query 162, all three 162. Original counts and complete body restored.
 // @retail 0x2514fd
 void c_matchmaking_list::v3()
 {
@@ -2847,6 +2850,8 @@ PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
 // publication screen local 100; row-only generic query 235 (item reload, row registers and movsx agree;
 // the title constant carrier returns); with game-first, map generic query, moved title case 3, separate
 // map widget or explicit heading receiver 237 each. Original field, helpers and complete body restored.
+// Round 303: shared nullable map-name publication, four acquisition graphs 271 each;
+// each with the generic row query 273. All original map publications, lookups and body restored.
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {

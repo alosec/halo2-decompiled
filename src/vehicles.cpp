@@ -2623,11 +2623,15 @@ PRIVATE inline real vehicle_angle_fraction(real angle)
    toward the controls' speed in the facing's frame, a yaw torque toward the
    steering, torques that hold the vehicle upright while it is off the
    ground, and its boost */
-// score 1053 (was 1124): Frame 0x80 versus 0x74; velocity and force homes still differ.
+// score 1053 (was 1053): Frame 0x80 versus 0x74; velocity and force homes still differ.
 // Existing inverse transform 1137; forward transform and accumulation 1053 kept;
 // both 1238; shared cross products 1130; inverse/cross 1134; forward/cross 1056;
 // all three 1222; all with mass scales 1254. Plain confirms the shared in-place
 // forward transform and vector accumulation; original incoming-velocity calculation kept.
+// Round 304: scalar incoming velocity/shared yaw/shared airborne producers in seven
+// nonempty combinations 1094/1072/1064/1066/1062/1053/1089; all with force/velocity role names 1089.
+// Original-graph persistent/planar/later/all native frame-object name families 1053/1053/1053/1053.
+// Original body restored; the frame remains 0x80 versus 0x74.
 // @retail 0xf3010
 void __stdcall function_f3010(long vehicle_index, s_vehicle_physics_state *state, real steering)
 {
@@ -3805,6 +3809,8 @@ bool __stdcall function_f8070(long bit, word const *flags);
 // Complete definition snapshot, result-first, direct active predicate in seven nonempty
 // combinations 1006/864/1006/869/1002/869/1002; snapshot with numeric movement-case
 // source order 1006. Original observations, switch and body restored.
+// Round 304: entry-owned kind/angular-ceiling/engine subsets 1010/1010/1010/1010/1010/1010/1010;
+// complete families with staged cross 1010. Original body restored; definition and float-return boundaries remain.
 // @retail 0xf6d10
 bool __stdcall function_f6d10(long vehicle_index, long name, real *value, bool *active)
 {
