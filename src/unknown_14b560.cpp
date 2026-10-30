@@ -820,6 +820,9 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 // fetched after the walk 100; the in-body inline_depth pair removed 185 (0xbaf40/0xbadc0 inline,
 // 508 bytes). Screened (one-file LTCG): the walk as an inline or cross-module function, under a
 // nested `if` for the unit test, or with a named object pointer: no entry test, or EAX unit.
+// Round 24 (lane 10): the walk through the existing 0xbaf80 126 (400 bytes; it stays a call here, retail
+// inlines it); the rest of the loop body nested under `if (unit != NONE)` 55; player/unit declared at
+// function scope 55; the walk as a for loop from the parent 55; the unit object fetched after the walk 171.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {
@@ -2012,7 +2015,10 @@ struct s_player_creation_record
 // 33/33/198/198/47/47/195/195. Round 22 (lane 10): a plain call with `inline` on 0x14f270's
 // definition 267 (still a call); constant NONE in the NONE arm's call 59 (both arms inline); a
 // globals pointer local in the set arm 33; the current controller read in the test 33; the
-// requested controller read from the record at each use 198.
+// requested controller read from the record at each use 198. Round 24 (lane 10): the controller block
+// through the earlier player pointer 37; the change test as `controller != old_controller` 33; the requested
+// controller read after the current one 38; the set arm's player store after the globals updates 34; the set
+// arm first 47 (as the earlier assignment-first arms).
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
