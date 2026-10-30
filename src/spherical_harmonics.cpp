@@ -67,7 +67,10 @@
 // factor 158; plus early coefficient 15 140; early coefficient 15 alone 147; retail store order
 // 144. All three roots double 77; sqrt(105) and sqrt(7) double 66; sqrt(105) double 73; zz scaled
 // in place 70; all double with coefficient 15 before coefficient 9 150 (645 bytes); coefficient
-// 15 at each position in the order, root types and local names (screened) no better.
+// 15 at each position in the order, root types and local names (screened) no better. With the float
+// roots: linear only 56; quadratic only 57; linear and quadratic, or every rounded root 54 (gives retail's two early schedules; not kept, a gain of 5); a
+// double sqrt(2) 156 (639 bytes); double sqrt(2) and sqrt(105) 78; coefficient 15 right after
+// band3_35 146; coefficient 15 as the first cubic output 145; band3_21 before band3_35 128.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

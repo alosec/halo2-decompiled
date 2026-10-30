@@ -13,6 +13,7 @@
 #include "data_array.h"
 #include "effects.h"
 #include "normalize3d.h"
+#include "matrix_transform.h"
 #include <xtl.h>
 #include "unknown_246cd0.h"
 
@@ -470,27 +471,32 @@ real function_3eb70(void);
 typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_particle_value_cache *, point3f const *, vector3f const *, real, color4f const *, void *);
 
 
-// score 56 (was 56): Offset initialization, scalar initializer order, property reloads and rotation scheduling differ.
-// Combined entry decisions 53; entry decisions with shared cache 53; scale/alpha/both result locals 119/56/119;
-// saved successor 217; particle cache with scale result 119; combined entry/property/cache 116.
-// Earlier: entry branch, property reload pairs and rotation scheduling differ;
-// forward/left/up/all axis receivers 118/55/55/118; forward/left/up/first-pair values 182/167/181/289;
-// left/up receivers with empty-list return and scale-first initialization 52/52, but the return only repeats the loop test (reverted in review).
-// Captured position/late output 353; captured velocity/late output 357; both 437;
-// translation component loop 56; inner cache member 56; derived mask at use 198;
-// scale initialized at property selection 273; translation value 160.
-// Earlier: the definitions indexed (index++) put the offset's zero store after the
-// list test and fix the three reload pairs (with scale declared first, all but the rotation
-// blocks match), but turn the rotations' products around and add 10 bytes: indexed 119,
-// indexed with scale first 117; plus split += rows 116; plus a matrix pointer local 123.
-// Round 112: scale declared before multiplier alone 54 (fixes the 1.0 store order only); existing
-// 0x173c10 for both hand-written mask refreshes 56 (same code, kept); on the indexed form with scale
-// first, input-first products 117 and a greedy screen of every rotation row's term order 116 at best;
-// the offset as a for-loop init 56.
-// Complete position/velocity/both row products 127/56/127; all-products before stores 164/121/171;
-// both input copies on complete-product graph 170; shared translation add with row products 127.
-// Indexed definitions plus scale-first defaults with those six product graphs 103/117/103/141/153/116.
-// Entry/reload order and matrix/input product scheduling remain; original body retained.
+// score 42 (was 56): both in-place rotations go through the shared rotate helper (it copies the
+// input when the output is the input), which gives retail's j and k rows. Left: row i sums the up
+// product before the forward one (retail forward first, loading forward.i into a register); the
+// offset's zero store comes before the list test (retail after); the two 1.0 stores are swapped; and
+// after each property call ours reloads the particle before the emitter definition (retail the
+// other way round).
+// Tried: combined entry decisions 53; entry decisions with shared cache 53; scale/alpha/both result
+// locals 119/56/119; saved successor 217; particle cache with scale result 119; combined
+// entry/property/cache 116; forward/left/up/all axis receivers 118/55/55/118; forward/left/up/first-pair
+// values 182/167/181/289; left/up receivers with empty-list return and scale-first initialization
+// 52/52 (the return only repeats the loop test); captured position/late output 353; captured
+// velocity/late output 357; both 437; translation component loop 56; inner cache member 56; derived
+// mask at use 198; scale initialized at property selection 273; translation value 160; the
+// definitions indexed (index++), which put the offset's zero store after the list test and fix the
+// three reload pairs but turn the rotations' products around and add 10 bytes: indexed 119, with
+// scale first 117, plus split += rows 116, plus a matrix pointer local 123; scale declared before
+// multiplier alone 54 (fixes the 1.0 store order only); existing 0x173c10 for both hand-written mask
+// refreshes 56 (same code, kept); on the indexed form input-first products 117 and a greedy screen of
+// every rotation row's term order 116 at best; the offset as a for-loop init 56; complete
+// position/velocity/both row products 127/56/127; all-products before stores 164/121/171; both input
+// copies on complete-product graph 170; shared translation add with row products 127; indexed
+// definitions plus scale-first defaults with those six product graphs 103/117/103/141/153/116. With
+// the helper: row i's terms in every order 42; row i right-grouped (four groupings) 45-49; indexed
+// definitions 115 (1136 bytes), with scale first 113; scale first alone 40; locals renamed to sort
+// the other way 42; helper with an unconditional copy, a result local, or the copy inside its own
+// block 50/287/50 (0x2477b0 then differs).
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
@@ -555,17 +561,11 @@ void function_175610(s_particle_value_cache *cache, s_particle_system_datum *sys
 					scale = function_246cd0(&emitter_definition->scale, cache->values) * multiplier;
 				if (definition->unknown0c)
 				{
-					point3f position_input = translated_position;
-					translated_position.x = (rotation_result->left.i * position_input.y + rotation_result->forward.i * position_input.x) + rotation_result->up.i * position_input.z;
-					translated_position.y = (rotation_result->forward.j * position_input.x + rotation_result->up.j * position_input.z) + rotation_result->left.j * position_input.y;
-					translated_position.z = (rotation_result->forward.k * position_input.x + rotation_result->up.k * position_input.z) + rotation_result->left.k * position_input.y;
+					function_2477b1(rotation_result, (vector3f *)&translated_position, (vector3f *)&translated_position);
 					translated_position.x = origin_result->x + translated_position.x;
 					translated_position.y = origin_result->y + translated_position.y;
 					translated_position.z = origin_result->z + translated_position.z;
-					vector3f velocity_input = motion;
-					motion.i = (rotation_result->left.i * velocity_input.j + rotation_result->forward.i * velocity_input.i) + rotation_result->up.i * velocity_input.k;
-					motion.j = (rotation_result->forward.j * velocity_input.i + rotation_result->up.j * velocity_input.k) + rotation_result->left.j * velocity_input.j;
-					motion.k = (rotation_result->forward.k * velocity_input.i + rotation_result->up.k * velocity_input.k) + rotation_result->left.k * velocity_input.j;
+					function_2477b1(rotation_result, &motion, &motion);
 				}
 				callback(particle, cache, &translated_position, &motion, scale, &color, context);
 			}

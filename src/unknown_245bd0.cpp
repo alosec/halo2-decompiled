@@ -4,6 +4,7 @@
 
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
+#include "matrix_transform.h"
 #include "data_array.h"
 #include "globals.h"
 #include <float.h>
@@ -791,27 +792,6 @@ struct s_frame_2477b0
 	matrix3x3 rotation;
 	point3f position;
 };
-
-PRIVATE __forceinline vector3f *function_2477b1(
-	matrix3x3 const *matrix, vector3f const *vector, vector3f *out)
-{
-	vector3f copy;
-	if (vector == out)
-	{
-		copy = *vector;
-		vector = &copy;
-	}
-	out->i = matrix->left.i * vector->j + matrix->up.i * vector->k + matrix->forward.i * vector->i;
-	real j = matrix->left.j * vector->j;
-	j += matrix->forward.j * vector->i;
-	j += matrix->up.j * vector->k;
-	out->j = j;
-	real k = matrix->left.k * vector->j;
-	k += matrix->forward.k * vector->i;
-	k += matrix->up.k * vector->k;
-	out->k = k;
-	return out;
-}
 
 // @retail 0x2477b0
 void function_2477b0(
