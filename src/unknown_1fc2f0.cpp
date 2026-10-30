@@ -224,6 +224,45 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // read from the global after the chains 64; that with the velocity copied as a struct 137; all
 // three rate products first, then the conversion, then the adds and subtracts (per component or
 // grouped, the conversion inside the i chain) 115/115/115 (387-390 bytes).
+// the limit test is written the other way round, so the comparison matches
+// retail's operand order and its branch, but the scheduler still computes the components in the
+// order i, j, k where retail does j, i, k, so the tick conversion takes xmm4 where retail reuses
+// xmm3, the deltas land in other registers and the limit is computed before the squared length.
+// rate local with long ticks 64; the components multiplied in one expression 96; the same without
+// the tick scale local 64; the components loaded first and multiplied in place 44.
+// The three chains reordered to j, i, k 44 (the compiler schedules them itself, the code is
+// unchanged); the chains as one expression each in that order 105; the chains as separate scalar
+// locals in that order 93; the components as separate scalar locals 94 and without the velocity
+// struct 106; the limit test the other way round 43.
+// This round: the tick products reordered to j, i, k 43 (the code is unchanged); the three state
+// loads reordered to j, i, k 47 (the chain order follows the loads, but the registers move with
+// them, so retail's xmm0 = i, xmm1 = j is lost); the state velocity read into three locals and
+// the chains written in j, i, k 87; the chains as one expression each without the separate loads
+// 105 in that order and 104 in i, j, k (the loads then fold into the products and the code loses
+// 18 bytes); the tick products written into a second vector 43 (the code is unchanged). The chain
+// order follows the order of the first definitions, so it moves with the loads and cannot be
+// changed on its own.
+// extends the word into EDI, while ours writes the word with a 16-bit store
+// to DI and loads the float into xmm0.
+// retail's first 0x5a bytes (rate kept in xmm3, the three components loaded
+// first) but the tick products land in fresh registers and the correction's
+// last product moves late, one instruction long: rate local with long ticks 64;
+// with the tick scale through local_scale3d 64; tick product and delta per
+// component 64; ticks read first 64; the limit test as !(limit * limit > ...) 56.
+// `long ticks` and a `rate` local give retail's first 21
+// instructions (rate in xmm3, movsx edi, components loaded first) but the tick
+// products go to new registers where retail scales in place 64 (369 bytes);
+// limit from the rate local 68; real ticks at the top 103; real ticks after the
+// rate 104; the same without the parameter reference 80.
+// Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
+// stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
+// (394 bytes); the rate read from the global at each use 99 (375 bytes).
+// Round 21 (lane 10): the prediction through vector3f_add_scaled + vector3d_from_points3d 43 and the
+// delta scaled in place 43 (both identical code); the correction through vector3f_add_scaled 97
+// (frame); a named squared length before the limit 79 (lockstep shift: the limit, the early j
+// square and the two spill stores then follow retail's schedule; chains still i, j, k and ticks in
+// xmm4); that plus tick_scale defined after the chains 73 (ticks reuse xmm3 as retail, but the tick
+// products become copies and the chains run k, j, i). No-op products (diagnostic) never move the j chain.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

@@ -1144,6 +1144,14 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // lost); times declared first 67; mask update as `x = x | bit` 67; loop index
 // declared before the loop 67; `count != 0` 67.
 // Round 198: guarded-result graphs at the existing channel/observer/member QoS helpers, seven
+// combinations 67 each; all three with late host read 86. Round 20: the observer through the existing
+// getter with the host arm updating the mask itself gives retail's registers and frame only while at
+// most one counter is set before the getter; count first 100, observer first with if/else arms 99,
+// count first with if/else arms 100, times first 99, host read right after the getter 99 (334 bytes
+// each: the extremes' stores sink past the memset, the member check reuses the loop's member_count
+// load, the cursor takes esi and the loop head is padded). Screened (one-file LTCG harness): the
+// member count read through another address expression or with the output cleared first, the QoS
+// helper's four parameters in every order, clamp/min-max/mask/tail spellings: no change.
 // combinations 67 each; all three with late host read 86.
 // Round 29: the observer through the existing observer getter gives retail's allocation
 // once the host is read after it and the mask is also written in a host arm (frame 0x78,

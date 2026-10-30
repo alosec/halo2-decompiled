@@ -86,7 +86,13 @@ bool g_47f05b;
 // constructed arm, while only the `block` form keeps the 1 in edx): chained flag assignment 38;
 // pool address through a byte pointer named after the first construction 38; if/else on the
 // placement result 38; bool flag first 38; NONE flag last 38. Four explicit base-constructor
-// stores in place of the loop still drop the vtable store (30, 0x146b80 lost).
+// stores in place of the loop still drop the vtable store (30, 0x146b80 lost). Round 20 (size-only
+// constructor, g_479888 at both placements): a class placement operator new 35; the size by const
+// reference 35; `m_size = size; m_size &= ...` 35; the base's size by const reference 35; the
+// construction copied from a temporary 34 (elided). A one-file LTCG harness also keeps the store for
+// none of: the abstract constructor out of line in another file (still inlined, store dropped), a
+// virtual call in the derived constructor (devirtualised after the final vtable store), out-params
+// by reference in the base, a pointer-walk loop.
 // @retail 0x146a20
 void function_146a20(void)
 {

@@ -102,6 +102,13 @@ void function_1d56f0(s_havok_component *component)
 // shape/filter/both/reversed fields before lookup 110/109/107/105; shape/filter/both before snapshot
 // 77/102/84; pose before input construction 217; a component-first getter 77; the tail through the
 // existing matrix setter (0x1d0c20, called out of line here) 113; `(data + index)->rigid_body` 77; the
+// body pointer declared at the top 77; a named index local 77; corrected-frame transform/translation/both
+// at loop entry or function entry 77 each; native translation/all-column SIMD construction 77/138; direct
+// `.data[index]` lookup 77; `index[data]` subscript 77; index copied to a local at entry 77; entry
+// reference through the array's operator[] 77; forceinline getter declaration 77; the count parameter
+// declared first 77 (a harness keeps base first for every entry statement order and lookup spelling).
+// A member function of s_havok_component (`this` = the component, as matched 0x1d08e0)
+// gives retail's index-first lookup: 76, with only the 0x1d0cf0 tail left (not kept: one point).
 // body pointer declared at the top 77; a named index local 77.
 // lookup address operands and the success-tail setter transport remain.
 // Earlier frame 0x104 and MXCSR homes agreed; result/direction/callback homes and setter convention

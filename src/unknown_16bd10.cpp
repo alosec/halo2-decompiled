@@ -258,6 +258,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // retail's load order (peaks, start, deceleration, acceleration, zero) 53, with the late zero 53;
 // the sum as six += statements in retail's add order 55; the last two terms as separate += 53
 // (272 bytes).
+// Round 22 (lane 10): ours homes only rates[2] and keeps the accelerations out of the frame. Both
+// arrays at function scope 49; the two peak elements swapped in the sum 52; the tick conversions as
+// locals declared at the sum 83 (289 bytes); the peaks filled by a loop over segments 1..2 56; a named
+// peak rate for both peak elements 112 (263 bytes).
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {
