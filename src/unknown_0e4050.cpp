@@ -66,6 +66,9 @@ bool function_e4050(long object_index)
    (0x21e230 keeps `this` in esi across the call); noinline keeps the call */
 inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool flag);
 
+// score 8 (was 8): Retail full-width edge comparison and separate returns remain; native signed/unsigned
+// outcome 10/10, signed word 9; false-first/full-arm outcome 13/10, zero-first real result 10, explicit edge
+// returns 10, real truth return 24. Original word outcome and body restored.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {
