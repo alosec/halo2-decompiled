@@ -796,6 +796,12 @@ struct s_signed_file_write_parameters
 // DL180: case order 2013 324; case order 3012 331; case order 0213 192; case order 0312 273; case
 // order 1203 313; case order 2103 314; case order 2301 332; case order 3210 328. Original
 // executable body restored.
+// Lane 14 r11: the header arm's buffer goes to the parameters home and the byte count to the task
+// home (retail the other way round). Locals renamed (scratch buffer, scratch size, written count;
+// header arm or both arms) 134 each, identical code; one byte count shared by every case 150 (also
+// with it declared first). Diagnostic: the getter reaching the scratch object through its address
+// 132 (aligned 113 -> 109; 0x2ad7c0 68 -> 173 though its aligned count improves 55 -> 49), so both
+// bodies look compiled with the object address-taken; a natural source of that is not found yet.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

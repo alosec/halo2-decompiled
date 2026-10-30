@@ -336,6 +336,12 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // the test 207f, pointer cursors with a direct call 212f.
 // Generic data/unsigned item contracts/both 115/115/115; actual info record/generic data
 // 229/229; native four-word data/native unsigned items 115/115; info plus native data 229.
+// Lane 14 r11: retail keeps both cursors and the counter in memory (load, add, store, then the
+// loop top reloads) with this/request/handle/index in EBX/EBP/EDI/ESI; every natural form splits
+// the handle (spilled at entry, reloaded after the loop) and gives a cursor EDI. Plain pointer
+// cursors 207; for loop over the parallel items/b arrays with the direct call 207; helper taking
+// the cursors by const reference 207; the volatile read on the data cursor only 207, on the items
+// cursor only 210; cursors grouped in a local struct (diagnostic) 210.
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {

@@ -59,10 +59,10 @@ struct s_spawn_scenario_23aea0
 	s_spawn_settings_23aea0 *settings;
 };
 
-// score 103 (was 105): the definition now stays in EAX and the source pointer in ECX, but
-// the destination is still an absolute pointer induction instead of retail's integer table
-// offset 0x18..0xa8; the prologue publishes the default table after the first scalar store
-// and the override loop keeps an extra lea esp, [esp].
+// score 105 (was 105): the destination is an absolute pointer induction instead of retail's
+// integer table offset 0x18..0xa8 (16 stores 3 bytes shorter each, so the override loop gains
+// an alignment pad); retail keeps the definition in EAX and forms the source pointer in ECX
+// between the two scalar stores.
 // actual batch/type ranges 139/227; inner type ordinal 139; direct twelve types 254;
 // source records with direct/batch/read-only ranges 257/227/227; complete override 140.
 // Word/byte batch ordinals 141/141; word/byte entry ordinals 242/242;
@@ -91,6 +91,15 @@ struct s_spawn_scenario_23aea0
 // A twelve-byte destination record indexed by the type ordinal moves the definition into
 // EAX and the source pointer into ECX (105 -> 103); the same record reached through a
 // pointer below the table regresses to 149.
+// Lane 14 r11: one `for (type = 2; type < 14; type++)` loop over struct fields 105 (VC unrolls it
+// by six into retail's two passes; same code as the nested loops); that loop with an entry
+// pointer 103; nested loops with an entry reference 103; an inline element accessor (index
+// parameter) 103; a twelve-byte array wrapper with an indexing operator 103; a walking source
+// record pointer 121. One-file screens (no link), all a pointer induction: const pointer or
+// reference to the globals, a global defined here/static/as a struct, unsized extern, array
+// reference local, while loop, `<= 13`, zero-based ordinal, struct copy (not unrolled).
+// Screens show VC keeps an integer offset only when two different global symbols share the
+// induction, and then rebases it to start at 0; retail's starts at 0x18 (12 * type, not rebased).
 // @retail 0x23aea0
 void function_23aea0()
 {
