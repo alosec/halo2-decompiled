@@ -860,6 +860,10 @@ void function_25aba0(long actor_index);
 // level computed before the stamp and assigned after 134; the state-one stamp through the table 134;
 // state-one/kind-2/choice as an if/else chain with the kind-2 test inverted (failure arm first) 119
 // (state-one now as retail, kind-2 failure fused); on that, the workspace declared at the loop top 119.
+// DL199: Shared parent-level short/int/long/dword gives 321/285/285/285; with the library
+// workspace clear 330/292/292/292. The common value changes loop and frame allocation; original
+// 0x4c frame, six pops and aggregate workspace restored. State-one split decrement and zero-fill
+// remain.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

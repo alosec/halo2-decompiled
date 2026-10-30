@@ -580,6 +580,9 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // input/both 176/147/168; completed output workspace 130; workspace plus requested/turn/both
 // 176/147/168; direct final setter 147 (828 bytes); round 42: turned, horizontal or the planar
 // magnitude/x/y at function scope 130 each (identical).
+// Round 231: facing-first positive / both positive predicates / facing-first nonzero /
+// both nonzero predicates 205/231/211/237; with direct component output
+// 175/193/181/199. Original admission and aggregate output restored.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

@@ -379,6 +379,9 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // the same through the entity's index 82 (157 bytes); without the table local 77; `if (index !=
 // NONE && flagged) entity->object_index = NONE;` then `if (entity->object_index != NONE)` 61 (the
 // memory retest is not threaded); the same on the local, published before the retest, 68.
+// Round 439: complete native 12-byte header value, native/library copies at lookup/entry
+// storage, 104 each; actual post-attachment Boolean success with those four copies, 82 each.
+// Both result graphs grow a frame; original pointer observations and virtual calls restored.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {
@@ -690,6 +693,11 @@ bool c_projectile_type::v8(long a, long b)
 // one (flags & 0x800) && group != NONE test (24, 12), unsigned index (12),
 // 0x9d450's object address form (12); (dword)(word)index is unchanged (5).
 // Dropping the volatile this copy loses retail's push ecx/[esp] store (55).
+// With the mask, any extra use of object (an added read at the end) gives it
+// esi again, so the swap is a use-count tie that the separate word read of
+// (word)index breaks. Also tried with the mask: bit tests as (flags >> 10) & 1
+// (12), result declared first (12), the compares' operands swapped (17), a
+// group_index local (12); the base class v27 call without the copy (52).
 // @retail 0xa3df0
 long c_device_type::v27(long a, long b, long c, long d)
 {

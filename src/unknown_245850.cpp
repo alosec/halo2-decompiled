@@ -35,7 +35,13 @@ struct s_245850
 // Tried: all 12 orders/groupings of local_3.k (14 or 20); point->z grouped `a + (b + c)` (14-16),
 // left to right (98: x is multiplied in place, one instruction fewer); a `long` plane index in
 // bsp3d_get_plane and its five declarations (116 here, 573 bytes; 0x14a300 still matches,
-// 0x10cf80 249 -> 247, 0x1fa3a0 80 -> 79).
+// 0x10cf80 249 -> 247, 0x1fa3a0 80 -> 79). Round 15 (exact LTCG harness, ~700 forms): VC
+// reassociates each sum by the definition order of its values, so text order and grouping
+// of one row change nothing; the plane values defined k, i, j give retail's three normal rows
+// but move the d sum (23; best d form 19); the point values defined y, z, x (or z first) give
+// retail's point->z row but move the loads (17-18); all three point rows ungrouped give
+// point->z but not x (21, real 26); point copy 139; scale local 126; named transformed
+// normal 59. The pragma removed lets LTCG inline 0x14a300 (160).
 // @retail 0x245850
 void function_245850(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,

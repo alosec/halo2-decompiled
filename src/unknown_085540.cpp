@@ -923,13 +923,17 @@ static __forceinline byte *view_allocate_buffer(long size, long owner, long rele
  return (byte *)function_80e14(size, owner, 0, release, 30, 0.1f);
 }
 
-// score 22 (was 22): the dword local is written before the byte local; retail writes the byte
-// first and then the dword into the structure.
 // score 22 (was 22): ours hoists the time stamp's volatile low store and the header memset's
-// low store, and packs start's spill apart from the volatile. Tried: the volatile and start
-// renamed 22; used zeroed before start 22; the header declared before the view stores 22.
-// _ReadWriteBarrier before the first allocation 19 (retail's store order; start's spill still
-// apart from the volatile's slot); before the count increment 27; before both allocations 19.
+// low store, and packs start's spill apart from the volatile. The dword local is written before
+// the byte local; retail writes the byte first and then the dword into the structure. Tried: the
+// volatile and start renamed 22; used zeroed before start 22; the header declared before the
+// view stores 22. _ReadWriteBarrier before the first allocation 19 (retail's store order; start's
+// spill still apart from the volatile's slot); before the count increment 27; before both
+// allocations 19. Each stamp's start spill shares its own volatile's slot in retail (ours pairs
+// the two volatiles): the helper's volatile renamed after `start` 22; the helper's result declared
+// before start 32 (and 0x6a8a0, 0x80e10, 0x18f260 worse). With the barrier: the header memset
+// before `unknownac = 0` 19; `long size` before the count increment 19. A compile-only build
+// gives the +0xc/+8 ring stores and the hoisted header store for every statement order.
 // @retail 0x862e0
 bool function_862e0(c_simulation_view *view)
 {
@@ -1046,6 +1050,8 @@ bool function_68670(byte *source, long size, void *block);
 // retail's zero stores, aligned diff 53 -> 45, but stores both zeros first), per-field memsets 145;
 // with the named span for the window 137 (window exact, aligned 38); on that, used update first 137,
 // named short payload size 137, a shared inline read helper mirroring view_buffer_write 137 (same code).
+// Round 232: Native signed header bitfields kind/size/both/value/kind-value/size-value/all, then all with occupied-window local
+// 97, 97, 97, 97, 97, 97, 97, 135. Original executable source restored.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {

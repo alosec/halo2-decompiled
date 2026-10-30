@@ -32,14 +32,17 @@ long function_189fe0(s_sound_request const *request, long tag_index);
 long function_189340(long object_index, long tag_index, long audible, s_sound_marker const *marker, s_sound_source_callbacks const *source, real scale, long platform_playback, char const *variant);
 
 // score 21 (was 21): retail reads the object index once, after the playback call, into
-// single late retained object load and five-byte extent gap remain.
-// Earlier: retail reads the object index once, after the playback call, into
-// late object carrier/reload still adds five bytes; qualified object refresh 100f/85p;
+// ebx and copies it to esi for the call; ours reads it into esi at the call and again
+// into ebx for the started test (526 bytes). With plain reads at the call, test and
+// dispatch (round 45, 90) the late read is one load as in retail, but into esi (the
+// call's register) with the sound index in edi, and the NONE branch stores esi for the
+// object index. Round 45: the early object local for every later use 116; the started
+// test nested 21, with plain late reads 90; plain call read with the test and dispatch
+// through the reference 28. Earlier: late object carrier/reload still adds five bytes;
+// qualified object refresh 100f/85p;
 // playback then refresh 101f/35p; chained request zeros 121f; initial result 118f; refresh with zeros
 // 103f/85p; object-first admission 118f; byte positioned state 118f; refreshed nested admission 100f/85p.
-// retail reads the object index once, after the playback call, into
-// ebx and copies it to esi for the call; ours reads it into esi at the call and again
-// into ebx for the started test (526 bytes). Argument-list assignment 85; plain reads
+// Argument-list assignment 85; plain reads
 // throughout 116; second half plain 90; all three through the reference 28; first half
 // plain 41; the first test alone through the reference 169; non-volatile reference 116.
 // frame 0xa0 agrees; +0x115 consumes the slot pointer

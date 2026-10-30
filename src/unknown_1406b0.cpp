@@ -798,7 +798,9 @@ PRIVATE long font_cache_read(long font_index, void *buffer, long size, dword off
 // arguments or reading `.field_0` (14); the s_data_datum_iterator form (14); a separate
 // pointer for the new prediction (14); early `return true` (72); nested ifs in the loop
 // (14); plain `long` parameters with the caller's declaration changed (86, and 0x13eeb0
-// drops to 18).
+// drops to 18). Round 41: only the character as a plain long 86 (0x13eeb0 18); only the font
+// as a plain long 88 (0x13eeb0 22); iterator and prediction at function scope 14; header
+// result in a pointer local 14; break out of the search and allocate only when not found 14.
 // @retail 0x1414d0
 bool font_cache_predict_character(s_13eeb1 font_index, s_13eeb1 character)
 {

@@ -371,6 +371,9 @@ extern "C" void _ReadWriteBarrier(void);
 // load-bearing for them); this function alone on the non-volatile data_iterator_next_inlined 162
 // (high water in ESI, pool still in EDI), the same without the barrier 152; the out-of-line
 // record_pool_iterator_step 205 (stays a call, 422 bytes); animation declared before the iterator 122.
+// DL199: Completion byte/word/short/long on ordinary three-field and four-field iterators: 152
+// each. Four-field frame reaches 0x10, still below retail 0x14; the second pool home remains
+// missing. All callback values and original body restored.
 // @retail 0x1fb510
 void function_1fb510(void)
 {

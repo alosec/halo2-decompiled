@@ -288,7 +288,7 @@ void function_1420f0(transform4x3f *out, point3f const *position, vector3f const
 void function_141590(transform4x3f const *in, transform4x3f *out);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 quaternionf *function_141f60(matrix3x3 const *matrix, quaternionf *out);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 
 PRIVATE inline void z_limit_correction(vector3f *value, real maximum)
 {
@@ -299,9 +299,6 @@ PRIVATE inline void z_limit_correction(vector3f *value, real maximum)
  }
 }
 
-// Held (coordinator 2026-10-30): matches with 0x11d790's parameters declared (q, angle, axis) at its
-// definition and every caller (lane 12 r44); applied once the callers in src/vehicles.cpp and
-// src/unknown_141590.cpp are free. Don't retry this function before then.
 // @retail 0xaaca0
 void function_aaca0(long index, point3f const *position, vector3f const *forward, vector3f const *up,
  vector3f const *linear_velocity, vector3f const *angular_velocity,
@@ -316,7 +313,7 @@ void function_aaca0(long index, point3f const *position, vector3f const *forward
  function_141590(&current, &inverse);
  function_142a60(&desired, &inverse, &difference);
  function_141f60(&difference.rotation, &rotation);
- function_11d790(&rotation, &correction, &angle);
+ function_11d790(&rotation, &angle, &correction);
  real angular_scale = angle * 5.0f;
  correction.i *= angular_scale;
  correction.j *= angular_scale;

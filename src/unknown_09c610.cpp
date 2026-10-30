@@ -289,24 +289,22 @@ struct s_input_9c610
     byte field_34;
 };
 
-// score 23 (was 31): only the call to function_e4a20 at the end differs (and
-// the branch offsets past it): retail passes the point in eax and the object in
-// ecx, ours the point in ecx and the object on the stack, which follows from
-// function_e4a20's own body (BLOCKED-BY 0xe4a20). Tried: the flags store first
-// of the second copy group 23 (kept); before the vector copy 67; first of all
-// 67; before field_3c 27.
-// Shared absolute lookup inline 23, out of line 122; shared index
-// reconstruction 107; both shared inline operations 114; point local at
-// notification 23, before guard 23, across dispatch 23; shared lookup
-// with point lifetime 23. Native frame/report copies still agree.
-// final validity predicate 129; byte success result 23; unsigned reconstructed handle 23;
-// signed-byte material 46; bool presence field 23; named validated tag result 23; source-width
-// pool index 112; unsigned salt word 24.
-// Byte notification read 46; byte tail read 23; both byte reads 46; word notification read 46.
-// Word tail read 23; both word reads 46; signed-byte tail read 23; byte notification/signed tail 46.
-// score 13 (was 23): flag 7 of +0x20 as TEST_FIELD_BIT((x >> 7) & 1) 13 (retail tests it as a
-// signed byte, mov al / test al, al / jns; a char < 0 test, a byte mask or a byte shift 23; flag 1
-// rewritten the same way 56, both 63).
+// score 13 (was 13): BLOCKED-BY 0xe4a20. The call to function_e4a20 at the end differs: retail
+// passes the point in eax and the object in ecx, ours the point in ecx and the object on the
+// stack, which follows from function_e4a20's own body. Flag 7 of +0x20 retail tests as
+// `mov al / test al, al / jns`: the plain `input->field_20 & 0x80` gives that test and retail's
+// length (429), but with the shorter call setup every later line shifts, 23 (also as a char < 0
+// test or a byte mask); use it once 0xe4a20 is fixed. TEST_FIELD_BIT((x >> 7) & 1) 13 (kept),
+// TEST_FIELD_BIT(x & 0x80) 13; flag 1 rewritten the same way 56, both 63; one flags local for
+// the copy and both tests 49. Earlier (at 23): the flags store first of the second copy group
+// 23 (kept); before the vector copy 67; first of all 67; before field_3c 27. Shared absolute
+// lookup inline 23, out of line 122; shared index reconstruction 107; both shared inline
+// operations 114; point local at notification 23, before guard 23, across dispatch 23; shared
+// lookup with point lifetime 23. Final validity predicate 129; byte success result 23; unsigned
+// reconstructed handle 23; signed-byte material 46; bool presence field 23; named validated tag
+// result 23; source-width pool index 112; unsigned salt word 24. Byte notification read 46; byte
+// tail read 23; both byte reads 46; word notification read 46; word tail read 23; both word
+// reads 46; signed-byte tail read 23; byte notification/signed tail 46.
 // @retail 0x9c610
 bool c_damage_aftermath_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
