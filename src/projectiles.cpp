@@ -608,6 +608,11 @@ s_projectile_material_response g_547660;
 // response ESI where retail has ESI/EDI/EDX), NULL-default getter with it 56, while-counted 56,
 // tail-recursive call on the parent 72 (made a loop, result dropped), counted without the reference
 // 64, walk local read through the reference 34.
+// Round 10: retail's entry jmp over the loop pad follows from its 5-byte word load. A walk local
+// initialised from the parameter 34 (copies coalesce), with the counted response loop 55, either
+// without the reference 51/65 (the index then arrives in EDX); a pointer to the index walked from
+// the parameter to each parent field 49 (word loads, but at the loop head), with the counted loop
+// 47; the existing global_material_get (inline in damage.cpp) for the lookup 34 (same code).
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)

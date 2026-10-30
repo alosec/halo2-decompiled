@@ -120,7 +120,7 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 }
 #pragma inline_depth(255)
 
-// score 15 (was 37): only the order of the players-match block and the timeout test differs:
+// score 15 (was 15): only the order of the players-match block and the timeout test differs:
 // retail lays out [search][players match][timeout: jle tail; jmp search], ours
 // [search][timeout: jle tail; jmp search][players match]. Retail's two search-block copies are
 // cross-jumped after layout; VC merges them before layout (block last) whenever the timeout
@@ -144,6 +144,12 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 // (copies apart, the 71e00 arm last); the state test inverted 37; an extra return in the
 // state arm 38/44; an inline search helper at both sites 20 (the timeout site keeps a call),
 // forced inline 37; the players-match test `== false` 15; no volatile store 75.
+// Round 10: the timeout arm a goto into the first search block 37 (block laid out after the timeout
+// test); retail's arm order (state, match, timeout) 37; with a named state bool 55 (session arms
+// exactly retail's, 71e00 arm last); with the 71e00 arm first under a named bool or `!=` chain 37/37;
+// the state test inverted inside the session arm 37; the result set before the timeout or first
+// copy's calls 95/115; an early return for type != 9 72; a new inline search helper at the timeout
+// site only, the first site only or both 20/37/20 (inlined copies merge before layout).
 // @retail 0x712d0
 bool function_712d0(c_session_state_matchmaking *arg_0)
 {
