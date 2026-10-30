@@ -105,17 +105,20 @@ extern long g_55c154;
 // (one arm is short); two load arms 174, with that call 179 (EBX takes zero, saved and the
 // 0x54e4a0 constant, `this` spills to [ebp-4], unbiased frame); selected arm first 178;
 // saved declared at the top 179.
+// Round 35: two load arms 174 again (`this` spills to [ebp-4], EBX takes the constant 1, unbiased
+// frame), with the shift bit test 174; the bit test as a signed shift 62 (sar); `selected == NONE`
+// tested twice without the classification local 77 (574 bytes). BLOCKED-BY 0x13fac0: our link
+// inlines the copy at this all-constant call site, where retail calls it.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {
-	struct s_variant_flags { unsigned long pad : 21; unsigned long bit21 : 1; };
 	if (*item == NONE) return;
 
 	s_variant_item *entry = &((s_variant_item *)data->data)[*item & 0xffff];
 	s_game_variant variant;
 	byte name[0x100];
 	long selected = entry->variant;
-	if (selected != NONE && !(flag_a && TEST_FIELD_BIT(((s_variant_flags const *)&entry->variant)->bit21)))
+	if (selected != NONE && !(flag_a && (bool)(((dword)entry->variant >> 21) & 1)))
 	{
 		if (entry->value2 != NONE)
 		{

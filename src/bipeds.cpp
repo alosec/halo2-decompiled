@@ -3562,7 +3562,13 @@ real magnitude3d(vector3f const *v);
 /* an actor riding a fast vehicle that is about to leave the ground (no
    ground under it, or none along its flight) says so, at most once every
    half second: falling (0x54), flipping over (0x56) or a jump (0x55) */
-// score 105 (was 105): Frame 0x84 agrees; byte/word read, float scheduling and normal-copy homes differ.
+// score 19 (was 105): Frame 0x84 agrees; the actor index for 0x1fb7e0 stays in ECX across the
+// 0x24590 call (retail moves it to EDI and back: its callers do not trust 0x24590 to keep ECX), and
+// that 2-byte tail difference shifts six jumps to the exit. Round 35: both probes through 0xdf880
+// (as 0xe30c0 does) 28 at retail length; the vehicle's 0x34c byte 27; the time comparison written
+// sum < time 21; the actor index as a named local 21 (same code); `falling` set before the flight
+// vector 19.
+// Earlier: byte/word read, float scheduling and normal-copy homes differed.
 // First/second/both branch-selected collision calls 215/225/105 fast; both retained.
 // On both calls: state at test 105; shared vector/point/both setters 107/110/111; carrier name 105.
 // Complete branch-selected calls 105 plain; original operands and helper roles preserved.
@@ -3582,50 +3588,26 @@ void __stdcall function_e3380(long arg_159e6d)
 		long time = g_510c54->game_time;
 		long ticks = g_510c54->field_2_3;
 
-		if (time - *(long *)((byte *)biped + 0x244) > ticks * 4 && vehicle->unknown34c > ticks &&
-			(biped->unknown38c == NONE || (real)time > ticks * 0.5f + (real)biped->unknown38c))
+		if (time - *(long *)((byte *)biped + 0x244) > ticks * 4 && *((byte *)vehicle + 0x34c) > ticks &&
+			(biped->unknown38c == NONE || ticks * 0.5f + (real)biped->unknown38c < (real)time))
 		{
-			s_biped_ground_collision collision;
-			point3f start;
-			vector3f vector;
 			bool falling = false;
 
 			biped->unknown38c = time;
-			function_b9dd0(arg_159e6d, &start);
-			start.x -= g_4687bc->i * 0.4f;
-			start.y -= g_4687bc->j * 0.4f;
-			start.z -= g_4687bc->k * 0.4f;
-			vector.i = g_4687bc->i * 8.0f;
-			vector.j = g_4687bc->j * 8.0f;
-			vector.k = g_4687bc->k * 8.0f;
-			collision.unknown24 = NONE;
-			if (!(function_ddf60(arg_159e6d) ?
-				function_1697c0(0x800001, &start, &vector, NONE, NONE,
-					(s_collision_result_1697c0 *)&collision) :
-				function_1697c0(0x84000d, &start, &vector, NONE, NONE,
-					(s_collision_result_1697c0 *)&collision)))
+			if (!function_df880(NULL, g_4687bc, NONE, arg_159e6d, NONE, 8.0f, NULL, NULL, NULL, NULL, NULL, NULL))
 			{
 				vector3f flight;
 
+				falling = true;
 				flight.i = vehicle->linear_velocity.i * 2.0f;
 				flight.j = vehicle->linear_velocity.j * 2.0f;
 				flight.k = vehicle->linear_velocity.k * 2.0f - g_51e9c4->unknown0 * 2.0f;
-				falling = true;
 				if (function_30bf0(&flight) > 0.0f)
 				{
-					function_b9dd0(arg_159e6d, &start);
-					start.x -= flight.i * 0.4f;
-					start.y -= flight.j * 0.4f;
-					start.z -= flight.k * 0.4f;
-					vector.i = flight.i * 8.0f;
-					vector.j = flight.j * 8.0f;
-					vector.k = flight.k * 8.0f;
-					collision.unknown24 = NONE;
-					if ((function_ddf60(arg_159e6d) ?
-						function_1697c0(0x800001, &start, &vector, NONE, NONE,
-							(s_collision_result_1697c0 *)&collision) :
-						function_1697c0(0x84000d, &start, &vector, NONE, NONE,
-							(s_collision_result_1697c0 *)&collision)) && collision.normal.k > 0.3f)
+					vector3f normal;
+
+					if (function_df880(NULL, &flight, NONE, arg_159e6d, NONE, 8.0f, NULL, &normal, NULL, NULL, NULL,
+						NULL) && normal.k > 0.3f)
 					{
 						falling = false;
 					}

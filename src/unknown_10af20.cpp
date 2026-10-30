@@ -113,6 +113,11 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 // vector3f_assign 93 (both need the two helpers as plain definitions, which 0x1c1e70 accepts);
 // forward and left summed per component, up through add-scaled 93. Retail stores nothing of
 // velocity until all three sums are done and loads up.j early (xmm7), spilling two left products.
+// Round 35 screen (cross helper: file-local / shared cross3f / forward and up pointer locals /
+// cross3f_staged, x velocity: current / scale-add-add chain / per-component sums / left scaled first
+// then add-scaled forward and up / left scaled first then per-component sums): current velocity with
+// the pointer locals or the staged cross 75 (378/379 bytes); every other velocity form drops retail's
+// two spills (353-362 bytes) and scores 84-98.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {
