@@ -422,6 +422,8 @@ struct s_ai_scene_assignment
 // Four parallel output-slot pointers before scoring or on success, crossed with the
 // actual previous-assignment source and selector-output store priority: eight at 56;
 // previous-source copies reach 347 bytes. All one-use element-pointer forms restored.
+// Round 292: Entry-capacity and completed-copy capacity regions, each terminal return or positive
+// scope and all eight nonoriginal combinations, 56 each; original exits restored.
 // @retail 0x2919e0
 void __stdcall function_2919e0(s_ai_scene *scene, s_ai_scene_assignment *assignments, short *assignment_count, short maximum_count,
 	short role_index, short role_count, long ai_index, long ai_index2, long ai_index3)
