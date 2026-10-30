@@ -527,6 +527,9 @@ bool sound_driver_voice_create_buffer(
 // parameters reordered (flags last) no change.
 // Round 263: first/second/both pair-volume zero chains after identifiers 109/107/118,
 // before identifiers 110/107/119; shared creation status 98, with both late chains 118. All restored.
+// Round 208: disjoint native descriptor phases, shared/per-phase mixbins,
+// pair arrays at success/phase entry and both descriptor name orders: 98 in all eight.
+// Original storage and body restored; conditional saves and zero/input residency remain.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,

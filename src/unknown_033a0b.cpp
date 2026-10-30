@@ -66,6 +66,9 @@ struct s_4e6950
 };
 extern s_4e6950 g_4e6950;
 
+// score 351 (was 351): Scaled cases hoist coefficients instead of the retail post-store memory operands.
+// Round 291: Native component loops for case subsets 23/35/23+35/24/23+24/35+24/all:
+// 351/351/381/351/381/381/381; all with four global-scale loops 381 (fast control 351).
 // @retail 0x33980
 void function_33980(long selector, vector3f *out)
 {

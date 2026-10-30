@@ -588,6 +588,8 @@ PRIVATE __forceinline real inverse_sqrt_1e6360(real squared)
 // aligned 110, closest), its products added straight into the velocity 239.
 // Round 36: single-workspace jitter 163; shared jitter add 157; shared movement add 156; all shared updates 156;
 // jitter rename 156; shared offset scale 139; scale with direct updates 155; scale with shared jitter add 149.
+// Native word/short/dword bit samples 168/168/170; on/off-first samples 231/231/233;
+// word/dword native jitter workspaces 161/163 (exact-only). Original sample and body restored.
 // @retail 0x1e6360
 void function_1e6360(s_biped_physics_output *output, real rate, long object_index, real blend)
 {

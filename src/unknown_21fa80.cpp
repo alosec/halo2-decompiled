@@ -133,6 +133,9 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 // Round 396: Pitch bound-test result with long/short offset and switch/if dispatch,
 // late destinations 532/535/531/534; entry uninitialized destinations 532/535/531/534
 // (fast control 532, full 545). One-point reduction dropped; all original body/helpers restored.
+// Round 290: Existing linear/bit-pin/real-pin input reference subsets 542/532/536/532/542/532/536;
+// all with native gain value 536 (fast control 532, full 545). Original executable source
+// restored.
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)
