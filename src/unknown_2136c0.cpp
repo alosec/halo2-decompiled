@@ -79,6 +79,8 @@ void function_213970(void);
 // Round 79: enum language result 145; first-element array clears 145; reversed progress fields 145;
 // existing language wrapper 145; query after file/copy clears 144/144; version validation first 141;
 // joint preference guard 158. All gains below the retention threshold; original body restored.
+// Round 198: Complete payload clear orders with the byte-tail block first/last/middle,
+// size-ordered blocks and all blocks reversed: eight orders, all 131. Original body and bounds restored.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

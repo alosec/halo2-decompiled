@@ -246,6 +246,8 @@ void function_07b3e0(void)
 // Round 20 (iterator form unless noted): the datum through data_datum_index on the iterator's
 // pool 57, on the global 69 (both pool registers and the pad appear, the datum pointer spills),
 // on a pool local 57; index set before the pool 58; this form with the scan on the global 64.
+// Round 198: Native unsigned absolute cursor, with immutable receiver and/or chained terminal
+// zero stores, 54 each; signed long/int cursor with chained zero stores 39. Original body restored.
 // @retail 0x7b430
 void function_07b430(void)
 {
