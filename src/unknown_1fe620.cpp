@@ -88,6 +88,9 @@ static __forceinline long real_to_long(real value);
 // side/first-output/second-output construction masks 1-7 scored 373/378/373/404/397/404/397; all
 // constructions with in-place sign assignment 397. Five-count best is below the eight-count retention
 // threshold; original vector stores restored.
+// DL190: Side/motion/both native real roots 378/378/378; native absolute magnitude 378; both roots plus absolute magnitude 373 (five-point gain rejected). Both complete double squared-length identities alone/absolute/root APIs 378/378/378. Frame and early input/state ownership remain; all restored.
+// DL192: Genuine magnitude/reciprocal/displacement workspace reuse, subsets 1-7: 378/404/404/390/390/408/408;
+// complete reuse with fallback point setter 466. Frame and early input/state ownership remain; all restored.
 // @retail 0x1fe620
 void function_1fe620(long arg_0, byte const *arg_1, byte const *arg_2)
 {

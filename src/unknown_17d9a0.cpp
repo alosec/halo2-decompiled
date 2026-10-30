@@ -128,22 +128,22 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 }
 
 // score 138 (was 138): frame 0xc and matrix/dot prefix agree; plane-store base, projection operands/publication and inverse schedule remain.
-// Earlier score 158 (was 164): plane-distance store base and projection/edge scheduling remain; both indices long 179f, horizontal long 164f, vertical long 179f, captured-index Y-first 164f, plane view after normal copy 181f.
+// At 158: plane-distance store base and projection/edge scheduling remain; both indices long 179f, horizontal long 164f, vertical long 179f, captured-index Y-first 164f, plane view after normal copy 181f.
 // Read-only projection metadata 164; selector field inputs 164; output reference 164; shared
 // point construction 162; vertical index first 164; table row before point 158 (kept); complete
 // edge predicate 166; row helper input 160; inverse at entry 230; normal block copy 168; copy-
 // return plane receiver 158 at 993 bytes; copy return with early row 171; early row with shared
 // point construction 160.
-// Earlier score 152 (was 158): plane store base and projection/edge scheduling still differ.
+// At 152: plane store base and projection/edge scheduling still differ.
 // return native destination 158f; native component array 158f.
 // transform workspace name 158f; native output first contract 168f.
 // native matrix reference 158f; copied normal receiver 161f.
 // nested edge validation 158f; conditional inverse publication 152p.
-// Earlier score 138 (was 152): plane-distance base, projection selectors/stores and inverse schedule remain.
+// At 138: plane-distance base, projection selectors/stores and inverse schedule remain.
 // Shared projection operation 334; native plane result 237; row-selector local 152;
 // bounds-first/vertical-first helper contracts 140/140; pointer-input point initializer 152;
 // vertical result snapshot 170; first-edge squared length 138; corrected contract/length combinations 146/146.
-// Earlier score 138 (was 138): Plane-distance base, projection selectors/stores and inverse scheduling remain. external output record
+// At 138: Plane-distance base, projection selectors/stores and inverse scheduling remain. external output record
 // 146; external corner array 138; output and corner array 146; external normal receiver 166; external
 // bounds record 146; matrix memcpy 138; bounds memcpy 152; normal memcpy current length 152.
 // Plane-distance base, projection publication and inverse scheduling still differ.
@@ -158,7 +158,7 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // Distance-only plane scope 143; second-edge squared result 146; both 147; external basis
 // references 152; first/all bound-first products 138/138; basis plus lengths 154; completed
 // Y/X projected values plus lengths 158.
-// Earlier score 138 (was 138): plane-distance store base, product operand order and the positive register differ.
+// At 138: plane-distance store base, product operand order and the positive register differ.
 // Plane pointer for the normal copy/dot/store 157 (store base as retail, dot operands flip); point-first
 // dot through it 153; pointer for copy and store only 151; projected y stored first 138; the existing
 // function_120810 for each corner projection 189 at 966 bytes, though its inlined lookup is retail's
@@ -169,6 +169,15 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // restored.
 // Round 288: complete shared corner-vector producers, forward/left affine and two-scale sums,
 // each with private/shared final projection 265, 250, 265, 250, 265, 241, 265, 241. Original body and helper restored.
+// Native side field byte/signed-char/char 142/142/142; with existing final projection 193/193/193;
+// byte/signed-char side with a reused short axis result 164/164. Original Boolean field, body and helper restored.
+// Lane 14 r11: the existing projection helper 0x120810 per corner 189 (966 bytes; its lookup is
+// retail's `shl`/`movsx` sequence, the products reorder); with natural row orders 189. Edges typed
+// point2f and formed by the existing vector2d_from_points2d 142 (992 bytes; aligned 152 -> 138:
+// retail's four edge stores then the reloads); on that, the inverse as if/else 157, as one inline
+// ternary 156, both lengths named 150, first length named with if/else 143 (986 bytes, aligned 131:
+// zero path stores the shared zero as retail; the epsilon load is hoisted and the projection lookup
+// and product orders remain). Next: the edge helper with if/else plus a form for the lookup.
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {

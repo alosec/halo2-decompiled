@@ -498,6 +498,9 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // with the same value reaching that plane's transform 363 (was 399). The separate guard tests and
 // the result flag's declaration order were left alone.
 // Round 412: distance zeros before their normalizers, plane subsets 0/1/01/2/02/12/012, 548/400/523/523/551/536/526; all three before normal component stores 435. Original body, retained fourth-distance phase and every helper restored.
+// Round 215: identifier after depth/x0/x1/y0/y1 acquisition 368 each; after x0/x1/y1 with the real
+// copied-rectangle receiver 386 each. Original publication and receiver restored; camera/corner
+// register exchange and initial/normal-distance scheduling remain.
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {
@@ -762,6 +765,9 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // classification with clipping/projection cursors 193/327; all cursors 195.
 // Native byte/Boolean culling-array initialization 489/489 (frame grows sixteen bytes).
 // All restored; coefficient preload, classification operands and projection staging remain.
+// Round 80: forward declaration first 196; const view 115; first-plane receiver 285,
+// with j-k-i offset order 285; inner do/while and condition increment 115/115;
+// const x value/reference 141/119. Original body restored.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {

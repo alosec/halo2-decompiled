@@ -69,6 +69,9 @@ extern s_4e6950 g_4e6950;
 // score 351 (was 351): Scaled cases hoist coefficients instead of the retail post-store memory operands.
 // Round 291: Native component loops for case subsets 23/35/23+35/24/23+24/35+24/all:
 // 351/351/381/351/381/381/381; all with four global-scale loops 381 (fast control 351).
+// Round 300: Existing clamp upper-first branches, independent lower/upper and upper/lower stores,
+// lower/upper-first returns, lower/upper-first conditionals and upper-first result exit:
+// 390/351/390/351/390/351/390/351 (fast control 351). Original clamp and body restored.
 // @retail 0x33980
 void function_33980(long selector, vector3f *out)
 {

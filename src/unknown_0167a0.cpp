@@ -74,12 +74,19 @@ PRIVATE inline byte const *material_parameters(long tag)
     return *(byte **)(g_4e3b44[tag & 0xffff].bytes + 0x24);
 }
 
-// score 47 (was 47): restore entry-load order (retail reloads the table field before the entry store) and
+// score 47 (was 47): BLOCKED-BY 0x18a90 (src/unknown_01cf50.cpp, contributor file: retail passes the state
+// in EBX, ours pushes it; that tail is about 42 of the 47 lines and the extra byte, the later calls shifting
+// by one instruction) and the restore block's schedule: retail reloads the table field before the entry
+// store and loads `second` after the two table loads, ours loads `second` right after the entry `lea`.
+// Frame, entry and logarithm agree. Forms (the history ran 167 -> 162 -> 153 -> 132 -> 95 -> 47):
+// restore entry-load order (retail reloads the table field before the entry store) and
 // BLOCKED-BY 0x18a90 (src/unknown_01cf50.cpp, contributor file: retail passes the state in ebx, ours
 // pushes it; that tail is about 42 of the 47 lines and the extra byte).
 // BLOCKED-BY 0x18a90 (retail passes the state in EBX, ours pushes it; the later calls
 // then shift by one instruction) and the `second` load of the restore block, scheduled after the table
 // loads in retail and right after the entry `lea` here; frame, entry and logarithm agree.
+// Direct entry publication with staged chain index/subscript/pointer/table-reload/accessor/parameter-address
+// forms 47 each; original reference with staged index 47; separate restored-entry local 183. Original body restored.
 // Earlier 95 from 132: frame four, the logarithm and the tail agree; left are the restore block (retail reloads
 // the range field before each call; ours keeps it in a register) and BLOCKED-BY 0x18a90, which retail passes
 // the state in ebx (ours pushes it).
@@ -93,37 +100,25 @@ PRIVATE inline byte const *material_parameters(long tag)
 // Typed numeric state fields 167; typed pointer fields 181; full state view 181;
 // force-inline material lookup 167; global-first mask unions on full view 181.
 // Factor first 167; inline depth one 167; scoped size 483; dirty-mask order 167; packed-range view 167.
-// Logarithm width and reset/restore scheduling remain;
-// rounded logarithmic value before stores 167; late tag publication 295; both published restore ranges 279;
+// Rounded logarithmic value before stores 167; late tag publication 295; both published restore ranges 279;
 // record reload after render call 192; raw global-first unions 167.
-// Earlier 167 from 167: Frame and entry agree; logarithm operand width/reset and restore allocation
-// Frame and entry agree; logarithm operand width/reset and restore allocation
-// differ. Pending-mask snapshot 188; late record predicate 297; late tag predicate 287; direct old
 // Pending-mask snapshot 188; late record predicate 297; late tag predicate 287; direct old
 // record 167; conditional reciprocal 167 (fast).
 // early dirty mask, update byte or late counter pair each 296; first published range 167;
 // second published range 187.
-// Earlier 162 from 167: logarithm width/reset and restore allocation remain;
-// final consumers read the actual published record field. Entry-only read 169; pass-only read 167;
+// Final consumers read the actual published record field: entry-only read 169; pass-only read 167;
 // early saved-tag predicate 298; published-record field reference 162 (plain); equality arms 167.
-// Earlier 162 from 162: logarithm/reset schedule and restore/final allocation remain.
 // Record-field pointer 162; signed entry/pass/both carriers 163/163/164;
 // negated equalities 162; saved tag at both tests 246; dirty-mask cursor 161; both cursors 161 (one-point gains dropped).
-// Earlier 153 from 162: dirty-word library clear recovers numeric/reset scheduling;
-// logarithm width and restore allocation remain. Native entry/chain/both descriptors,
+// Dirty-word library clear 153 (recovers the numeric/reset scheduling). Native entry/chain/both descriptors,
 // const record and signed change forms 162; update/counter/all/reset-last clears 287/258/307/157.
 // Actual entry offset, chain index, pass index, range index, offset/chain, offset/pass,
 // chain/pass/range and all four named computations each 153.
-// logarithm width/reset and restore allocation remain;
-// logarithm/reset schedule and restore/final allocation remain.
-// dirty-word library clear recovers numeric/reset scheduling;
 // Native entry/pass/range/all word pointers 153/153/153/153;
 // readonly entry words 153; chained counter resets 155;
 // unqualified float-input logarithm 152; reciprocal default first 157.
 // Float-input logarithm with native descriptors/first range/second range 152/152/184;
 // with first mask pair/mask cursor/both 151/151/151 (two-point gains excluded).
-// Dirty-word library clear 153 recovers numeric/reset scheduling;
-// Native entry/chain/both descriptors,
 // First/second/both native mask loops 152/180/180; published table/record/both field lifetimes
 // 289/283/307; native signed packed carriers 153; signed carriers with table field 289.
 // Early changed/tag/both declaration homes 153/153/153; separate record publication 153;
@@ -178,6 +173,13 @@ PRIVATE inline byte const *material_parameters(long tag)
 // Round 34: table field through a reference for all three reads 47; entry word read inside the index 47;
 // direct entry store 47 (table reload as retail; the second-index load then hoists above the store);
 // direct store with `second + (packed & 0x1ff)` 47; direct store read back through a const reference 293.
+// Round 118 (all keep the second-index load above the entry store): direct store with the entry read back
+// from its field 47; that with `second + (packed & 0x1ff)` 47; next folded into the pass expression 47; that
+// with the entry read from its field inside it 47; the reference form with the swapped sum 47; `second`
+// read through its address (diagnostic) 47, so the order is not an aliasing effect.
+// Round 83, all on the direct entry store (aligned 3: only `second` loads before the entry store, retail
+// after both table bases): chain lookup folded into the pass expression 47; tables re-read into its
+// local after the store 47; `second` read through its address 47; named chain index 47.
 // @retail 0x16b90
 void __stdcall function_16b90(byte *state, long tag, long first, long second,
     long third, long fourth, real scale)
@@ -939,6 +941,9 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
 // bank returns 170/170. Original complete writer and both live-bound walks restored.
 // Round 289: Actual external descriptor bitfield subsets (direct destination, mapped source slot, mapped source kind); complete native entry cursor:
 // [155, 155, 155, 155, 155, 155, 155, 155]. All executable source and temporary types restored.
+// Round 220: Whole four-byte descriptor values in direct/mapped/both paths, native or memcpy,
+// 180/191/186 each; one complete refill workspace, native/memcpy 186/186. All regress; original
+// descriptor observations, live bounds, entry steps, helper, calls and complete body restored.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {
@@ -1447,6 +1452,9 @@ void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 // seven subsets, then all at function entry, 267 each. Original producer points,
 // scopes, shared writer and complete body restored; descriptor/index schedule remains.
 // Round 293: Shared writer common output/dirty completion, category/bank branch-or-conditional trees with bit/ordinal results: 444/471/438/447/465/475/456/457. Exact-only pointer forms all regress and lose a matched writer sibling; complete original helper and body restored.
+// Round 428: actual mapping rows as signed-word pairs, long/short slot and mapped ordinal,
+// rejection-first 267/267/266/266; positive admission 267/267/266/266. One-point
+// bounded-ordinal forms rejected; original byte cursor, source, guard, writer and body restored.
 // @retail 0x19ca0
 void function_19ca0(byte *state, word const *range)
 {

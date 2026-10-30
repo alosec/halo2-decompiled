@@ -740,6 +740,9 @@ union s_60403
 // before the changed test 149.
 // Round 198: native comparison result conditional/guarded/equal-header 271/276/268, split
 // header and payload results 328; with late mask 265/290/282/392.
+// Round 420: New-to-old map scoped through member emission with late retained mask; union/bool discriminator and
+// pointer/value map receiver 336/343/351/357, repeated with iteration-scope discriminator declarations
+// 336/343/351/357. Original lifetimes and union restored.
 // @retail 0x60400
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update)
 {
