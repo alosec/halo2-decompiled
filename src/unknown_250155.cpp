@@ -2439,6 +2439,9 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Round 184: shared count 301; result-first voice 129; native team byte 165; count/voice 307;
 // scoped text/all receivers 111/111; late team-result constants 171; complete combined graph 307.
 // Original count, receivers, widths and outputs restored.
+// Promoted first-loop team with numeric/reverse and absent-first/last switch cases 238 at 915 bytes
+// in all four orders; default-result initialization on each 234 at 913. Scalar homes stay
+// displaced; original short team and switch restored.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {

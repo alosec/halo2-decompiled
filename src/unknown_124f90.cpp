@@ -3377,6 +3377,9 @@ void __stdcall function_1264c0(dword arg_0);
 // 107; local-pointer, loop, chained and helper id stores 9; struct copy of the ids 114.
 // Range fill saved/direct 119/122; counted fill saved/direct 121/121; with shared invalid value
 // 104/102/102/102. All restored.
+// Native external array reference/pointer, forward stores 9/9; reverse stores 9/9; reverse indexed reset
+// 9/9; native memory clear 6/6, all on inline reconstruction and flag-controlled wait. No exact match;
+// original body restored.
 // @retail 0x1257b0
 void function_1257b0(void)
 {
@@ -3883,6 +3886,9 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 // Fixed stack allocation of first/second/both buffers 131/145/149; batch 139; batch with first/second/both
 // 162/162/164; all with long restart 161.
 // Entry allocation first/second/both/all 174/176/174/164; all with long restart 163. All restored.
+// Actual first/second/both memset-return receivers, used by collection and submission, 143/129/125;
+// declarations at entry 143/129/125; both with long restart, normal/entry declarations, 108/108. Original
+// body restored.
 // @retail 0x125b40
 void function_125b40(void)
 {

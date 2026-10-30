@@ -1787,6 +1787,9 @@ PRIVATE __forceinline void project_112070(vector3f const *v, vector3f const *for
 // indexed ratio 897; paired ID-end/ratio-end 889/861; paired short/word ordinal 903/903. Original
 // indexed do-loop, all input observations, helpers and complete body restored; frame and first-
 // angle/overlay expansion remain.
+// Staged side cross, overlap-safe direction, both, overlap-safe default angles, side/angles,
+// direction/angles, all, then all with independent secondary projection: 820/842/824/891/847/892/869/882.
+// Original body, complete input capture, helper and includes restored.
 // @retail 0x112070
 void __stdcall function_112070(long unit_index, dword const *node_mask, long node_count,
 	real_quaternion_transform *transforms)

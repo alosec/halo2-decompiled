@@ -88,6 +88,10 @@ bool function_25d9b0(long prop_index);
 // plain 124 at 555 bytes is a seven-point gain and is restored; existing
 // length/self-dot helpers with the two late queries all tie 152 reduced.
 // Initial actor/prop/node registers and fallback placement still differ.
+// Every-use property observations with late state query / long priority / both: reduced
+// 170/152/169/151; the existing view getter ties all four. Both late-query/long-priority
+// forms plain 124 at 554 bytes (seven below 131), rejected; original body restored.
+// The invitation convention, initial property/node ranks and fallback placement remain.
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {

@@ -24,6 +24,8 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // live/scalar inputs with double square 164/197; normalized-vector setter on original/live/scalar inputs
 // 217/255/243. All restored; half/offset allocation and x87/SSE schedule remain.
 // Round 412: complete normalization scale loop/shared scalar scale/direct division/shared double scale 105/177/105/184; with nonpositive projection first 105/184/105/184. Original body and precision restored.
+// Round 288: shared affine/difference producers with in-place/distinct output, ordinary/forced
+// difference declaration and original/earlier magnitude 262, 251, 262, 251, 262, 234, 262, 234. Original restored.
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {
