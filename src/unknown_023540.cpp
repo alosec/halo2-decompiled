@@ -2986,6 +2986,9 @@ struct s_2a2f0_record
 // Round 224: readonly real strip table, entry/branch constant initialization,
 // record-pointer/direct fields and long/short ordinal combinations with independent
 // dimensions and ordinary count reads: 166/272/175/230/205/268/215/255. All restored.
+// Round 234: Every count use reads its field, with current-group observation, nested lookup and complete
+// dimension-selection subsets 0..7: 262/262/262/262/262/262/262/262. Every trial removes pooled-memory
+// qualifier and parameter-slot aliases; original body restored; count-copy boundary remains.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3249,6 +3252,9 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // short/long additive input 1457/1457/1453/1453/1457/1457/1453/1453. Actual-mode helper
 // long/short/byte/dword under force-inline 853 each, under inline 1446/1455/1534/1446.
 // Original helper contract, all call inputs and complete body restored.
+// Round 234: Packed fraction byte/word, RGB byte/word/dword, alpha word/dword and combined native
+// channels on the long/bool capability graph: 903/852/1112/853/853/1101/1107/1111. All restored;
+// capability/save roles and state expansion remain.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
