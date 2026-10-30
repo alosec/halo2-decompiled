@@ -222,61 +222,6 @@ struct s_weapon_definition_view
  byte *barrels;
 };
 
-// score 41 (was 41): the unit is looked up again for each slot query, the barrel is kept as a
-// long and clamped without the count guard, so the frame is retail's 0x1c, the length is retail's
-// 634 bytes and the two slot queries reload the object table as retail does; with the trigger
-// state's address formed first in the trigger loop retail advances that cursor first (35; not
-// kept, a gain under 8 on a function still above 30).
-// Left: retail tests the trigger count twice before the trigger loop (`test eax, eax; jle`,
-// then `xor ebp, ebp` and the loop's own test); with an `if (definition->trigger_count > 0)`
-// guard every register and the trigger loop are retail's (4 left), but a guard that repeats the
-// loop's test is only kept with a match. The four left in that form: the object lookups read
-// [edx + eax + 8] and [ecx + edi + 8] (retail [eax + edx + 8] and [edi + ecx + 8]).
-// Round 95 lead (one-file harness, then confirmed in the build): that base/index order follows
-// the parity of the number of distinct result fields stored before each lookup. Dropping any
-// one of the eleven opening stores, or adding a store to a new field (padding) before the
-// lookups, gives retail's index-first order in all four; a new field stored after the fallback
-// calls flips only the loop's lookups; their source order (40 orders), duplicate stores to a
-// field, stores to the weapon array, reads and calls change nothing. So retail's opening has an
-// even count of field stores at that stage (or one store the compiler drops later) while it
-// emits the same eleven stores; a local relevance struct copied in flips it but copies through
-// the stack (39). Not found yet: a natural form with that count.
-// slot query (ours shares one lookup), clamps an int barrel with no count guard (in eax/ecx, keeping
-// the result pointer in ebx and the trigger-state cursor in the result parameter's home) and tests
-// the trigger count twice before the trigger loop.
-// Earlier: invalid weapon initialization 149; flat fallbacks 149; unsigned hand 149; typed trigger
-// state 149; state at use 149; barrel field at use 159; selector inside positive guard 159; native
-// mode 149; read-only tag 149; read-only trigger 149; active interval 150; shared false stores 155;
-// selector declared before receiver 149; separate bounded result 149; direct native bounds 188; flag
-// field at store 149; direct mode-two result 178; shared mode-one stores 149; trigger fields at use 175;
-// native weapon receiver 149; handle workspace name 149.
-// Round 69: long barrel without the count guard 180 (618 bytes; frame 0x1c, retail's clamp and
-// parameter-home reuse, but the shared lookup shifts the rest); short barrel without the guard 159;
-// long barrel with the guard 176; the existing 0xcbd50 for both queries 149 (identical code); long
-// barrel without the guard plus a short hand index 218. Unit pointer local, a pointer to the
-// workspace, scalar results copied in, NONE stores first and a trigger-count guard compile identically.
-// Native trigger value/read-only value, short barrel 185/185; promoted barrel 176/176;
-// definition value with short/long barrel 164/214; both native values 217/207.
-// Trigger value needs frame 0x60; definition value self-aligns and needs 0x2f4. Restored.
-// Lane 14 r6: guard 10; guard + state address first 4; then the lookup through a headers
-// local, `data + index` or a named masked index 4 each; offset-first address arithmetic 4
-// (flips 0x82c10 when written index-first, so the order follows the context, not the
-// expression); the existing 0xcbd50 for both slot queries 180; a trigger-count local 118.
-// Without the guard: headers local 35; named masked index 35; trigger pointer before the state
-// pointer 41; definition declared before its assignment 35; index declared outside the for 35.
-// Round 95, on the guard form (4): single exit around the lookups 4; the masked index and the
-// headers as locals in the shared getter 4 (siblings still match); a dword getter index 4
-// (flips 0x82c10 to 3); a macro-style lookup 180 (618 bytes); a nested inline getter 4; the
-// existing 0xcbd50 for both slot queries 180 (inlined, one lookup); `weapons[hand]` at each use
-// 4. Harness, all 4: chained NONE/float/bool/consumed stores, `0` floats, a relevance clear
-// helper, a relevance pointer local, typed/byte-pointer stores at the same offsets, guard
-// spellings, `!= 0` tests, in-place mask, `default:` case, trigger pointer arithmetic, and
-// clamp spellings; a one-dimensional clear loop unrolls into a word store (25).
-// Round 41, on the guard form (4): the query helper taking the unit index (the lookup inside
-// it) 180 (one shared lookup; 0x82c10 50); the two slot queries as a plain loop 347 (not
-// unrolled); the weapons array declared first 4; a per-hand active row pointer 10. Without
-// the guard: a while loop (index declared before it) 35, no second count test. Retail's own
-// matched siblings use both base/index orders (0x82b70 has [edi + ecx] and [ecx + edi]).
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {
@@ -294,7 +239,8 @@ void function_82d20(long object_index, s_object_relevance_source *source, s_weap
  if (object_index == NONE)
   return;
  long weapons[2];
- weapons[0] = object_query_weapon(object_get_082b70(object_index), object_get_082b70(object_index)->weapon_slots[0]);
+ s_082b70_object *unit = object_get_082b70(object_index);
+ weapons[0] = object_query_weapon(unit, unit->weapon_slots[0]);
  weapons[1] = object_query_weapon(object_get_082b70(object_index), object_get_082b70(object_index)->weapon_slots[1]);
  if (weapons[0] == NONE && weapons[1] == NONE)
  {
@@ -309,35 +255,38 @@ void function_82d20(long object_index, s_object_relevance_source *source, s_weap
   {
    byte *weapon = (byte *)object_get_082b70(weapon_index);
    s_weapon_definition_view *definition = (s_weapon_definition_view *)g_4e3b44[*(dword *)weapon & 0xffff].bytes;
-   for (long trigger_index = 0; trigger_index < definition->trigger_count; trigger_index++)
+   if (definition->trigger_count > 0)
    {
-    s_weapon_trigger_view *trigger = &definition->triggers[trigger_index];
-    long barrel = trigger->barrel;
-    if (PIN(barrel, 0, definition->barrel_count - 1) == barrel)
+    for (long trigger_index = 0; trigger_index < definition->trigger_count; trigger_index++)
     {
-     byte *state = (byte *)object_get_082b70(weapon_index) + 0x1a4 + barrel * 0x34;
-     word flags = *(word *)(state + 4);
-     if (flags & 0x80)
+     byte *trigger_state = weapon + 0x20c + trigger_index * 0xc;
+     s_weapon_trigger_view *trigger = &definition->triggers[trigger_index];
+     long barrel = trigger->barrel;
+     if (PIN(barrel, 0, definition->barrel_count - 1) == barrel)
      {
-      *(word *)(state + 4) = flags & 0xff7f;
-      result->consumed[hand] = true;
+      byte *state = (byte *)object_get_082b70(weapon_index) + 0x1a4 + barrel * 0x34;
+      word flags = *(word *)(state + 4);
+      if (flags & 0x80)
+      {
+       *(word *)(state + 4) = flags & 0xff7f;
+       result->consumed[hand] = true;
+      }
      }
-    }
-    byte *trigger_state = weapon + 0x20c + trigger_index * 0xc;
-    switch (trigger->mode)
-    {
-    case 2:
-     if (*trigger_state == 1 || *trigger_state == 2)
-      result->active[hand][trigger_index] = true;
-     break;
-    case 1:
-     if ((trigger_state[4] & 0x20) && trigger->barrel != NONE &&
-      *(short *)(definition->barrels + trigger->barrel * 0xec + 0x34) == 1)
+     switch (trigger->mode)
      {
-      result->active[hand][trigger_index] = true;
-      result->update_relevance = true;
+     case 2:
+      if (*trigger_state == 1 || *trigger_state == 2)
+       result->active[hand][trigger_index] = true;
+      break;
+     case 1:
+      if ((trigger_state[4] & 0x20) && trigger->barrel != NONE &&
+       *(short *)(definition->barrels + trigger->barrel * 0xec + 0x34) == 1)
+      {
+       result->active[hand][trigger_index] = true;
+       result->update_relevance = true;
+      }
+      break;
      }
-     break;
     }
    }
   }

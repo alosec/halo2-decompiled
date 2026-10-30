@@ -46,10 +46,10 @@ void function_2ce8e0(s_block_state *blocks, s_inflate_stream *stream, dword *che
 		stream->checksum = blocks->checksum = blocks->checksum_function(0, NULL, 0);
 }
 
-/* allocates a block decoder with a window of window_size bytes; NULL when
+/* allocates a block decoder with a window of window_length bytes; NULL when
    out of memory */
 // @retail 0x2ce950
-s_block_state *function_2ce950(s_inflate_stream *stream, block_checksum checksum_function, dword window_size)
+s_block_state *function_2ce950(s_inflate_stream *stream, block_checksum checksum_function, dword window_length)
 {
 	s_block_state *blocks;
 
@@ -60,13 +60,13 @@ s_block_state *function_2ce950(s_inflate_stream *stream, block_checksum checksum
 		stream->release(stream->opaque, blocks);
 		return NULL;
 	}
-	if ((blocks->window = (byte *)stream->allocate(stream->opaque, 1, window_size)) == NULL)
+	if ((blocks->window = (byte *)stream->allocate(stream->opaque, 1, window_length)) == NULL)
 	{
 		stream->release(stream->opaque, blocks->tables);
 		stream->release(stream->opaque, blocks);
 		return NULL;
 	}
-	blocks->window_end = blocks->window + window_size;
+	blocks->window_end = blocks->window + window_length;
 	blocks->checksum_function = checksum_function;
 	blocks->mode = _block_type;
 	function_2ce8e0(blocks, stream, NULL);
@@ -110,10 +110,10 @@ long function_2cc890(s_inflate_stream *stream)
 	return 0;
 }
 
-/* sets up a stream for inflating with a window of 2^window_bits bytes
+/* sets up a stream for inflating with a window of 2^window_log bytes
    (negative: no header or checksum); 0, or a negative error */
 // @retail 0x2cc8d0
-long function_2cc8d0(s_inflate_stream *stream, long window_bits, char const *version, long stream_size)
+long function_2cc8d0(s_inflate_stream *stream, long window_log, char const *version, long stream_size)
 {
 	if (version == NULL || version[0] != '1' || stream_size != sizeof(s_inflate_stream))
 		return -6;
@@ -131,19 +131,19 @@ long function_2cc8d0(s_inflate_stream *stream, long window_bits, char const *ver
 		return -4;
 	stream->state->blocks = NULL;
 	stream->state->raw = 0;
-	if (window_bits < 0)
+	if (window_log < 0)
 	{
-		window_bits = -window_bits;
+		window_log = -window_log;
 		stream->state->raw = 1;
 	}
-	if (window_bits < 8 || window_bits > 15)
+	if (window_log < 8 || window_log > 15)
 	{
 		function_2cc890(stream);
 		return -2;
 	}
-	stream->state->window_bits = window_bits;
+	stream->state->window_log = window_log;
 	if ((stream->state->blocks = function_2ce950(stream, stream->state->raw ? NULL : function_2ce7b0,
-		(dword)1 << window_bits)) == NULL)
+		(dword)1 << window_log)) == NULL)
 	{
 		function_2cc890(stream);
 		return -4;
@@ -162,7 +162,7 @@ long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte c
 	long error;
 
 	stream.input = source;
-	stream.input_size = source_size;
+	stream.input_left = source_size;
 	stream.output = destination;
 	stream.output_size = *destination_size;
 	stream.allocate = allocate;

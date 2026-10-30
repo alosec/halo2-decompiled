@@ -1149,6 +1149,9 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // expansion ties but changes matched helper controls; all declarations and body restored.
 // Unsigned class key/set key/both/all four input-key domains 828 each; definitions
 // and shared declarations restored.
+// Round 425: Iterator graph field at every post-search graph use, with all eight
+// requested mode/class/type field subsets, 969/964/1008/1024/969/964/1008/1024.
+// Original graph/key owners, constructors, iterator outputs and requests restored.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
@@ -1263,6 +1266,9 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 // original/resolved/both requests: 2101/2157/3335, 1989/1988/2978, 828/828/828. Full
 // expansion ties but changes matched helper controls; unsigned class key/set key/both/
 // all four input-key domains 828 each. All declarations and executable source restored.
+// Round 191: Persistent-result admission 828; with immutable candidate 978, late candidate 996,
+// paired native transfers 988, iterator-owned request keys 1016, native iterator 826, direct result
+// 978, retained lookup name 828. Two-point gain rejected; original body restored.
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

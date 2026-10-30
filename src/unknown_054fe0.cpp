@@ -1127,6 +1127,14 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // lost); times declared first 67; mask update as `x = x | bit` 67; loop index
 // declared before the loop 67; `count != 0` 67.
 // Round 198: guarded-result graphs at the existing channel/observer/member QoS helpers, seven
+// combinations 67 each; all three with late host read 86. Round 20: the observer through the existing
+// getter with the host arm updating the mask itself gives retail's registers and frame only while at
+// most one counter is set before the getter; count first 100, observer first with if/else arms 99,
+// count first with if/else arms 100, times first 99, host read right after the getter 99 (334 bytes
+// each: the extremes' stores sink past the memset, the member check reuses the loop's member_count
+// load, the cursor takes esi and the loop head is padded). Screened (one-file LTCG harness): the
+// member count read through another address expression or with the output cleared first, the QoS
+// helper's four parameters in every order, clamp/min-max/mask/tail spellings: no change.
 // combinations 67 each; all three with late host read 86.
 // Round 29: the observer through the existing observer getter gives retail's allocation
 // once the host is read after it and the mask is also written in a host arm (frame 0x78,
@@ -1136,6 +1144,10 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // else`, and as a guarded do loop; the getter alone 100. With those stores ahead of the
 // observer branch (retail's order) the cursor keeps the register in every form screened:
 // getter after the counters, helper parameter orders, qos scope, times position, while loop.
+// Round 20: this body with the host read after the observer 86, the same through the getter
+// 86 (latency to ebx, session to the stack); the round 29 form 99 with the counters before the
+// getter 109, with the host and the counters before it 112 (session on the stack); qos at
+// function scope 67.
 // @retail 0x64480
 void network_session_get_member_latency(s_session_member_latency *latency, c_class_58d20 *session)
 {
@@ -1346,6 +1358,9 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 // copy alone/with collection/update/both 180/180/180/180, bounded short count 226. On that cache
 // graph, promoted team/direct current/direct cache observation subsets 183/237/240/180/183/216/220,
 // all with short count 220. Four-point form rejected; original full body restored at 184.
+// Round 219: Finite membership exhaustion with long/dword/short/word count, right shifts
+// 249/249/240/240 and ordinal-bit removal 262/262/245/245. All restored; owner/count/zero
+// allocation and requested-record induction remain.
 // @retail 0x65cb0
 void network_session_interface_update_player_properties(c_class_58d20 *session)
 {
@@ -1670,6 +1685,10 @@ static __forceinline bool function_65341(c_class_58d20 **out)
 // declarations swapped 145; pointer-terminated user loop 145. Original restored.
 // Round 256: Actual selector state-test result in bool/byte/short/long, conditional/guarded state
 // acquisition 135/139/135/139/152/153/153/153. All restored.
+// Round 189: Coherent initialization flag as bool/byte/word/long 145/129/141/134; with guarded
+// state production 143/148/146/141. Scalar-SSE on the new byte graph 129 (one diagnostic, target
+// regression); variant/status/both early defaults on it 124/132/149. All frame/default-output
+// forms rejected; original helper, body and flags restored.
 // @retail 0x65340
 void function_065340(void)
 {
@@ -1929,6 +1948,10 @@ struct s_summary_player_sort_entry
  byte properties[0x90];
 };
 
+// score 339 (was 339): Frame 0xa9c versus 0xaa8; type/membership/member-index homes and saved registers differ.
+// Round 216: complete state-field observations 378; with native membership/player/selected-member
+// references 378/378/377; membership-player/membership-member/player-member 378/377/377;
+// all three 377. Frame remains 0xa9c. Original complete body and external type declarations restored.
 // @retail 0x64d70
 bool __stdcall function_64d70(s_session_browser_summary *output)
 {

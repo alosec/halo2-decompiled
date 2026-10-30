@@ -182,12 +182,25 @@ __forceinline bool function_184448(long arg_0)
 }
 
 #pragma inline_depth(1)
-// score 977 (was 977): frame 0x11d4 versus 0x11cc; initial surface and
+// score 977 (was 977): Frame 0x11d4 versus 0x11cc and scene/surface geometry homes remain.
+// Round 419: scene field observations 983; effect record reference 977; scene field observations/effect
+// record reference 983; surface record reference 977; scene field observations/surface record reference
+// 983; effect record reference/surface record reference 977; scene field observations/effect record
+// reference/surface record reference 983; scene field observations/effect record reference/surface record
+// reference/material record reference 989. Frame 0x11d4 versus 0x11cc and scene/surface geometry homes
+// remain. Original body restored.
+// frame 0x11d4 versus 0x11cc; initial surface and
 // geometry/transform homes differ. Complete scalar normalization capture
 // scored 989; common length result 999 recovers 0x11cc. Native copies
 // scored 1097/1070. Full-width low endpoints 976 (one-point gain rejected);
 // high/both 1009; row combinations 1020/1004/1035; selectors 1038/1017.
 // Scalar-capture/endpoint combinations scored 992/1005/979/1014.
+// Existing in-place point/plane transforms with complete scalar input capture: point 1045,
+// plane 1024, both 1093; point scalar capture/native publication 984; plane 979; both 989;
+// point staged/plane direct 1027, point direct/plane staged 1028. All original helpers restored;
+// frame excess and initial surface/geometry homes remain.
+// Plane scalar capture alone recovers frame 0x11cc at 1024 (4538 bytes, first +0x1d);
+// staged point publication with that capture 1027. Both remain rejected.
 // @retail 0x184440
 void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, long arg_3)
 {

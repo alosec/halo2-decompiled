@@ -7,7 +7,7 @@
 #include "unknown_2cb5b0.h"
 
 /* takes the next input byte of a stream (the caller has checked there is one) */
-#define INFLATE_NEXT_BYTE(stream) ((stream)->input_size--, (stream)->total_input++, *(stream)->input++)
+#define INFLATE_NEXT_BYTE(stream) ((stream)->input_left--, (stream)->total_input++, *(stream)->input++)
 
 long __stdcall function_2ce9e0(s_block_state *blocks, s_inflate_stream *stream, long result);
 
@@ -29,7 +29,7 @@ long function_2cc9d0(s_inflate_stream *stream, long flush)
 		switch (stream->state->mode)
 		{
 		case _inflate_method:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			if (((stream->state->sub.method = INFLATE_NEXT_BYTE(stream)) & 0xf) != 8)
@@ -39,7 +39,7 @@ long function_2cc9d0(s_inflate_stream *stream, long flush)
 				stream->state->sub.marker = 5;
 				break;
 			}
-			if ((stream->state->sub.method >> 4) + 8 > stream->state->window_bits)
+			if ((stream->state->sub.method >> 4) + 8 > stream->state->window_log)
 			{
 				stream->state->mode = _inflate_bad;
 				stream->message = "invalid window size";
@@ -48,7 +48,7 @@ long function_2cc9d0(s_inflate_stream *stream, long flush)
 			}
 			stream->state->mode = _inflate_flag;
 		case _inflate_flag:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			flags = INFLATE_NEXT_BYTE(stream);
@@ -66,25 +66,25 @@ long function_2cc9d0(s_inflate_stream *stream, long flush)
 			}
 			stream->state->mode = _inflate_dictionary_4;
 		case _inflate_dictionary_4:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected = (dword)INFLATE_NEXT_BYTE(stream) << 24;
 			stream->state->mode = _inflate_dictionary_3;
 		case _inflate_dictionary_3:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected += (dword)INFLATE_NEXT_BYTE(stream) << 16;
 			stream->state->mode = _inflate_dictionary_2;
 		case _inflate_dictionary_2:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected += (dword)INFLATE_NEXT_BYTE(stream) << 8;
 			stream->state->mode = _inflate_dictionary_1;
 		case _inflate_dictionary_1:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected += (dword)INFLATE_NEXT_BYTE(stream);
@@ -117,25 +117,25 @@ long function_2cc9d0(s_inflate_stream *stream, long flush)
 			}
 			stream->state->mode = _inflate_check_4;
 		case _inflate_check_4:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected = (dword)INFLATE_NEXT_BYTE(stream) << 24;
 			stream->state->mode = _inflate_check_3;
 		case _inflate_check_3:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected += (dword)INFLATE_NEXT_BYTE(stream) << 16;
 			stream->state->mode = _inflate_check_2;
 		case _inflate_check_2:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected += (dword)INFLATE_NEXT_BYTE(stream) << 8;
 			stream->state->mode = _inflate_check_1;
 		case _inflate_check_1:
-			if (stream->input_size == 0)
+			if (stream->input_left == 0)
 				return result;
 			result = flush;
 			stream->state->sub.check.expected += (dword)INFLATE_NEXT_BYTE(stream);

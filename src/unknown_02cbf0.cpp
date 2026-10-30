@@ -49,7 +49,33 @@ static __forceinline long floor_to_long_inline(real value)
 	}
 }
 
-// score 36 (was 36): packed-word load order (ours reads the old word first), the intensity
+// score 36 (was 36): retail ORs the incoming flags and category before the kept top bits of the first
+// word; the scaled intensity spills to `outside`'s home (ours `level`'s: retail's callers push level as a
+// word, BLOCKED-BY 0x133390 and 0x133520, whose held file holds the byte declaration); retail builds the
+// new kind word in esi, takes the instance bit from a copy (`and eax, 0xffffff01`) and stores the word
+// just before the 0x449e0 call (ours stores it at once and passes the named bool through a stack byte);
+// retail sets edx to the state before the bit-count test.
+// Tried: separate allocation increment, entry reference, position memcpy and early group-pointer scope
+// 80; object-tag result first 97; object-index guard first 175; separate inline floor results 80;
+// missing-geometry guard first 276; flags-first or-chain, two-statement split and &=/|= split 80
+// (reassociated); named word local in the call, named bools before the store, kind term first, dword
+// kind 80; separate call-value copy for the out-of-line floor 80; all eight ordinary/inline/separate-
+// noinline section/kind declaration pairs 46 (1036/1033). On the mask test: kind term first 80;
+// packed-word local in either order 80; load named before the kind store 81; kind call inside the store
+// 80; &=/|= kind split 80; shifted dword kind 80; instance bit read before the store 89; old word copied
+// to a local 91; only the instance named 38; only the load named 79; instance named first 39; both named
+// with the field-bit test 73; flags-last and category-first word-one or-chains 46 (reassociated); a
+// bitfield view for the kind store (diagnostic) 80. Grouped new fields (either order), old word last,
+// kind word split or with a named shifted kind, dword kind result, `!= 0` bit argument: identical code;
+// bitfield view of the word (kind only / all fields) 80/84 on the `& 0x40` form; word and both bools
+// before the store 46; old word read through the global array in the first/kind word 47/57.
+// Round 97 (on the `& 0x40` form; aligned counts in brackets, baseline 17): instance bit passed inline
+// with the load named 79 [15], both inline as the loader's other callers write them 80 [13] (retail's
+// `and ..., 0xffffff01; push`, block two instructions short), that with the kind term first 79 [15];
+// a named kind word (store, then the bit from it) 80/80/79 [13/13/15] (plain, kind first, load named);
+// `(word & 0x1000) != 0` inline/named 80/36 [13/17]; kind call inside the store with inline arguments,
+// either order 80/80 [17/17].
+// packed-word load order (ours reads the old word first), the intensity
 // spill (ours in level's dead slot, retail in outside's: retail's callers push level as a
 // word, BLOCKED-BY 0x133390 and 0x133520, whose file holds the byte declaration), the new kind
 // word (retail builds it in esi, takes the instance bit from a copy and stores the word just
@@ -57,7 +83,42 @@ static __forceinline long floor_to_long_inline(real value)
 // the pool argument (retail sets edx before the bit-count test) and the flag-clear register
 // (retail ecx, ours edx). The bit-6 test is retail's `test al, 0x40`; the loader's two flags
 // are named before the call, so the load test is set first as in retail.
+// the bit-6 test is retail's `test al, 0x40` and the loader's two flags are named
+// before the call, so the load test is set first as in retail. Left: retail ORs the incoming flags and
+// category before the kept top bits; the scaled intensity spills to `outside`'s home (ours `level`'s:
+// retail's callers push level as a word, `mov cx, word`, but the held src/unknown_1321f0.cpp declares
+// it a byte for 0x133390 and 0x133520; level as a word gives 34 here and 0x133f70 16 -> 8, not kept
+// because those callers would need a byte-level forwarding overload: retry once that file is free);
+// retail keeps the new kind word in esi, takes the instance bit from a copy and stores the word just
+// before the 0x449e0 call (ours stores it at once and spills instance_bit to `mode`'s home); retail
+// sets edx to the state before the bit-count test.
+// packed-word load order, intensity spill and final word home.
+// the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
+// shifted the listing, 46 at 1036 bytes) and the loader's two flags are named before the call, so
+// the load test is set first as in retail. Left: retail ORs the incoming flags and category before
+// the kept top bits; the scaled intensity spills to `outside`'s home (ours `level`'s); retail keeps
+// the new kind word in esi, takes the instance bit from a copy and stores the word just before the
+// 0x449e0 call (ours stores it at once and spills instance_bit to `mode`'s home); retail sets
+// edx to the state before the bit-count test.
 // Tried: separate allocation increment, entry reference, position memcpy and early group-pointer
+// scope 80; object-tag result first 97; object-index guard first 175; separate inline floor results
+// 80; missing-geometry guard first 276; flags-first or-chain, two-statement split and &=/|= split 80
+// (reassociated); named word local in the call, named bools before the store, kind term first, dword
+// kind 80; separate call-value copy for the out-of-line floor 80; all eight ordinary/inline/
+// separate-noinline section/kind declaration pairs 46. On the mask test: kind term first 80;
+// packed-word local in either order 80; load named before the kind store 81; kind call inside the
+// store 80; &=/|= kind split 80; shifted dword kind 80; instance bit read before the store 89; old
+// word copied to a local 91; only the instance named 38; only the load named 79; instance named first
+// 39; both named with the field-bit test 73; flags-last and category-first word-one or-chains 46
+// (reassociated); a bitfield view for the kind store (diagnostic) 80; grouped new fields (either
+// order), old word last, kind word split or with a named shifted kind, dword kind result, `!= 0` bit
+// argument: identical code; bitfield view of the word (kind only / all fields) 80/84 on the `& 0x40`
+// form; word and both bools before the store 46; old word read through the global array in the
+// first/kind word 47/57. With the word level: word-one orders (old last, category first, old in the
+// middle, grouped) 34 each; byte category 281; kind word local stored after the load test, only the
+// load named, everything in the call, instance computed first 78/77/78/78 (1033 bytes, the kind
+// block two instructions short: the word is shifted in place after an early store); only the
+// instance named 36; kind term first 34.
 // scope 80; object-tag result first 97; object-index guard first 175; separate inline floor
 // results 80; missing-geometry guard first 276; flags-first or-chain, two-statement split and
 // &=/|= split 80 (reassociated); flags-last and category-first or-chains, grouped new fields
@@ -76,6 +137,46 @@ static __forceinline long floor_to_long_inline(real value)
 // pool pointer local (before the section call or before the bit test) and a separate variable
 // for the second section 36 (identical code); category through a byte cast 281 (category goes
 // to the stack).
+// packed-word load order, intensity spill, final kind-word carrier and state setup differ.
+// Earlier at 46: packed-word load order (ours reads the old word first), the intensity
+// packed-word load order, intensity spill and final word home.
+// the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
+// shifted the listing, 46 at 1036 bytes) and the loader's two flags are named before the call, so
+// the load test is set first as in retail. Left: retail ORs the incoming flags and category before
+// the kept top bits; the scaled intensity spills to `outside`'s home (ours `level`'s); retail keeps
+// the new kind word in esi, takes the instance bit from a copy and stores the word just before the
+// 0x449e0 call (ours stores it at once and spills instance_bit to `mode`'s home); retail sets
+// edx to the state before the bit-count test.
+// &=/|= split 80 (reassociated); named word local in the call, named bools before the store, kind
+// term first, dword kind 80; separate call-value copy for the out-of-line floor 80; all eight
+// ordinary/inline/separate-noinline section/kind declaration pairs 46. On the mask test: kind term
+// first 80; packed-word local in either order 80; load named before the kind store 81; kind call
+// inside the store 80; &=/|= kind split 80; shifted dword kind 80; instance bit read before the
+// store 89; old word copied to a local 91; only the instance named 38; only the load named 79;
+// instance named first 39; both named with the field-bit test 73; flags-last and category-first
+// word-one or-chains 46 (reassociated); a bitfield view for the kind store (diagnostic) 80.
+// packed-word load order (ours reads the old word first), the intensity
+// spill (ours in level's dead slot, retail in outside's: retail's callers push level as a
+// word, BLOCKED-BY 0x133390 and 0x133520, whose file holds the byte declaration) and the new kind word
+// (retail builds it in esi and stores it after the push). The field-bit test of bit 6 is
+// not retail's code (retail: test al, 0x40); `& 0x40` gives it at 80 (1033 bytes), but the
+// kind-word block is then two instructions short and the tail shifts.
+// Separate allocation increment, entry reference, position memcpy and early
+// group-pointer scope 80; object-tag result first 97; object-index guard first
+// 175; separate inline floor results 80; missing-geometry guard first 276.
+// Flags-first or-chain, two-statement split and &=/|= split 80 (reassociated);
+// named word local in the call, named bools before the store, kind term first,
+// dword kind 80; separate call-value copy for the out-of-line floor 80.
+// Earlier: a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Round 409: All eight ordinary/inline/separate-noinline section/kind declaration pairs 46 (1036/1033); no gain. Original contracts restored. Retained-word load order, intensity slot, final word carrier and shifted flag test remain.
+// Grouped new fields (either order), old word last, kind word split or with a
+// named shifted kind, dword kind result, `!= 0` bit argument: identical code;
+// bitfield view of the word (kind only / all fields) 80/84 on the `& 0x40` form;
+// word and both bools before the store 46; old word read through the global
+// array in the first/kind word 47/57.
+// Round 421: shared masked input 110; uniform record indexing 374; masked/indexed record 364; short record index
+// 36; masked/short index 110; indexed/short index 375; all record inputs 364; entry-scope masked input/all record
+// inputs 394.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,

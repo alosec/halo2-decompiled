@@ -293,6 +293,9 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 // Round 188: native point/vector position with memcpy/memmove, original then entry
 // uninitialized declarations: 220/220/223/223/220/220/223/223. Memmove reaches retail
 // 1030-byte length but regresses; original position transfer and body restored.
+// Round 211: outgoing up/forward/turn overlap-safe transfers in all seven subsets, then all three
+// with the late position transfer, scores 224/223/233/223/233/230/241/251. Original executable
+// form restored.
 // @retail 0x1197b0
 void function_1197b0(long object_index)
 {
@@ -1153,47 +1156,40 @@ void function_1e6120(s_biped_physics_output *arg_0, void *arg_1, real arg_2, boo
     bool arg_5, real arg_6);
 void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped_physics_output *arg_2);
 
-// score 94 (was 94): Frame 0x1f0 agrees; call setup, movement loads and force-call publication still differ.
-// MOV/LEA call setup, movement flag merge, force argument and activity register still differ;
-// MOV/LEA setup, component loads and force-byte publication still differ;
-// stationary/byte/word movement result 107/98/111; complete flag value 98;
-// initial-state/parent/update/countdown activity values 265/119/98/101. Original body restored.
-// Earlier frame-correct forms targeted call setup, flag merge, component loads and result homes.
-// Branch flag store 131; long force 130; native velocity copy 131; long activity
-// 164; reversed result OR 131; parent result earlier 123; update/countdown result earlier 131.
-// With original flag store, early parent result 109; long force 101; both 110.
-// Native motion/input/state fields 98 each; request/output/all basis copies 98 each;
-// movement-output and orientation-output scopes 98 each.
-// BLOCKED-BY 0x1c4b00: retail's body tests its last parameter as a
-// byte (a bool), so retail keeps the found flag in a stack byte and pushes the dword;
-// our declaration is a long (definition in a file this lane may not edit), so ours
-// zero-extends and every later instruction is one line off. The flag-4 store through
-// the shared flags setter, the countdown reset stored as NONE (EBX holds NONE as in
-// retail) and the countdown decremented on the field give retail's code there.
-// Still differs: MOV/LEA order at the first 0x1e5af0 call (a named output pointer 92).
-// Squared length summed k, j, i as statements gives retail's load order but only 2.
-// Bitfield store with the NONE reset 108; branch store 119; ternary store 119.
-// Force byte/word/signed-byte 94/16/94; readonly metadata 94; metadata with byte/word force 94/16;
-// absent-parent first 94; absent-parent with byte force 94. The single-use word carrier is rejected unless exact.
-// Result homes/movement scope/early activity/direct velocity receiver/refresh names/read-only movement 94
-// each; conditional orientation success 112; short activity 168.
-// Squared length in i, j, k order, through the shared squared-length or dot helper 94 each;
-// a vector3f field at 0x138 of the output read directly 92 (retail's k, j, i loads); with a
-// word force result 14 (the rest is the force push and the MOV/LEA order). Named output, up and
-// forward pointers 94/92 with the field.
-// Word force with ordered squares/native publication/output receiver 14/16/16; squares and
-// publication/squares and output/output and publication 14/14/16; all three 14; ordered squares with final
-// mask setter 14. Changed single-use word carrier is exact-only; all restored.
-// Direct force query 101; velocity-input/complete-input/nested-input scopes 94/94/94; direct query
-// with those input scopes 101/101/101; direct query with reversed orientation result 101 (fast).
-// existing rounding helper 101; chained sentinel words 96; native sentinel library fill 278; byte parent
-// countdown 94; postfix parent countdown 100; shared final flag clear 94; signed short force 16; rounding helper
-// with signed force 62.
-// Round 263: object/input/both flags read at each use 156/132/121; existing basis helper
-// inline/noinline declarations 94/94; inline with those observations 156/132/121. All restored.
-// Round 414: Frame 0x1f0 agrees; first basis MOV/LEA, component loads and force publication remain.
-// Existing vector assignment at requested/output-basis/velocity copy masks 1-7 scored
-// 269/149/290/101/280/162/302; all copies with terminal flag setter 302. Native copies restored.
+// score 94 (was 94): frame 0x1f0 agrees; call setup, movement loads and force-call publication still differ.
+// Retail spills the found flag to a stack byte and pushes the whole dword to 0x1c4b00 (no zero-extension), so
+// 0x1c4b00 takes a bool; ours declares a long and zero-extends, and every later instruction is one line off.
+// Round 37: 0x1c4b00's flag as a bool in its definition and every declaration gives 44 (0x1c4b00 and its matched
+// callers keep matching; 0xe24f0's resting call then has retail's shape too, but its count rises 742 -> 748 by a
+// shift, so it was reverted); with it, the squared length through length_sq3f on a vector3f field at output
+// offset 0x138 (retail's k, j, i loads) 42; that read alone 92. Then left: the MOV/LEA order at the first
+// 0x1e5af0 call and, from the velocity copy into the re-fetched object on, retail loading the source's i into
+// ECX before the object pointer, with every later scratch register following that rotation. On the 42 form:
+// the object fetched inside the copy (cast or a `velocity` field at 0x88) 42/42; a velocity field through the
+// object local 42; a pointer to the stepped velocity used by the copy and the call 42; the copy written per
+// component 103 (1051 bytes).
+// Earlier, with the long force flag: stationary/byte/word movement result 107/98/111; complete flag value 98;
+// initial-state/parent/update/countdown activity values 265/119/98/101; branch flag store 131; long force 130;
+// native velocity copy 131; long activity 164; reversed result OR 131; parent result earlier 123;
+// update/countdown result earlier 131; with the original flag store, early parent result 109; long force 101;
+// both 110; native motion/input/state fields 98 each; request/output/all basis copies 98 each; movement-output and
+// orientation-output scopes 98 each; the flag-4 store through the shared flags setter, the countdown reset stored
+// as NONE (EBX holds NONE as in retail) and the countdown decremented on the field give retail's code there; a
+// named output pointer 92; squared length summed k, j, i as statements 2 fewer; bitfield store with the NONE reset
+// 108; branch store 119; ternary store 119; force byte/word/signed-byte 94/16/94; readonly metadata 94; metadata
+// with byte/word force 94/16; absent-parent first 94, with byte force 94; result homes/movement scope/early
+// activity/direct velocity receiver/refresh names/read-only movement 94 each; conditional orientation success 112;
+// short activity 168; squared length in i, j, k order, through the shared squared-length or dot helper 94 each; a
+// vector3f field at 0x138 of the output read directly 92, with a word force result 14; named output, up and
+// forward pointers 94/92 with the field; word force with ordered squares/native publication/output receiver
+// 14/16/16, and the pairs and all three 14/14/16/14, with the final mask setter 14; direct force query 101;
+// velocity-input/complete-input/nested-input scopes 94/94/94, with the direct query 101 each, with reversed
+// orientation result 101; existing rounding helper 101; chained sentinel words 96; native sentinel library fill
+// 278; byte parent countdown 94; postfix parent countdown 100; shared final flag clear 94; signed short force 16;
+// rounding helper with signed force 62; object/input/both flags read at each use 156/132/121; existing basis
+// helper inline/noinline declarations 94/94, inline with those observations 156/132/121; existing vector
+// assignment at requested/output-basis/velocity copy masks 1-7 269/149/290/101/280/162/302, all copies with the
+// terminal flag setter 302.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {

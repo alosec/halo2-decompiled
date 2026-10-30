@@ -328,46 +328,29 @@ bool function_1f8660(long actor_index);
 real function_1f8940(long actor_index);
 real function_1e3920(long actor_index);
 
-// score 46 (was 46): aligned 0x764 frame agrees; actor-index and search-result carriers differ after
-// scratch allocation. Retail reloads the actor index into EBX for the search and keeps the result in
-// EAX until the success branch (then ESI); ours reloads the index into EDX and copies the result to
-// EBX at once. Earlier result-first 53; output/reference and failure-cleanup forms did not close the
-// carrier gap. Per-use actor receiver with nested failure-first and output-home names 117/117; early
-// admission 140/140; success-first 116/116; success-first/early admission 138/138. All forms grow to
-// 368 or 372 bytes. Typed request reference fields 46; complete request Boolean 89; named movement
-// kind 46; typed fields/kind 46; Boolean with fields/kind/both 89/89/89; aggregate zero with
-// fields/Boolean 99. Round 110: selection compared inside the else-if 46; reference declared before
-// the scratch call 46; success branch first 46; flag store before the result 46; out locals swapped
-// 46; the reference compared as a long value 46; the search part as an inline helper 223 (its callee
-// inlined). The scratch release written in each branch 47 (342 bytes, same carriers); the failing
-// actor re-read into `actor` 46; the selection tested without a local 46; the search outputs or the
-// reference declared at the top of the function 46/46. Separate raw/admitted reference values with
-// immutable raw value and entry request/scratch declarations: 46/46/48/48/46/46/48/48, all 344 bytes.
-// Original lifetimes and body restored. Round 37: the matched siblings 0x1a9400, 0x1b0ab0 and 0x1c1730
-// keep the actor index in a callee-saved register across 0x261280 and leave the reference in EAX, as
-// retail does here; ours rematerialises the index from the stack and gives EBX to the reference.
-// Reference declared, then assigned 46; scratch fetched after the search outputs are declared 46;
-// actor before result 65; both comparisons with the sentinel first 46; the request declared at the
-// top of the function 48.
-// aligned 0x764 frame agrees; actor-index and search-result carriers differ after scratch allocation.
-// Retail reloads the actor index into EBX for the search and keeps the result in EAX until the success
-// branch (then ESI); ours reloads the index into EDX and copies the result to EBX at once.
-// Earlier result-first 53; output/reference and failure-cleanup forms did not close the carrier gap.
-// Per-use actor receiver with nested failure-first and output-home names 117/117; early admission 140/140;
-// success-first 116/116; success-first/early admission 138/138. All forms grow to 368 or 372 bytes.
-// Typed request reference fields 46; complete request Boolean 89; named movement kind 46;
-// typed fields/kind 46; Boolean with fields/kind/both 89/89/89; aggregate zero with fields/Boolean 99.
-// Round 110: selection compared inside the else-if 46; reference declared before the scratch call 46;
-// success branch first 46; flag store before the result 46; out locals swapped 46; the reference
-// compared as a long value 46; the search part as an inline helper 223 (its callee inlined).
-// The scratch release written in each branch 47 (342 bytes, same carriers); the failing actor re-read
-// into `actor` 46; the selection tested without a local 46; the search outputs or the reference
-// declared at the top of the function 46/46.
-// Separate raw/admitted reference values with immutable raw value and entry request/scratch
-// declarations: 46/46/48/48/46/46/48/48, all 344 bytes. Original lifetimes and body restored.
-// Round 18 (lane 10): the select-or-remember tail as a forceinline helper 46 (same code); the reference
-// or the scratch pointer declared at the block top 46/46; the reference compare written global-first 46;
-// the result declared after the actor 65.
+// score 9 (was 46): the search result is kept in `reference` and its copy in `found`, so the result
+// stays in EAX through the test and the push and only the copy moves to ESI late (retail), leaving
+// EBX for the actor index. Left: the failure arm is merged with the scratch release, so VC hoists
+// `mov edx, edi` above its two stores and the selection-success path cannot join that release; the
+// two out values swap ECX/EDX. With the success arm written first every instruction of both arms is
+// retail's, but that arm is laid out first (`je` to the failure arm; retail `jne` to the success arm,
+// the failure arm falling into the release it shares with the selection-success path).
+// Forms on the copy graph: actor flag cleared before the result 8 (store order not retail's); out
+// locals swapped 9; release in each arm 21; success arm first 31, with `!=` on the long values, `==
+// false`, operands swapped 31/31/32; early `return true` for an inactive actor 105 (both arm orders);
+// `selected = reference; selected = function_2626b0(..., selected, ...)` 46 (the copy merges);
+// permuter 35 tries, none better.
+// Before the copy graph (all 46 unless noted): result first 53; per-use actor receiver with nested
+// failure-first and output-home names 117; early admission 140; success-first 116; typed request
+// reference fields; complete request Boolean 89; named movement kind; aggregate zero with fields/Boolean
+// 99; selection compared inside the else-if; reference declared before the scratch call; success
+// branch first; flag store before the result; out locals swapped; the reference compared as a long
+// value; the search part as an inline helper 223; the scratch release written in each branch 47; the
+// failing actor re-read into `actor`; the selection tested without a local; the search outputs or the
+// reference declared at the top; separate raw/admitted reference values 46/48; reference declared,
+// then assigned; actor before result 65; both comparisons with the sentinel first; the request declared
+// at the top of the function 48; the select-or-remember tail as a forceinline helper; the reference or
+// the scratch pointer declared at the block top; the reference compare written global-first.
 // @retail 0x1bcab0
 bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 {
@@ -401,9 +384,10 @@ bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 		}
 		else
 		{
-			s_reference selected = function_2626b0(actor_index, reference, other_index, scratch, unknown, true);
-			if (REFERENCE_EQUAL(selected, g_470fa0))
-				function_262800(actor_index, reference, false);
+			s_reference found = reference;
+			reference = function_2626b0(actor_index, found, other_index, scratch, unknown, true);
+			if (REFERENCE_EQUAL(reference, g_470fa0))
+				function_262800(actor_index, found, false);
 		}
 		ai_scratch_buffer_release(scratch);
 	}
@@ -504,6 +488,14 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // canonical bitwise conjunction with long/bool/byte/short special 152/85/85/201.
 // Boolean bitwise conjunction kept, 85/861 plain; the post-scan tail is shared.
 // Entry NONE EBP/EBX, predicate setup and separation SSE homes still differ.
+// Round 83: `&&` flag 200 (aligned 23: flag memory-only, the unknown268 block laid out after the
+// special path); with returns for the scan exits 226; with an inline timer-minimum helper used twice
+// 286; const `&&` flag 200; the player loop as a forceinline helper, `&&`/bitwise flag 235/207.
+// Round 18 (lane 11): `&&` flag, if/else arms, false then if, scan in the else with
+// the flag set there or at its declaration: 189/189/191/189/191 at 872 bytes (NONE in
+// EBX, entry matches, but the flag stays in memory and the tail follows the special
+// path); the tail as a forced-inline helper taking the flag by value 47 (same code),
+// with the `&&` flag 189.
 // Round 39 (m3 lane 12): the bitwise flag is already spilled around the scan to the dead
 // actor-index slot as retail, but its byte def before the branch takes BL (so NONE takes EBP);
 // every branchy def gives NONE in EBX but threads the known-true flag by copying the tail's

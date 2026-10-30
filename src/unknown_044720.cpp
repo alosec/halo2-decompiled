@@ -171,6 +171,17 @@ void function_44720(void)
 // pointer hoisted into ebx).
 // Native context at part/entry/function scope with cached/live level 107/135 each;
 // native context with byte/word level 133/138. Original storage restored; frame and geometry reloads remain.
+// Round 420: global each-use 107; global each-use/live level 135; global each-use/indexed receiver 140;
+// global each-use/live level/indexed receiver 136; global each-use/single result 132; global
+// each-use/single result/live level 132; global each-use/single result/indexed receiver 143; global
+// each-use/single result/live level/indexed receiver 128. Original body restored.
+// Round 36 (one-file harness, this file plus both callees' files: identical to the full build): on the
+// level-at-call form the structural difference is 23 instructions (entry pointer built before its
+// first load, the flags kept in EAX through the lookup, no reload at the geometry join). On it every
+// subset of: weight read at the call, short transform, ternary material, fallback masks swapped,
+// material index by the long index, `geometry == NULL` (63 forms) none closer; a `dword` selector
+// local read first (the 0x44720 form) or a `flags` local for the level and transform tests none
+// closer; the lookup as an ordinary or forceinline function in another file stays a call.
 // @retail 0x44c90
 void __stdcall function_44c90(long group, dword selection_mask, long level,
     dword and_mask, dword or_mask, dword fallback_and_mask, dword fallback_or_mask, bool force)
@@ -314,6 +325,9 @@ void __stdcall function_44c90(long group, dword selection_mask, long level,
 // alignment/library center capture subsets 199/199/199/199. Complete native query copy on the same
 // four graphs 207/207/207/207. Separate storage grows frame to 0x10a4; all original alignments,
 // copies, calls and full body restored.
+// Round 302: Nested node-cache guards NONE-first/cache-first with original/filled count
+// and original/radius-first scheduling 190/190/191/191/190/190/191/191. Original guards,
+// count initializer and complete executable body restored; entry/index and point homes remain.
 // @retail 0x45560
 void function_45560(short entry_index, point3f const *center, real radius)
 {

@@ -306,6 +306,11 @@ __inline void transform_point(s_camera const *camera, point3f const *p, point3f 
 // DL175: Uniform transform term permutations, every parallel product named, early uninitialized
 // reversed-point scratch and direct inverse factors [195, 195, 195, 195, 195, 213, 195, 207]. All
 // arithmetic-order forms are exact-only; original helper and body restored.
+// Round 219: Native matrix-row loops long/dword/short/word 214/214/477/477;
+// with shared scale 258/258/495/495. Forced long/short, original/shared scale 214/405/258/410.
+// Long-row frame is retail 0x2c; inverse-order/direct factors/both/y-first/y-first with order/
+// y-first with direct factors/descending rows/descending with direct factors 213/262/261/214/213/254/231/218.
+// All restored; inverse/point homes and scaled-component allocation remain.
 // @retail 0x30830
 long function_30830(point3f const *a, s_camera const *camera, vector3f const *d, point2f const *scale, bool perspective, bool negate, point2f *out)
 {
@@ -527,6 +532,11 @@ real function_30bf0(vector3f *v);
 // pointer locals with the staged product 36 (224 bytes, retail's product grouping, xmm homes and
 // three x87 operand pairs differ); a 27-form screen of pointer locals x declaration order x second
 // product form no better than 35.
+// carriers retained.
+// Round 295: shared staged cross first/second/both 42/42/42; second product in
+// the normalized workspace with ordinary/staged first 68/68; direct staged output
+// with ordinary/staged first 42/42; native axis value with direct staged output 103.
+// Original distinct workspaces restored; x87 input order and SSE carriers remain.
 // @retail 0x31b40
 real function_31b40(vector3f *vector, vector3f const *axis)
 {
@@ -640,6 +650,9 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
 // flags in the second-group pass only 62; TEST_FIELD_BIT mask test 77 (it only realigns the listing
 // by one instruction); positive-count guarded do loops 143/182; group while/continue forms, flag
 // word snapshot 133; De Morgan flag bits 136; real two-byte flag fields 77/225.
+// Round 421 (at 77, before the group helper): first/third packed fields 77; filtered packed fields 225; all helper packed fields 225; final packed
+// fields 77; first/third/final fields 77; filtered/final fields 225; all packed fields 225; all fields/ascending
+// runtime publication 225.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)

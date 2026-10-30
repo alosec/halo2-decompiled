@@ -83,6 +83,14 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // with the angle as the first operand, polar declared first or angle declared at the top 57 each;
 // case 1 with a chained zero, no sine local (309) or the zero store first 57.
 // Round 129 (82): side test with the converted value on the left 81 (fixes the ucomiss only);
+// case conversion/angle/seed/extent homes, trigonometric order, side test and normalization loads differ.
+// Earlier at 65: what is left is per-case stack homes (conversion temporaries, angles, seed
+// and extents in cases 0, 1, 5, 7 and 9), the case 1/9 fsin/xorps order, the side test's ucomiss
+// operands and the first normalisation product (scale first in retail, one byte shorter).
+// extents) differ in cases 0, 1, 5, 7 and 9; also the case 1/9 fsin/xorps order, the side
+// test's ucomiss operands and the first normalisation product (scale first in retail, one
+// byte shorter, which also moves the jump table by four bytes).
+// Round 129: side test with the converted value on the left 81 (fixes the ucomiss only);
 // random draws as `real x = function_x82e52f(seed, NULL, 0); x *= k;` 82 (same code; as one
 // product 554 in screen terms); named inverse local 82; the speed scale through the existing
 // scale helper 91 (2348 bytes, but its loads merge); swap plus direct draws 81. Screened:
@@ -101,6 +109,9 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Ordinary pooled scaling with fraction result reference-first/pointer 106/106; returned real 82;
 // ordinary-inline reference-first/pointer/return 819/819/976; returned real plus ordinary extent query
 // 443; ordinary-inline original reference 819.
+// Round 421: cone velocity setter 114; ring velocity setter 548; cone/ring setters 552; fixed/direction setter 99;
+// cone/fixed setters 107; ring/fixed setters 558; all velocity setters 562; all velocity setters/final scale
+// helper 562.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

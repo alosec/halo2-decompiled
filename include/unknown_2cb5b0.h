@@ -58,7 +58,7 @@ struct s_inflate_state
 		dword marker;
 	} sub;
 	long raw;
-	dword window_bits;
+	dword window_log;
 	s_block_state *blocks;
 };
 
@@ -66,7 +66,7 @@ struct s_inflate_state
 struct s_inflate_stream
 {
 	byte const *input;
-	dword input_size;
+	dword input_left;
 	dword total_input;
 	byte *output;
 	dword output_size;
@@ -76,7 +76,7 @@ struct s_inflate_stream
 	block_allocate allocate;
 	block_free release;
 	void *opaque;
-	long data_type;
+	long content_kind;
 	dword checksum;
 	dword reserved;
 };

@@ -130,6 +130,34 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // list-address pointer locals 70; retail order through the shared sample local 133; declared
 // cache-record type, direct four random returns, both, combined initial flags, flags/type and
 // flags/direct draws 70 each; declared type with retail timestamp order 133, with all three forms
+// 133; named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; field_10 first
+// with the compare as a bool local 133; compare operands swapped 71; count increment before the
+// timestamp store 71; field_10 after the field_14/16/18 sample 184/168/152; field_50 read into a
+// named pointer for the compare 70; retail order with the compare operands swapped 133; field_10
+// stored right after the record link/record pointer/field_08/flag bits/seed-type bitfield
+// 227/178/200/217/204.
+// With field_10 last its unknown04 temporary takes ECX (the seed pointer is dead by then; retail's
+// takes EDX while the seed pointer is live), which starts the scratch rotation after the compare.
+// Retail's fold after an fstp occurs at only one other site (0x39a80); no matched function has
+// either form. Count incremented before the field_3c store 71; short child index 76; with
+// field_10 first 137; sample drawn into a local before the field_10 store 146; field_10 stored
+// after field_08 200.
+// Round 96: a minimal one-file LTCG test (build/r96/hfold) reproduces the split: `fstp [r+0x38]` directly
+// followed by `if (rec != cache->last)` always gives `mov eax, [m]; cmp r, eax` (operands swapped, a named
+// cache local, double or signed draws, an if-else, callee-saved receivers: all split), and any instruction
+// between them (another field store) gives the folded `cmp r, [m]`. Child test as `continue` 70; owner fields
+// stored in the other order 70; count increment before the field_3c store 71; parent store before the link
+// call 99 (864 bytes); field_10 stored before the four draws 200.
+// Round 83: field_10 first 133 (aligned 21: the split compare and the child-loop registers);
+// loop test written count-first 71; child ordinal passed as word 70; record/parent stores swapped
+// 70; child definition read into a named local 76; -1 literal for the last 0x173fd0 argument 70.
+// Round 18: compile-only, the split is this compiler's default tuning after an x87 store that
+// follows x87 arithmetic in one block; it folds after a call's fstp, when the compare starts a
+// block (a jump target), or with /G7 or /Os. Screens of inline sample/compare/update helpers,
+// do/while, a one-pass loop, an empty if and identical store arms all split. Full builds with
+// field_10 first: 133 (aligned 21, 876 bytes); with a label before the compare 140; the sample
+// through the reference helper 133; the cache update as an early-return inline helper 133;
+// typed compare 133.
 // 133; named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; compare
 // operands swapped 71; count increment before the timestamp store (or the field_3c store) 71; short
 // child index 76, with field_10 first 137; field_10 after the field_14/16/18 sample 184/168/152;
@@ -425,6 +453,8 @@ void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_
 // 429/447/451/449/449/448/449; all with combined header assignment 449.
 // Original parameter producers, motion helper and complete body restored; late EBP remains.
 // Round 293: Uninitialized child-handle/record-owner/reciprocal declarations before the loop, all seven subsets, and all at function entry: 356 each. All original producer phases, signed pretest, link calls, reciprocal expressions and complete body restored.
+// Round 429: One native point for blend then probe start, with entry/consumer direction,
+// placement and sample declarations: all eight 416 (frame 0xa0). Original body restored.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)

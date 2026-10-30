@@ -556,6 +556,18 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // each use or the k copy moved before the second normalization shorten the body to 765-788 bytes);
 // normalized scalar declaration priority 130; immutable normalized pair 130; planar pair names 130;
 // length/pair names 130; second length in normalized-pair context 131; named integer sign 130;
+// declaration priority plus planar names 130; sine result arms 149.
+// Round 148: Complete helper-context preview agrees at 130. Complete planar facing capture 177; both
+// dot/determinant product pairs 141; both input/product forms 177; facing/magnitude/side/all zero-first
+// comparisons 130/130/130/130; native output copy then component scales 145. Magnitude/zero, facing, rotation
+// and output schedules remain.
+// Round 317: Guard-scoped normalized scalars 130; native planar input 130; both 130; all speed-field reads 140; scalar declarations at planar entry 130; adjusted turn name 130; requested direction name 130; native guarded input plus field reads 131.
+// Round 262: complete vector setter at requested direction/turn input/both
+// 176/147/168; completed output workspace 130; workspace plus requested/turn/both
+// 176/147/168; direct final setter 147 (828 bytes). Original body restored.
+// Round 77: horizontal array view 130; facing array fields 130; turned array stores 130; direct array output 147;
+// combined array views 130; horizontal pointer 137; immutable magnitude 130; immutable normalized scalars with
+// direct output 147. Original body restored.
 // declaration priority plus planar names 130; sine result arms 149; complete planar facing capture
 // 177; both dot/determinant product pairs 141; both input/product forms 177; facing/magnitude/side/
 // all zero-first comparisons 130/130/130/130; native output copy then component scales 145;

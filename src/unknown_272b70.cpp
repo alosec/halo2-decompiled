@@ -1387,6 +1387,9 @@ PRIVATE __forceinline bool function_274a51(long arg_0, s_object_seat const *arg_
 // Round 251: bounded candidate count/index byte-short, char-short, short-byte, short-char, byte-byte, byte-char, char-byte, char-char 188/90/182/269/78/190/190/148. Original short counters and body restored.
 // Round 255: native complete candidate record, four construction lifetimes with aggregate assignment
 // 204/204/204/204; library-copy counterparts 204/204/204/204 (861 bytes). All restored.
+// Round 298: native selected-seat copies at selection/object lookup/after leave/winning
+// update 125/124/80/168; library-copy counterparts 125/124/80/168. All restored;
+// selected-seat retention does not recover the initial candidate schedule or request homes.
 // @retail 0x274a50
 void function_274a50(long ai_index, long vehicle_index, long filter_range, bool load)
 {
@@ -2554,6 +2557,9 @@ struct s_scenario_scripting_view
 // selector, early counter and complete search restored; actor/counter homes and delayed data
 // observation remain.
 // Round 255: complete point-set fields at every use with data/root observation and short-counter scope subsets 102/86/102/87/101/88/101/89. All restored; wrapper unchanged.
+// Round 298: joint best-distance/index entry, outer admission, pre-actor and post-actor
+// lifetimes 103/99/95/95; with loop-local short counter 103/99/94/94. All restored;
+// actor/set/counter homes and delayed data observation remain.
 // @retail 0x2769d0
 void function_2769d0(long point_reference)
 {
