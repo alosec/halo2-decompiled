@@ -253,6 +253,11 @@ short __stdcall function_1c10a0(long actor_index)
 // into `add eax, [edx + 0x44]`); with a data local / typed base / actor argument inside
 // the reset 20/20/20; extra lookup first 20; result first 20; index or slot read through
 // its address 20/20; slot read after the reset 28 (unfolded, but pool ECX as 0x1b09b0).
+// Volatile reads of both parameters before the reset 20; both read through their
+// addresses 28; plain slot cast and reset 28; a call to function_1f86a0 90 (stays a call);
+// that with `inline` on 0x1f86a0 28 (and 0x1f86a0 then inlines into all its callers).
+// Retail is 0x1f86a0 inlined at link time (argument in EAX first, its own unfolded
+// loads): BLOCKED-BY 0x1f86a0 (`/Ob1` file, called out of line by 28 other functions).
 // @retail 0x1c10f0
 bool __stdcall function_1c10f0(long actor_index, s_slot *slot)
 {

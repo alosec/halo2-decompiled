@@ -219,14 +219,19 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 	{
 		s_actor_view *actor = actor_get(actor_index);
 
-		if (actor->unknown018 != NONE && function_c8200(object_index, seat_index, actor->unknown018))
+		if (actor->unknown018 != NONE && function_c8200(actor->unknown018, object_index, seat_index))
 			result = true;
 	}
 	return result;
 }
 
-// score 3 (was 3): at the 0xc8200 call retail loads the seat index and the object before the
-// unit index (ecx last), ours loads the unit index first. Round 70: one result with `break` for
+// score 3 (was 3): at the 0xc8200 call (now in retail's (unit, object, seat) order, which loads
+// the unit last as retail) ours reloads the seat pointer into ECX and reads the object at once;
+// retail reloads it into EAX and loads the seat index in between. Before the reorder ours loaded
+// the unit index first. Round 23: the other parameter orders 3/4/4/2 (the last, (object, unit,
+// seat), loses 0x11b0c0's match); flag tested through seats[i] 82; actor lookup at the call 135;
+// seat pointer 100; nested 0xc8200 test 3; actor after result 3; named actor team 3; seat array
+// declared first 3; plain bitfield test 69. Round 70: one result with `break` for
 // the two rejections, bool result and the seat count from 0xc8b80 (retail inlines it) gave the
 // shrink-wrapped ebp/esi saves (109 -> 3); 0xc8b80 alone 109, bool alone 117, without 0xc8b80 7
 // (harness), long result 48 (harness); every 0xc8200 parameter order 4-27 (harness); nested
@@ -278,7 +283,7 @@ bool function_1b8f30(long actor_index, long object_index)
 				}
 			}
 			else if (!function_1b8d80(actor_index, seats[i].object_index, seats[i].seat_index, false) &&
-				function_c8200(seats[i].object_index, seats[i].seat_index, actor->unknown018))
+				function_c8200(actor->unknown018, seats[i].object_index, seats[i].seat_index))
 			{
 				result = true;
 			}
@@ -572,6 +577,9 @@ extern "C" void _ReadWriteBarrier(void);
 // This round: slot data block 29, without barrier 50, actor-first 31;
 // const actor 6; const state without barrier 44; data block/const actor
 // without barrier 50; const data state 29; actor object reference 6.
+// Round 23: the slot read once through its address before or after the
+// actor lookup 6/6, the same without the barrier 44/44; the barrier before
+// the actor lookup 44, at the head of the NONE block 43, first 44.
 // @retail 0x1ba8c0
 void __stdcall function_1ba8c0(long actor_index, s_slot *slot, s_slot_target_list *list)
 {

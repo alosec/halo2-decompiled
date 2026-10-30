@@ -326,6 +326,11 @@ void c_class_2c9e69::select_last_variant()
 // Without the receiver qualifier one reload of the text is hoisted into EDI ahead of both arms
 // (retail reloads it per arm, EDI and EBX): plain receiver 36; text used directly in both arms 36;
 // per-arm receiver locals 36; named arm first 38; icon declared first 36. 600 s permuter run, none below 23.
+// Both arms reload the spilled text first; when both reloads land in EDI the two identical
+// loads are merged ahead of the variant test (even two qualified reads), and retail keeps
+// them apart only because its name arm reloads into EBX. Copies in both arms 36; name-arm
+// copy declared before the test 36, or at function top 36; name-arm copy only (text read
+// directly in the empty arm) 13 at 159 bytes, the name arm then exact except EDI for EBX.
 // @retail 0x2c9ff4
 void c_class_2c9e69::v20(c_class_1a2c81 *item, long unused)
 {

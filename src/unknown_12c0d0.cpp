@@ -13,6 +13,7 @@
 #include "async.h"
 #include <xtl.h>
 #include <string.h>
+#include "unknown_080e10.h"
 
 /* the part of a bitmap's data block the cache keeps track of */
 struct s_bitmap_data
@@ -538,12 +539,6 @@ long __stdcall function_12d2f0(long size, long user_data, long update, long rele
 
 double timing_ticks_to_seconds(__int64 ticks);
 
-static __int64 read_tsc(void)
-{
-	volatile __int64 t = 0;
-	__asm rdtsc
-}
-
 /* 0x12c600 (xbox_texture_cache_update.cpp): the cache's per-frame update */
 void function_12c600(void);
 
@@ -876,15 +871,17 @@ long texture_cache_bitmap_level(s_bitmap_data const *bitmap, real scale)
 /* function_12d2f0, pumping the cache until a block is free: not at all
    (type 0), or for up to 30 pumps and 0.1 seconds (type 1) or 90 pumps and
    one second (type 2) */
-// score 2 (was 2): the value is stored to the stack before EDI is pushed; retail pushes EDI
-// first and stores it afterwards.
-// score 2 (was 2): timer zero store still precedes the EDI save; split start 2; direct start 2;
+// score 2 (was 2): the tick reader's volatile zero stores are scheduled before EDI is pushed;
+// retail pushes EDI first and stores them afterwards. Tried: split start 2; direct start 2;
 // immutable start 2; result declaration before start 2; counter declaration before start 2;
-// timeout before start 15; pump bound before start 10; nested allocation result 2.
+// timeout before start 15; pump bound before start 10; nested allocation result 2; the reader
+// `inline` 2 or unsigned 2; the reader storing rdtsc's halves into its local 129; the
+// existing header reader function_80e13 2 (kept); the counter declared in the loop block 2;
+// the size and page tests nested as in function_80e14 2.
 // @retail 0x12d400
 long function_12d400(long type, long size, long user_data, long update, long release)
 {
-	__int64 start = read_tsc();
+	__int64 start = function_80e13();
 	long result = 0;
 	real timeout = 0.0f;
 	long maximum_pumps = 0;
@@ -920,7 +917,7 @@ long function_12d400(long type, long size, long user_data, long update, long rel
 				}
 				else
 				{
-					__int64 elapsed = read_tsc() - start;
+					__int64 elapsed = function_80e13() - start;
 					if (elapsed < 0)
 					{
 						elapsed = 0;
