@@ -602,7 +602,7 @@ struct s_signed_file_read_parameters
 
 __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 
-// score 53 (was 59): retail sums the two sizes body first everywhere (entry `mov eax, [ebx+0xc];
+// score 53 (was 53): retail sums the two sizes body first everywhere (entry `mov eax, [ebx+0xc];
 // mov ecx, [ebx+4]; lea edx, [eax+ecx+0x14]`, total in EDX, task in EAX; signature case `lea esi,
 // [ecx+edx]` with body_size in ECX); ours sums header first (total in EAX), so the signature case does
 // not start with `mov ecx, [ebx+0xc]` like the body case and VC7.1 cannot hoist that common first
@@ -615,8 +615,7 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // `size = MIN(buffer size, body_size - body_offset)` make the getter, reloads and whole body case
 // retail's: aligned 12 left (the sum order and the hoist), but 161 positional at 689 bytes (0x2adb10
 // 279, aligned 122 -> 45). No source form
-// moved the sum order: written order, `+=`, a total helper (value or pointer argument), a void
-// parameter view, nested header/body records, signed or long size types, no packing, declarations at
+// moved the sum order: written order, `+=`, a total helper (value or pointer argument), nested header/body records, signed or long size types, no packing, declarations at
 // the top, case order, inline min function, each reference removed in turn; only a body_size read once
 // in the whole function sums body first. Tried: the result stored as one plain `memcmp == 0` store
 // 53 (kept, was an output local and a true/false if/else 59); short-lived body/header/both size reads
@@ -628,6 +627,21 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // owner before the flag 59 (0x2adb10 141); the getter reading the pointer at each use 168 (0x2adb10
 // 278); split claim/size helpers without the record 163; size-first body test 176; body size first in
 // the total, sizeof first, the total as a long or without a dword local 68 each (same code).
+// Lane 13 r14: VC orders the two size loads by an internal order that follows the function's
+// locals, not the written order; the record pointer as a local cast from a `void *` parameter (the
+// form of this file's other work callbacks) gives the body-first total and signature sum, 51
+// (aligned 31 -> 29). With the address-taken record above, that view, one function-scope byte count
+// and the scratch arm `size = buffer size; if (size > remaining) size = remaining;` (remaining read
+// again after the claim), retail's dispatch hoist of body_size appears and the body case is retail's
+// but for ESI/EDI swapped between size and position and the total in EAX: 34 at 687 bytes (aligned
+// 24), but 0x2adb10 134 -> 279 (944 bytes); not kept. The same with MIN in the scratch arm 159-161
+// (689 bytes), the record alone 161, view and shared byte count without the record 53, the clamp
+// without the record 180. Compile-only screens (they reproduce the full build here): no total local
+// gives retail's entry but rotates every later temp (43+); partly shared byte counts 28-32; size and
+// position declaration order, scope, names, a shared position, a remaining local, flipped clamp
+// compares, an out-parameter getter, getter store orders: no better. On the 34 form the claim and
+// size helpers as plain, static or inline functions, or in another file (inlined by the link): 34
+// each, 0x2adb10 279 each.
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {
@@ -804,6 +818,8 @@ struct s_signed_file_write_parameters
 // DL180: case order 2013 324; case order 3012 331; case order 0213 192; case order 0312 273; case
 // order 1203 313; case order 2103 314; case order 2301 332; case order 3210 328. Original
 // executable body restored.
+// Lane 13 r14 (with 0x2ad7c0's record form, claim/size helpers): 279 at 944 bytes, aligned 72 -> 32;
+// the getter sites copy the buffer and size between registers where retail loads them in place.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

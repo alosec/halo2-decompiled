@@ -1268,6 +1268,11 @@ bool function_0bfe60(dword const *flags, long bit);
 // All restored; loop/count and test-index colours plus bitset row address remain.
 // Lane 8 r79: non-query draw first 140; bitset row declared between test and status 54; device
 // global at each use 93; bitset row global at each use 122; `(1 << slot->c) & mask` 52.
+// Lane 13 r14: retail gives the test index EDI and the device pointer EBX (status's register),
+// leaving EBP to the loop counter and the total; ours puts the counter, device and total in EDI and
+// the test index in EBP. The total declared at the top of the query block 139 (441 bytes); status
+// declared before the test index 53; `set + index * 3` 52; the test index written at both calls 142;
+// the clamped total stored in the arm with an else storing 0 132 (443 bytes).
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {

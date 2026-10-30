@@ -416,7 +416,6 @@ struct s_ai_scene_assignment
 // build): the count in a local, the copy by index or by pointer step, the last-role
 // test at its use, the role pointer or assignment pointer later, the iterator at
 // the top, a NONE default with one exit: identical code or worse.
-// outputs/score declared outside the loop 56; local_0 recomputed each pass worse.
 // Round 242: default-selected result with early rejection/positive enumeration 56/56;
 // initialized selected result with positive enumeration 56; native-width completion result 123.
 // Actual short role advanced/restored around recursion with retained/live completion and
@@ -427,6 +426,13 @@ struct s_ai_scene_assignment
 // previous-source copies reach 347 bytes. All one-use element-pointer forms restored.
 // Round 292: Entry-capacity and completed-copy capacity regions, each terminal return or positive
 // scope and all eight nonoriginal combinations, 56 each; original exits restored.
+// Lane 13 r14: only a long next-role local passed to the recursion gives retail's maximum count in
+// ESI (61 at 347 bytes, aligned 21 against 24; the recursion then adds 1 to the sign-extended store
+// index), so the raw `role_index + 1` argument is what gives the role index the register; that
+// local in the flag test alone 56; the iterator's actor index in a named local 56; the assignment
+// pointer recomputed once after the score test 123 (or with the copy through it 120); return for
+// the inner break 56; `if (local_7 <= 0.0f) continue;` 59, `if (!(local_7 > 0.0f)) continue;` 56;
+// `0.0f < local_7` 56.
 // @retail 0x2919e0
 void __stdcall function_2919e0(s_ai_scene *scene, s_ai_scene_assignment *assignments, short *assignment_count, short maximum_count,
 	short role_index, short role_count, long ai_index, long ai_index2, long ai_index3)

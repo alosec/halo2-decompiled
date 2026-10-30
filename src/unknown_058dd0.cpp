@@ -770,6 +770,9 @@ void c_session_client::function_06dbc0()
 // use (no local) worse (this in eax). Compile-only, all with this in edx: 32 combinations of the
 // condition shape (also the type test first), truthy memcmp, a copy of this as the call argument and
 // grouped or separate case 7/8; an inline copy of 0x58d90's body gives retail's direct table only.
+// Lane 13 r14: the existing 0x58d90 called with a `__forceinline` declaration in this file stays
+// out of line (its /Ob0 definition) 100, as a plain call 100; the type test first 43; memcmp with
+// the id first 47; the memcmp folded into the mode/type condition 43.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
