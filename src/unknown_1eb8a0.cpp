@@ -116,6 +116,10 @@ PRIVATE __forceinline void rotate_direction(vector3f *vector, const vector3f *ax
 // without a match; with dot3f kept and the named cross terms 93 (fast; 0x1ff360 134 fast at 854
 // bytes); HEAD's helper with only cross3f in 0x1ecf50 170 (fast). The hand-written dot product
 // is kept only if it reaches a byte match.
+// Round 83: angle-taking helper 120; that boundary with scalar cross/k-j-i projection 148;
+// complement before/after projection on the scalar-cross graph 148/148; vector/axis formal swap
+// there 148; axis component snapshots 120; staged shared cross 120; separate input/output helper
+// with an input copy 313. Original helper and body restored.
 // @retail 0x1ecf50
 void function_1ecf50(vector3f *forward, vector3f *up, s_direction_rotation_input *input)
 {

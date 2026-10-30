@@ -905,6 +905,9 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
 // Round 220: Whole four-byte descriptor values in direct/mapped/both paths, native or memcpy,
 // 180/191/186 each; one complete refill workspace, native/memcpy 186/186. All regress; original
 // descriptor observations, live bounds, entry steps, helper, calls and complete body restored.
+// Round 437: Symmetric preserved/incoming operand graphs 1-7 with body cursor steps 155 each; all-
+// commuted graph with one shared masked input 185, matched writer sibling 88. Two-point forms
+// rejected; full writer and both walks restored.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {

@@ -1175,30 +1175,22 @@ void c_game_engine_45c948::v12()
 	}
 }
 
-// score 14 (was 14): retail loads the engine global g_4e6948 into edx at the
-// top of the function, ours loads it into ecx just before the mode test (as retail
-// compiles the identical matched 0x2bd260), so the load and the compare come in the
-// other order. Direct final-field initialization 6.
-// top of the function, ours loads it just before the mode test, so the load
-// and the compare come in the other order.
-// The early global and compare schedule remains; direct final-field initialization 6.
-// Split sentinel/mode guard 17; middle/early predicates and direct options tests 13;
-// payload between zero stores 8; both zeros first 13; partial aggregate 56/119;
-// type before payload 6; middle predicate with that order 6; subtype readback 6;
-// parameter address 6; shared send 6; void-return send 6; force-inline send 6.
-// Round 107: options pointer read first, mode test read first, parameter read first: 14 each with
-// identical code (statement order does not move the allocation); dword parameter 14; definition
-// placed after the class 14.
-// Marked initializer/returned receiver/dispatcher/both/receiver plus dispatcher 49/53/47/73/77;
-// early mode exit 27; marked initializer/returned receiver in mode scope 40/45;
-// visible initializer/dispatcher/both forced inline 14/14/14. Frame 0x24 still agrees.
+/* retail fills this event field by field, as the other engines' event
+   senders do, not through the shared initializer */
 // @retail 0x2bf480
 void c_game_engine_45c948::v6(long a)
 {
 	s_event event;
 
-	game_engine_event_initialize_inline(&event, 9, 0);
+	event.type = 9;
+	event.subtype = 0;
+	event.cause_player_index = NONE;
+	event.cause_team = NONE;
+	event.effect_player_index = NONE;
+	event.effect_team = NONE;
+	event.f = 0;
 	event.a = a;
+	event.g = NONE;
 	game_engine_event_send_inline(&event);
 }
 
@@ -1511,6 +1503,10 @@ struct s_territory_tag
 // Tried: the player lookup before the position copy 29; the mask update first
 // 50, or between the copy and the player lookup 32; the tag chain as byte
 // offsets 24; a const player pointer 24; a 600 s permuter run, none below 24.
+// Round 16: the existing position-copy helper 43; game_engine_get() 24; the tag index as
+// a ternary 41; placement declared first 24; tag index at function scope 48; placement at
+// function scope 24; the test without the short cast 51; player declared at the block top
+// 24; the created object in its own local 24; an early NONE return 62.
 // @retail 0x2c0980
 long territory_create_item(long player_index, long territory)
 {

@@ -595,6 +595,14 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 // second product (identical code: the products are canonicalised); first product from the
 // direction local with the staged second product 223, with both products from direction (cross3f
 // or staged second) 229/229; up staged into a local, then copied 253 (1290 bytes).
+// Lane 13 round 18 (base: staged second product + forward pointer in the else branch, 217 at
+// 1270 bytes, 35 aligned): both products staged 221; previous_up copied after the direction 241;
+// first product from the direction local with a plain second product 217 (1261 bytes, 47
+// aligned); the distance stored after the products 224 (it then holds xmm0 across them). A
+// compile-only build of the file reproduces the first product's colours (u.k in xmm2 even with
+// the distance on x87); there u.k takes retail's xmm0 only when no distance store sits between
+// the call and the products (dropped or moved after them: 19-21 differing SSE lines against 33);
+// none of 48 helper/operand/copy-placement combinations does better than the base.
 // @retail 0x23de50
 void __stdcall function_23de50(void *state, void *input, s_observer_command *output)
 {
