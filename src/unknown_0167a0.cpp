@@ -161,6 +161,9 @@ PRIVATE inline byte const *material_parameters(long tag)
 // from its field 47; that with `second + (packed & 0x1ff)` 47; next folded into the pass expression 47; that
 // with the entry read from its field inside it 47; the reference form with the swapped sum 47; `second`
 // read through its address (diagnostic) 47, so the order is not an aliasing effect.
+// Round 83, all on the direct entry store (aligned 3: only `second` loads before the entry store, retail
+// after both table bases): chain lookup folded into the pass expression 47; tables re-read into its
+// local after the store 47; `second` read through its address 47; named chain index 47.
 // @retail 0x16b90
 void __stdcall function_16b90(byte *state, long tag, long first, long second,
     long third, long fourth, real scale)

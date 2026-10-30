@@ -77,10 +77,10 @@ void c_animation_channel::clear()
 }
 
 // score 36 (was 36): incoming graph save and the late graph store still differ. With retail's
-// store order (graph after unknown0d) and the byte-pointer clear the body equals retail except
-// that the animation id is copied through ECX (retail: ESI, while CX holds unknown0e), so ESI is
-// never modified and LTCG passes graph straight in ESI (retail: ECX, then push esi; mov esi, ecx);
-// the four matched callers break. Early frame-position store kept (36).
+// store order (graph after unknown0d) and the byte-pointer clear the body equals retail except that
+// the animation id is copied through ECX (retail: ESI, while CX holds unknown0e from an early load and
+// a late store), so ESI is never modified and LTCG passes graph straight in ESI (retail: ECX, then
+// push esi; mov esi, ecx); the four matched callers break. Early frame-position store kept (36).
 // Forms: sentinel/word/byte clear chains 41/41/43; two-byte memset 43; stored flags 41; stored-ID
 // result 76; renamed late graph 42; dword/long flags plus early frame 36/37; paired defaults 42;
 // identifier memcpy 36; metadata before resets 42; trailing defaults 41; redundant byte clear
@@ -108,7 +108,7 @@ void c_animation_channel::clear()
 // is what makes it an ESI argument): retail order with the graph parameter cleared when the index
 // is NONE 51 (same code); graph store after unknown16/unknown08 43/40 (graph EDX, flags ECX);
 // after unknown0c/flags 51; frame first with graph late 39; retail order with the byte pair 42
-// (ESI argument, NONE in ECX as retail). All restored.
+// (ESI argument, NONE in ECX as retail).
 // Round 95 (one-file harness, LTCG conventions reproduce: retail order passes graph in ESI there
 // too): on retail's order, graph copied to a local first, the parameter set to NONE when the id
 // is NONE, the last flags bits from the stored field, the frame store before graph 51 each in
@@ -125,6 +125,17 @@ void c_animation_channel::clear()
 // stored through pointers (as reset()/clear() do), which on retail's order give 43 in the build
 // (the matched callers lose). On the current order: the id words through a pointer 36; unknown0c/
 // unknown0d through a char pointer 34; both 34 (two-point gains, pointer locals: not kept).
+// from the stored field 36. Round 118 (one-file harness): all 120 orders of the late
+// graph/frame/id/rate/unknown0e stores pass graph in ESI, as do a forced-inline initializer taking
+// every parameter and pointer stores for the id words.
+// Round 30: retail's store order read from its listing 51 (graph in ESI, five matched callers
+// break); default-constructed id for the two NONE stores 62 (dropped as dead); that order with
+// unknown0e after unknown0d 51; unknown0e after the id copy 36; flags stored next to the derived
+// byte 36. Retail hoists the unknown0e load above the graph store, which is what leaves ESI for
+// the id copy.
+// Round 83: retail order 42 (callers lose); unknown0e stored right after unknown0d 42 (stored at
+// once, ECX free for the id copy); the two NONE id words as one chained assignment, retail
+// order/current 41/36; the two zero words chained 38.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)

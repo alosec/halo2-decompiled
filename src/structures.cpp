@@ -513,6 +513,7 @@ struct s_vertex_source_23ac30;
 struct s_vertex_bounds_23ac30;
 struct s_table_holder;
 void *function_1efd80(s_table_holder *holder, dword position);
+void function_ba690(long object_index, byte **states, long *state_count, long *a, long *b);
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node);
 
@@ -616,6 +617,11 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // guard as `return result` 231; a const bounds pointer 70; the lookup and surface lookup in their
 // own block 70; section groups from the section index local 157. Diagnostic: the bounds read
 // before the geometry-block call still gives 9 (left: the lookup address, 0x11e800's registers).
+// Round 81: the region permutations through the existing 0xba690 call, which LTCG inlines here as
+// retail does (kept: identical code, its body no longer written out); with the bounds read before
+// the geometry-block call 9, plus the lookup pointer 4 (only BLOCKED-BY 0x11e800's argument
+// registers left, so neither form can be kept yet); lookup declared at the top 70; a region
+// index local 262.
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)
@@ -631,13 +637,14 @@ bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 		*(long *)((byte *)triangle + 0xc) = NONE;
 		*(long *)((byte *)triangle + 0x10) = NONE;
 		byte *model = g_4e3b44[model_index & 0xffff].bytes;
-		byte *object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
-		signed char *regions = (signed char *)(object + *(short *)(object + 0x11a));
+		byte *regions;
+		long region_count;
+		function_ba690(COLLISION_OBJECT_14A8E0, &regions, &region_count, NULL, NULL);
 		byte *region_data = *(byte **)(model + 0x20) + (*(short *)((byte const *)collision + 0x44)) * 16;
-		if (regions[(*(short *)((byte const *)collision + 0x44))] != -1)
+		if (regions[(*(short *)((byte const *)collision + 0x44))] != 0xff)
 		{
 			*(long *)((byte *)triangle + 0x14) =
-				*(short *)(*(byte **)(region_data + 0xc) + regions[(*(short *)((byte const *)collision + 0x44))] * 16 + 0xc);
+				*(short *)(*(byte **)(region_data + 0xc) + (char)regions[(*(short *)((byte const *)collision + 0x44))] * 16 + 0xc);
 		}
 		else
 			*(long *)((byte *)triangle + 0x14) = 0xff;
@@ -645,7 +652,7 @@ bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 		if (section_index == 0xff) goto done;
 		byte *section = *(byte **)(model + 0x28) + section_index * 0x5c;
 		if (!function_12de70((s_geometry_block_info *)(section + 0x38), 3)) goto done;
-		object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
+		byte *object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
 		point3f point = collision->point;
 		long transform_count = *(short *)(object + 0x114) / sizeof(transform4x3f);
 		if (transform_count > 0)

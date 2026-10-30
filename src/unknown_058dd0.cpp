@@ -219,6 +219,9 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 // the outer if with `result = true` inside 69 (also with session_state_is_live 69);
 // the outer test on 0x58d20 and 0x6e720 with `result = 6e6b0` 75; session_state_is_live
 // alone 65.
+// Round 81: the success test nested under the 0x58d20 test with `result = true` inside 69; one
+// condition with `result = true` inside 69; the 0x6dfa0 result tested in an if/else-if chain
+// 84; owner read at each use 88; the owner and session locals after the 0x6dfa0 call 90.
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -752,7 +755,7 @@ void c_session_client::function_06dbc0()
 	function_06dc60(this, 3);
 }
 
-// score 43 (was 44): this stays in edx where retail copies it to ebx at entry, so
+// score 43 (was 43): this stays in edx where retail copies it to ebx at entry, so
 // the mode and member index take esi; separate case 7 and 8 labels (retail's direct
 // table) with an inline compare-and-update helper 47, an inline id-compare helper 48,
 // a member-index local 47, an id copy 47, the mode in a local 47; a state local 43;
@@ -761,6 +764,12 @@ void c_session_client::function_06dbc0()
 // compile-only). With 0x58d90 inlined by the link (its file at /Ob1, a diagnostic) the
 // table is retail's but this stays in edx (47); only /Os or /G7, which compare the mode
 // in memory, give retail's push ebx.
+// Round 81: the 0x6d380 call written twice (a diagnostic) gives retail's head exactly (this in
+// ebx, id in ebp, mode and index in edx): retail allocates as if this and id were live across a
+// call; with only this live across one, id still takes edx. Separate case 7 and 8 bodies 47; a
+// busy flag set by the switch 47; an early return on an equal id 43; session at each use 46; one
+// combined condition 43; harness: a memcmp result local (worse), a sized compare helper, a __stdcall
+// member or __cdecl callee, /arch:SSE, /G7, /Ob1, /Ox or /G5 all keep this in edx.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
@@ -1799,6 +1808,9 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // bytes); the integer pending with the named preparation result 47, tested `if (prepared)` 48, with
 // session_state_is_live 48; session_state_is_live alone 48; a named elapsed time 48; named countdown
 // seconds 48.
+// Round 81: a bool ready with the failure arm written first (`!a || !b`) 96; a bool ready false at
+// its declaration 90; the pending value as the remaining time 91; the integer pending with the
+// failure arm first 48; the same with pending set in each arm 52.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {

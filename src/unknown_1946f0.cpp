@@ -115,6 +115,10 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // face transform as a three-component loop 172 (not unrolled); the grid through an inline
 // `(real)value / 63.f` helper 114 (599 bytes); the zero first and the face pointer before the
 // doubling 87.
+// pointer into the normalization 62. Round 80: the file's decoded-direction normalizer with its sum in
+// i, j, k order (here and/or in 0x195070) 61 (the reduced build keeps the decoded k on x87 either way;
+// an LTCG harness of the file alone popped it); the face pointer before the grid 81; y before x 75;
+// compound face scaling 61.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
