@@ -2198,7 +2198,9 @@ void network_session_leave_joining(c_class_58d20 *session)
 // 9/9; source from scratch clear with record/pointer fields 38/35, with returned state destination
 // 40/37. Round 87: clock after the state clear 28; state store before the copy 6, before the clear
 // 6; sizeof the record type in the record clear and the copy 3; `void *state_data` (0x5e030's
-// form) declared before the clear 3, between the clock and NONE 3.
+// form) declared before the clear 3, between the clock and NONE 3. Round 15: dword NONE field 3;
+// clock helper with a result local 3, as a ternary 3 (0x614a0 48); the union's bool member as the
+// clear/copy destination 3; typed state pointer with a struct assignment 3; field-by-field copy 46.
 // @retail 0x61330
 void network_session_leave_join_request(c_class_58d20 *session)
 {
