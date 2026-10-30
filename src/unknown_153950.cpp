@@ -583,7 +583,11 @@ struct s_player_axes_153d10
 };
 
 // score 2 (was 2): one product is built with its operands in the other order: retail multiplies up.k by
-// forward.i, ours multiplies forward.i by up.k. Everything else is identical.
+// forward.i, ours multiplies forward.i by up.k. Everything else is identical. Retail keeps every
+// cross product's text order; ours orders all six by the axis pointers' age. Round 14 (plain):
+// cross3f, cross3f_staged or the cross through forward/up 41; no axis pointers 35 and the axis
+// pointers after the cross 10 (all six up first); only forward or only up declared before the
+// cross 8/6 (three products flip).
 // @retail 0x153d10
 void __stdcall function_153d10(long user_index, long tag_index, void *owner, void *direction, long unused, real scale, real priority, bool directional)
 {

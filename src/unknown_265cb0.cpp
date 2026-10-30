@@ -1151,6 +1151,11 @@ struct s_equipped_object_view
 // object_get 28 or object_header_get 28. Tried (r27b): the comparison through a
 // real local 12; the tag index through a long local 12; `if (...) result = true`
 // 14. 0xee8a0 (matched) needs the same volatile view for its weapon lookup.
+// Round 14, no volatile: the existing function_cbd50 for the held index 28 (result
+// declared first 40); the existing unit_get_current_weapon 28; the fields at each use
+// 27; the object pointer for the held slot with the slot read through a second
+// lookup 4 (retail's reload; only the entry's data register and the slot's sign
+// extension differ). Two held lookups reload it data-first (15, 142 bytes).
 // @retail 0x2675f0
 bool function_2675f0(long object_index)
 {
