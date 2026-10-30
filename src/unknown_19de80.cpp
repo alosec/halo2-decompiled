@@ -308,6 +308,14 @@ static inline bool teams_enabled_19e1c0()
 }
 
 /* writes the text of one token for the event, returning its length */
+// score 390 (was 390): retail clamps the copy length with `cmp remaining, length` and a conditional
+// move, so the comparison written as `remaining <= result` was tried: with the volatile result 466,
+// with a plain result 652 (against 390 and 691). The plain result does match retail's frame 0x204
+// and its ESI result register, but it merges the four name/team copy tails into one block, where
+// retail keeps a copy of the length and clamp in each case and shares only the copy itself.
+// score 390 (was 390): this round confirmed the blocker is the frame: the `volatile` result keeps the
+// frame at 0x208 where retail has 0x204, and a plain result merges the four name/team copy tails
+// (701); the team loops and the token/remaining register homes still differ.
 // score 390 (was 390): the switch-side-time branch now returns the remaining length directly,
 // the team branches keep the event's team in a local; frame 0x208 versus 0x204 and the copy tails differ.
 // Depth one with plain result 709; depth one with original result 443; unsigned mode 443;

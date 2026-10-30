@@ -106,6 +106,11 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	arg_2->k = projected_term_k - cross_term_k;
 }
 
+// score 43 (was 43): this round's sentinel store orders (the +0x18 word before the bytes, after the
+// +0x1a word, the bytes swapped, the bytes written as numbers, the words cast to short) all compile
+// to the same 43, so the store order is the compiler's scheduling, not the source's.
+// score 43 (was 43): this round ran the source permuter over the body; the rotation's xmm ranking
+// (retail's xmm1..xmm5 cycle against ours) and the final sentinel store order still differ.
 // score 43 (was 43): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
 // Earlier: y/z range-add order, rotation registers and final sentinel
 // three causes remain. The y/z point draws add the point component before the range
