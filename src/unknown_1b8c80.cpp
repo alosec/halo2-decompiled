@@ -355,6 +355,23 @@ PRIVATE __forceinline void function_1b9201(long arg_0, vector3f *arg_1)
 		matrix_transform_vector(object_node_matrix(object_get(local_0->parent_index), local_0->parent_node), &local_0->forward, arg_1);
 }
 
+// score 6 (was 11): the seat scan is now guarded by an explicit
+// `tag->seat_count > 0` test, which puts the seat count in ESI and the short index in
+// EBP as retail does; what is left is the guard's folded compare, which still uses a
+// separate constant zero in EAX (also used for the seat = NULL store) where retail
+// compares the count against the index register and stores that register's zero, so
+// one extra xor and two register choices remain
+// score 11 (was 11): the seat loop's first test still compares the count against a
+// constant zero in EAX (the same zero that stores seat = NULL) while retail compares
+// the count against the index register, whose zero doubles as the NULL store; the
+// index here is zeroed separately, so the loop preamble is laid out differently. This
+// round's four trials in this file (the index initialised in the enclosing block, a
+// count local, a function-scope seat pointer and a plain recompile) gave 14, 14, 67
+// and a byte-identical body, so the body is unchanged
+// score 11 (was 11): the seat loop still keeps the seat count in EBP and the index
+// in ESI here while retail keeps the count in ESI and the index in EBP, so the loop
+// preamble is laid out differently; this round's count-in-a-local trial compiles
+// byte-identically and the rest of the function matches
 // score 11 (was 11): the seat loop keeps the seat count in EBP and the index
 // in ESI here, retail keeps the count in ESI and the index in EBP, so the loop
 // preamble is laid out differently. The rest of the function matches.
@@ -375,11 +392,15 @@ bool function_1b9200(long object_index, long prop_index)
 		if (!(tag->flagsbc & 1))
 		{
 			s_vehicle_seat_definition *seat = NULL;
+			short i = 0;
 
-			for (short i = 0; i < tag->seat_count; i++)
+			if (tag->seat_count > 0)
 			{
-				if (TEST_FIELD_BIT(tag->seats[i].flags.bit3))
-					seat = &tag->seats[i];
+				for (; i < tag->seat_count; i++)
+				{
+					if (TEST_FIELD_BIT(tag->seats[i].flags.bit3))
+						seat = &tag->seats[i];
+				}
 			}
 			if (seat)
 			{
@@ -940,6 +961,20 @@ short __stdcall function_1b9890(long actor_index, s_slot *slot)
 
 /* invites the clump members to the joint, the nearest first, when the
    object has more than one seat to take */
+// score 17 (was 17): the element pointer is still formed after the call's argument
+// pushes, so the element pool's data has to survive them and lands in ESI with the
+// record in EAX; retail forms it before the pushes, so the data stays in the
+// volatile EDX with the record in ECX. This round's trials in this file could not
+// move the two data loads
+// score 17 (was 17): the call to the joint invitation now hands its arguments over
+// in retail's registers (the joint index in EAX and the priority in EDI), so the
+// whole gap is the prologue: retail loads the element pool's data into EDX right
+// after the table pointer and keeps the element record in ECX, ours loads the data
+// late into ESI and keeps the record in EAX
+// score 17 (was 17): the prologue still loads the element pool data late into ESI
+// and the element record into EAX where retail loads the data into EDX right after
+// the table pointer and the record into ECX; the two inline lookups have the same
+// shape, so this round's trials could not change the order of the data loads
 // score 17 (was 17): retail loads the element pool data into EDX before the
 // actor is fetched and keeps the element record in ECX, ours loads the data
 // later into ESI and the record in EAX. Both read the actor pool global
@@ -1287,6 +1322,13 @@ struct s_1ba091
     s_slot_entry_iterator field_4;
 };
 
+// score 198 (was 198): the frame 0x14 still agrees; the object-header data is still
+// acquired after the actor is scaled where retail takes it before, and the
+// eligibility mask, the entry and the result keep their homes; unchanged this round
+// score 198 (was 198): the frame 0x14 still agrees, but the object-header data is still
+// acquired after the actor is scaled where retail takes it before, and the eligibility
+// mask, the entry and the result keep their homes; this round's trials in this file
+// found no lower form of that order
 // score 198 (was 198): frame 0x14 agrees; early object-header acquisition, incoming actor, mask/entry/result carriers and reusable homes remain.
 // Earlier: frame 0x14 agrees; incoming actor ECX/EDX, early object-header
 // acquisition, selection-mask storage and iterator/result homes differ.

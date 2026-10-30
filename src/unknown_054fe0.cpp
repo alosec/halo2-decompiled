@@ -1116,6 +1116,9 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 	return result;
 }
 
+// score 67 (was 67): the frame is still four bytes smaller than retail's and the
+// count, the minimum and the maximum are still set up in another order; this
+// round's trials in this file found no lower form of them
 // score 67 (was 67): the frame is four bytes smaller than retail's and the locals
 // (the count, the minimum and the maximum) are set up in another order.
 // Retail gives latency ebp and spills the member cursor; ours the reverse. The
@@ -1252,6 +1255,12 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 
 /* the host gives the players their properties: unique names, and teams when
    the game has teams */
+// score 184 (was 184): the frame 0xe4 still agrees; the owner, the name count, the
+// zero's allocation and the requested cursor are unchanged, and this round's trials
+// in this file found no lower form of them
+// score 184 (was 184): the frame 0xe4 agrees; the owner, the name count and the
+// zero's allocation and the requested cursor remain, and this round's trials in
+// this file found no lower form of them
 // score 184 (was 184): frame 0xe4 agrees; owner/count/zero allocation and requested cursor remain.
 // Round 75: our zero stays in edx from the parameters test (cmp edi, edx) through both loops, so the
 // name count is spilled and the owner leaves edx. Count increment as its own statement 184; long mask
@@ -1675,6 +1684,12 @@ static __forceinline bool function_65341(c_class_58d20 **out)
  return result;
 }
 
+// score 118 (was 118): retail still picks the observer pointer with a conditional
+// move after the flag test and ours still computes the same value with a negation
+// and a test; unchanged this round
+// score 118 (was 118): retail still picks the observer pointer with a conditional
+// move after the flag test while ours computes the same value with a negation and
+// a test; this round's trials in this file found no lower form of it
 // score 118 (was 118): retail picks the observer pointer with a conditional move
 // after the flag test; ours computes the same value with a negation and a test.
 // Earlier retained form counted 114 (was 120).

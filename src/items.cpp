@@ -400,6 +400,15 @@ inline real item_real_random_range(real lower, real upper)
 	return lower + (upper - lower) * ((real)(*seed >> 16) * (1.0f / 65535.0f));
 }
 
+// score 6 (was 6): the three x87 instructions around the effect call's argument
+// pushes are still one slot early here (the fxch st(1) after the first push 0,
+// the delay spill before the tag-index load and the fstp st(0) before the push
+// eax); this round found no lower form of the argument setup
+// score 6 (was 6): the argument setup still keeps the fxch st(1) after the first
+// push 0, the delay spill before the tag-index load and the fstp st(0) before the
+// push eax; this round added no lower form (the owner's field order, the delay
+// expression's spelling and the source permuter leave the three x87
+// instructions where they are)
 // score 6 (was 6): the effect call's argument setup has three x87
 // instructions one slot earlier in ours: the fxch st(1) before the first push 0,
 // the delay spill before the tag-index load and the fstp st(0) before the push
@@ -1306,6 +1315,12 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 	function_10cf80(&velocity, object_index, false);
 }
 
+// score 185 (was 185): the frame 0xac agrees; the release byte's read-modify-write,
+// the tail, the event-point homes and the location-call setup are unchanged, and
+// this round's trials in this file left them where they are
+// score 185 (was 185): the frame 0xac agrees; the release byte's read-modify-write,
+// the tail, the event-point homes and the location-call setup remain, and this
+// round's trials in this file left them where they are
 // score 185 (was 185): Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
 // Earlier: Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
 // Earlier 154 (was 154): frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.

@@ -9,6 +9,12 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
     real arg_3, bool *arg_4, s_path_trace_result *arg_5);
 
 #pragma inline_depth(0)
+// score 104 (was 104): the frame 0x3c still agrees; the half and offset XMM allocation
+// and the x87/SSE projection scheduling are unchanged, and this round's trials in
+// this file found no lower form of them
+// score 104 (was 104): the frame 0x3c agrees; the half and offset XMM allocation and
+// the x87/SSE projection scheduling remain, and this round's trials in this file
+// found no lower form of them
 // score 104 (was 104): frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling remain.
 // Earlier: frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling differ;
 // tried position base 105; origin base 105; displacement base 105; geometry bases 105; unsigned component 104;
