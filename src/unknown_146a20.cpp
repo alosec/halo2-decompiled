@@ -67,6 +67,11 @@ bool g_47f05b;
 // buffer argument through g_479888 38; `(c_havok_fixed_memory *)g_479888 + 1` 38; a typed
 // `fixed` pointer local with `fixed + 1` 34; `block` read after the three global stores 34; the
 // fixed buffer in a local before storing g_479894 38; `block` reassigned from g_479888 for the pool 34.
+// A constructor that takes only the size and puts the buffer at `this + 1` (in the fixed buffer or
+// its base, with or without `block`), or a subclass holding the 0x15000 bytes, gives retail's reload
+// and the 1 in edx, leaving only the dead vtable store: 35 each (140 bytes). A one-file LTCG harness
+// keeps the store for none of member reads, constant-folded branches, a cross-file constructor or the
+// globals as one struct.
 // Force-inline abstract constructor 34; scoped block 34; abstract-typed block 34; refcount-typed block 34;
 // intermediate/derived/abstract result reused for the pool 44/44/44; intermediate result published 38;
 // inline target 34.

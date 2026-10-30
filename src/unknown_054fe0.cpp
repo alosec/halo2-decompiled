@@ -1140,6 +1140,9 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // (two stack arguments): 112, host arm first 112, with continue 112; the same
 // with host read after the observer 109/109. Retail also re-reads member_count
 // in the member check where ours reuses the loop's load.
+// Observer as a ternary initializer 102 (convention flips, 0x658c0 and 0x65770
+// lost); times declared first 67; mask update as `x = x | bit` 67; loop index
+// declared before the loop 67; `count != 0` 67.
 // Round 198: guarded-result graphs at the existing channel/observer/member QoS helpers, seven
 // combinations 67 each; all three with late host read 86.
 // @retail 0x64480

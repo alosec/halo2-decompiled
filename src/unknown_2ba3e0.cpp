@@ -450,6 +450,10 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // sequential in both). Minimum scale with the normalized pointer as its output 34; the in-place
 // scale helper on the normalized pointer 34; a named velocity pointer for the blend and clamp
 // 397, for the clamp only 260; previous velocity scaled into its own vector 191. Restored.
+// Round 282: selected-bound common completion, upper/lower defaults and split normalize/scale
+// 365/362/342/365; with shared change magnitude 359/360/355/359 (frame 0xac).
+// Shared normalization-product setter 37 (1519 bytes). All restored; native 0xb4 frame,
+// back-edge definition/first reloads and lower normalization publication remain.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {
@@ -648,11 +652,15 @@ real g_55e618;
 // Velocity snapshot argument 676; reflection loop 102; reflected value 241; sweep scale 129;
 // both scales 129; coefficient local 102; displacement scale 129; snapshot plus loop 676;
 // shared tangent 190; shared start 102; both shared differences 102. Original body retained.
-// score 102 (was 102): retail copies dot for perp.i/j and multiplies perp.k in place, ours
+// Earlier: retail copies dot for perp.i/j and multiplies perp.k in place, ours
 // copies the normal components. On the velocity-pointer form with the position built first
 // and the products interleaved (185): velocity pointer before normal 187, normal pointer
 // after velocity 189, keep after the products 190 (1537 bytes, frame 0x118); interleaved
 // products on this body 209 / 211.
+// Round 410: Shared full-vector response assignment, with shared projection, shared tangent, and
+// both producers 191/191/191/191. Separate placement inline/noinline declarations with that
+// consumer 285/191; alone 289/102. All restored; sweep/collision homes and projection spills
+// remain.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

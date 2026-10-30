@@ -706,7 +706,10 @@ struct s_typed_object_header
 /* 0xe68c0, src/unknown_0e68c0.cpp */
 bool function_e68c0(long type, long unit_index);
 
-// score 75 (was 85): the prologue saves EBX and EBP where retail saves ECX and EBX, so the saved
+// score 57 (was 75): the result is a byte that spills to a frame slot and the guard tests
+// the vehicle index first, so the body lines up with retail's; what is left is the register
+// set (retail keeps the vehicle index in eax and the pool pointer in ebp, ours in ebp and
+// edi) and the 1<<type shifts, which retail does in ebx and ours in eax.
 // register set and the order of the body differ.
 // With the result a long in ebx the 1<<type shifts use eax, so the vehicle index moves to ebp in
 // the prologue; retail's byte result loses bl to the shifts and spills to the frame slot, the
@@ -717,20 +720,22 @@ bool function_e68c0(long type, long unit_index);
 // @retail 0x9ee20
 bool c_unit_exit_vehicle_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
-	long result = false;
 	long unit_index = function_a58d0(entities[0]);
 	long vehicle_index = function_a58d0(entities[1]);
-	if (unit_index == NONE || vehicle_index == NONE)
-		return result;
-	s_record_pool *local_1 = g_4e0300;
-	if (((1 << ((s_typed_object_header *)local_1->data)[unit_index & 0xffff].type) & 3) && ((1 << ((s_typed_object_header *)local_1->data)[vehicle_index & 0xffff].type) & 3))
+	bool result = false;
+	if (vehicle_index != NONE && unit_index != NONE)
 	{
-		s_vehicle_event_unit_view *unit = (s_vehicle_event_unit_view *)((s_typed_object_header *)local_1->data)[unit_index & 0xffff].object;
-		if (unit->parent_index != NONE && unit->parent_index == vehicle_index &&
-			unit->seat_index != NONE && unit->seat_index == *(long const *)data)
+		s_record_pool *local_1 = g_4e0300;
+		byte *headers = (byte *)local_1->data;
+		if (((1 << ((s_typed_object_header *)local_1->data)[unit_index & 0xffff].type) & 3) && ((1 << ((s_typed_object_header *)headers)[vehicle_index & 0xffff].type) & 3))
 		{
-			function_e68c0(0x1d, unit_index);
-			result = true;
+			s_vehicle_event_unit_view *unit = (s_vehicle_event_unit_view *)((s_typed_object_header *)local_1->data)[unit_index & 0xffff].object;
+			if (unit->parent_index != NONE && unit->parent_index == vehicle_index &&
+				unit->seat_index != NONE && unit->seat_index == *(long const *)data)
+			{
+				function_e68c0(0x1d, unit_index);
+				result = true;
+			}
 		}
 	}
 	return result;
@@ -2068,7 +2073,7 @@ static __forceinline long function_9d453(long arg_0, short arg_1)
 	return local_0;
 }
 
-// score 168 (was 168): object/offset homes and low-mask allocation remain;
+// score 155 (was 155): object/offset homes and low-mask allocation remain;
 // Round 9 (lane 10): retail holds the 0x400 block's short in EAX (stores 0x90 before the result update);
 // its value as a ternary 201; its declaration after the field reads 168; set in if/else 201; both slot
 // masks at the loop head 285 (1041 bytes); first slot mask long 168.
@@ -2181,7 +2186,12 @@ static __forceinline long function_9d453(long arg_0, short arg_1)
 // the store 168; the unit through the header-array index 168 (SIB order unchanged); the 0xee field and
 // its new value as bool 168 (retail loads the field into DL before the compare and keeps both float
 // flags in stack bytes; ours compares memory and keeps the first flag in DL).
-// score 155 (was 168): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Earlier 155 (was 168): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Round 284: Complete native child-result record, direct request parameter, and
+// signed/unsigned bit ordinal 191/191/191/191; constant field defaults
+// before the getter 278/278/278/278. Exact-only records restored.
+// Original separate results with direct request parameter, signed/unsigned ordinal
+// 155/155; all executable source restored.
 // @retail 0x9d450
 long c_unit_type::v27(long arg_0, long arg_1, long arg_2, long arg_3)
 {

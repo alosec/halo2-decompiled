@@ -1677,11 +1677,16 @@ struct s_unit_flags_10a_view
 
 /* the unit's death outside mode 4: clears its flags, applies the globals'
    damage at +0x144 to it and, unless flag 2 at +0x10a, marks it */
-// score 35 (was 39): retail clears flags 21 and 5 of +0x134 with two stores (the second from the
+// score 35 (was 35): retail clears flags 21 and 5 of +0x134 with two stores (the second from the
 // first's register) and flag 7 of +0x10a in memory, before it reads the globals; ours merges the
 // two clears. Flag 2 of +0x10a read through a word bitfield view gives retail's load and shift
 // (37); the globals read after the first clear 35. No effect: the clears through a dword or long
 // bitfield view (37); worse: the first clear through a fresh lookup 39, the second 67, all three 63.
+// Round 410: Shared bit-setter combinations for flags21/5/7 41/41/41/35/41/41/41; all setters with
+// globals first 38. Real primary-field bit views for the same seven combinations
+// 35/35/35/33/33/33/33; all with globals first 39 (172 bytes). The 33/180-byte forms gain only two
+// and are rejected. All bodies and primary field declarations restored; flag store/register order
+// and material publication remain.
 // @retail 0xcffc0
 void function_cffc0(long unit_index)
 {
@@ -1740,9 +1745,12 @@ bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 
 /* whether a rider of the unit sits in a seat with bit 11 whose +0x3e is
    the given value */
-// score 2 (was 33): only the order of the two argument loads before function_d0620 differs
+// score 2 (was 2): only the order of the two argument loads before function_d0620 differs
 // (retail moves unit_index into eax before taking the iterator's address). Flag 11 read as a field
 // bit gives the rest. Iterator first, result first or an iterator pointer local 2; result after the call 77.
+// Round 410: Initializer inline/noinline, next inline/noinline, both inline and both noinline 2
+// each; natural for initializer 2; predicate-defined result 49. All restored; initializer
+// argument-load order remains.
 // @retail 0xc9200
 bool __stdcall function_c9200(long unit_index, short value)
 {
@@ -2647,10 +2655,6 @@ void __stdcall function_c42e0(long unit_index, void const *placement)
 /* picks up a grenade: when the globals allow its type (+0x104, 0x2c bytes
    each) and the unit carries fewer than the type's maximum, counts it,
    tells the player code, and deletes it */
-// score 33 (was 33): Entry and frame agree; shared NONE carrier and final player word compare differ.
-// Entry bool result 54; long result 96; entry long result 96; byte result 90;
-// promoted player slot 33; nested object tests plus promoted slot 33; direct success 53;
-// early globals guard 95. Original body restored.
 // @retail 0xccba0
 bool __stdcall function_ccba0(long unit_index, long grenade_index)
 {
@@ -2674,9 +2678,9 @@ bool __stdcall function_ccba0(long unit_index, long grenade_index)
 				unit->grenade_counts[*(short *)(definition + 0x12e)]++;
 				function_a7a30(unit_index, 0x400000);
 				function_a8950(unit_index, grenade->definition_index);
-				s_unit *object = (s_unit *)function_badc0(unit_index, 3);
-				if (object && object->unknown13c != NONE &&
-					*(short *)((byte *)g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c + 0x28) != NONE)
+				long controller = unit_get_player_index(unit_index) == NONE ? NONE :
+					*(short *)((byte *)g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c + 0x28);
+				if (controller != NONE)
 				{
 					function_f8110(grenade_index);
 				}
@@ -3363,9 +3367,13 @@ bool __stdcall function_cc460(long object_index)
 /* the unit's team (+0x138): its player's, else its actor's, else for a
    vehicle the team its riders share (riders in seats with bit 11 count
    apart; any disagreement leaves it NONE) */
-// score 14 (was 118): retail lays the final team test out with the team == NONE store first; the
+// score 14 (was 14): retail lays the final team test out with the team == NONE store first; the
 // tests nested or reordered stay at 14. Flag 2 of +0x10a through the word bitfield view 14 (the
 // earlier TEST_FIELD_BIT on it 111); flag 11 of the seat as a field bit.
+// Round 410: Final publication outside iterator admission: conditional value, disagreement
+// invalidation, branch-defined output and ordinary-first output 81/82/63/144; with both team
+// accumulators full width 86/88/78/148. All restored; final no-team publication/exit layout
+// remains.
 // @retail 0xc6990
 void function_c6990(long unit_index)
 {
