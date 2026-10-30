@@ -120,10 +120,11 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 }
 #pragma inline_depth(255)
 
-// score 37 (was 37): the session state test is inverted (je against jne) and the shared tail
-// block is placed on the other side of the branch. Retail lays the search block (mark the
-// session, mode 7) right after the session_b state test and reaches it from the timeout
-// compare with `jle tail; jmp search`; ours always places it after the timeout compare.
+// score 15 (was 37): only the order of the players-match block and the timeout test differs:
+// retail lays out [search][players match][timeout: jle tail; jmp search], ours
+// [search][timeout: jle tail; jmp search][players match]. Retail's two search-block copies are
+// cross-jumped after layout; VC merges them before layout (block last) whenever the timeout
+// copy is the last arm before the shared return, so the match arm is written last here.
 // Tried: a search flag set on both paths (37); if/else with the goto into the else (37);
 // the search block written out twice, with local_0 = true (37), return true (65) or one of
 // each (90); returns in the players-match branch and a goto to the end (41); a
@@ -137,7 +138,12 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 // one copy 65/65, in both 34 (178 bytes, copies merged); a dead `local_0 = true` before either
 // `return true` 65/65.
 // Unhandled-result bool/char/short/word/dword 83/83/89/89/86; genuine success
-// char/short/word carriers 66/54/54. Original Boolean result and shared tail restored.
+// char/short/word carriers 66/54/54. Round 96: two copies in the original arm order 37
+// (merged), with the result set before/between the calls 95/74; the state test as a switch
+// 54 (range compare, default last; copies kept apart); a named bool for the state test 55
+// (copies apart, the 71e00 arm last); the state test inverted 37; an extra return in the
+// state arm 38/44; an inline search helper at both sites 20 (the timeout site keeps a call),
+// forced inline 37; the players-match test `== false` 15; no volatile store 75.
 // @retail 0x712d0
 bool function_712d0(c_session_state_matchmaking *arg_0)
 {
@@ -152,21 +158,28 @@ bool function_712d0(c_session_state_matchmaking *arg_0)
 		{
 			if (!local_3->state)
 			{
-local_7:
 				if (arg_0->flag97c)
 					session_search_mark_session((s_session_search *)&arg_0->flag97c,
 						(const s_search_session *)((byte *)arg_0 + 0xa20));
 				network_session_set_mode(local_2, 7);
 				local_0 = true;
-				goto local_6;
 			}
-			if (network_session_players_match(local_2, local_3))
+			else if (!network_session_players_match(local_2, local_3))
+			{
+				if (function_75890(arg_0->unknown970) > g_network_configuration.value190)
+				{
+					if (arg_0->flag97c)
+						session_search_mark_session((s_session_search *)&arg_0->flag97c,
+							(const s_search_session *)((byte *)arg_0 + 0xa20));
+					network_session_set_mode(local_2, 7);
+					local_0 = true;
+				}
+			}
+			else
 			{
 				network_session_set_mode(local_2, 13);
 				local_0 = true;
 			}
-			else if (function_75890(arg_0->unknown970) > g_network_configuration.value190)
-				goto local_7;
 		}
 		else
 		{
@@ -174,7 +187,6 @@ local_7:
 			function_71e00(arg_0);
 		}
 	}
-local_6:
 	return local_0;
 }
 

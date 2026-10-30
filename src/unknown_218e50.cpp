@@ -19,6 +19,9 @@ static inline s_sound_permutation_set *sound_permutation_set_get(s_sound_promoti
 // length, without the casts 61; on top of that: the globals first 57 (caller 0x18c720 lost), the
 // set from the globals local 47 (caller lost), an else-if clamp 51, the last index in the result
 // first 56, a short clamped index 70 (caller lost).
+// kept in the 16 bit registers instead of the 32 bit ones.
+// Direct signed-count validation with early or positive ownership scored
+// 95/90 (164/169 bytes); short/long sample results and global reads varied.
 // @retail 0x218e50
 real function_218e50(long tag_index, short set_index, short permutation_index, short sample_index)
 {

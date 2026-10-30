@@ -806,7 +806,8 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 }
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
-// score 49 (was 90): the length and the frame match retail's. Left: the prologue (retail pushes
+// score 49 (was 49): the length and the frame match retail's. Left: the prologue (retail pushes
+// the length and the frame match retail's. Left: the prologue (retail pushes
 // ebp before ebx and copies the count into the compressed size's slot), the loop head (retail sets
 // the header's zero and kind 1 at the head, before the count test, and rebuilds the ring base each
 // pass; ours peels the test) and the count and data-address registers in the loop body.
@@ -833,6 +834,13 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // destination read once through its address 14; a void destination 14; dword offset 14; offset
 // declared first 14; word size 15; the terminal record at the loop head with a break 128; a
 // break to a terminal record after the loop 159.
+// Round 95 (lane 14's 14 form reproduced; one-file harness exact for it): deleting any other
+// statement moves neither single, so both are local. `add eax, ebp`: `&destination[offset]`,
+// `offset + destination` or a const void cast 14 each; the real s_ring_buffer::write at the data
+// write 162 (stays out of line); that method declared inline in its file 14 (LTCG inlines it with
+// the same `lea ecx`; 0x869a0 2 -> 99); harness: byte source, forceinline copy, position local,
+// size local, kind cast, `memset(&header, 0, 8)`, header declared outside the loop, word kind,
+// a pointer-based kind store, `0 < remaining`, a long flag: no change.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {

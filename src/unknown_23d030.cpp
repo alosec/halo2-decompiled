@@ -153,6 +153,9 @@ struct s_free_state_23d260
 // 293/112/287; shared yaw sine/cosine 110; roll update before the pitch clamp 132;
 // a one-use normalization input pointer 107 (1329 bytes, exact-match-only). No pointer kept.
 // Round 409: Existing staged up cross alone/fallback setter/initial setter/both setters 244/243/244/238; all recover zero XMM1 and first +0xa6, last reaches 1326 bytes, but side/up/roll allocation worsens. Initial/fallback/both whole-vector setters 110; uniformly const trig values 110. Original body and normalization retained; no helper or include kept.
+// Round 194: existing shared rotation/staged up cross/direct trig/both 285/221/224/220;
+// those four with alternate normalization 289/307/293/299. Staged forms recover zero
+// and first +0xa6 but regress the complete body. Original rotation, normalizer and all includes restored.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {

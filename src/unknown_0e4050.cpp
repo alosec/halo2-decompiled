@@ -54,6 +54,9 @@ inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool fl
 // with a ternary 30, with two returns 27 (retail's exact edge and clamp blocks, laid out in the
 // other order); fabs(a - b) < 0.0001f first 27; the clamp result declared first with the edge
 // returns in the else 10.
+// Retail full-width edge comparison and separate returns remain; native signed/unsigned
+// outcome 10/10, signed word 9; false-first/full-arm outcome 13/10, zero-first real result 10, explicit edge
+// returns 10, real truth return 24. Original word outcome and body restored.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {

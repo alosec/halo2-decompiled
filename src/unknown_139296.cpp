@@ -336,6 +336,11 @@ void function_13ad48(long user_index, byte const *selectors, real *values, byte 
 bool function_22acb4(long player_index);
 
 // score 165 (was 165): extra second-mask spill and persistent constant homes remain.
+// Retail reads the mode word as NONE, 0, 1 in that order and the type bits as
+// 1, 2, 3; either order alone scores 190-196, both 196, the 0x3c block written
+// as clears 232-234, a dword second mask 288 and an unsigned flags word 192.
+// Retail keeps the first mask in ebx and the second in bx; ours keeps the
+// first in edi and spills the second to a second frame slot.
 // Round 43: arithmetic NONE-seeded first 237; with third type order 123 240;
 // dword/signed-word first 295/295; dword/signed-word second 291/288;
 // OR-seeded first with third orders 123/231 281/280.
