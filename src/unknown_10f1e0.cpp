@@ -447,6 +447,9 @@ void function_1d90e0(long render_model_index, long node_index, transform4x3f *no
 // existing graph_tag_get with bit_vector_test 42. With the mask test our update reuses the test's
 // mask-first shape (load/OR/store); 0x2c39f0 (matched) shows retail giving that shape after a mask test
 // too, so the update follows the register state rather than its spelling.
+// Round 83: bit_vector_test with the set moved ahead of 0x1d90e0 44 (the update is then index-first but
+// still load/OR/store); a block-scoped graph pointer per arm, `found` declared before the loop, `return`
+// at the walk's end, and a direct `|=` update with the shift test 37 each.
 // @retail 0x113980
 void __stdcall function_113980(long object_index, long target_index, bool alternate, real weight,
 	s_animation_state *state, s_graph_pair_iterator *iterator, long node_count, transform4x3f *nodes)
@@ -1320,6 +1323,9 @@ long function_cbd50(long unit_index, short weapon_index);
 // one instruction), with a byte result 339, with the flag set through an inline pointer helper 334, with
 // a ternary depletion and both slot reads through the headers 340, with both slot reads through the unit
 // 329. Retail re-reads the unit in both queries and the data in the second: loads are not reused there.
+// Round 83: one depletion helper for 0x110ab0 and 0x1103a0, static inline (kept out of line) 419, forceinline
+// 334 (frame four); the depletion flag renamed to sort between the other two 164; interruptible declared
+// before depleted 165; result declared after the two flags 165.
 // @retail 0x110ab0
 bool __stdcall function_110ab0(long unit_index)
 {
@@ -1504,6 +1510,9 @@ bool __stdcall function_110ab0(long unit_index)
 // with a bool depletion 480; with the slot reads through the unit 487; the headers local for the two
 // checks only, after/before the unit read, 480/480; with the unit index read once through its address
 // 474 (callers unchanged); that address read alone 450.
+// Round 83: depletion/interruptible declared before the unit lookup 450 (same code); that with `result = true`
+// at its declaration and no state-switch default 483; interruptible before depleted 463; the overlay flag
+// declared with the others 493; the 0xc7070 test inverted 473.
 // @retail 0x1103a0
 bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 {
@@ -1824,6 +1833,9 @@ PRIVATE __forceinline void project_112070(vector3f const *v, vector3f const *for
 // agrees. The whole body in a helper the stdcall entry calls: static inline 4236 (kept out of line),
 // forceinline 790 (same code), inline 4236; only the part after the overlay-flag clear in a helper:
 // static inline 3727, forceinline 913.
+// Round 83: the final slot test inverted with its arms swapped 790 (same code; retail lays the then-arm
+// first); the relative angles declared with the defaults 790; the scratch channel declared first 801; the
+// two aiming channels at the aiming block's top 789; the graph looked up after the definition 795.
 // @retail 0x112070
 void __stdcall function_112070(long unit_index, dword const *node_mask, long node_count,
 	real_quaternion_transform *transforms)
@@ -2534,6 +2546,9 @@ PRIVATE inline bool function_111651(c_animation_channel const *arg_0)
 // the last use, the first two, the first and last, or once into a local: 663 each (ret 8 as in retail,
 // first difference +0x23), but the request pointer is then cached in ESI where retail re-reads it, and the
 // callers lose (0xdd360 281 -> 282, 0xefde0 715 -> 721).
+// Round 83: the held-slot calls as a plain counted loop 666 (same code, kept); the 0xc000043 flag as one
+// expression 700; the first request flag copied as a bool 673; the change test as one `||` 673; the
+// validity and the forced flag ahead of the change test (retail's order) 686.
 // @retail 0x111650
 bool __stdcall function_111650(long arg_0, long *arg_1)
 {
@@ -2730,14 +2745,12 @@ bool __stdcall function_111650(long arg_0, long *arg_1)
     {
         if (local_2->graph_tag_index != NONE && !(local_2->flags & 1))
             local_2->resources_request(local_2->unknown70, local_2->unknown74, local_2->unknown78, true, true);
-        long *local_31 = (long *)((byte *)local_0 + 0x218);
-        long local_32 = 4;
-        do
+        for (long local_32 = 0; local_32 < 4; local_32++)
         {
-            if (*local_31 != NONE)
-                function_1060a0(*local_31, arg_0);
-            ++local_31;
-        } while (--local_32);
+            long local_31 = ((long *)((byte *)local_0 + 0x218))[local_32];
+            if (local_31 != NONE)
+                function_1060a0(local_31, arg_0);
+        }
     }
     if (!(local_2->flags & 1))
     {
@@ -2829,7 +2842,7 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
     return elapsed;
 }
 
-// score 44 (was 52): BLOCKED-BY 0xe70b0 (its return type) for the frame 0x3c versus 0x38. Measured from
+// score 44 (was 44): BLOCKED-BY 0xe70b0 (its return type) for the frame 0x3c versus 0x38. Measured from
 // the frame top every slot agrees except the action short (ours 4-aligned below the 4-byte slots,
 // retail 2-aligned with the two flag bytes under it) and the control/definition pair; VC7.1 gives a
 // lone 2-byte local, word, char[2], one-short struct or inlined short parameter a 4-aligned slot, so
@@ -2915,6 +2928,9 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // returning a two-byte class with a constructor by value (hidden return pointer in EAX, returned
 // unchanged, as retail's 0xe70b0 does) gives frame 0x38 and 20 here, 12 with the declaration order
 // kept above (the control/definition slots and the two flag stores before the lookup's branch remain).
+// Round 83: animation chosen by a ternary 189; the action short declared first 218; the no-overlay and
+// overlay-busy exits as `return false` 225/225; the animation default before the table reads with both flags
+// cleared before the lookup's `if` 232 (the clears then sit where retail has them, but NONE goes to EDI).
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)
