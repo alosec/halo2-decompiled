@@ -201,6 +201,22 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // retail computes both logarithms before either product, keeps
 // the upper one on the x87 stack until the division (FILD n + FDIVP) and stores the
 // integer weights in the dead lo/hi argument slots (PUSH ECX frame); ours multiplies
+// the lower product first (FIMUL), divides with FIDIV and needs a second slot; the
+// log computations sink to their use from any earlier statement or block. Forms:
+// implicit integer weights 43 (FIMUL); one expression with the log calls 43; named
+// exponent with inline conversions 43; weights before the logs 38; named exponent 38;
+// double intrinsics 41; the blend as an inline helper taking the logs 38 (diagnostic
+// only); n declared after the logs 38; upper-first logs, real weighted sum/exponent,
+// entry log homes and reader declarations 38; explicit log/weight locals with one
+// result 64; positive interior admission 49; double logs 38; upper double log 38;
+// lower/upper/both products reversed 38; integral lower/upper weight 44/44; direct
+// interior return 36 (rejected two-point gain); limit before compare/read/call
+// 41/44/60; limit/log local renames 38; earlier weight declarations 38; integer
+// weights 43; named weighted logs 38; in-place accumulator from the lower log 43;
+// both logs before the limit test 41; limit as a conditional 47; inline helper taking
+// lo/hi 38; named real count and exponent 52; accumulated exponent (`+=`) 43, upper
+// term first 43; logs in an inner block 43; exp of a double argument 43; exp guarded
+// by an implied `n > 0` 35 (redundant test, not kept).
 // the lower product first, divides with FIDIV and needs a second slot. Implicit
 // integer weights 43 (FIMUL); one expression with the log calls 43; named exponent
 // with inline conversions 43; weights before the logs 38; named exponent 38; double

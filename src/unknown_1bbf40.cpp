@@ -349,6 +349,25 @@ real function_1e3920(long actor_index);
 // Reference declared, then assigned 46; scratch fetched after the search outputs are declared 46;
 // actor before result 65; both comparisons with the sentinel first 46; the request declared at the
 // top of the function 48.
+// aligned 0x764 frame agrees; actor-index and search-result carriers differ after scratch allocation.
+// Retail reloads the actor index into EBX for the search and keeps the result in EAX until the success
+// branch (then ESI); ours reloads the index into EDX and copies the result to EBX at once.
+// Earlier result-first 53; output/reference and failure-cleanup forms did not close the carrier gap.
+// Per-use actor receiver with nested failure-first and output-home names 117/117; early admission 140/140;
+// success-first 116/116; success-first/early admission 138/138. All forms grow to 368 or 372 bytes.
+// Typed request reference fields 46; complete request Boolean 89; named movement kind 46;
+// typed fields/kind 46; Boolean with fields/kind/both 89/89/89; aggregate zero with fields/Boolean 99.
+// Round 110: selection compared inside the else-if 46; reference declared before the scratch call 46;
+// success branch first 46; flag store before the result 46; out locals swapped 46; the reference
+// compared as a long value 46; the search part as an inline helper 223 (its callee inlined).
+// The scratch release written in each branch 47 (342 bytes, same carriers); the failing actor re-read
+// into `actor` 46; the selection tested without a local 46; the search outputs or the reference
+// declared at the top of the function 46/46.
+// Separate raw/admitted reference values with immutable raw value and entry request/scratch
+// declarations: 46/46/48/48/46/46/48/48, all 344 bytes. Original lifetimes and body restored.
+// Round 18 (lane 10): the select-or-remember tail as a forceinline helper 46 (same code); the reference
+// or the scratch pointer declared at the block top 46/46; the reference compare written global-first 46;
+// the result declared after the actor 65.
 // @retail 0x1bcab0
 bool __stdcall function_1bcab0(long actor_index, s_slot *slot)
 {

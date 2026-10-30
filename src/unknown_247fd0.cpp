@@ -179,6 +179,9 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // Round 402 on the expanded-lookup graph: declared cache-record type, direct four
 // random returns, both, combined initial flags, flags/type and flags/direct draws
 // 70 each; declared type with retail timestamp order 133, with all three forms 133.
+// Round 6: field_10 stored after the field_14/field_16/field_18 samples 184/168/152; field_50
+// read into a named pointer before the compare 70; retail order with the compare operands
+// swapped 133.
 // All restored; timestamp/sample order and later scratch registers remain.
 // Round 113: named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; field_10
 // first alone 133 (aligned 19 against 39: only the split compare and the child-loop registers differ);

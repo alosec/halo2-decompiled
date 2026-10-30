@@ -249,6 +249,24 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // field retest 55. Compiler barrier after the test (with the early bool) 42: then only the index
 // arithmetic is still shared; plus a (word) index at the object read 39; barrier after a join
 // on the local 38; flag value tested twice 66; index re-read from the entity after the clear 67.
+// retail's data reload after the flag test (table global kept in EDX, index
+// recomputed) is a CSE kill: a store between the flag test and the object read gives retail's
+// push/pop EBP and reload; ours shares one header address and keeps a long result in EBP. Forms
+// (77 at the start): incoming output flags 87; later result 80; both 89; invalid header first 75;
+// shared header 77; incoming flags and header 87; guard exits 77; result from validity 69;
+// byte/native/short result 76/49/52; published index 70; full acceptance 73; incoming flags with
+// byte/native result 64/69; early long/byte/short/signed-byte success result 67/70/65/70; byte
+// after notification 70; native header acceptance 65; native rejection first 52; combined native
+// acceptance 67; early bool result set after the attach 77; header or object through the
+// entity's index 77/77; result declared after the in/out value 77; native result with the header
+// through the entity's index 49; signed-byte/unsigned-word/unsigned-native validity 76/52/49;
+// shared success exit bool/long/byte 75/67/70; shared validity exit native/word 52/55; result
+// header/object/both getters 49/49/49; both getters with early bool success 77; bool result with
+// a table local/forceinline getters/named flag/else-if NONE retest/entity index 78/77/77/75/77.
+// Round 6: deleted index set to NONE then published and retested 38 and as a ternary 38 (both
+// retail's object read; the join keeps `cmp; mov [edi+8]; je` because a join block holding a store
+// is never threaded); ternary field store with a field retest 43; flagged-arm store with a field
+// retest 55; repeated index store in the clear arm 42.
 // false BL lifetime, temporary EBP save and independent header/object lookups remain.
 // retail holds a bool result in BL from before the creation call, saves
 // EBP only around the header test and loads the header and the object separately; ours keeps

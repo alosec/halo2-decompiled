@@ -127,6 +127,45 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // and cosine 130, with them named before the call 123 (dot i, j, k); the point component first in the
 // sums 52; the rotation helper as plain static inline 52; its parameters as (vector, axis, angle) 52.
 // Diagnostic only: the range helper's result cast to real 48 (draws as retail, rotation unchanged).
+// y/z range-add order, rotation registers and final sentinel
+// scheduling differ. Result, conversion and sine stack homes now agree.
+// retail packs the random-to-float temp at frame +8 and the
+// result at +0xc (the sine shares +0 with the first sum); ours swaps those two
+// slots. Ours also adds the field before the range start in the three point
+// draws, colours the rotation's xmm registers differently and stores +0x18
+// ahead of the +0xc..+0x10 stores.
+// Tried: random_index for both index draws 68 (identical code); function_x82e52f
+// for the weighted fraction 84; both 143; function_259d0 for the four range
+// draws 140, with random_index 137; all three helpers 78 (adds as retail, the
+// rotation then ranks j where retail ranks i); on that: dot3f(vector, axis) 78,
+// the rotated vector in a local copy 193, the angle passed straight 87, the
+// angle read after the copy 87, cosine before sine 84.
+// four causes. Frame: retail packs the random-to-float temp at +8 and the
+// result, conversion and sine stack homes differ; rotation
+// registers also differ.
+// Transient creation handle with range result, trig input and shared cross boundaries:
+// 361/358/360/357/360/357/359/364. Result, conversion and sine homes plus rotation registers
+// remain.
+// The shared random helpers (function_259d0 for the four draws, function_x82e52f for the
+// fraction, random_index for both index draws) 68 at 1409 bytes: the three draw sums then
+// add as retail, but the rotation's dot turns j,i,k (retail i,k,j). On that form: angle
+// passed straight 79; fraction without its local 125 (dot as retail, fraction product
+// reassociated); (1 - cos) first 68; count inline 68; dot operands swapped 68; named
+// 1 - cos 68; named dot 126; the z flag inlined 325; the handler pointer through an if 111;
+// the slot pointer as a sum 68; descriptive helper names 68 (also on the old form, 68).
+// result at +0xc (the sine temp shares +0 with the first sum), ours the result at +8 (sharing it
+// with the sine temp) and the random temp at +0xc. Ours reassociates `range draw + base` (adds
+// the base first); the rotation's xmm colouring differs; the scheduler hoists the 0x18 NONE store.
+// Round 75: the existing random-range function (0x259d0) for the four draws 140 (fixes the three
+// fadd orders, reorders the rotation); result renamed object_index/result/zz_index/aa_index 68 each
+// (slot unchanged); result declared first 69; existing random real for the fraction 145; angle
+// field passed straight to the rotation 80.
+// Round 253: Separate total/threshold 52; with word draw/long choice/both 470/248/463;
+// cumulative-scope counterparts 361/470/301/463. On the recovered graph, shared range/all random
+// helpers 113/53. Keep ordinary-confirmed total/threshold split only: 68 to 52 at retail length,
+// scalar homes agree; remaining y/z adds, rotation ranks and sentinel scheduling.
+// Round 289: Coherent selected radius, radius/negative, two reused bounds, complete selected row; each with shared double trig input:
+// [247, 243, 242, 294, 250, 229, 229, 285]. All executable source and temporary types restored.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {

@@ -948,6 +948,9 @@ bool __stdcall function_2399da(long controller_index)
 // library identity copy 90; copy plus those orders 92/95/94; native own-rank value 90.
 // Task result from complete dispatch 139 at 464 bytes; with named removal/rank tests or
 // selected-validity expression in all seven combinations 139 each at 464 bytes.
+// Round 413: selected-identity producer reversed cases 90; if returns/definite result arms
+// 180/180 (frame 0xefc); direct case returns 156. Forceinline forms repeat 90/180/180/156.
+// All six return-form variants lose a matched peer; original shared producer restored.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {
