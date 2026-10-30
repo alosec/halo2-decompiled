@@ -366,6 +366,8 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // ordinary inline resolver 125; symmetric memcmp buffer order 125; copy-versus-exit
 // arms 125, with symmetric compare 125; native aggregate iterator on ordinary-inline
 // resolver/byte-derived word-count graph 125. Original body/declarations restored.
+// Round 417: early visited admission 249; visited-skip/nested admission/both 125 each;
+// early admission with either/both joins 249 each; complete early graph with shared bit helpers 207.
 // Round 413: Boolean convergence-result do-loop 111 (811 bytes); int/long/dword result
 // 128 each (815 bytes). Native iterator aggregate gives the same 111/128/128/128;
 // condition named changed 111. Keep original iterator initialization and the natural Boolean
