@@ -1720,6 +1720,8 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 189: Actual widget/validity and validity/widget pointer contracts 172/172; sole validity
 // member base in both orders 156/156; indexed team fields with all four contracts 154 each.
 // Bounds/receiver scheduling and team induction remain. Original helper and body restored.
+// Round 440: Pointer-only team/player text/icon traversal masks 1/2/3/4/5/6/7 score 217/154/230/488/511/504/524;
+// complete graph with guarded team range 539. Every native traversal and helper restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

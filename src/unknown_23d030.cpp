@@ -166,6 +166,8 @@ struct s_free_state_23d260
 // All executable forms and the temporary include restored; zero and side normalization remain.
 // Round 429: One pitch/roll cosine workspace, with entry/producer cosine, sine and side
 // declarations: all eight 117 at 1326 bytes. Original body restored.
+// Round 440: Native forward producer scalar/setter, published/local consumers 355/343/339/370; entry declarations repeat
+// 355/343/339/370. All native direction producers and consumer changes restored; zero/side normalization remains.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {
