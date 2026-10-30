@@ -944,6 +944,14 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
 // Round 220: Whole four-byte descriptor values in direct/mapped/both paths, native or memcpy,
 // 180/191/186 each; one complete refill workspace, native/memcpy 186/186. All regress; original
 // descriptor observations, live bounds, entry steps, helper, calls and complete body restored.
+// Round 42 (lane 16): direct loop through a `word const &` store reading the index at each use 191
+// (retail's store shape); plus mapped loop with value/mask locals, store in both category arms, index
+// `remap + field` 207; direct loop with value/mask locals and the entry step at the end of the body 191
+// (values in EBX with a stack home and the counter in memory as retail; frame 0xc); plus that mapped
+// loop 226 (frame 0x10 as retail, but the counter takes a register again); one counter for both loops
+// 209; store as a macro: original calls 291, mask/value locals 198, direct reads 209. With the original
+// store: entry step at the end of both bodies 155; plus direct value/mask locals 155; plus the mapped
+// value/mask locals and store in both category arms 168.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {
@@ -1455,6 +1463,19 @@ void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 // Round 428: actual mapping rows as signed-word pairs, long/short slot and mapped ordinal,
 // rejection-first 267/267/266/266; positive admission 267/267/266/266. One-point
 // bounded-ordinal forms rejected; original byte cursor, source, guard, writer and body restored.
+// Round 42 (lane 16): the direct loop's store is the structural cause. A forceinline store taking the
+// descriptor as `word const &` and reading the output index from it at each use gives retail's direct loop
+// exactly (re-read after the store, lea address) 154 (1228 bytes); with the mapped loop's `packed` a word,
+// the store called in both arms of the category test with index `remap + field` 152 (1225 bytes, mapped
+// store exact); plus the mapping element through a `short const *source` read twice 130 (1225 bytes): only
+// retail's rescale test after 0x1b2c0 (`mov ax,[ebx]; test ah,8`, ours `test byte [ebx+1],8`) differs.
+// That needs a word value tested for two different bits (as in matched 0x12c770 and 0x1ab770); not found.
+// On the 130 form: `packed` re-read for the rescale test 130; loop-top `packed` for the test only/for test
+// and store 193/239 (spilled); re-read moved from after the pack call to after 0x1b2c0 126; rescale test
+// inside the component loop 150. Same mapped forms without the direct-loop store 272; mapped index
+// unconditional 163; mapped arms with a dword `packed` 227. The store as a function-like macro (index
+// re-evaluated) gives the same 130 but 0x17170 291 (198 with mask/value locals); evaluating mask/value
+// once in it 254 and loses 0x176a0. Not kept: the reference store has one caller, 0x17170 rises with it.
 // @retail 0x19ca0
 void function_19ca0(byte *state, word const *range)
 {
