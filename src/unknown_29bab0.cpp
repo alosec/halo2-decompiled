@@ -117,6 +117,9 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 // Round 408: direct input with lookup/position ordinary/inline/noinline declaration
 // pairs, excluding ordinary/ordinary, 804 each (eight forms). Original declarations,
 // complete body, input home and all arithmetic helpers restored.
+// Round 417: direct input, per-use heading/up receivers and planar-normalizer inline
+// declaration, seven subsets then all with staged cross: 903/803/891/803/903/803/891/803.
+// All executable source, helper calls and declarations restored.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

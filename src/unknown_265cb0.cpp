@@ -917,43 +917,25 @@ struct s_object_activity_flags
 	word unused : 13;
 };
 
-// score 79 (was 79): initial input register, early actor null and exit saves
-// differ; explicit actor arms, unsigned selected handles, bonus snapshots and
-// actor-bonus result 79; split first selection 114; fallback formal read 82.
-// entry input is EAX versus EDX; nullable actor and save timing still differ.
-// Entry/all header helpers 79/79; external object reference 79; const object/actor/settings views 79/79/79.
-// Combined const views 79; header helper with const object 79; existing scalar qualifier and original body restored.
-// retail's second-call re-read looks like a plain spill reload of the parameter
-// (all four saved registers busy); without the qualifier ours keeps the index in ebp and spills the
-// actor instead. NULL actor then conditional lookup re-measured 113 (index eax, header/first edi/ebx);
-// on it: settings as one conditional 170; header getter 113; plain parameter used directly 140;
-// actor declared before the object 113. Settings conditional on the opening body 114.
-// Native actor and typed settings receivers, separate or combined, with table capture and invalid-
-// input exit 79 in seven forms; native nullable-actor statement form 113. Entry index, early actor
-// NULL and save/pop schedule remain.
-// Round 244: separate activity rejection 80; uniform compound accumulator 79; both 80;
-// settings-first optional bonus 79, with rejections/compound/both 80/79/80;
-// joined rejection 80. Original conditional actor and complete body restored; input/save schedule remains.
-// Round 18 (lane 10): NULL actor then lookup re-measured 113 (header base EDI and first EBX, retail EBX/EDI);
-// on it: first declared before the actor index 113, actor/settings before the object 113, the entry copy
-// before the result 113 (identical code); plain parameter 140 (index in EBP, actor spilled to the
-// parameter's home); plain parameter read once through its address at the second call 140.
+/* the object's summed value: its actor's base (or, for a player, the settings' one), its seat's
+   value, the tag values of the two objects looked up for it and, when the actor's flag 0x225 is
+   set, the settings' second value */
 // @retail 0x267370
-real function_267370(long volatile object_index)
+real function_267370(long object_index)
 {
 	real result = 0.0f;
-	long initial_object_index = object_index;
-	if (initial_object_index != NONE)
+	if (object_index != NONE)
 	{
-		s_slot_object_view *object = object_get(initial_object_index);
-		s_actor_view *actor = NULL;
+		s_slot_object_view *object = object_get(object_index);
 		byte *settings = NULL;
 		if (((s_prop_threshold_table *)g_4e034c)->count > 0)
 			settings = (byte *)((s_prop_threshold_table *)g_4e034c)->entries;
 		if (!((bool)((s_object_activity_flags *)object)->blocked) && ((1 << object->type) & 3))
 		{
+			s_actor_view *actor = NULL;
 			long actor_index = object->actor_index;
-			actor = actor_index != NONE ? actor_get(actor_index) : NULL;
+			if (actor_index != NONE)
+				actor = actor_get(actor_index);
 			long first;
 			if (actor)
 			{
@@ -962,7 +944,7 @@ real function_267370(long volatile object_index)
 			}
 			else
 			{
-				first = function_cbd50(initial_object_index, *(char *)((byte *)object + 0x212));
+				first = function_cbd50(object_index, *(char *)((byte *)object + 0x212));
 				if (object->player_index != NONE && settings)
 					result = *(real *)(settings + 0x160);
 			}

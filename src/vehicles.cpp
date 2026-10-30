@@ -765,7 +765,7 @@ __forceinline long vehicle_round(real value)
 
 /* flips a vehicle back over: a spin about its forward (or its side) for up
    to two seconds while it's upside down */
-// score 12 (was 79): three products with up.j keep it in a register (retail folds it as the memory
+// score 12 (was 12): three products with up.j keep it in a register (retail folds it as the memory
 // operand: the first cross's k term and the side cross's i and k terms), and the fail path re-zeroes
 // AL before returning false (retail returns the entry's zero), two bytes over retail.
 // Double literals 98; shared crosses 140; both 79 (kept); angular/both scales 83/83;
@@ -781,6 +781,13 @@ __forceinline long vehicle_round(real value)
 // vector3f_scale 12 (all kept); then cross3f_staged for either cross 16/18/25; `rate *= strength` 20;
 // the hand projection 20; a result per arm 30, an else arm 12, chained zero stores 14, the flag
 // cleared first 27; the condition in a bool returned at one/two exits 32/20.
+// Round 31: one `bool result` exit (false, success sets true, the stores in an else) declared
+// first 188, after the lookups 30 (no re-zero, but the flag clear splits into load/and/store), between
+// them 62, set before the 34e increment 30; with the flag cleared first 15 (751/751, exit as retail but
+// the flag store first). A compile-only screen reproduces the product operands exactly: every result
+// form flips three more products; the helper's component order (all six, staged or not), operand text
+// order, inline/forceinline, local declaration order, the if/else inverted and the rate computed first
+// never give the first cross's f.i load, which moves only when the side block is removed.
 // @retail 0xef870
 bool function_ef870(long vehicle_index)
 {
@@ -3981,17 +3988,23 @@ PRIVATE __forceinline long vehicle_players_on_foot(long *unit_indices, point3f *
 	iterator.index = NONE;
 	while ((player = data_iterator_next_inlined(&iterator)) != NULL && count < 16)
 	{
-		long unit_index = *(long *)(player + 0x2c);
-
-		if (unit_index != NONE && VEHICLE_GET(unit_index)->parent_object_index == NONE)
+		if (*(long *)(player + 0x2c) != NONE && VEHICLE_GET(*(long *)(player + 0x2c))->parent_object_index == NONE)
 		{
-			unit_indices[count] = unit_index;
-			centers[count] = VEHICLE_GET(unit_index)->center;
+			unit_indices[count] = *(long *)(player + 0x2c);
+			centers[count] = VEHICLE_GET(*(long *)(player + 0x2c))->center;
 			count++;
 		}
 	}
 	return count;
 }
+
+/* an iteration over the vehicles: the current vehicle, then the object
+   iterator */
+struct s_vehicle_iterator
+{
+	s_vehicle *vehicle;
+	s_type_f1af8e iterator;
+};
 
 /* starts an iteration over the vehicles */
 PRIVATE inline void vehicle_iterator_new(s_type_f1af8e *iterator)
@@ -4005,72 +4018,58 @@ PRIVATE inline void vehicle_iterator_new(s_type_f1af8e *iterator)
 
 /* whether a moving vehicle is within ten world units of a player on foot,
    and which */
-// score 102 (was 110): frame 0x114 agrees; player-scan allocation and scheduling still differ.
-// Bounded short/word/char/byte player counts 137/130/134/129;
-// those four with result-first common exit 137/130/134/129;
-// existing velocity magnitude helper 131, native difference with/without it
-// 135/135 (match-only), plain vehicle for loop 131.
-// Earlier body restored.
-// Y405: kept the full-width result set after the collection with one exit, 110. The collector
-// reading the unit field at every use as well gives 85 at 569/562, but 0xf7ca0 shares the
-// collector and goes 142 -> 150, so not kept.
-// Collector count long/short/word/byte with per-use unit 124/170/170/171;
-// cached unit with short/word/byte/char collector count 184/184/185/185.
-// Per-use unit with positive bool/byte/word/long return 124/117/90/93;
-// existing typed player with early/bool/word/long return 124/124/90/93.
-// Word/long return name ordering at entry and after collection 90/96/93/85.
-// Earlier current-vehicle stack home and center-address scale differed.
-// Round 409: Three-use center pointer with short ordinal 102 (556/562, plain); complete squared-component names also 102, not kept. Long/word/byte ordinal with or without complete squared components 163/103/107; seven- and three-point forms restored. Scaled center loads and LEA now agree. Player-pool/current-vehicle/result allocation remains; collector and all call arguments unchanged.
 // @retail 0xf7a60
 bool __stdcall function_f7a60(long *vehicle_index)
 {
 	long unit_indices[16];
 	point3f centers[16];
 	long count = vehicle_players_on_foot(unit_indices, centers);
-	long found = true;
 
 	if (count > 0)
 	{
-		s_type_f1af8e iterator;
-		s_vehicle *vehicle;
+		s_vehicle_iterator iterator;
 
-		vehicle_iterator_new(&iterator);
-		while ((vehicle = (s_vehicle *)function_baeb0(&iterator)) != NULL)
+		vehicle_iterator_new(&iterator.iterator);
+		while ((iterator.vehicle = (s_vehicle *)function_baeb0(&iterator.iterator)) != NULL)
 		{
 			short i;
 
 			for (i = 0; i < count; i++)
 			{
-				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.object_index)
+				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.iterator.object_index)
 				{
 					point3f const *center = &centers[i];
-					real dx = vehicle->center.x - center->x;
-					real dy = vehicle->center.y - center->y;
-					real dz = vehicle->center.z - center->z;
+					real dx = iterator.vehicle->center.x - center->x;
+					real dy = iterator.vehicle->center.y - center->y;
+					real dz = iterator.vehicle->center.z - center->z;
 
 					if (100.0f > dz * dz + dy * dy + dx * dx &&
-						vehicle->linear_velocity.i * vehicle->linear_velocity.i +
-						vehicle->linear_velocity.j * vehicle->linear_velocity.j +
-						vehicle->linear_velocity.k * vehicle->linear_velocity.k >= 1.0f)
+						iterator.vehicle->linear_velocity.i * iterator.vehicle->linear_velocity.i +
+						iterator.vehicle->linear_velocity.j * iterator.vehicle->linear_velocity.j +
+						iterator.vehicle->linear_velocity.k * iterator.vehicle->linear_velocity.k >= 1.0f)
 					{
-						*vehicle_index = iterator.object_index;
-						goto done;
+						*vehicle_index = iterator.iterator.object_index;
+						return true;
 					}
 				}
 			}
 		}
 	}
-	found = false;
-done:
-	return found;
+	return false;
 }
 
 /* whether an occupied vehicle (one with its flag 2 at +0x10a set) is within
    ten world units of a player on foot, and which */
-// score 142 (was 142): frame 0x114/0x118 and current-vehicle storage differ.
+// score 124 (was 142): the seat loop differs (retail zero-extends the seat word into EBP and tests it
+// with `test ebp, 0xfff8; ja`, so the iterator's object index is re-read in the inner loop where ours
+// keeps it in EBP). Round 31: retail's own player scan has no on-foot filter and no 16 cap (the shared
+// collector's form was wrong here): its own scan with a unit local 144, reading the unit field at
+// each use 124 (kept, the scan is byte-equal to retail); with the vehicle iterator struct (current
+// vehicle before the iterator, retail's frame 0x118 and vehicle slot) as 0xf7a60; a center pointer
+// changes nothing (144 with the unit local, 124 with per-use reads; not kept).
 // Outer declarations, const vehicle, loop scope, single result, shared center and
 // point-difference helper all 142; indexed seats 156; native unsigned seat mask
-// with plain pointer stepping 140 at 561/549 (-2, restored). Original body retained.
+// with plain pointer stepping 140 at 561/549 (-2, restored).
 // Y405: the shared collector reading the unit at every use moves this to 150 (not kept); own body restored. Positive
 // word return with short/long/word/byte ordinal and plain seat stepping 170/164/170/172; long
 // return 167/162/167/169. Occupied-mask result dword/long/word/short at entry/after collection
@@ -4081,37 +4080,50 @@ bool __stdcall function_f7ca0(long *vehicle_index)
 {
 	long unit_indices[16];
 	point3f centers[16];
-	long count = vehicle_players_on_foot(unit_indices, centers);
+	s_record_pool_iterator iterator;
+	byte *player;
+	long count = 0;
+
+	iterator.data = g_4e8c24;
+	iterator.index = NONE;
+	while ((player = data_iterator_next_inlined(&iterator)) != NULL)
+	{
+		if (*(long *)(player + 0x2c) != NONE)
+		{
+			unit_indices[count] = *(long *)(player + 0x2c);
+			centers[count] = VEHICLE_GET(*(long *)(player + 0x2c))->center;
+			count++;
+		}
+	}
 
 	if (count > 0)
 	{
-		s_type_f1af8e iterator;
-		s_vehicle *vehicle;
+		s_vehicle_iterator iterator;
 
-		vehicle_iterator_new(&iterator);
-		while ((vehicle = (s_vehicle *)function_baeb0(&iterator)) != NULL)
+		vehicle_iterator_new(&iterator.iterator);
+		while ((iterator.vehicle = (s_vehicle *)function_baeb0(&iterator.iterator)) != NULL)
 		{
 			short i;
 
 			for (i = 0; i < count; i++)
 			{
-				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.object_index)
+				if (VEHICLE_GET(unit_indices[i])->parent_object_index != iterator.iterator.object_index)
 				{
-					real dx = vehicle->center.x - centers[i].x;
-					real dy = vehicle->center.y - centers[i].y;
-					real dz = vehicle->center.z - centers[i].z;
+					real dx = iterator.vehicle->center.x - centers[i].x;
+					real dy = iterator.vehicle->center.y - centers[i].y;
+					real dz = iterator.vehicle->center.z - centers[i].z;
 
-					if (100.0f > dz * dz + dy * dy + dx * dx && TEST_FIELD_BIT(VEHICLE_WORD_BITS(vehicle->flags_10a)->bit2))
+					if (100.0f > dz * dz + dy * dy + dx * dx && TEST_FIELD_BIT(VEHICLE_WORD_BITS(iterator.vehicle->flags_10a)->bit2))
 					{
-						long seat_count = (unsigned long)vehicle->unknown120 >> 3;
-						word const *seat = (word const *)((byte *)vehicle + vehicle->unknown122 + 4);
+						long seat_count = (unsigned long)iterator.vehicle->unknown120 >> 3;
+						word const *seat = (word const *)((byte *)iterator.vehicle + iterator.vehicle->unknown122 + 4);
 						long j;
 
 						for (j = 0; j < seat_count; j++, seat += 4)
 						{
 							if (*seat & 0xfff8)
 							{
-								*vehicle_index = iterator.object_index;
+								*vehicle_index = iterator.iterator.object_index;
 								return true;
 							}
 						}

@@ -211,7 +211,14 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 
 // score 65 (was 65): the result lives in bl where retail keeps it in a stack
 // byte, because retail's 0x6e720 takes the session in ebx (this function saves
-// ebx around that call) and ours takes it in esi; see the note there.
+// ebx around that call) and ours takes it in esi; see the note there. Tried: one
+// && test setting `result = true` in its block 69 (174 bytes), set before the calls
+// 69, `return true` there 75; the 0x58d20 test as an outer if around `result = 6e720
+// && 6e6b0` 62 (its failure joins the common exit as in retail; the other two keep a
+// `xor bl, bl` exit), the success block after it 62, with session_state_is_live 62;
+// the outer if with `result = true` inside 69 (also with session_state_is_live 69);
+// the outer test on 0x58d20 and 0x6e720 with `result = 6e6b0` 75; session_state_is_live
+// alone 65.
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -745,10 +752,15 @@ void c_session_client::function_06dbc0()
 	function_06dc60(this, 3);
 }
 
-// score 44 (was 43): this stays in edx where retail copies it to ebx at entry, so
+// score 43 (was 44): this stays in edx where retail copies it to ebx at entry, so
 // the mode and member index take esi; separate case 7 and 8 labels (retail's direct
 // table) with an inline compare-and-update helper 47, an inline id-compare helper 48,
-// a member-index local 47, an id copy 47, the mode in a local 47.
+// a member-index local 47, an id copy 47, the mode in a local 47; a state local 43;
+// cases grouped by outcome 43; a do/while (false) join 43; an early return on an equal
+// id 43; a goto single exit 43; copies of this before, after or at the call 43 (all
+// compile-only). With 0x58d90 inlined by the link (its file at /Ob1, a diagnostic) the
+// table is retail's but this stays in edx (47); only /Os or /G7, which compare the mode
+// in memory, give retail's push ebx.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
@@ -1088,181 +1100,6 @@ void function_72170(c_session_state_matchmaking *state)
 		}
 	}
 }
-
-struct s_matchmaking_player_values
-{
-	byte unknown00[0x18];
-	long selected;
-	byte unknown1c[0x630 - 0x1c];
-	byte summary[0x184];
-	long player_count;
-	byte unknown7b8[0x878 - 0x7b8];
-	long ranks[16];
-	long values[16];
-	byte unknown8f8[0x938 - 0x8f8];
-	long limit;
-	bool common_found;
-	byte common[12];
-	byte unknown949[3];
-	long first;
-	long second;
-	bool ready;
-	byte unknown955[3];
-	long maximum;
-	long minimum;
-	long average;
-};
-
-struct s_player_rating_properties
-{
-	byte unknown00[0x12c];
-	long selected;
-	short unknown130;
-	short rank;
-	long value;
-};
-
-long __stdcall function_063190(void *summary, long user);
-
-#pragma optimize("s", on)
-// score 110 (was 115): frame, aggregate registers and conditional moves differ. Retail
-// keeps one frame word (the session), missing/ordinal in EBX/EBP, and in the last loop
-// indexes the ranks by EDX, rereads the player count and keeps minimum/maximum in
-// EAX/EBX with cmovg/cmovle, which needs /arch:SSE (this file is /O2 /Gr; retail's
-// `mov eax, 1`/`mov eax, 0x7f` are speed-mode code, the size pragma here gives
-// `inc`/`push; pop`).
-// Round 129: without the size pragma 180 (483 bytes); a plain `for` for the last loop
-// 129 (435 bytes); both 143; ternary minimum/maximum 129 (either comparison order).
-// Screened with /arch:SSE on a scratch copy: the plain `for` without the pragma gives
-// retail's register minimum/maximum and cmovs and a one-word frame, but counts the loop
-// down with the count cached and a pointer, where retail rereads the count.
-// Before: read-only session 115; external session reference 115; short missing 116;
-// direct readiness 119; shifted membership bit 120; average scalar 115; external rank
-// reference 110 kept; both rating references 124; session per-use 169, mode-scoped 115;
-// word ordinal 134; absent/user continues 115/116; ready-first 112; sum-first 118;
-// rating-data reference 115; indexed aggregate 129; aggregate field reference 110;
-// availability count 156; early summary result 110; rank element pointer 110; absent-rank
-// continue 110; count before extrema 113; active-session spill name 110; count/member/scan
-// failure exits 124/121/115; complete-rating/property skips 110/110; empty-aggregate
-// rejection 112; live count field 110; distinct traversal roles 110; mode field 115;
-// selection snapshot 131; property/player records 110/110; source rank/value/both field
-// bindings 110/110/110; live selection field 110; byte missing count 110; signed byte
-// missing count 110; byte player ordinal 129; both byte counters 129; native signed
-// counters 110; aggregate function scope 110; native member property storage 110; fixed
-// player end test 110; sse after rank binding 111.
-// Frame/aggregate registers and conditional moves still differ.
-// Read-only session 115; external session reference 115; short missing
-// 116; direct readiness 119; shifted membership bit 120; average scalar
-// 115; external rank reference 110 kept; both rating references 124.
-// EBP frame has three words versus one session spill; aggregate registers differ.
-// Session per-use 169, mode-scoped 115; word ordinal 134; absent/user continues 115/116;
-// ready-first 112; sum-first 118; rating-data reference 115.
-// score 110 (was 110): session spill and aggregate allocation still differ.
-// Indexed aggregate 129; aggregate field reference 110; availability count 156;
-// early summary result 110; rank element pointer 110; absent-rank continue 110;
-// count before extrema 113; active-session spill name 110. Opening body retained.
-// score 110 (was 110): session spill and aggregate registers remain different.
-// Count/member/scan failure exits 124/121/115; complete-rating/property skips 110/110;
-// empty-aggregate rejection 112; live count field 110; distinct traversal roles 110.
-// score 110 (was 110): three-word frame/session spill and aggregate allocation remain.
-// Mode field 115; selection snapshot 131; property/player records 110/110;
-// source rank/value/both field bindings 110/110/110; live selection field 110.
-// score 110 (was 110): Three-word frame/session spill and aggregate allocation remain. byte missing count 110; signed byte
-// missing count 110; byte player ordinal 129; both byte counters 129; native signed counters 110; aggregate
-// function scope 110; native member property storage 110; fixed player end test 110; sse after rank binding
-// 111.
-// Eligible-only rank reference 115; early property receiver 110; both lifetimes 115;
-// maximum-first/sum-between-extrema/count-before-sum 110/110/113;
-// eligible source-rank snapshot/read-only inputs 116/115.
-// @retail 0x72540
-void function_72540(c_session_state_matchmaking *state)
-{
-	c_class_58d20 *session = state->owner->session_a;
-	s_matchmaking_player_values *ratings = (s_matchmaking_player_values *)state;
-	if (state->mode == 3)
-	{
-		if (ratings->player_count == session->player_count)
-		{
-			long missing = 0;
-			for (long i = 0; i < 16; i++)
-			{
-				if (session->player_mask & (1 << i))
-				{
-					s_network_session_player *player = &session->players[i];
-					long index = function_063190(ratings->summary, (long)&player->user_id);
-					if (index != NONE)
-					{
-						long &rank = ratings->ranks[index];
-						if (!(player->user_flags & 3))
-						{
-							if (rank == NONE || ratings->values[index] == NONE)
-							{
-								s_player_rating_properties *properties = (s_player_rating_properties *)player;
-								missing++;
-								if (properties->selected == ratings->selected && properties->value != NONE && properties->rank != NONE)
-								{
-									rank = properties->rank;
-									ratings->values[index] = properties->value;
-									missing--;
-								}
-							}
-						}
-						else
-						{
-							rank = NONE;
-							ratings->values[index] = NONE;
-						}
-					}
-					else
-						state->mode = 6;
-				}
-			}
-			ratings->ready = missing == 0;
-		}
-		else
-			state->mode = 6;
-		if (state->mode == 3)
-		{
-			for (long i = 0; i < session->member_count; i++)
-			{
-				if (*(long *)((byte *)&session->members[i] + 0xac + ratings->selected * sizeof(long)) != 1)
-				{
-					state->mode = 6;
-					break;
-				}
-			}
-		}
-		if (state->mode == 3 && ratings->ready)
-		{
-			long maximum = 0;
-			long total = 0;
-			long count = 0;
-			long minimum = 127;
-			long i = 0;
-			if (ratings->player_count > 0) do
-			{
-				long rank = ratings->ranks[i];
-				if (rank != NONE)
-				{
-					if (rank < minimum) minimum = rank;
-					if (rank >= maximum) maximum = rank;
-					total += rank;
-					count++;
-				}
-			}
-			while (++i < ratings->player_count);
-			if (count > 0)
-			{
-				ratings->minimum = minimum;
-				ratings->maximum = maximum;
-				ratings->average = total / count;
-			}
-			else
-				state->mode = 1;
-		}
-	}
-}
-#pragma optimize("", on)
 
 bool network_session_host_clear_flag49fc(c_class_58d20 *session);
 struct s_member_quality_collection;
@@ -1956,6 +1793,12 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // 12 -> 11: retail's `sete al` and `test al, al`, only the 0x6e720 setup and the block order left; the
 // same with the failure arm first 96 (same code); the failure stores swapped 96; a long ready 69 (retail's
 // shared `xor eax, eax` for the timer and the flag, but `test eax, eax`); `ready = unknown18 = 0;` 96.
+// Round 159: a named preparation result tested `if (!prepared)` with a bool ready per arm 96 (the
+// failure arm comes first, as in retail, but the join still follows the countdown arm); a bool ready per
+// arm with the failure arm written first 96; a bool ready false at its declaration 90; both 100 (429
+// bytes); the integer pending with the named preparation result 47, tested `if (prepared)` 48, with
+// session_state_is_live 48; session_state_is_live alone 48; a named elapsed time 48; named countdown
+// seconds 48.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {

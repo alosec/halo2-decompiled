@@ -602,6 +602,12 @@ s_projectile_material_response g_547660;
 // 65/56. Compiled alone with every argument on the stack, each form (short, word or long
 // parameter, walk local, read through the reference) loads the index as a dword, never retail's
 // word load that keeps it off the register-argument list.
+// Round 8: compiled alone, the index loads as a word only when nothing reassigns it in a loop (the
+// loop-carried copy widens the entry load), so the walk is not a loop over the parameter as written;
+// counted response loop 56 (alone: retail's guard/counter shape, but index EDI, material ECX and the
+// response ESI where retail has ESI/EDI/EDX), NULL-default getter with it 56, while-counted 56,
+// tail-recursive call on the parent 72 (made a loop, result dropped), counted without the reference
+// 64, walk local read through the reference 34.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -687,10 +693,10 @@ PRIVATE inline void projectile_effect_parameters_initialize(s_effect_parameters 
 }
 
 /* pushes a projectile, and spins it at random by the push's strength */
-// score 34 (was 34): the existing random unit vector call gives retail's impulse ESI and seed EDI/EDX
-// (69 -> 36), the vector sums give retail's add order (34). Still differs: our build folds the
-// 1/65535 and pi/2 factors into one constant (retail multiplies by each), and loads all three axis
-// components ahead of the spin where retail folds i and j into mulss.
+// score 13 (was 34): only the j product still differs: ours loads axis j ahead of the spin (as k),
+// retail copies the spin and multiplies by memory (as i). Earlier: the existing random unit vector
+// call gives retail's impulse ESI and seed EDI/EDX (69 -> 36), the vector sums give retail's add
+// order (34); our build folded the 1/65535 and pi/2 factors into one constant (fixed in round 8).
 // Round 75: length-first product 95; double sqrt product 36; add-scaled helper 71; in-place scale 34;
 // one-use named fraction 14 (no fold), with a double spin 13 (i folded), both reverted (one-use local).
 // Round 196: direct length 95; fraction 114; complete native scale 98; length/fraction 114;
@@ -714,6 +720,11 @@ PRIVATE inline void projectile_effect_parameters_initialize(s_effect_parameters 
 // product still loads j instead of copying spin), in-place 14, double spin 13, swapped add 13,
 // double product 13, fraction declared first 13. Without it: spin straight to the scale 32;
 // declaration orders 14/14/15; length local before/after the axis 93/105; spin *= quarter turn 14.
+// Round 8 (the fold is reassociation inside one expression): `spin *= 1.5707964f;` as its own
+// statement 15; the quarter turn in the scale argument 13 (C1 still after the length); spin started
+// from the fraction and `spin *= length` 13 (retail's x87 order, kept); with add_scaled 73; in-place
+// scale 34; three-step spin 14; the add fed the scale's result 13; rotation declared first 13; spin
+// declared first 13.
 // @retail 0xfa820
 void function_fa820(long projectile_index, vector3f const *impulse)
 {
@@ -725,11 +736,11 @@ void function_fa820(long projectile_index, vector3f const *impulse)
 
 		vector3f axis;
 		random_unit_vector(&axis, &g_4e7408->unknown0);
-		real spin = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__) * (real)sqrt(length_sq3f(impulse)) *
-			1.5707964f;
+		real spin = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+		spin *= (real)sqrt(length_sq3f(impulse));
 
 		vector3f rotation;
-		vector3f_scale(&axis, spin, &rotation);
+		vector3f_scale(&axis, spin * 1.5707964f, &rotation);
 		vector3f_add(&projectile->angular_velocity, &rotation, &projectile->angular_velocity);
 		function_fbd40(projectile_index);
 		function_b9b90(projectile_index, false);

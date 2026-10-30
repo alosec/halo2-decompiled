@@ -1271,7 +1271,11 @@ static inline s_players_globals *players_globals_14f2e0()
 
 /* gives a player its unit (the unit kept for it, the unit waiting to be
    reused, or a new unit at a starting location) and resets its spawn state */
-// score 75 (was 114): Player/tag/globals/unit register lifetimes and success BL still differ.
+// score 46 (was 75): NONE materialization and the zero/flag store schedule differ; success BL agrees.
+// Round 39: joint/dependent output initialization 75/75; chained word/flag clears 75/75;
+// result before/after the final reset 60/75; after field_198/before the user tests 46/46;
+// early result with chained NONE 48; with chained words/flags or flags first 46/46/46;
+// shared field zero 46; word clears from field_198 58. Kept before the user tests; plain 46.
 // Shared direction helper for reuse/create/both 251/201/276; creation/colors/both entry scopes
 // 152/114/152; native/byte success 174/177; sentinel clears 114;
 // representation inline/out-of-line declarations 114/114.
@@ -1423,6 +1427,7 @@ bool __stdcall function_14f2e0(long player_index)
 	player->flag10 = false;
 	player->field_17c = 0;
 	player->field_17e = 0;
+	result = true;
 	if (player->user_index != NONE)
 	{
 		motion_sensor_reset(player->user_index);
@@ -1438,7 +1443,6 @@ bool __stdcall function_14f2e0(long player_index)
 	}
 	function_152340();
 	player->flag3 = false;
-	result = true;
 
 done:
 	return result;

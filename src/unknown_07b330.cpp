@@ -156,6 +156,9 @@ bool __stdcall function_07b140(void *object, long destination, long type, long s
 // Round 47: separate dispatcher noinline declarations 3; loop-scoped storage 3;
 // function-scope size 3; function-scope collection 3; explicit member access 3;
 // element-address decode 3; array-address decode 3; 32-bit storage elements 3.
+// Round 192: native int/unsigned-int dispatch selectors 3/3; inline dispatch 3;
+// initial overflow guard 119; failed-header break/return 75/71;
+// actual header-result bool/long carriers 77/31. All restored; dispatch argument roles remain.
 // @retail 0x7afd0
 bool s_network_message_gateway::read_packet(const s_type_99af70 *address, s_bitstream *stream)
 {

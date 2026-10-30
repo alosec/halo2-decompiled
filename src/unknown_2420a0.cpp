@@ -896,7 +896,8 @@ static inline bool ctf_team_is_active(long team)
 
 static inline point3f *marker_position(long marker_index)
 {
-	return &g_4e0350->marker_entries[marker_index].position;
+	s_marker_entry *entry = &g_4e0350->marker_entries[marker_index];
+	return &entry->position;
 }
 
 long function_2421d0(long team);
@@ -1663,29 +1664,6 @@ void function_15e360(point3f const *point, long object_index);
 byte *record_pool_lookup(s_record_pool *data, long datum_index);
 void function_242e00(long player_index, long team);
 
-// score 64 (was 64): the root-location call passes the object in EAX and the location in ESI
-// (retail: location in EAX, object in ECX, BLOCKED-BY 0xba300); in the tail retail keeps the marker
-// index in ESI and reloads the engine globals pointer after each call, ours keeps that pointer in ESI
-// and spills the index. Kept: 0x176b60's parameters in retail's argument-setup order 83 -> 79; the
-// directions filled in index order with marker 4's from the copied vector 79 -> 64. Tried: the point
-// copied straight from the marker table, declared at its use, or both 83 (identical, 64 on the kept
-// order); the directions in index order 86; the positions in index order 95; both 98; without the
-// inline_depth pair 246; the tail through function_a7810 or the 0x400 change inline 83; the marker
-// index or the point declared earlier 83; marker 4's direction from the copied vector alone 72 (68 on
-// 79), as marker 2's copy 172, all from the copy 98; marker 3's first component before marker 4 82;
-// names first 111 (110 on the kept order); on the kept order the positions in index order 76; the
-// point read before the flag clears 44 (a read moved above a call). Found: the
-// tail's marker entry through an element pointer (`entry = &...marker_entries[marker_index]; point =
-// entry->position;`) gives 2 on the kept order, only the 0xba300 call differing; it needs a match, so
-// apply it together with the held 0xba300 change. Round 103: 0xba300 is still contributor code (DIFF 24).
-// Round 87: unchanged; 0xba300 still contributor code (DIFF 24) and every caller of it is todo.
-// Round 71: unchanged; 0xba300 still contributor code (todo). Retail never takes the engine
-// globals pointer's address (only loads and its allocation store), so its reload after each
-// 0xb58c0 call is the register choice the element-pointer form above reproduces.
-// Round 19: the same element pointer inside the existing marker_position helper (`s_marker_entry
-// *entry = &g_4e0350->marker_entries[marker_index]; return &entry->position;`) gives 2 here, only
-// the 0xba300 call differing, with the file's other 60 functions unchanged (fast); the same address
-// as one expression 64. Held for the 0xba300 change like the tail form above. BLOCKED-BY 0xba300.
 // @retail 0x242660
 void function_242660(long object_index, bool arg_1)
 {

@@ -166,6 +166,10 @@ void function_1ea880(long first_player, long player_index, s_object_values *tabl
 // body restored; frame 0x48 versus 0x50 and result/history/rounding homes remain.
 // Round 399: First-lookup entry defaults for damage code, selection/fallback slots, killer team and all
 // combinations, then credited player: 461/442/433/467/460/442/433/443. Original restored.
+// Round 209: History player fields at every use in selection/attribution/assist 466/447/426; selection-
+// attribution/selection-assist/attribution-assist 456/440/458; all phases 420, with related-unit player
+// at each use 416. Five-point best excluded; original observations restored; frame/result/rounding
+// homes remain.
 // @retail 0x1e9fa0
 void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
 {

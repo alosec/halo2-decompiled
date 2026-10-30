@@ -430,6 +430,9 @@ void __stdcall function_25dd50(
 // declared before the loop 38; trace-block locals at the loop top 38; side read before the two
 // transform calls 152; failed-facing arm setting side to 0 instead of continue 222; any order of
 // the loop-top and trace-block declarations 38 (30 orders screened).
+// Round 39: cover-first ownership with separate geometry/transform guards and positive output
+// scope, all eight combinations 197 at 837 bytes; trace-first positive output alone/transform
+// guards 38/38, with separate geometry guard/both 149/149 at 836 bytes. All original source restored.
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,
@@ -950,7 +953,7 @@ void __stdcall function_25eea0(
 			return;
 		}
 
-		function_d0620(actor->unknown26c, &iterator);
+		function_d0620(&iterator, actor->unknown26c);
 		while (function_d0690(&iterator))
 		{
 			long unit_index = iterator.child_index;
