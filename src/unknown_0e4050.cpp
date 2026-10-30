@@ -67,6 +67,10 @@ inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool fl
 // Round 202: independent clamp bounds 8; native bound returns 34; upper-first bounds 13;
 // existing shared real clamp with word/full/direct edge outcomes 8/10/10, edge-first 27,
 // one real result 35. All bodies and helper declarations restored.
+// Round 207: native byte flag, word/signed/direct/explicit edge returns 8/10/10/10;
+// comparison-first 20 (AL input, five caller losses), flag-first 33 (same five losses);
+// edge-first/unsigned outcome 27/10; double difference 9 (qword epsilon load, broad match losses).
+// Original Boolean contract and float producer restored; full-width independent edge exits remain.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {

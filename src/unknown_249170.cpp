@@ -117,6 +117,10 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Original six differences remain: ring trig/zero order and the first normalization product pair.
 // On the original case-home graph, pointer-returning shared normalization/speed/both scales 47/47/47;
 // paired ring sine/cosine values alone or with each scale combination 497 each (exact-only, restored).
+// Round 207: float trig family 29; native reciprocal-root intrinsic 688 (16-byte aligned frame,
+// nine match losses, restored); native component array with inherited/ordinary reads 6/47;
+// all three tail declarations at entry 6; tail local names 6; reciprocal/squared-speed declaration
+// at entry separately 6/6. Original frame, helper, field accesses and qualified reads restored.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {
