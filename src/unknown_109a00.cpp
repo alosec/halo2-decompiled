@@ -425,6 +425,8 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // with existing center conversion 151/154/149. Existing staged cross alone 112, with complete
 // transfers and center conversion 149. Original copies, search, products and caller restored;
 // object/entry input registers, physics-record spill and center/projection schedule remain.
+// Round 236: signed/unsigned matching-body result, native/late default and existing center converter 231/239/253/246/231/239/253/246.
+// Original executable body restored.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {
