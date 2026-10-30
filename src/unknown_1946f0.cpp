@@ -93,6 +93,13 @@ static __forceinline void decode_direction(long index, vector3f *direction)
 // match retail (the zero made first in xmm3, 2.0 and 1.0 loaded into xmm2 at their uses), 61 -> 47.
 // Before that (cause 1), retail's decoder acted as if a block ended after the two 1/63 products: a
 // one-pass loop around them (diagnostic only) gave retail's schedule, 51.
+// two causes. (1) The decoder's constants: retail makes the zero first (xmm3)
+// and loads 2.0 and 1.0 into xmm2 at their uses; ours loads 2.0 early into xmm3 and makes the zero
+// late. Retail's decoder acts as if a block ends after the two 1/63 products: a one-pass loop around
+// them (diagnostic only, not kept) gives retail's schedule, 51. (2) Ours keeps the decoded k on x87
+// (fst) and squares it first; retail pops it and sums j*j, k*k, then i*i from memory. A block boundary
+// before the normalization (diagnostic branch) makes ours reload in retail's order. These sum orders
+// follow VC's tuple numbering, not the source order.
 // Round 78: the rounding through the existing real_to_long (forceinline declaration, as ai.cpp does)
 // in place of the hand-written fld/fistp block 62 -> 61 (kept: the sum is now k, j, i and j scales as
 // retail's j * inv); on it: a two-pass grid loop 124 (VC keeps the loop); normalize_inline 61;
@@ -120,6 +127,21 @@ static __forceinline void decode_direction(long index, vector3f *direction)
 // loop for the rows, the rows reordered: none reloads; the decoder as an address-less plain or
 // `inline` function in unknown_195720.cpp is not inlined (393, two callers lost; `inline` leaves an
 // unresolved call); `__forceinline` there is untested (its reduced image lacked that file).
+// Round 119: the 0x195070 decoder (same decode, retail hoists 2.0 there and makes the zero late, as
+// ours does here) shows the block after the 1/63 products is particular to this caller. A two-pass
+// grid loop shifting the index by six, the zero first 130; the same with `index >> (6 * n)` 134; the
+// face transform as a three-component loop 172 (not unrolled); the grid through an inline
+// `(real)value / 63.f` helper 114 (599 bytes); the zero first and the face pointer before the
+// doubling 87.
+// pointer into the normalization 62. Round 80: the file's decoded-direction normalizer with its sum in
+// i, j, k order (here and/or in 0x195070) 61 (the reduced build keeps the decoded k on x87 either way;
+// an LTCG harness of the file alone popped it); the face pointer before the grid 81; y before x 75;
+// compound face scaling 61.
+// Round 34: face pointer and zero before the grid values 87; the three rows into locals, then the
+// stores 61; constant-first grid products and doubling 61; y before x 71; `1.f != face->scale` 61.
+// pointer into the normalization 62. Round 20: constant-first doubling 61; `x *= face->scale` 61;
+// face pointer before the grid values 81; the equal-direction arm first 61; zero between the grid
+// products and the doubling 72; the rows written in both scale arms 224 (no tail merge).
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
@@ -156,6 +178,17 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 // helper as plain inline 344 (not inlined). Plain component loops (rows/normalization/output in
 // seven subsets) 114/96/114/96/96/96/96; all with complete normalized value 155 at 489 bytes.
 // Row/output forms are 440 bytes; no count gain or missing store/reload recovery.
+// retail keeps 1/63 in xmm2 and 2 in xmm3 and finishes x (both products) before
+// converting y; ours keeps 1/63 in xmm0 and scales x and y by two late. Retail also pops the decoded k
+// and sums i, k, j from memory (a block boundary before the normalization), and scales the normalized
+// vector in place. Single-expression grid values 126 (1/63*2 folds into one constant); x finished
+// before y 96; `vector3f_scale` with the magnitude call 96; the existing decode_direction_194d30
+// helper 114 (aligned 34 -> 26: the final scale then matches retail and the hand-written decode copy
+// goes; the decode registers and x87 reload remain); that helper as plain inline 344 (not inlined).
+// Plain component loops (rows/normalization/output in seven subsets) 114/96/114/96/96/96/96; all
+// with complete normalized value 155 at 489 bytes. Row/output forms are 440 bytes; no count gain or
+// missing store/reload recovery. Original body and normalizer restored.
+// DL190: Whole face value/native output stores, setter, aggregate 175/175/205; memcpy face with the same boundaries 175/175/205. Original face with setter/aggregate 96/136. Complete face snapshot adds spills; grid reciprocal, last-component reload and output carriers remain. All restored.
 // @retail 0x195070
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {

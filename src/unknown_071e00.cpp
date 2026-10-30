@@ -144,6 +144,10 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 // (copies apart, the 71e00 arm last); the state test inverted 37; an extra return in the
 // state arm 38/44; an inline search helper at both sites 20 (the timeout site keeps a call),
 // forced inline 37; the players-match test `== false` 15; no volatile store 75.
+// Round 17: natural arm order (state 0, match, timeout) 37; with the state test as a named bool 55
+// (session arms as retail, the 71e00 arm last); a plain inline search helper at both sites 20
+// (second site a call); one search copy behind `!state || timeout` 55; a search flag from `!state`
+// set by the timeout test 40.
 // Round 10: the timeout arm a goto into the first search block 37 (block laid out after the timeout
 // test); retail's arm order (state, match, timeout) 37; with a named state bool 55 (session arms
 // exactly retail's, 71e00 arm last); with the 71e00 arm first under a named bool or `!=` chain 37/37;

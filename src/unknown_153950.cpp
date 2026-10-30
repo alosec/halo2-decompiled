@@ -407,6 +407,23 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 }
 
 // score 13 (was 13): only the j and k rows of the inlined rotation differ: retail adds
+// projection * axis + vector * cosine (u.j loaded before the u.i store), ours the other way round
+// (the i row agrees).
+// Tried: norm scalar 67; nested norm tests 64; early 2D cross 207; direction copy loop 271;
+// rotation/scale/both component loops 166; const bounds input 64; shared scale 64; previous-priority
+// snapshot 280; requested-duration snapshot 271; external bounds reference 67; forward x/y
+// observations 165/163; normalized x observation 81; cosine-complement scalar 64; timer rereads and
+// long update 64; validity result and angle-phase scope 85; forward snapshot 126; normal snapshot
+// 119; entry sine/cosine 64; both draws after normalizing the cross vector 174; every operand and
+// term order of the 2D dot/cross and of the rotation's dot alike; rotation statement orders j/i/k 63,
+// cosine first worse; v declared before w 60; cross3f_staged, vector3f_scale, dot3f and cross3f for
+// the written-out helper bodies (kept); final scale through &slot->vector 61; complete dot2/cross2/
+// initial-normal/projection/rotation-cross/update products 78/78/58/60/60/60; early dot+cross+normal
+// 56; complete rotation and early/rotation combinations 60/56; normal producer orders
+// ijk/ikj/jik/jki/kij 64/56/64/64/56; shared axial/normal/tangent contribution vectors 63-109;
+// complete shared affine sum 85; rotation through slot fields at each use 80; axis as a local copy
+// 120; rotation as an inline (vector, axis, sine, cosine) helper 59; axis cross before the
+// projection 66; complement first in the projection 59.
 // projection * axis + vector * cosine (vector.j loaded before the vector.i store), ours the other
 // way round. A compile-only copy reproduces ours once the random-range draws are inlined; with the
 // scale draw opaque or constant it gives retail's rows, so the order follows the draws' expression
@@ -419,8 +436,11 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // record_rotate_vector 90, biped_rotate_about 60, rotate_scalars_146320 74); the unit-length tests
 // through length_sq3f with dot `v.i * w.i + w.j * v.j` 33 (other dot/cross text orders 35-49);
 // &slot->forward/&slot->vector in place of the e/u locals 24 (one of the two kept 46/51); forward
-// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76. Final scale through &slot->vector
+// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76; final scale through &slot->vector
 // 38, u before e 41, inline sine/cosine 30, renamed sine/cosine 24.
+// Round 17 (plain): e/u locals again 34, u only 46, e only 51; forward stored j, i, k 25,
+// j, k, i 57 (1106 bytes), k, j, i 16.
+// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76. Final scale through &slot->vector
 // Round 177: dot2/cross2/initial-normal/projection/rotation-cross/update products
 // 78/78/58/60/60/60; early dot+cross+normal 56; complete rotation and four early/rotation
 // combinations 60 and 56/56/56/56; normal producer orders ijk/ikj/jik/jki/kij 64/56/64/64/56;

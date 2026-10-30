@@ -326,6 +326,10 @@ void function_125a90(long value);
 // decisions 115/110/168/177; existing fully inlined iterator with the same four forms
 // 115/110/168/177. Original traversal restored; the early policy load, ESI multiply
 // and special/remove/ordinary/keep ordering remain.
+// Lane 14 r9: the join as `if (remove) {removal} else keep` 51 (kind arm, keep, then the special arm and
+// removal after the loop step); every action written in its own arm (no flag) 110; the flag declared
+// before the element 47 (same code); the kind tests joined with && 47, plus the flipped join 51; the
+// special arm as `remove = type == 0x26 ? !a : false` 47.
 // Round 95 (one-file harness with 0x221810 pinned out of line; aligned 23 = 47 here): ours ends
 // the kind arm with a jump into the special arm's `je` (tail merge), so the kind arm is the
 // fall-through; that order survives the special arm cut down to `remove = false`, the arms
@@ -340,6 +344,10 @@ void function_125a90(long value);
 // special = 0x20 || 0x26` with removal first gives retail's whole block order in the compile-only
 // harness, but LTCG then inlines 0x221810 (144 at 467 bytes; with the kind test as one `&&` 144,
 // keep first 157 at 471 bytes); removal first alone 51.
+// Round 13 (lane 13): the element written out at each use (`((T *)array->data)[index].field`)
+// gives retail's `imul eax` + `lea esi` but sinks it below the b test 43; with `if (remove)`
+// first as well 47; `if (remove)` first alone 51; ELEMENT(array, T, datum) 62, with index 94;
+// `&((T *)data)[index]` 47; `(T *)(data + index * sizeof(T))` 47.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {

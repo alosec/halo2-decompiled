@@ -510,12 +510,17 @@ void __stdcall function_26c2d0(long prop_index);
 bool function_1fef40(s_type_c3b527 const *target, long actor_index);
 extern vector3f *g_4687b0;
 void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
-// score 130 (was 130): Frame 0x20 agrees; magnitude/zero residency, rotation schedule and final publication remain.
-// Earlier: retail tests the planar length after the scale products with the zero in
-// xmm0 and does not carry that zero into the inlined rotation (memory 0.0 for i, a fresh xorps for
-// j/k); ours zeroes xmm6 before the divide and keeps it through the rotation, whose loads, dot order
-// and registers then differ. Retail stores the velocity directly (speed * each component): with
-// direct stores the tail matches but the body is 828 bytes (the middle is four instructions short).
+// score 130 (was 130): frame 0x20 agrees. Retail tests the planar length after the scale products
+// with the zero in xmm0 and does not carry that zero into the inlined rotation (memory 0.0 for i, a
+// fresh xorps for j/k); ours zeroes xmm6 before the divide and keeps it through the rotation, whose
+// loads, dot order and registers then differ. Retail multiplies the facing components as registers
+// (`movss reg, [field]; mulss reg, y`) and stores the velocity directly (speed * each component):
+// with direct stores the tail matches but the body is 828 bytes. Round 42: retail inlines the same
+// rotation helper at about 20 sites; the matched 0x1055b0 and 0x177d10 write it with axis-first
+// products and (1 - cosine) first; a file-local copy in that form (not keepable: a twin of
+// rotate_direction, which lives in another lane's file) gives aligned 83 against 106 (134), and with
+// direct stores aligned 70 (147, 830 bytes), so the rotation's shape is most of what is left.
+// Fast checks build this one differently unless 0x1ecf50 and 0x2b400 are checked with it.
 // Tried: planar scale loop 153; direction branch update 204; horizontal native copy 142; rotation
 // native copy 153; real signed sine 170; horizontal shared facing base 195; horizontal facing rotation
 // copy 195; horizontal native vector copy 142; horizontal rotation copy 142; direct products 173;
@@ -543,75 +548,13 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // axis form 152/190; vertical input 171, with native horizontal 171, with axis snapshot 214; direct
 // planar commit 182; planar memcpy 152; original horizontal fallback 162; fallback plus planar copy
 // 157; native turn plus fallback 162; normalized point 237; both points 253; normalized point plus
-// direct commit 166; named normalized x/y 130 (kept); y declared first 136; named dot 130; direct
-// output stores 147 (828 bytes); side before the turned copy 136 (862 bytes); sine as a ternary of
-// constants 149. Round 71 (all with direct output stores): inline sine with the side bool declared
-// before the turned copy 140 (838 bytes); side bool from an if/else 147; vector2f horizontal 147;
-// turned declared at the block top 147; no named x/y 160. Screens: speed read at each use or the
-// k copy moved before the second normalization shorten the body to 765-788 bytes. Fast checks build
-// this one differently unless 0x1ecf50 and 0x2b400 are checked with it.
-// frame 0x20 agrees; magnitude/zero, facing and rotation/output schedules remain.
-// Earlier: horizontal homes and initial copy registers recovered; planar/turn schedules and
-// horizontal homes and initial copy registers recovered; planar/turn schedules and
-// Earlier 136 (was 153): horizontal homes and initial copy registers recovered; planar/turn schedules and
-// output length still differ; tried planar scale loop 153; direction branch update 204; horizontal native
-// copy 142; rotation native copy 153; real signed sine 170; horizontal shared facing base 195; horizontal
-// facing rotation copy 195; horizontal native vector copy 142; horizontal rotation copy 142.
-// direction-copy registers and planar stack homes differ.
-// Direct products 173; native side predicate 152; nested guards 153;
-// entry magnitude 153; both planar normalizations inline 153.
-// Earlier: with the native horizontal copy, direct final products 154;
-// shared direct scale 154; depth one 142; size policy 366; shared output-vector
-// scale 142; native turn side 145. Planar copy/rotation scheduling still differs.
-// Earlier: horizontal/rotation and final output scheduling still differ.
-// Earlier 142 (was 142): with the native horizontal copy, direct final products 154;
-// Earlier 142 (was 142): horizontal/rotation and final output scheduling still differ.
-// Length in predicate 142; adjustment test result 142; direct side expression 142;
-// turn-test result 139; original direction object 185; shared output in place 206;
-// native output in place 206; facing object reference 153.
-// turn completion copy 142; output memcpy 142;
-// named turn length 139; result declared first 142; native motion view 142;
-// read-only actor 142; both completion copies 142; word side 146;
-// named length with word side 143, direct output 146, shared scale 146.
-// Horizontal product/rotation schedules and output length remain.
-// Earlier: Frame 0x20 agrees; horizontal copies, square products, rotation schedule
-// Earlier 136 (was 142): Frame 0x20 agrees; horizontal copies, square products, rotation schedule
-// and output length still differ. Forced rotation declaration 142; inline declaration 142; planar
-// facing snapshot 220; named dot 142; named determinant 142; combined planar result lifetimes 142;
-// planar scale operand order 142; planar completion copy 146.
-// Frame 0x20 agrees; horizontal square/copy order, rotation schedule and output length still
-// differ. native turn initializer 152; turn before side 136; initialized turn before side
-// 151; output product input order 142; shared double output 137; shared double direct output
-// 167; horizontal copy observation 144; native input observations 154; existing length
-// inline 142; earlier turn length result 136; earlier turn product input order 136; earlier
-// turn shared result scale 136; earlier turn shared direct scale 160.
-// Earlier: Horizontal square/copy order, rotation and output scheduling remain. combined memmove 191; immutable real
-// Earlier 136 (was 136): Horizontal square/copy order, rotation and output scheduling remain. combined memmove 191; immutable real
-// results 136; byte turn truth 136; horizontal memmove 184; turn memmove 168; output memmove 140; external
-// speed binding 147; external side components 136; native planar initializer 161; early turn memcpy 136;
-// completed output memcpy 136.
-// Horizontal store/square, rotation and final publication schedules still differ.
-// Y/X horizontal initialization 161f; factor entry lifetime 136f; native output loop 137f; turn
-// input before normalization 171f; turn workspace at entry 136f; output after target update 136f;
-// normalization failure first 131p; Y/X input with output loop 157f.
-// Failure-first branch worsens aligned instruction order; original branch retained.
-// horizontal square/copy order, rotation schedule and output length remain.
-// Native horizontal on early turn copy 136; axis reference/snapshot 152/190;
-// native horizontal with either axis form 152/190; vertical input 171, with native horizontal 171, with axis snapshot 214.
-// Earlier: horizontal square/copy order, rotation and output scheduling remain;
-// direct planar commit 182; planar memcpy 152; original horizontal fallback 162; fallback plus
-// planar copy 157; native turn plus fallback 162; normalized point 237; both points 253;
-// normalized point plus direct commit 166.
-// Earlier: the normalized planar components read into named x/y (used by both tests)
-// Earlier 136 (was 136): horizontal square/copy order, rotation and output scheduling remain;
-// Earlier 130 (was 136): the normalized planar components read into named x/y (used by both tests)
-// give retail's square order in the planar normalization. Still differs: retail multiplies the
-// facing components as registers (`movss reg, [field]; mulss reg, y`) and tests the length after
-// the scale products with 0.0 in xmm0; the inlined rotation's loads and registers; the output.
-// y declared first 136; named dot 130; direct output stores 147 (828 bytes); side before the
-// turned copy 136 (862 bytes); sine as a ternary of constants 149. Fast checks build this one
-// differently (rotation helper left out of the reduced image): use plain checks.
-// Normalized scalar declaration priority 130; immutable normalized pair 130; planar pair names 130;
+// direct commit 166; named normalized x/y 130 (kept: retail's square order in the planar
+// normalization); y declared first 136; named dot 130; direct output stores 147 (828 bytes); side
+// before the turned copy 136 (862 bytes); sine as a ternary of constants 149; inline sine with the
+// side bool declared before the turned copy 140 (838 bytes); side bool from an if/else 147; vector2f
+// horizontal 147; turned declared at the block top 147; no named x/y 160 (screens: speed read at
+// each use or the k copy moved before the second normalization shorten the body to 765-788 bytes);
+// normalized scalar declaration priority 130; immutable normalized pair 130; planar pair names 130;
 // length/pair names 130; second length in normalized-pair context 131; named integer sign 130;
 // declaration priority plus planar names 130; sine result arms 149.
 // Round 148: Complete helper-context preview agrees at 130. Complete planar facing capture 177; both
@@ -622,6 +565,18 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // Round 262: complete vector setter at requested direction/turn input/both
 // 176/147/168; completed output workspace 130; workspace plus requested/turn/both
 // 176/147/168; direct final setter 147 (828 bytes). Original body restored.
+// Round 77: horizontal array view 130; facing array fields 130; turned array stores 130; direct array output 147;
+// combined array views 130; horizontal pointer 137; immutable magnitude 130; immutable normalized scalars with
+// direct output 147. Original body restored.
+// declaration priority plus planar names 130; sine result arms 149; complete planar facing capture
+// 177; both dot/determinant product pairs 141; both input/product forms 177; facing/magnitude/side/
+// all zero-first comparisons 130/130/130/130; native output copy then component scales 145;
+// guard-scoped normalized scalars 130; native planar input 130; both 130; all speed-field reads 140;
+// scalar declarations at planar entry 130; adjusted turn name 130; requested direction name 130;
+// native guarded input plus field reads 131; complete vector setter at requested direction/turn
+// input/both 176/147/168; completed output workspace 130; workspace plus requested/turn/both
+// 176/147/168; direct final setter 147 (828 bytes); round 42: turned, horizontal or the planar
+// magnitude/x/y at function scope 130 each (identical).
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

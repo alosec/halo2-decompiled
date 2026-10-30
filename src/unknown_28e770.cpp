@@ -102,6 +102,8 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 }
 
 // score 118 (was 118): first alignment product, case-five clear join and contribution scheduling remain; staged alignment 136 plain, direct motion 235f, direct forward 253f, double-factor scaling 190f, signed-byte mode 504f.
+// Tried (MiniMax B run 19): the case-four NONE store reached by a goto into the else branch's
+// clear 76; not kept (a goto is kept only with a byte match).
 // Earlier 138 (was 140): alignment/clear-join/contribution schedules remain; fast preview 144.
 // Read-only forward 144f; alignment snapshot 414f; named alignment 144f;
 // marker failure break 185f; in-place contribution 204f; scale result 149f;
@@ -149,6 +151,10 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // differences; separation-only gives 142. Both callers survive, all tables unchanged. Original
 // getter, common workspace and complete cases restored.
 // Round 255: marker-facing rejection direct orders 113/121/113; immediate bool results in original/OR/AND/both orders 118/113/121/113; long result 118. The 113 forms reach 2416 bytes but gain only five and worsen the code window 103 -> 110. All restored.
+// Round 191: actual source-direction alignment 362; complete scalar contribution sums 118;
+// combined 362; source/facing ownership 435, with sums 435; source/direct admission 362,
+// with sums 362, all forms 435. All source/member substitutions were exact-match-only;
+// all trial bodies restored. Original vectors, cases, call tuples and expression trees retained.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {

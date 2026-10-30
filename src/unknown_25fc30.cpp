@@ -438,6 +438,12 @@ void __stdcall function_25dd50(
 // failed-facing test as an early continue 85 (839 bytes); a named edge index after a split trace
 // test 38. Compile-only: the failed-facing block lands before the first side case (retail's
 // place) only when that arm sets side to 0 and falls into the side test (listed, 222).
+// Round 13 (lane 13): compile-only, VC always defers the failed-facing `continue` block to just
+// before the latch (after case 1 and the call), whatever the side code looks like; it stays after
+// the cover arm only when the arm falls into the side test: the side read back from the field
+// after the if/else 275 (893 bytes), side = 0 there keeps zero in EBX (222 before). Also: cover as
+// `covers + index` 38, face as `faces + index` 38, a named face index 38, the cover array read
+// from the context field at each use 38.
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,

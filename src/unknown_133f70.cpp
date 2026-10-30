@@ -159,6 +159,8 @@ short function_2cbf0(long arg_1, long arg_2, short arg_3, dword arg_4,
 // arguments remains.
 // Round 47: tag local 16; key local 16; tag/key in either order 16; category+tag 16;
 // category+key 16; category+tag+key 16; category+key+tag 16; caller preserved.
+// Lane 14 round 8: 0x2cbf0's level declared a word (as this caller pushes it) with the word field
+// passed directly 8; not kept while the held src/unknown_1321f0.cpp declares level a byte (see 0x2cbf0).
 // @retail 0x133f70
 void function_133f70(s_133f70 const *record, bool arg_2)
 {
