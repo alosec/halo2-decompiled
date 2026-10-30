@@ -1203,6 +1203,11 @@ bool function_26f360(s_path_settings const *settings, point3f const *start, poin
 bool function_26fe90(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point);
 bool function_26f990(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point);
 
+// score 202 (was 235): Frame 0xe4 agrees; actor/character registers, selector tests and target/direction homes still differ.
+// Shared point difference 240; entry request reservation 236; both 242; initial if admission 226;
+// if admission plus shared difference 202 kept (1002 bytes); entry request plus if 228;
+// complete graph/role names 209/209. Ascending admission 226, with shared difference 202,
+// with typed request fields 214, with both 210. Original game-call values and orders retained.
 // @retail 0x1f7c70
 bool __stdcall function_1f7c70(long actor_index, short type, bool allow_jump, vector3f *direction_out, short *type_out, vector3f *movement_out)
 {
@@ -1215,27 +1220,25 @@ bool __stdcall function_1f7c70(long actor_index, short type, bool allow_jump, ve
     s_object_marker marker;
     point3f target;
     real minimum;
-    switch (type)
+    if (type == 5)
     {
-    case 5:
         if (!function_10f9b0(actor->unknown018, 0x5000534, 0x5000049, 3, &animation, false) ||
             !function_26fe90(actor_index, object_index, *(real *)(character + 4), &marker, &target))
             goto failed;
         minimum = 0.8660253882408142f;
-        break;
-    case 3:
+    }
+    else if (type == 3)
+    {
         if (!function_10f9b0(actor->unknown018, 0x5000281, 0x5000049, 3, &animation, false) ||
             !function_26f990(actor_index, object_index, *(real *)(character + 4), &marker, &target))
             goto failed;
         minimum = 0.95f;
-        break;
-    default:
-        goto failed;
     }
+    else
+        goto failed;
     {
         vector3f direction;
-        direction.i = target.x - actor->position.x;
-        direction.j = target.y - actor->position.y;
+        vector3d_from_points3d(&actor->position, &target, &direction);
         direction.k = 0.0f;
         real distance = function_30bf0(&direction);
         if (distance > 0.0f && animation.position.x * -1.3f > distance && dot3f(&actor->unknown290, &direction) > 0.0f)

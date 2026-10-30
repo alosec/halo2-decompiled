@@ -667,6 +667,12 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // count before base 174; current from base each pass 98; copy before the entry 133; memcpy copy 91.
 // Shared count/inner-array/both snapshots 177/164/194; outer-array snapshot 206; outer plus
 // count/inner/both 213/210/228; shared inner index with count and array 188.
+// Complete native bounded-color publication 172; with actual output reference 164;
+// with overlap-safe input transfer 214, with both 211. Complete scalar bound results 109;
+// with output reference 116; overlap-safe input 155, with both 152. Original color
+// operations, observations and pointer traversal restored; current/base register roles remain.
+// Complete scalar bounds with overlap-safe input/output reference reach first +0x66
+// at 152/580, but introduce an out-of-line transfer and worsen the total; rejected.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {
