@@ -62,6 +62,9 @@ long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte c
 // direct test result 54; success from pool admission 66; inverse failure result 120;
 // result assigned in both allocation outcomes 124; entry allocator-output workspace 22.
 // All result forms and workspace lifetimes restored; shared helper bodies and qualifiers unchanged.
+// Round 51: pool declaration split 3; pool declared before result 3; result declaration split 3;
+// result renamed 3; callback-context names early/late 3/3; combined pool/result/context forms 3;
+// callback-context declaration split 3. Original restored; the duplicate low timestamp store remains.
 // @retail 0x199740
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
 {
