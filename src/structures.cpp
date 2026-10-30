@@ -210,6 +210,13 @@ static __forceinline bool structure_bsp_collision_available()
 // flag from the && expression with the model query nested under `if (!excluded)` 68; the requery
 // in an inline helper that updates the collision through its address 90; found cleared in the
 // scenery arm with no flag 68.
+// Round 78: the flag assigned `excluded = function_10a0b0(...) != 2` inside the type test, with
+// `if (excluded) goto done` or `if (!excluded)` guards 54/54 (286 bytes, but aligned worse: setne
+// and the threaded exit stay); the object part in an inline helper returning `!excluded` 106
+// (keeps the flag in BL and the join test, adds a sete); the final test nested in the requery
+// arm 77; `return function_14a8e0(...)` with an && flag 77 (263 bytes). A compile-only screen of
+// 177 flag/guard/tail forms threads the 0x10a0b0 compare in every one; only a computed value in
+// the join (a negation, a widening, a store) keeps retail's un-threaded flag test.
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {
@@ -494,7 +501,7 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 /* the collision record's object index, re-read at each use as retail does (no local copy) */
 #define COLLISION_OBJECT_14A8E0 (*(long *)((byte const *)collision + 0x40))
 
-// score 70 (was 78): with the part list read through its 0x48-byte range records and the part
+// score 70 (was 70): with the part list read through its 0x48-byte range records and the part
 // offset read at each use, only the model/collision registers (EBX/EDI swapped), the lookup address
 // (retail keeps it in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differ.
 // Round 8 (lane 10): range-record list 95 (kept); part offset at each use 78 (kept); section groups
@@ -579,6 +586,10 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // Round 194: shared first/second/both object acquisitions, node-matrix accessor alone,
 // either/both acquisitions with that accessor and shared headers with it 78 each.
 // Model/collision homes, bounds timing, lookup reuse and triangle-call inputs remain.
+// Round 78: the work after the lookup nested under `if (lookup.initialize(...))` 70; the lookup
+// guard as `return result` 231; a const bounds pointer 70; the lookup and surface lookup in their
+// own block 70; section groups from the section index local 157. Diagnostic: the bounds read
+// before the geometry-block call still gives 9 (left: the lookup address, 0x11e800's registers).
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)
