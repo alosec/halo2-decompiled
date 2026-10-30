@@ -480,32 +480,12 @@ void __stdcall function_1acfd0(long actor_index, s_slot *slot)
 	}
 }
 
-// score 20 (was 24): frame 0x28 agrees; the actor-data load is not hoisted into ECX above
-// the saves (ours loads it into EBP and adds, retail uses LEA), and the mode lookup's table
-// load and registers differ (retail computes the index first, then loads the table into EAX).
-// The slot state read through the past-the-header view fixed the two post-request restores.
-// Round 49: 40 combinations of declaration order, comparison order and local names compile
-// identically (24); natural facing copy 45, after the timer field 5 instructions longer; the
-// existing rounding helper 150, with a named seconds local and natural copy 151.
-// Earlier: timer names/declarations/homes/setter 24; request before mode 24; type after point 34;
-// reverse word declarations 24; mode after vector 44; request result 26; failure first 48;
-// data snapshot 26; shared byte offset 26; named unit index 26; rounding result 150; direction
-// memcpy 45; direct slot 24; timer byte first 35; full width mode 39; mode tests reversed 27;
-// inactive state branch first 168; missing prop early return 24; alignment product operands 30;
-// unsigned short mode 24; request home in active scope 24; low word actor slot 155; receiver
-// names/separate initialization/constant receivers/nested facing test 24; facing eligibility
-// value 26; direct direction-bit snapshots 39; request memset 195; request aggregate 190; actor
-// pointer written out instead of actor_get 171; node/view/both entry scopes 24; read-only view
-// 24; active-result lifetime 176; direct bit-view consumers 24; absent view first 95.
-// With the view (20): state declared first 20; natural facing copy 42, unknown1c first 183,
-// per-component copy 59; constant-first alignment compare 20; unit index named at the mode
-// lookup 162 (725 bytes) or at entry 180 (726 bytes); request arms swapped 48 (before the view).
 // @retail 0x1ad130
 void __stdcall function_1ad130(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_1acda0 *state = (s_1acda0 *)slot->unknownc;
-	if (actor->unknown504 == 2)
+	if (actor_get(actor_index)->unknown504 == 2)
 	{
 		if (state->unknown25)
 		{
