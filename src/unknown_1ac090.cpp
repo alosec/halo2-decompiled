@@ -849,6 +849,8 @@ bool function_1f8660(long arg_0);
 // Round 69: actor named to sort after the buffer 7 (names do not order these homes); failure flag
 // after the actor store 7; prop test as its own if 7; third vector declared before the call 7;
 // untyped buffer pointer 7.
+// Round 41: entry flag test through a fresh actor lookup 33; buffer cleared after its release 7;
+// request outputs declared before the buffer 7; request before the count 7; reference output first 7.
 // @retail 0x1ad6a0
 bool __stdcall function_1ad6a0(long arg_0, s_slot *arg_1)
 {
@@ -1001,14 +1003,18 @@ struct s_1ac612
 // source actor named after index home 29; best index and source actor named homes 29;
 // candidate difference shared helper 29; marker difference shared helper 29;
 // forward product shared helper 135; up product shared helper 41. Restored.
-// score 29 (was 29): frame 0x8c agrees; EBP/EDI and offset/selection spill homes remain exchanged.
+// Earlier: frame 0x8c agrees; EBP/EDI and offset/selection spill homes remain exchanged.
 // Native source location 58; query outputs at loop/entry and source receiver at entry 29 each;
 // marker reference/readonly candidate tag/distance predicate/aligned up-product scope 29 each.
 // All executable forms and the experimental include restored.
-// score 29 (was 29): actor-offset/selection registers and spill homes still differ.
+// Earlier: actor-offset/selection registers and spill homes still differ.
 // Candidate cursor 244; marker cursor 234; both cursors 249; distance first 29;
 // distance across queries 266; point declaration first 29; selection update first 30;
 // short ordinal entry scopes 29. Restored.
+// Round 41: candidate read from the query array at each use 58; forward test through the existing
+// 0x26f8f0 helper (retail inlines it here; its /Ob1 file keeps it out of line even with an inline or
+// __forceinline declaration) 206/206/206; best-index renames (best_index, winner, zz_index) 29;
+// forward product in the helper's operand order 137; up product after the forward test 29, both 137.
 // @retail 0x1ac610
 bool __stdcall function_1ac610(long arg_0, point3f const *arg_1,
 	s_object_marker *arg_2, short *arg_3)
