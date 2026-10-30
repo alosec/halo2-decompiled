@@ -47,6 +47,11 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // lookup written into the cell address 69 (table base in edi as retail, temporary still ebx),
 // also index-first, declared before the squad pointer, or as `&cells[arg_1]` 69 each; the cell
 // offset in its own statement first 70 (VC folds it back).
+// spilled, frame 0xdc). Round 96: local_10 as a ternary 70 (identical); local_5 as
+// a short 70 (identical); `if (arg_1 == NONE) return local_0;` as a guard 109 (the
+// exit is duplicated at the top, NONE immediate); the call result in its own local
+// returned directly 108 (370 bytes); that local copied to local_0 inside an
+// `!= NONE` test 136.
 // @retail 0x203780
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3)
 {

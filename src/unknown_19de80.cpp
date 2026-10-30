@@ -365,6 +365,9 @@ static inline bool teams_enabled_19e1c0()
 // Round 409: native cause/effect/both team-field addresses 390/390/394; formatter outcomes 414;
 // with cause/effect/both 411/411/414 (411 is retail length); all with ordinary final result 713.
 // Original result, team values, complete copy/format paths and body restored.
+// Round 415: token-first zero-only player/team/other comparisons in seven subsets
+// 391/390/391/391/392/391/392; complete comparison graph with ordinary result 692.
+// Original comparison operands, result storage and copy/format tails restored.
 // @retail 0x19e1c0
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining)
 {

@@ -666,6 +666,8 @@ struct s_1f9762
 // live from entry); a `last`-first test threads every path and keeps the copies in place.
 // `!reached` or `!projection_direction` guards, the last arm's test as `<=` or nested, and the
 // last arm written first change neither.
+// Boolean result/home role names in four lexical orders 67/67/67/67; each with a shared
+// output predicate used for both validity and vector publication 83/83/83/83 (616 bytes).
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)
@@ -830,6 +832,8 @@ real normalize2d(point2f *v);
 // Round 412: Native unit-state accessor 135; fallback-vector setters 192; joined two-use retry
 // result 213; accessor/setters 192; accessor/retry 213; setters/retry 187; all three 187; all with
 // short result 213. All restored.
+// Early trajectory-failure exit on the retained facing graph, bool/byte/long/short result
+// 135/186/151/159; each with direct request return 182/193/173/153. All restored.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
@@ -1103,6 +1107,8 @@ real function_50650(real cosine);
 // Round 403: native settings 117; readonly settings 117; native settings actor 117; readonly native
 // actor 117; readonly object 117; readonly settings actor 117; readonly native receivers 117; native
 // settings getter 117. Opening body restored.
+// Round 39: shared planar normalizer common/separate result, either arm first 117;
+// complete native input with those result forms 382 (fast control 117). Shared helper restored.
 // @retail 0x1f9e70
 real function_1f9e70(long actor_index, long object_index, point2f const *position,
     vector2f const *path_direction, vector2f const *facing, vector2f const *desired,
@@ -1423,6 +1429,9 @@ PRIVATE inline real movement_normalize2d(point2f *v)
 // Round 412: Ordinary origin with entry getter inline 255; origin/direction/both transform inline
 // 274 each; getter with origin/direction/both inline 274 each; noinline getter with both
 // transforms inline 274. All body and declarations restored.
+// Ordinary origin on the shared arc/trace graph, late side flag, early zero result and
+// both 255/288/262/292; each with existing normalizer force-inline 255/288/262/292.
+// All ordinary sources move the entry homes and regress; original body/helper restored.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)

@@ -120,6 +120,9 @@ s_slot_handler_2 g_47e1c0 =
 // (same registers); all three components scaled in place 107 (operands are canonicalized).
 // Round 191: Existing displacement setter 107; fallback-point setter 188; both 188; normalized-vector setter 107; displacement/normalization 107; fallback/normalization and all three 188/188.
 // Round 191: Complete setters with existing projection helper 188. Two-point forms fail the retention margin; every setter and changed-sum form restored.
+// Round 194: complete native origin/destination/both/facing inputs 245/218/316/154;
+// origin+facing/destination+facing/all inputs/shared subtraction 291/260/363/363.
+// Input snapshots enlarge the frame; all original per-use inputs and the in-place direction restored.
 // @retail 0x1b3070
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {

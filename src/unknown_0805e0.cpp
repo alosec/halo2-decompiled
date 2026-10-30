@@ -68,6 +68,12 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // (no entry pointer) 71; iterator store re-read as the index 51; loop over *iterator 71;
 // successor read through the table after the entry 60 (EBX successor as retail, 137 bytes);
 // short index 64 (entry reuses the index register as retail, 138 bytes).
+// Round 7 (lane 15): retail hoists the `& 3` mask into AL (`mov al, 3` before the loop), which is what
+// leaves the successor to EBX; the compiler hoists it only when the loop holds two uses of the constant.
+// Early returns with a successor local 49, with `index = *iterator` 49, as a for loop 49, index reassigned
+// from the successor 52, guarded do-while 49; harness: mask on the dword, inline, as two bit tests or
+// through a char cast, `continue` filters, short index/successor mixes - the mask stays an immediate.
+// The mask is the XDK guest mask (`XOnlineIsUserGuest`, as this function's caller tests it).
 // @retail 0x805e0
 bool player_configuration_cache_next_recent_player(s_recent_player *player, long *iterator)
 {
@@ -478,6 +484,11 @@ void function_1537f0(s_profile_record *record);
 // declared before the loop and zeroed in it 67; harness only: `= { 0 }`, XUID-based identity types,
 // identity zeroed by its XUID fields (only the flags word stays in memory, its store hoisted) - none
 // keeps the identity in memory.
+// Round 7 (lane 15): identity zeroed by one chained assignment 95 (282 bytes); source declared first 67;
+// both declared before the zeroing 67; `= { 0 }` in the real build 67; 0x7f8b0 defined in another file
+// (inlined across files) 67. The
+// harness also folds a dword[3]/byte[12]/union identity, a zeroing loop, a 64-bit identity type and an
+// opaque entry pointer.
 // @retail 0x7f930
 void function_7f930(void)
 {
@@ -767,11 +778,9 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 }
 #pragma inline_depth(8)
 
-// score 66 (was 66): frame 0xc agrees; admission prefix, removed-index EDX/ESI and upper ECX/EAX remain.
-// Frame 0xc agrees; removed-index EDX/ESI, upper-bound ECX and copy/repair induction remain.
+// score 66 (was 66): frame 0xc agrees; the admission prefix (a `cache_full` bool, retail tests the count
+// directly), the order of the four link stores of the new entry and the EAX/ECX/EDX choices after them remain.
 // Paired range arms 373;
-// frame 0x0c agrees; removed-index registers, upper
-// bound selection and copy-loop induction remain. Paired range arms 373;
 // native FILETIME 314; short adjustment 300; unsigned repair counter 364;
 // range/time/short combination 375; native time and short adjustment 357.
 // Three relative-position cases 243; early bounds 377; explicit upper bound 361;
@@ -821,6 +830,10 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // entry time workspace 66; pre-copy long adjustment 382; indexed destination 168;
 // mutable removal with upper-first declarations 66; shared range-direction relation 381;
 // indexed destination with native timestamp member 168. Original body restored.
+// Round 7 (lane 15): link stores next_other/unknown58 first 65, with chained NONE stores 65, NONE stores
+// first 157; round 149's entry rebuilt 71 (entry matches but for the g_4cf980 load target and upper in EAX
+// coalesced with the count); on it: those link stores 70, count path lower first 72, named count 71,
+// flag declared first 71, flag set after the decrements 73, flag declared after the removal 71.
 // Round 183: actual endpoint 389; plain endpoint 396; one count 89 (frame 0x10); endpoint/count 380; plain endpoint/count 394; endpoint relation 387; plain relation 394; combined count/relation 384. Original body restored.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)

@@ -130,6 +130,10 @@ static __forceinline void capsule_update_1e55d0(c_z_shape_view *shape, byte *com
 // Aligned forms recover frame 0x94 but lose four matched controls; declaration contracts do not fix it.
 // Round 269: velocity pointer 319; direct state parameter 319; both 319; direct input parameter 319;
 // velocity/input 319; state/input 319; all 319; all with shared squared length 319. Original body restored.
+// Round 418: native capsule component/flag-word/both/read-only-shape/
+// component-shape/flags-shape/all/output-first contracts 319/319/319/319/319/319/319/319.
+// All original contracts restored; aligned frame retained, move/input/physics
+// ownership and the velocity null test remain.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {

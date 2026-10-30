@@ -1446,6 +1446,7 @@ void __stdcall function_18560(byte *context, s_packed_shader_range const *range)
 // Mapped source/index/descriptor-slot uninitialized declarations at branch entry,
 // seven subsets, then all at function entry, 267 each. Original producer points,
 // scopes, shared writer and complete body restored; descriptor/index schedule remains.
+// Round 293: Shared writer common output/dirty completion, category/bank branch-or-conditional trees with bit/ordinal results: 444/471/438/447/465/475/456/457. Exact-only pointer forms all regress and lose a matched writer sibling; complete original helper and body restored.
 // @retail 0x19ca0
 void function_19ca0(byte *state, word const *range)
 {
