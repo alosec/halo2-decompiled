@@ -1439,7 +1439,7 @@ void function_274a50(long ai_index, long vehicle_index, long filter_range, bool 
 					s_object_seat *seat = &seats[seat_index];
 
 					if (seat->object_index != NONE && seat->seat_index != NONE &&
-						function_c8200(seat->object_index, seat->seat_index, candidate_actor->unit_index))
+						function_c8200(candidate_actor->unit_index, seat->object_index, seat->seat_index))
 					{
 						real score;
 

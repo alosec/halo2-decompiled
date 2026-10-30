@@ -1050,7 +1050,8 @@ PRIVATE inline real device_translation_distance_squared(point3f const *a, point3
 }
 
 // score 2 (was 2): the float argument is stored to the stack before edi is pushed; retail pushes edi first and
-// stores the float one slot higher.
+// stores the float one slot higher. Round 23: had_animation set after the time / first in the block 43/44;
+// the animation as a const reference 203; sampled declared after the time 2; time before the animation 2.
 // @retail 0x107ed0
 bool __stdcall function_107ed0(long device_index, long name, real seconds)
 {
