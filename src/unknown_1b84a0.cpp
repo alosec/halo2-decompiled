@@ -122,6 +122,12 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // Round 155: on the top actor lookup (index EBP, view EBX as retail; actor ESI/state EDI swapped): node/view
 // declared at the top 52, prop-index local 52, slot cast at each use 52, last test as if/else-return 52, NONE
 // as an early store and return 91; getter in both NONE test and node lookup 47; actor before the view test 97.
+// Round 7 (lane 13): --fast frees this handler's convention (the table is dropped from the reduced image), so
+// all trials ran plain. Retail's actor is a local (first load folded, then `add edi, edx`). On the top actor
+// form, the completion store written again for the NONE case (if/else) gives retail's late EBX push and own
+// NONE epilogue with state ESI and actor EDI, but the index then stays on the stack and the node takes EBX:
+// 69; the same with the slot parameter typed `s_slot_23 *` (table cast) 69, node/view declared first 69,
+// NONE arm first 91; that store on the current body 97.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {

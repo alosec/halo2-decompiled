@@ -75,6 +75,13 @@ bool g_47f05b;
 // Force-inline abstract constructor 34; scoped block 34; abstract-typed block 34; refcount-typed block 34;
 // intermediate/derived/abstract result reused for the pool 44/44/44; intermediate result published 38;
 // inline target 34.
+// Round 7 (lane 13): retail's matched functions that keep a base vtable store (0x2784c0, 0x2dec70 and the
+// other Havok constructors) all read memory through another pointer between the two stores; here nothing
+// does. On the size-only constructor: intermediate class novtable 35, virtual destructor in the fixed class
+// 35, base stores through an inline initialize member 35, abstract loop split 3 + NONE 34 (0x146b80 and
+// 0x22c3e0 lose their matches), a buffer/size description struct read by the base constructor 36 (146
+// bytes; the reads are forwarded before the store is dropped). Harness only: memset in the abstract
+// constructor, size by reference bound to a local, buffer by reference: store dropped each time.
 // @retail 0x146a20
 void function_146a20(void)
 {
