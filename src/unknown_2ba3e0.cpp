@@ -349,6 +349,9 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // k,j,i) read first 10/10 (1517 bytes); next before properties 10; properties/next declared at the
 // loop 43/64; on the 2 form: parameter orders with the record second or before scale 2/2, particle
 // declared outside the loop 2, a separate particle mask 51, the successor through a local 2.
+// Round 9 (lane 14): change scaled through the file's scale helper 10 (same code); the maximum-change
+// scale the same 10; the change's squared length through the direction helper 42; the loop's mask
+// computed at the top of the loop 328; the maximum branch's final scale through the scale helper 45.
 // Earlier rounds (the minimum normalization then stored j and k one by one):
 // Round 90: the blend's previous add through vector3f_add with the squared speed from dot3f 34 (kept;
 // the add is retail's in-place block); with the direction/vector squared helpers 105/102, length_sq3f 113,

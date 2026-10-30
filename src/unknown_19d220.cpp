@@ -53,37 +53,6 @@ static __forceinline void king_settings_verify(s_game_variant_king_settings *set
 
 /* clamps every setting of a variant into its range; a variant that needed
    any change is replaced by the slayer defaults */
-// score 57 (was 57): frame 0x330 agrees; post-copy flags and zero chains exchange EAX/ECX, adding four bytes.
-// retail masks the flags in eax after the inlined defaults'
-// wcsncpy call and keeps the zero in ecx; ours the other way round, which also
-// makes the and/or two bytes longer each and so moves the jump table by 4 (its
-// entries and padding then differ too).
-// frame 0x330 agrees; post-copy flags and zero chains exchange EAX/ECX, adding four bytes.
-// Earlier: the switch's jump table address is baked into the code
-// and can never match, and retail masks the flags in eax where ours masks them
-// in ecx, so the stores of the masked flags and the copy differ.
-// Round 43: with eax busy right after the wcsncpy call the zero takes ecx and
-// the whole tail becomes retail's (5 at 2088 bytes, via the terminator stored
-// through wcsncpy's result; not kept: 0x19d220 29, 0x212380 420). Tried in the
-// helper: per-arm flags48 expressions 58 (0x19d220 158); 0xf9a | (...) 58;
-// name declared first 58; engine flags as &= then |= 58. In this body: the
-// result cleared before the defaults 57; early returns 406; the equal case first
-// 458; the result from the comparison 455; an else arm for the valid case 458.
-// name declared first 58; engine flags as &= then |= 58.
-// Native input snapshots in the long, short and char clamps, separately and together, 57 in
-// all seven forms; store-on-change clamps 727 at 1928 bytes. Original clamp reads and stores
-// restored; the shared defaults initializer is unchanged.
-// Round 29: retail also stores flags48 after the zero stores; the helper's second flags48
-// statement moved there 75 (0x19d220 118); `valid = memcmp(...) == 0` 455; `valid = false`
-// before the defaults call 57; the original copy declared first 57; valid declared just
-// before the compare 459.
-// Round 21 (lane 10): the same EAX/ECX exchange shows in 0x212c20's inlined slayer defaults (retail
-// keeps flags48 in EAX and finishes its OR and store after the zero stores; ours finishes flags48
-// first and gives the engine flags EAX), so the helper's form is the likely cause. Calling the real
-// 0x19d220 with its noinline declaration dropped 57 (diagnostic); duplicate clamps earlier in the body
-// never move it (diagnostic). Helper: flags48 as `&=` then `|=` 57; as a ternary 57; the name
-// terminator after the flags 57 (0x19d220 15); unknown4c cleared before the flags 57 (0x19d220 13);
-// the copy through the existing unicode_string_copy 57 (same code). Helper and body restored.
 // @retail 0x19d650
 bool function_19d650(s_game_variant *variant)
 {

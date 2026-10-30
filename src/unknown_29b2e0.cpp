@@ -156,6 +156,9 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
 // defaults with those captures 401/400/401; complete early captures with role names 405, with branch-
 // owned angles 401. Original inputs, helper contracts and normalization order restored; early J and
 // magnitude/yaw homes remain.
+// Round 304: common unchanged/scaled output publication, scalar vector/point/both 480/401/486;
+// native vector/point/both 475/454/530; scalar/native and native/scalar 524/469.
+// Original normalizers and body restored; early J and magnitude/yaw homes remain.
 // @retail 0x29b2e0
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
     vector3f const *arg_3, real arg_4, vector3f *arg_5)

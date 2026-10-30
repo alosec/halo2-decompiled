@@ -195,10 +195,10 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // score 143 (was 143): frame 0xa0 versus 0xb0 (the 0x1697c0 collision output is 0x5c bytes; the
 // shared header type is 0x4c), then the scratch registers are rotated by one from the 0x110ab0
 // argument on (eax/ecx/edx), which also moves the request/collision arguments, the target copy and
-// the inlined 0x1f4460 head. The movement helper already expands.
-// header type is 0x4c), then scratch registers rotated by one from the 0x110ab0 argument on
-// (eax/ecx/edx), which also moves the request/collision arguments, the target copy and the
-// inlined 0x1f4460 head. The movement helper already expands.
+// the inlined 0x1f4460 head. With the 0x5c output and the NONE store first, the only structural
+// difference left is the target point: retail finishes point.z before the inlined head and adds the
+// actor offset from memory (`add esi, [esp + 0x34]; cmp byte ptr [esi + 0x229], bl`); ours sinks
+// point.z after the head's table load and goes through ECX (5 bytes longer).
 // Tried: native slot-data block 143; full 0x5c collision output (frame 0xb0) 140, with native
 // slot-data 140; complete point setter/vector setter/position-add/both vector producers 140 each;
 // destination, request, destination/request, hit/probe, both point names, target/request/probe
@@ -207,8 +207,7 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // material initialized at declaration 138, aggregate target/early material 138; partial unit copy
 // 104 and with aggregate target or CRT point copy 104 (restored); CRT point copy/aggregate target
 // alone 140/140; uniform unit copy at entry 234, after position 161, with early material/slot data
-// 161/161. The three-point frame correction was restored.
-// Round 108: collision NONE store before the vector math 141 (138 with the 0x5c output: gives
+// 161/161; collision NONE store before the vector math 141 (138 with the 0x5c output: gives
 // retail's store order); with the 0x5c output, stamp through the existing 0x146650 getter 138,
 // stamp stores swapped 141, slot pointer declared after the lookups 138, `== false` test 138,
 // height declared at its definition 138. Deleting the whole stamp block (diagnostic) leaves 10
@@ -218,6 +217,18 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // Native status declarations do not fix the post-stamp register rotation; all types/body restored.
 // Round 289: Computed proximity bool/byte/short/long on the complete collision/native-payload graph; then each with one result exit:
 // [247, 247, 252, 250, 231, 231, 226, 228]. All executable source and temporary types restored.
+// Round 423: returned position with native/original payload 226/226; each with complete
+// collision output 224/224; target declaration at publication gives 226/226/224/224.
+// All reduced previews; complete original body and declarations restored.
+// height declared at its definition 138 (deleting the whole stamp block, as a diagnostic, leaves 10
+// aligned differences: everything after it then takes retail's registers); full output with stamp
+// byte/native payload, stamp signed byte, near byte, near signed byte, both bytes and the three
+// mixed/signed combinations: eight forms 140 at 955 bytes; computed proximity bool/byte/short/long
+// on the complete collision/native-payload graph, then each with one result exit: 247, 247, 252, 250,
+// 231, 231, 226, 228. Round 36, on the 0x5c output with the NONE store first: request fields in
+// reverse order 140; `distance2d(...) < 2.0f` 138; target index stored before the point copy 138;
+// point declared before the target 138; sums written collision point first 138; object lookup
+// after the point 148.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {

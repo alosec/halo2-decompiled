@@ -152,6 +152,9 @@ __forceinline void function_2992ba(short arg_0, bool arg_1, real arg_2, point2f 
 // domains: 408/408/409/458/417/471/463/495. Original cursor, counts and body restored.
 // Round 251: candidate point/scalar snapshots 401/488; early direction publication 407/459; candidate plus facing snapshots 487/450; early publication with both 487/453. Seven-point best rejected; original helper and body restored.
 // The 401 point-snapshot form gives 0x1c cleanup with frame 0x74 at 1733/1732 bytes; restored.
+// Round 424: candidate snapshot with helper-owned point/returned point/scalar evaluation
+// 445/445/431; each with void normalizer 445/445/431; point/scalar with ordinary inline
+// emitter 713/431. All restored; nullable-input residency, XY homes and cleanup remain.
 // @retail 0x298d90
 void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f const *arg_3,
 	point2f const *arg_4, point2f const *arg_5, real arg_6, point2f const *arg_7, point2f const *arg_8)
@@ -389,6 +392,9 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 // frame/radius and trace/pivot/result homes remain.
 // Round 249: Consistent side/whole-angle/both/bool-side+angle observations 781/767/755/813;
 // on the split-output planar frame 756/786/805/806. Original reads, frame and helpers restored.
+// Round 217: existing in-place normalized vector scale alone/with shared difference 749/749;
+// plus reverse scale 742/742 (3374 bytes, seven-point gain rejected); planar pivot with those
+// four forms 755/755/769/769. Frame and eager radius remain; all helpers and body restored.
 // @retail 0x299460
 bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,
