@@ -246,6 +246,14 @@ struct s_seat_animations
 // 0x188130 17); with animation read once through its address 52 (retail's code with animation/count/element
 // in EBX/EBP/EAX for retail's EBP/EAX/EBX; no declaration order, counter or flag type, compare order or loop
 // spelling rotates them); with the guard 76 (0x188130 17), with count first 79, its if/else spelling 79.
+// Round 120: ours computes the getter's element address in ECX (`add ecx, esi`) and copies it out; retail
+// forms it in element's register (`lea ebx, [ecx + esi]; test ebx, ebx`), as in 0x1882d0. Getter shapes
+// (byte offset, elements local, inverted early return or ternary, else arm, long index, index + elements)
+// keep the add. `while (s_globals_element *element = ...)` with the per-arm entry and the guard 79
+// (155 bytes: animation in EBP, element spilled, result in EAX); that with the address read and no guard
+// 52; the getter in a for loop's init and step 164 (243 bytes); the while declaration with the entries
+// pointer, no guard and the break before the parent step 63 (185 bytes); animation before type in the
+// parameter list with the address read 52.
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, c_type_47f957 element_index)
 {
