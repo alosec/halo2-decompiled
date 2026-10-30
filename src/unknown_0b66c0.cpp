@@ -539,7 +539,10 @@ short function_b5000(s_transport_endpoint *endpoint, void const *buffer, short l
 // restore exit last; ours puts the restore exit first. Tried: `return true` in the would-block arm 44;
 // direct returns everywhere 72 (retail's block order, but the results fold to constants); the
 // plain failure as `return false` behind `if (sent != -2)` 20; looping while the iteration
-// succeeded with the completion guarded after the loop 44; success arm ending in `continue` 10.
+// succeeded with the completion guarded after the loop 44; success arm ending in `continue` 10;
+// `if (sent != -2) return result;` then the restore and the goto 25 (retail's order, folded false);
+// success arm first in an if/else 10; position declared before the loop 10. Retail's shared
+// return (BL, not folded) follows the would-block test, so it comes first in its source order.
 // @retail 0xb6000
 bool s_http_connection_ab::send()
 {

@@ -1787,7 +1787,13 @@ void function_15e460(long object_index, long value)
 // guard moves the engine lookup to ESI/EDI (retail's) yet keeps one in EAX 29;
 // that plus the assignment on the special arm 29; the special arm as an early
 // return 30; a single || chain return 31. A permutation run's cold scratch
-// build outran its timeout before searching.
+// build outran its timeout before searching. Result true first with the special
+// arm returning true 30, returning result 30, setting true in an if/else 30;
+// three returns 30; the compare returned under the negated special case 30;
+// one guard with the negated special case 32. Compile-only screens (~110 forms,
+// exact against ours): result types bool/byte/char/long/int/short/dword, bool or
+// byte return, options local first/second/in the guard, all reads through
+// engine_options(), a split result: none holds the one apart from the result.
 // @retail 0x15eb20
 bool function_15eb20(long player_index)
 {
@@ -2300,7 +2306,11 @@ static __forceinline void add_clamped_score(short *score, short delta)
 // Helper parameter order swapped 5; helper taking long delta with the cast inside 5; single
 // expression sum 5; score-first sum 5; value returned and stored by the callers 5; dword index 5;
 // nested index28 test 5; player declared before index 5; score address as base plus index 99;
-// branch order swapped with the tests merged 111.
+// branch order swapped with the tests merged 111; clamp and notify as one helper shared with
+// 0x15b3a0 5 (either parameter order); ternary clamp store 5; the field added directly, either
+// operand first 5/5; engine tests through g_55e4d0[globals->engine_index] 5/5/5; player pointer
+// after the add 97, at its use 104. Retail's 0x1e9ce0 has the same engine-test swap, and 0x2422d0
+// rotates three identical engine tests through EAX, ECX, EDX (scratch rotation, not spelling).
 // @retail 0x15b7c0
 bool function_15b7c0(long delta, long player_index)
 {
@@ -3086,7 +3096,11 @@ void function_15ba20(void)
 // lookup keeps the index in a different register. Tried: an unsigned index parameter 16; the shared
 // input-counter helper 16; the force-inline input-counter helper 16; the table read before the peer
 // call 68; the existing cause setter forced inline 70; the existing initializer forced inline 79;
-// size optimization 125; global optimization off 86.
+// size optimization 125; global optimization off 86; team through event_player_get 16 (aligned 9);
+// cause team stored before the cause player 56 (with event_player_get 56); engine_player_get
+// pointer before the event 50, after the initializer 56; team read into a local 56. Retail stores
+// type and f first and loads the data pointer before the NONE stores; every form keeps the
+// initializer's store order (as the matched 0x162d00 and 0x2bc420 do).
 // @retail 0x157ed0
 void function_157ed0(long player_index)
 {
