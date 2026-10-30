@@ -954,7 +954,15 @@ real function_21f650(long channel_index, long mode);
 
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
-// score 42 (was 42): function_219290's two arguments load group-first (retail index-first; its
+// score 2 (was 42): only function_219290's two arguments differ: they load group-first (retail
+// index-first), BLOCKED-BY 0x219290 (a contributor's matched function; its parameters swapped would fix
+// it, and caller 0x21c400 calls the present order). Naming the voice's chunk (released,
+// then the queued one requested) fixed the rest. Tried: a function-wide channel_index local 113; the last
+// block's locals folded into one expression 42; elapsed_time read into a local before the rate call 42; a
+// stream pointer for the last state test 42; the table pointer declared at the outer scope 42; a named
+// rate 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
+// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42.
+// function_219290's two arguments load group-first (retail index-first; its
 // parameters swapped would fix it, but contributor caller 0x21c400 calls the present order), one
 // store sits after the permutation copy, the second release hoists the chunk-table load, and the
 // last block swaps ecx/edx with the post-call SOUND_SYSTEM load in edx (retail eax). Tried: a
@@ -976,16 +984,18 @@ void sound_voice_update_chunks(short voice_index)
 		if (voice->next_permutation && queued < 3)
 		{
 			s_sound_globals_chunks_view *tables = SOUND_GLOBALS_CHUNKS;
+			s_sound_chunk *chunk = &tables->chunks[voice->permutation->first_chunk + voice->chunk_index];
 			s_sound_cache_request_result result;
 
-			sound_reference_release((s_sound_reference_holder *)&tables->chunks[voice->permutation->first_chunk + voice->chunk_index]);
+			sound_reference_release((s_sound_reference_holder *)chunk);
 			if ((short)function_219290(voice->chunk_index, (s_permutation_group *)voice->permutation) == NONE)
 				voice->unknown10 = 0.0f;
 			voice->permutation = voice->next_permutation;
 			voice->chunk_index = voice->next_chunk_index;
 			voice->next_permutation = NULL;
 			voice->next_chunk_index = NONE;
-			result.value = function_218850(NONE, &tables->chunks[voice->permutation->first_chunk + voice->chunk_index], 0);
+			chunk = &tables->chunks[voice->permutation->first_chunk + voice->chunk_index];
+			result.value = function_218850(NONE, chunk, 0);
 			if (!TEST_FIELD_BIT(result.loaded))
 				queued = 0;
 		}
@@ -3490,6 +3500,10 @@ struct s_128ca0
 // Round 224: Live definition/permutation/playback, definition-permutation/definition-playback/
 // permutation-playback/all/all-pitch-parameters 307/364/681/385/709/864/878/878. Definition-only
 // recovers frame 0x494 but regresses; original receivers, gain homes and complete countdown arms restored.
+// Round 270: actual signed-long location-gain field alone/outer reference sum/both
+// reference sums 215/256/306; outer/both with shared scale 257/295; both with scale
+// and native pitch bounds 295; both with early gain/early gain and scale 306/295.
+// Outer sum recovers frame 0x494 but regresses; original body and shared field restored.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {

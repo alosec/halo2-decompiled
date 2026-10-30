@@ -2655,10 +2655,6 @@ void __stdcall function_c42e0(long unit_index, void const *placement)
 /* picks up a grenade: when the globals allow its type (+0x104, 0x2c bytes
    each) and the unit carries fewer than the type's maximum, counts it,
    tells the player code, and deletes it */
-// score 33 (was 33): Entry and frame agree; shared NONE carrier and final player word compare differ.
-// Entry bool result 54; long result 96; entry long result 96; byte result 90;
-// promoted player slot 33; nested object tests plus promoted slot 33; direct success 53;
-// early globals guard 95. Original body restored.
 // @retail 0xccba0
 bool __stdcall function_ccba0(long unit_index, long grenade_index)
 {
@@ -2682,9 +2678,9 @@ bool __stdcall function_ccba0(long unit_index, long grenade_index)
 				unit->grenade_counts[*(short *)(definition + 0x12e)]++;
 				function_a7a30(unit_index, 0x400000);
 				function_a8950(unit_index, grenade->definition_index);
-				s_unit *object = (s_unit *)function_badc0(unit_index, 3);
-				if (object && object->unknown13c != NONE &&
-					*(short *)((byte *)g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c + 0x28) != NONE)
+				long controller = unit_get_player_index(unit_index) == NONE ? NONE :
+					*(short *)((byte *)g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c + 0x28);
+				if (controller != NONE)
 				{
 					function_f8110(grenade_index);
 				}

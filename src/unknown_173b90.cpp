@@ -1154,6 +1154,11 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
 // separate-tag/group-first declarations 135/135/135/135; definition rejection with the
 // same four declaration graphs 135/135/135/135. Original nested body restored; tag/group
 // ownership, definition bit five and callback reloads remain.
+// Round 411: existing shared lookup alone/field flags/request/both 135/343/133/331;
+// with word bit five, alone/field flags/request/both 310/340/129/328. The 133 and 129
+// forms are below threshold and restored. Callback inline/noinline/both 125/135/125;
+// the inline-only declaration of the external 0x1e4e0 (125) is not kept: no definition in this
+// file; complete original body and shared lookup linkage restored.
 // @retail 0x174420
 void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
 {

@@ -338,7 +338,7 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
     return v;
 }
 
-// score 34 (was 47): frame 0xb4 agrees; 1521/1516 bytes. The back-edge parameter reloads (ours first,
+// score 34 (was 34): frame 0xb4 agrees; 1521/1516 bytes. The back-edge parameter reloads (ours first,
 // next, definition; retail definition, next, first) and the minimum-speed normalization differ: retail
 // computes j and k into two registers (k into the inverse's own) before storing either.
 // Round 90: the blend's previous add through vector3f_add with the squared speed from dot3f 34 (kept;
@@ -445,6 +445,10 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // final component loop 111; scaled-add publication 115; normalizer loop/ordinary inline/inverse
 // lifetime/native slot names 47 each; both publication and normalizer loops 107 at retail length.
 // Every executable form restored; lower-tail stores and back-edge reload order remain.
+// Round 282: selected-bound common completion, upper/lower defaults and split normalize/scale
+// 365/362/342/365; with shared change magnitude 359/360/355/359 (frame 0xac).
+// Shared normalization-product setter 37 (1519 bytes). All restored; native 0xb4 frame,
+// back-edge definition/first reloads and lower normalization publication remain.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {

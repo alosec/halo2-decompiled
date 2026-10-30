@@ -584,6 +584,10 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // Play first/middle parameter orders 51/51 (same code); play fields read at entry 54 (play
 // becomes a register argument, in eax). Retail keeps the object in esi and play in edi; ours
 // needs esi for 0xba300's location argument (BLOCKED-BY 0xba300's convention).
+// Round 282: shared velocity setter with global/pointer/value inputs 63/63/95;
+// point plus velocity setters 75; partial point/point+direction construction with
+// velocity setter 96/90; velocity before compression 63, with both setters 75.
+// All restored; root-location registers, saves and stacked playback input remain.
 // @retail 0x189210
 long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
 {
