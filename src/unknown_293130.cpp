@@ -104,8 +104,8 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_5 * local_0;
 }
 
-// score 68 (was 68): result, conversion and sine stack homes differ; rotation
-// registers also differ.
+// score 52 (was 68): y/z range-add order, rotation registers and final sentinel
+// scheduling differ. Result, conversion and sine stack homes now agree.
 // Transient creation handle with range result, trig input and shared cross boundaries:
 // 361/358/360/357/360/357/359/364. Result, conversion and sine homes plus rotation registers
 // remain.
@@ -117,6 +117,10 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // fadd orders, reorders the rotation); result renamed object_index/result/zz_index/aa_index 68 each
 // (slot unchanged); result declared first 69; existing random real for the fraction 145; angle
 // field passed straight to the rotation 80.
+// Round 253: Separate total/threshold 52; with word draw/long choice/both 470/248/463;
+// cumulative-scope counterparts 361/470/301/463. On the recovered graph, shared range/all random
+// helpers 113/53. Keep ordinary-confirmed total/threshold split only: 68 to 52 at retail length,
+// scalar homes agree; remaining y/z adds, rotation ranks and sentinel scheduling.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {
@@ -127,7 +131,7 @@ long __stdcall function_293130(long arg_0)
 	if (local_3->field_2c != NONE && local_3->field_c > 0 && local_2->field_10 > 0)
 	{
 		real local_5 = 0.0f;
-		real local_4 = 0.0f;
+		real total_weight = 0.0f;
 		short local_6 = 0;
 		short local_7;
 		short local_16;
@@ -137,20 +141,20 @@ long __stdcall function_293130(long arg_0)
 		{
 			if (local_2->field_10 & (1 << local_7))
 			{
-				local_4 += local_3->field_10[local_7].field_18;
+				total_weight += local_3->field_10[local_7].field_18;
 				local_6++;
 			}
 		}
-		if (local_4 > 0.0f)
+		if (total_weight > 0.0f)
 		{
 			real random_fraction = (real)function_293131() * (1.0f / 65535.0f);
-			local_4 *= random_fraction;
+			real selection_weight = total_weight * random_fraction;
 			for (local_16 = 0; local_16 < local_3->field_c; local_16++)
 			{
 				if (local_2->field_10 & (1 << local_16))
 				{
 					local_5 += local_3->field_10[local_16].field_18;
-					if (local_5 >= local_4)
+					if (local_5 >= selection_weight)
 					{
 						local_8 = local_16;
 						break;

@@ -2547,6 +2547,10 @@ struct s_scenario_scripting_view
 // point-table+count, point-table+position, count+position, all three 83/91/97/90;
 // all with loop-local short counter 91. Original complete search restored.
 // Round 251: nearest-test bool/byte/short/long results and their exact logical complements, all eight 80. Original strict selection, separate point branches and complete body restored.
+// Round 253: Existing native actor getter/view, counter-scope/selector-width/guarded-data
+// combinations 80/87/96/92/96/98/95/99. All 367 bytes; exact wrapper survives. Original getter,
+// selector, early counter and complete search restored; actor/counter homes and delayed data
+// observation remain.
 // @retail 0x2769d0
 void function_2769d0(long point_reference)
 {
