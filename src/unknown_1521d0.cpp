@@ -24,6 +24,8 @@ static inline s_timer_player *timer_player_get(long player_index)
 // the loop down brought that reread back. Other tested forms scored 9 to 15,
 // an indexed do/while 35; the 600 s permutation run from here found no
 // improvement. Needs 0xd0e00 to match: without it this is 194 bytes, score 147.
+// First-timer pointer ownership with byte or typed player stride scored
+// 12/14 at 104 bytes; it fixes entry addressing but changes the loop tail.
 // @retail 0x1521d0
 void function_1521d0(long player_index)
 {
