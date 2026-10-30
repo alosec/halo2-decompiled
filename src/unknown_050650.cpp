@@ -1270,6 +1270,10 @@ struct s_actor_looking_turn_request
 // Y423: High aiming case block first 536; looking case 2 first 525; both 536;
 // those orders with sequential validity 536/525/536; high aiming with outer
 // validity scope, alone/with looking order 536/536 fast (control 525). Restored.
+// Existing validity defaults produced by marker/combat/aiming decoder success tests,
+// subsets 1-7, 530/528/530/535/551/535/551; all plus looking decoder tests 526
+// (fast control 525, full 506). All reserve 0xcc versus retail 0xc8; exact-match-only
+// forms restored, preserving original result storage, scopes, queries and complete body.
 // @retail 0x298370
 void function_298370(long actor_index)
 {
