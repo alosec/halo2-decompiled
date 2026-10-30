@@ -17,7 +17,9 @@ bool function_1f4a20(s_1f4a20_entry const *arg_2, long arg_0, s_reference arg_1,
 bool function_1af530(long arg_0, long *arg_1, long *arg_2);
 void function_265c30(long arg_0, long arg_1, bool arg_2);
 
-// score 36 (was 36): the locals sit at stack addresses eight bytes lower than retail's, so the
+// score 9 (was 9): actor/source/completion homes rotate +0x2c/+0x30/+0x24 versus
+// +0x24/+0x2c/+0x30. The frame and native conversion agree.
+// Earlier layout/conversion observations and trials: the locals sat eight bytes lower, so the
 // values handed to the calls are taken from the wrong slots, and retail converts the scaled delay
 // inline (fld, fistp into local_13's dead slot, mov dx) where ours calls real_to_long.
 // `static __forceinline long real_to_long(real value);` declared here gives retail's code
@@ -64,6 +66,9 @@ void function_265c30(long arg_0, long arg_1, bool arg_2);
 // output declared first 9; it renamed 9 (names do not order these homes); the existing actor and
 // prop-node getters 9 (identical code, kept); the 0x262b40 result declared before its flag 13;
 // a separate long for 0x1af530's second output 45.
+// Round 204 (all-image fast): completion initialized 205; chained false outputs 13;
+// acceptance producer 174; const source 9; guarded two-use key 9; complete role names 9;
+// role names/completion initialized 205; role names/guarded key 9. Original body restored.
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {

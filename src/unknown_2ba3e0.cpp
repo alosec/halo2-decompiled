@@ -471,6 +471,9 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // product order compiles the same. That order in the normalizer 34 (same code); file scale
 // helper in the normalizer 34 (same code); file scale helper for the minimum's final scale 34
 // (same code); squared-first minimum test 34 (same code); next assigned just before the loop 86.
+// Round 204: vector-squared input by const reference, ordinary/forced squared and normalizer
+// availability, and void/pointer normalizer output: eight contracts 10 each. All original
+// helpers and marked bodies restored; back-edge reloads and maximum squared producer remain.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {
