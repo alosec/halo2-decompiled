@@ -893,11 +893,16 @@ struct s_looping_playback_definition
 	char playback_index;
 };
 
+struct s_short_bounds
+{
+	short lower;
+	short upper;
+};
+
 struct s_looping_pitch_modifier
 {
 	byte unknown00[8];
-	short lower;
-	short upper;
+	s_short_bounds pitch_bounds;
 	byte unknown0c[8];
 };
 
@@ -928,8 +933,10 @@ long function_219370(s_animation_state *state, s_animation_ref *ref);
 // reordered direct fields 16, reused track 22, common direct fields 10; named range sum 10; set pointer 10;
 // long set-index local 10; fallback arm first with common result 10; inline set accessor 10;
 // function_2194c0 parameters as (ref, value) at its definition and every call 0 (callee not ours, held).
+// Lane 17 round 2: parameters as (playback, sound, definition, ...), the order retail's callers set up
+// (edx sound, then ecx playback, at 0x21b940 and 0x21c400): 10 here, 0x21b940 16 -> 14 (kept).
 // @retail 0x21cb90
-dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_definition *definition, s_looping_playback_definition *playback, long track_index, short arg_58ecd0, bool clear)
+dword looping_sound_get_permutations(s_looping_playback_definition *playback, s_type_5ef569 *sound, looping_sound_definition *definition, long track_index, short arg_58ecd0, bool clear)
 {
 	dword result;
 	if ((definition->flags & 0x30) && sound->controller_index != NONE)
@@ -973,7 +980,9 @@ short function_219110(s_set_ref *ref, short offset, dword *used_mask, short prev
 void sound_playback_set_chunk(long sound_index, long definition_index, char pitch_range_index, char permutation_index, short chunk_index);
 long __stdcall function_125e60(s_looping_track_sound *sound);
 
-// score 77 (was 77): Float/result/random spill homes and initialization scheduling differ.
+// score 14 (was 77): only the record initialization's store schedule differs (the playback reload, the 0xa4
+// byte and the loop-flag byte move up) and the flag set is a plain store where retail ORs it in.
+// Earlier: Float/result/random spill homes and initialization scheduling differ.
 // Round 76: bounds pointer 74; with mask 132; direct previous 80; initialization swap 77; result name 74;
 // distance name 74; declarations swapped 188; split result 74; the pitch bounds read through a pointer to
 // the modifier's lower field indexed [0]/[1] with an entry NONE result and one return 68 (not kept: the
@@ -989,12 +998,20 @@ long __stdcall function_125e60(s_looping_track_sound *sound);
 // Round 313: Computed modifier span, original/promoted previous: 77/131; with computed pitch offset
 // 77/131; entry result with span 71/126; with offset 71/126. Six-count gain rejected; original body
 // restored. Result-first recovers early spills; initialization and pitch scheduling remain.
+// Lane 17 round 2 (kept, 77 -> 14): short pitch-range local 149 alone (retail's block and tail, but the shift-form
+// flag test was 7 bytes long), with the 0x2000 mask test 45; loop links through a pointer 29; pitch bounds member
+// read through a pointer 26; entry result with one exit 20; named lower bound 16; 0x21cb90's parameters in
+// retail's setup order 14. Not kept: one-bit loop flag 29/14; flag set through playing->loop 28/13 (mixed access);
+// pitch sum orders 26 x4; renames for slot order 26 x5; direct distance 190; track declared at entry 111;
+// chained fade zeros 13 (stores in the wrong order); links declared after the record 14; handle before its
+// byte 14; flags before track index 14; resets before the fade zeros 14; callbacks before time 16.
 // @retail 0x21b940
 long function_21b940(long looping_sound_index, long definition_index, long pitch_range_index, short track_index, short state, dword *seed)
 {
 	s_type_5ef569 *sound = (s_type_5ef569 *)LOOPING_SOUNDS->data + (looping_sound_index & 0xffff);
 	looping_sound_definition *definition = (looping_sound_definition *)g_4e3b44[sound->definition_index & 0xffff].bytes;
 	looping_sound_track_definition *track_definition = &definition->tracks[track_index];
+	long result = NONE;
 	s_type_99c531 *source = &sound->source;
 	if ((byte)function_126bd0(definition_index))
 	{
@@ -1003,7 +1020,7 @@ long function_21b940(long looping_sound_index, long definition_index, long pitch
 		long listener_index = function_127d00(source, maximum_distance, NULL);
 		if (listener_index != NONE)
 		{
-			long result = record_pool_allocate(g_4e637c);
+			result = record_pool_allocate(g_4e637c);
 			if (result != NONE)
 			{
 				s_looping_sound_tables *tables = (s_looping_sound_tables *)g_51ebd4;
@@ -1027,41 +1044,45 @@ long function_21b940(long looping_sound_index, long definition_index, long pitch
 				playing->chunk_index = NONE;
 				playing->unknowna4 = NONE;
 				playing->handle = NONE;
-				playing->loop.track_index = (char)track_index;
-				playing->loop.flags = 0;
-				playing->loop.field_8_4 = track->field_8_4;
-				playing->loop.permutations = track->permutations;
-				playing->loop.next_sound_index = result;
-				playing->loop.previous_sound_index = result;
-				if (playing->state == 2 && TEST_FIELD_BIT((playback->flags >> 13) & 1))
-					playing->loop.flags |= 1;
+				s_looping_track_links *links = &playing->loop;
+				links->track_index = (char)track_index;
+				links->flags = 0;
+				links->field_8_4 = track->field_8_4;
+				links->permutations = track->permutations;
+				links->next_sound_index = result;
+				links->previous_sound_index = result;
+				if (playing->state == 2 && (playback->flags & 0x2000))
+					links->flags |= 1;
 				if (definition->flags & 0x20)
 				{
 					function_2198f0(sound->controller_index)->function_219f60(1);
-					playing->loop.controller_index = sound->controller_index;
-					playing->loop.synch_state = NONE;
+					links->controller_index = sound->controller_index;
+					links->synch_state = NONE;
 				}
 				else
-					playing->loop.controller_index = NONE;
-				if (pitch_range_index == NONE)
+					links->controller_index = NONE;
+				short pitch_range;
+				if (pitch_range_index != NONE)
+					pitch_range = (short)pitch_range_index;
+				else
 				{
-					s_looping_pitch_modifier *modifier = &tables->pitch_modifiers[playback->playback_index];
-					real pitch = ((real)modifier->upper - (real)modifier->lower) * track->gain + playing->pitch + (real)modifier->lower;
-					pitch_range_index = function_218f50(playback, NONE, pitch);
+					s_short_bounds *bounds = &tables->pitch_modifiers[playback->playback_index].pitch_bounds;
+					real lower = (real)bounds->lower;
+					real pitch = ((real)bounds->upper - lower) * track->gain + playing->pitch + lower;
+					pitch_range = function_218f50(playback, NONE, pitch);
 				}
-				dword permutations = looping_sound_get_permutations(sound, definition, playback, track_index, pitch_range_index, state == 2);
-				short previous = (short)looping_sound_get_previous_permutation(definition, playback, pitch_range_index);
-				short permutation = function_219110((s_set_ref *)playback, pitch_range_index, &permutations, previous, seed, NULL, false);
-				looping_sound_set_permutations(sound, definition, playback, track_index, pitch_range_index, permutations, permutation);
-				sound_playback_set_chunk(result, definition_index, (char)pitch_range_index, (char)permutation, 0);
+				dword permutations = looping_sound_get_permutations(playback, sound, definition, track_index, pitch_range, state == 2);
+				short previous = (short)looping_sound_get_previous_permutation(definition, playback, pitch_range);
+				short permutation = function_219110((s_set_ref *)playback, pitch_range, &permutations, previous, seed, NULL, false);
+				looping_sound_set_permutations(sound, definition, playback, track_index, pitch_range, permutations, permutation);
+				sound_playback_set_chunk(result, definition_index, (char)pitch_range, (char)permutation, 0);
 				function_125e60(playing);
 				looping_sound_link_sound(looping_sound_index, track_index, result);
 				++sound->playing_sound_count;
 			}
-			return result;
 		}
 	}
-	return NONE;
+	return result;
 }
 
 // @retail 0x21b910
@@ -1373,7 +1394,7 @@ void function_128500(long sound_index, s_looping_voice_counts *counts);
 short function_128a60(long sound_index, short count, short const *voice_indices);
 
 /* retail expands the permutation getter in function_21c190 and calls it elsewhere */
-inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_definition *definition, s_looping_playback_definition *playback, long track_index, short arg_58ecd0, bool clear);
+inline dword looping_sound_get_permutations(s_looping_playback_definition *playback, s_type_5ef569 *sound, looping_sound_definition *definition, long track_index, short arg_58ecd0, bool clear);
 
 // score 50 (was 93): the prologue through the pitch-range call agrees; left: both permutation
 // paths read the track index inside their arms (`add eax, 7`) where retail reads it before the
@@ -1424,7 +1445,7 @@ bool function_21c190(s_type_5ef569 *sound, s_type_06b94f *track, long sound_inde
 
 	/* Retail expands the permutation helpers here, but calls them from
 	   function_21b940. Keep the same shared/local mask rules. */
-	dword permutations = looping_sound_get_permutations(sound, definition, playback, playing->loop.track_index, arg_58ecd0, true);
+	dword permutations = looping_sound_get_permutations(playback, sound, definition, playing->loop.track_index, arg_58ecd0, true);
 
 	short previous = !(definition->flags & 0x30) ?
 		(short)function_219370((s_animation_state *)&g_51ebd4->sets[playback->pitch_range_base + playing->pitch_range_index], (s_animation_ref *)playback) : NONE;
@@ -1546,7 +1567,7 @@ void function_21b0e0(bool update)
 					long definition_index = playing->definition_index;
 					s_looping_playback_definition *playback = (s_looping_playback_definition *)g_4e3b44[definition_index & 0xffff].bytes;
 					s_looping_pitch_modifier *modifier = &((s_looping_sound_tables *)g_51ebd4)->pitch_modifiers[playback->playback_index];
-					real pitch = ((real)modifier->upper - (real)modifier->lower) * track->gain + playing->pitch + (real)modifier->lower;
+					real pitch = ((real)modifier->pitch_bounds.upper - (real)modifier->pitch_bounds.lower) * track->gain + playing->pitch + (real)modifier->pitch_bounds.lower;
 					c_class_219e90 *controller = controller_get(sound->controller_index);
 					if (controller->definition_index == NONE)
 						random_next(&controller->field_8_4);
@@ -1845,6 +1866,13 @@ void function_21fa80(long channel_index, s_looping_channel_properties const *pro
 // Round 421: continuation before terminal stop 345 (plain kept), 1936/1929 bytes; on it,
 // short permutation/long chunk/both 450/422/461; effect receiver alone/with those
 // 345/450/422/461. Original widths, effects and call tuples retained.
+// Lane 17 round 2: retail clears the properties as two aggregates (first dword stored, then 11 dwords; the
+// effects' first dword, then 0x111 dwords): the base fields grouped in a nested struct with `= {{0}, {0}}`
+// gives exactly that clear but 503 (1955 bytes); `= {0}` on the flat struct 478; the pitch bounds read
+// through a bounds pointer with a named lower bound 345 (retail's `lea [ecx+edx*4+8]`); both 503; early
+// track-value/scale snapshots (diagnostic) 501; properties declared at entry 345; total gain as successive
+// statements 345. Retail also calls 0x221810 out of line where ours inlines it (its file is another lane's),
+// and snapshots the track value and the source scale before the clear (frame 0x4bc).
 // @retail 0x21c400
 void function_21c400(short voice_index, real gain, s_looping_channel_spatialization const *spatialization)
 {
@@ -1859,7 +1887,7 @@ void function_21c400(short voice_index, real gain, s_looping_channel_spatializat
 	looping_sound_track_definition *track_definition = &definition->tracks[playing->loop.track_index];
 	c_class_219e90 *controller = controller_get(sound->controller_index);
 	s_looping_pitch_modifier *modifier = &((s_looping_sound_tables *)g_51ebd4)->pitch_modifiers[playback->playback_index];
-	real pitch = ((real)modifier->upper - (real)modifier->lower) * track->gain + playing->pitch + (real)modifier->lower;
+	real pitch = ((real)modifier->pitch_bounds.upper - (real)modifier->pitch_bounds.lower) * track->gain + playing->pitch + (real)modifier->pitch_bounds.lower;
 	bool primary = track->sound_index == sound_index;
 	s_looping_channel_properties properties;
 	memset(&properties, 0, sizeof(properties));
@@ -1944,7 +1972,7 @@ void function_21c400(short voice_index, real gain, s_looping_channel_spatializat
 				{
 					if (!(definition->flags & 2))
 					{
-						dword permutations = primary ? looping_sound_get_permutations(sound, definition, playback, playing->loop.track_index, playing->pitch_range_index, false) : playing->loop.permutations;
+						dword permutations = primary ? looping_sound_get_permutations(playback, sound, definition, playing->loop.track_index, playing->pitch_range_index, false) : playing->loop.permutations;
 						permutation_index = function_219110((s_set_ref *)playback, playing->pitch_range_index, &permutations, playing->permutation_index, seed, NULL, false);
 						if (primary)
 							looping_sound_set_permutations(sound, definition, playback, playing->loop.track_index, playing->pitch_range_index, permutations, permutation_index);
@@ -2259,7 +2287,7 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 								s_looping_playback_definition *playback = (s_looping_playback_definition *)g_4e3b44[next_definition & 0xffff].bytes;
 								s_looping_sound_tables *tables = (s_looping_sound_tables *)g_51ebd4;
 								s_looping_pitch_modifier *modifier = &tables->pitch_modifiers[playback->playback_index];
-								real pitch = ((real)modifier->upper - (real)modifier->lower) * track->gain + (real)tables->classes[playback->sound_class].pitch + (real)modifier->lower;
+								real pitch = ((real)modifier->pitch_bounds.upper - (real)modifier->pitch_bounds.lower) * track->gain + (real)tables->classes[playback->sound_class].pitch + (real)modifier->pitch_bounds.lower;
 								short arg_58ecd0 = function_218f50(playback, NONE, pitch);
 								long replacement = looping_sound_find_sound(index, next_definition, arg_58ecd0, (short)i);
 								if (replacement == NONE)
