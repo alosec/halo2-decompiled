@@ -178,6 +178,9 @@ PRIVATE inline byte const *material_parameters(long tag)
 // Round 34: table field through a reference for all three reads 47; entry word read inside the index 47;
 // direct entry store 47 (table reload as retail; the second-index load then hoists above the store);
 // direct store with `second + (packed & 0x1ff)` 47; direct store read back through a const reference 293.
+// Round 83, all on the direct entry store (aligned 3: only `second` loads before the entry store, retail
+// after both table bases): chain lookup folded into the pass expression 47; tables re-read into its
+// local after the store 47; `second` read through its address 47; named chain index 47.
 // @retail 0x16b90
 void __stdcall function_16b90(byte *state, long tag, long first, long second,
     long third, long fourth, real scale)

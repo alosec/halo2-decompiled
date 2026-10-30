@@ -3840,28 +3840,20 @@ void function_147af1(long first, long second, c_render_window *window);
 struct s_2f800_view;
 void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 
-// score 34 (was 34): the stores to g_4ba038 and g_4ba010 land in other
-// places than retail's. Both stores are placed by the compiler, not by the
-// order of the statements: with the addresses of g_4ba038 and g_4ba010 taken
-// anywhere in the program they land exactly where retail puts them (probed
-// by taking them in src/unknown_02c560.cpp, which takes this function to 26),
-// so retail's program took those addresses somewhere this tree does not.
-// The flag is loaded as a dword where retail loads a byte, and the tail calls
-// 0x13680 with the flag pushed where retail passes it in bl; both follow
-// 0x13680's convention, which retail has as one bool in bl and a plain ret
-// (BLOCKED-BY 0x13680).
-// is loaded where retail loads a whole word, and the calls at the end are in
-// a different order with their arguments set up differently. The tail is
-// 0x13680's convention (retail passes the flag in bl; BLOCKED-BY 0x13680);
-// the flag passed from the frame's copy 34.
-// Round 93: both store orders (the counter before the kind byte, the flag
-// clear between the two block copies) are retail's once g_4ba038 and
-// g_4ba010 are address-taken (diagnostic only, 26): retail keeps them in an
-// address-taken struct, whose definitions are in other lanes' files. Flag
-// clear before the first copy 34; counter increment one statement earlier
-// 34; kind stored after the sky index 37; flag clear as the first store 34;
-// camera default as a named source local 153.
-// Round 187: Native mode-word/auxiliary-word/final-byte subsets 1/2/3/4/5/6/7 and all unsigned-mode bits 34 each; auxiliary-word forms lose caller. Original declarations restored; shared-store alias and protected flag convention remain.
+// score 34 (was 34): the stores to g_4ba038 and g_4ba010 land in other places than retail's (the
+// counter before the kind byte, the flag clear between the two block copies). Both stores are placed
+// by the compiler, not by the order of the statements: with the addresses of g_4ba038 and g_4ba010
+// taken anywhere in the program they land exactly where retail puts them (probed by taking them in
+// src/unknown_02c560.cpp, which takes this function to 26), so retail keeps them in an address-taken
+// struct whose definitions are in other lanes' files. The flag is loaded as a dword where retail loads
+// a byte, and the tail calls 0x13680 with the flag pushed where retail passes it in bl; both follow
+// 0x13680's convention, which retail has as one bool in bl and a plain ret (BLOCKED-BY 0x13680).
+// Tried: the flag passed from the frame's copy 34. Round 93: flag clear before the first copy 34;
+// counter increment one statement earlier 34; kind stored after the sky index 37; flag clear as the
+// first store 34; camera default as a named source local 153. Round 187: native mode-word/
+// auxiliary-word/final-byte subsets 1/2/3/4/5/6/7 and all unsigned-mode bits 34 each (auxiliary-word
+// forms lose a caller). Round 83: flag clear as `false` 34; counter as `+= 1` 34; kind stored before
+// the counter 34; flag clear after the view copy 34; `enabled != false` passed to 0x13680 40.
 // @retail 0x2ba10
 void function_2ba10(s_2f970_view const *view, long cluster, long player,
     byte const *camera, bool enabled, long leaf, bool invalid, vector3f const *sky_color,
