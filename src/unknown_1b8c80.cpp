@@ -355,6 +355,8 @@ PRIVATE __forceinline void function_1b9201(long arg_0, vector3f *arg_1)
 		matrix_transform_vector(object_node_matrix(object_get(local_0->parent_index), local_0->parent_node), &local_0->forward, arg_1);
 }
 
+// score 11 (was 6), coordinator review: the `tag->seat_count > 0` guard repeats the loop's own first test, so it is
+// kept only with a match (6 with it); the loop is back to its earlier form
 // score 6 (was 11): the seat scan is now guarded by an explicit
 // `tag->seat_count > 0` test, which puts the seat count in ESI and the short index in
 // EBP as retail does; what is left is the guard's folded compare, which still uses a
@@ -392,15 +394,11 @@ bool function_1b9200(long object_index, long prop_index)
 		if (!(tag->flagsbc & 1))
 		{
 			s_vehicle_seat_definition *seat = NULL;
-			short i = 0;
 
-			if (tag->seat_count > 0)
+			for (short i = 0; i < tag->seat_count; i++)
 			{
-				for (; i < tag->seat_count; i++)
-				{
-					if (TEST_FIELD_BIT(tag->seats[i].flags.bit3))
-						seat = &tag->seats[i];
-				}
+				if (TEST_FIELD_BIT(tag->seats[i].flags.bit3))
+					seat = &tag->seats[i];
 			}
 			if (seat)
 			{
