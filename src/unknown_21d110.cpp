@@ -843,6 +843,9 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // with a ternary 77. Screens: renaming definition/repeat_state/tag_index moves no slot; initialising
 // repeat_state reorders several slots but the bool stays a byte; the looping state fetched through an
 // inlined helper with out-parameters leaves the frame unchanged.
+// Round 49 (fast, baseline 58): the alternate expression directly in SET_BIT 139; direct raw gain 58;
+// both 139; a function-scope looping pointer with direct gain 58; cumulative const effect, controller index,
+// tag flags and tag index on that neutral graph 58 each. Opening body restored.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

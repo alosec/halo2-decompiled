@@ -2293,6 +2293,9 @@ PRIVATE inline void vehicle_contact_steer(s_vehicle_physics_state *state, s_vehi
 // Value-input spin result, value/field periods and short/byte gear 182/261/197/262;
 // separate exhaustive/default-zero results with value/field periods 189/261/208/258.
 // Seven-point value-input gain below margin; frame, torque/contact and period homes remain.
+// Round 49: torque/counter declaration swap 189; steering helper with a matrix argument 189;
+// both 189; const spin 189; late torque/late counter/both 189 each; behavioural counter name 189.
+// Original target and steering helper restored.
 // @retail 0xf1f80
 void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state)
 {
