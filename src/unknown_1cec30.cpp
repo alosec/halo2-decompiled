@@ -2782,6 +2782,8 @@ PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
 // Round 183: target entry inline/noinline 50/50; state-update inline alone/with entry
 // inline/noinline 50/50/50; state-update noinline alone/with entry inline/noinline 50/50/50.
 // Paired getter unchanged; all contracts restored.
+// Round 47: array operator[] at all five/first-only/late-three sites 10/7/10; array reference for the
+// bound/all reads 7/10; size reference 7; shared data pointer 171; final call scope 7. Original body restored.
 // @retail 0x1ced00
 void function_1ced00(s_havok_component *component)
 {
