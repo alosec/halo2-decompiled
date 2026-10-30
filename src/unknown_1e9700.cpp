@@ -324,6 +324,10 @@ void __stdcall function_1e9fa0(void *engine_globals, long object_index, long rep
 // into a short local 13 (the engine test swap stays). The arguments arrive
 // as in retail (player in EAX, counter in ECX, four pushes) and 0x1ea5b0's
 // call already matches, so that caller does not decide the load order.
+// 0x15b7c0's clamped-add helper (delta first) 84; a plain short delta and
+// field 85 (and 0x15b7c0/0x15b3a0 lose their match through the declaration);
+// the field read after the index 83, or inside the index expression 85; a row
+// pointer indexed by the field at each use 64 (0x15b3a0 and 0x1ea770 lose theirs).
 // @retail 0x1e9ce0
 void function_1e9ce0(long player_index, long counter, s_statborg *statistics,
 	long field, long volatile delta, bool by_team)
