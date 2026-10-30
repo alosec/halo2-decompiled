@@ -1117,7 +1117,7 @@ bool function_a69a0(long a, long b, long c, long d, long e, bool f, long g)
 
 
 quaternionf *function_141f60(matrix3x3 const *matrix, quaternionf *out);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 matrix3x3 *function_141e10(matrix3x3 *out, quaternionf const *q);
 
 PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const *up, matrix3x3 *matrix)
@@ -1130,13 +1130,6 @@ PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const
  matrix->up = *up;
 }
 
-// score 4 (was 4): both extraction calls form the angle address before the axis address.
-// Reused axis/angle output pointers 10; reused angle output pointer 6; saved/current output
-// pointer pairs 10/10; extraction calls swapped 7; axis declarations swapped 4; axis names 4;
-// forced orientation inline 4.
-// Held (coordinator 2026-10-30): matches with 0x11d790's parameters declared (q, angle, axis) at its
-// definition and every caller (lane 12 r44); applied once the callers in src/vehicles.cpp and
-// src/unknown_141590.cpp are free. Don't retry this function before then.
 // @retail 0xa9b40
 void function_a9b40(long index, s_z_copy_state *state)
 {
@@ -1152,8 +1145,8 @@ void function_a9b40(long index, s_z_copy_state *state)
  vector3f const *current_forward = (vector3f const *)(object + 0x70);
  function_141f60(&saved_matrix, &saved_rotation);
  function_141f60(&current_matrix, &current_rotation);
- function_11d790(&saved_rotation, &saved_axis, &saved_angle);
- function_11d790(&current_rotation, &current_axis, &current_angle);
+ function_11d790(&saved_rotation, &saved_angle, &saved_axis);
+ function_11d790(&current_rotation, &current_angle, &current_axis);
  if (current_angle - saved_angle > 0.0001f)
  {
   real weight = 0.35f;

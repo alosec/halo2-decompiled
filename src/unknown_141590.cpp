@@ -588,7 +588,7 @@ void function_142390(
 }
 
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 
 // @retail 0x1424f0
 vector3f *matrix4x3_rotation_between(
@@ -604,7 +604,7 @@ vector3f *matrix4x3_rotation_between(
 	function_141590(a, &inverse);
 	function_142a60(b, &inverse, &relative);
 	function_141f60(&relative.rotation, &rotation);
-	function_11d790(&rotation, out, &angle);
+	function_11d790(&rotation, &angle, out);
 	out->i *= angle;
 	out->j *= angle;
 	out->k *= angle;

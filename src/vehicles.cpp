@@ -2383,7 +2383,7 @@ void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state
 
 void function_141590(transform4x3f const *in, transform4x3f *out);
 quaternionf *function_141f60(matrix3x3 const *matrix, quaternionf *out);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 
 /* a damping force against a speed, at most what stops it within a tick */
 PRIVATE __forceinline real vehicle_friction(real speed, real friction, real scale)
@@ -2604,7 +2604,7 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	// Reuse the inverse transform workspace for the relative transform.
 	function_142a60(&desired, &transform, &transform);
 	function_141f60(&transform.rotation, &rotation);
-	function_11d790(&rotation, &rotation_axis, &rotation_angle);
+	function_11d790(&rotation, &rotation_angle, &rotation_axis);
 
 	real rate = PIN(rotation_angle * maximum_turn_rate * 0.95492965f, 0.0f - maximum_turn_rate, maximum_turn_rate);
 	vector3f torque;
