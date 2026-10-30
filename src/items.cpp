@@ -584,6 +584,9 @@ struct s_item_collision_bsp
 // Round 208: six uniform normal-column operand combinations, native cross-product
 // operands, and joint complete normal/distance products all 249. Sum trees,
 // plane inputs, random draws and the whole original body restored.
+// Round 285: existing staged spin cross/shared final linear sum/both/shared final angular sum/
+// cross-angular/both sums/all/all with marker-first storage: 249/249/249/249/249/249/249/249 fast.
+// Original complete body restored; protected plane width, join homes and spin tail remain.
 // @retail 0x10cf80
 void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effect)
 {
@@ -1065,6 +1068,9 @@ struct s_item_flags_view_10b850
 // both complete formal orders, 813 each; reversed original pointer contract 813;
 // reversed private dot formals on the latter and two new native receiver contracts 813 each.
 // Original rotation helper, all four callers and every dot tuple restored; frame remains 0x154.
+// Round 285: existing staged orientation cross at first/second/third/fourth/first-two/last-two/
+// all sites, then all with staged flow cross: 821/821/821/818/813/820/820/935 fast.
+// Original complete body and helpers restored; frame and Boolean/vector homes remain.
 // @retail 0x10b850
 void __stdcall function_10b850(long object_index)
 {

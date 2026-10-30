@@ -1302,6 +1302,9 @@ bool function_0b6760(s_index_pair const *pair);
 // Round 190: shared motion completion in bool/byte/short/long, before/after activity by name,
 // 294/294/406/402 each. Refresh/event ordinary-inline-noinline pairs 294 each;
 // the refresh-inline forms also lose two matched callers. Original body and declarations restored.
+// Round 285: actual repeated power-target/position-target/both/delay/power-delay/position-delay/
+// all field lvalues, then all with result-first storage: 296/295/297/296/298/297/299/299 fast.
+// Original complete body, observations and inherited qualifiers restored; frame/index/state homes remain.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {
