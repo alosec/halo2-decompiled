@@ -387,7 +387,7 @@ real function_1e9700(short row);
 real function_259a0(dword *seed);
 
 bool function_d0690(s_object_child_iterator *iterator);
-void function_d0620(long object_index, s_object_child_iterator *iterator);
+void function_d0620(s_object_child_iterator *iterator, long object_index);
 void function_b7360(long object_index);
 void __stdcall function_b8540(long a);
 void function_b8b70(long object_index);
@@ -710,7 +710,7 @@ void function_d6800(long object_index, s_damage_owner const *owner, bool notify_
 			s_object_child_iterator iterator;
 			bool last = true;
 
-			function_d0620(object->parent_object_index, &iterator);
+			function_d0620(&iterator, object->parent_object_index);
 			while (function_d0690(&iterator))
 			{
 				if (iterator.child_short != NONE && iterator.child_index != object_index)
@@ -878,15 +878,38 @@ bool function_d73c0(long object_index, s_type_1e6529 const *data, bool *instant_
 	return result;
 }
 
+/* the root of an object's parents, as 0xbaf80 (which is noinline): retail
+   writes this walk out inline in 0xd6f90's ray loop */
+PRIVATE inline long damage_object_root(long object_index)
+{
+	long root = NONE;
+
+	while (object_index != NONE)
+	{
+		root = object_index;
+		object_index = DAMAGE_OBJECT(object_index)->parent_object_index;
+	}
+	return root;
+}
+
 /* damages everything in the damage's radius; returns the first player unit
    hit, else the last object hit */
+// score 206 (was 229): left is 0xbadc0 and register allocation. The link-time inliner inlines 0xbadc0 at the first
+// use (the flags & 2 unit test) but calls it at the other two; retail calls all three. Retail keeps data in edi,
+// the definition in esi and &data->position in ebx (the distances are [ebx], [ebx+4], [ebx+8]) and spills the
+// player index to the frame; it also recomputes the squared distance for the second test (ours shares it).
+// Done: the players' parent walk is the damage_object_root loop (783 bytes, retail 782; 229 -> 209), and
+// the cached `position` pointer (206). Tried: the player_index/NONE split of the first badc0 use (354, all three
+// inlined); separate `!unit` / `player_index == NONE` tests (209); a squared-distance helper called twice (249,
+// still shared); s_record_pool_iterator + data_iterator_next_inlined for the players (208).
 // @retail 0xd6c80
 long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index)
 {
 	s_damage_definition *definition = (s_damage_definition *)g_4e3b44[data->definition_index & 0xffff].bytes;
 	real radius = MAX(definition->radius04, MAX(definition->radius58, definition->radius68));
+	point3f const *position = &data->position;
 	long objects[k_maximum_area_of_effect_objects];
-	long object_count = function_bb050(0, (definition->flags0c & 2) ? 3 : 0, &data->unknown1c, &data->position, radius,
+	long object_count = function_bb050(0, (definition->flags0c & 2) ? 3 : 0, &data->unknown1c, position, radius,
 		objects, k_maximum_area_of_effect_objects);
 	long first_object_index = NONE;
 	long last_object_index = NONE;
@@ -906,17 +929,14 @@ long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index)
 			if (player->unit_index == NONE)
 				continue;
 
-			long root_index = player->unit_index;
-			while (DAMAGE_OBJECT(root_index)->parent_object_index != NONE)
-				root_index = DAMAGE_OBJECT(root_index)->parent_object_index;
+			s_damage_object *root = DAMAGE_OBJECT(damage_object_root(player->unit_index));
 
-			s_damage_object *root = DAMAGE_OBJECT(root_index);
 			if (object_count >= k_maximum_area_of_effect_objects)
 				continue;
 
-			real dx = root->field_x221477.x - data->position.x;
-			real dy = root->field_x221477.y - data->position.y;
-			real dz = root->field_x221477.z - data->position.z;
+			real dx = root->field_x221477.x - position->x;
+			real dy = root->field_x221477.y - position->y;
+			real dz = root->field_x221477.z - position->z;
 			real inner = root->field_xae9109 + radius;
 			if (inner * inner >= dz * dz + dy * dy + dx * dx)
 				continue;
@@ -1261,22 +1281,22 @@ bool function_d8b50(real *recent_a, real *recent_b, char *timer, byte const *fie
 // @retail 0xda860
 void function_da860(byte const *owner, byte const *target, word mask, word *bits)
 {
-	long count = *(long const *)(owner + 0xe0);
 	real total = 0.0f;
-	long i;
 
-	for (i = 0; i < count; i++)
+	for (long i = 0; i < *(long const *)(owner + 0xe0); i++)
 	{
 		byte const *entry = *(byte const *const *)(owner + 0xe4) + i * 0x14;
 
 		if (!(mask & (1 << i)) && *(long const *)(entry + 8) == *(long const *)(target + 0x3c))
-			total += *(real const *)(entry + 0xc);
+			total = *(real const *)(entry + 0xc) + total;
 	}
 
-	real choice = (real)random_next(&g_4e7408->unknown0) * (1.f / 65535.f) * total;
+	real fraction = (real)random_next(&g_4e7408->unknown0) * (1.f / 65535.f);
+	real choice = fraction * total;
+	long count = *(long const *)(owner + 0xe0);
 	real sum = 0.0f;
 
-	for (i = 0; i < count; i++)
+	for (long i = 0; i < count; i++)
 	{
 		byte const *entry = *(byte const *const *)(owner + 0xe4) + i * 0x14;
 
@@ -1387,7 +1407,7 @@ bool __stdcall function_db110(long object_index, bool players_only, bool walk_si
 	{
 		s_object_child_iterator iterator;
 
-		function_d0620(object_index, &iterator);
+		function_d0620(&iterator, object_index);
 		while (function_d0690(&iterator))
 		{
 			if (iterator.child_short != NONE)
@@ -1462,6 +1482,18 @@ real function_d9020(long object_index, byte const *resistance, byte const *sourc
 /* destroys a damage region: picks the permutations whose chance and body
    threshold allow it, and destroys each now or schedules it after its
    delay */
+// score 96 (was 179): what is left is register choice and the two unmatched callees' conventions. Retail keeps the
+// accumulator pointer in ecx (reusing it for the 0xda110 call's last argument) and the exclusive-flag value in eax, ours
+// the reverse; the permutation pointer is loaded as `edi = permutations; movss [edi + eax + 8]; add edi, eax` where ours
+// uses a lea; 0xda110 takes its first argument in eax and 0xd9d60 its flag in al, which their own unmatched bodies decide
+// (with the 0xd9d60 call of 0xdaaa0 removed, this function stays 94 and 0xd9d60 itself is 8). Writing the two
+// exclusive-flag tests as separate `if`s on `accumulator->flags & 0x400` (no `exclusive` local) gives retail's branch
+// shape and register assignment for the loop; `pending = (pending & 0xfff8) | (i & 7)` (same value as the xor form)
+// gives retail's byte-load `xor word [state + 4], ax`.
+// Tried: an `exclusive` dword local with `exclusive && ...` / `!exclusive && ...` (179: the compiler merges them into a
+// diamond and reloads flags), no `region` local (165: the regions array is reloaded every iteration), `region` or `state`
+// declared first (186, 183), a `permutations` local or `permutation += i` (188), `pending ^= (pending ^ i) & 7` and its
+// word-cast variants (110).
 // @retail 0xdae60
 void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_owner const *owner, long region_index,
 	s_damage_region_accumulator *accumulator)
@@ -1472,12 +1504,13 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 
 	for (long i = 0; i < region->permutation_count; i++)
 	{
-		s_damage_info_permutation *permutation = &region->permutations[i];
-
 		if (state->destroyed_permutations & (1 << i))
 			continue;
-		if (permutation->unknown08 != 0.0f)
+		if (region->permutations[i].unknown08 != 0.0f)
 			continue;
+
+		s_damage_info_permutation *permutation = &region->permutations[i];
+
 		if (permutation->skip_chance != 0.0f &&
 			permutation->skip_chance > (real)random_next(&g_4e7408->unknown0) * (1.f / 65535.f))
 			continue;
@@ -1486,10 +1519,9 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 		if (permutation->body_threshold > 1.0f && !(permutation->flags & 0x200000))
 			continue;
 
-		dword exclusive = accumulator->flags & 0x400;
-		if (exclusive && (permutation->flags & 0x1000000))
+		if ((accumulator->flags & 0x400) && (permutation->flags & 0x1000000))
 			continue;
-		if (!exclusive && (permutation->flags & 0x800000))
+		if (!(accumulator->flags & 0x400) && (permutation->flags & 0x800000))
 			continue;
 
 		if (permutation->delay > 0.0f)
@@ -1497,7 +1529,7 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 			if ((state->pending & 0xfff8) && (state->pending & 7) != i)
 				function_da110(state->pending & 7, info, object_index, owner, region_index, accumulator);
 
-			state->pending ^= (state->pending ^ i) & 7;
+			state->pending = (state->pending & 0xfff8) | (i & 7);
 
 			real seconds = g_510c54->field_2_3 * permutation->delay;
 			long ticks;
@@ -1558,6 +1590,10 @@ long function_1e4a10(long index);
 /* damages an object's shield: scales the damage by the shield material's
    armor, takes it off the shield, passes what is left over to the body
    (accumulator->damage) and stuns the shield's recharge */
+// score 10 (was 189): only the schedule differs: after the call to function_d5bc0 retail reloads the 1.0f
+// constant before the `xorps` of zero and the spilled locals (ours reloads 1.0f last), and ours pushes the
+// shield-damaged effect before `lea ebx, [edi + 8]` for function_176780 (retail: after). Tried: owner pointer in
+// a local for the function_176780 call (no change), the tail's unknownd4 handle in a long local (12).
 // @retail 0xd9110
 void function_d9110(long object_index, s_damage_effect_definition const *definition, s_type_1e6529 *data,
 	s_damage_region_accumulator *accumulator)
@@ -1576,7 +1612,9 @@ void function_d9110(long object_index, s_damage_effect_definition const *definit
 	}
 	else if (!TEST_FIELD_BIT(object->damage_flags.unknown7))
 	{
-		real maximum_shield = function_d5d80(object_index, definition->category == 1);
+		/* a bool local: retail stores it to a stack byte and pushes the whole dword */
+		bool is_category_1 = definition->category == 1;
+		real maximum_shield = function_d5d80(object_index, is_category_1);
 		real inverse_maximum_shield = maximum_shield > 0.0f ? 1.0f / maximum_shield : 0.0f;
 		byte *material = (byte *)function_188690(accumulator->field_4_2->shield_material);
 		real multiplier = 1.0f;
@@ -1648,14 +1686,24 @@ void function_d9110(long object_index, s_damage_effect_definition const *definit
 		}
 	}
 
-	if (DAMAGE_OBJECT(object_index)->unknownd4 != NONE)
-		function_b58c0(DAMAGE_OBJECT(object_index)->unknownd4, 0x80);
+	object = DAMAGE_OBJECT(object_index);
+	if (object->unknownd4 != NONE)
+		function_b58c0(object->unknownd4, 0x80);
 	accumulator->damage = body_damage;
 }
 
 /* damages a region: raises its damage level by the damage over the span to
    its next permutation's threshold, and when the level fills, destroys the
    permutations at that threshold */
+// score 229 (was 265): register and stack-slot assignment only. Retail keeps `destroy` in bl and the permutation index
+// in memory, ours the reverse; the damage-level delay is read through a region pointer reloaded from the stack right at
+// the use in retail, ours reloads it into edi early on each path; retail tests the exclusive flag with `test eax, mask`
+// on each side of the `?:`, ours materializes `and eax, mask`. The state-count check is unsigned (`shr ecx, 3`, signed
+// compare) and the last-permutation flag is computed from the threshold after the search loop, which makes the compiler
+// store it on each path as retail does. The conventions of 0xd9d60 and 0xda110 are unmatched callees' (see 0xdae60).
+// Tried: the flag preset true and cleared inside the loop (284), `if (i < count) {...} else flag = true` after the loop
+// (512), the `?:` operands as `!= 0`, `!!`, `(bool)` or `== mask` (286, 286, 284, 262 with +3 bytes), `region` declared
+// before `object` (275 with the preset flag), a separate loop variable for the second loop (no change).
 // @retail 0xdaaa0
 void function_daaa0(s_damage_info *info, long object_index, s_damage_owner const *owner, long region_index,
 	real damage, s_damage_region_accumulator *accumulator)
@@ -1663,25 +1711,25 @@ void function_daaa0(s_damage_info *info, long object_index, s_damage_owner const
 	s_damage_object *object = DAMAGE_OBJECT(object_index);
 	s_damage_info_region *region = &info->regions[region_index];
 
-	if (region_index >= 0 && region_index < object->region_states_size / (long)sizeof(s_object_region_state))
+	if (region_index >= 0 && region_index < (long)((dword)(long)object->region_states_size / sizeof(s_object_region_state)))
 	{
 		s_object_region_state *state = (s_object_region_state *)((byte *)object + object->region_states_offset) + region_index;
 		real previous_threshold = 1.0f;
 		real next_threshold = 0.0f;
 		long i;
 		s_damage_info_permutation *permutation;
-		bool last_permutation = true;
 
 		for (i = 0, permutation = region->permutations; i < region->permutation_count; i++, permutation++)
 		{
 			if (!(state->destroyed_permutations & (1 << i)))
 			{
 				next_threshold = permutation->unknown08;
-				last_permutation = next_threshold == 0.0f;
 				break;
 			}
 			previous_threshold = permutation->unknown08;
 		}
+
+		bool last_permutation = next_threshold == 0.0f;
 
 		real fraction = damage / MAX(previous_threshold - next_threshold, 1.0f / 255.0f);
 
@@ -1715,7 +1763,6 @@ void function_daaa0(s_damage_info *info, long object_index, s_damage_owner const
 					continue;
 
 				permutation = &region->permutations[i];
-				bool blocked = false;
 
 				if (!have_threshold)
 				{
@@ -1728,6 +1775,7 @@ void function_daaa0(s_damage_info *info, long object_index, s_damage_owner const
 				}
 
 				bool destroy = true;
+				bool blocked = false;
 
 				if (last_permutation && (region->flags & 4) && function_db110(object_index, false, false))
 					destroy = false;
@@ -1827,6 +1875,11 @@ real function_db090(s_damage_info *info, void const *region_entry, long object_i
 /* damages an object's body: scales the damage by the body's material,
    applies region damage, takes it off the body and depletes the body when
    it runs out */
+// score 40 (was 218): the passed `bool` and the `short` team are locals as in 0xd5d20 (retail stores the comparison
+// result to a stack byte and pushes the dword, and sign-extends the team into esi/ecx); what is left is scheduling (the
+// `mov eax, [edi]` before the `info` test, which register the object pointer and the 1 << type shift use) and the
+// `lea ebx, [ecx + 8]` before the last call's first push.
+// Tried: the region entry cached in a local before the `info &&` test (226).
 // @retail 0xd8cb0
 void function_d8cb0(long object_index, s_damage_effect_definition const *definition, s_type_1e6529 *data,
 	s_damage_region_accumulator *accumulator)
@@ -1837,7 +1890,8 @@ void function_d8cb0(long object_index, s_damage_effect_definition const *definit
 
 	if (damage > 0.0f)
 	{
-		real maximum_body = function_d5d20(object_index, definition->category == 1);
+		bool ignore_difficulty = definition->category == 1;
+		real maximum_body = function_d5d20(object_index, ignore_difficulty);
 		real inverse_maximum_body = maximum_body > 0.0f ? 1.0f / maximum_body : 0.0f;
 
 		if (info && accumulator->unknown00)
@@ -1877,7 +1931,10 @@ void function_d8cb0(long object_index, s_damage_effect_definition const *definit
 	real maximum_body_vitality = current->maximum_body_vitality;
 
 	if ((1 << current->type) & 3)
-		maximum_body_vitality = function_1e9720(1, current->team) * maximum_body_vitality;
+	{
+		short team = current->team;
+		maximum_body_vitality = function_1e9720(1, team) * maximum_body_vitality;
+	}
 	if (maximum_body_vitality * body_vitality <= 0.0f)
 	{
 		if (function_db110(object_index, false, false))
@@ -2374,7 +2431,7 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 
 struct s_ai_scale_source;
 bool function_1c8440(long actor_index, real *value, s_ai_scale_source const *source);
-real function_15dec0(long player_index, long owner_player_index);
+real function_15dec0(long player_index, long other_index);
 bool function_0bfe60(const dword *flags, long bit);
 struct s_game_allegiance_globals;
 extern s_game_allegiance_globals *g_4f55ec;
@@ -2390,12 +2447,18 @@ PRIVATE inline real damage_random_range(real lower, real upper)
 /* the damage a damage event does to an object before armor: a random
    amount between the definition's bounds, scaled by the event, the owner's
    AI and the game engine; sets *friendly when the team scale applies */
+// score 5 (was 108): only the order of the two final "return damage" blocks differs (retail
+// puts the no-team return before the not-enemy one, ours the reverse). Tried: three early returns
+// (16), a goto to one shared return (24), a flat team/state test (5, same order), separate team and
+// state tests (28)
 // @retail 0xd9b60
 real function_d9b60(s_type_1e6529 *data, byte const *definition, long object_index, bool *friendly)
 {
 	real amount = *(real const *)(definition + 0x10);
 
-	if (*(real const *)(definition + 0x10) != *(real const *)(definition + 0x14))
+	if (amount == *(real const *)(definition + 0x14))
+		amount = *(real const *)(definition + 0x10);
+	else
 		amount = damage_random_range(*(real const *)(definition + 0x10), *(real const *)(definition + 0x14));
 
 	real damage = ((1.0f - data->unknown54) * *(real const *)(definition + 0xc) + amount * data->unknown54) *
@@ -2415,7 +2478,7 @@ real function_d9b60(s_type_1e6529 *data, byte const *definition, long object_ind
 			{
 				s_damage_object *object = DAMAGE_OBJECT(object_index);
 
-				if (((1 << object->type) & 3) && ((*(dword *)((byte *)object + 0x134) >> 31) & 1) &&
+				if (((1 << object->type) & 3) && (bool)((*(dword *)((byte *)object + 0x134) >> 31) & 1) &&
 					*(short *)(owner + 0x138) != 1)
 				{
 					damage = 0.0f;
@@ -2426,11 +2489,12 @@ real function_d9b60(s_type_1e6529 *data, byte const *definition, long object_ind
 
 	if (g_55e4d0[g_4e9ae8->engine_index])
 	{
-		real scale = function_15dec0(function_d7ae0(object_index), data->owner.player_index);
+		real scale = function_15dec0(data->owner.player_index, function_d7ae0(object_index));
+		real scaled = scale * damage;
 
 		if (scale == 0.0f)
 			data->in_unknown_radius = false;
-		return scale * damage;
+		return scaled;
 	}
 
 	short team = data->owner.team;
@@ -2443,9 +2507,12 @@ real function_d9b60(s_type_1e6529 *data, byte const *definition, long object_ind
 			enemy = !function_0bfe60((dword const *)((byte *)g_4f55ec + 0xc4), team * 16 + 1);
 		if (enemy)
 		{
+			real result = function_1e9700(0) * damage;
+
 			*friendly = true;
-			return function_1e9700(0) * damage;
+			return result;
 		}
+		return damage;
 	}
 	return damage;
 }
@@ -2662,7 +2729,11 @@ void function_d9640(s_damage_report const *report, long object_index)
 				object->owner_object_index = report->owner.object_index;
 				object->owner_team = report->owner.team;
 			}
-			if (!(type_mask & 3) || !((*(dword *)((byte *)object + 0x134) >> 19) & 1))
+			bool pushable = true;
+
+			if (type_mask & 3)
+				pushable = !((*(dword *)((byte *)object + 0x134) >> 19) & 1);
+			if (pushable)
 			{
 				bool large = report->scale > 0.5f && (*(dword *)(definition + 0x14) & 0x20);
 				vector3f impulse;
@@ -2690,9 +2761,6 @@ void function_d9640(s_damage_report const *report, long object_index)
 				{
 					switch (type)
 					{
-					case 0:
-						function_de620(object_index, &thrown_impulse);
-						break;
 					case 1:
 					case 7:
 					case 11:
@@ -2701,13 +2769,16 @@ void function_d9640(s_damage_report const *report, long object_index)
 						else
 							function_b7880(object_index, report->unknown40, &report->origin, &impulse, NULL);
 						break;
+					case 5:
+						function_fa820(object_index, &thrown_impulse);
+						break;
 					case 2:
 					case 3:
 					case 4:
 						function_10cf80(&thrown_impulse, object_index, large);
 						break;
-					case 5:
-						function_fa820(object_index, &thrown_impulse);
+					case 0:
+						function_de620(object_index, &thrown_impulse);
 						break;
 					case 12:
 						function_119020(object_index, &thrown_impulse);
@@ -2745,6 +2816,14 @@ enum
 
 /* damages an object's regions through the model's damage markers within
    the damage's radius and cone, then its attached children the same way */
+// score 203 (was 215): the code is the same instruction for instruction except for the material block: retail
+// loads data->unknown7c again (`xor ecx, ecx; mov cx, [esi + 0x7c]`) for each function_188690 call, while ours
+// keeps the first load (the inlined global_material_get's argument) in di across both calls, which makes the
+// function 16 bytes shorter and shifts the loop padding after it. Tried: a short local for the material index in
+// front of the check or inside the block (203), (word) casts on the arguments (203), armor pointers in locals
+// (203), the multiplier in a local or `amount *=` (203), calling function_188690 for the check too (259, not
+// inlined), the check's result in a local (203); `scale = 1` as the initial value with the PIN inside the if
+// (270), PIN as a ternary (216), the PIN's lower/upper tests as statements (216).
 // @retail 0xd82e0
 void __stdcall function_d82e0(s_type_1e6529 *data, real damage, long object_index, s_damage_region_accumulator *accumulator)
 {
@@ -2794,9 +2873,10 @@ void __stdcall function_d82e0(s_type_1e6529 *data, real damage, long object_inde
 					real scale;
 
 					if (range > 0.0f)
-						scale = PIN(1.0f - (distance - jpt->minimum_radius) / range, 0.0f, 1.0f);
+						scale = 1.0f - (distance - jpt->minimum_radius) / range;
 					else
 						scale = 1.0f;
+					scale = PIN(scale, 0.0f, 1.0f);
 					marker_indices[marker_count] = (byte)i;
 					marker_scales[marker_count] = scale;
 					marker_count++;
@@ -2832,12 +2912,10 @@ void __stdcall function_d82e0(s_type_1e6529 *data, real damage, long object_inde
 					if (total > 0.0001f)
 						share = marker_scales[i] / total * scale;
 
-					short region_index = *(short *)(entry + 0xc);
-
-					if (region_index >= 0 && region_index < info->region_count)
+					if (*(short *)(entry + 0xc) >= 0 && *(short *)(entry + 0xc) < info->region_count)
 					{
-						function_daaa0(info, object_index, &data->owner, region_index,
-							share / info->regions[region_index].vitality, accumulator);
+						function_daaa0(info, object_index, &data->owner, *(short *)(entry + 0xc),
+							share / info->regions[*(short *)(entry + 0xc)].vitality, accumulator);
 					}
 				}
 			}
@@ -3359,6 +3437,15 @@ PRIVATE inline void scale3f(vector3f const *v, real scale, vector3f *out)
 /* whether the structure blocks damage from the damage's origin to a point
    on an object; around units, four rays offset sideways by the
    definition's spread must all be blocked */
+// score 153 (was 266): the root walk is written out inline in the ray loop (damage_object_root,
+// 0xbaf80 stays a call in the else branch; 164), and the loop sets result and breaks instead of returning from
+// inside (153; the failing call's epilogue is then shared with the else branch as in retail). Left: retail's
+// cases 2 and 3 share the code from `movaps xmm1,xmm0 / mulss xmm1,[up.i]` while ours scales case 2 as
+// `movss xmm1,[up.i] / mulss xmm1,xmm0`; the cross product loads side.j/offset.k in a different order; and
+// retail computes `remaining` after the second root walk (ours before). Tried: the second root in a named local
+// before `remaining` (165, and the convention changes to object_index in edi / point in ebx), the same for the
+// else branch's 0xbaf80 result (211, same convention change), `v->i * scale` in scale3f (153), the cross
+// product's first line with its products swapped (153).
 // @retail 0xd6f90
 bool function_d6f90(long object_index, point3f const *point, s_type_1e6529 const *data)
 {
@@ -3397,16 +3484,17 @@ bool function_d6f90(long object_index, point3f const *point, s_type_1e6529 const
 				break;
 			}
 
-			function_1697c0(0x4a08c2d, &data->origin, &offset, function_baf80(object_index), data->unknown18, &collision);
+			function_1697c0(0x4a08c2d, &data->origin, &offset, damage_object_root(object_index), data->unknown18,
+				&collision);
 
 			point3f start = collision.point;
 			vector3f remaining;
 
 			vector3d_from_points3d(&start, point, &remaining);
-			result = function_1697c0(0x14a08c2d, &start, &remaining, function_baf80(object_index), data->unknown18,
-				&collision);
+			result = function_1697c0(0x14a08c2d, &start, &remaining, damage_object_root(object_index),
+				data->unknown18, &collision);
 			if (!result)
-				return result;
+				break;
 		}
 		return result;
 	}
@@ -3516,7 +3604,7 @@ void function_db670(long object_index, long vehicle_index)
 		bool no_bipeds = true;
 		s_object_child_iterator iterator;
 
-		function_d0620(vehicle_index, &iterator);
+		function_d0620(&iterator, vehicle_index);
 		while (function_d0690(&iterator))
 		{
 			if ((1 << DAMAGE_OBJECT(iterator.child_index)->type) & 1)
@@ -4105,6 +4193,11 @@ struct s_damage_object_creation
 
 /* marks damage sections destroyed, and splits off the model nodes no
    longer joined to the object's root as new objects */
+// score 221 (was 235): caching `info->unknowne0` as the loop bound (retail does not reload it; 235 -> 221) and
+// making detached_nodes signed (`test / jle` as retail; same score). Left is register allocation: retail keeps
+// object_index in esi, hoists the section_mask_a zero-extension into edi and spills the datum offset, so its
+// frame is 4 bytes larger; ours keeps the offset in esi and object_index in edi. Tried: the loop as
+// `if (detached_nodes > 0 && ...) while (detached_nodes != 0)` (236), a `word mask_a` local (221).
 // @retail 0xdbc80
 void function_dbc80(long object_index, short section_mask_a, short section_mask_b)
 {
@@ -4114,7 +4207,9 @@ void function_dbc80(long object_index, short section_mask_a, short section_mask_
 
 	if (info)
 	{
-		for (long i = 0; i < info->unknowne0; i++)
+		long section_count = info->unknowne0;
+
+		for (long i = 0; i < section_count; i++)
 		{
 			if ((1 << i) & (word)section_mask_a)
 				object->unknowne0 |= 1 << i;
@@ -4136,7 +4231,7 @@ void function_dbc80(long object_index, short section_mask_a, short section_mask_
 			s_damage_object *current = DAMAGE_OBJECT(object_index);
 			byte *node_states = (byte *)current + *(short *)((byte *)current + 0x11a);
 			long node_count = *(short *)((byte *)current + 0x118) / 10;
-			dword detached_nodes = 0;
+			long detached_nodes = 0;
 			long i;
 
 			for (i = 0; i < node_count; i++)

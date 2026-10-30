@@ -602,40 +602,23 @@ struct s_signed_file_read_parameters
 
 __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 
-// score 68 (was 68): header/body carriers, dispatch loads, scratch capacity and signature
-// receiver differ. Retail computes the remaining size in each buffer arm (re-read after the
-// scratch-buffer stores) and clamps the capacity by it, and loads body_size once in the switch
-// dispatch for the body and signature cases. Tried: short-lived body/header/both size reads
-// 182/174/182; reversed signature equality 68; Boolean equality 68; inline depth one 68; global
-// optimization off 491; frame pointer 246; per-arm remaining written into size by the getter
-// 179, capacity clamped by remaining 181, remaining clamped by capacity 234; total as sizeof
-// first 68; body size grouped with sizeof 68. Round 11: with the scratch object made one
-// address-taken record (storage, owner, pointer, size, flag; init `pointer = storage`, as
-// retail's 0x4fa0c8..0x5020d4 layout shows) the body is 173 and 0x2adb10 134 -> 131; adding
-// the per-arm remaining 175, the getter storing the owner before the flag 175 (0x2adb10 129),
-// and the signature state as its own case with `default: __assume(0)` 166 (aligned 54 -> 37:
-// signature case and getter now retail's) but two instructions longer: case 1 reloads
-// body_size where retail reuses the dispatch load, and the buffer goes eax -> ebp; size sums
-// and the case-1 comparison in either order 166-167; getter fresh pointer reads 163 (0x2adb10
-// 279).
-// header/body carriers, dispatch loads, scratch capacity and
-// signature receiver differ; short-lived body/header/both size reads 182/174/182;
-// reversed signature equality 68; Boolean equality 68; inline depth one 68;
-// global optimization off 491; frame pointer 246.
-// retail computes the remaining size in each buffer arm (re-read
-// after the scratch-buffer stores) and clamps the capacity by it; that per-arm form
-// loses the entry ebp save: written into size by the getter 179, capacity clamped
-// by remaining 181, remaining clamped by capacity 234. Total as sizeof first 68;
-// body size grouped with sizeof 68.
-// Round 402: current-graph shared byte count, seek-position home, both, full signature
-// outputs, count/signatures, position/signatures, all outputs and role-named signatures
-// 68 each; all restored. Frame 0x2c agrees; dispatch/buffer and signature registers remain.
-// Retail's reloads after the getter's stores come back with the scratch object's 0x8000-byte
-// storage as its first member (address taken by `pointer = storage`); with the per-arm
-// remaining size as well 175 (aligned 50 against 51: entry sum and dispatch body-size load,
-// size/position homes in esi/edi swapped), without it 173; per-arm form alone 179; body size
-// first in the total/position sums 175 (same code); size-first body test 176; getter owner
-// store before the flag 176.
+// score 68 (was 68): retail loads body_size before header_size in the entry total and hoists
+// one body_size load into the switch dispatch (shared by the body and signature cases, which then
+// keep it in ecx); it computes the remaining size in each buffer arm, re-read after the scratch
+// getter's global stores, and clamps the capacity by it; ours computes it once before the arms.
+// Tried: short-lived body/header/both size reads 182/174/182; reversed signature equality 68;
+// Boolean equality 68; inline depth one 68; global optimization off 491; frame pointer 246; per-arm
+// remaining written into size by the getter 179, capacity clamped by remaining 181, remaining
+// clamped by capacity 234; total as sizeof first 68; body size grouped with sizeof 68. With the
+// scratch object as one address-taken record (0x8000-byte storage first, then owner, pointer, size,
+// flag; init `pointer = storage`, retail's 0x4fa0c8..0x5020d4 layout) 173 (0x2adb10 134 -> 131),
+// plus the per-arm remaining 173-175 (aligned 50 against 55: reloads and getter now retail's;
+// entry order, dispatch load and size/position homes in esi/edi swapped remain), the getter storing
+// the owner before the flag 175-176, signature state as its own case with `default: __assume(0)`
+// 166, size sums and the case-1 comparison in either order 166-167, getter fresh pointer reads 163.
+// Round 402: shared byte count, seek-position home, signature outputs and role names 68 each.
+// Round 15: body size first in the total, sizeof first, body test written size-first, both,
+// the total as a long, the total converted without a dword local: 68 each (same code).
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {

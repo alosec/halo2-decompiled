@@ -889,6 +889,9 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 // / point-first_person-pan-animation / point-first_person-animation-pan /
 // pan-point-first_person-animation / pan-animation-point-first_person / pan-first_person-point-animation
 // / animation-point-first_person-pan: 330/340/356/341/460/464/459/459. Original restored.
+// Round 39: shared native pan rotation matrix, either declaration/conversion order, 243;
+// with fraction before conversion 358 at 1716 bytes. Reusing the existing full pan transform
+// in both conversions, four late-fraction forms, 237. Original native objects and body restored.
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
 {
