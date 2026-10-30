@@ -2820,6 +2820,10 @@ PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
 // Round 183: existing name/appearance/team payloads before validity bits, all seven nonempty
 // combinations 100 each; all three with one current-item receiver 293. Original setter bodies
 // and complete target restored; receiver reload, row query and animation homes remain.
+// Round 204: Real source-table cursors: names 106; appearances 105; both 106; teams 106; names/teams 108;
+// appearances/teams 105; all three 107; all three plus destination cursor 294 at 889 bytes. The seven
+// source-only forms stay 876 bytes. Original indexed body, helper bodies and memcpy restored; receiver
+// reload, row/query and animation roles remain.
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {

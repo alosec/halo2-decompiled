@@ -78,7 +78,24 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 	direction->k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
 }
 
-// score 62 (was 62): two causes. (1) The decoder's constants: retail makes the zero first (xmm3) and
+// score 62 (was 62): decoder zero/scale schedule and final x87 component forwarding differ.
+// Retail's decoder acts as if a block ends after the two 1/63 products: a one-pass loop around them
+// (diagnostic only, not kept) gives retail's zero-in-xmm3, late-2.0 schedule, 51. Retail also pops
+// the decoded k and sums j, k, then i from memory (ours keeps k on x87 with fst and squares it
+// first), and scales j as j * inv.
+// Tried: shared face/grid scales 96; initialized grid 133; shared scale value 96; complete output
+// aggregate/memcpy 155; default memcpy and direct angle 62; coordinate stages 62; selected scale
+// results 62; plane offset first 100; axis table 62; origin snapshot 129; table subobjects 129;
+// coordinate names 62; existing normalizer call 187; face scale value 82; integer grid values 62;
+// complete shared decoder 503; decoder output reference 62; native component loop 173; complete
+// private decode consumer 62; ordinary decoder inline 394; initial direction value 63; workspace
+// names, formatter scope, unsigned index, complete bounds, shared rounding, shared/existing decoded
+// normalization, completed decode output and decoder pointer/vector results 62, 62, 62, 122, 72,
+// 62, 62, 88, 62, 155; sum orders j+k+i, i+(j+k), k+j+i, i+k+j 62 each; decoder stores through the
+// n[] view 62 (with i+(j+k) 62); zero declared first in the decoder 84; grid divided by 63 62; the
+// existing real_to_long for the angle 73; grid point passed to an inline point transform 62; step
+// count as a decoder parameter 62; point2f grid scaled in place 68.
+// two causes. (1) The decoder's constants: retail makes the zero first (xmm3) and
 // loads 2.0 and 1.0 into xmm2 at their uses; ours loads 2.0 early into xmm3 and makes the zero late.
 // (2) From +0x137 every line is one off: ours keeps the decoded k on x87 (fst) and squares it first;
 // retail pops it and sums j*j, k*k, then i*i from memory. A block boundary before the normalization

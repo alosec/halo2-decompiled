@@ -637,6 +637,9 @@ PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, v
 // Round 273: independent first/candidate/selected plane declarations at function entry,
 // seven subsets 564 each; all three plus the quad declaration at entry 564. Original
 // declarations and complete body restored; definition/count/plane homes still differ.
+// Round 38: Staged cross product, with cross lifetime local/group and sign expression/branches,
+// 559/559/559/559 fast at 3631 bytes, frame 0x21e4; each with common angle result 618
+// at 3632 bytes. Five-point best rejected; original cross call, angle helper and body restored.
 // @retail 0x17fd20
 void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 	s_decal_output_17dd80 *output, s_decal_projection_17fd20 *projection, s_decal_placement const *placement)
