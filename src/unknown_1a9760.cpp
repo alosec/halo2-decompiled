@@ -13,6 +13,8 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // Earlier: frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling differ;
 // tried position base 105; origin base 105; displacement base 105; geometry bases 105; unsigned component 104;
 // degenerate normal first 104; squared magnitude value 104; rejected direction loop 104.
+// Scale/add operand orders 104 each; split squared magnitude 105; inner += 117; earlier magnitude declaration 104;
+// component counter scope 104; mode stores before scaled output 104. Original body restored.
 // the rotated vector's XMM allocation differs - retail
 // keeps the two dot products in xmm1 and xmm0 where ours uses xmm5 and xmm3 -
 // and the second subtraction and the x87 sum are swapped.

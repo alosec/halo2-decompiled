@@ -1246,6 +1246,14 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
 // with pointer/reference receivers and local/iteration output lifetimes: 215;
 // comparison-produced write success in each context: 216 (898 bytes). All restored;
 // file displacement, request-copy and I/O scheduling within frame 0x1144 remain.
+// Round 424: native create-member pointer/reference and task pointer/reference 104 each;
+// cleared-task pointer alone/with create pointer/with create reference 226 each;
+// cleared-member pointer 217. All restored; file displacement and request/completion/I-O scheduling remain.
+// Round 102 (fast): the file element read at each use with no file local 281 (955 bytes); write success
+// set by its own test 166 (914 bytes; the joins then match, left: displacement, task zeroing register,
+// done-pointer lea, the handle copy moving from the close call to the size query, retail's 1 in ESI),
+// with `index == 1` for the range 414, with the file pointer after the path call 168, with a nested
+// close test 166. All restored.
 // @retail 0x213970
 void function_213970(void)
 {

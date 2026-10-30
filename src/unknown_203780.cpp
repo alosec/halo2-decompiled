@@ -43,7 +43,29 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // Round 96: local_10 as a ternary 70 (identical); local_5 as a short 70
 // (identical); `if (arg_1 == NONE) return local_0;` as a guard 109 (the exit
 // is duplicated at the top, NONE immediate); the call result in its own local
+// the actor store under `if (local_0 != NONE)` 71.
+// Lane 11 r12 (aligned counts, base 44): the cell pointer as a typed element
+// address or index-first sum 44 (identical code); the guards nested to one exit
+// with the call result in its own local, or `local_0 = call; if (local_0 !=
+// NONE) store` 102/97 (arg_1 moves to dx); the call result in its own local
+// copied to local_0 on success, early returns kept 93 (NONE in ebx, local_0
+// spilled, frame 0xdc).
+// Round 16: the chain starts at the cell pointer: VC loads the cell table pointer while arg_1
+// is still live in cx, so that temporary takes ebx (retail: arg_1 sign-extended first, temporary
+// in ecx, arg_0 in ebx, a free esi for NONE). Index-first sum 70; typed `+ arg_1` 70; the squad
+// lookup written into the cell address 69 (table base in edi as retail, temporary still ebx),
+// also index-first, declared before the squad pointer, or as `&cells[arg_1]` 69 each; the cell
+// offset in its own statement first 70 (VC folds it back).
+// spilled, frame 0xdc). Round 96: local_10 as a ternary 70 (identical); local_5 as
+// a short 70 (identical); `if (arg_1 == NONE) return local_0;` as a guard 109 (the
+// exit is duplicated at the top, NONE immediate); the call result in its own local
 // returned directly 108 (370 bytes); that local copied to local_0 inside an
+// `!= NONE` test 136. Round 82: every guard nested with the call-fail
+// `return NONE` kept 100 (local_0 in eax, arg_1 in dx); the call result in its
+// own local copied to local_0 on success 70 (identical code now); local_8
+// initialized to the cell and overwritten by the marker branch 109; the index
+// guards returning NONE 70 (identical); the arg_1 guard early with the rest
+// nested 123.
 // `!= NONE` test 136. Round 120 (real checks of an 18-form grid: arg_1 guard
 // nested / `return local_0` / `return NONE`, x range guards the same three
 // ways, x the call tail `== NONE return NONE` or `!= NONE store`): every early

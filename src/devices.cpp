@@ -879,6 +879,26 @@ bool function_108530(long device_index, long name)
 /* starts a motion from the current position toward a target (both pinned to
    0..1) over a duration: accelerating from a velocity for the acceleration
    time, cruising, and decelerating to a final velocity */
+// score 121 (was 121): retail passes the initial velocity in xmm6 (one register for its whole
+// life, so ret 0x14) and keeps the ramp-down time in its stack slot throughout; ours keeps the
+// ramp-down time in xmm1 through the clamps and loads the initial velocity late (ret 0x18).
+// The cruise velocity stored into the motion in each branch (no velocity local) gives retail's
+// acceleration and deceleration blocks exactly, but alone 134. Tried (with both callers): that
+// tail with the position pinned after the target 102 (target then passed in a register; 0x108670
+// 13 -> 28); cruise time first, then the stores, then the halves 116 (ramp-down then passed in a
+// register); stores before the cruise and half times 144; if-statement clamps, no remaining local,
+// fresh distance, every order of the denominator terms and the initial velocity at every parameter
+// position never give the initial velocity a register (about 2000 forms screened).
+// incoming velocity remains on the stack rather than XMM6;
+// duration/ramp-down allocation and the 0x18/0x14 return gap remain. Earlier half-time/store
+// sweeps best 121; clamp helpers 123; clamped locals 122; coordinated parameter placements 121-124;
+// acceleration-field pointer store 131; early initial-speed square 142. External inline/noinline/both
+// 121/121/121; file-local plain/inline/noinline 121/121/121; shared signed phase acceleration 121;
+// shared acceleration with file-local inline/noinline 121. Original routine and both calls restored.
+// initial velocity remains on the stack while ramp-down time occupies a register.
+// Isolated ramp-down zero/min/both if-clamps 121/121/121; const initial velocity 121;
+// all-read/all-read-write ramp-down references 121/130; shared velocity with stored initial 125;
+// entry velocity copy plus reused parameter 152. Original body restored.
 // @retail 0x107ab0
 void device_motion_start(s_device_motion *motion, real target, real duration, real ramp_up_time,
 	real ramp_down_time, real final_velocity, real initial_velocity)
@@ -1319,6 +1339,9 @@ bool function_0b6760(s_index_pair const *pair);
 // Round 285: actual repeated power-target/position-target/both/delay/power-delay/position-delay/
 // all field lvalues, then all with result-first storage: 296/295/297/296/298/297/299/299 fast.
 // Original complete body, observations and inherited qualifiers restored; frame/index/state homes remain.
+// Round 424: actual power/position/both group target snapshots 351/389/368;
+// each with ordinary index 312/349/392; both with ordinary saved pointer,
+// without/with ordinary index 388/425. All restored; frame/index/header/state homes remain.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {

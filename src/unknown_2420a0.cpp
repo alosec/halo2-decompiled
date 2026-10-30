@@ -1114,6 +1114,10 @@ void c_game_engine_markers::v21(long object_index)
 // Round 77: the team at each call again 119 (the options pointer then stays in EDX from entry and the
 // type lookup takes ESI/EDI); a short slot 93, with the team at each call 93 (438 bytes); the unit
 // looked up before the type test 119, with the team at each call 132; an object pointer after the
+// test with the team at each call 130. Round 36, on the kept form: the flag as `flags[slot] & 1` 40
+// (identical); the team through the player getter, no player local 40 (identical); the absolute
+// index, player and team all inside the flag block 93; a char team 88; the unit through the object
+// getter at both player-index reads 113 (439 bytes).
 // test with the team at each call 130. Round 19, on the team at each call (its whole difference is
 // the options pointer kept in EDX from entry, which moves the type test to ESI/EDI): the flag as a
 // byte mask 119; an empty `do {} while (false)` after the type test 119 or before the engine-type
@@ -1875,6 +1879,16 @@ long function_242ef0(s_242ef1 arg_0, long team)
 // five matched callers, which all break; the header inline storing the subtype first 64 (0x19ebb0 then
 // differs); the parameters as (flag, player index) 53 (0x241620 then differs); the team read by the
 // absolute index through either player getter 57.
+// Round 119: BLOCKED-BY 0x19ebb0. Retail makes the subtype before the type (a call's argument order),
+// so the initializer is the out-of-line 0x19ebb0 inlined by the linker, which its /Ob1 file prevents
+// here; with the header inline every spelling makes the type first and keeps the engine type in ebp.
+// One-file harness: the time test's table read is what takes ebx from the engine type (without it ours
+// reuses ebx); ternaries inverted, cause/team order, final sum order, subtype/type locals: identical
+// code (53 each with --fast); team before cause with the subtype ternary inverted 56.
+// Round 36: subtype and type locals before the initializer 53 (identical); an options pointer local
+// for the mode and engine type 60 (and caller 0x241620 stops matching); the type ternary inverted 53;
+// a guard return on the time test 53; the index declared after the mode test with the time test
+// joined 67. Diagnostic: without the final table store EBP is still used.
 // @retail 0x2430a0
 void function_2430a0(long player_index, bool flag)
 {

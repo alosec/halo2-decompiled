@@ -752,6 +752,9 @@ dword function_1a7ad0(long owner_index)
 // Overlap-safe primary/fallback/both transfers 165/166/140; both with every-use tags, readonly
 // source, separate primary scope, default-first fallback or indexed definition 138/140/140/121/140.
 // Original transfers restored.
+// Round 418: actor record 96; primary bits record 96; actor/primary records 96; fallback bits record 96;
+// actor/fallback records 96; both bits records 96; all records 96; readonly all records 96. owner/output
+// ranks, separate fallback base and intersection setup remain.
 // @retail 0x1a7b30
 void function_1a7b30(s_flag_bits *result, long owner_index)
 {
@@ -837,6 +840,24 @@ void function_25aba0(long actor_index);
 // reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
 // `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
 // takes the `dec [mem]` form in every arrangement.
+// Round 100 (on the kept body): state-one pop as `--level` or `level = level - 1` 69/69; kind-2 failure
+// state store before the stamp 69; state-one / kind-2 / choice as one if-else chain 69 (identical code
+// on this base: only the state-one pop is fused); slot selection after the enabled test 177.
+// Round 10 (lane 13), with 0x1a7b30 unchanged (its result pointer arrives in ESI, retail EDI): memset
+// alone 143 (957/957, aligned 12 from 16: entry registers, the state-one pop and 0x1a8080's argument
+// set-up); plus 0x1a8080 as (type, owner, level) 143 (aligned 10, 0x1a8080 still matches); plus the
+// state-one pop first 146; plus the state-one and kind-2 arms as an if/else chain 128 (aligned 10:
+// state-one split as retail, kind-2 fused); on the chain the kind-2 pop first or between its stores
+// 143 each (kind-2 split, state-one fused again); the kind-2 success leaving by `break` 128.
+// Diagnostics: a different state-one decrement leaves kind-2 fused on the chain, and a different
+// kind-2 decrement leaves state-one fused on the continue form, so the two pops aren't merged; the
+// choice looks like the allocator's (a temporary register or a memory operand for the decrement).
+// Round 99 (lane 6), on the kept body: the first enabled test through the handler local, as the
+// next-handler test is written, 69 (identical); kind-2 failure with the state store first 69 (aligned
+// 18: only that arm's store order moves, the state-one pop stays `dec [mem]`); the state-one stamp
+// through the table 69; `current` from `&owner->slots[level]` 69; `current` declared before the
+// handler 159 (966 bytes). The entry registers follow 0x1a7b30's own ESI/EDI colouring (its result
+// pointer arrives in ESI, retail EDI).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
@@ -1893,6 +1914,9 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 // Descriptor reference across nullable conversion: pointer/reference table, mutable/readonly
 // descriptor and iteration/entry query output all 13 at 565 bytes. Exact-only selectors restored;
 // query and count ranks remain.
+// Round 418: initial test count 111; marker test count 164; both test counts 166; both result count 166;
+// nullable initial count 111; nullable marker count 145; nullable both counts 152; nullable result count
+// 152. query/name carriers, optional matrix conversion and count/exit allocation remain.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)

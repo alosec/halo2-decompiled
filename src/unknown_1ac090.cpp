@@ -347,12 +347,23 @@ short __stdcall function_1ac3f0(long actor_index)
 	return result;
 }
 
-// score 29 (was 29): coordinator, round 34 review: the 4-point form below writes slot_random_range's
-// body out inline, which is kept only with a byte match; restored to the helper call (29). Lead: the
+// score 2 (was 29): round 36 (lane 9): the scale is drawn from the random-real helper into a named
+// local and scaled as `1.0f + 2.0f * random`, as 0x1ac090 and the matched slot handlers 0x1b5c00 and
+// 0x1b6120 write their draws (coordinator, 2026-10-30: this idiom is kept; it replaces round 34's
+// byte-match-only ruling). Left: the short-delay path's 0x24/0x39 stores are swapped.
+// Round 34 review: the 4-point form below wrote slot_random_range's body out inline. Lead then: the
 // scale drawn as `1.0 + 2.0 * random` in double through the random-real helper
 // gives retail's single seed store, unfolded 1/65535 product (doubled with fadd st0,st0) and the scale
 // kept on the x87 stack to the first timer. Left: the `+ 1.0` adds a double constant one store later
 // (retail adds a float constant after the 0x25 store) and the short-delay path stores 0x39 before 0x24.
+// Round 36: the random value in a named local, `random = function_x82e52f(...)` then
+// `scale = 1.0f + 2.0f * random`, 2 (seed forwarded, unfolded product, retail's float constant; only the
+// short-delay path's 0x24/0x39 stores swapped: VC duplicates the 0x39 tail into that arm and schedules the
+// zero-register store first); kept by the coordinator. On it: a set-flag guard return 17; the arm
+// returning itself 26; `delay < g_45dbd8` 2; the else arm's false store first 4; a short-delay bool stored
+// once after the timer 22; the tail store through the slot cast 2; a result variable 2; the scale through
+// the file's random_range 74 (seed reloaded). Compile-only screens: the store in all three paths, the
+// file's timer writer for one or both timers, byte/char fields all keep the swap.
 // Round 34: scale through 0x259d0 47 (seed forwarded, unfolded, but the scale is substituted into the
 // timer: fimul); plus a compiled-out do/while after the draw/before the timer 47/47; plus a rate local in
 // the timer block/after the draws 43/37; plus an in-place converted duration 47; plus the cross-file
@@ -402,7 +413,8 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 	if (!state->unknown0c)
 	{
 		real delay = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, character->lower, character->upper);
-		real scale = slot_random_range(1.0f, 3.0f);
+		real random = function_x82e52f(&g_4e7408->unknown0, __FILE__, __LINE__);
+		real scale = 1.0f + 2.0f * random;
 
 		state->unknown0d = true;
 		state->unknown12 = false;

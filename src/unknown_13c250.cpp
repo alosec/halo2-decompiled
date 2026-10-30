@@ -112,6 +112,10 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // Round 412: candidate/class/both observations at each use 144/144/144; actual selected-candidate pointer alone/with candidate reads/with class reads/with both 183 each; complete pointer graph with unsigned ranks 183. Original body, count and every call restored.
 // Round 415: complete carried/scenario/tag receiver observations, alone and all combinations, 144
 // each; completed count on the complete receiver graph 181 at 831 bytes. Original body restored.
+// Round 44: separate preferred/best candidates on the pointer scan 180; with the preferred switch case
+// 183; indexed scan with the preferred case 176; indexed scan with the preferred pre-test 139 (subthreshold);
+// completed-count snapshot 165; known-zero carried append 196; known-zero fallback append 179;
+// one-observation second append 147. Opening body restored.
 // @retail 0x13c250
 void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
 {
