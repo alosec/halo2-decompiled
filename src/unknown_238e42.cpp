@@ -948,6 +948,9 @@ bool __stdcall function_2399da(long controller_index)
 // code); grouped permission test, `own_rank >= rank`, block-scoped identity, the membership copy's bool
 // result kept (same code); rank dispatch inverted (rank != NONE first) worse; own rank read at each use
 // (same code), operands swapped and `own_rank > 1` worse.
+// Lane 17 r1: task index preset to NONE 90; validity through an inline bool predicate 90; validity
+// test inverted with the 0x5c dialog first 90; rank-3 test as `!=` with the rank update first 92;
+// identity copied into a block-local used by the test and the removal 90.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

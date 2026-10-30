@@ -591,6 +591,11 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 // second product (identical code: the products are canonicalised); first product from the
 // direction local with the staged second product 223, with both products from direction (cross3f
 // or staged second) 229/229; up staged into a local, then copied 253 (1290 bytes).
+// Lane 17 r1: right declared first 57; const previous_up 57; a forward pointer in both branches with
+// cross3f 325 (1268 bytes); previous_up copied after the direction difference 98; staged second product
+// with the else-branch forward pointer 217 (1270 bytes): retail's staged order (k, j, i, then the stores)
+// but right's colours follow previous_up.k, which ours loads into a free register before the distance
+// store where retail loads it into xmm0 after that store.
 // @retail 0x23de50
 void __stdcall function_23de50(void *state, void *input, s_observer_command *output)
 {

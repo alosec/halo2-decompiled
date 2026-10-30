@@ -540,6 +540,12 @@ void function_3dd10(long object_index, bool force);
 // Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
 // variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
 // const choice count with the signed first bound 637 (unrolled). Original body restored.
+// Lane 17 r1: first scan as a do-while (the choice count is already known positive) 221f; inverse in
+// the found block (round 55's form) 132f, with the variant byte read before the blend value 123f, with
+// the inverse declared at function entry 132f; outer count written at each use 294f (reloaded each
+// pass). A volatile-weight diagnostic (reverted) stops the signed first scan unrolling (retail's
+// jle/jl exits) but swaps the weight/mask homes, 102f. With the inverse in the found block only the
+// not-found exit's own 1.0 reload (retail: movss xmm5 before the count reload) is missing.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
