@@ -1262,6 +1262,8 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
     return result;
 }
 
+// score 0 (was 32): matches retail. The pool pointer is kept in a local for the header and
+// the unit's type byte, and the unit's object pointer is read from the global's data.
 // score 32 (was 32): the device and unit indices take retail's EDI/EBP roles the other way
 // round, and the unit type test has no saved EBX temporary: retail keeps the pool pointer in EAX
 // until the unit object read, whose re-read data base it then copies from ESI (`mov eax, esi`).
@@ -1355,19 +1357,20 @@ bool c_device_touch_event::v11(long a, long const *entities, long c, void const 
         word suppressed : 1;
         word unknown3 : 13;
     };
-    long unit;
     long device = function_a58d0(entities[0]);
-    unit = function_a58d0(entities[1]);
-    if (unit != NONE && device != NONE)
+    long unit = function_a58d0(entities[1]);
+    if (device != NONE && unit != NONE)
     {
-        byte *headers = g_4e0300->data;
-        long device_offset = (device & 0xffff) * 12;
-        if ((1 << *(byte *)(headers + device_offset + 3)) & 0x380)
+        s_record_pool *pool = g_4e0300;
+        s_z_event_header *headers = (s_z_event_header *)pool->data;
+        if ((1 << headers[device & 0xffff].type) & 0x380)
         {
-            long unit_offset = (unit & 0xffff) * 12;
-            if (((1 << *(byte *)(headers + unit_offset + 3)) & 3) &&
-                !((bool)((s_unit_flags *)*(byte **)(headers + unit_offset + 8))->suppressed))
-                function_107840(device, unit);
+            if ((1 << ((s_z_event_header *)pool->data)[unit & 0xffff].type) & 3)
+            {
+                byte *unit_object = ((s_z_event_header *)g_4e0300->data)[unit & 0xffff].object;
+                if (!((bool)((s_unit_flags *)unit_object)->suppressed))
+                    function_107840(device, unit);
+            }
         }
     }
     return false;

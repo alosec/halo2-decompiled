@@ -666,6 +666,10 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // (retail player count in EAX, extra count in EDX) and flow through the copy, fill, call setup and
 // the final clamp's register: our loop temporaries take EDI/EAX (retail EDX/EDI), leaving EDX for the
 // player count. The body, not the parameter order or the caller, decides them.
+// Round 22: retail's only caller 0x7e210 (src/unknown_07a9a0.cpp) loads the player count
+// into EAX and the loop count into EDX before the call; the call to 0x91e30 then keeps its
+// arguments in ECX/EDX/EAX (retail) where ours keeps them in EDX/EAX/ECX, the same rotation
+// as the two counts, so the exchange reaches the call setup from that out-of-lane caller.
 // Tried: result first 34; guarded countdown 45; source/output cursors 67; count parameter reference
 // 54; shared existing count 34; staged total 34; capacity lifetime first 34; independent loop
 // indices 34; named candidate party 34; descriptive scalar homes 34; independent indices with
