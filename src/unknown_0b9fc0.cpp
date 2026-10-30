@@ -371,7 +371,8 @@ void __stdcall function_115220(long machine_index)
 	}
 }
 
-// score 286 (was 286): its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 286 (was 286): Frame 0xc8 agrees; early flag carriers, the initial clamp spill and later float/portal/movement scheduling differ.
+// Earlier: its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // Frame 0xc8 agrees; early flag carriers, the extra clamp spill, floating schedule and portal/movement homes remain.
 // Round 269: motion workspace 368; position snapshot 455; both 455; shared ordinal 368;
 // motion/ordinal 368; position/ordinal 455; all 455; all with the twice-used position predicate 344.
@@ -380,6 +381,17 @@ void __stdcall function_115220(long machine_index)
 // Round 271: full-width unsigned/signed flag storage composed with bool/byte/short/long
 // position predicates: 465/465/345/465/465/465/345/465, all 1899 bytes.
 // All restored; early flag carriers and the initial clamp spill remain.
+// Round 216: conditional mutable clamp 286; separate minimum and final selection 396;
+// lower-bound-first selection, zero-update minimum, both-outcome minimum and both-outcome result 396 each;
+// pure component lookup after selection 297; complete at-use flag observations with selection 396.
+// Actual position mask in word/dword storage 463/453, with separate minimum 462/452.
+// Original predicate, clamp, flag observations, every operand and complete body restored.
+// Round 426: shared completion exit, direct portal result, entry-first result and all
+// seven subsets 305/298/321/286/305/298/321; all with byte portal result 321.
+// Original result graph, initial clamp, two-use predicate and complete body restored.
+// Round 221: native word flags with short/word/long/dword/byte/char position predicates
+// 438/438/334/334/286/286; signed-halfword flags with short/word predicates 438/438.
+// Original predicate and complete body restored; eager flag carrier and initial clamp spill remain.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
@@ -691,6 +703,13 @@ struct s_component_property_view
 // first, second, third or last 13; the component written in the call 14; offset
 // before the data pointer 13; 0xa0-byte element indexing 13; result declared
 // first 13; one && test with the call 14.
+// permutation run found no improvement. Round 39 (m3 lane 12): ours also
+// hoists the g_51e9b8 load to the front, where retail loads it into eax after
+// the index scaling. Pointer-typed value/positive parameters (table type too)
+// 13; the component expression inside the call 14 (positive then loads
+// early); result declared first 13; index term first in the address 13;
+// 0x1d3550 declared (key, value, positive) 13 (diagnostic only, its file was
+// held this round). All restored.
 // @retail 0x11bd60
 bool __stdcall function_11bd60(long object_index, long key, long value, long positive)
 {

@@ -237,6 +237,8 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 // Round 252: eligibility accumulated with logical OR 43, bitwise OR 31, conditional 3;
 // named eligibility 3; actor at every use 116 (matched caller lost); read-only actor,
 // read-only flags, both 3/3/3. Original complete body restored.
+// Round 42: unit/seat/object/paired field-address locals 3/3/3/3; const actor pointer 3;
+// read-only full definition 3; separate occupied flag 62; read-only count 3. Restored.
 // @retail 0x1b8f30
 bool function_1b8f30(long actor_index, long object_index)
 {
@@ -1277,7 +1279,8 @@ struct s_1ba091
     s_slot_entry_iterator field_4;
 };
 
-// score 198 (was 198): frame 0x14 agrees; incoming actor ECX/EDX, early object-header
+// score 198 (was 198): frame 0x14 agrees; early object-header acquisition, incoming actor, mask/entry/result carriers and reusable homes remain.
+// Earlier: frame 0x14 agrees; incoming actor ECX/EDX, early object-header
 // acquisition, selection-mask storage and iterator/result homes differ.
 // Earlier slot-data form 198; raw-mask and independent iterator variants 202/207;
 // Result-first 190; explicit same-object result 230; cleanup result 258.
@@ -1301,6 +1304,10 @@ struct s_1ba091
 // positive admission, data member and default-owned code 211. Original restored.
 // Round 272: native header getter and parent field with payload/iterator/result
 // lifetime subsets 198/198/202/202/198/198/202/202. Original body and types restored.
+// Round 187: consistent selection-field observations with member payload, result/iterator names
+// and combinations, eight at 249 (frame 0x18, 874 bytes); actual iterator aggregate construction
+// with member payload, ordinary returned-entry for loop, byte bit fields or all three, five at 260
+// (885 bytes). Indexed member-data form tried first on both new graphs; original body/types restored.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {
@@ -1417,6 +1424,9 @@ void function_201ad0(long squad_index, long object_index);
 // the hand-written fld/fistp (216 -> 28). Then: the event test in one if 28; the definition
 // inline 28; the actor getter at each use in the last two statements 39; the product without the
 // real cast 28; a fresh actor pointer for the last two statements 28.
+// frame 0x32c and length agree; the driver byte spills
+// where retail retains BL, the squad pointer uses EBX instead of EDI, and the
+// seat walk and conversion homes differ.
 // Current-vehicle/root-index and seat-count/total-seats home names, each with
 // driver or complementary passenger ownership: eight forms, all 218.
 // Native byte/signed-byte driver state, mutable/const 218/218 each;
@@ -1424,6 +1434,9 @@ void function_201ad0(long squad_index, long object_index);
 // Round 400: Consistent per-use vehicle squad field with native count/root-input/seat-array
 // scope in masks 0-7: 256/256/285/285/256/256/285/285. Original field snapshot, roots and seat
 // walk restored.
+// Round 420: Existing child-iterator initializer with native short squad-call conversions in masks 0-7: eight
+// forms, all 216. Original handwritten initialization, casts and declarations restored; driver/squad and
+// seat/conversion homes remain.
 // @retail 0x1bb570
 void __stdcall function_1bb570(long vehicle_index, long actor_index)
 {

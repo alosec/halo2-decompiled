@@ -25,8 +25,29 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
 }
 
 // score 29 (was 29): left are the frame (sub esp, 8: the object index gets its own slot, where
-// retail keeps a 4-byte frame and the object index in arg_1's home and the permutation in arg_3's)
+// retail keeps a 4-byte frame and the object index in arg_1's slot and the permutation in arg_3's)
 // and the call setup, BLOCKED-BY 0xdb760 (contributor; retail takes the permutation in ebx and the
+// object on the stack, ours the object in ebx). Kept (round 78): the clamp as if/else-if/else
+// (retail's unthreaded `cmp; mov ecx, 1; jg; mov ecx, esi`), the mode read at each use, the
+// permutation read into its local before the parameter store (no `lea edi, [esi + 4]`: table in
+// esi, event in edi as retail) and no false assignments (result reloaded from its slot).
+// Tried: clamp of a re-read mode 84 (310 bytes); a plain permutation local 110/109 (the object
+// index then stays in ebx, as 0xdb760 takes it), with no false assignments 70; no false
+// assignments alone 59, inner one removed 58, outer one removed 68; PIN(mode, 0, 1) 66, with no
+// false assignments 75; event pointer declared at the top 82; the clamp helper plain static or
+// extern 57; a named tag table local 57; the permutation re-read at each use 57; the original
+// parameter order 86 (84 without false assignments); the parameter store at the call 120, inside
+// the range test 29, the range test on the parameter 84; locals renamed 29/31; result declared
+// after the object index 51; the object index computed before the result flag 51 (4-byte frame,
+// the result byte takes the parameter home); existing object_get, region word view, typed event
+// view, named permutation-table pointer 90; object failure early return 91. Round 117: the
+// permutation stored in arg_1 or arg_2 instead of arg_3 120 (271 bytes, 4-byte frame, the object
+// index in ebx); the bit test on the stored permutation 120; the object index also stored in the
+// unused arg_0 3 (retail's code except three parameter-home offsets, the minimum with this
+// callee is two; a second parameter reuse, not kept), arg_0 for the object index alone 120; the shift and
+// the permutation lookup on event[1] at each use 29; the damage tag read before the region test 59;
+// the region flags pointer formed just before the bit test 115 (276 bytes).
+// retail keeps a 4-byte frame and the object index in arg_1's home and the permutation in arg_3's)
 // object on the stack, ours the object in ebx). Everything between agrees. The frame follows from
 // the blocker: the permutation stored back into arg_3 is a new web that takes arg_1's dead home
 // first, and the object index (defined before arg_3's first read) has no other home it may use.
@@ -44,6 +65,18 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
 // locals renamed 31; result declared after the object index 51; object index declared before the
 // result (defined after it) 29; the object index stored into arg_1 and passed from it (diagnostic,
 // copy-propagated away) 29.
+// Tried: clamp of a re-read mode 84 (310 bytes, retail's unthreaded clamp); a plain permutation
+// local instead of the reused parameter 110 (lane 11: 74 at 280 bytes, the object index then
+// stays in ebx as 0xdb760 takes it), with no false assignments 70; no false assignments 107
+// (result only on the stack), inner one removed 58, outer one removed 68; PIN(mode, 0, 1) 66
+// (301 bytes); the member's fields copied in the other order; event pointer declared at the top
+// 82; the clamp helper plain static/extern 57/57; a named tag table local 57; the permutation
+// re-read at each use 57; the original parameter order with the new clamp/reads 86, without false
+// assignments 84; the parameter store at the call 120, inside the range test 29, the range test
+// on the parameter 84; locals renamed 31; result declared after the object index 51 (round 80:
+// 297 bytes and a 4-byte frame, but the result byte takes the parameter home and the event
+// pointer moves to ebx). Round 80: the event parameter or the object index renamed to sort
+// before or after the other 29 each (identical code).
 // @retail 0x9c910
 bool c_damage_section_response_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {

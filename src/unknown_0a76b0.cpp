@@ -3523,6 +3523,10 @@ void function_e5750(long unit_index);
 // all 72; direct post-call unit lookup 52.
 // Lane 16 r31: the unit pointer read before the 0xec0d0 call matches with __declspec(noinline) on
 // function_e5750's declaration (not allowed, docs/DECOMPILING.md); without it 0xe5750 inlines here: 72.
+// Round 10 (lane 14): BLOCKED-BY 0xe5750 (finished contributor code): a compile-only screen inlines it
+// under one `if` from /d2inlT70 up, unconditionally from 62 and under 0xec9a0's two tests from 90, and
+// every source form here stays under the build's threshold. Pointer before the call with `!type` 72,
+// with an early return 72, a bool local before the call 83; after the call an early return 52, `!type` 52.
 // @retail 0xec330
 void __stdcall function_ec330(long unit_index, long type)
 {
@@ -3940,10 +3944,6 @@ void function_1c4b00(long object_index, void *a, void *b, long c);
 
 /* the pose sat down from finished: the unit leaps to the kept point on a
    ballistic arc */
-// score 66 (was 66): frame 0x1c agrees; scalar output homes and x87/SSE speed transport differ.
-// Minimum/selected/both scalar output names 66/66/66; existing scaler 66;
-// scaler with those three name sets 66/66/66; both names, scaler and
-// reversed scalar declarations 66. Original body and includes restored.
 // @retail 0xecdc0
 void __stdcall function_ecdc0(long unit_index, long type)
 {
@@ -3951,22 +3951,21 @@ void __stdcall function_ecdc0(long unit_index, long type)
 
 	s_unit_actions *actions = UNIT_ACTIONS_GET(UNIT_ACTION_UNIT_GET(unit_index));
 	point3f center;
-	real minimum_speed;
+	real launch_speed;
 	real speed;
 	vector3f velocity;
 
 	function_b9dd0(unit_index, &center);
-	function_fa1a0(1.0f, 1.0f, &center, (point3f const *)&actions->unknown20, &minimum_speed, NULL, NULL,
+	function_fa1a0(1.0f, 1.0f, &center, (point3f const *)&actions->unknown20, &launch_speed, NULL, NULL,
 		false, &velocity, &speed, NULL, NULL, NULL, NULL);
-	if (function_fa1a0(minimum_speed + 0.01f, 1.0f, &center, (point3f const *)&actions->unknown20,
+	launch_speed += 0.01f;
+	if (function_fa1a0(launch_speed, 1.0f, &center, (point3f const *)&actions->unknown20,
 		NULL, NULL, NULL, false, &velocity, &speed, NULL, NULL, NULL, NULL))
 	{
-		velocity.i *= speed;
-		velocity.j *= speed;
-		velocity.k *= speed;
+		vector3f_scale(&velocity, speed, &velocity);
 		function_b7740(unit_index, &velocity, NULL, false);
 		function_1c4b00(unit_index, &velocity, NULL, 1);
-		if (velocity.k * velocity.k + velocity.j * velocity.j + velocity.i * velocity.i > 0.0001f)
+		if (length_sq3f(&velocity) > 0.0001f)
 		{
 			function_b9b90(unit_index, false);
 			function_b7360(unit_index);

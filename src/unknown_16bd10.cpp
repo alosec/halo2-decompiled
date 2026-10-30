@@ -251,6 +251,21 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // by a loop 100 (aligned 31; 271 bytes), the loop after the other fills 100; the three segment
 // products summed in a loop over the arrays 106; PIN + two arrays + separate += 90 again. A
 // compile-only screen of 34 array/fill/sum forms never kept those three in memory.
+// Round 98, on the PIN form: tick counts in an integer array 95 (292 bytes); a three-segment loop
+// (four product spellings) 88 each, VC unrolls it and factors (a * t + r) * t; const 2x3 aggregate 88;
+// const two-array aggregates 90; segment times in a float array with the written-out sum 88.
+// Round 80 (plain clamps): the zero acceleration assigned just before the sum 49; the fills in
+// retail's load order (peaks, start, deceleration, acceleration, zero) 53, with the late zero 53;
+// the sum as six += statements in retail's add order 55; the last two terms as separate += 53
+// (272 bytes).
+// Round 22 (lane 10): ours homes only rates[2] and keeps the accelerations out of the frame. Both
+// arrays at function scope 49; the two peak elements swapped in the sum 52; the tick conversions as
+// locals declared at the sum 83 (289 bytes); the peaks filled by a loop over segments 1..2 56; a named
+// peak rate for both peak elements 112 (263 bytes).
+// Round 42: arrays and tick locals at function scope 49 (identical); short tick locals 119; the
+// conversions written in the sum 83; PIN + 2x3 with the segment times in a float array 88, with
+// per-segment {rate, acceleration} pairs 88; compile-only, all 720 orders of the six 2x3 fills, a
+// time array, a time loop and factored per-segment terms keep the same single spilled peak.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {
@@ -894,6 +909,9 @@ PRIVATE inline real game_ticks_to_seconds(long ticks)
 // Round 39: shared native pan rotation matrix, either declaration/conversion order, 243;
 // with fraction before conversion 358 at 1716 bytes. Reusing the existing full pan transform
 // in both conversions, four late-fraction forms, 237. Original native objects and body restored.
+// Round 425: Existing vector setter for the complete plane normal, alone and with
+// projection/offset/pan setters in all combinations, 443/447/443/447/448/456/448/456 fast.
+// Original normal copy, all parallel rows, float groups and complete body restored.
 // @retail 0x16c840
 void __stdcall function_16c840(long user_index, long unused, s_observer_command *command)
 {
