@@ -621,6 +621,11 @@ s_projectile_material_response g_547660;
 // without the reference 51/65 (the index then arrives in EDX); a pointer to the index walked from
 // the parameter to each parent field 49 (word loads, but at the loop head), with the counted loop
 // 47; the existing global_material_get (inline in damage.cpp) for the lookup 34 (same code).
+// Round 12: a counted scan gives retail's shape but colours index/material/counter/pointer EDI/ECX/
+// EDX/ESI (retail ESI/EDI/ECX/EDX) with the dword entry load: a named response base indexed 54,
+// the element indexed off the definition 56, a walk local read through the reference 56, the
+// material declared before the loop 56; the pointer scan with a walk local read through the
+// reference 34 (same code). A read through the reference loads a word only when no loop carries it.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -2473,7 +2478,7 @@ real function_1201a0(vector3f *v, vector3f const *fallback);
 void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *seed, real min_angle, real max_angle);
 struct s_globals_element;
 s_globals_element *function_188690(short index);
-void function_184060(long unknown3c, byte unknown59, s_type_1e6529 *data, long unknown50);
+void function_184060(long unknown3c, long unknown59, s_type_1e6529 *data, long unknown50);
 void function_a85c0(long projectile_index, s_collision_result_1697c0 const *collision, vector3f const *direction,
 	bool unknown, real scale_a, real scale_b);
 
