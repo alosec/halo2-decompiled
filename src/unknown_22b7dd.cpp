@@ -61,6 +61,16 @@ struct s_bitmap_tag_22b7dd
 // helper 49 (plain `inline` stays out of line under /O1, 72); the index as `cond ? 1 : 0` or as the
 // `&&` value 80; a bool frame flag 100 (271 bytes: zero in EDX and everything before the frames as
 // retail, but `movzx` at both uses); an unsigned index 38 (same code).
+// count are kept in the other registers. Our frame index takes the zero register (its 0 and the
+// shared zero merge, so the zero moves to a saved register); retail keeps index in ESI (xor esi, esi;
+// inc esi) and zero in EDX, as the matched 0x22ae21 does. Round 93 (plain checks): shared frame-offset
+// helper 83 (out of line), forceinline 49; index as the && value 80 (two constant arms); per-branch
+// index with ++ 49, with = 1 (0x22ae21's form) 49; short index 73; dword index 38; index declared at
+// the top 39; a bool frame choice 100 (271 bytes, but zero in EDX and aligned 19: only the bool's
+// byte register and movzx differ); per-branch bools set in the test 105 (aligned 18: every
+// instruction retail's but the bool sits in BL with movzx where retail's index is ESI, and the
+// sequence in ESI where retail uses EBX); bools initialised from the && 84 (constant arms);
+// no sequence-block pointer local 60.
 // @retail 0x22b7dd
 bool function_22b7dd(byte const *arg_1, long arg_2)
 {

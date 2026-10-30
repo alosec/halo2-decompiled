@@ -1262,7 +1262,9 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
     return result;
 }
 
-// score 32 (was 32): +0x12 device/unit EDI/EBP roles differ; the second
+// score 32 (was 32): the device and unit indices take retail's EDI/EBP roles the other way
+// round, and the second type mask has no saved EBX temporary; retail also copies a second
+// table value into EAX for the unit type test.
 // type mask lacks the saved EBX temporary and header-base copy. Earlier guard,
 // declaration/result lifetime, header/table and unsigned-mask forms gave 32-54.
 // Tried: named device mask 32; named unit mask 32; both masks 32; byte suppression
@@ -1270,13 +1272,16 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // predicates 39; byte flags with masks 35. Opening executable body restored.
 // Device/unit saved registers and the second mask temporary differ.
 // constant indices 32; unsigned indices 32; index names 32; early unit offset 39; word slots 53; byte mask 35; typed word slots 69; shifted membership masks 38.
-// score 32 (was 32): complete device/unit classification 32/32/32; deferred eligibility 49/51;
+// Earlier: complete device/unit classification 32/32/32; deferred eligibility 49/51;
 // negative classification exits 32; explicit membership 53; contiguous byte domains 66.
 // Retail's EBX mask temporary and `mov eax, esi` copy say a second table value is live in EAX
 // during the unit type test. Device-first guard with typed table reads and an object local 33; the
 // same with the object read from a re-read table 33, or through the existing object_get 33; device
 // and unit header pointers 52; unit header pointer from a re-read table 54; re-read table for both
 // unit reads 54 (device then sits in EDI as in retail, but the table moves to EDX).
+// Complete native unit-header value, late/early ownership with original/device-first guards:
+// current table 62/66/62/66; table re-read 62/66/62/66. All add a 0xc frame.
+// Native handle-array loop/two original stores 194/32 (exact-only grouping; restored).
 // @retail 0xa4540
 bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
 {

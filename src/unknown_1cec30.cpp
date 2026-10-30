@@ -911,6 +911,10 @@ void function_1d1540(s_havok_component *component);
 // set + body pointer + m_fixed first 88 at 230 (retail's code except the ebx parameter); that with
 // flag5 first 27 at 220 (component in edi, costs 0x1d0c20 and 0x1d1b60); as a member function, every
 // parameter order, body pointer at the top, else arm first, early return, noinline: all as 88.
+// The 88 body is retail's but for the component's stack home (allocated to ebx, loaded from the
+// stack); the getter at each use 88; this function declared ahead of 0x1d1260 88; 0x1d0c20 defined
+// first 88. Without the 0x1d1260 call the component arrives in edi (89); without the 0x1d1540 call
+// it stays on the stack (77): the call to 0x1d1260 with the component live across it decides it.
 // Reset/rebuild inline/noinline contracts, original then aligned-copy/fixed-or-flag-first graphs
 // 81/81/81/81/81/81/81/81/88/88/88/88/27/27/27/27. Original executable source restored. All four 27
 // forms still lose matched 0x1d1b60 at 59 in the reduced image.
@@ -938,7 +942,14 @@ void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_com
 	}
 }
 
-// score 38 (was 38): Frame and component-in-EBX convention still differ; zero transform/translation/both 64/61/84;
+// score 38 (was 38): only 0x1d0cf0's convention is left (retail passes the component in ebx, so
+// its frame is 0x5c with push ebx). Tried: zero transform/translation/both 64/61/84; rotation
+// workspace/initialized workspace/initialized transform with workspace 78/106/107; position input
+// value 77; rotation input values 143; external matrix/component records 38/38; complete frame
+// set/initialization/library copy 81/71/71; translation memcpy 70; aligned forward/up column values
+// 49/49; defined ahead of 0x1d0cf0 38; 0x1d0cf0's set-copy forms 40/40/49; 0x1d0cf0 with retail's
+// body (component still on the stack) 40; 0x1d0cf0 with the component in edi 49.
+// Frame and component-in-EBX convention still differ; zero transform/translation/both 64/61/84;
 // rotation workspace/initialized workspace/initialized transform with workspace 78/106/107;
 // position input value 77; rotation input values 143. Original body restored.
 // Earlier: frame and component register still differ; external matrix/component records 38/38;

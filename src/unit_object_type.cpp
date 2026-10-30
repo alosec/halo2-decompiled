@@ -1677,11 +1677,16 @@ struct s_unit_flags_10a_view
 
 /* the unit's death outside mode 4: clears its flags, applies the globals'
    damage at +0x144 to it and, unless flag 2 at +0x10a, marks it */
-// score 35 (was 39): retail clears flags 21 and 5 of +0x134 with two stores (the second from the
+// score 35 (was 35): retail clears flags 21 and 5 of +0x134 with two stores (the second from the
 // first's register) and flag 7 of +0x10a in memory, before it reads the globals; ours merges the
 // two clears. Flag 2 of +0x10a read through a word bitfield view gives retail's load and shift
 // (37); the globals read after the first clear 35. No effect: the clears through a dword or long
 // bitfield view (37); worse: the first clear through a fresh lookup 39, the second 67, all three 63.
+// Round 410: Shared bit-setter combinations for flags21/5/7 41/41/41/35/41/41/41; all setters with
+// globals first 38. Real primary-field bit views for the same seven combinations
+// 35/35/35/33/33/33/33; all with globals first 39 (172 bytes). The 33/180-byte forms gain only two
+// and are rejected. All bodies and primary field declarations restored; flag store/register order
+// and material publication remain.
 // @retail 0xcffc0
 void function_cffc0(long unit_index)
 {
@@ -1711,10 +1716,15 @@ void function_cffc0(long unit_index)
 }
 
 /* whether 0xc9040 holds for any of the seat's markers on the unit */
-// score 77 (was 99): retail takes unit_index in esi, keeps i in ebp and found in a stack byte,
+// score 56 (was 82): retail takes unit_index in esi, keeps i in ebp and found in a stack byte,
 // tests i < count at the loop's top and found at its bottom, after the increment. The loop as a
 // guarded do-while 77; !found first in the for 85; a do-while breaking on the count 85; a while
 // breaking at the end 106; a for breaking inside 103.
+// Round 203: Retail frame and ESI input recovered by the native short ordinal 56/196 bytes, plain
+// confirmed; count short 84, both native 85; marker cursor with result-first/long result/short result
+// 82/99/97; cursor for loop with bool/short success 102/97. Count/position-cursor allocation and
+// top-count/bottom-success loop layout still differ. Only the ordinal width is retained; all calls and
+// loop domains stay original.
 // @retail 0xc6fb0
 bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 {
@@ -1723,7 +1733,7 @@ bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 	s_object_marker markers[4];
 	long count = function_b8d30(unit_index, marker_name, markers, 4, false);
 
-	long i = 0;
+	short i = 0;
 
 	if (count > 0)
 	{
@@ -1740,9 +1750,12 @@ bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 
 /* whether a rider of the unit sits in a seat with bit 11 whose +0x3e is
    the given value */
-// score 2 (was 33): only the order of the two argument loads before function_d0620 differs
+// score 2 (was 2): only the order of the two argument loads before function_d0620 differs
 // (retail moves unit_index into eax before taking the iterator's address). Flag 11 read as a field
 // bit gives the rest. Iterator first, result first or an iterator pointer local 2; result after the call 77.
+// Round 410: Initializer inline/noinline, next inline/noinline, both inline and both noinline 2
+// each; natural for initializer 2; predicate-defined result 49. All restored; initializer
+// argument-load order remains.
 // @retail 0xc9200
 bool __stdcall function_c9200(long unit_index, short value)
 {
@@ -1877,6 +1890,11 @@ void __stdcall function_d0870(long weapon_index, long unit_index, long secondary
 
 /* drops every weapon the unit holds (mode 1: deletes them) */
 #pragma inline_depth(0)
+// score 105 (was 105): Existing slot-change expansion and header receiver still differ. Forced-inline
+// helper with body-stepped cursor 106; native short ordinal/slot 100, short ordinal with long slot 99
+// (gains below eight rejected); live indexed slots with forced/ordinary inline 130/130; unsigned ordinal
+// 106; existing complete slot service with cursor/index 190/171. Original helper, inherited scope and
+// body restored.
 // @retail 0xccf20
 void function_ccf20(long unit_index)
 {
@@ -3086,7 +3104,12 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 78 (was 92): its flag tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 78 (was 78): its flag tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// Round 203: Boolean fourth flag 83; retained time receiver 75 (three-count gain rejected); both 79;
+// masked lookup helper 79; flag/helper 84; time/helper 76; all 80; twice-used notification index 80.
+// Hostility result alone/flag/time/both 119/125/113/119; common notification alone/flag/hostility/both
+// 77/74/94/110, exact-only and restored. Early Boolean normalization, shared notification and
+// constant-register allocation remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
@@ -3359,9 +3382,13 @@ bool __stdcall function_cc460(long object_index)
 /* the unit's team (+0x138): its player's, else its actor's, else for a
    vehicle the team its riders share (riders in seats with bit 11 count
    apart; any disagreement leaves it NONE) */
-// score 14 (was 118): retail lays the final team test out with the team == NONE store first; the
+// score 14 (was 14): retail lays the final team test out with the team == NONE store first; the
 // tests nested or reordered stay at 14. Flag 2 of +0x10a through the word bitfield view 14 (the
 // earlier TEST_FIELD_BIT on it 111); flag 11 of the seat as a field bit.
+// Round 410: Final publication outside iterator admission: conditional value, disagreement
+// invalidation, branch-defined output and ordinary-first output 81/82/63/144; with both team
+// accumulators full width 86/88/78/148. All restored; final no-team publication/exit layout
+// remains.
 // @retail 0xc6990
 void function_c6990(long unit_index)
 {

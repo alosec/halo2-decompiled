@@ -79,6 +79,11 @@ struct s_11c1b0
 // declared at the top and first assigned in the block 50 (still the argument's home: the def, not the
 // scope, decides); the copy used in the early true test 50, in both tests 50; the copy re-read from
 // the global 50 (all identical code).
+// Round 93: the saved index already shares arg_0's slot; left are local_0/zero in di/ebx (retail
+// bx with xor ebx, ebx / edi) and the slot store after the range test (retail: before it, as only
+// a reassigned parameter gives). Both NULL-clear blocks as one inline helper 50; early return false
+// for the range test 122; saved index declared at function scope 50; early true test on the saved
+// copy 50; unload argument written in the call 50.
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {
