@@ -127,6 +127,11 @@ void c_animation_channel::clear()
 // success result 49. Round 75: existing clear() then retail-order assignments 51; const graph 51;
 // __fastcall member declaration 51 (LTCG overrides it); retail order with the byte-pointer clear 42;
 // eight orders of the graph/frame/id/rate/unknown0e/unknown10 assignments 42 each.
+// Round 5: `unknown10 |=` the flag bit with plain byte clears 43 (the clear folds away, graph in EDX,
+// five callers lost); retail order with unknown0e before graph 42; `animation_id = c_type_709360()`
+// for the NONE pair, current/retail order 55/59 (the dword store absorbs both word stores); retail
+// order with unknown0e converted to a short local before graph 42 (propagated; retail's movsx
+// still holds CX across the id copy, ours copies the id first).
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)
