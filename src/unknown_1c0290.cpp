@@ -210,6 +210,16 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // 161/161; collision NONE store before the vector math 141 (138 with the 0x5c output: gives
 // retail's store order); with the 0x5c output, stamp through the existing 0x146650 getter 138,
 // stamp stores swapped 141, slot pointer declared after the lookups 138, `== false` test 138,
+// height declared at its definition 138. Deleting the whole stamp block (diagnostic) leaves 10
+// aligned differences: everything after it then takes retail's registers.
+// Full output with stamp byte/native payload, stamp signed byte, near byte, near signed byte,
+// both bytes and the three mixed/signed combinations: eight forms 140 at 955 bytes.
+// Native status declarations do not fix the post-stamp register rotation; all types/body restored.
+// Round 289: Computed proximity bool/byte/short/long on the complete collision/native-payload graph; then each with one result exit:
+// [247, 247, 252, 250, 231, 231, 226, 228]. All executable source and temporary types restored.
+// Round 423: returned position with native/original payload 226/226; each with complete
+// collision output 224/224; target declaration at publication gives 226/226/224/224.
+// All reduced previews; complete original body and declarations restored.
 // height declared at its definition 138 (deleting the whole stamp block, as a diagnostic, leaves 10
 // aligned differences: everything after it then takes retail's registers); full output with stamp
 // byte/native payload, stamp signed byte, near byte, near signed byte, both bytes and the three

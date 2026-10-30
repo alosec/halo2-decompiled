@@ -105,6 +105,12 @@ extern long g_55c154;
 // (one arm is short); two load arms 174, with that call 179 (EBX takes zero, saved and the
 // 0x54e4a0 constant, `this` spills to [ebp-4], unbiased frame); selected arm first 178;
 // saved declared at the top 179.
+// Round 21 (lane 10): a named count shared by the copy and the 0x238c69 call (`long maximum_count =
+// 0x20;`, as matched 0x148c3e passes it) keeps unicode_string_copy out of line with retail's
+// ecx/edi/esi call and no noinline. Two load arms with the inline copy 174; with the named count 179
+// (EBX holds saved and then &g_54e4a0, `this` moves to ESI and spills, unbiased frame); the count
+// declared at the arm's top 179; selected arm first 178; one load with the named count 88. Original
+// body restored.
 // Round 35: two load arms 174 again (`this` spills to [ebp-4], EBX takes the constant 1, unbiased
 // frame), with the shift bit test 174; the bit test as a signed shift 62 (sar); `selected == NONE`
 // tested twice without the classification local 77 (574 bytes). BLOCKED-BY 0x13fac0: our link

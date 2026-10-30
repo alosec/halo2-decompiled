@@ -1379,7 +1379,7 @@ point2f *g_4687c4;
    sway springs, the weapons' animations, zoom overlays and idles */
 static __forceinline real function_x82e52f(dword *seed, char const *file, long line);
 
-// score 218 (was 232): frame 0x28 versus 0x2c, unit/mode homes and shared look reciprocal remain.
+// score 218 (was 218): frame 0x28 versus 0x2c, unit/mode homes and shared look reciprocal remain.
 // Earlier 241 from 241: frame 0x30 vs 0x2c; esi/edi saved before the unit test (retail after it,
 // frame 0x28 vs 0x2c; esi/edi saved before the unit test (retail after it,
 // frame 0x28 vs 0x2c; esi/edi saved before the unit test (retail after it,
@@ -1519,6 +1519,12 @@ static __forceinline real function_x82e52f(dword *seed, char const *file, long l
 // DL179: Coordinated scalar-spring/angular-difference ordinary, inline and noinline
 // declaration pairs (excluding both ordinary) 218/218/499/499/499/218/218/218 fast;
 // original complete body and every helper declaration restored. Frame/look homes remain.
+// Round 212: const overlay return pair with two role names 220/220; pair reservation at
+// weapon/iteration/user scope, both names, 388 each (fast control 220). Original lookup lifetime and body
+// restored; frame and look homes remain.
+// Round 426 (fast control 220): shared bool/long override with logical publications
+// 404/422; bitwise publications 422/413; those four with direct overlay-result assignment
+// 431/435/434/422. Original override branch, lookup and complete executable body restored.
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {
@@ -1943,6 +1949,12 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 // Round 280: Delayed count pointer/reference with original/value-first products 391 each fast, pointer
 // plain 436; with early conditional blend defaults 169 each fast (exact-only, rejected). Fast control 411,
 // full baseline 410. Original helper and result producers restored.
+// Round 212: native user animated-test/store and adjusted-store bits, seven dword subsets
+// 415/411/415/414/426/414/426; complete byte view 410 (fast control 411). One-point byte gain rejected;
+// original user record and all consumers restored; early blend and receiver homes remain.
+// Round 428: complete eligibility/duration classifier arms, full bool/byte/short/long
+// 422/422/443/443; complementary bool/byte/short/long 446/446/446/447
+// (fast control 411; full 410). Early blend byte and user/weapon/sway homes remain; restored.
 // @retail 0x16760c
 void __stdcall function_16760c(long user_index, long field_x11c898)
 {

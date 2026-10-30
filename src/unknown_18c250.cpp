@@ -414,7 +414,7 @@ void function_18c720(long tag_index, long object_index, long set_index, long per
 				fld local_1
 				fistp local_2
 			}
-			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, (short)local_2));
+			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, local_2));
 			function_18ca20(object_index, tag_index, &((s_sound_globals_promotion_view *)g_51ebd4)->permutations[set->first_permutation + permutation_index], scale);
 		}
 	}
@@ -568,7 +568,7 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 	location->spatial.compressed_forward = vector3d_compress(g_4687b0);
 }
 
-// score 280 (was 280): frame 0x8c versus 0x80, datum/tag homes and the protected root-location convention differ.
+// score 279 (was 279): frame 0x8c versus 0x80; datum/tag homes and root-output address formation differ.
 // Earlier 280 from 280: Frame 0x8c versus 0x80; datum/tag and protected root-location convention remain. BLOCKED-BY 0xba300.
 // Frame 0x8c versus 0x80; datum/tag and protected root-location convention remain.
 // Round 9 (lane 10): retail's case-3 failure byte is a dead store into the slot the audibility output
@@ -645,6 +645,9 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 // short/word/unsigned-long ordinals 367/367/331; shared long/short ordinal 331/367. Original
 // scalar fields, property tests, receiver pair and full body restored; protected root-location and
 // datum/tag homes remain.
+// Round 217: native root output at query/entry scope via aggregate/library copy 305 each; with
+// native velocity output 337 each. Frame 0x8c and datum/tag homes remain. Root-location callee
+// now matches and uses object ECX/output EAX; original body restored.
 // @retail 0x18cbc0
 void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 {

@@ -435,19 +435,6 @@ void function_de080(vector3f const *forward, vector3f const *up, vector2f *forwa
 
 /* moves the biped's camera offset (+0x3cc) toward its head marker,
    relative to its root node, a little each tick */
-// score 7 (was 7): frame 0x9c, native entry and length agree; cross-component
-// add/store scheduling remains. Existing node query 34; point difference 129;
-// both 48; coherent vector homes 127/34/129/48; outputs first 48. Clamped steps 34;
-// destination pointer 24; both 34; delta-first 34, with steps/pointer/both 34/24/34;
-// plain component loop 24 (kept, plain); raw differences 24; current components 87;
-// current components and differences 87; point setter 34.
-// Native low/high loop clamp 7 plain (kept); upper/lower clamp 12; low/high with
-// current-component reuse 83; full clamped correction macro/branches 61/54; shared
-// smoothing difference with macro/low-high/high-low 63/62/62. Cross-store scheduling remains.
-// Round 281: component reference 27; named updated value 7; both 27; short ordinal 141;
-// ordinary while 7; component pointer 27; point-pointer traversal 258; sequential bounds 7.
-// All restored; frame and length agree, cross-store scheduling remains.
-// Round 171: Projected correction 7; staged subtraction 49; conditional clamp 7, staged 49, in-place 34; direct clamp outcomes 179; unsigned ordinal 7, projected 7. Cross-store scheduling remains; original body restored.
 // @retail 0xde190
 void function_de190(long arg_159e6d)
 {
@@ -480,7 +467,8 @@ void function_de190(long arg_159e6d)
 		{
 			for (long component = 0; component < 3; ++component)
 			{
-				real difference = local.n[component] - biped->unknown3cc.n[component];
+				real *current = &biped->unknown3cc.n[component];
+				real difference = local.n[component] - *current;
 				if (difference < -0.01f)
 					difference = -0.01f;
 				else if (difference > 0.01f)
@@ -565,9 +553,6 @@ void function_1e54d0(void *state, long a);
 
 /* starts the biped toward an object to grab (+0x390), switching its
    physics to mode 6; NONE clears it */
-// score 40 (was 57): target/physics registers, visibility-call target convention and facing/flag store order still differ.
-// Positive target 62; positive eligibility 57; both 62; Boolean flag 58; word flags 67; vector helper 70; memcpy 57; positive/Boolean 65;
-// one target-address read 61; that read with positive flow and native flags 33 (exact-match-only, rejected); natural positive flow/native flags 40, kept.
 // @retail 0xdee60
 void function_dee60(long arg_159e6d, long target_index, bool flag)
 {
@@ -583,8 +568,8 @@ void function_dee60(long arg_159e6d, long target_index, bool flag)
 			{
 				biped->unknown390 = target_index;
 				function_1e54d0(&biped->physics_mode, 6);
-				biped->unknown444 = biped->unknown168;
 				biped->unknown3f8 = flag;
+				biped->unknown444 = biped->unknown168;
 				if (flag && !TEST_FIELD_BIT((biped->flags_134 >> 23) & 1))
 				{
 					biped->flags_348 |= 0x2000;
@@ -1453,14 +1438,17 @@ apply:
 /* whether the biped can see a biped it would grab: a ray from its eye to
    the target's center (or to three points up the target's height) gets
    through */
-// score 932 (was 1031): Frame 0x8c versus retail 0xac; the outer eye call expands, but the inner call and incoming self index still differ.
+// score 931 (was 932): Frame 0x8c versus retail 0xac; the outer eye call expands, but the inner call still differs.
 // Outer-only inline 952; entry result 1038; scan result 1020; shared displacement 1031;
 // scan collision workspace 1031; role names 1031; native while scan 1031; combined entry result 1038.
 // Outer-only inline with scan/entry result 932/950; shared workspaces 952; all scan forms 932.
 // Retain outer-only inline and scan result, plain 932; the inner helper remains ordinary.
+// Round 162: the self index read once through its address keeps both arguments on the stack as retail (931; matches caller 0xdee60).
 // @retail 0xde9d0
 bool __stdcall function_de9d0(long arg_159e6d, long target_index)
 {
+	long const *self_reference = &arg_159e6d;
+	long self_index = *self_reference;
 	s_biped_header *header = &((s_biped_header *)g_4e0300->data)[target_index & 0xffff];
 
 	if ((1 << ((byte *)header)[3]) & 1)
@@ -1488,7 +1476,7 @@ bool __stdcall function_de9d0(long arg_159e6d, long target_index)
 			center.z -= *(real *)(target_definition + 0x270) * 0.5f;
 			count = 3;
 		}
-		biped_grab_eye(arg_159e6d, &eye);
+		biped_grab_eye(self_index, &eye);
 		bool result = false;
 
 		for (i = 0; i < count; i++)
@@ -1500,7 +1488,7 @@ bool __stdcall function_de9d0(long arg_159e6d, long target_index)
 			vector.j = center.y - eye.y;
 			vector.k = center.z - eye.z;
 			collision.unknown24 = NONE;
-			if (!function_1697c0(0x84000d, &eye, &vector, arg_159e6d, target_index,
+			if (!function_1697c0(0x84000d, &eye, &vector, self_index, target_index,
 				(s_collision_result_1697c0 *)&collision))
 			{
 				result = true;
@@ -1958,6 +1946,11 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 // Round 237: physical header type/fallback geometry/both 76/76/76; typed first/fallback/both
 // successful-query returns 76/76/76; typed failed-query arm 76; typed root-header receiver 76.
 // All declarations, snapshots and original body restored; frame/input homes remain.
+// Round 162: the vehicle's position/radius through the existing out-parameter getter 0x30c60 gives retail's 0x20 frame
+// (its radius out-local is retail's dead store) but stays out of line here: 110 (307 bytes). Diagnostic only: an
+// inline real-typed copy of that getter 70, plus a success-controlled attempt loop (`!success && attempt < 2`,
+// first query assigned to success, second under `if (!success)`) MATCH under --fast; the loop fixes the input homes.
+// Needs 0x30c60 inline with a real out (its declarations in other files say long); not applied.
 // @retail 0xe0070
 void function_e0070(long arg_159e6d, long vehicle_index)
 {
@@ -2020,6 +2013,9 @@ void __stdcall function_1c3770(long object_index, dword flags);
 // Round 396: Entry-zero query output with retained/at-use count, shared long/short getter,
 // and entry/at-use tag: 91/109/84/101/97/111/93/113. All restored; entry EBP remains.
 // Round 171: Paired flag field with retained/native body and retained/fresh count: word 63/73/82/87, byte 103/115/105/117. Extra EBP, validated-index transport and flag scheduling remain; original body and object declaration restored.
+// Round 162: the count re-read at the call through a second biped lookup gives retail's byte test and re-read but
+// keeps the extra EBP: with the shared getter/explicit body 91 (265 bytes)/68. Signed-char count field, bitfield or
+// one-bit-at-a-time flag clears, settlement declared first, short index: no change or worse (harness). Restored.
 // @retail 0xe0c70
 void function_e0c70(long arg_159e6d)
 {
@@ -2128,6 +2124,9 @@ bool __stdcall function_e1b60(long arg_159e6d, point3f const *point, real value)
 // Extent formal order reversed 0 but loses its matched callee (1, address base/index); separate noinline and inline
 // extent declarations original/reversed 2/0 with the same callee loss; outer early exit, split inner guard, both early exits 2/2/2;
 // explicit cdecl and stdcall original/reversed 2/0 with the same callee loss; signed int extent index original/reversed 2/0, same loss.
+// Round 162 (harness, both files): the extent query as a member of the component (this first, index parameter),
+// written with havok_component_rigid_body_get(index, this) or rigid_bodies[index]: 0 here and the callee unchanged.
+// Not applied: the callee's file was held by another lane this round.
 // @retail 0xe1a80
 void function_e1a80(long arg_159e6d)
 {
@@ -3416,25 +3415,6 @@ void function_e3700(long arg_159e6d)
 
 /* the airborne biped: falling damage, a random spin for one that tumbles,
    and its airborne animation */
-// score 6 (was 6): the cross product's three components are computed in named locals,
-// which recovers retail's product order. Left: the scaled add's first product (the shared
-// helper computes component * scale, retail scale * component), the call to the unmatched
-// 0xe3910 and the branch displacements that follow from it.
-// Getter declaration at caller only 177; bounded-random helper 194 (range rounding differs);
-// shared cross 177; both helpers 194; unit-random/both helpers 177/177; entry axis 194;
-// role names and branch stores 190. Separate out-of-line getter declaration 90, plain confirmed.
-// On the out-of-line graph: cross/unit-random/both 90/90/90; branch stores alone,
-// with cross/unit-random/both, and all with entry axis 94/94/94/94/94. Original body retained.
-// On named normalized draws, shared cross/update and branch/default stores [11, 35, 8, 32, 13, 37, 12, 34];
-// computed tick spin, native up copy and both [11, 122, 120]. Best plain 8.
-// Earlier named/staged normalized draws with scalar/shared updates and spin/tick lifetimes
-// 30/32/27/29/29/31/28/30. Named fractions preserve both random products; branch stores recover the tail.
-// Round 282: negative cross-factor orders in all seven row subsets 8 each; entry axis on k-order 8.
-// Existing scale/add helpers, in-place/distinct increment 56/56; with shared cross 58/53. Restored.
-// This round: the third product's operands the other way 8; the second term in a local 8; the negated
-// component 84 (570 bytes); the three products in named locals 6 (kept).
-// Round 190: tick product/direct tick expression/commuted tick product/commuted spin update
-// on the named cross graph 9/9/9/6; with the shared cross-result setter 9/9/9/6. Original update retained.
 // @retail 0xe40d0
 void __stdcall function_e40d0(long arg_159e6d, long *names)
 {
@@ -3464,9 +3444,7 @@ void __stdcall function_e40d0(long arg_159e6d, long *names)
 				real cross_j = g_4687b0->i * biped->up.k - biped->up.i * g_4687b0->k;
 				real cross_k = g_4687b0->j * biped->up.i - biped->up.j * g_4687b0->i;
 
-				axis.i = cross_i;
-				axis.j = cross_j;
-				axis.k = cross_k;
+				vector3f_assign(&axis, cross_i, cross_j, cross_k);
 				found = function_30bf0(&axis) > 0.0f;
 			}
 			if (!found)
@@ -3474,12 +3452,9 @@ void __stdcall function_e40d0(long arg_159e6d, long *names)
 				real angle_fraction = (real)random_next(&g_4e7408->unknown0) * 1.5259022e-05f;
 				real angle = angle_fraction * 6.2831855f;
 
-				axis.i = (real)cos(angle);
-				axis.j = (real)sin(angle);
-				axis.k = 0.0f;
+				vector3f_assign(&axis, (real)cos(angle), (real)sin(angle), 0.0f);
 			}
-			spin *= g_510c54->rate;
-			vector3f_add_scaled(&biped->angular_velocity, &axis, spin, &biped->angular_velocity);
+			vector3f_add_scaled(&biped->angular_velocity, &axis, spin * g_510c54->rate, &biped->angular_velocity);
 		}
 		function_e3910(arg_159e6d);
 	}

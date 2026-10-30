@@ -121,6 +121,12 @@ s_slot_handler_2 g_47e1c0 =
 // (same registers); all three components scaled in place 107 (operands are canonicalized).
 // Round 191: Existing displacement setter 107; fallback-point setter 188; both 188; normalized-vector setter 107; displacement/normalization 107; fallback/normalization and all three 188/188.
 // Round 191: Complete setters with existing projection helper 188. Two-point forms fail the retention margin; every setter and changed-sum form restored.
+// Round 186: Matched point-transform inline declarations, then inline with separate noinline declarations,
+// crossed with native/shared subtraction and magnitude/projection: 109/107/107/124 and 109/107/107/124.
+// Result-first bool/byte/long and later bool: 139/216/207/216. Two-point gains fail the keep margin;
+// changed-sum forms are also match-only. Restore the complete original executable body, loop domains,
+// recursive call, all vector operands, helper bodies and every external declaration. Frame 0x44 and the
+// direction XMM/reciprocal-copy gap remain.
 // Round 194: complete native origin/destination/both/facing inputs 245/218/316/154;
 // origin+facing/destination+facing/all inputs/shared subtraction 291/260/363/363.
 // Input snapshots enlarge the frame; all original per-use inputs and the in-place direction restored.

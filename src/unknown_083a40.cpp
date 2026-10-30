@@ -552,7 +552,46 @@ bool function_84560(s_simulation_world_owner *watcher)
 
 void simulation_player_collection_swap(s_type_c67652 *collection, long player_index, long other_index, s_simulation_player_update *update);
 
-// score 32 (was 32): three spots in the second loop, all register choice. The preheader builds the
+// score 32 (was 32): the address of the record is computed in EDX and the zero kept in EBX;
+// retail computes it in ECX and stores it first, so the block order differs.
+// inline/noinline swap declaration 32; apply-update declaration 32; both 32;
+// collection preheader 277; const session 32; const collection 32; array-base key 32;
+// late key pointer 45; occupant reference 45; collection reference 32;
+// machine pointer renamed 32; second-loop index renamed 32.
+// The rest is register choice: retail loads `updates` after pushing the slot
+// for the swap call and adds the collection first for the occupant's key.
+// Tried: player pointer first in the loop 32, player before source 32,
+// collection hoisted out of the loop 277, swap update through a local or an
+// index 32, `updates + ++*count - 1` 32, occupant key through
+// watcher->players 294, through player 291, `(collection->players + i)` 32.
+// The session player's configuration as a real member at 0xa8 32 (same code); the mask test
+// wrapping the body instead of `continue` 32 (same code); `configuration` reused for the last copy
+// 113; one function-scope player pointer for both loops 32 (same code); `&watcher->players` written
+// at each use instead of `collection` 294.
+// J185: signed-word first/second/conflict ordinal subsets 291/257/292/179/281/288/313;
+// byte conflict ordinal 196. Native narrow counters grow the body; original counters, source observations,
+// exact key/copy expressions, call roles and all helper declarations restored.
+// Round 35: the swap callee declared (collection, player, update, other) with its definition and
+// this call, 36 (the swap call becomes retail's row for row: slot pushed before the updates load;
+// the swap callee still matches; the last record's two source reads then trade registers and the
+// occupied key address keeps its order); on it the last record's reads swapped 47, read before the
+// count increment 40, the occupied key through `collection->players + i` 36, its index stored
+// before its type 38.
+// Round 35 (one-file harness, exact; aligned/positional 9/16): `++*count;` before the swap call 9/16;
+// `&updates[(*count)++]` 16/20; the occupant key via `(&collection->players[i])->key` 9/16; the four
+// loop-top declarations in the other 11 orders 9/16; all 23 other parameter orders of the swap
+// callee (it stays matched) 9-17; the player as `&collection->players[i]` 153 (mask too 120).
+// Round 5: the occupied record's key address is one byte shorter here ((offset + cursor) + collection
+// with add/lea against retail's (collection + offset) + cursor with lea/lea), which shifts every later
+// jump and call by a byte up to the loop pad. The swap's count increment as its own statement 32 and
+// its update named first 32 (both identical code); the occupant key from `&collection->players[i]`
+// 32 (identical); the conflict scan through `collection` 263; `collection` declared before the
+// player-mask test 32.
+// Round 19 (lane 11), on the swap order above: the swap's update through the local `update` 36;
+// the occupied key through `watcher->players.players[i]` 292; the second loop's player and mask
+// through `collection` 271, its player alone 267. With it the occupied key is still
+// (offset + cursor) + collection where retail adds (collection + offset) first.
+// three spots in the second loop, all register choice. The preheader builds the
 // configuration cursor in EDX and stores it late (retail ECX, stored at once); `updates` is loaded
 // before the swap call's slot push (retail after it); the occupied record's key address is
 // associated (offset + cursor) + collection with add/lea, one byte shorter than retail's
