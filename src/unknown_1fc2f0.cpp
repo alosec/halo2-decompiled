@@ -200,7 +200,7 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 }
 
 /* the tracked velocity, its change limited to half a unit per second */
-// score 43 (was 44): the limit test is written the other way round, so the comparison matches
+// score 43 (was 43): the limit test is written the other way round, so the comparison matches
 // retail's operand order and its branch, but the scheduler still computes the components in the
 // order i, j, k where retail does j, i, k, so the tick conversion takes xmm4 where retail reuses
 // xmm3, the deltas land in other registers and the limit is computed before the squared length.
@@ -233,6 +233,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
 // stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
 // (394 bytes); the rate read from the global at each use 99 (375 bytes).
+// DL192: Common native velocity publication 61; scaled add 96; in-place scale/add 50; reused squared length
+// 77; late tick conversion 45; with native input copy 137, squared length 54, squared length/scaled add 95.
+// Late ticks move first difference to +0x5a but enlarge by four bytes; all restored.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

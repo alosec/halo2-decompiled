@@ -492,6 +492,8 @@ struct s_request_profile
 // Native pointer destinations with matched per-element query: index less/not-equal bounds, ticks first
 // 347/347 and state first 349/349; pointer less/not-equal bounds, ticks first 320/320 and state first
 // 334/334. All remove qualified global data reads.
+// DL192: Native transition record publication, Boolean/full query, flat/grouped loops 221/222/196/189;
+// complete array clear before those queries 196/163/196/187. Ordinary global load throughout; all restored.
 // @retail 0x1e73b0
 void function_1e73b0()
 {
