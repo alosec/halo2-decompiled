@@ -121,6 +121,11 @@ void function_22a664(s_widget_quad_2b11 const *arg_0, s_float_rect const *arg_1,
 // width/height product splits 26/14; final-address pointers with split/const/original dimensions 100 each;
 // record-base pointer 12 (not kept); with const dimensions/height split/width split 12/12/24;
 // height at each use 18.
+// Round 13, all on the bounds-record pointer (12): half-height after the advance 18; corners from
+// a bounds rectangle 37; corner 3 before 1 and 2 16; shared corner values copied from the quad 28;
+// pulse-first products 12; conversion-first extents 12; y before x in each corner 20; pulse query
+// after the extents 53; half-height/half-width written at each use 18/189. The advance product
+// takes XMM4 and the half-height copy XMM3 under every statement order (retail XMM3/XMM4).
 // @retail 0x200462
 void function_200462(long arg_0)
 {

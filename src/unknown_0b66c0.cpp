@@ -342,7 +342,8 @@ bool function_b51b0(s_transport_endpoint *endpoint, s_type_99af70 const *address
 
 bool function_7af40(s_type_99af70 const *address);
 
-// score 32 (was 32): tried the flag bit set through a byte cast of the flags word, as retail
+// score 32 (was 32): the flag is read before the three endpoint field stores instead of after
+// tried the flag bit set through a byte cast of the flags word, as retail
 // the flag is read before the three endpoint field stores instead of after
 // them, the endpoint pointer is kept in a register here instead of being reloaded from the
 // connection, and the attempt counter is incremented in a register instead of in place. Retail
@@ -370,6 +371,7 @@ bool function_7af40(s_type_99af70 const *address);
 // store differs (after the call, retail before it): 15 at 245 bytes, but the mixed reads can only
 // be kept with a match. Other orders of the counter, state and copy 35/35/37/111; the flag alone
 // re-read 42; the open alone re-read 109; `= count + 1` 111.
+// tried the flag bit set through a byte cast of the flags word, as retail
 // tried the flag bit set through a byte cast of the flags word, as retail
 // sets it in the low byte, 30 (an address cast for 2 points: not kept); the flag is still read
 // before the three field stores instead of after them, the endpoint pointer is kept in a register

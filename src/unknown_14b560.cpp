@@ -1934,6 +1934,10 @@ bool function_23bb70(long tag_index, point3f const *position);
 // and the four values that are pushed for the call are pushed in another order.
 // Round 7: independent getters and a fresh getter only at the increment 71 each;
 // const player/options pointers and const options data 19 each; player/options/both object references 19 each.
+// Round 15: player declared before the options 90 at 303 bytes (retail's load order, aligned 9 against 8:
+// the add before the counter read and the late +0x14 read remain, and the loop loses its padding);
+// counter read through a getter in the seed with the player defined after it 77; seed built in
+// statements 19, with the options field first 19; seed computed before the result/best locals 22.
 // @retail 0x14ef00
 long function_14ef00(long player_index, long tag_index, bool deterministic, bool preserve_counter)
 {
