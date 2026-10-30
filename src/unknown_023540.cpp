@@ -2832,6 +2832,9 @@ static __forceinline void texture_corner_rotate(real x, real y, real cosine, rea
 // reciprocal-first normalization 282. Original paired diameters, scale and trig homes retained.
 // Round 180: Entry declarations of first/second/bounds output buffers, masks 1-7, then all with
 // entry trig declarations: 282/282/282/282/282/282/282/282. Original executable body restored.
+// Round 74: stage name 282; entry stage 443; entry stage with scaled-dimension names 443 and
+// with a reciprocal name 443; original-position stage with both scalar names 282; both scalar
+// names 282; scaled-dimension names 282; reciprocal name 282. Original executable body restored.
 // @retail 0x29b00
 void __stdcall function_29b00(long tag, short first_bitmap, real first_alpha,
     real first_angle, real first_scale, long second_bitmap, real second_alpha,

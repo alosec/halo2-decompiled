@@ -2827,6 +2827,10 @@ PRIVATE inline void squad_item_set_team(s_widget_item *item, short team)
 // appearances/teams 105; all three 107; all three plus destination cursor 294 at 889 bytes. The seven
 // source-only forms stay 876 bytes. Original indexed body, helper bodies and memcpy restored; receiver
 // reload, row/query and animation roles remain.
+// Round 75: typed appearance assignment 100; typed appearance cursor 105; separate display counter 100;
+// publication screen local 100; row-only generic query 235 (item reload, row registers and movsx agree;
+// the title constant carrier returns); with game-first, map generic query, moved title case 3, separate
+// map widget or explicit heading receiver 237 each. Original field, helpers and complete body restored.
 // @retail 0x253339
 void c_network_squad_browser_screen::v3()
 {
