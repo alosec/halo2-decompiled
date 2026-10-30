@@ -373,6 +373,11 @@ bool function_7af40(s_type_99af70 const *address);
 // open call reading the connection's endpoint again 111 (the split counter takes ebx, the address
 // then arrives in eax and 0xb40b0 stops matching). A compile-only copy without link-time code
 // generation splits the counter even with the copy written out, so it cannot screen this.
+// Round 33: with retail's endpoint reads (one read for the three stores, re-reads for the flag and
+// the open call) the body is retail's except the counter, split into load/inc/store in EBX, which
+// moves the address to EAX (111, 0xb40b0 lost); a compiled-out `do {} while (false)` after the
+// increment 32, with the reads 111; the copy helper with a dword size and the reads 111; the
+// failed open closing and returning first with the reads 101.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

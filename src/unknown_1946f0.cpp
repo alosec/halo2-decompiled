@@ -119,6 +119,8 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // i, j, k order (here and/or in 0x195070) 61 (the reduced build keeps the decoded k on x87 either way;
 // an LTCG harness of the file alone popped it); the face pointer before the grid 81; y before x 75;
 // compound face scaling 61.
+// Round 34: face pointer and zero before the grid values 87; the three rows into locals, then the
+// stores 61; constant-first grid products and doubling 61; y before x 71; `1.f != face->scale` 61.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {

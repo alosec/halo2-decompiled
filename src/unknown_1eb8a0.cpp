@@ -99,6 +99,11 @@ PRIVATE __forceinline void rotate_direction(vector3f *vector, const vector3f *ax
 // Round 256: Staged axis construction original/angle/entry storage with named/direct normalization
 // 141/170/141/170/141/170; native aggregate axis with named/direct normalization 120/160. All
 // restored.
+// Round 35 (0x11d3b0's matched rotate form): k-j-i projection sum plus scalar cross terms 148 (991 bytes,
+// aligned 156 -> 103: the products follow retail, but the frame grows to 0x1c because the cosine gets
+// its own home beside the x87 transfer slot, and the sum still runs i,k,j); scalar cross terms alone
+// 148 (same frame); k-j-i sum alone 149 (1005 bytes); axis by value 177; the rotation written out in
+// the body with named sine/cosine 189; named sine/cosine with the scalar cross terms 189.
 // @retail 0x1ecf50
 void function_1ecf50(vector3f *forward, vector3f *up, s_direction_rotation_input *input)
 {

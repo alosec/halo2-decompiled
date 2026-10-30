@@ -1182,6 +1182,11 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // j/k rows still forward-first); its products matrix-first 80 (same code); plus the support add
 // through vector3f_add 70 (1039 bytes, in-place products, F.j/U.j residency swapped); both adds
 // through vector3f_add with the original helper 83. Original body restored.
+// Round 32 (lane 16): override add as `dst = src + dst` 50; through typed output-struct fields, both
+// operand orders 50/50; row i written forward + left + up 50 (same code); single grouped expressions
+// per row, (j-left + k-up) + i-forward then forward + left + up, 87. Diagnostics (not kept): without
+// the 0x1f0870 call the override add and second rotation take retail's order; with the call but
+// `current` not passed, the movaps copies go; an opaque or hollowed 0x1f0870 changes neither.
 // @retail 0x1f0450
 void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrier_contact const *contact)
 {

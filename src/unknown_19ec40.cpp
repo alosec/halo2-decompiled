@@ -69,6 +69,7 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // 78 -> 48 and register-masked 20 -> 18: then only the register roles differ (ours point EBX, key BP
 // with a preheader copy, globals EDI, entry ECX; retail globals EBX, point EBP, entry ESI, key CX);
 // with the keys compared directly or as `continue` tests the same code; position from globals 115.
+// first one loaded in the preheader and at the back edge) and the globals, point and i rotate to EDI,
 // EBX and ESI. The fast check needs distance_sq3f (0x24550) in the image (105 without it). Tried:
 // unsigned key bits (a word key compared with each field cast to word) plus entry position 61, not
 // kept: the casts only steer the compares; entry position alone 112; separate keys 61; read-only
@@ -94,6 +95,24 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // full-width result index 65; mixed parameter/temporary key tests 65/65; reused entry-field temporary
 // 65; const entry pointer 65; key declared at function scope 65; radius squared at its use 92; entry
 // as `marker_entries + i` 65; count and best declared before radius_squared 65.
+// 65; the keys read through volatile casts 99 (the prologue then matches, but each key loads as a
+// dword into esi, entry stays in ecx and the loop top loses its aligning jmp), key_a alone 97, with
+// distance = 0 / if (point) 102, through an inline key-match helper 102; distance = 0 / if (point)
+// alone 102 positional (retail's movaps-before-je block order; aligned 78 -> 48, register-masked
+// 20 -> 18: then only the register roles differ); one && chain without the globals and
+// point_reference locals 117; point_reference dropped 71 (point becomes a register argument);
+// globals local dropped 113; inline key-match helper 65; entry at function scope 65; field-first key
+// compares 65; (void)& of the key parameters (no effect); keys compared without the key temporary
+// 65; entry declared first 65; point test with the arms swapped worse; position copied from globals
+// or from entry 64 (position from globals 115 with the reordered declarations); one && chain of the
+// key tests 65; `continue` per key test 65 (all three key forms give identical code); every key test
+// through globals->marker_entries[i] without entry 138 (378 bytes); i declared at the top 65; count
+// declared first 65; globals declared before point_reference 65; formal word keys 65 (two matched
+// callers differ); entry-pointer traversal 106; output pointer 65; memcpy append 97; full-width
+// result index 65; mixed parameter/temporary key tests 65/65; reused entry-field temporary 65.
+// Round 35: a 40-form screen of key form (temporary / direct / continue) x point test x position
+// source (g_4e0350 / globals / entry) x declaration order x entry before the key: best 64 (position
+// from entry), every distance = 0 / if (point) row 102-115.
 // @retail 0x19ec40
 long function_19ec40(
 	point3f const *point,
