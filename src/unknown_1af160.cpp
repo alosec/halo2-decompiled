@@ -17,7 +17,7 @@ bool function_1f4a20(s_1f4a20_entry const *arg_2, long arg_0, s_reference arg_1,
 bool function_1af530(long arg_0, long *arg_1, long *arg_2);
 void function_265c30(long arg_0, long arg_1, bool arg_2);
 
-// score 9 (was 36): retail rounds the delay with its own fld/fistp straight into the long that
+// score 9 (was 9): retail rounds the delay with its own fld/fistp straight into the long that
 // also takes 0x261280's count output and 0x1af530's second output (the matched 0x1bd230 writes the
 // same random-delay rounding in its body); the real_to_long helper's separate result cannot share
 // that home. Left: three dword homes rotate (the actor spill, ours 0x2c / retail 0x24; the
@@ -36,7 +36,12 @@ void function_265c30(long arg_0, long arg_1, bool arg_2);
 // block-scoped long 44 (as the forceinline helper); into local_13 9 (kept). On that form: the bool
 // output declared first 9; it renamed 9 (names do not order these homes); the existing actor and
 // prop-node getters 9 (identical code, kept); the 0x262b40 result declared before its flag 13;
-// a separate long for 0x1af530's second output 45.
+// a separate long for 0x1af530's second output 45. Round 43: descriptive names for the actor,
+// location and flag 9; the 0x2626b0 call's test nested or as `!(a || b)` 9/9; the flag declared
+// after the actor 9; the outputs declared before the scratch buffer 9. A no-/GL /FAs build orders
+// these homes by weighted use count (names and declaration places never move them). Diagnostic,
+// reverted: 0x2605d0 not passing the flag pointer on to the stubbed 0x260670 gives 36 with the
+// flag's home moved, so the homes follow what LTCG knows of that callee chain (BLOCKED-BY 0x260670).
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {

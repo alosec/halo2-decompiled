@@ -158,42 +158,28 @@ long function_239d50(long count, point2f const *points, point2f *hull);
 short function_239e50(short count, point2f const *points, short *indices);
 
 /* 0 when every point is the same, 1 when they are on one line, 2 otherwise */
-// score 42 (was 42): state/index/point registers (retail ECX/EDX/ESI) and the XMM homes
-// differ; retail keeps the line normal's j in XMM2 through the scaling, so its constants
-// sit one XMM register higher. Local/formal point cursor with short ordinal 94/93; short
-// remaining count 94/93; long ordinal 97/97; long remaining count 94/93; byte state 91;
-// unsigned word ordinal 85; state increments 76; terminal equality 43; first point before
-// scan 85; normalizer reference 42; point-first dot 42; success normalizer 102; normalizer
-// input vector 126; compound scales 42; factor-first scales 42; positive normalizer scope
-// 42; long point index 101; count-first guard 99; long state 86; plane/point names 42;
-// forced normalizer 42; forced dot 42; both forced 42; single-result normalizer 42;
-// squared-length expression 42; staged scales 42; reverse scale publication 42; length
-// workspace 56; signed-distance expression 42; native first-point components 63;
-// accumulated dot result 46; repeated j input 42; repeated i input 42; both scalar inputs
-// 126; state renamed to sort before the index 42; zero-length arm first 44; `>= epsilon`
-// far test 68; named normalizer length 56; line declared before the first point 42.
-// state/index/point and normalization SSE homes still differ at frame 0x18.
-// Earlier: coupled state/index/XMM homes and normalized Y load remain;
-// local/formal point cursor with short ordinal 94/93; short remaining count
-// 94/93; long ordinal 97/97; long remaining count 94/93. Opening body restored.
-// zero/one SSE homes, state/index/point registers and normalized Y load remain;
-// byte state 91; unsigned word ordinal 85; state increments 76; terminal equality 43;
-// first point before scan 85; normalizer reference 42; point-first dot 42; success normalizer 102.
-// Frame 0x18 agrees; state/index, point pointer and SSE constant registers differ.
-// normalizer input vector 126; compound scales 42; factor-first scales 42; positive normalizer scope 42; long point index 101; count-first guard 99; long state 86; plane/point names 42; forced normalizer 42; forced dot 42; both forced 42.
-// Earlier: state/index/point and normalization XMM homes remain.
-// Single-result normalizer 42; squared-length expression 42; staged scales 42;
-// reverse scale publication 42; length workspace 56; signed-distance expression 42;
-// native first-point components 63; accumulated dot result 46.
-// Repeated j input 42; repeated i input 42; both scalar inputs 126.
-// Shared normalizer/magnitude 42/42; tested initial/distance states 81/76; both tested states 79;
-// early distance default 65; shared normalizer with tested states/default 79/65.
-// Bounded geometric enum with original/count-first/terminal/zero-first graph; independent-point
-// word/enum/count-first/terminal graph; first-point memcpy/memmove 86/94/86/86/54/58/99/58/42/99.
-// Original executable source restored.
-// Indexed point receiver across dispatch with short/long/signed-byte/enum state 89/104/109/104;
-// the same receiver at function scope 89/104/109/104. Original indexed expressions and state
-// restored.
+// score 42 (was 42): state/index/point registers (retail ECX/EDX/ESI, ours EDX/ESI/ECX) and the
+// XMM homes differ at frame 0x18: retail keeps the line normal's scaled j in a fresh XMM2 (loaded
+// before the divide) where ours scales it in the reciprocal's register, so retail's constants sit
+// one XMM register higher; retail also stores the first point's y before its x.
+// Tried: local/formal point cursor with short ordinal 94/93; short remaining count 94/93; long
+// ordinal 97/97; long remaining count 94/93; byte state 91; unsigned word ordinal 85; state
+// increments 76; terminal equality 43; first point before scan 85; normalizer reference 42;
+// point-first dot 42; success normalizer 102; normalizer input vector 126; compound scales 42;
+// factor-first scales 42; positive normalizer scope 42; long point index 101; count-first guard 99;
+// long state 86; plane/point names 42; forced normalizer, forced dot, both forced 42; single-result
+// normalizer 42; squared-length expression 42; staged scales 42; reverse scale publication 42;
+// length workspace 56; signed-distance expression 42; native first-point components 63; accumulated
+// dot result 46; repeated j/i input 42/42; both scalar inputs 126; state renamed to sort before the
+// index 42; zero-length arm first 44; `>= epsilon` far test 68; named normalizer length 56; line
+// declared before the first point 42; shared normalizer/magnitude 42/42; tested initial/distance
+// states 81/76; both tested states 79; early distance default 65; shared normalizer with tested
+// states/default 79/65; bounded geometric enum with original/count-first/terminal/zero-first graph,
+// independent-point word/enum/count-first/terminal graph, first-point memcpy/memmove
+// 86/94/86/86/54/58/99/58/42/99; indexed point receiver across dispatch with short/long/signed-byte/
+// enum state 89/104/109/104, the same receiver at function scope 89/104/109/104. Round 43: the
+// normalizer's scale statements as `*=`, j first, both vector-first or both reciprocal-first 42 each
+// (the compiler commutes them to the same code); the dot product's terms j first 42.
 // @retail 0x239b80
 short function_239b80(short count, point2f const *points)
 {
