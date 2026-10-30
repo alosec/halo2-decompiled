@@ -441,7 +441,8 @@ void __fastcall function_24cdaf(void)
 // existing player accessor 6; function-scope message/index 6 each; short index 6.
 // Indexed player fields 26; tick address from state and index 16; tick address from global 56;
 // tick pointer name 6; increment result name 6; both role names 6; minimum intrinsic 6;
-// nested countdown guards 6.
+// nested countdown guards 6; messages indexed at each use 6; the field read twice in the
+// saturation 27; a short reference for the ticks 6; nested expiry tests 6; a named elapsed time 6.
 // @retail 0x24cdd8
 void function_24cdd8(long player_index)
 {

@@ -1691,6 +1691,9 @@ void function_b7360(long object_index);
 // coherent scratch names 471; names with delay/end/both 482/483/482. Original conversion destinations,
 // case graph and actor-object observation restored.
 // Round 188: Coordinated state/location/both inline contracts 471 each; producer-local motion completion alone/with state/with location/with both 527 each; both with literal recording completion 527; isolated recording completion 471. State-inline forms lose 22 matched reduced controls. All declarations, result producers and full body restored.
+// Consistent first/second command references and actor-action observations, subsets 1-7,
+// 544/514/532/520/532/526/530; all before notification 509. All original observations and
+// complete body restored; pool/actor/output ownership and the forty-byte gap remain.
 // @retail 0x258cf0
 short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {

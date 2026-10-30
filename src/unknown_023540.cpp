@@ -3520,28 +3520,28 @@ failure:
 
 dword g_4b8424;
 void function_27aa0();
-// score 5 (was 5): opening projection remains x/y/z with direction x first.
-// Z/y/x with all/first/third k copy-then-multiply 101/101/101; buffer after projection 16;
-// input view after projection 16; early buffer with late input view 16; early dot declaration 16;
-// first k-i-j row 23; multi-use first-scale local 101.
-// score 5 (was 16): retail adds the dot product's terms z, y, x and loads the
-// position's x before the direction's; here x, y, z with the direction's x
-// first. Tried: the terms z, y, x 16 (the k products then copy the scale);
-// y, x, z 7; x, z, y 20; y, z, x 20; z, x, y 18; one expression in any order,
-// dot3f either way round or partial sums 105-106; n[] subscripts 16; scale
-// first in the products 16; vector3f_scale for the rows 101-105; position as
-// the first parameter (with the caller) gives retail's dot with z, y, x but
-// the j products then load the component first, 14 (654 bytes)
-// New trials at 5: zero-initialized buffer 160; cleared buffer 160;
-// cleared trailing triple 105; first/third/second row component loops
-// 242/242/242; coefficient loop 242; first reciprocal divided in place 104.
-// score 5 (was 5): Opening projection loads x before z. Last projection term
-// after reciprocal one/two/three 38/151/149; y and z after first reciprocal
-// 51; split projection 59; fourth reciprocal at use 140; third reciprocal at
-// use 136; fade clamped in its output slot 63.
-// opening projection loads remain x/y/z rather than z/y/x.
-// Six-by-four buffer 5; branched reciprocal 72; full buffer initializer 155;
-// direction/scalar/tail/third-row ordering 100/148/143/75; shared span carrier 144.
+// score 5 (was 5): retail adds the dot product's terms z, y, x, loading the position's component
+// first in each; here x, y, z, and the x term loads the direction's first in every order.
+// Tried: the terms z, y, x 16 (the k products then copy the scale); y, x, z 7; x, z, y 20;
+// y, z, x 20; z, x, y 18; one expression in any order, dot3f either way round or partial sums
+// 105-106; n[] subscripts 16; scale first in the products 16; vector3f_scale for the rows
+// 101-105; position as the first parameter (with the caller) gives retail's dot with z, y, x but
+// the j products then load the component first, 14 (654 bytes). Z/y/x with all/first/third k
+// copy-then-multiply 101/101/101; buffer after projection 16; input view after projection 16;
+// early buffer with late input view 16; early dot declaration 16; first k-i-j row 23; multi-use
+// first-scale local 101; zero-initialized buffer 160; cleared buffer 160; cleared trailing triple
+// 105; first/third/second row component loops 242/242/242; coefficient loop 242; first
+// reciprocal divided in place 104; last projection term after reciprocal one/two/three
+// 38/151/149; y and z after first reciprocal 51; split projection 59; fourth reciprocal at use
+// 140; third reciprocal at use 136; fade clamped in its output slot 63; six-by-four buffer 5;
+// branched reciprocal 72; full buffer initializer 155; direction/scalar/tail/third-row ordering
+// 100/148/143/75; shared span carrier 144.
+// Round 14 (exact LTCG harness, aligned counts, 4 = this body): a product's operand order in
+// the dot never follows the text; each k/j row product copies the scale when its dot term is
+// not the last one. Every term order as statements 4-18; z/y/x with the sum's local renamed
+// 8; separate spans 60-64; buffer/settings declarations moved 4-18 (no effect); no settings
+// local 60-64; [6][4] buffer, same; mixed statement/expression sums 6-66; the three
+// plane-offset sums with either operand first, no effect.
 // @retail 0x25a10
 void function_25a10(vector3f const *direction, point3f const *position, byte const *state)
 {

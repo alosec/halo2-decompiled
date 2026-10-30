@@ -496,6 +496,9 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
 // each and both with existing vector differences 297/297/297; complete incremental rows with
 // differences 296; complete shared dot/difference producers 351 (sum order differs, match-only).
 // All endpoints, qualifier, original rows and body restored.
+// Round 434: parent value captured in paired/actor/trace cases 395/384/330; paired-actor/
+// paired-trace/actor-trace 421/399/388; all cases 421, all with native radius snapshot 420.
+// Parent records grow the frame to 0x44/0x4c/0x50; original field observations and body restored.
 // @retail 0x26f3f0
 bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
     s_type_c3b527 const *entry, long actor_index, s_type_f17a25 *state,
