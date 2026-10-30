@@ -257,6 +257,9 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
 // Round 193: Existing masked-index domains word/short/dword 659/659/620; with Boolean slots 661/661/665;
 // word/short indices with short slots 661/661. Original accessor domains, all case bodies, inherited
 // qualifiers and matched sibling restored; state/player/unit residency remains.
+// Y423: All 32 cases return the completed result, ordinary player/child flags
+// and native long eligibility subsets 830/795/871/815/723/828/736/846 fast;
+// control 620. All shorten away from retail; complete original body restored.
 // @retail 0x1e7ab0
 bool function_1e7ab0(long local_index, long type)
 {

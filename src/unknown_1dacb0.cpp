@@ -1149,6 +1149,9 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // expansion ties but changes matched helper controls; all declarations and body restored.
 // Unsigned class key/set key/both/all four input-key domains 828 each; definitions
 // and shared declarations restored.
+// Round 425: Iterator graph field at every post-search graph use, with all eight
+// requested mode/class/type field subsets, 969/964/1008/1024/969/964/1008/1024.
+// Original graph/key owners, constructors, iterator outputs and requests restored.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

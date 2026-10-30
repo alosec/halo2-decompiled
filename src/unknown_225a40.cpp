@@ -107,6 +107,11 @@ static inline void sound_track_start_impulse(long index, long handle)
 // Member memcpy 16; entry value/reference 80/16; shared impulse input order 16;
 // short impulse index 45; index before parameter fill 17; short/unsigned loop index 57/16.
 // The scaled entry address still folds into the member load; the impulse pointer uses EDX.
+// index-first element sum 16; typed element helper 16; named entry pointer 16;
+// entry label at a byte offset 16; index-first sum written out 16; named base address 16.
+// Integer arithmetic for the entry sum, the sum with the index first, the label read
+// through an integer address, the label read in a helper and the impulse parameters in
+// a named pointer all give the same bytes; the permuter produced no candidate.
 // @retail 0x225ab0
 void function_225ab0(void)
 {

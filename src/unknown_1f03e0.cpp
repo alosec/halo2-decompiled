@@ -352,6 +352,9 @@ extern real g_47f05c;
 // Round 411: Double best-alignment storage with entry success/selection defaults and
 // immutable count in all eight subsets 259 each (890 bytes); frame remains 0xd0 and
 // the accumulator uses x87 work. Original float accumulator, defaults and count restored.
+// Round 297: Entry false-result/selection/best-alignment constants and all four
+// combinations 192 each; all three with uniform shape-height reads 204 (frame 0xd4,
+// 869 bytes). Original constant/result lifetimes, height snapshot and body restored.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)
@@ -513,6 +516,9 @@ PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f
 // DL179: Complete parallel projection products, paired first sums, normalization squares,
 // products+squares, sums+squares, joint products, joint products+squares and that graph
 // with the input-preserving first cross 146 each (991/977); original direct-output body restored.
+// Round 297: Existing staged cross at first/selected-zero/selected-other/first+zero/
+// first+other/both selected/all sites 144/182/144/182/144/218/218; all with
+// averaging-only support scope 218. Original helpers and direct-output body restored.
 // @retail 0x1f2a80
 void function_1f2a80(byte const *request, bool moving,
     vector3f const *desired, long const *indices, long count, vector3f *out, vector3f const *velocity)
@@ -899,6 +905,9 @@ struct s_flags_1f0870
 // 590/613/619/716; initial+history/fallback+history/all/all with direct output
 // 710/692/686/680. Initial copy reaches retail length without a score gain;
 // complete original body, copies, history publication and output receiver restored.
+// Round 297: Native flying/ground basis values, shared staged flying crosses and
+// their four combinations 646/642/591/666/646/631/666; all with the remaining
+// crosses staged 666. Original basis observations, helpers and full body restored.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {
@@ -1178,6 +1187,17 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // Round 177: Independent matrix-axis pointer/reference boundaries, all eight forms 71;
 // shared in-place final override/support/both additions 83/88/83. Override loads recover
 // but coefficient allocation worsens; original helper, alias copy and body restored.
+// Round 21 (lane 10): override add through the existing vector3f_add 83 (the add then loads the
+// position first, as retail, but the rotation sums rotate: VC reassociates by function context);
+// with vector3f_rotate_into_axes for both rotations 80 (first rotation's term order exact, second's
+// j/k rows still forward-first); its products matrix-first 80 (same code); plus the support add
+// through vector3f_add 70 (1039 bytes, in-place products, F.j/U.j residency swapped); both adds
+// through vector3f_add with the original helper 83. Original body restored.
+// Round 32 (lane 16): override add as `dst = src + dst` 50; through typed output-struct fields, both
+// operand orders 50/50; row i written forward + left + up 50 (same code); single grouped expressions
+// per row, (j-left + k-up) + i-forward then forward + left + up, 87. Diagnostics (not kept): without
+// the 0x1f0870 call the override add and second rotation take retail's order; with the call but
+// `current` not passed, the movaps copies go; an opaque or hollowed 0x1f0870 changes neither.
 // @retail 0x1f0450
 void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrier_contact const *contact)
 {

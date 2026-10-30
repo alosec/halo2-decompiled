@@ -351,59 +351,17 @@ struct s_join_screen_view
 extern long g_51ec08;
 extern long g_51ec0c;
 
+/* what joining a friend shows in place of the join */
+enum e_join_prompt
+{
+	_join_prompt_none,
+	_join_prompt_unavailable,	/* the OK dialog of 0x23982a (states 6 to 8) */
+	_join_prompt_squad_choice,	/* 0x239843 asks how to join */
+	_join_prompt_session_choice	/* 0x2398a0 asks how the session's squad comes along */
+};
+
 /* joins the friend's game (mode 1 to 4: how a squad already formed comes
    along) */
-// score 80 (was 80): frame 0x14 agrees; only the placement differs (aligned, 6 instructions): the
-// state 6-8 and mode-not-1 call blocks follow the mode-one branch, where retail emits them after the
-// mode-3 window block; the longer jumps make the body twelve bytes short. Our compiler places pending
-// call-and-leave blocks first when a straight-line run ends (compile-only probe), so retail's two
-// blocks were not such pending blocks there. Earlier join-mode widths and session-record forms
-// excluded. Tried: state ranges 125; cold range first 99; availability gate 126; common switch exits
-// 80; later join-type lifetime 155; timestamp workspace 80; gate/common exits 126; ranges/lifetime 137;
-// cold cases first 80; state nine first 80; entry join result 96; shared player gate 104; leave from
-// join result 123; positive title gate 101; zero-time initializer 80; query declarations first 80;
-// native/numeric mode switches 116/116; mode-one rejection first 81; leave/screen mode first 79/112;
-// screen-first mode switch 116; non-three state outcome first 95; invitation test outcome 103; leave
-// code written in both branches 104; return/break in every combination 80; in-session chain first 80
-// (same code); case locals at function scope 80; rejection as a final else-if 80 (same code);
-// explicit unsupported-state exit, actual squad predicate and both 80/80/80; leave action from
-// original inputs with neither/either/both boundaries 104 each at 479 bytes; precomputed complete
-// leave expression 147 at 495 bytes; inverted mode-one test 81; case 6-8 first 80; combined first
-// condition 80; in-session arm first with the squad arm as its else 80; `else` around the
-// mode-not-1 call 80 (compile-only, same order: default/case 5 arms, braces, an if-based state
-// dispatch, larger blocks).
-// only the placement differs (aligned, 6 instructions): the state 6-8 and
-// mode-not-1 call blocks follow the mode-one branch, where retail emits them after the mode-3
-// window block; the longer jumps make the body twelve bytes short. Earlier join-mode widths and
-// session-record forms excluded. State ranges 125; cold range first 99; availability gate 126;
-// common switch exits 80; later join-type lifetime 155; timestamp workspace 80; gate/common exits
-// 126; ranges/lifetime 137; cold cases first 80; state nine first 80; entry join result 96;
-// shared player gate 104; leave from join result 123; positive title gate 101; zero-time
-// initializer 80; query declarations first 80; native/numeric mode switches 116/116; mode-one
-// rejection first 81; leave/screen mode first 79/112; screen-first mode switch 116; non-three
-// state outcome first 95; invitation test outcome 103; leave code written in both branches 104;
-// return/break in every combination 80; in-session chain first 80 (same code); case locals at
-// function scope 80; rejection as a final else-if 80 (same code).
-// frame 0x14 agrees; cold dialog blocks precede the main join path, twelve bytes short.
-// Cold state/mode blocks precede the main join block; body remains twelve bytes short.
-// state ranges 125; cold range first 99; availability gate 126; common switch exits 80;
-// later join-type lifetime 155; timestamp workspace 80; gate/common exits 126; ranges/lifetime 137.
-// matching 0x14 frame; cold state/mode block placement still differs,
-// with twelve missing bytes. Earlier join-mode widths and session-record forms excluded;
-// tried cold cases first 80; state nine first 80; entry join result 96; shared player gate 104;
-// leave from join result 123; positive title gate 101; zero-time initializer 80;
-// query declarations first 80.
-// native/numeric mode switches 116/116; mode-one rejection first 81;
-// leave/screen mode first 79/112; screen-first mode switch 116; non-three state outcome first 95;
-// invitation test outcome 103. One-point leave-first gain rejected; body restored.
-// Explicit unsupported-state exit, actual squad predicate and both 80/80/80;
-// leave action from original inputs with neither/either/both boundaries 104 each at 479 bytes;
-// precomputed complete leave expression 147 at 495 bytes.
-// Round 93 (plain checks; --fast builds this one differently): leave code written in both mode arms
-// 104 (479 bytes, merged into the mode-one arm); explicit else around the mode-not-one call 80;
-// squad test merged into the first condition 80; join part after the switch with cases 6-8 and
-// default returning 80 (same layout); the last two mode arms swapped (mode != 3 first) 78 (wrong
-// arm order, aligned worse).
 // @retail 0x2395dc
 void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, long mode)
 {
@@ -413,6 +371,7 @@ void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, l
 	long state = function_0592d0();
 	bool in_this_title = online_friend_is_in_this_title(friend_);
 	long join_type = 1;
+	e_join_prompt prompt = _join_prompt_none;
 
 	if (!(flags & 1))
 	{
@@ -427,7 +386,6 @@ void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, l
 	case 3:
 	case 4:
 	case 9:
-	{
 		if (!in_session && mode != 4)
 		{
 			if (players > 1)
@@ -437,8 +395,7 @@ void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, l
 					join_type = 2;
 					goto leave;
 				}
-				function_239843(controller_index);
-				return;
+				prompt = _join_prompt_squad_choice;
 			}
 		}
 		else if (players > 1)
@@ -464,63 +421,78 @@ void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, l
 			}
 			else
 			{
-				function_2398a0(controller_index);
-				return;
+				prompt = _join_prompt_session_choice;
 			}
-		}
-
-		bool join_pending = ((s_online_selection *)&g_54d598.settings)->join_pending;
-
-		if (flags & 0xc0)
-		{
-			online_friends_answer_game_invite(controller_index, friend_, 0);
-		}
-		if (!in_this_title)
-		{
-			if (join_pending)
-			{
-				((s_online_selection *)&g_54d598.settings)->join_pending = false;
-				XOnlineFriendsJoinGame(controller_index, friend_);
-			}
-			function_2397b9(controller_index);
-			return;
-		}
-
-		FILETIME none;
-		bool invited;
-
-		memset(&none, 0, sizeof(none));
-		invited = memcmp(&friend_->gameinviteTime, &none, sizeof(none)) != 0;
-		function_148523();
-		if (state == 3)
-		{
-			g_54d598.pending_join_type = join_type;
-			if (in_session && join_type == 3)
-			{
-				function_19a1bd();
-			}
-			else
-			{
-				g_4ee4e0 = true;
-				function_199e2e(true);
-			}
-		}
-		else
-		{
-			if (!network_session_interface_has_user(&friend_->xuid))
-			{
-				g_51ec08 = 0;
-				g_51ec0c = 0;
-			}
-			function_199c94(friend_, controller_index, invited);
 		}
 		break;
-	}
 	case 6:
 	case 7:
 	case 8:
-		function_23982a(controller_index);
+		prompt = _join_prompt_unavailable;
 		break;
+	default:
+		return;
+	}
+	if (prompt == _join_prompt_unavailable)
+	{
+		function_23982a(controller_index);
+		return;
+	}
+	if (prompt == _join_prompt_squad_choice)
+	{
+		function_239843(controller_index);
+		return;
+	}
+	if (prompt == _join_prompt_session_choice)
+	{
+		function_2398a0(controller_index);
+		return;
+	}
+
+	bool join_pending = ((s_online_selection *)&g_54d598.settings)->join_pending;
+
+	if (flags & 0xc0)
+	{
+		online_friends_answer_game_invite(controller_index, friend_, 0);
+	}
+	if (!in_this_title)
+	{
+		if (join_pending)
+		{
+			((s_online_selection *)&g_54d598.settings)->join_pending = false;
+			XOnlineFriendsJoinGame(controller_index, friend_);
+		}
+		function_2397b9(controller_index);
+		return;
+	}
+
+	FILETIME none;
+	bool invited;
+
+	memset(&none, 0, sizeof(none));
+	invited = memcmp(&friend_->gameinviteTime, &none, sizeof(none)) != 0;
+	function_148523();
+	if (state == 3)
+	{
+		g_54d598.pending_join_type = join_type;
+		if (in_session && join_type == 3)
+		{
+			function_19a1bd();
+		}
+		else
+		{
+			g_4ee4e0 = true;
+			function_199e2e(true);
+		}
+	}
+	else
+	{
+		if (!network_session_interface_has_user(&friend_->xuid))
+		{
+			g_51ec08 = 0;
+			g_51ec0c = 0;
+		}
+		function_199c94(friend_, controller_index, invited);
 	}
 }
 /* joins the selected friend's game through Live */
@@ -951,6 +923,10 @@ bool __stdcall function_2399da(long controller_index)
 // Round 413: selected-identity producer reversed cases 90; if returns/definite result arms
 // 180/180 (frame 0xefc); direct case returns 156. Forceinline forms repeat 90/180/180/156.
 // All six return-form variants lose a matched peer; original shared producer restored.
+// Round 77: late selection getter 166; post-membership selected pointer 90; member/controller/team 16
+// (remove callee 13, matched peers 4); member/team/controller 16 likewise; controller/member/team 17
+// (remove callee 12); team/controller/member and team/member/controller 91 each (remove callee 2,
+// matched peers 3); read-only rank 90. Original body and every removal declaration/call restored.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

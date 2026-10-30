@@ -776,66 +776,49 @@ bool network_session_get_membership(c_class_58d20 *session, long *value4c, long 
 }
 
 
-struct s_64310
-{
-	long field_0;
-	long field_4;
-	dword field_8;
-	s_session_member *field_c;
-	s_network_session_player *field_10;
-};
-
-// score 43 (was 43), as 0x643f0: retail keeps the player mask in ebp and the
-// address of the players array in edi (lea edi, [eax + 0x1120]), then reads a
-// player's member index through it; ours folds the array into the load
-// ([ecx + eax + 0x112c]), needs no ebp and is 6 bytes shorter. Plain locals,
-// the struct's fields in another order or layout, const references to the
-// players or members pointer, an inline function filling the struct and a
-// player pointer score 43 to 53; the 600 s permutation run found no match.
+/* passes the member record of a player's machine to 0x5aba0, when the
+   session's current member is its value50 member */
 // @retail 0x64310
 bool network_session_interface_kick_player(long player_index)
 {
-	volatile bool result = false;
-	c_class_58d20 *session = network_session_get_live();
-	if (session)
+	bool result = false;
+	c_class_58d20 *session;
+	long host_member_index;
+	long value50;
+	s_session_member *members;
+	dword player_mask;
+	s_network_session_player *players;
+	if (network_session_get_current_if_valid(&session) &&
+		network_session_get_membership(session, NULL, &host_member_index, NULL, &value50, NULL, &members, NULL, &player_mask, &players) &&
+		host_member_index == value50 && (player_mask & (1 << player_index)))
 	{
-		s_64310 local_0;
-		local_0.field_0 = session->current_member;
-		local_0.field_4 = session->value50;
-		local_0.field_8 = session->player_mask;
-		local_0.field_c = session->members;
-		local_0.field_10 = session->players;
-		if (local_0.field_0 == local_0.field_4 && (local_0.field_8 & (1 << player_index)))
-		{
-			long member_index = local_0.field_10[player_index].member_index;
-			if (member_index != local_0.field_0 && network_session_delegate_leader(session, (const s_session_member_identity *)local_0.field_c[member_index].words))
-				result = true;
-		}
+		s_network_session_player const &player = players[player_index];
+		if (player.member_index != host_member_index &&
+			network_session_delegate_leader(session, (const s_session_member_identity *)members[player.member_index].words))
+			result = true;
 	}
 	return result;
 }
 
-// score 43 (was 43): the same as 0x64310 above, which differs only in the
-// function it calls.
+/* the same, through 0x5acc0 */
 // @retail 0x643f0
 bool network_session_interface_ban_player(long player_index)
 {
-	volatile bool result = false;
-	c_class_58d20 *session = network_session_get_live();
-	if (session)
+	bool result = false;
+	c_class_58d20 *session;
+	long host_member_index;
+	long value50;
+	s_session_member *members;
+	dword player_mask;
+	s_network_session_player *players;
+	if (network_session_get_current_if_valid(&session) &&
+		network_session_get_membership(session, NULL, &host_member_index, NULL, &value50, NULL, &members, NULL, &player_mask, &players) &&
+		host_member_index == value50 && (player_mask & (1 << player_index)))
 	{
-		s_64310 local_0;
-		local_0.field_0 = session->current_member;
-		local_0.field_4 = session->value50;
-		local_0.field_8 = session->player_mask;
-		local_0.field_c = session->members;
-		local_0.field_10 = session->players;
-		if (local_0.field_0 == local_0.field_4 && (local_0.field_8 & (1 << player_index)))
-		{
-			long member_index = local_0.field_10[player_index].member_index;
-			if (member_index != local_0.field_0 && network_session_boot_machine(session, (const s_session_member_identity *)local_0.field_c[member_index].words))
-				result = true;
-		}
+		s_network_session_player const &player = players[player_index];
+		if (player.member_index != host_member_index &&
+			network_session_boot_machine(session, (const s_session_member_identity *)members[player.member_index].words))
+			result = true;
 	}
 	return result;
 }
@@ -1144,6 +1127,14 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // lost); times declared first 67; mask update as `x = x | bit` 67; loop index
 // declared before the loop 67; `count != 0` 67.
 // Round 198: guarded-result graphs at the existing channel/observer/member QoS helpers, seven
+// combinations 67 each; all three with late host read 86. Round 20: the observer through the existing
+// getter with the host arm updating the mask itself gives retail's registers and frame only while at
+// most one counter is set before the getter; count first 100, observer first with if/else arms 99,
+// count first with if/else arms 100, times first 99, host read right after the getter 99 (334 bytes
+// each: the extremes' stores sink past the memset, the member check reuses the loop's member_count
+// load, the cursor takes esi and the loop head is padded). Screened (one-file LTCG harness): the
+// member count read through another address expression or with the output cleared first, the QoS
+// helper's four parameters in every order, clamp/min-max/mask/tail spellings: no change.
 // combinations 67 each; all three with late host read 86.
 // Round 29: the observer through the existing observer getter gives retail's allocation
 // once the host is read after it and the mask is also written in a host arm (frame 0x78,
@@ -1363,6 +1354,9 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 // copy alone/with collection/update/both 180/180/180/180, bounded short count 226. On that cache
 // graph, promoted team/direct current/direct cache observation subsets 183/237/240/180/183/216/220,
 // all with short count 220. Four-point form rejected; original full body restored at 184.
+// Round 219: Finite membership exhaustion with long/dword/short/word count, right shifts
+// 249/249/240/240 and ordinal-bit removal 262/262/245/245. All restored; owner/count/zero
+// allocation and requested-record induction remain.
 // @retail 0x65cb0
 void network_session_interface_update_player_properties(c_class_58d20 *session)
 {
@@ -1950,6 +1944,10 @@ struct s_summary_player_sort_entry
  byte properties[0x90];
 };
 
+// score 339 (was 339): Frame 0xa9c versus 0xaa8; type/membership/member-index homes and saved registers differ.
+// Round 216: complete state-field observations 378; with native membership/player/selected-member
+// references 378/378/377; membership-player/membership-member/player-member 378/377/377;
+// all three 377. Frame remains 0xa9c. Original complete body and external type declarations restored.
 // @retail 0x64d70
 bool __stdcall function_64d70(s_session_browser_summary *output)
 {

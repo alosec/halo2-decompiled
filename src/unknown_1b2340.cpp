@@ -154,6 +154,8 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // Bounded distance in the actual trace result: native field alone 144; native category 190; entry trace
 // lifetime 144/190; shared squared length 144/190; both lifetime and shared length 144/190. Original body
 // restored.
+// Round 423: returned probe/failure/both points 195/159/199; each with native category
+// 220/197/225; probe return/cluster arms 195; both returns/category/cluster arms 225. Restored.
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {

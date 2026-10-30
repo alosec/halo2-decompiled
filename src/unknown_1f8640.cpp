@@ -368,6 +368,7 @@ struct s_1f8a70_actor
 	s_1f8a70_frame frame;
 };
 // score 228 (was 228): frame 0x84 versus retail 0x80; pool/data entry schedule and unit-output/route/result homes differ.
+// frame 0x84 versus 0x80; pool/data entry schedule, early false and unit-output/route/result homes differ.
 
 // Earlier: frame 0x80 agrees; pool/data staging and returned-unit-output/route/result homes differ.
 // Earlier 399 (was 399): Frame 0x80 agrees; pool/data schedule, protected unit-mode boundary and result/route homes remain.
@@ -459,6 +460,9 @@ struct s_1f8a70_actor
 // Round 193: Current dword-selector graph: output/selector/result role names, seven subsets 228 each; all
 // with unit phase scope 228. Signed long 411, returned mode output 412; three-choice enum 411/412, scoped
 // enum 411/412. Original unsigned dword, mode consumer and all homes restored.
+// Round 215: native route short/word/signed-byte/byte on the dword-selector graph 420/366/416/336;
+// each with returned unit-output consumption 416/371/422/350. Original dword selector and mode
+// consumer restored; current frame 0x84/0x80, pool/data schedule and unit/result homes remain.
 // @retail 0x1f8a70
 bool __stdcall function_1f8a70(long actor_index, long unknown)
 {

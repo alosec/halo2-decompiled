@@ -212,6 +212,9 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 // Round 415: existing hoisted-bound first/second pool scans and shared salted-index
 // producer, seven subsets 886/886/886/924/924/924/924; all with forced datum getter 924.
 // Original scanners, identifier expressions, getter and complete body restored.
+// Round 424: positive uniqueness bool/byte/short/long decisions 886 each;
+// each with default-first detail completion 884 (two-point gain rejected).
+// Original duplicate result, detail expression and complete body restored.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)
@@ -547,6 +550,8 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 // Round 205: updater/angle/environment-consumer inline versus noinline
 // declarations, all eight coordinated combinations 223. Every provider
 // and caller declaration restored; frame and BSP/camera/duration homes remain.
+// Round 425: Three native missing-tail library fills in six orders, then a shared
+// signed/unsigned byte extent, 284 each. Original merged fill loop and body restored.
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)
 {
