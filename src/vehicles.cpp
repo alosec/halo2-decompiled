@@ -1021,7 +1021,7 @@ struct s_type_1e6529
 bool function_f1320(long vehicle_index);
 void __stdcall function_1d24a0(s_havok_component *component, float position);
 void function_1d2460(s_havok_component *component);
-bool function_205510(void *buffer, void const *definition_physics, s_havok_component *component);
+bool function_205510(s_havok_component *component, void const *definition_physics, void *buffer);
 transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 void function_1cfb90(s_havok_component *component, transform4x3f const *matrix, void const *buffer);
 bool __stdcall function_f6670(long vehicle_index, bool update);
@@ -1105,7 +1105,7 @@ bool __stdcall function_efde0(long vehicle_index)
 					s_havok_component *component = havok_component_get(vehicle->havok_component_index);
 					byte buffer[0x28];
 
-					if (function_205510(buffer, definition + 0x2ac, component))
+					if (function_205510(component, definition + 0x2ac, buffer))
 					{
 						transform4x3f matrix;
 
