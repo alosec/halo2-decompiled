@@ -341,6 +341,12 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // score 10 (was 10): frame 0xb4 and length 1516 agree. The back-edge parameter reloads (ours first,
 // next, definition; retail definition, next, first) and the maximum-speed branch's squared length
 // differ (ours the vector normalizer's k,i,j statements; retail (i+j)+k with k in the lower register).
+// Round 125 (lane 4): a cache.values pointer local 10; properties read through the definition at
+// each use 297; the vector normalizer's sum as one expression 34; the velocity normalizer in both
+// branches with k read first and (i+j)+k 34; the first input mask read before the cache setup 38. A
+// one-link LTCG harness (exact for 0x2b98b0/0x2b9750) finds no body of the vector, direction or
+// velocity normalizer that gives this branch's (i+j)+k and keeps 0x2b98b0 and 0x2b9750: the k-first
+// i,j,k statement form needs a normalizer of its own.
 // Round 7 (lane 14): the minimum-speed normalization folds retail's j/k loads only when the maximum
 // branch sums its squared length in statements; maximum branch through the vector normalizer and the
 // minimum branch's normalize split from its scale 10 (kept); maximum branch alone 52; the direction
