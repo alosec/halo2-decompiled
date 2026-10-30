@@ -245,6 +245,11 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // 105, one six-term sum 95, squares grouped t * (t * k) 86; the arrays in one local struct 88;
 // peaks filled by a chained assignment 114 (both peaks one register, no frame). The preloads keep
 // four coefficients in xmm4-7 in every form; retail spills the peaks and the acceleration.
+// Round 85 (compile-only screens reproduce this function's float code; the written-order `+=` chain
+// gives retail's add order and shared clamp tail, but all 720 `+=` orders, all 720 fill orders and the
+// 2x3/3x2 arrays keep one coefficient spilled, retail three; fills after the clamps spill none):
+// `+=` chain cc2, c2, aa0, a0, bb1, b1 50; written-order `+=` chain 55, with the 2x3 array 54, with
+// PIN clamps 90, with both 88.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

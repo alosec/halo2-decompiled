@@ -124,6 +124,9 @@ void c_animation_channel::clear()
 // Round 83: retail order 42 (callers lose); unknown0e stored right after unknown0d 42 (stored at
 // once, ECX free for the id copy); the two NONE id words as one chained assignment, retail
 // order/current 41/36; the two zero words chained 38.
+// Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
+// lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
+// frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)
@@ -705,6 +708,12 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // Round 408: dispatcher inline/noinline/both declarations 97 each; those with
 // direct callback transport 125 each; inline/both with early state clear 116 each.
 // Original dispatcher contract, state writes and callback transport restored.
+// Round 85 (retail loads the callback into EBX at the first dispatch, reuses it at the second and
+// reloads it at the third; the second-dispatch reload is our 4 extra bytes): callback read directly at
+// all three dispatches 133 (loaded into EBX at entry, graph spilled); plain read at the first dispatch
+// 133; channel read directly for the byte clear 97, also for the first flags 97 (same code); the
+// volatile read moved to the second dispatch 97 (same code); volatile read at the third dispatch only
+// 141 (callback in EBX from entry, frame 0x10).
 // @retail 0x1c66a0
 void __stdcall c_animation_channel_advance(c_animation_channel *channel, real frame, s_animation_state *state,
 	animation_event_callback callback, long user)
