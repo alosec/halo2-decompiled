@@ -929,6 +929,9 @@ void function_1d1540(s_havok_component *component);
 // the whole body inside a force-inline helper (diagnostic) 88. The same 88 result without 0x1d5120
 // in the image; a /Gd compile loads the component once into EBX. Matched 0x1c59a0, 0x1cbf50 and
 // 0x136860 take EBX arguments with self-aligned frames, so the alignment alone is not the cause.
+// Round 431: Library transform copies with original/fixed-first body receiver: memcpy and memmove, then
+// both with the inverse reserved at entry: 81/85/77/76/81/85/77/76. The 76 forms are five-point gains
+// only; both 77 forms lose matched 0x1d1b60 at 60. Original executable body restored.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
