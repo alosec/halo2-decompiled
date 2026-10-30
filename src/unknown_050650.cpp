@@ -1104,6 +1104,8 @@ struct s_actor_looking_structure_view
 /* Name inferred from the path traces and the idle-direction caller. */
 // score 23 (was 68): only rank-driven operand orders remain: the rotation dot (retail j,i,k with axis j
 // loaded before the copy), the axis-j-first cross product and the score sum (retail i,k,j).
+// counter homes, candidate cursor and expanded rotation scheduling differ.
+// entry result order now agrees; loop homes, rotation scalar scheduling and return tail remain.
 // Result first 139; existing angular wrapper 468; vector producer 261; both 466;
 // native header/body induction with those producers 137/468/266/466.
 // Separate forced angular declaration 78/265/85/270; earlier cursor step 88;
@@ -1133,6 +1135,10 @@ struct s_actor_looking_structure_view
 // i,k,j/i,j,k/k,i,j 25 and j,i,k/j,k,i/k,j,i 23 (kept j,k,i, as the test below), statements 143,
 // i+(k+j) 126; named sine/cosine = wrapper; helper parameter order, written operand orders and
 // dot term order 23 each; dot3f in the helper 144; cross3f 58.
+// Round 204: Rotation projection/cross producers: shared cross/staged cross 156/156; shared projection
+// alone/with cross/with staged cross 142/149/149; same-order staged projection alone/with cross/with staged
+// cross 139/82/82. Counter/cursor homes and scalar schedule remain; original helper, include set and body
+// restored.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {
@@ -1290,6 +1296,9 @@ struct s_actor_looking_turn_request
 // DH round 239: Native marker/movement/turn-request record-name subsets 506 each;
 // all three with the uninitialized marker workspace at entry also 506. Original
 // names, workspace scope and whole body restored; frame 0xd0/0xc8 remains.
+// DH round 252: One sequential aiming/looking validity result, native long/short/byte/bool
+// with long idle, then each with short idle
+// 506/549/522/522/540/547/524/524. Original complete executable body restored.
 // @retail 0x298370
 void function_298370(long actor_index)
 {
