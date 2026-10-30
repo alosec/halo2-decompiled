@@ -105,6 +105,13 @@ struct c_aggregate : c_child
 // started from starts[i] with only the end named 45 (same code); an item pointer in the cleanup loop 45;
 // one child cursor at function scope walked by the collection and dispatch loops 56; the error test
 // before the child test 50.
+// Round 48: under LTCG no form lets the address-taken `produced` share a slot (an LTCG mini-link
+// keeps it apart in every variant; dropping `&result` alone gives 0x8020 with produced still apart),
+// where a /GL- build packs it with the loop-2 cursor and loop-3 count as retail does. Diagnostic, at
+// once reverted: the file built /GL- gives this function 20 but costs 0x97f60, 0x97fe0 and 0x980d0
+// their matches, so it needs a non-LTCG object of its own. Child cursor walked in loop 1 45; children
+// read without the pointer cast 45; source pointer copied first 45; get_info output at function
+// scope 45; produced declared at loop scope 143.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {

@@ -84,6 +84,10 @@ PRIVATE inline long swizzle_log2(dword value)
 // Original coordinate captures, helper, table expressions and tail restored.
 // Round 211: existing logarithm signed short/long inputs crossed with bounded short/long counts
 // and short/long results, scores 82/82/82/82/82/82/82/82. Original executable form restored.
+// Round 48: `!=` in both tail tests 84; outputs stored y first 83; `!=` tests with log2_floor's loop
+// 87; `mask < 64` 82 (same code); y looked up before x in both arms 83. Diagnostic only: in a /O2 /Gr
+// object (no /arch:SSE) the minimum becomes retail's branch, yet the coordinate promotion and the
+// tail's register roles still differ; x and y used directly put y on the stack (ret 0xc).
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

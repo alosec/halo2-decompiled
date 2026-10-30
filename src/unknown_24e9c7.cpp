@@ -159,6 +159,11 @@ struct s_24e9c7_bounds
 // Round 313: Shared real half-width, with direct/named full pixel width: current basis 125/125, early
 // upper 123/123, deferred basis 129/129, both lifetimes 128/128. Two-count gain rejected; original
 // geometry and body restored; early spill and scalar homes remain.
+// Round 48: VC rewrites `size * -forward_j` as `-(forward_j * size)` and sinks it (ours); `0.0f -
+// forward_j` or a negated-component local keeps retail's early `size * (0 - forward_j)`, yet the
+// pair's home stays below result: across built in the side vector and scaled in place by the half
+// width, with `0.0f -` 139; with unary minus 144; `0.0f -` alone (a listed form, as a base) 138;
+// negated-component locals scaled by size 138; scale read before size with `0.0f -` 137.
 // @retail 0x24e9c7
 real function_24e9c7(s_24e9c7_marker const *marker, s_24e9c7_placement const *placement)
 {

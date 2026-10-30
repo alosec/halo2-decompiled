@@ -1164,6 +1164,10 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // Round 421: signed-byte routing/pair/quad truth carriers, all seven nonempty subsets
 // 137 each; all three as signed short 144/404. Original Boolean carriers, real-bin
 // loops, gains and body restored. Source/bin homes and runtime zero remain.
+// Round 48 (lane 12): MATCH (full check) as its own /O2 /Op /arch:SSE /Gr file with the zero gain as
+// `long gain = 0` passed as *(real *)&gain and a speaker-mode switch whose mode-0 case holds a dead
+// `remaining = 0;` (needed for retail's four-entry jump table; an empty case 0 drops the table, `gain = 0` 91).
+// Held: the dead store is not kept even with a match, and a new /Op file is a build-flag decision.
 // @retail 0x2afb80
 void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rear, long mode, s_mixbin_settings *mixbins)
 {

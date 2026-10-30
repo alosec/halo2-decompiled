@@ -231,6 +231,10 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // reverse order 140; `distance2d(...) < 2.0f` 138; target index stored before the point copy 138;
 // point declared before the target 138; sums written collision point first 138; object lookup
 // after the point 148.
+// Round 48: the stamp's time read into a local first 135 (fixes the 0x110ab0 push register but
+// moves the flag store after the time load; a one-use field copy, not kept); with the full 0x5c
+// output 132; action declared before the unit test 143; time local after the flag store 143; named
+// unit-test result 143; position declared first 143; state declared after the lookups 143.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {
