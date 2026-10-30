@@ -545,6 +545,9 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // conditional, 163/247/153/246/281/281/147/241. All exact-only; no match. Original query
 // observation, rotation helper, input copies, inherited local qualifier and complete body restored.
 // Round 255: unsigned-word ring with short/word/byte/char spokes 117/117/246/246; signed-byte ring with short/word/byte/char spokes 130/130/247/247. All restored; x87 ring conversion and rotation spill remain.
+// Round 200: output-pointer rotation with four formal priorities 90/90/90/90;
+// with native phase before distance 143/143/143/143 (frame 0xdc). Original void helper,
+// input copies and complete body restored; output-result lifetime does not resolve the spill.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
