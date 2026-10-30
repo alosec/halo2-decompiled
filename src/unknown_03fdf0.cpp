@@ -4,11 +4,70 @@
 /* UNKNOWN_03FDF0.CPP: cached light geometry and material pass dispatch */
 
 #include "unknown_11c920.h"
+#include "visibility_storage.h"
+#include "view_context_storage.h"
 #include "globals.h"
 #include "index_cache_storage.h"
 #include "unknown_0494b0.h"
 #include <string.h>
 #include <xtl.h>
+
+struct s_planar_camera_source;
+struct s_planar_camera;
+struct s_timed_effect_globals;
+void function_3d600(void);
+void function_441b0(s_planar_camera_source const *source, s_planar_camera *state, byte const *view);
+s_timed_effect_globals *function_01fd20(s_timed_effect_globals *result);
+s_bit_vector_pool *function_1320f0(long mode, long pass, bool enabled, long extra,
+	byte const *camera, byte const *plane, real distance, void *filter, real offset, long identifier);
+void __stdcall function_2cbc0(bool enabled);
+void function_44720(void);
+
+// @retail 0x3f2c0
+void function_3f2c0(s_planar_camera_source const *source, byte const *view, long object_index, long identifier)
+{
+	long const *identifier_reference = &identifier;
+	long identifier_value = *identifier_reference;
+	(void)identifier_value;
+	byte camera[0x1bc]; // a whole s_planar_camera: function_441b0 fills 0x1bc bytes
+	real offset = 0.0f;
+	function_441b0(source, (s_planar_camera *)camera, view);
+	byte *effect = (byte *)function_01fd20(0);
+	bool enabled = effect && effect[0x3c];
+	if (enabled)
+	{
+		offset = *(real *)(effect + 0x40) - *(real *)(camera + 0x70);
+	}
+	function_3d600();
+	s_bit_vector_pool *data = function_1320f0(0, 1, enabled, 0, camera,
+		camera + 0x60, 1024.0f, NULL, offset, g_4b9ee4);
+	if (object_index != NONE)
+	{
+		struct s_entry_list_view
+		{
+			long maximum;
+			word count;
+			short *shorts_b;
+			long *longs_a;
+			long *longs_c;
+			short *shorts_d;
+		};
+		s_entry_list_view *list = (s_entry_list_view *)data->lists[2];
+		bool found = false;
+		for (long i = 0; i < (short)list->count && !found; ++i)
+			found = list->longs_a[(short)i] == object_index;
+		if (!found && list->count < list->maximum - 1)
+		{
+			list->longs_a[list->count] = object_index;
+			list->shorts_b[list->count] = 0;
+			list->longs_c[list->count] = 0;
+			list->shorts_d[list->count] = NONE;
+			++list->count;
+		}
+	}
+	function_2cbc0(true);
+	function_44720();
+}
 
 struct s_record_source;
 struct s_cache_record;
