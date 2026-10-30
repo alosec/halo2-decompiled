@@ -139,6 +139,11 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 // Round 218: Complete speaker library copy with seven native voice-output entry-scope subsets, then
 // all three role names, 529 each (reduced control 532, full 545). Three-count reductions rejected;
 // all native output scopes, copy and body restored.
+// Round 197: Complete computed real gain/routing/pitch subexpressions, masks 1..7,
+// 542/547/554/545/542/547/554; all with native gain value 554.
+// Native send word stores/tests, stores, stores/tests with routing, tests on gain graph
+// 545/538/562/550; complete library speaker copy with store-only/both views, then native
+// gain values, 566/557/566/557. Three- and seven-point gains rejected; original body restored.
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)

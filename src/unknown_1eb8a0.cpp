@@ -104,6 +104,10 @@ PRIVATE __forceinline void rotate_direction(vector3f *vector, const vector3f *ax
 // its own home beside the x87 transfer slot, and the sum still runs i,k,j); scalar cross terms alone
 // 148 (same frame); k-j-i sum alone 149 (1005 bytes); axis by value 177; the rotation written out in
 // the body with named sine/cosine 189; named sine/cosine with the scalar cross terms 189.
+// Round 83: angle-taking helper 120; that boundary with scalar cross/k-j-i projection 148;
+// complement before/after projection on the scalar-cross graph 148/148; vector/axis formal swap
+// there 148; axis component snapshots 120; staged shared cross 120; separate input/output helper
+// with an input copy 313. Original helper and body restored.
 // @retail 0x1ecf50
 void function_1ecf50(vector3f *forward, vector3f *up, s_direction_rotation_input *input)
 {

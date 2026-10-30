@@ -350,6 +350,10 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // cursors 207; for loop over the parallel items/b arrays with the direct call 207; helper taking
 // the cursors by const reference 207; the volatile read on the data cursor only 207, on the items
 // cursor only 210; cursors grouped in a local struct (diagnostic) 210.
+// Round 40: index loop with items[i], b[i], &data.v[i * 4] passed straight to 0x991d0 207 (data
+// cursor and counter in memory as retail, but the items cursor takes EDI and the handle spills);
+// through the helper 208; handle/index renamed three ways 207; handle/index declared in each
+// case block 166 (with the index loop 189).
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {
