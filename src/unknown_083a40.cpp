@@ -564,6 +564,10 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // collection hoisted out of the loop 277, swap update through a local or an
 // index 32, `updates + ++*count - 1` 32, occupant key through
 // watcher->players 294, through player 291, `(collection->players + i)` 32.
+// The session player's configuration as a real member at 0xa8 32 (same code); the mask test
+// wrapping the body instead of `continue` 32 (same code); `configuration` reused for the last copy
+// 113; one function-scope player pointer for both loops 32 (same code); `&watcher->players` written
+// at each use instead of `collection` 294.
 // J185: signed-word first/second/conflict ordinal subsets 291/257/292/179/281/288/313;
 // byte conflict ordinal 196. Native narrow counters grow the body; original counters, source observations,
 // exact key/copy expressions, call roles and all helper declarations restored.

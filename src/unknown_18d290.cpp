@@ -149,6 +149,9 @@ bool function_14ddc0(long local_player_index);
 // inline unit getter 89. Round 5: `exists && split` order 44; unit read as `exists ? ... : NONE`
 // under `if (split)` 44; object read through its own address at the second call 44; split as one
 // `exists && ...` expression 52 (188 bytes); split declared before exists 44.
+// Round 113: `exists && split` 44; split declared first 44; shared local_player_exists 44; it
+// twice with a split flag 96 (retail's BL re-test, split materialised); split test plus a
+// local_player_exists unit ternary 89. All restored.
 // @retail 0x18d4f0
 void function_18d4f0(long object_index, char *audible, long *local_player_index)
 {

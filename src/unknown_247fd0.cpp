@@ -159,6 +159,10 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // random returns, both, combined initial flags, flags/type and flags/direct draws
 // 70 each; declared type with retail timestamp order 133, with all three forms 133.
 // All restored; timestamp/sample order and later scratch registers remain.
+// Round 113: named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; field_10
+// first alone 133 (aligned 19 against 39: only the split compare and the child-loop registers differ);
+// field_10 first with the compare as a bool local 133 (still split); compare operands swapped 71;
+// count increment before the timestamp store 71. All restored.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)

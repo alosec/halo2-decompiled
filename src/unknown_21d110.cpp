@@ -757,6 +757,11 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // state 151; word flags/char state 162; byte flags/long state 193; byte flags/char state 195;
 // dword flags/short state 152; complete native looping snapshot 226. Original executable body
 // restored.
+// before alternate in the looping arm 67; the group switch as if/else-if 114; renaming either
+// local 67 (no slot moves: names do not order this frame); the two declared the other way round
+// 67; both initialised 92 (repeat_state reaches retail's slot, the bool stays a byte); the entry
+// flags read at each use 78. Screened (one-file LTCG): declared at the top, the definition or tag
+// index declared earlier, the definition read at each use: the bool stays at the bottom.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {
