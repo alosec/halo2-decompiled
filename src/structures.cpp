@@ -171,7 +171,38 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
-// score 61 (was 68): retail keeps an exclusion flag in BL (`mov bl, 1` on the scenery arm, `xor bl,
+// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL: `mov bl, 1;
+// jmp` in the scenery arm, `xor bl, bl` before 0xbf9a0 and `test bl, bl` again after it, so
+// &triangle->c takes EDI and the collision lives in its parameter slot: stored after the requery,
+// reloaded after 0xbf9a0); the byte result is converted with setne. Retail 0x14af40 has the
+// identical idiom. Tried: read-only object 68; unsigned object handle 68; word query buffer 68;
+// native collision record 71; external triangle reference 68; source publication 68; byte result
+// merge 68; query workspace names 68; native record retested with byte result storage; model
+// inline/noinline 68/68; state inline 68; both contracts 68; probe result 68; model result 68;
+// final found result 111; triangle inline 68; the collision re-read from the parameter at the join
+// 68 (with a block-local flag 68); the flag as one && expression tested twice, with returns 68; the
+// same with an else-if tail and a final else for the no-object case 71 (286 bytes); assigned with
+// the && expression, tests unchanged 68; an inline helper for the scenery test stays out of line
+// and is threaded 113/111; a switch on the object type with the scenery case falling into the
+// general case 68, or the flag set in a one-case switch 68; the flag from the && expression with
+// the model query nested under `if (!excluded)` 68; the requery in an inline helper that updates
+// the collision through its address 90; found cleared in the scenery arm with no flag 68; bool
+// result 78 (262 bytes: setne gone); the flag set in both arms with `if (excluded) goto done;` 68,
+// and with a bool result 78; a pointer parameter passed by address to an inline probe helper 134;
+// the by-value source passed by address to that helper 86/76; multi-consumer object policy,
+// short/long and bool/byte found in object scope 117/117/116/116, at function scope 68/68/61/61
+// (long policy reaches 286 bytes); `excluded = function_10a0b0(...) != 2` inside the type test
+// with `if (excluded) goto done` or `if (!excluded)` guards 54/54 (286 bytes, setne and the
+// threaded exit stay; a flag set inside a test, not kept); the object part in an inline helper
+// returning `!excluded` 106 (keeps the flag in BL and the join test, adds a sete); the final test
+// nested in the requery arm 77; `return function_14a8e0(...)` with an && flag 77 (263 bytes); a
+// named `instance` bool from `!excluded && 0xbf9a0` 68; the exclusion clearing found with a
+// found-only final test 68; the flag in two steps (type test, then `!= 2`) 92 (298 bytes: keeps
+// the join test after 0xbf9a0, but as sete/setne); an inverted `lightmapped` flag from `||` 68; a
+// single-exit `handled` flag also set after 0x14a8e0 68. A compile-only screen of ~190 flag,
+// guard and tail forms threads the flag in every one; only a computed value in the join (a
+// negation, a widening, a store, a setcc result) keeps retail's un-threaded flag test.
+// retail keeps an exclusion flag in BL (`mov bl, 1` on the scenery arm, `xor bl,
 // bl` before 0xbf9a0) and tests it at a join it does not thread, so &triangle->c takes EDI, the
 // collision lives in its parameter slot (reloaded after the model query, stored after the requery)
 // and the 0x14a8e0 return is laid out last; VC threads every flag form here, so the excluded arm now
@@ -379,6 +410,7 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 // Round 207: native point-value getter with bool/byte/long/dword validity outputs,
 // default-first result 284/284/278/278; eligibility-owned return 284/284/278/278.
 // Frames 0x68/0x6c and shorter code regress; original Boolean fetch and defined failures restored.
+// Round 426: captured instance key through publication with long/short/word/dword plane storage 232/180/197/232; Boolean results 242/187/194/242. Original collision observations and defined vertex failures restored.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
@@ -482,6 +514,7 @@ struct s_vertex_source_23ac30;
 struct s_vertex_bounds_23ac30;
 struct s_table_holder;
 void *function_1efd80(s_table_holder *holder, dword position);
+void function_ba690(long object_index, byte **states, long *state_count, long *a, long *b);
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node);
 
@@ -585,6 +618,11 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // guard as `return result` 231; a const bounds pointer 70; the lookup and surface lookup in their
 // own block 70; section groups from the section index local 157. Diagnostic: the bounds read
 // before the geometry-block call still gives 9 (left: the lookup address, 0x11e800's registers).
+// Round 81: the region permutations through the existing 0xba690 call, which LTCG inlines here as
+// retail does (kept: identical code, its body no longer written out); with the bounds read before
+// the geometry-block call 9, plus the lookup pointer 4 (only BLOCKED-BY 0x11e800's argument
+// registers left, so neither form can be kept yet); lookup declared at the top 70; a region
+// index local 262.
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)
@@ -600,13 +638,14 @@ bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 		*(long *)((byte *)triangle + 0xc) = NONE;
 		*(long *)((byte *)triangle + 0x10) = NONE;
 		byte *model = g_4e3b44[model_index & 0xffff].bytes;
-		byte *object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
-		signed char *regions = (signed char *)(object + *(short *)(object + 0x11a));
+		byte *regions;
+		long region_count;
+		function_ba690(COLLISION_OBJECT_14A8E0, &regions, &region_count, NULL, NULL);
 		byte *region_data = *(byte **)(model + 0x20) + (*(short *)((byte const *)collision + 0x44)) * 16;
-		if (regions[(*(short *)((byte const *)collision + 0x44))] != -1)
+		if (regions[(*(short *)((byte const *)collision + 0x44))] != 0xff)
 		{
 			*(long *)((byte *)triangle + 0x14) =
-				*(short *)(*(byte **)(region_data + 0xc) + regions[(*(short *)((byte const *)collision + 0x44))] * 16 + 0xc);
+				*(short *)(*(byte **)(region_data + 0xc) + (char)regions[(*(short *)((byte const *)collision + 0x44))] * 16 + 0xc);
 		}
 		else
 			*(long *)((byte *)triangle + 0x14) = 0xff;
@@ -614,7 +653,7 @@ bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 		if (section_index == 0xff) goto done;
 		byte *section = *(byte **)(model + 0x28) + section_index * 0x5c;
 		if (!function_12de70((s_geometry_block_info *)(section + 0x38), 3)) goto done;
-		object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
+		byte *object = *(byte **)(g_4e0300->data + (COLLISION_OBJECT_14A8E0 & 0xffff) * 12 + 8);
 		point3f point = collision->point;
 		long transform_count = *(short *)(object + 0x114) / sizeof(transform4x3f);
 		if (transform_count > 0)
@@ -713,6 +752,7 @@ done:
 // Round 207: actual skipped/failed/found model state, signed byte/word/long/dword
 // in object scope 134/136/133/133; function-scope declarations 134/136/133/133.
 // Byte state reaches retail length; prologue/result/NONE allocation remains. All restored.
+// Round 426: native byte/signed-byte/short/long retry state 125 each; all four with the existing point setter at retry advance 125 each. Original body restored; exclusion/result/direction allocation remains.
 // @retail 0x14af40
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)

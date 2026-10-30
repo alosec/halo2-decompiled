@@ -433,6 +433,11 @@ void __stdcall function_25dd50(
 // Round 39: cover-first ownership with separate geometry/transform guards and positive output
 // scope, all eight combinations 197 at 837 bytes; trace-first positive output alone/transform
 // guards 38/38, with separate geometry guard/both 149/149 at 836 bytes. All original source restored.
+// Round 11: the edge flag through the pathfinding data's own edge array 42; the direction through
+// the existing vector3f_scale 38 (same code); the side cases as if/else 172 (792 bytes); the
+// failed-facing test as an early continue 85 (839 bytes); a named edge index after a split trace
+// test 38. Compile-only: the failed-facing block lands before the first side case (retail's
+// place) only when that arm sets side to 0 and falls into the side test (listed, 222).
 // Round 13 (lane 13): compile-only, VC always defers the failed-facing `continue` block to just
 // before the latch (after case 1 and the call), whatever the side code looks like; it stays after
 // the cover arm only when the arm falls into the side test: the side read back from the field

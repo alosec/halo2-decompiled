@@ -218,11 +218,19 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 // `xor bl, bl` exit), the success block after it 62, with session_state_is_live 62;
 // the outer if with `result = true` inside 69 (also with session_state_is_live 69);
 // the outer test on 0x58d20 and 0x6e720 with `result = 6e6b0` 75; session_state_is_live
+// alone 65.
+// Round 81: the success test nested under the 0x58d20 test with `result = true` inside 69; one
+// condition with `result = true` inside 69; the 0x6dfa0 result tested in an if/else-if chain
+// 84; owner read at each use 88; the owner and session locals after the 0x6dfa0 call 90.
 // alone 65. Round 11 (0x6e720's file held by another lane; relink screen, current form 55 there):
 // `result = true` inside one && test 60 (aligned 23 -> 17, 174 bytes); the 0x58d20 test outer with
 // the other two inside and `result = true` 60; the outer test on 0x58d20 and 0x6e720 with `result =
 // 6e6b0` 65; an early `return result` after 0x6dfa0 54 (183 bytes); an early return on a false result
 // in the type-2 arm 55 (same code).
+// Round 84 (BLOCKED-BY 0x6e720, whose file another lane holds): the type 2 arm first 95 (156
+// bytes); `if (!result)` split from the live test 65; `bool result;` declared first 65; the
+// 0x6e6b0 test as its own `if (result)` 69; one early `return result` for the three guards 63 (183
+// bytes, the same plan with `xor bl, bl; mov al, bl` exits).
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -764,6 +772,13 @@ void c_session_client::function_06dbc0()
 // id 43; a goto single exit 43; copies of this before, after or at the call 43 (all
 // compile-only). With 0x58d90 inlined by the link (its file at /Ob1, a diagnostic) the
 // table is retail's but this stays in edx (47); only /Os or /G7, which compare the mode
+// in memory, give retail's push ebx.
+// Round 81: the 0x6d380 call written twice (a diagnostic) gives retail's head exactly (this in
+// ebx, id in ebp, mode and index in edx): retail allocates as if this and id were live across a
+// call; with only this live across one, id still takes edx. Separate case 7 and 8 bodies 47; a
+// busy flag set by the switch 47; an early return on an equal id 43; session at each use 46; one
+// combined condition 43; harness: a memcmp result local (worse), a sized compare helper, a __stdcall
+// member or __cdecl callee, /arch:SSE, /G7, /Ob1, /Ox or /G5 all keep this in edx.
 // in memory, give retail's push ebx. Round 11: the existing 0x58d90 called in the test 100 (stays
 // out of line, 84 bytes); an early return on the mode/type test, the mode test outer with the type
 // and id tests inside and a member id pointer local 43 each (same code); the session read at each
@@ -773,6 +788,11 @@ void c_session_client::function_06dbc0()
 // Lane 13 r14: the existing 0x58d90 called with a `__forceinline` declaration in this file stays
 // out of line (its /Ob0 definition) 100, as a plain call 100; the type test first 43; memcmp with
 // the id first 47; the memcmp folded into the mode/type condition 43.
+// Round 84: an early return on the mode and type 43; session read in the switch and the local
+// after it 43; the type tested before the mode 43; memcmp operands swapped 47; a return after the
+// call 43; harness: one && condition with the memcmp, cases 3 and 5 left to the default, an id
+// copy: no change. Calling the existing busy-state test out of line puts this in ebx (as any call
+// before the compare does), but retail has that switch inline.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
@@ -1810,6 +1830,10 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // arm with the failure arm written first 96; a bool ready false at its declaration 90; both 100 (429
 // bytes); the integer pending with the named preparation result 47, tested `if (prepared)` 48, with
 // session_state_is_live 48; session_state_is_live alone 48; a named elapsed time 48; named countdown
+// seconds 48.
+// Round 81: a bool ready with the failure arm written first (`!a || !b`) 96; a bool ready false at
+// its declaration 90; the pending value as the remaining time 91; the integer pending with the
+// failure arm first 48; the same with pending set in each arm 52.
 // seconds 48. Round 11 (0x6e720's file held by another lane): nested ifs with the timer reset in both
 // else arms 48 (same code); the leave arm first (`mode != 3`) worse (51 on a relink screen where the
 // current form is 43); result set before the mode call 48.

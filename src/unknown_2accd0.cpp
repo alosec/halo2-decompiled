@@ -806,7 +806,8 @@ struct s_signed_file_write_parameters
 };
 #pragma pack(pop)
 
-// score 134 (was 134): retail keeps every `parameters` load after the scratch getter's
+// score 134 (was 134): frame 0x18 and length agree; scratch-owner versus header/minimum scheduling, opposite buffer/count homes and extension I/O residency remain.
+// Earlier: retail keeps every `parameters` load after the scratch getter's
 // stores, as if the scratch object were address-taken (its 0x8000-byte storage at
 // 0x4fa0c8 sits right before the owner/pointer/size words and the flag byte); ours
 // hoists the loads. Storage as the object's first member, init `pointer = storage`
@@ -820,6 +821,16 @@ struct s_signed_file_write_parameters
 // executable body restored.
 // Lane 13 r14 (with 0x2ad7c0's record form, claim/size helpers): 279 at 944 bytes, aligned 72 -> 32;
 // the getter sites copy the buffer and size between registers where retail loads them in place.
+// Round 187: body I/O fields at each use/parallel remaining-byte parts/both native API result
+// carriers/fields plus parts/fields plus carriers/parts plus carriers/all three/all plus native
+// signature value clear 261/271/163/275/269/279/283/340. Original getter, storage, observations,
+// success types, library clears, zero-capacity loop and complete body restored.
+// Lane 14 r11: the header arm's buffer goes to the parameters home and the byte count to the task
+// home (retail the other way round). Locals renamed (scratch buffer, scratch size, written count;
+// header arm or both arms) 134 each, identical code; one byte count shared by every case 150 (also
+// with it declared first). Diagnostic: the getter reaching the scratch object through its address
+// 132 (aligned 113 -> 109; 0x2ad7c0 68 -> 173 though its aligned count improves 55 -> 49), so both
+// bodies look compiled with the object address-taken; a natural source of that is not found yet.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

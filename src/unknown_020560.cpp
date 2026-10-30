@@ -273,6 +273,12 @@ void function_16f60(byte *state, word const *range)
 // Round 182: Native prefix-table masks and a complete mode/state table do not recover selective setter expansion
 // Trials 1-8: 176, 134, 101, 124, 198, 192, 216, 226.
 // Trials 9-9: 832.
+// Native common suffixes, two/three/four setters across modes 3/4/6: 121/243/236;
+// with mode 5: 217/244/243; all enabled modes, two/four setters: 269/313.
+// Selected suffix results shorten the body but do not recover selective expansion; original tails restored.
+// Round 428: enabled-first complete group orders (1=one/two, 3=three/four):
+// 13560 201; 13650 199; 15360 209; 15630 223;
+// 16350 197; 16530 205; 10365 158; 10635 146. Original complete arm order and body restored.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -877,6 +883,14 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
     *direction = sample->direction;
 }
 
+// score 627 (was 627): Frame 0x1c/0x2c, offset/selection homes, override layout and fraction retention differ.
+// Native point-difference producer subsets nearest/anchor/both/opposite/nearest+opposite/
+// anchor+opposite/all: 626/627/626/685/668/685/668; all plus shared dot 668 (exact-only).
+// The one-point nearest gains are ineligible; original scalar producers and arithmetic restored.
+// Frame 0x1c versus 0x2c; count/selection/projection and fraction homes differ.
+// Round 428: complete squared products in both searches, projection products and both 627 each;
+// actual selected-record common copy tail, with either/both products and common distance storage,
+// 748 each at 1944/2122 bytes. All original sums, copy paths and body restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
@@ -1273,6 +1287,11 @@ bool function_0bfe60(dword const *flags, long bit);
 // the test index in EBP. The total declared at the top of the query block 139 (441 bytes); status
 // declared before the test index 53; `set + index * 3` 52; the test index written at both calls 142;
 // the clamped total stored in the arm with an else storing 0 132 (443 bytes).
+// Round 23 (lane 10): the SDK's begin-visibility-test call for the push expansion 158 (stays out
+// of line); the index from an if instead of the ternary 55; the result locals at the query block
+// 52; the clamp as if/else 52; a const set 52. Without LTCG every spelling of the bitset row
+// (row pointer, &row[0], flat index, pointer arithmetic, const, a separate global or struct row)
+// gives ADD; retail's LEA costs the one byte that shifts the exits.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {
@@ -1333,9 +1352,10 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 
 long __stdcall function_3bf20(s_slot *slot, byte *data);
 
-// score 6 (was 71): only the frame counter load differs: retail loads it after the global test
+// score 6 (was 6): only the frame counter load differs: retail loads it after the global test
 // and before the slot pointer, ours after the slot's valid test (our build moves a load to its
-// only use). Retail keeps the clamped amount in the dead key's second field with a store in each
+// only use). Retail reads the counter as if it were volatile: the read through a volatile pointer
+// at the top of the global block matches byte for byte (forbidden form, diagnostic only). Retail keeps the clamped amount in the dead key's second field with a store in each
 // clamp arm, which a direct field store gives (the union member) and a reference to the field
 // does not (it merges the stores). Tried: a plain amount 108 (frame 0x1c, own slot); the key
 // in its own block 108; that and the rest under `index != NONE` 101; the positive guard alone 92;
@@ -1348,6 +1368,21 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // Lane 8 r79: key and query as inline helpers 96-117; plain amount local 86 (frame 0x1c); with
 // this body: the frame computed before the slot pointer 75, the counter read first 72, read as an
 // __int64 copy, after the slot pointer, reassigned, 64-bit add or `+ 1` first: 6 each; permuter 6.
+// Round 23 (lane 10): the existing bit-test helper (stays out of line) 90, with the counter read
+// at the top of the global block 88; the slot pointer before the global test 22; a const counter
+// copy before the slot pointer 6; the whole frame expression there 75; an inline query helper
+// taking the counter 106.
+// J197: validity from admission, ordinary/before-slot/early-row/after-slot: 78/78/74/78;
+// byte/long/short validity 78/103/106; default-false availability 79. Shared inline bit
+// test on the direct-key graph 6; with early counter capture 6, row at helper argument 73,
+// capture before global admission 6. Counter-load scheduling remains; opening body restored.
+// J199: direct slot fields with early/use-point counter 71/71; original graph
+// with default availability/amount/both 42/82/86; direct final disjunction 12;
+// default-true/default-false final results 40/40. Counter load still sinks; restored.
+// Round 20: the counter read at the storage block top with the set at the arm top 6 (the load
+// sinks), read before the storage test 6; written inside the bitset test 72 (the load stays, the
+// divide moves after the clamp); the bit test through function_0bfe60 90; the bit test before
+// the clamp 79.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {

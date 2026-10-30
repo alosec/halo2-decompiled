@@ -155,6 +155,9 @@ __forceinline s_object_ai_data *function_28dbd5(s_handler_object_view *arg_0)
 // Round 250: existing staged outer/rotation/both crosses 226/185/226;
 // with sine after axis scale 222/187/222; both staged crosses before projection 233,
 // with delayed sine 205 (frame 0x118, first +0xa9). Original helper and body restored; frame 0x11c/0x118 remains.
+// Round 424: fused moving/fixed offsets, moving-offset/velocity, fixed-offset/velocity,
+// all three component loops 188/188/193/193; with delayed sine 182/182/184/184.
+// Three-point best rejected: frame 0x118, request twelve bytes early; original body/helper restored.
 // @retail 0x28dbd0
 long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, bool arg_4)
 {
