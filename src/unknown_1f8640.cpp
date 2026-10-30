@@ -367,7 +367,8 @@ struct s_1f8a70_actor
 	byte unknown00[0x4ac];
 	s_1f8a70_frame frame;
 };
-// score 228 (was 228): frame 0x84 versus 0x80; pool/data entry schedule, early false and unit-output/route/result homes differ.
+// score 228 (was 228): frame 0x84 versus retail 0x80; pool/data entry schedule and unit-output/route/result homes differ.
+// frame 0x84 versus 0x80; pool/data entry schedule, early false and unit-output/route/result homes differ.
 
 // Earlier: frame 0x80 agrees; pool/data staging and returned-unit-output/route/result homes differ.
 // Earlier 399 (was 399): Frame 0x80 agrees; pool/data schedule, protected unit-mode boundary and result/route homes remain.
@@ -456,6 +457,9 @@ struct s_1f8a70_actor
 // Round 239: direct three-route decision chains 210/201/120/102/021/012
 // 417/416/420/398/420/416; 210 with long route/returned unit output 423/414. All restored.
 // Round 412: branch-owned disabled false and ordinary false after unit, bool/byte/short/long 419/427/441/432; after resets 417/425/441/432. Only the pool load moves before allocation; data and result/route homes remain. All original results, calls and phases restored.
+// Round 193: Current dword-selector graph: output/selector/result role names, seven subsets 228 each; all
+// with unit phase scope 228. Signed long 411, returned mode output 412; three-choice enum 411/412, scoped
+// enum 411/412. Original unsigned dword, mode consumer and all homes restored.
 // Round 215: native route short/word/signed-byte/byte on the dword-selector graph 420/366/416/336;
 // each with returned unit-output consumption 416/371/422/350. Original dword selector and mode
 // consumer restored; current frame 0x84/0x80, pool/data schedule and unit/result homes remain.
