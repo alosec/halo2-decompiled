@@ -73,6 +73,11 @@ void function_16e2c0(long arg_0);
 // a reassigned parameter gives). Both NULL-clear blocks as one inline helper 50; early return false
 // for the range test 122; saved index declared at function scope 50; early true test on the saved
 // copy 50; unload argument written in the call 50.
+// Round 10 (lane 13): retail's `xor ebx, ebx; mov bx` then a dword store into the slot before the
+// range test is the shape of an assignment to the short parameter itself. Without that: one result
+// carrier (no separate success flag) 130; the success flag defined before the true test 127; the
+// unload pointer in the call 50; the true test's operands swapped 50; a named callback pointer in the
+// loop 50.
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {

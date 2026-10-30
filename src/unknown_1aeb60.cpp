@@ -361,6 +361,10 @@ short *function_e70b0(long unit_index, short *value);
 // Round 114: final mode test as a call to the existing 0x1f86f0 138 (kept out of line); through the
 // existing actor pointer 132; nested timer test 49; nested final test 49; named action value 49;
 // a 26-try permuter run found nothing below 49.
+// Round 10 (lane 13): the final test as a call to the existing 0x1f86f0 with `inline` on its definition
+// (inlined as in retail, its other callers unchanged) 49 (the same code); with the slot cast first 49;
+// with the action state read after the call 49; the time read before the lookups 97; the node getter
+// at both uses 54. Retail's coloring looks as if ECX were taken at entry (index EDX, data ECX).
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {

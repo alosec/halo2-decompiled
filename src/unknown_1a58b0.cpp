@@ -837,6 +837,15 @@ void function_25aba0(long actor_index);
 // reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
 // `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
 // takes the `dec [mem]` form in every arrangement.
+// Round 10 (lane 13), with 0x1a7b30 unchanged (its result pointer arrives in ESI, retail EDI): memset
+// alone 143 (957/957, aligned 12 from 16: entry registers, the state-one pop and 0x1a8080's argument
+// set-up); plus 0x1a8080 as (type, owner, level) 143 (aligned 10, 0x1a8080 still matches); plus the
+// state-one pop first 146; plus the state-one and kind-2 arms as an if/else chain 128 (aligned 10:
+// state-one split as retail, kind-2 fused); on the chain the kind-2 pop first or between its stores
+// 143 each (kind-2 split, state-one fused again); the kind-2 success leaving by `break` 128.
+// Diagnostics: a different state-one decrement leaves kind-2 fused on the chain, and a different
+// kind-2 decrement leaves state-one fused on the continue form, so the two pops aren't merged; the
+// choice looks like the allocator's (a temporary register or a memory operand for the decrement).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
