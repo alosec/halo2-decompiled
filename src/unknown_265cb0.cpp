@@ -1253,6 +1253,7 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 // Native target assignment 133; offset setter 101; both 135; projected-point aggregate 99;
 // target/aggregate 133; offset/aggregate 101; all producers 135; read-only projected point 135.
 // Clock conversion/copy and direction/ahead/target homes remain; all producers restored.
+// Round 293: Uninitialized difference/decay/blend entry declarations, all seven subsets, and all with rounded-count entry declaration: 99 each. Every value producer stays in place; complete original declarations, existing local qualifier and body restored.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {
