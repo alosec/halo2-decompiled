@@ -556,10 +556,11 @@ struct s_item_collision_bsp
 	s_item_collision_instance *instances;
 };
 
-// score 211 (was 249): one shared spin scale for both spin branches, with the third spin
+// score 211 (was 211): Frame 0xa0 agrees; protected plane-index width, plane joins and pending spin-k homes differ.
+// Earlier 211 (was 249): one shared spin scale for both spin branches, with the third spin
 // component scaled after the branch so the pending value and the scale stay on the x87 stack.
 // Plane-index width, plane-join registers and the transform product rows still differ.
-// score 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
+// Earlier 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
 // plane-index width, plane-join registers and spin stores differ;
 // seed before square root 249; fallback input copy 364; up pointer 253;
 // plane input scalars 254; angular output initializer 253.
@@ -590,6 +591,9 @@ struct s_item_collision_bsp
 // Round 285: existing staged spin cross/shared final linear sum/both/shared final angular sum/
 // cross-angular/both sums/all/all with marker-first storage: 249/249/249/249/249/249/249/249 fast.
 // Original complete body restored; protected plane width, join homes and spin tail remain.
+// Round 434: complete axis/impulse/both snapshots 342/345/351; with the existing staged cross
+// 342/345/351; both with a native material index, without/with staged cross 350/350. Combined
+// captures grow the frame to 0xac; original observations, plane interface, spin workspaces and body restored.
 // @retail 0x10cf80
 void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effect)
 {
