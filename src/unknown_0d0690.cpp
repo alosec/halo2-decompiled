@@ -944,7 +944,7 @@ bool function_d3630(s_vertex_block *block, long triangle_index, s_mesh *mesh, re
 }
 
 // @retail 0xd0620
-void function_d0620(long object_index, s_object_child_iterator *iterator)
+void function_d0620(s_object_child_iterator *iterator, long object_index)
 {
 	s_object *object = OBJECT_FROM_INDEX(object_index);
 	bool done = false;

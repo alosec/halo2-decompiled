@@ -1763,7 +1763,7 @@ bool __stdcall function_c9200(long unit_index, short value)
 	bool result = false;
 	s_object_child_iterator iterator;
 
-	function_d0620(unit_index, &iterator);
+	function_d0620(&iterator, unit_index);
 	while (function_d0690(&iterator) && !result)
 	{
 		if (iterator.child_value == unit_index && iterator.child_short != NONE)
@@ -3416,7 +3416,7 @@ void function_c6990(long unit_index)
 	short other_team = NONE;
 	s_object_child_iterator iterator;
 
-	function_d0620(unit_index, &iterator);
+	function_d0620(&iterator, unit_index);
 	if (function_d0690(&iterator))
 	{
 		do
@@ -5433,7 +5433,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 		result = false;
 	}
 	s_object_child_iterator iterator;
-	function_d0620(vehicle_index, &iterator);
+	function_d0620(&iterator, vehicle_index);
 	while (function_d0690(&iterator))
 	{
 		s_unit *rider = UNIT_GET(iterator.child_index);

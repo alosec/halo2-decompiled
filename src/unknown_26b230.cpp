@@ -315,7 +315,7 @@ void function_268c90()
 						if (object)
 						{
 							s_object_child_iterator children;
-							function_d0620(extra, &children);
+							function_d0620(&children, extra);
 							bool child_available = function_d0690(&children);
 							while (child_available)
 							{

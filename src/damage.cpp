@@ -387,7 +387,7 @@ real function_1e9700(short row);
 real function_259a0(dword *seed);
 
 bool function_d0690(s_object_child_iterator *iterator);
-void function_d0620(long object_index, s_object_child_iterator *iterator);
+void function_d0620(s_object_child_iterator *iterator, long object_index);
 void function_b7360(long object_index);
 void __stdcall function_b8540(long a);
 void function_b8b70(long object_index);
@@ -709,7 +709,7 @@ void function_d6800(long object_index, s_damage_owner const *owner, bool notify_
 			s_object_child_iterator iterator;
 			bool last = true;
 
-			function_d0620(object->parent_object_index, &iterator);
+			function_d0620(&iterator, object->parent_object_index);
 			while (function_d0690(&iterator))
 			{
 				if (iterator.child_short != NONE && iterator.child_index != object_index)
@@ -1386,7 +1386,7 @@ bool __stdcall function_db110(long object_index, bool players_only, bool walk_si
 	{
 		s_object_child_iterator iterator;
 
-		function_d0620(object_index, &iterator);
+		function_d0620(&iterator, object_index);
 		while (function_d0690(&iterator))
 		{
 			if (iterator.child_short != NONE)
@@ -3515,7 +3515,7 @@ void function_db670(long object_index, long vehicle_index)
 		bool no_bipeds = true;
 		s_object_child_iterator iterator;
 
-		function_d0620(vehicle_index, &iterator);
+		function_d0620(&iterator, vehicle_index);
 		while (function_d0690(&iterator))
 		{
 			if ((1 << DAMAGE_OBJECT(iterator.child_index)->type) & 1)
