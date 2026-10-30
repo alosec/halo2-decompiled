@@ -33,9 +33,12 @@ __int64 timing_counter_resume(timing_counter *c)
 	return total;
 }
 
-// score 4: identical body and length; our prologue stores the first delta
+// score 4 (was 4): identical body and length; our prologue stores the first delta
 // zero before pushing esi, while retail pushes esi first and then stores both
-// zero dwords. The permuter found no better variant.
+// zero dwords. The permuter found no better variant. The tick local zeroed by
+// memset 50 (stores dropped); a volatile double 10; a volatile LARGE_INTEGER
+// `= { 0 }` 50; total and stopped declared volatile in the struct 34 (push esi
+// first, then a push edi); stopped alone 4; total alone 34.
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {

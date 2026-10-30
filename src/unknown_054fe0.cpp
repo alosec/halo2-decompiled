@@ -1153,6 +1153,10 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 // else`, and as a guarded do loop; the getter alone 100. With those stores ahead of the
 // observer branch (retail's order) the cursor keeps the register in every form screened:
 // getter after the counters, helper parameter orders, qos scope, times position, while loop.
+// Round 20: this body with the host read after the observer 86, the same through the getter
+// 86 (latency to ebx, session to the stack); the round 29 form 99 with the counters before the
+// getter 109, with the host and the counters before it 112 (session on the stack); qos at
+// function scope 67.
 // @retail 0x64480
 void network_session_get_member_latency(s_session_member_latency *latency, c_class_58d20 *session)
 {

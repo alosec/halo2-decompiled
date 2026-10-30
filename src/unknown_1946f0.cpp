@@ -81,7 +81,7 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 	direction->k = z * face->axes[2].k + y * face->axes[1].k + x * face->axes[0].k + face->origin.k;
 }
 
-// score 61 (was 62): two causes. (1) The decoder's constants: retail makes the zero first (xmm3)
+// score 61 (was 61): two causes. (1) The decoder's constants: retail makes the zero first (xmm3)
 // and loads 2.0 and 1.0 into xmm2 at their uses; ours loads 2.0 early into xmm3 and makes the zero
 // late. Retail's decoder acts as if a block ends after the two 1/63 products: a one-pass loop around
 // them (diagnostic only, not kept) gives retail's schedule, 51. (2) Ours keeps the decoded k on x87
@@ -108,7 +108,9 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // transform 62; step count as a decoder parameter 62; point2f grid scaled in place 68; a compiled-out
 // `do {} while (false)` between the decode and the normalization 62 (identical code: no join); zero
 // after y / between x and y / after the face pointer 73/81/62; the decoder returning its output
-// pointer into the normalization 62.
+// pointer into the normalization 62. Round 20: constant-first doubling 61; `x *= face->scale` 61;
+// face pointer before the grid values 81; the equal-direction arm first 61; zero between the grid
+// products and the doubling 72; the rows written in both scale arms 224 (no tail merge).
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
