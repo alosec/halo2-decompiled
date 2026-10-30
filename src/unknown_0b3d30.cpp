@@ -8,6 +8,7 @@
 #include <xtl.h>
 #include <xonline.h>
 #include <wchar.h>
+#include "online_result_cache.h"
 
 struct s_http_connection_ab;
 extern s_http_connection_ab g_546a8c;
@@ -17,7 +18,6 @@ void online_result_registration_clear(void);
 void function_6b640(long task_index);
 extern bool g_510580;
 extern long g_510584;
-extern dword g_5107d8;
 
 // @retail 0xb3d30
 void __stdcall function_b3d30(long stage)
@@ -190,7 +190,7 @@ bool online_result_get_address(long index, IN_ADDR *address);
 // @retail 0xb40b0
 bool function_b40b0()
 {
-    long index = (dword)g_547620 % g_5107d8;
+    long index = (dword)g_547620 % g_510588.count;
     bool result = false;
     IN_ADDR address;
     if (online_result_get_address(index, &address))
