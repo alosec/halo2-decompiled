@@ -1657,7 +1657,7 @@ void function_176b60(s_effect_owner const *owner, long marker_count, s_effect_ma
 void function_a8040(long index, long value, point3f const *position);
 void function_d6660(s_type_1e6529 *data, long definition_index);
 void function_bc190(long object_index, s_damage_owner *owner);
-void object_get_root_location(long object_index, s_location *location);
+s_location *object_get_root_location(long object_index, s_location *location);
 long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 void function_15e360(point3f const *point, long object_index);
 byte *record_pool_lookup(s_record_pool *data, long datum_index);
