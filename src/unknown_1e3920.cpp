@@ -600,6 +600,9 @@ real function_267370(long object_index);
 // output pointer 96. Locate-only: the plane test's two compares against another constant give the
 // plane block exactly (54): the -1 shared between them and the resets is the cause; the resets then
 // take -1 in EAX (retail ECX) and the carrier stays in EDI.
+// Round 46: both NONE resets delayed across carrier selection 420 fast; unknown26c alone 415 fast/372 plain;
+// unknown274 alone 416 fast; the whole reset group 421 fast; initial/parent/held header getters and
+// bool held bit 416 fast each (reduced control 416). Original body restored.
 // @retail 0x1e3b60
 void function_1e3b60(long actor_index)
 {

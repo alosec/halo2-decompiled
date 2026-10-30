@@ -784,7 +784,7 @@ bool function_2715a0(byte *buffer)
 	return result;
 }
 
-// score 486 (was 501): State/node/link registers, scalar homes and heap-helper expansion differ.
+// score 486 (was 486): State/node/link registers, scalar homes and heap-helper expansion differ.
 // Earlier field-bit mask forms 501 (from 533).
 // State EBX/EBP, node/link cursors and scalar homes remain. Force-inline insertion 577 (loses matched caller);
 // scalar role names 501; early inherited result 503; squared-length helpers 500; point setter 501; plain
@@ -797,6 +797,9 @@ bool function_2715a0(byte *buffer)
 // 518/544/497/497/518/544/497/497. Wide cursor with direct high/low/both masks 529/525/527;
 // both masks with wide count 527. All restored; 497 gains only four, and native mask forms shorten away from retail.
 // Round 194: Invariant diameter/shared square/both 520/528/538; default entry cost 504; single distance result 501; diameter with default cost 528; square/diameter/cost with original/single distance 517/517. Root view after sift before sentinel 486 (kept), native metadata store 486; after sentinel 485/485 (one point rejected); after pruning/query 502/502/502/502. Frame 0xc54 and length agree; state/base, link and scalar registers still differ.
+// N227: Native signed root/bounded hash/signed collision lookup carriers, seven subsets
+// 515/509/538/501/540/517/542; all with readonly node 542. Original lookup domains
+// and body restored; state/node/link registers and heap expansion remain.
 // @retail 0x271630
 PRIVATE bool function_271630(s_type_f17a25 *state)
 {
