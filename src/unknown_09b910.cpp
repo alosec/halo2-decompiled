@@ -1269,14 +1269,22 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // bitfields 35; byte flags view 35; byte bitfields with masks 35; combined header
 // predicates 39; byte flags with masks 35. Opening executable body restored.
 // Device/unit saved registers and the second mask temporary differ.
-// constant indices 32; unsigned indices 32; index names 32; early unit offset 39; word slots 53; byte mask 35; typed word slots 69; shifted membership masks 38.
-// score 32 (was 32): complete device/unit classification 32/32/32; deferred eligibility 49/51;
+// constant indices 32; unsigned indices 32; index names 32; early unit offset 39; word slots 53;
+// byte mask 35; typed word slots 69; shifted membership masks 38.
+// Complete device/unit classification 32/32/32; deferred eligibility 49/51;
 // negative classification exits 32; explicit membership 53; contiguous byte domains 66.
 // Retail's EBX mask temporary and `mov eax, esi` copy say a second table value is live in EAX
 // during the unit type test. Device-first guard with typed table reads and an object local 33; the
 // same with the object read from a re-read table 33, or through the existing object_get 33; device
 // and unit header pointers 52; unit header pointer from a re-read table 54; re-read table for both
 // unit reads 54 (device then sits in EDI as in retail, but the table moves to EDX).
+// Round 6: device-first guard alone 33; the matched 0xa3420's form (typed headers, one combined
+// type test, object from a re-read table) with/without result and object locals 33 each. A pool
+// pointer local read for the headers and again for the object gives retail's device EDI / unit EBP
+// 30 (also nested, or with an object local); the pool still dies after the first read where
+// retail keeps it in EAX until the object read (hence its EBX temporary). Pool headers with a
+// global object read, or the reverse, 33/33; object through the headers 54; every unit read from
+// the pool 52; pool unit header pointer 52.
 // @retail 0xa4540
 bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
 {

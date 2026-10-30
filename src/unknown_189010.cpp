@@ -580,6 +580,8 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // Play first/middle parameter orders 51/51 (same code); play fields read at entry 54 (play
 // becomes a register argument, in eax). Retail keeps the object in esi and play in edi; ours
 // needs esi for 0xba300's location argument (BLOCKED-BY 0xba300's convention).
+// Round 6: unchanged; the first difference (+0x7, play stacked and EBP saved) still comes from
+// 0xba300's object EAX / location ESI arguments (retail: object ECX, location EAX).
 // @retail 0x189210
 long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
 {
