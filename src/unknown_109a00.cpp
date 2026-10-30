@@ -116,10 +116,10 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 							point3f moved;
 							transform4x3f_apply_point(&motion->transform, &matrix.position, &moved);
 							vector3f displacement;
+							displacement.i = matrix.position.x - moved.x;
+							real scale = (real)g_510c54->field_2_3;
 							displacement.j = matrix.position.y - moved.y;
 							displacement.k = matrix.position.z - moved.z;
-							real scale = (real)g_510c54->field_2_3;
-							displacement.i = matrix.position.x - moved.x;
 							vector3f change = {
 								displacement.i * scale,
 								displacement.j * scale,
@@ -142,8 +142,9 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 	return result;
 }
 
-// score 30 (was 74): Frame 0x88 agrees; the second point-velocity first linear add uses a register
-// copy and memory add instead of a direct load/add. The nonrotating scale/add schedule remains at retail length.
+// score 10 (was 30): Frame 0x88 agrees; two x-component adds remain: the second point-velocity first
+// linear add uses a register copy and memory add (retail loads linear.x and adds the cross term), and the
+// velocity update adds change.x as a load and add (retail copies change.x and adds the velocity from memory).
 // Earlier: point-velocity and nonrotating scale/add
 // Frame 0x88 and first point-velocity agree; second point-velocity and nonrotating schedules remain.
 // Frame 0x88 and first point block agree; second point inputs, nonrotating products and five extra bytes remain.
@@ -223,6 +224,10 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // both scales on the after-k clock 173. Only the after-k clock read is kept, plain 30;
 // all helpers and output boundaries restored. Frame and retail length agree; the
 // second point's first linear add and nonrotating SIMD scheduling remain.
+// Round 97: x difference, then the clock scale, then the y and z differences 10 (kept: retail copies the
+// scale for x and scales y and z in place); x, scale, z, y 18; on the kept form: velocity-add operands
+// swapped 10 (identical); one/two throwaway tuples at entry 163/172 (diagnostic; the adds never flip);
+// delta before the velocity add 61; `+=` component adds 37; displacement scaled in place 172.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {

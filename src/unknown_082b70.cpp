@@ -227,8 +227,6 @@ struct s_weapon_definition_view
 // 634 bytes and the two slot queries reload the object table as retail does; with the trigger
 // state's address formed first in the trigger loop retail advances that cursor first (35; not
 // kept, a gain under 8 on a function still above 30).
-// state's address formed first in the trigger loop retail advances that cursor first (35, under
-// the keep bar: not kept).
 // Left: retail tests the trigger count twice before the trigger loop (`test eax, eax; jle`,
 // then `xor ebp, ebp` and the loop's own test); with an `if (definition->trigger_count > 0)`
 // guard every register and the trigger loop are retail's (4 left), but a guard that repeats the
@@ -274,6 +272,10 @@ struct s_weapon_definition_view
 // helper, a relevance pointer local, typed/byte-pointer stores at the same offsets, guard
 // spellings, `!= 0` tests, in-place mask, `default:` case, trigger pointer arithmetic, and
 // clamp spellings; a one-dimensional clear loop unrolls into a word store (25).
+// Round 97 (harness, on the guard form): body under `if (object_index != NONE)` with the relevance test
+// outside/inside 17/7 (aligned; no flip; in the build, inside 41); the relevance record cleared through a
+// pointer local that also feeds the final call 32 (build 134). The SIB order still needs an odd change in
+// the opening's distinct stores.
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {
