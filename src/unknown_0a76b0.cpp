@@ -2506,7 +2506,7 @@ done:
 }
 
 void function_b9c60(long object_index, bool flag);
-void function_ba690(long object_index, unsigned char **states, long *state_count, long *a, long *b);
+void function_ba690(long object_index, long *state_count, unsigned char **states, long *a, long *b);
 void __stdcall function_d1360(long vehicle_index, long seat_index, bool a, bool b);
 void function_e5300(long unit_index, long a);
 
@@ -2534,7 +2534,7 @@ void __stdcall function_ea6b0(long unit_index, long type)
 			long state_count;
 			bool hidden = false;
 
-			function_ba690(unit->parent_object_index, &states, &state_count, NULL, NULL);
+			function_ba690(unit->parent_object_index, &state_count, &states, NULL, NULL);
 			if (*(long *)(seat + 0xac) < state_count)
 				hidden = states[*(long *)(seat + 0xac) * 8 + 1] < 3;
 			function_b9c60(unit_index, hidden);
@@ -3070,6 +3070,12 @@ bool __stdcall unit_action_vehicle_ejection_update(long unit_index, long type)
 	return result;
 }
 
+struct s_unit_request_vehicle_flip
+{
+	long type;
+	long flipper_index;
+};
+
 struct s_damage_owner
 {
 	long player_index;
@@ -3082,14 +3088,6 @@ void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner)
 
 /* flips a vehicle back over (type 33): the way it rolls, from how far over
    it is and where the flipping unit stands */
-// score 2 (was 72): retail does the 0x348 flag `or` before loading the request for the owner call;
-// ours loads the request first. Shared point difference/cross/both 143/165/150;
-// persistent success admission alone/with difference/with cross/with both 72/97/74/98;
-// entry owner output with success admission 148. Original vector calculations retained.
-// Round 12 (lane 14): the matrix calls inside vector3d_from_points3d's arguments with g_4687b0 read
-// at each use, dot3f(&side, &unit->forward), the flags as a word and nested type/0xf5dc0 tests 2
-// (kept); with cross3f_staged 80/85; the request read through its address 2/2; the flag `or` in each
-// arm 2; the 0x348/0x34d/0x34e bytes as struct fields 2; a 600 s permuter run, none below 2.
 // @retail 0xeb5d0
 bool __stdcall unit_action_vehicle_flip(long unit_index, s_unit_request *request)
 {
@@ -3100,7 +3098,9 @@ bool __stdcall unit_action_vehicle_flip(long unit_index, s_unit_request *request
 	{
 		if (function_f5dc0(unit_index))
 		{
-			long flipper_index = *(long *)((byte *)request + 4);
+			s_unit_request_vehicle_flip *flip = (s_unit_request_vehicle_flip *)request;
+			s_damage_owner owner;
+			long flipper_index = flip->flipper_index;
 
 			if (flipper_index != NONE)
 			{
@@ -3131,12 +3131,11 @@ bool __stdcall unit_action_vehicle_flip(long unit_index, s_unit_request *request
 			{
 				*((byte *)unit + 0x34d) = 1;
 			}
-			*(word *)((byte *)unit + 0x348) |= 0x40;
+			word *flags = (word *)((byte *)unit + 0x348);
+			*flags |= 0x40;
 			*((byte *)unit + 0x34e) = 0;
 
-			s_damage_owner owner;
-
-			object_get_damage_owner(*(long *)((byte *)request + 4), &owner);
+			object_get_damage_owner(flip->flipper_index, &owner);
 
 			byte *current = (byte *)UNIT_ACTION_UNIT_GET(unit_index);
 

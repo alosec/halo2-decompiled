@@ -253,6 +253,8 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 // Round 425: Bounded cluster count short/word/unsigned-long, each with original/inverse
 // weighted-state, 618/700/618/700/616/698; short/word ordinal paired with its count
 // 755/739. Original full-width count, Boolean state, loop and complete body restored.
+// Round 228: native aggregate value inputs scalar/merge/both/color/scalar-color/merge-color/all
+// 886/813/977/826/976/934/1081; all with by-value publication 1240. Original helper contracts and body restored.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {
