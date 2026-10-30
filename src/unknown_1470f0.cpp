@@ -207,8 +207,14 @@ void *c_game_havok_memory::allocate16(long size, long memory_class)
 // 36/36/45/36; pool+fixed/pool+physical/three pools/all paths 36 each.
 // Original calls restored; first upper-bound branch pair and bound-register reuse remain.
 // the first range's end is now a named local tested for equality, which gives
+// the first range's end is now a named local tested for equality, which gives
 // retail's jge/jne pair and the shared dispatch block; the first range's start and the second and
-// third ranges' ends are still computed in edx where retail uses eax.
+// third ranges' ends are still computed in edx where retail uses eax. Only an end named before
+// the first test keeps the jne, and it is then computed before the jg; every end written in the
+// test (>= or > with ==, either order, casts, comma, range helper) gives a lone jge and split calls.
+// Inclusive third 6 (moves 0x147160 9 -> 7 and 0x147240 19 -> 30); end named at function scope
+// with inclusive third 11; inline range helper for the first two 10; inline >= || == end 70;
+// start test nesting the named end 70; third testing == first 23.
 // @retail 0x147320
 void c_game_havok_memory::deallocate16(void *address, long size, long memory_class)
 {
