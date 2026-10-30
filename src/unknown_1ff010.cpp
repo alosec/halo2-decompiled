@@ -510,6 +510,9 @@ void __stdcall function_26c2d0(long prop_index);
 bool function_1fef40(s_type_c3b527 const *target, long actor_index);
 extern vector3f *g_4687b0;
 void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
+// Round 19: unchanged; the inline planar normalisation still compares the length before the
+// divide where retail compares it after, and carries the magnitude and the reciprocal in
+// different registers; no new form was found.
 // score 130 (was 130): frame 0x20 agrees. Retail tests the planar length after the scale products
 // with the zero in xmm0 and does not carry that zero into the inlined rotation (memory 0.0 for i, a
 // fresh xorps for j/k); ours zeroes xmm6 before the divide and keeps it through the rotation, whose

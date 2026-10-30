@@ -1157,6 +1157,9 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 // Y423: Balance-call-first logical result with independent all/eligible word/dword
 // histograms 768/824/821/831; bitwise result 766/829/826/844 fast (control 766).
 // Native dword workspaces recover frame 0xb4 but regress; original body restored.
+// DL196: input group/rating/machine-user base subsets
+// 853/855/907/856/850/855/856; all bases with admitted member-rating observation 856.
+// Original executable body and all supporting contracts restored.
 // @retail 0x7e210
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {
