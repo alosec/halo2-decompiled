@@ -11,6 +11,9 @@
 real distance_sq3f(point3f const *a, point3f const *b);
 
 // score 65 (was 65): key preheader and global/point/index/entry registers still differ.
+// Round 73: formal word keys 65 (two matched callers differ); entry-pointer traversal 106; output pointer 65;
+// memcpy append 97; full-width result index 65; mixed parameter/temporary key tests 65/65;
+// reused entry-field temporary 65. Opening signature and body restored.
 // Unsigned key bits (a word key compared with each field cast to word) plus entry position 61,
 // not kept: the casts only steer the compares; entry position alone 112; separate keys 61; read-only globals 61;
 // function-scope position 61; wrapped index 105; direct count 61;

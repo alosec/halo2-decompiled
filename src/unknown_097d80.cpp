@@ -53,6 +53,9 @@ struct c_aggregate : c_child
 
 
 // score 85 (was 85): frame 0x8024 against 0x8020 (retail packs the completion output with two later
+// Round 73: ordinal/child-cursor dispatch 115; explicit inner length on ordinal/range forms 102/99;
+// guarded count-down block traversal 130; shared output/output as count/result 84/84/84;
+// produced count reused as cleanup total 130. Opening body restored.
 // Frame 0x8024 versus 0x8020, scalar output homes, dispatch ownership and allocator reload remain.
 // Frame 0x8024 versus 0x8020, completion-output home, dispatch ownership and allocator reload remain.
 // Earlier 85 (was 92): frame 0x8024 against 0x8020 (retail packs the completion output with two later
