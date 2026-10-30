@@ -377,6 +377,9 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 // Round 403: real triangle-reference cursor with readonly metadata/surface table/range
 // bound/vertex cursor combinations 210/210/211/193/213/210/213; complete graph
 // with Boolean result 224. Original traversal and defined-failure body restored.
+// Round 207: native point-value getter with bool/byte/long/dword validity outputs,
+// default-first result 284/284/278/278; eligibility-owned return 284/284/278/278.
+// Frames 0x68/0x6c and shorter code regress; original Boolean fetch and defined failures restored.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
@@ -486,7 +489,12 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 /* the collision record's object index, re-read at each use as retail does (no local copy) */
 #define COLLISION_OBJECT_14A8E0 (*(long *)((byte const *)collision + 0x40))
 
-// score 70 (was 70): with the part list read through its 0x48-byte range records and the part
+// score 70 (was 70): frame 0x58 and initial model/collision homes agree; bounds timing,
+// lookup-address reuse and triangle-test registers differ.
+// Earlier: with the part list read through its 0x48-byte range records and the part offset read
+// at each use, the model/collision registers (EBX/EDI swapped), lookup address (retail keeps it
+// in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differed.
+// with the part list read through its 0x48-byte range records and the part
 // offset read at each use, only the model/collision registers (EBX/EDI swapped), the lookup address
 // (retail keeps it in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differ.
 // Round 8 (lane 10): range-record list 95 (kept); part offset at each use 78 (kept); section groups
@@ -571,6 +579,9 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // Round 194: shared first/second/both object acquisitions, node-matrix accessor alone,
 // either/both acquisitions with that accessor and shared headers with it 78 each.
 // Model/collision homes, bounds timing, lookup reuse and triangle-call inputs remain.
+// Round 209: Borrowed collision-point input with original/branch-owned point production, do/for vertex
+// loop 70/70/70/70; corresponding bounded short vertex ordinals 102/102/102/102. Original body
+// restored; bounds timing, lookup reuse and triangle-test registers remain.
 // Round 78: the work after the lookup nested under `if (lookup.initialize(...))` 70; the lookup
 // guard as `return result` 231; a const bounds pointer 70; the lookup and surface lookup in their
 // own block 70; section groups from the section index local 157. Diagnostic: the bounds read
@@ -700,6 +711,9 @@ done:
 // Existing model and collision probe declarations ordinary/inline/noinline, independently and
 // jointly, 125 in all eight forms. Both original declarations restored; their definitions,
 // arguments and the entire body are unchanged.
+// Round 207: actual skipped/failed/found model state, signed byte/word/long/dword
+// in object scope 134/136/133/133; function-scope declarations 134/136/133/133.
+// Byte state reaches retail length; prologue/result/NONE allocation remains. All restored.
 // @retail 0x14af40
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)

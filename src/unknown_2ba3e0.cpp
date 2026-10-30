@@ -338,9 +338,18 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
     return v;
 }
 
-// score 34 (was 34): frame 0xb4 agrees; 1521/1516 bytes. The back-edge parameter reloads (ours first,
-// next, definition; retail definition, next, first) and the minimum-speed normalization differ: retail
-// computes j and k into two registers (k into the inverse's own) before storing either.
+// score 10 (was 34): frame 0xb4 and length 1516 agree. The back-edge parameter reloads (ours first,
+// next, definition; retail definition, next, first) and the maximum-speed branch's squared length
+// differ (ours the vector normalizer's k,i,j statements; retail (i+j)+k with k in the lower register).
+// Round 7 (lane 14): the minimum-speed normalization folds retail's j/k loads only when the maximum
+// branch sums its squared length in statements; maximum branch through the vector normalizer and the
+// minimum branch's normalize split from its scale 10 (kept); maximum branch alone 52; the direction
+// normalizer there 17; a one-caller i,j,k statement normalizer 9, with k read into a local first 2
+// (only the reloads left; not kept, new helper); the velocity normalizer in both branches with k (or
+// k,j,i) read first 10/10 (1517 bytes); next before properties 10; properties/next declared at the
+// loop 43/64; on the 2 form: parameter orders with the record second or before scale 2/2, particle
+// declared outside the loop 2, a separate particle mask 51, the successor through a local 2.
+// Earlier rounds (the minimum normalization then stored j and k one by one):
 // Round 90: the blend's previous add through vector3f_add with the squared speed from dot3f 34 (kept;
 // the add is retail's in-place block); with the direction/vector squared helpers 105/102, length_sq3f 113,
 // written-out sum 115; inverse-first j/k products in the normalizer 34 (same code); the minimum branch
@@ -539,11 +548,13 @@ void function_2b9b10(s_particle_properties_2ba const *definition, void const *or
         squared = dot3f(&particle->velocity, &particle->velocity);
         if (squared > maximum_speed * maximum_speed)
         {
-            vector3f_scale(normalize_particle_velocity_2b(&particle->velocity), maximum_speed, &particle->velocity);
+            normalize_particle_vector_2b(&particle->velocity);
+            vector3f_scale(&particle->velocity, maximum_speed, &particle->velocity);
         }
         else if (minimum_speed * minimum_speed > squared)
         {
-            vector3f_scale(normalize_particle_velocity_2b(&particle->velocity), minimum_speed, &particle->velocity);
+            normalize_particle_velocity_2b(&particle->velocity);
+            vector3f_scale(&particle->velocity, minimum_speed, &particle->velocity);
         }
     }
 }
@@ -666,6 +677,7 @@ real g_55e618;
 // both producers 191/191/191/191. Separate placement inline/noinline declarations with that
 // consumer 285/191; alone 289/102. All restored; sweep/collision homes and projection spills
 // remain.
+// Round 293: Destructive normal-copy projection/velocity-copy tangent/both 265/283/332; scaled response 101 (one-count gain rejected); projection/response 264, tangent/response 278, all stages 337, all with direct velocity producer 285. Original vectors and complete body restored.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

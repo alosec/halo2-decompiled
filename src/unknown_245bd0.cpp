@@ -5,6 +5,7 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "data_array.h"
+#include "vector_products.h"
 #include "globals.h"
 #include <float.h>
 #include <math.h>
@@ -260,7 +261,6 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // distance (reciprocal inside it) with length_sq3f gets the in-place products (compile-only xmm
 // diff 13) but swaps x/y and folds the last dot term, 129 (and a one-caller helper).
 // the sphere test's normal: retail multiplies the x and z
-// the sphere test's normal: retail multiplies the x and z
 // differences in place (normal x/y/z in xmm1/xmm3/xmm2) and loads 1.0 in each arm;
 // ours multiplies copies of the scale and hoists 1.0 into xmm0 before the fsqrt.
 // The unit-z arm's zero stores chained (y first, then x) 57 (each order with y or z
@@ -298,6 +298,15 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // and reciprocal-one hoisting remain.
 // Scale helper with the factor as its first parameter 57; unit-z through vector3f_assign 61;
 // arms swapped 170; depth stored before the normalization branch 173; sqrtf 57.
+// Round 160: existing vector3f_scale with the reciprocal in the call 57, with a scale local 57,
+// plus dot(normal, center) 57, plus vector3f_assign unit z 61; length_sq3f with the reciprocal
+// passed to shape_scale3d 152; a 72-form compile screen of these helpers (squared distance,
+// scale, unit-z arm, dot order) found none below 57.
+// Round 7 (lane 14): fast MATCH with a one-caller helper returning the x and z squares (statements,
+// through its pointer) plus `+= d.j * d.j`, with the unit-z zeros stored separately or chained j
+// first (not kept: a new one-caller helper only steering the products); that helper alone 2 (the
+// unit-z zero stores in the other order), with the dot inputs swapped 2; every square through a
+// pointer local plus the dot swap 148; products written by fields after an x,z,y statement sum 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -357,7 +366,14 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 // length_sq3f/dot3f for c 55/57; radius square after the sum, c <= 0, length_sq3f for a, radius
 // local, named distance square, radius square first, result before *t: 40 (same code);
 // dot3f for b 42; reverse dot for b/a 42/42; result declared late 67 (caller 0x2469b0 170);
-// arms swapped 63.
+// arms swapped 63. Round 160: c as one expression with the terms reversed 49; length_sq3f
+// for c 55; dot3f for b with dot3f for a 40, reverse dot for b with dot3f for a 40; reversed
+// one-expression c with reverse dot b 49; a 60-form compile screen of c, b and a through the
+// existing helpers or one expression found none below 40.
+// arms swapped 63. Round 7 (lane 14): b's retail order i,k,j comes from statements, but the last
+// term then loads first (compile-only); b as i,k statements plus j 46, i plus k,j 46, three
+// statements 42 (434 bytes each), through the existing reverse dot 42; the radius-square
+// declaration at any of five places gives the same code (compile-only).
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
@@ -417,6 +433,12 @@ bool function_2461a0(
 	return result;
 }
 
+// score 104 (was 106): every sum now associates as in retail (the compiler reorders unparenthesized
+// sums of three products); what still differs is scheduling of the first block: retail multiplies
+// v.k by u.k from memory before summing a, and keeps a in XMM3 and uv in XMM0 (ours XMM4, XMM1), which
+// swaps registers to the end. Tried: any subset of the four parenthesized sums (151-214), w computed
+// k, j, i by hand (211), a or uu parenthesized (180, 206), uv unparenthesized in any order (214),
+// uv as += statements (182), a/uv/uu statement orders (104-217), den = a * uu (104).
 // @retail 0x246360
 bool function_246360(
 	vector3f const *direction,
@@ -437,10 +459,10 @@ bool function_246360(
 	}
 	vector3f w;
 	vector3d_from_points3d(&capsule->origin, start, &w);
-	real uw = dot3f(u, &w);
-	real vw = v->k * w.k + v->j * w.j + v->i * w.i;
+	real uw = (u->j * w.j + u->i * w.i) + u->k * w.k;
+	real vw = (v->k * w.k + v->j * w.j) + v->i * w.i;
 	real b = vw * uv - uw * a;
-	real c = (w.k * w.k + w.j * w.j + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
+	real c = ((w.k * w.k + w.j * w.j) + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
 	real disc = b * b - c * den;
 	if (0.f > disc)
 	{
@@ -506,7 +528,7 @@ bool function_246360(
 	q.i = u->i * t_enter + w.i;
 	q.j = u->j * t_enter + w.j;
 	q.k = u->k * t_enter + w.k;
-	real along = (v->k * q.k + v->j * q.j + q.i * v->i) / a;
+	real along = ((v->k * q.k + v->j * q.j) + q.i * v->i) / a;
 	real back = 0.f - along;
 	plane->i = v->i * back + q.i;
 	plane->j = v->j * back + q.j;
@@ -521,24 +543,8 @@ bool function_246360(
 	return true;
 }
 
-// score 53 (was 53): the multiplier is kept in XMM1 and multiplied into XMM0; retail loads the
-// multiplier into XMM0 and multiplies by XMM1.
-// Earlier: plane object reference 210; origin reference 57; direction reference 53;
-// projected-start initializer 53; projected-direction initializer 53; paired initializers 55;
-// vertex-end traversal 66; quotient update 53. Projection operands and edge allocation still differ.
-// operand text order of the six products is canonicalised (each flip 53);
-// the negated distance computed at entry 164; both projected points through one inline
-// point-plus-scaled-normal helper 83, though it gives retail's three plane-first loads for the
-// start point and the last two direction products (only the first direction product and the
-// edge loop's registers still differ).
-// Round 184: Complete named/start-direction product phases, six-product ownership, interleaved
-// components, array products and interleaved products 157/113/157/157/112/113/189/157; existing
-// add-scaled direction/start/both 84/84/83; existing projection inline/forced 53/53. All
-// restored. Retail: start-point products all load the plane field first, direction products
-// fold only the first (the edge loop folds d2.x into edge.y's copy); direction point computed
-// first 83; edge before offset 53; numerator before denominator 125; current vertex indexed
-// from i - 1 instead of the walking pointer 205 (caller 0x2469b0 139); start point projected
-// before the direction point is built 138 (0x2469b0 2).
+/* where along start + t * direction (t in [0, 1]) the segment first enters a prism, and the
+   prism's top plane */
 // @retail 0x2466b0
 bool function_2466b0(
 	point3f const *start,
@@ -548,10 +554,10 @@ bool function_2466b0(
 	plane3f *out)
 {
 	real b = plane_distance_to_point(&prism->plane, start);
-	real a;
 	real t0 = 0.f;
 	real t1 = 1.f;
-	if (!(fabs(a = shape_dot_reverse(&prism->plane.n, direction)) < k_real_epsilon))
+	real a = shape_dot_reverse(&prism->plane.n, direction);
+	if (!(fabs(a) < k_real_epsilon))
 	{
 		real inv = 1.f / a;
 		real s0 = 0.f - inv * b;
@@ -587,37 +593,32 @@ bool function_2466b0(
 	{
 		return false;
 	}
-	real nb = 0.f - b;
-	real q0[3];
-	q0[0] = prism->plane.i * nb + start->x;
-	q0[1] = prism->plane.j * nb + start->y;
-	q0[2] = prism->plane.k * nb + start->z;
+	vector3f q0;
+	vector3f_add_scaled((vector3f const *)start, &prism->plane.n, -b, &q0);
 	real na = 0.f - a;
 	real q1[3];
 	q1[0] = na * prism->plane.i + direction->i;
 	q1[1] = prism->plane.j * na + direction->j;
 	q1[2] = prism->plane.k * na + direction->k;
 	point2f s2;
-	prism_project(q0, prism->axis, prism->side, &s2);
+	prism_project(&q0.i, prism->axis, prism->side, &s2);
 	point2f d2;
 	prism_project(q1, prism->axis, prism->side, &d2);
 	long count = prism->point_count;
+	long i = 0;
 	if (count > 0)
 	{
-		long i = 1;
-		point2f const *local_0 = prism->points;
 		do
 		{
-			long next = i >= count ? 0 : i;
-			point2f const *cur = local_0;
-			point2f offset;
-			offset.y = s2.y - cur->y;
-			offset.x = s2.x - cur->x;
+			point2f const *vertex = &prism->points[i];
+			long next = (i + 1 >= count) ? 0 : i + 1;
+			point2f const *next_vertex = &prism->points[next];
 			point2f edge;
-			edge.y = prism->points[next].y - cur->y;
-			edge.x = prism->points[next].x - cur->x;
-			real denom = edge.y * d2.x - d2.y * edge.x;
-			real num = offset.y * edge.x - edge.y * offset.x;
+			vector2d_from_points2d(vertex, next_vertex, &edge);
+			point2f offset;
+			vector2d_from_points2d(vertex, &s2, &offset);
+			real denom = shape_cross2d(&d2, &edge);
+			real num = shape_cross2d(&edge, &offset);
 			if (!(fabs(denom) < k_real_epsilon))
 			{
 				real r = num / denom;
@@ -644,9 +645,8 @@ bool function_2466b0(
 			{
 				return false;
 			}
-			local_0++;
 			i++;
-		} while (i - 1 < count);
+		} while (i < count);
 	}
 	*t = t0;
 	out->n = prism->plane.n;

@@ -38,6 +38,9 @@ long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte c
 // comes from 0x2cc8d0 taking its stream in esi, so its real body is needed first.
 // Native unpack status at entry/after allocation 130/102; raw storage/unsigned bytes/both
 // 52/52/52; entry status with raw storage/unsigned bytes 130/130; later status with both 102.
+// Round 96: result declared after the allocation 89; the retry loop with break/continue (the
+// matched 0x194260 form) 52; the allocator local before the pool setup 57; elapsed as a read
+// then `-= start` 52; the timestamp read before the result default 52.
 // @retail 0x199740
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
 {
