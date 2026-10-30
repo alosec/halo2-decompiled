@@ -273,6 +273,9 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 // 0xffff`, but the tag table moves from EDI to ECX, loaded before the frame); the flags field read just
 // before function_173ba0 149 (arg_0 becomes a stack parameter), both 156; the second and third block
 // elements through named element pointers 117 each (identical code).
+// Round 233: packed mapping element/native directory/both/marker/element-marker/directory-marker/
+// all schemas/all plus low-word fallback mask: 117/117/117/117/117/117/117/152. Original data views and
+// accessor retained; fallback EDX masking and stage/pass/unfused-load homes remain.
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)
