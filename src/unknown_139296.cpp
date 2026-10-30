@@ -470,6 +470,8 @@ bool function_22acb4(long player_index);
 // second-mask slot remains; original phase order, observation and complete body restored.
 // Round 424: physical item-selection orders 2143/2413/2431/3142/3412/3421/4132/4213
 // all 165 at 884 bytes. Original order restored; extra second-mask spill and constant homes remain.
+// N227: Set-first total updates in first/second/third/fourth/first-second/second-third/
+// second-fourth/all result families 304/287/281/285/303/285/304/347. Original setter restored.
 // @retail 0x13a050
 void function_13a050(byte const *status, long user_index, long type, s_13ad48_item const **item_out,
 	word *first_out, word *second_out, word *third_out, word *fourth_out)
