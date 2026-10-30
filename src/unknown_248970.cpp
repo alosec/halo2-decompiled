@@ -51,8 +51,9 @@ public:
 		s_247fd0 *arg_3, transform4x3f const *arg_4, dword arg_5);
 };
 
-// score 227 (was 227): activation AL and stacked location agree; frame 0x10/0x14,
-// metadata/head/count homes and x87 cleanup differ.
+// score 198 (was 227): activation AL and stacked location agree; frame 0x0c/0x14,
+// retained head/position homes and x87 cleanup differ.
+// Earlier metadata/head/count homes differed.
 // Earlier: retail's convention since round 67 (flag in AL, location stacked, 0x175270
 // retail's convention since round 67 (flag in AL, location stacked, 0x175270
 // the child loop advances a 0xb8-stride cursor over the child table instead
@@ -209,6 +210,9 @@ public:
 // Round 431: Complete viewer lookup via both branches then immutable conditional result, each with
 // original/viewer/child-cursor/position receiver identities: 234/234/234/234/234/234/234/234. Original
 // pointer producer, receiver identities and complete executable body restored.
+// Round 317: Child byte-offset induction with readonly metadata/live count/independent ordinal
+// subsets 243/243/198/198/243/243/198/198. Plain 198 with live tag count kept;
+// original scalar math, allocation/link stores and callback tuple preserved.
 // @retail 0x248970
 void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s_particle_system_datum *arg_2,
 	real *arg_3, transform4x3f const *arg_4)
@@ -216,7 +220,6 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 	s_248970 *local_20 = (s_248970 *)arg_0;
 	long local_0 = local_20->field_4;
 	s_248971 *local_1 = (s_248971 *)arg_2->function_1751d0();
-	long local_2 = local_1->field_30;
 	point3f *position = &local_20->field_10;
 	*position = arg_4->position;
 	local_20->field_2 = arg_5;
@@ -253,8 +256,8 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 		}
 	}
 	*(real *)((byte *)arg_3 + 0x1c) = local_20->field_1c;
-	byte *local_cursor = local_1->field_34;
-	for (long local_14 = 0; local_14 < local_2; ++local_14)
+	long child_offset = 0;
+	for (long local_14 = 0; local_14 < local_1->field_30; ++local_14)
 	{
 		s_record_pool *local_15 = g_51ec88;
 		if (local_0 == NONE)
@@ -280,8 +283,8 @@ void function_248970(s_particle_location_datum *arg_0, bool arg_5, real arg_1, s
 			local_20->field_8 = local_18;
 		}
 		c_247470 *local_19 = DATUM(local_15, c_247470, local_0);
-		local_19->function_247470(arg_1, arg_2, (s_object_2470e0 *)local_cursor, (s_247fd0 *)arg_3, arg_4, arg_2->color);
-		local_cursor += 0xb8;
+		local_19->function_247470(arg_1, arg_2, (s_object_2470e0 *)(local_1->field_34 + child_offset), (s_247fd0 *)arg_3, arg_4, arg_2->color);
+		child_offset += 0xb8;
 		local_0 = local_19->field_8;
 	}
 }
