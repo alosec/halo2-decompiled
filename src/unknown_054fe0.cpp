@@ -1687,6 +1687,10 @@ static __forceinline bool function_65341(c_class_58d20 **out)
 // declarations swapped 145; pointer-terminated user loop 145. Original restored.
 // Round 256: Actual selector state-test result in bool/byte/short/long, conditional/guarded state
 // acquisition 135/139/135/139/152/153/153/153. All restored.
+// Round 189: Coherent initialization flag as bool/byte/word/long 145/129/141/134; with guarded
+// state production 143/148/146/141. Scalar-SSE on the new byte graph 129 (one diagnostic, target
+// regression); variant/status/both early defaults on it 124/132/149. All frame/default-output
+// forms rejected; original helper, body and flags restored.
 // @retail 0x65340
 void function_065340(void)
 {
