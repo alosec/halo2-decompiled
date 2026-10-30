@@ -70,6 +70,10 @@ PRIVATE __forceinline long texture_floor(real value)
 // Round 69: bitmap/bias at function scope 4/4; reversed level compare 4; `>=` magnitude test 90;
 // tag local for the NONE test 4. Harness: EAX only when the bitmap is a constant zero; a constant
 // bitmap in the arm, an unconditional bitmap or a call without it keep EDX.
+// Round 123: bit scan in an inline index helper 4; bit scan split into two asm statements 4;
+// bias assigned in the arm without its zero default 65; ignored call result named 4; bitmap
+// narrowed to short at the floor 16. Harness: the second floor's asm decides it (an asm copy
+// that clobbers EDX in place of ECX gives EAX here).
 // @retail 0x1b0a0
 void __stdcall function_1b0a0(byte *state)
 {
