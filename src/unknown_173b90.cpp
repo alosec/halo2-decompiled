@@ -497,27 +497,6 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // definitions 115 (1136 bytes), with scale first 113; scale first alone 40; locals renamed to sort
 // the other way 42; helper with an unconditional copy, a result local, or the copy inside its own
 // block 50/287/50 (0x2477b0 then differs).
-// Offset initialization, scalar initializer order, property reloads and rotation scheduling differ.
-// Combined entry decisions 53; entry decisions with shared cache 53; scale/alpha/both result locals 119/56/119;
-// saved successor 217; particle cache with scale result 119; combined entry/property/cache 116.
-// Earlier: entry branch, property reload pairs and rotation scheduling differ;
-// forward/left/up/all axis receivers 118/55/55/118; forward/left/up/first-pair values 182/167/181/289;
-// left/up receivers with empty-list return and scale-first initialization 52/52, but the return only repeats the loop test (reverted in review).
-// Captured position/late output 353; captured velocity/late output 357; both 437;
-// translation component loop 56; inner cache member 56; derived mask at use 198;
-// scale initialized at property selection 273; translation value 160.
-// Earlier: the definitions indexed (index++) put the offset's zero store after the
-// list test and fix the three reload pairs (with scale declared first, all but the rotation
-// blocks match), but turn the rotations' products around and add 10 bytes: indexed 119,
-// indexed with scale first 117; plus split += rows 116; plus a matrix pointer local 123.
-// Round 112: scale declared before multiplier alone 54 (fixes the 1.0 store order only); existing
-// 0x173c10 for both hand-written mask refreshes 56 (same code, kept); on the indexed form with scale
-// first, input-first products 117 and a greedy screen of every rotation row's term order 116 at best;
-// the offset as a for-loop init 56.
-// Complete position/velocity/both row products 127/56/127; all-products before stores 164/121/171;
-// both input copies on complete-product graph 170; shared translation add with row products 127.
-// Indexed definitions plus scale-first defaults with those six product graphs 103/117/103/141/153/116.
-// Entry/reload order and matrix/input product scheduling remain; original body retained.
 // Round 19: in the first rotation only row x differs (ours evaluates forward.i*x first, so x and z
 // take each other's XMM registers; rows y and z agree apart from them). The row x pair swapped in both
 // rotations 56 (identical: VC orders the products itself, by the function's tuple count); both
@@ -528,6 +507,12 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // Round 307: Complete per-emitter alpha/color/scale policy subsets 248/267/261/255/246/241/282;
 // one raw flag observation 260. Policy homes enlarge the frame; original property observations
 // and shared in-place rotations restored.
+// Round 27: the emitter definition computed first in the loop body 47 (fixes all three reload pairs:
+// they follow where the definition's value is computed, but the emitter lookup then comes after it);
+// declared first and assigned in place 42 (same code); the offset declared at the function top 65 (the
+// zero store follows the declaration). On the indexed form with scale first (113, 1136 bytes; only the
+// two rotations differ: rows i/j/k sum k,i,j / j,i,k / i,k,j against retail j,i,k / i,k,j / i,k,j):
+// the 0xf80f mask passed inline 113 and the index declared at the function top 113 (rotations unchanged).
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
@@ -1365,6 +1350,9 @@ bool function_17afd0(long effect_index, long value);
 // retail; NONE stays in EBX because availability lands in AL); bit 9 form alone 128; if/else owner with the
 // false-init availability 138 (availability spilled, same-view takes BL), without the bit form 150, with a
 // view local 138.
+// Round 312: same-view classification after attachment on the retained availability gate,
+// bool/byte/short/long attachment with original/direct camera result 100/125/100/125/111/122/110/122.
+// Two-point gain restored; later-result forms can coalesce owner/NONE but regress overall. Original snapshot and body restored.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {

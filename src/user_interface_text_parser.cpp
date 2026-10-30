@@ -485,6 +485,9 @@ done:
 // 54; the name typed as dword 49/54. Round 36, on the retail-order body: the missing-definition path
 // copying and returning early 72 (189 bytes); `&g_55c6e4[0]` at both uses 54; the buffer named in a
 // local for both uses 54; const definition pointer and tag read 54; the default label first 54.
+// score 32 (was 49): retail's case order (0, 1, 9, 2, 3, 4, 7, 8) with the copy repeated after the
+// translation; ours still keeps the switch's value in EDI from the entry and pushes the buffer address
+// in ESI where retail pushes it as an immediate, and the selector load lands in ECX.
 // @retail 0x22d456
 void __stdcall parse_gametype(long string_handle, word *buffer)
 {
@@ -504,6 +507,9 @@ void __stdcall parse_gametype(long string_handle, word *buffer)
 		case 1:
 			name_id = 0x1000010d;
 			break;
+		case 9:
+			name_id = 0x700010e;
+			break;
 		case 2:
 			name_id = 0x600010f;
 			break;
@@ -519,13 +525,12 @@ void __stdcall parse_gametype(long string_handle, word *buffer)
 		case 8:
 			name_id = 0xb000115;
 			break;
-		case 9:
-			name_id = 0x700010e;
-			break;
 		default:
 			goto done;
 		}
 		function_1a0180(tag_index, name_id, (word *)g_55c6e4);
+		parse_copy(buffer, g_55c6e4);
+		return;
 	}
 done:
 	parse_copy(buffer, g_55c6e4);

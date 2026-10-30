@@ -550,7 +550,8 @@ struct s_match_player_rating_collection
 // score 16 (was 22): retail holds the entry skill sign-extended in ESI (movsx at the load, mov ebx,esi for the call); a 32-bit local gives that movsx but MSVC then picks EBX for it and moves the team-mode byte to CL, so the whole frame shifts.
 // Also tried with a 32-bit skill: the call reading the field instead 24 (the compare narrows back to 16 bits); the local at the loop top 104; team mode declared first 113; a const team mode 113; locals renamed 113; an unsigned 32-bit skill 113;
 // declared at function scope 113; team mode as byte or char 113; team mode read from the collection in the loop 113 (in both places 105); the compare reading the field 99; declared inside the condition's block 103;
-// loads and tests in one condition 104; the tests as continues 113; the key and active tests split from the rest 113; the selected skill read from the entry at the call 103; the key read from the collection 117.
+// loads and tests in one condition 104; the tests as continues 113; the key and active tests split from the rest 113; the selected skill read from the entry at the call 103; the key read from the collection 117;
+// the call passing (long)other_skill 16; other_team read before the tests 65; an int skill 113; a long skill with the field compared 99; a long skill and long team mode 92.
 // @retail 0x74800
 long __stdcall function_74800(const s_match_player_rating_collection *collection, long selected)
 {

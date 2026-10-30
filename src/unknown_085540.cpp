@@ -1030,6 +1030,8 @@ bool function_68670(byte *source, long size, void *block);
 // Round 222: connection-ready bool/byte/short/long on original entry, each 97; each with named
 // occupied span 135. Original body restored; reader visibility, cursor reloads and count updates
 // remain.
+// Round 232: Native signed header bitfields kind/size/both/value/kind-value/size-value/all, then all with occupied-window local
+// 97, 97, 97, 97, 97, 97, 97, 135. Original executable source restored.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {

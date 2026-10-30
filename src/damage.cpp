@@ -1908,6 +1908,7 @@ real function_db090(s_damage_info *info, void const *region_entry, long object_i
 // `mov eax, [edi]` before the `info` test, which register the object pointer and the 1 << type shift use) and the
 // `lea ebx, [ecx + 8]` before the last call's first push.
 // Tried: the region entry cached in a local before the `info &&` test (226).
+// @coldspear's permuter (#104, 2026-10-30): 40 -> 36 only by reading a short where retail reads a dword (not kept).
 // @retail 0xd8cb0
 void function_d8cb0(long object_index, s_damage_effect_definition const *definition, s_type_1e6529 *data,
 	s_damage_region_accumulator *accumulator)
@@ -2029,6 +2030,7 @@ void function_176330(point3f const *point, s_effect_marker *markers);
 // it is not understood (it follows their own, still unmatched, code); the bodies are statement for statement retail's.
 // Tried (all 69): the flag as long or byte, the owner cast hoisted to a local, the flag computed into a local bool or
 // as `!= 0` at the call sites, the marker branch first, the function moved before 0xdae60, the flag last or second.
+// @coldspear's permuter (#104, 2026-10-30): 66 -> 52 needs a volatile local pointer; its reorders alone gain nothing.
 // @retail 0xd9d60
 void function_d9d60(long marker_name, long object_index, bool at_marker, long effect_index,
 	s_damage_owner const *owner)
@@ -3352,6 +3354,8 @@ void function_d87e0(long list_index, bool can_take_damage)
 // Tried (all still 46): operand order of the name test, passing marker_name instead of name to 0xb8d30, the array
 // address in a separate local, i*0x1c written before the base, marker_name copied to a local, a struct-array
 // view of the markers.
+// @coldspear's permuter (#104, 2026-10-30): 46 -> 31 only by changing an offset and swapping 0xb8d30's arguments at one
+// call (not kept).
 // @retail 0xd88f0
 short __stdcall function_d88f0(long object_index, long marker_name)
 {
@@ -3719,6 +3723,7 @@ void function_db670(long object_index, long vehicle_index)
 
 /* a permutation destroyed elsewhere (over the network): starts its delayed
    effect, or destroys it here */
+// @coldspear's permuter (#104, 2026-10-30): 38 -> 29 only by swapping arguments at a call and adding volatiles (not kept).
 // @retail 0xdb760
 void function_db760(long region_index, long permutation_index, long object_index, long mode)
 {

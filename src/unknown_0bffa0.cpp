@@ -1154,6 +1154,9 @@ void function_c0110()
 // of through a reference local 6 (kept). Round 52: explicit per-arm stores, direct per-arm stores,
 // and direct stores with an index reference 87/87/87; a direct store ternary 6; the object or flags
 // live at entry 6/6; flags declared before the object 6; separate original and updated flag values 6.
+// Round 26: the object typed as the file's light object with `flag6` set or cleared in each arm 68,
+// `flag6 = remaining` 60; the header read through the file's object header type (kept) 6; signed
+// flags 6; the object through an inline getter 6.
 // @retail 0xc3260
 void __stdcall function_c3260(long light_index, bool clear_object_flag)
 {
@@ -1163,8 +1166,7 @@ void __stdcall function_c3260(long light_index, bool clear_object_flag)
     long object_index = light->object_index;
     if (object_index != NONE && clear_object_flag)
     {
-        struct s_object_header { byte unknown00[8]; byte *object; };
-        byte *object = ((s_object_header *)g_4e0300->data)[object_index & 0xffff].object;
+        byte *object = (byte *)((s_light_object_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
         bool remaining = false;
         s_record_pool_iterator iterator;
         iterator.data = g_4e030c;

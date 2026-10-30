@@ -1122,6 +1122,9 @@ struct s_actor_looking_structure_view
 // copy, as retail, but flips other product operands); the existing cross-file rotation helpers with
 // sine/cosine arguments (cross-first scalars / dot3f with a cross vector) 146/140; the candidate array
 // declared before forward 23; forward copied member-wise 199.
+// Round 27: fraction as a ternary after the query 144; `1 - cosine` named in the helper 23; cross terms
+// before the projection 158 (931 bytes); the 0.6 clamp as an if statement 141 (927 bytes); the dot in its
+// own local beside the score 33.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {

@@ -291,19 +291,21 @@ struct s_z_state_world
 // database pointer is in ecx (retail edx) and the active byte goes to cl. Tried: inline active
 // test, record getter or dispatch helper 11; world local in the inner block 11; state through the
 // re-read 11; database local 11; active read before the pointer (72 spellings) 14-21; renames 11;
-// a 600 s permuter run, none below 11.
+// a 600 s permuter run, none below 11. Round 89: the world global read at each use (no local, no
+// address cast) builds the same code; with one world local for both reads ours is retail with ecx and
+// edx swapped (world and database in ecx), 18 in every spelling: state local, identifier declared
+// first, object local, database and index locals, state-test helper, unsigned identifier, entity
+// table types; database read from the global in the state block 11 (sunk past the test).
 // @retail 0xa9820
 bool function_a9820(long *block, long index)
 {
 	bool result = false;
-	s_z_state_world *world = (s_z_state_world *)g_4cf77c;
-	if (world->state == 4 || world->state == 5)
+	if (((s_z_state_world *)g_4cf77c)->state == 4 || ((s_z_state_world *)g_4cf77c)->state == 5)
 	{
 		long identifier = ((s_object_header *)g_4e0300->data)[index & 0xffff].object->field_d4;
 		if (identifier != NONE)
 		{
-			// Preserve the later world-pointer read when selecting the record.
-			s_z_entity_record *entity = &((s_z_state_world *)*(void * const *)&g_4cf77c)->database->entities[identifier & 0x3ff];
+			s_z_entity_record *entity = &((s_z_state_world *)g_4cf77c)->database->entities[identifier & 0x3ff];
 			if (entity->active)
 			{
 				long type = entity->type;
@@ -332,20 +334,17 @@ bool function_a9820(long *block, long index)
 // Shapes tried: world read once 18; database local 18; re-read of the global 11; state read from the
 // global 11; array form of the active byte 14/21; const world 18; void world 18; named database 11/18.
 // The permuter could not finish a run here: it builds the whole program for its baseline and the
-// machine is busy with other lanes' builds.
+// machine is busy with other lanes' builds. Round 89 (with 0xa9820): the world global read at each use
+// builds the same code; one world local for both reads 18 in every spelling (see 0xa9820).
 // @retail 0xa99f0
 void function_a99f0(long index, long *block)
 {
-	s_z_state_world *world = (s_z_state_world *)g_4cf77c;
-	if (world->state == 4 || world->state == 5)
+	if (((s_z_state_world *)g_4cf77c)->state == 4 || ((s_z_state_world *)g_4cf77c)->state == 5)
 	{
 		long identifier = ((s_object_header *)g_4e0300->data)[index & 0xffff].object->field_d4;
 		if (identifier != NONE)
 		{
-			// The world pointer is read from the shared global again for the record lookup.
-			// Read the shared world through its const pointer at the later use.
-			world = (s_z_state_world *)*(s_simulation_world *const *)&g_4cf77c;
-			s_z_entity_record *entity = &world->database->entities[identifier & 0x3ff];
+			s_z_entity_record *entity = &((s_z_state_world *)g_4cf77c)->database->entities[identifier & 0x3ff];
 			if (entity->active)
 			{
 				long type = entity->type;
@@ -1118,7 +1117,7 @@ bool function_a69a0(long a, long b, long c, long d, long e, bool f, long g)
 
 
 quaternionf *function_141f60(matrix3x3 const *matrix, quaternionf *out);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 matrix3x3 *function_141e10(matrix3x3 *out, quaternionf const *q);
 
 PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const *up, matrix3x3 *matrix)
@@ -1131,13 +1130,6 @@ PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const
  matrix->up = *up;
 }
 
-// score 4 (was 4): both extraction calls form the angle address before the axis address.
-// Reused axis/angle output pointers 10; reused angle output pointer 6; saved/current output
-// pointer pairs 10/10; extraction calls swapped 7; axis declarations swapped 4; axis names 4;
-// forced orientation inline 4.
-// Held (coordinator 2026-10-30): matches with 0x11d790's parameters declared (q, angle, axis) at its
-// definition and every caller (lane 12 r44); applied once the callers in src/vehicles.cpp and
-// src/unknown_141590.cpp are free. Don't retry this function before then.
 // @retail 0xa9b40
 void function_a9b40(long index, s_z_copy_state *state)
 {
@@ -1153,8 +1145,8 @@ void function_a9b40(long index, s_z_copy_state *state)
  vector3f const *current_forward = (vector3f const *)(object + 0x70);
  function_141f60(&saved_matrix, &saved_rotation);
  function_141f60(&current_matrix, &current_rotation);
- function_11d790(&saved_rotation, &saved_axis, &saved_angle);
- function_11d790(&current_rotation, &current_axis, &current_angle);
+ function_11d790(&saved_rotation, &saved_angle, &saved_axis);
+ function_11d790(&current_rotation, &current_angle, &current_axis);
  if (current_angle - saved_angle > 0.0001f)
  {
   real weight = 0.35f;

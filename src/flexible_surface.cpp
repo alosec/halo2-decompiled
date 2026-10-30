@@ -443,6 +443,10 @@ static inline dword surface_random()
 // Round 221: j/k projection pair 160, uniform direction-first factors 178; either projection before
 // shared cross 176/176; existing dot-helper orders before cross 179/179; named cosine complement
 // 176, with direction-first factors and staged cross 176. Original body restored; frame 0x28 remains.
+// Round 49: old snapshot before axis/before trigonometry on the current shared graph 164/164;
+// const old/both inputs/staged cross with both const 160 each; post-cross dot3f in either input order
+// on the const staged graph 181 each; const staged inputs with shared random_index draws 160.
+// Original body restored.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {
