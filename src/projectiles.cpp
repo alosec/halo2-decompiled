@@ -1202,6 +1202,9 @@ extern vector3f *g_4687ac;
 // consistent radius-field reads 198/193/179/185. Full-width result reaches 756 bytes but
 // regresses. Original result exits, cached radius, simultaneous endpoints and body restored;
 // frame/tag/query homes remain.
+// Round 430: complete repeated positive/negative offsets, native products or existing scale producer,
+// with actual long query result and bounded first-ray combinations 168/170/167/169 each.
+// All reach 756 bytes; unbounded/bounded frames 0x3c/0x30 still miss 0x34. Original body restored.
 // @retail 0xfc030
 bool function_fc030(long projectile_index, point3f const *point, s_collision_result_1697c0 *collision)
 {
@@ -1678,6 +1681,9 @@ real function_17c900(short function_type, real input);
 // DH round 236: lead/turn/drift vector storage promoted without moving their input reads,
 // all seven subsets 348 each; complete promoted graph with role-based point/vector names 348.
 // Original branch storage and complete body restored; input transport and vector homes remain.
+// Round 430: complete lead-offset/staged turn-cross/clock receiver subsets
+// 344/348/344/362/365/362/365; complete graph with point/direction names and declaration order 365.
+// Four-point lead-offset forms reach retail length but are below the keep margin; original body restored.
 // @retail 0xf87f0
 void function_f87f0(long projectile_index, point3f *aim_point)
 {
@@ -2532,6 +2538,9 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 // Round 284: Independent effect/sound long or dword counters at their producers, four
 // combinations 1162 each; those with the collision routine declared inline 1162 each.
 // Original shared counter and declaration restored; frame and velocity contract remain.
+// Round 430: marker/request producer declarations and complete effect/sound phase scope,
+// seven subsets 1162/1162/1162/1162/1162/1208/1208; complete graph with request before spatial input 1208.
+// Last three recover frame 0x218 but shrink to 4768/4828 bytes; velocity stays stacked. Original restored.
 // @retail 0xfaa60
 void function_faa60(vector3f *velocity, long projectile_index, s_collision_result_1697c0 const *collision,
 	point3f *end_point, vector3f *displacement, short collision_count)
