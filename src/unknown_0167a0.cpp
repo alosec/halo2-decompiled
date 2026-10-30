@@ -77,10 +77,12 @@ PRIVATE inline byte const *material_parameters(long tag)
 // score 47 (was 47): restore entry-load order (retail reloads the table field before the entry store) and
 // BLOCKED-BY 0x18a90 (src/unknown_01cf50.cpp, contributor file: retail passes the state in ebx, ours
 // pushes it; that tail is about 42 of the 47 lines and the extra byte).
+// BLOCKED-BY 0x18a90 (retail passes the state in EBX, ours pushes it; the later calls
+// then shift by one instruction) and the `second` load of the restore block, scheduled after the table
+// loads in retail and right after the entry `lea` here; frame, entry and logarithm agree.
 // Earlier 95 from 132: frame four, the logarithm and the tail agree; left are the restore block (retail reloads
 // the range field before each call; ours keeps it in a register) and BLOCKED-BY 0x18a90, which retail passes
 // the state in ebx (ours pushes it).
-// Earlier: Frame and numeric/reset sequence agree; logarithm width and restore allocation remain.
 // Earlier: Frame and numeric/reset sequence agree; logarithm width and restore allocation remain.
 // Earlier 167 from 167: logarithm width/reset schedule and restore/final pointer allocation;
 // logarithm factor width and restore allocation remain; frame and numeric/reset sequence agree.
@@ -167,6 +169,9 @@ PRIVATE inline byte const *material_parameters(long tag)
 // direct first updater 149; direct second updater 47; entry word at chain 47;
 // direct published entry 294. Original body restored.
 // Round 235: published table snapshot after entry/before entry/after packed 151/231/151; after-entry with distinct packed/chain/both/pass/all restore receivers 151/151/151/151/151.
+// Round 76: entry stored directly into its field, no reference, 47 (the table reload now hoists as in
+// retail; first difference +0x19e -> +0x1a7; restored, same count); entry through the existing entry local 183; packed word read
+// inside the chain index 47; tables re-read once into its local 47; named chain/pass bases 47.
 // Round 155: entry table from the local 151; entry stored to its field directly 47 (table reload in place,
 // the second index load hoists instead); plus range stored directly 163; entry local reused 183;
 // direct entry store with swapped index sum 47.

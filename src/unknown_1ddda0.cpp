@@ -387,7 +387,15 @@ PRIVATE __forceinline real function_1de2c2(point3f const *arg_0, point3f const *
  return local_0;
 }
 
-// score 44 (was 44): the restore order after the inlined insertion differs
+// score 44 (was 44): the loads after the first loop are in the other order and the byte load uses mov
+// cl where retail uses movzx ecx, so the table address that follows is off. Tried: the projection
+// helper for both edge points without the volatiles 109; the volatiles removed 98; the side flag
+// declared first 44; the insertion helper's parameters swapped 44; the first loop's exit test as an
+// if/break 44. Round 74 (identical code unless scored): the in-loop flag read before the volatile side
+// copy, the pre-loop index without the bool local, the bool local read first, and a byte local, all
+// 44; the flag set before the first insertion 238; a long side index in the first loop 190.
+// the restore order after the inlined insertion differs
+// the restore order after the inlined insertion differs
 // (mov ebp before mov ebx, retail restores ebx first), and retail loads the
 // side flag as a byte into cl and extends it later (mov cl, [esi + 0x21e];
 // movzx ecx, cl) where ours zero-extends it at the load, so the table

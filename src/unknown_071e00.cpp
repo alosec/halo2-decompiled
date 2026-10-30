@@ -136,6 +136,8 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 // timeout copy with a byte-offset search pointer or flag 65/65; `local_0 = true; return local_0;` in
 // one copy 65/65, in both 34 (178 bytes, copies merged); a dead `local_0 = true` before either
 // `return true` 65/65.
+// Unhandled-result bool/char/short/word/dword 83/83/89/89/86; genuine success
+// char/short/word carriers 66/54/54. Original Boolean result and shared tail restored.
 // @retail 0x712d0
 bool function_712d0(c_session_state_matchmaking *arg_0)
 {

@@ -561,7 +561,14 @@ void __stdcall function_1889d0(dword flags)
 	}
 }
 
-// score 62 (was 62): retail loads the flag word whole into bx (ours a masked byte), reloads the
+// score 61 (was 109): the flag word is masked down to the two bits the tests use, so the word
+// stays in a register across the query call and the value is kept in the stack slot.
+// Left: the load is a byte load (retail loads the word into bx); the tag lookup and the final
+// global still pick other registers.
+// New this run: dword mask 61; the word read then masked 61; the mask as int/long 61; the mask
+// with direct bit tests 61; the word mask 130; the wide masks 118; the value read at the call
+// 109; the tag entry through a pointer local 61; the final global through the local 99;
+// the value read before the flag word 128.
 // value into ecx (ours eax) and picks other scratch registers in the sound-tag loop and the final
 // flag test; without the 0x60 mask the flags and the value swap ebx and the stack slot.
 // Tried: flags/tag names 110; positive/rejection tests 110; direct parameter 160; early flag 42
@@ -634,7 +641,7 @@ void __stdcall function_188ac0(dword flags)
 			record_pool_release(array, datum);
 		else
 		{
-			word flags5 = *(word const *)&element->flags & 0x60;
+			dword flags5 = *(word const *)&element->flags & 0x60;
 			if ((bool)((flags5 >> 5) & 1))
 			{
 				long value = element->value;
