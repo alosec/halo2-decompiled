@@ -192,6 +192,12 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 // with complete normalized value 155 at 489 bytes. Row/output forms are 440 bytes; no count gain or
 // missing store/reload recovery. Original body and normalizer restored.
 // DL190: Whole face value/native output stores, setter, aggregate 175/175/205; memcpy face with the same boundaries 175/175/205. Original face with setter/aggregate 96/136. Complete face snapshot adds spills; grid reciprocal, last-component reload and output carriers remain. All restored.
+// Round 434: complete scalar normalizer inputs with sqrt/fabs, sqrt/fabsf, sqrtf/fabs,
+// sqrtf/fabsf 32 each; const input/output snapshots with those APIs 56 each. The
+// components passed as scalar parameters in the orders ikj/jik/jki/kij/kji 28/34/32/55/55,
+// output-first ijk/ikj 32/28 (not kept: a parameter order chosen to steer the loads). On ikj,
+// shared output scale/reversed products/direct magnitude query 28/28/97; in-place copy/native
+// scaled value 58/58. Original normalizer restored.
 // @retail 0x195070
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {

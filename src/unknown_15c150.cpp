@@ -166,6 +166,9 @@ PRIVATE __forceinline s_mp_globals *transition_start_time_set(s_mp_globals *glob
 }
 
 // score 5 (was 5): the game options pointer is kept in ebp where retail keeps it in ebx.
+// Round 123: const options pointer 5; reset loop in an inline helper taking the globals 150;
+// iterator declared before the options pointer 5; lives narrowed in each ternary arm 5;
+// lives read before the slot index 5.
 // @retail 0x15c550
 void function_15c550()
 {

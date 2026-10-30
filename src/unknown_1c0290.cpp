@@ -192,6 +192,8 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// Round 19: unchanged; the frame (0xa0 against 0xb0) and the collision output size still
+// differ; no new form was found.
 // score 143 (was 143): frame 0xa0 versus 0xb0 (the 0x1697c0 collision output is 0x5c bytes; the
 // shared header type is 0x4c), then the scratch registers are rotated by one from the 0x110ab0
 // argument on (eax/ecx/edx), which also moves the request/collision arguments, the target copy and

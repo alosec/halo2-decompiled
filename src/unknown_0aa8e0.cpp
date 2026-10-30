@@ -299,6 +299,9 @@ PRIVATE inline void z_limit_correction(vector3f *value, real maximum)
  }
 }
 
+// Held (coordinator 2026-10-30): matches with 0x11d790's parameters declared (q, angle, axis) at its
+// definition and every caller (lane 12 r44); applied once the callers in src/vehicles.cpp and
+// src/unknown_141590.cpp are free. Don't retry this function before then.
 // @retail 0xaaca0
 void function_aaca0(long index, point3f const *position, vector3f const *forward, vector3f const *up,
  vector3f const *linear_velocity, vector3f const *angular_velocity,

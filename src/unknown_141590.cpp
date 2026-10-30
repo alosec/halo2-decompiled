@@ -191,6 +191,9 @@ static inline void quaternion_transform_vector(
 // Round 258: output/vector/quaternion contract with original/scalar-cross/scale-first/
 // both forms 237/281/302/306; vector/output/quaternion contract with those forms
 // 240/237/298/311. Original helper, three call roles and body restored.
+// Round 228: two-argument in-place helper with pointer/reference quaternion and vector
+// contracts 290/290/290/290; each with independent cross scalars 313/313/313/313.
+// Original helper contracts and complete body restored.
 // @retail 0x1417b0
 void matrix4x3_rotation_between_vectors(
 	transform4x3f *matrix,
