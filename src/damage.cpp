@@ -645,14 +645,20 @@ void function_d6a70(long object_index)
 	}
 }
 
-// score 168 (was 183): what still differs is register allocation and the parent's flag store. Retail keeps g_4e0300
-// in ebp across the call to 0xb8b70 (ours reloads it). Retail's iterator calls leave the parent's flags re-read from
-// memory (`or byte [esi+0x10b], 0x20`) and `last` in the dead `unknown` argument slot, because 0xd0620 takes the
-// iterator in ebx. Ours reuses the flag word it loaded for the test. 0xd0620 (unknown_0d0690.cpp) is unmatched and its
-// body decides that convention, so this is probably not fixable here. The body_depleted store re-reads the object
-// with DAMAGE_OBJECT so it compiles to retail's byte `or` (183 -> 168).
-// Tried: a local copy of g_4e0300 (183, same code); the same re-read for the parent's unknown13 (177); a byte
-// `|= 0x20` on the parent's flags (181).
+// score 159 (was 168): what is left is register allocation, from one cause. Retail loads g_4e0300 into ebp in the
+// prologue and reuses it for the body_depleted lookup and the unknownd4 lookup (it does not reload it across 0xb8b70
+// and the memset); that puts the index in esi and the object in a frame slot ([esp+0xc]) and the owner in ebp.
+// Ours reloads g_4e0300 at each lookup and so keeps the index in ebp. The iterator calls now match (0xd0620 takes
+// (iterator, object_index), `lea ebx,[esp+0x10]` / `call 0xd0620` / `mov edx,ebx` agree), and so does the flag
+// logic. Tried (the retail forms for the two flag stores, both exact, but the register shift costs more):
+// test the flag through a fresh DAMAGE_OBJECT lookup and store through the cached `object` (byte `or [eax+0x10a],4`
+// and the one lookup, as retail; 190), the same plus the parent's unknown12 test through a fresh lookup (retail's
+// `or byte [esi+0x10b],0x20` with no reloaded flag word; 170, 592 bytes); a cached store alone makes the compiler
+// share one word load for the test and the store (183); a byte `|= 4` (174); the body wrapped in `if (!depleted)`
+// (183); a local `s_record_pool *` copy of g_4e0300 (162, folded back into a reload); b8b70 moved after the
+// unknownd4 block, to see whether g_4e0300 then stays in a register (202, it goes to esi, not ebp). The reload
+// across 0xb8b70 looks like the link-time pass not knowing that 0xb8b70 leaves g_4e0300 alone, so this is probably
+// not fixable from the source.
 // @retail 0xd6800
 void function_d6800(long object_index, s_damage_owner const *owner, bool notify_parent, bool unknown)
 {
@@ -1407,14 +1413,22 @@ void function_dbfb0(long object_index, s_damage_owner const *owner, bool a, bool
 
 /* whether an object, or anything seated in or attached to it, is a unit (a
    player's unit, if players_only) */
-// score 167 (was 167): the compiler inlines 0xbadc0 (the datum lookup and the type test) at the unit check in the
-// iterator loop; retail calls it (`mov eax,child_index; push 3; call 0xbadc0`), keeps NONE in edi and `result` in the
-// dead first argument slot (`mov byte [esp+0x24],..`), and recurses with real calls. The inlined copy takes ebx, ebp
-// and a stack slot and moves `result` into bl. 0xd0620 (not ours) takes the iterator in ebx in retail as well.
-// Retail's tails read as `result = result || db110(first_child, players_only, true)` and, for the sibling,
-// `return result || db110(next, players_only, true)` (the `mov byte,0 / je / mov byte,1` and `mov al,1` exits); that
-// form stops the compiler turning the sibling call into a loop but scores 193 here because of the inlining, so
-// the if/else form below stays. Tried: the unit/player_index split of 0xd7ae0 (still inlined).
+// score 187 (was 167): the compiler inlines 0xbadc0 (the datum lookup and the type test) at the unit check in the
+// iterator loop; retail calls it (`mov eax,child_index; push 3; call 0xbadc0`). That is the only real difference:
+// with the call kept out of line (checked with a throwaway noinline copy of 0xbadc0 in this file) the rest of the
+// function compiles to retail's 246 bytes with `result` in the dead first argument slot, if the tails are written
+//     if (first_child != NONE) result = result || db110(first_child, players_only, true);
+//     if (next != NONE && walk_siblings) result = result || db110(next, players_only, true);
+//     return result;
+// (the first-child part is `result = result || ...` in either form). The if/else form below turns the sibling
+// `return function_db110(...)` into a loop (246 bytes, 82 with the call out of line) and so does not match even then;
+// it is kept only because with 0xbadc0 inlined it scores 187 where the `||` form scores 206 (212 with
+// `return result || db110(next...)`, whose end is `xor eax,eax` / `mov eax,1` where retail returns al). Also tried
+// with the `||` tails: local copy of child_index (212), `!= NULL` (212), `||` inside one condition (212), nested
+// `if (players_only)` (212), `for` and `do`-style loops and `unit` declared outside the loop (206), `return true`
+// from the loop (253). All inline 0xbadc0. A noinline declaration of 0xbadc0 in its own file (unknown_0bad50.cpp)
+// makes this function MATCH with the `||` tails, but breaks 0x11a570, 0x11a680, 0x274f30, 0x275160, 0x275270 and
+// 0x2736c0 (retail inlines it there), so it cannot be used. 0xd0620 (not ours) takes the iterator in ebx in retail.
 // @retail 0xdb110
 bool __stdcall function_db110(long object_index, bool players_only, bool walk_siblings)
 {
