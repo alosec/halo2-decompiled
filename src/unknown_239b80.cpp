@@ -443,6 +443,10 @@ PRIVATE __forceinline void polygon_difference_23a220(point2f const *a, point2f c
 	result->j = a->y - b->y;
 }
 
+// The polygon's edges and the point's offset are both differences of two vertices: the edge
+// runs from the current vertex to the next one (wrapping round the end), the offset from the
+// current vertex to the tested point. A point that lies farther from an edge than the radius
+// is outside the polygon, so the function returns false for it.
 // score 50 (was 50): retail loads the count once (DX, then EBX sign-extended for the
 // wrap) and compares the index with the count's stack home as a word; ours re-reads the
 // count each pass. The XMM homes differ too (retail offset XMM0/XMM3, edge XMM1/XMM2).
@@ -465,21 +469,25 @@ PRIVATE __forceinline void polygon_difference_23a220(point2f const *a, point2f c
 // count/count-plus-next/count-plus-ordinal 50/50/50/50/50/73/73/67. Original executable source
 // restored. The three ordinary-count forms lose matched 0x14a370 at 23/23/27 in the reduced image.
 // @retail 0x23a160
-bool function_23a160(point2f const *point, real radius, short volatile count, point2f const *points)
+bool function_23a160(point2f const *point, real radius, short count, point2f const *points)
 {
-	real radius_squared = radius * radius;
+	short total = count;
 	bool result = true;
+	real radius_squared = radius * radius;
 	for (short i = 0; i < count; i++)
 	{
-		vector2f offset;
-		polygon_difference_23a220(point, &points[i], &offset);
-		long next = (i + 1 >= count) ? 0 : i + 1;
+		long next = (i + 1 >= total) ? 0 : i + 1;
+		point2f const *current = &points[i];
 		vector2f edge;
-		polygon_difference_23a220(&points[next], &points[i], &edge);
-		real length_squared = (real)(edge.i * edge.i) + (real)(edge.j * edge.j);
+		polygon_difference_23a220(&points[next], current, &edge);
+		vector2f offset;
+		polygon_difference_23a220(point, current, &offset);
+		real edge_j_value = edge.j;
+		real edge_i_value = edge.i;
+		real length_squared = edge_i_value * edge_i_value + edge_j_value * edge_j_value;
 		if (length_squared != 0.f)
 		{
-			real cross = edge.j * offset.i - edge.i * offset.j;
+			real cross = offset.i * edge.j - offset.j * edge.i;
 			if (cross > 0.f && cross * cross > length_squared * radius_squared)
 			{
 				result = false;
