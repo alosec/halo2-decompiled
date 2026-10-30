@@ -677,6 +677,9 @@ __forceinline void sound_stream_append_mixbin(s_mixbin_settings *settings, long 
 // third initialized scope with memmove 328 plain at 1015/1071, kept. Frame and conversion reuse remain.
 // Round 191: Reduced control 320/1031 versus full 328/1015. Complete phase-zero descriptor reuse first-second/first-third/second-third/all 369/361/376/407 fast.
 // Round 191: The same phase-zero reuse with the one routing table static 410/385/392/455. All reuse/static forms restored; the all-reuse static frame is 0x90 and the missing-conversion gap grows.
+// J198: remove redundant inactive-pair aggregate zeros, seven native descriptor subsets
+// 327/327/364/337/341/341/378; all with first-use declarations 378. Every shared initializer and active pair retained.
+// Descriptor/conversion homes and repeated-conversion coalescing remain; all nonkeepers restored.
 // @retail 0x2aeb20
 void c_sound_effects::initialize(s_sound_effect_settings *settings, s_sound_effect_buffers *buffers, bool rear)
 {

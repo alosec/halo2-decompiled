@@ -428,10 +428,14 @@ bool function_f42f0(long vehicle_index);
    definition's steering curve, and its throttle and turn rates */
 PRIVATE inline void vehicle_approach(real *value, real const *rates, real bound, real dt);
 
-// score 237 (was 246): frame and cross/dot schedule, rate-bound and final-angle homes differ.
+// score 229 (was 237): Frame 0x10 versus 0x14, cross/dot and argument homes remain; genuine control scalars kept.
 // Shared cross/dot/approach subsets 262/246/262/239/248/239/248; both dots 235
 // (regrouping restored). Exponent and ordinary clamp subsets 246 each; all with
 // shared rate approach 237, retained after plain confirmation.
+// J198: staged cross/rate tables/both/control scalars/tables-controls/staged-controls/all/entry declarations
+// 244/282/307/229/274/236/298/298; real absolute ratio/division/both/late sign 229/229/229/234.
+// Cross/dot, scalar-argument and rate schedules remain; original grouping and game-call roles preserved.
+// Native grouped-left and one-use absolute-call-result forms are exact-only; all restored.
 // @retail 0xeec90
 void function_eec90(long vehicle_index, real *steering)
 {
@@ -455,9 +459,11 @@ void function_eec90(long vehicle_index, real *steering)
 	}
 	else
 	{
-		real bound = (0.0f > vehicle->throttle ? *(real *)(definition + 0x1f8) : *(real *)(definition + 0x1f4)) * vehicle->throttle;
+		real throttle = vehicle->throttle;
+		real bound = (0.0f > throttle ? *(real *)(definition + 0x1f8) : *(real *)(definition + 0x1f4)) * throttle;
 		vehicle_approach(&vehicle->speed, (real const *)(definition + 0x1f4), bound, dt);
-		bound = (0.0f > vehicle->steering ? *(real *)(definition + 0x230) : *(real *)(definition + 0x22c)) * vehicle->steering;
+		real turn_input = vehicle->steering;
+		bound = (0.0f > turn_input ? *(real *)(definition + 0x230) : *(real *)(definition + 0x22c)) * turn_input;
 		vehicle_approach(&vehicle->turn, (real const *)(definition + 0x22c), bound, dt);
 	}
 
@@ -2258,6 +2264,11 @@ PRIVATE inline void vehicle_contact_steer(s_vehicle_physics_state *state, s_vehi
 // selection-zero torque/byte flags 311; entry-zero torque/use-point bits 274; selection-zero
 // torque/use-point bits 301; spin forceinline 189; steer forceinline 189; both forceinline 189;
 // spin noinline 425; steer noinline 350; both noinline 545. Original executable body restored.
+// J198: torque name/throttle scope/quaternion loop-entry/function-entry declarations 189 each;
+// native contact cursor with original/loop/entry/combined lifetimes 245 each.
+// Value-input spin result, value/field periods and short/byte gear 182/261/197/262;
+// separate exhaustive/default-zero results with value/field periods 189/261/208/258.
+// Seven-point value-input gain below margin; frame, torque/contact and period homes remain.
 // @retail 0xf1f80
 void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -3080,10 +3091,15 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 /* the orientation the vehicle's physics aims for: its facing held level,
    turned through its flip while it flips (returns whether it flips), else
    the state's own */
-// score 204 (was 204): Restored original body; projection/cross-product scheduling and angle precision remain.
+// score 169 (was 204): Staged cross, native up receiver and complete products kept; projection/trig schedules remain.
 // Shared cross 204; external cross 326; native forward/up/both 263/269/298;
 // shared cross with forward/both 263/298. Wide angle 177 rejected without exact equality;
 // coordinated external force-inline 326, with wide angle 359; all original contracts restored.
+// J198: staged cross/projection/both/dot/products/combinations 188/205/190/211/206/207/207/207.
+// Up/forward/both receivers and case/trig combinations 177/204/178/188/188/178/178/178.
+// On native receiver, complete projection/dot/both/sine-first 171/171/169/169; staged cross, native up receiver and all symmetric products kept plain.
+// Double angle/cases/trig/both 147/147/147/147; shared dot/scale/both/trig 154/148/149/149.
+// All precision/grouping forms exact-only and restored. Projection-load order, cross operands and trig homes remain.
 // @retail 0xf44a0
 bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_physics_state *state,
 	matrix3x3 *result)
@@ -3093,17 +3109,24 @@ bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_p
 	bool flipping = fraction > 0.0f;
 	real dot;
 
+	vector3f *up = &facing->up;
 	facing->forward = vehicle->local_velocity;
-	facing->up = *g_4687b0;
-	dot = facing->up.j * facing->forward.j + facing->up.k * facing->forward.k + facing->up.i * facing->forward.i;
-	facing->up.i -= facing->forward.i * dot;
-	facing->up.j -= facing->forward.j * dot;
-	facing->up.k -= facing->forward.k * dot;
-	if (function_30bf0(&facing->up) == 0.0f)
+	*up = *g_4687b0;
+	real dot_j = up->j * facing->forward.j;
+	real dot_k = up->k * facing->forward.k;
+	real dot_i = up->i * facing->forward.i;
+	dot = dot_j + dot_k + dot_i;
+	real projected_i = facing->forward.i * dot;
+	real projected_j = facing->forward.j * dot;
+	real projected_k = facing->forward.k * dot;
+	up->i -= projected_i;
+	up->j -= projected_j;
+	up->k -= projected_k;
+	if (function_30bf0(up) == 0.0f)
 	{
-		facing->up = *g_4687a8;
+		*up = *g_4687a8;
 	}
-	vehicle_cross(&facing->up, &facing->forward, &facing->left);
+	cross3f_staged(up, &facing->forward, &facing->left);
 	if (flipping)
 	{
 		real angle;
@@ -3133,13 +3156,13 @@ bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_p
 			goto rotate_up;
 		}
 		cosine = (real)cos(angle);
-		vehicle_cross(&result->forward, &result->up, &axis);
+		cross3f_staged(&result->forward, &result->up, &axis);
 		sine = (real)sin(angle);
 rotate_up:
 		result->up.i = axis.i * sine + result->up.i * cosine;
 		result->up.j = result->up.j * cosine + axis.j * sine;
 		result->up.k = result->up.k * cosine + axis.k * sine;
-		vehicle_cross(&result->up, &result->forward, &result->left);
+		cross3f_staged(&result->up, &result->forward, &result->left);
 	}
 	else
 	{
