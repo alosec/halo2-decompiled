@@ -3753,6 +3753,9 @@ PRIVATE inline void function_1275d8(quaternionf const *arg_0, vector3f const *ar
 // complete reuse with native output-pointer return 1020. Original distinct workspaces restored.
 // Round 259: existing rotation output pointer/reference results, pointer/reference output
 // formals and ordinary/forced expansion: eight forms 535 each. Original helper restored.
+// Round 194: shared zone result/local/direct/entry 555/554/555; native player-state member 535;
+// shared zone plus native member 555; with complete blend reads 582; with source-state reads 836;
+// both complete observations 799. Original result, source pointer and body restored.
 // @retail 0x127400
 void function_127400(bool arg_0)
 {
