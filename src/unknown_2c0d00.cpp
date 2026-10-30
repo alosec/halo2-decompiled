@@ -906,6 +906,8 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
 // memory (retail ebx). Retail's crossing test is one byte set three times (`xor dl, dl` before the
 // normalisation, `mov dl, 1` per test): the flag form `crossing = false; if (..) crossing = true` x3
 // reaches 318 here (kept out: flag rule).
+// Review (coordinator): the two-scalar direction (324) is a hand copy of vector2d_from_points2d's body
+// with no match, so the code stays at main's helper call (347); body copies are kept only with a match.
 // Round 79 kept: the edge's node pair as a real array, the fixed-side tests on the edge's word
 // (edge_node_open_2c: retail's `mov cx, word; movzx eax, cx; cmp cx, 0xffff`), the long test on
 // the indexed ones, start/end vertices by if/else, complete geometry before the tests, the ring
@@ -1034,9 +1036,9 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         }
         point2f const *start = (point2f const *)&data->vertices[from_vertex];
         point2f const *end = (point2f const *)&data->vertices[to_vertex];
-        real direction_x = end->x - start->x;
-        real direction_y = end->y - start->y;
-        point2f normal = { direction_y, 0.0f - direction_x };
+        point2f direction;
+        vector2d_from_points2d(start, end, &direction);
+        point2f normal = { direction.y, 0.0f - direction.x };
         normalize_offset_direction_2c(&normal);
         point2f offset, other_offset;
         scale_offset_direction_2c(radius, &normal, &offset);
@@ -1048,9 +1050,9 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         point2f first, second;
         vector2d_from_points2d(&offset, start, &first);
         vector2d_from_points2d(&other_offset, start, &second);
-        bool first_crossing = (first.y * direction_y + first.x * direction_x < 0.0f ? 1 : 0) == side &&
-            first.x * direction_y - first.y * direction_x < 0.0f;
-        bool second_crossing = second.x * direction_y - second.y * direction_x < 0.0f;
+        bool first_crossing = (first.y * direction.y + first.x * direction.x < 0.0f ? 1 : 0) == side &&
+            first.x * direction.y - first.y * direction.x < 0.0f;
+        bool second_crossing = second.x * direction.y - second.y * direction.x < 0.0f;
         bool crossing = first_crossing || second_crossing || first_vertex == NONE;
         long vertex = ((crossing != first_open) == side) ? vertex1 : vertex0;
         if (vertex == previous_vertex)
