@@ -62,7 +62,7 @@ long function_2cc850(s_inflate_stream *stream)
 }
 
 // @stub 0x2ce950
-void *function_2ce950(s_inflate_stream *stream, block_checksum checksum, unsigned long window_size)
+void *function_2ce950(s_inflate_stream *stream, block_checksum checksum, unsigned long window_length)
 {
     return 0;
 }

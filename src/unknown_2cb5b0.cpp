@@ -19,7 +19,7 @@ struct s_inflate_state
 	long mode;
 	dword sub[2];
 	long raw;
-	dword window_bits;
+	dword window_log;
 	void *blocks;
 };
 
@@ -27,7 +27,7 @@ struct s_inflate_state
 struct s_inflate_stream
 {
 	byte const *input;
-	dword input_size;
+	dword input_left;
 	dword total_input;
 	byte *output;
 	dword output_size;
@@ -37,7 +37,7 @@ struct s_inflate_stream
 	block_allocate allocate;
 	block_free release;
 	void *opaque;
-	long data_type;
+	long content_kind;
 	dword checksum;
 	dword reserved;
 };
@@ -47,7 +47,7 @@ typedef char assert_inflate_state_size[(sizeof(s_inflate_state) == 0x18) ? 1 : -
 long function_2cc9d0(s_inflate_stream *stream, long flush);
 long function_2cc890(s_inflate_stream *stream);
 long function_2cc850(s_inflate_stream *stream);
-void *function_2ce950(s_inflate_stream *stream, block_checksum checksum, dword window_size);
+void *function_2ce950(s_inflate_stream *stream, block_checksum checksum, dword window_length);
 dword function_2ce7b0(dword checksum, byte const *buffer, dword size);
 
 /* the default allocator of a stream that brings none */
@@ -64,13 +64,13 @@ void __stdcall function_2ce7a0(void *opaque, void *address)
 	free(address);
 }
 
-/* sets up a stream for inflating with a window of 2^window_bits bytes
+/* sets up a stream for inflating with a window of 2^window_log bytes
    (negative: no header or checksum); 0, or a negative error */
 // score 90 (was a stub): the convention is retail's (stream esi, window bits ecx, version eax,
 // size on the stack), but its callees are stubs: retail passes 0x2cc890/0x2cc850 the stream in
 // eax and 0x2ce950 the stream in eax and the window size in ebx.
 // @retail 0x2cc8d0
-long function_2cc8d0(s_inflate_stream *stream, long window_bits, char const *version, long stream_size)
+long function_2cc8d0(s_inflate_stream *stream, long window_log, char const *version, long stream_size)
 {
 	if (version == NULL || version[0] != '1' || stream_size != sizeof(s_inflate_stream))
 		return -6;
@@ -88,19 +88,19 @@ long function_2cc8d0(s_inflate_stream *stream, long window_bits, char const *ver
 		return -4;
 	stream->state->blocks = NULL;
 	stream->state->raw = 0;
-	if (window_bits < 0)
+	if (window_log < 0)
 	{
-		window_bits = -window_bits;
+		window_log = -window_log;
 		stream->state->raw = 1;
 	}
-	if (window_bits < 8 || window_bits > 15)
+	if (window_log < 8 || window_log > 15)
 	{
 		function_2cc890(stream);
 		return -2;
 	}
-	stream->state->window_bits = window_bits;
+	stream->state->window_log = window_log;
 	if ((stream->state->blocks = function_2ce950(stream, stream->state->raw ? NULL : function_2ce7b0,
-		(dword)1 << window_bits)) == NULL)
+		(dword)1 << window_log)) == NULL)
 	{
 		function_2cc890(stream);
 		return -4;
@@ -121,7 +121,7 @@ long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte c
 	long error;
 
 	stream.input = source;
-	stream.input_size = source_size;
+	stream.input_left = source_size;
 	stream.output = destination;
 	stream.output_size = *destination_size;
 	stream.allocate = allocate;
