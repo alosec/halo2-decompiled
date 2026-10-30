@@ -261,6 +261,10 @@ real function_1f8940(long actor_index);
 // Request clear before scratch 71; all constants before scratch 76; full request before scratch 75;
 // kind/numerics/flags before scratch 68/68/77; choice fields before constants 30;
 // constant prefix with range before choice 77. Scratch/request staging restored.
+// Round 14 (exact LTCG harness): a copy of the reference for the follow call, the cancel call or both 27;
+// the follow result in a local 27; the found arm first 54; the sentinel test as a long compare 27, as
+// field compares 72 (130 instructions); the reference declared at function scope 27; the outputs declared
+// at the top, before the scratch or swapped, the scratch after the request 27; the request at the top 50.
 // @retail 0x1b3380
 bool __stdcall function_1b3380(long actor_index, s_slot *slot)
 {
