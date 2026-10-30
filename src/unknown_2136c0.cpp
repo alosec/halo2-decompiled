@@ -81,6 +81,15 @@ void function_213970(void);
 // address order 145. Ours hoists the NONE stores above the clears (separate globals don't alias them);
 // BLOCKED-BY the global layout: both retail blocks' globals are also declared in src/unknown_214c30.cpp
 // and src/unknown_12be90.cpp.
+// Round 40: the two blocks need structs, but block A's globals are also used by src/unknown_214c30.cpp and
+// block B's g_55bd04/g_55bd08 are defined in src/unknown_12be90.cpp. Without the size pragma 158 (language
+// inlined, its read hoisted above the clears); with stores in address order/language first/NONE stores first
+// 161/170/161; NONE stores first with the pragma 131.
+// Round 79: enum language result 145; first-element array clears 145; reversed progress fields 145;
+// existing language wrapper 145; query after file/copy clears 144/144; version validation first 141;
+// joint preference guard 158. All gains below the retention threshold; original body restored.
+// Round 198: Complete payload clear orders with the byte-tail block first/last/middle,
+// size-ordered blocks and all blocks reversed: eight orders, all 131. Original body and bounds restored.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

@@ -216,6 +216,9 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 	return *(byte const *const *)(block + 4) + index * size;
 }
 
+// score 117 (was 117): retail keeps the masked index in EDX where ours reuses EAX for the table
+// entry, and the fallback path's call order and the element loads still differ; the file handle
+// comes in through a declaration outside this file.
 // score 117 (was 117): Frame 0x5c and first thirteen instructions agree; fallback EDX masking, stage/pass homes and unfused element loads differ.
 // Earlier: frame 0x5c agrees; saved EDI table ownership, fused lookups and scratch allocation remain.
 // Earlier: ECX table hoist versus saved EDI and lookup-register ownership still differ.
@@ -273,6 +276,9 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 // 0xffff`, but the tag table moves from EDI to ECX, loaded before the frame); the flags field read just
 // before function_173ba0 149 (arg_0 becomes a stack parameter), both 156; the second and third block
 // elements through named element pointers 117 each (identical code).
+// Round 233: packed mapping element/native directory/both/marker/element-marker/directory-marker/
+// all schemas/all plus low-word fallback mask: 117/117/117/117/117/117/117/152. Original data views and
+// accessor retained; fallback EDX masking and stage/pass/unfused-load homes remain.
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)

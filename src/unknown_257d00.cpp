@@ -2151,6 +2151,9 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // Round 218: Nearest/candidate/distance scalar role names, seven subsets, 491 each; all three
 // uninitialized at entry 491 (reduced control 491, full 478). Actor/state ownership and first point
 // home remain; original scalar lifetimes restored.
+// Round 312: first/second/both request receivers at uses 489/491/489; physical selector alone/first/second/both
+// 491/489/491/489; both receivers and selector with the two-stage native flag value 491 (reduced control 491,
+// full 478). Two-point reduced gains rejected; every receiver, physical declaration and original body restored.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
