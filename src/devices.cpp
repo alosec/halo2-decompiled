@@ -1077,7 +1077,8 @@ PRIVATE inline real device_translation_distance_squared(point3f const *a, point3
 }
 
 // score 2 (was 2): the float argument is stored to the stack before edi is pushed; retail pushes edi first and
-// stores the float one slot higher.
+// stores the float one slot higher. Round 23: had_animation set after the time / first in the block 43/44;
+// the animation as a const reference 203; sampled declared after the time 2; time before the animation 2.
 // @retail 0x107ed0
 bool __stdcall function_107ed0(long device_index, long name, real seconds)
 {
@@ -1369,6 +1370,9 @@ bool function_0b6760(s_index_pair const *pair);
 // Round 424: actual power/position/both group target snapshots 351/389/368;
 // each with ordinary index 312/349/392; both with ordinary saved pointer,
 // without/with ordinary index 388/425. All restored; frame/index/header/state homes remain.
+// Round 229: complete tag-table observations with device/entry-key reads, inherited/ordinary
+// index and ordinary/result-first lifetime, all eight 442/370/374/412/442/370/374/412.
+// Original saved pointer, qualifiers and complete body restored.
 // @retail 0x106790
 bool __stdcall function_106790(long volatile device_index)
 {

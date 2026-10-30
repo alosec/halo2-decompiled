@@ -311,6 +311,9 @@ __inline void transform_point(s_camera const *camera, point3f const *p, point3f 
 // Long-row frame is retail 0x2c; inverse-order/direct factors/both/y-first/y-first with order/
 // y-first with direct factors/descending rows/descending with direct factors 213/262/261/214/213/254/231/218.
 // All restored; inverse/point homes and scaled-component allocation remain.
+// Round 436: row compound accumulators through translation/at publication/first pair 238/238/262;
+// parallel compound rows through translation/at publication/first pair 238/238/262;
+// output accumulation through translation/final two contributions 238/262. All original helper/body restored.
 // @retail 0x30830
 long function_30830(point3f const *a, s_camera const *camera, vector3f const *d, point2f const *scale, bool perspective, bool negate, point2f *out)
 {
