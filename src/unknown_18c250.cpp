@@ -170,6 +170,9 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // Round 431: common word/long datum slots 151/23; with machine receiver reacquired 151/23;
 // root-location returned output original/word/long slot 172/108/172; long slot with overlap-safe location copy 53.
 // Frame and normal block agree; machine receiver, cluster-map registers and final publication order remain.
+// Round 42: named machine object 23; header local in the machine arm 23; indices local 23; object local
+// reassigned from the header 23; one header local for the type and machine reads 137. Only dropping the (word)
+// cast gives retail's cluster lea/base order, but retail zero-extends the index.
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
