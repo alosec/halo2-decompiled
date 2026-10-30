@@ -39,6 +39,9 @@ bool network_session_host_set_summary(c_class_58d20 *session, const s_session_su
 // score 9 (was 11): the found/count initialisation order matches retail now;
 // only the summary address still differs: retail recomputes `lea eax,[esp+0x24]`
 // after the push, ours reuses the `ebx` copy of `&summary`.
+// Round 44: post-remove pointer/reference 9 each; read-only source 9; one-element summary array 9;
+// output-pointer copy 9; direct tail session reads 9; final-call session local 9;
+// direct summary initialization 9. Opening body restored.
 // @retail 0x6d380
 void __stdcall function_06d380(c_session_client *client, const s_session_id *id)
 {

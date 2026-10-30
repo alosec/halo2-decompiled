@@ -590,6 +590,10 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // inside projection/reach 136/136; after lateral/adjusted distance 147/152;
 // projection/reach interval with later radius addition 139/141. Subthreshold forms restored.
 // Entry heading result 141; both normalization outputs 141; entry-declared heading 141; entry projection 141; both outputs with projection-boundary interval 136; sequential alignment helper 141; heading with entry displacement 141; heading with entry timing outputs 141. Restored.
+// Round 44: late fallback with the post-projection radius expression repeated 95 at 964 bytes (diagnostic);
+// named post-projection sum in either operand order 211 each; request stores in disassembly order on the
+// repeated form 94; direction-length name 94; forward/remaining distance names 94 each; timing outputs
+// declared before geometry 94; first-length local reused for adjusted distance 95. Opening body restored.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {
