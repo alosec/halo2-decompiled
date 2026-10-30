@@ -492,6 +492,9 @@ struct s_request_profile
 // Native pointer destinations with matched per-element query: index less/not-equal bounds, ticks first
 // 347/347 and state first 349/349; pointer less/not-equal bounds, ticks first 320/320 and state first
 // 334/334. All remove qualified global data reads.
+// Round 421: matched full-value query in one native 32-entry loop, indexed long/short/word/dword
+// counters 348/321/321/348; advancing destination with those counters 349/321/321/349.
+// All remove the inherited qualified global data read; original body restored at 108/540.
 // @retail 0x1e73b0
 void function_1e73b0()
 {
