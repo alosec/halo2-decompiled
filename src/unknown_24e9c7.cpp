@@ -151,6 +151,14 @@ struct s_24e9c7_bounds
 // Round 303: early outer/texture/selected-bitmap admissions 128/127/149;
 // outer+texture/outer+bitmap/texture+bitmap/all 130/149/149/183;
 // all with returned height declared after admission 183. Original scopes and body restored.
+// Round 46: retail computes the across pair right after size as size * (0 - forward_j) and spills
+// its j part at -8, the same home later used for the scaled side j (ours sinks both products to the
+// side and negates after multiplying). Side vector built then scaled in place 144; perpendicular
+// then in-place size scale 139; scale field at each use 141; negated operand first 125; marker
+// global stores before the geometry 149. Original body restored.
+// Round 313: Shared real half-width, with direct/named full pixel width: current basis 125/125, early
+// upper 123/123, deferred basis 129/129, both lifetimes 128/128. Two-count gain rejected; original
+// geometry and body restored; early spill and scalar homes remain.
 // @retail 0x24e9c7
 real function_24e9c7(s_24e9c7_marker const *marker, s_24e9c7_placement const *placement)
 {

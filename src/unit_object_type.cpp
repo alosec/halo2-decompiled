@@ -3172,6 +3172,8 @@ void function_c6810(long unit_index)
 // address. Tried: both branches calling 0xe6900 179 (second also inlined); a noinline declaration of 0xe6900 150
 // (not honoured); the call sites reordered 179; a shared request local 179; the player slot as a local byte
 // pointer, a struct view or an array element 60 (same); the requester unit and its player index re-read 60.
+// @coldspear (#104, 2026-10-30): reading the request definition g_4677c8[9] through a volatile pointer gives 26,
+// not kept (no match), but it shows retail re-reads the definition there.
 // @retail 0xce520
 void function_ce520(long weapon_index, long unit_index, bool flag)
 {
@@ -3275,7 +3277,7 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 /* the state of a unit's weapon use: 6 or 5 for the flags when asked, 7
    past the definition's limit at +0x114, else 3; otherwise 0xc96b0's
    range (2 when forced, at most 1 when held), clamped to 1 for players */
-// score 58 (was 64): Frame and lookups agree; first +0x2f has flag/b register roles and ret 0x14/0x18.
+// score 58 (was 58): Frame and lookups agree; first +0x2f is flag stack/BL, cleanup 0x1c/0x18.
 // Round 11 (lane 15): the range is clamped when held, as retail tests its third stack argument
 // (`[esp + 0x14]` after the pops), not b: 64 -> 58 (a behaviour fix; 0xc9e70 128 -> 121).
 // Round 175: held clamp 58 (possible operand fix; exact-only, restored); existing bit view 74;
@@ -3285,6 +3287,9 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 // Round 179: one shared range/result with bit/result-arm/definition-scope combinations
 // 64/70/80/87/74/81/64/76. Blocked return from initialized range, with native bit and
 // terminal result clamp, 64/64/74/74; with held operand 58/58/58/58 (exact-only, restored).
+// Round 230: flat flag/a and flag/b cases, then native frozen-bit view, blocked-range return, both,
+// held-test result and its three combinations: 58/58/58/58/58/58/58/58.
+// Original threshold observations, held operand, argument roles and body restored.
 // @retail 0xc9770
 long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, bool held, bool force, real c, real d)
 {
@@ -3741,7 +3746,7 @@ void function_d03e0(long unit_index, long definition_index)
 
 /* applies the unit's melee damage to what it hit (a device of type 7 with
    bit 5 at +0x1cc is triggered first), then ends its state +0x2bc */
-// score 57 (was 61): the second object lookup (type 7, then bit 5 of +0x1cc) is merged into the first;
+// score 57 (was 57): the second object lookup (type 7, then bit 5 of +0x1cc) is merged into the first;
 // retail repeats it (the pool pointer shared in EDX, index and element reloaded), so all after it shifts.
 // Retail's NONE material store before 0xd6660 and the 0x184060 arguments as retail passes them (the
 // field at +8 as the index in EAX, the one at +4 as the bit) are kept; the tail is then retail's.
@@ -3755,6 +3760,8 @@ void function_d03e0(long unit_index, long definition_index)
 // either/both lookups, no object local, nested ifs, a byte pointer to the machine, a named index,
 // dword-cast mask, dword flag word: lookup still merged; a word-cast index at the second lookup
 // gives retail's registers but movzx.
+// Round 230: complete target handle, native header table, both, header element, element/handle,
+// readonly table, readonly table/handle, readonly element: 117/55/117/58/115/55/117/58. Original body restored.
 // @retail 0xcfc90
 void __stdcall function_cfc90(long unit_index, long definition_index, s_unit_melee_hit const *hit)
 {
@@ -5604,6 +5611,9 @@ void function_cf040(long unit_index, short type)
 // array, two lookups, a volatile read of the weapon index (all 1); a short hand counter 180, a char
 // weapon slot 71. Before the tail change: a while or a for for the root walk 24, a copy of the vehicle
 // index 24, an explicit offset for the header 24, the two tail conditions swapped 20.
+// @coldspear (#104, 2026-10-30): the remaining difference is the order of an address's two registers on a byte array
+// (ours [index + pointer], retail [pointer + index]), as in 0x4c450, 0x181cf0, 0x23600, 0x1988e0 and 0x194710. About 20
+// forms tried on two of them (index spelling, declaration order, pointer formation, char and const types): none changed it.
 // @retail 0xc92c0
 bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_index, long *blocker_index, bool *grouped)
 {

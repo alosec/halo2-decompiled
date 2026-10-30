@@ -79,6 +79,11 @@ static inline s_12eb00 *entry_at_index(s_12ed00 *table, long index)
 // unsigned output count 21; unsigned remaining count 21. Restored.
 // Named entry/ramp/both pin results 21/21/21; explicit count update 21;
 // contribution part 20; named blend 21; full accumulation/output-step assignments 21/21.
+// Round 15 (ours ends `ret 8` like retail): clusters and output indexed by a for loop and the count, no
+// cursors 21 (identical code); pins as hi < x ? hi : x 19; short index and long pinned locals in nested tests
+// 21; cursor copies output/remaining/clusters 22; pins as x >= lo ? (x <= hi ? x : hi) : lo 29; renamed
+// result/cursors 21; count parameter second or last (caller updated) 21; result read once in
+// `previous_index = count++` moves its slot to +0x2c (101). The result is the heaviest spilled local.
 // @retail 0x12eb00
 long function_12eb00(long count, s_fog_cluster_distance *clusters, s_12eb00 *output)
 {

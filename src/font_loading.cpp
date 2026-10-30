@@ -507,7 +507,7 @@ static inline word font_character_pixel(long alpha, long color)
 
 /* decodes a character's run-length coded pixels to 16 bit pixels; returns
    how many pixels there are (with no destination it only counts them) */
-// score 85 (was 85): retail zero-extends the alpha byte to 32 bits before the
+// score 85 (was 85): alpha extension, literal-word assembly and run-two reuse differ.
 // Alpha parity extension, literal-word assembly and run=2 reuse remain. Disjoint
 // shifted/multiplied alpha fields 204/194; long/word/unsigned opacity nibble 172/236/172; word
 // color-first/alpha-first and long color-first assembly 175/228/172. Original pixel helper and
@@ -544,6 +544,8 @@ static inline word font_character_pixel(long alpha, long color)
 // assembly and run-two reuse remain.
 // Remainder alpha parity: signed OR/add 185/191; unsigned OR/add 204/228;
 // each with one run workspace 185/191/204/228. Helper and decoder restored.
+// Round 231: native byte-header class / high-alpha / low-alpha field subsets 1-7,
+// then all fields with the native six-bit count, 85 each. Original input view restored.
 // @retail 0x122610
 long function_122610(long size, void const *pixels, void *destination)
 {
