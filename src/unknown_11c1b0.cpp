@@ -75,6 +75,10 @@ struct s_11c1b0
 // Round 406: Initial index/zero registers and saved-index publication remain. Consistent unsigned-
 // word current/saved/request equality with 0xffff sentinel, parameter-read ordering, saved entry
 // lifetime and byte late-success combinations. Scores 75/75/133/133/91/91/137/137. All restored.
+// Round 18 (lane 10): an inline helper for the four global clears (both sites) 50; the saved index
+// declared at the top and first assigned in the block 50 (still the argument's home: the def, not the
+// scope, decides); the copy used in the early true test 50, in both tests 50; the copy re-read from
+// the global 50 (all identical code).
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {

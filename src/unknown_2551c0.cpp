@@ -104,6 +104,9 @@ short __stdcall function_2551c0(long actor_index)
 // inputs axis/vector/sine/cosine or axis/sine/cosine/vector or cosine/sine/axis/vector 43 each;
 // vector/sine/cosine/axis, sine/cosine/axis/vector, axis/cosine/sine/vector and
 // sine/cosine/vector/axis 72 each. Early cross products and score-dot carriers remain.
+// Round 18 (lane 10): the vector by value with the rotated vector returned 377 (619 bytes); outputs through
+// a local vector copied back 200; the helper taking the angle (sine/cosine inside) 43; a long loop
+// counter 167; the axis components as helper locals 197.
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {
