@@ -158,6 +158,10 @@ bool function_14ddc0(long local_player_index);
 // tests with the player getter in the unit ternary 89 (our second call sets ESI before EAX, so
 // the unit cannot stay in ESI); player getter then NONE-test ternary 42; that with the unit test
 // nested 42; the first form with the hierarchy test nested 89; `exists && split` 44. Restored.
+// Round 118: `continue` on each failed test 52 (188 bytes, aligned as before: the split test is no
+// longer materialised, but the BL re-test is missing); nested tests 52; nested with the unit read as
+// `exists ? ... : NONE` 52; the unit through a player-datum pointer 44; the existence call repeated
+// in the test 96 (208 bytes). 0x18d4f0 is 0xbafb0's only caller.
 // @retail 0x18d4f0
 void function_18d4f0(long object_index, char *audible, long *local_player_index)
 {
