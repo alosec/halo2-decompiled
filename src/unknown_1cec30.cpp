@@ -2644,13 +2644,32 @@ void function_1d83e0(long body_index, s_havok_component *component, long node_a,
 
 
 #include "unknown_1eb550.h"
+#include "vector_products.h"
 
 void function_bba20(long object_index);
 void function_f7ed0(long vehicle_index, vector3f *impulse);
-// score 50 (was 50): Frame 0x30 and length agree; the full image pushes ebx/ebp/esi at entry where
-// retail stages them (the reduced image stages them as retail and leaves 7: the five rigid-body reads
-// address [offset + data] where retail has [data + offset], and the 0x1d1010 call copies the component
-// to ESI before the index to ECX).
+
+/* caps a vector's length at maximum; true when it was longer */
+PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
+{
+    real length_squared = v->k * v->k;
+    length_squared += v->j * v->j;
+    length_squared += v->i * v->i;
+    bool limited = length_squared > maximum * maximum;
+    if (limited)
+        scale_vector_by_double(v, maximum / sqrt(length_squared), v);
+    return limited;
+}
+
+// score 7 (was 50): the saves are staged as retail's; the five rigid-body reads address
+// [offset + data] where retail has [data + offset], and the 0x1d1010 call copies the component to ESI
+// before the index to ECX. The entry saves came from this function's own double-typed scale: with a
+// named double here, any image holding 0x2056e0's double cap or unknown_0350e0.cpp pins the saves at
+// entry. Round 17: both caps through the existing scale_vector_by_double 50; real scales 77 (folds the
+// last multiply); quotient per component 77; the two-caller cap helper with the quotient as
+// scale_vector_by_double's argument 7 (kept), with a named double scale 50; operator[] reads at the
+// first two sites 7; negated change product 7; existing keyframed helper at both/the last test 151/29.
+// Earlier rounds (the full image then pushed ebx/ebp/esi at entry):
 // Earlier: Frame 0x30 agrees; admission save staging and paired fixed/zero velocity homes remain.
 // staggered register saves and paired velocity homes differ;
 // marked linear/angular/both getters 200/197/274; earlier angular norm 146; keyframe query 167 (fast base 135).
@@ -2753,28 +2772,10 @@ void function_1ced00(s_havok_component *component)
             {
                 vector3f linear, angular;
                 rigid_body_velocities_get(havok_component_rigid_body_get(i, component), &linear, &angular);
-                real speed_squared = linear.k * linear.k;
-                speed_squared += linear.j * linear.j;
-                speed_squared += linear.i * linear.i;
-                if (speed_squared > 10000.0f)
-                {
-                    double scale = 100.0f / sqrt(speed_squared);
-                    linear.i = (real)(linear.i * scale);
-                    linear.j = (real)(linear.j * scale);
-                    linear.k = (real)(linear.k * scale);
+                if (velocity_limit_length(&linear, 100.0f))
                     havok_component_rigid_body_linear_velocity_set(i, component, &linear);
-                }
-                real angular_squared = angular.k * angular.k;
-                angular_squared += angular.j * angular.j;
-                angular_squared += angular.i * angular.i;
-                if (angular_squared > 2500.0f)
-                {
-                    double scale = 50.0f / sqrt(angular_squared);
-                    angular.i = (real)(angular.i * scale);
-                    angular.j = (real)(angular.j * scale);
-                    angular.k = (real)(angular.k * scale);
+                if (velocity_limit_length(&angular, 50.0f))
                     havok_component_rigid_body_angular_velocity_set(i, component, &angular);
-                }
             }
             havok_component_rigid_body_state_update(i, component);
             if (havok_component_rigid_body_get(i, component)->body_is_simulating().m_bool &&

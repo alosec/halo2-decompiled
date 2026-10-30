@@ -93,7 +93,14 @@ long c_page_heap::get_page_size()
 // takes ebx, first lives in the frame and page_count is re-read; ours shares page + 1 between
 // the two (lea ecx, [esi + 1]). One scan variable 103; checked++ in the body 103;
 // checked = ++page as the increment 79; page++; checked = page; in a while loop 79; the scan
-// as an inline helper with a next-page out parameter 80
+// as an inline helper with a next-page out parameter 80. Round 17: VC7.1 keeps two counters only
+// when checked is declared before page (`checked++` in the body or a comma increment); declared after,
+// any spelling merges them. Ours also caches page_count in a spilled temporary where retail reads
+// [this + 0xc] at each test and spills first, so with two counters checked spills too. Tried:
+// checked declared first with checked++ 128 (frame 8); no end variable 80; the alignment step split
+// into three statements 80; checked assigned before the bit test 171; free_run declared outside the
+// outer loop 80. Compile-only screens: do/while with an outer if and a for loop keep the
+// page_count temporary.
 // @retail 0x1a1a90
 void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 {

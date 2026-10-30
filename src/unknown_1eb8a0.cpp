@@ -867,6 +867,16 @@ PRIVATE __forceinline long movement_counter_increment(byte value)
 // an inline helper returning success 357.
 // attached ESI/EBP roles and scan setup still differ; per-use direction 88.
 // attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// attached ESI/EBP roles and scan setup still differ; per-use direction 88.
+// Round 17: the contact table read through the component inside the scan (no local) plus `found =
+// true` before the field_11 store gives retail's scan and everything after it (aligned diff 52 ->
+// 20) but a one-byte pad at the unrolled loop head (347 positional). The pad comes from the attached
+// roles: retail's world-up pointer lives in EBP and its two `[ebp]` reads take a displacement byte,
+// so retail's loop head lands 15 bytes from alignment (no pad) and ours 1 byte from it. Diagnostic
+// copies without the world-up copy or without the first dot give object_index retail's ESI. On that
+// scan form (all 346/347, same roles): node matrix local, world-up local at the dot, object pointer
+// inline, transform terms reordered, the existing object_get/object_node_matrix helpers, dot
+// arguments swapped; world-up local before the transform call 504.
 // Unsigned attached handle 157; const contacts 157; unsigned selection 157;
 // initialized found 364; forward workspace 482; shared difference 237; const objects 157.
 // On per-use scan: direct count 88; direct table 356; both 356; found first 87 (one-point addition dropped).
