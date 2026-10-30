@@ -594,7 +594,23 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 /* whether the players and the extra players joining them can be balanced
    into the teams within the given imbalance; each extra player is a party
    of its own */
-// score 34 (was 34): frame 0x48 agrees; +0x14 player count arrives in EDX where retail has
+// score 34 (was 34): frame 0x48 agrees; from +0x14 the player-count EAX/EDX roles are exchanged
+// (retail player count in EAX, extra count in EDX) and flow through the copy, fill, call setup and
+// the final clamp's register. The body, not the parameter order or the caller, decides them.
+// Tried: result first 34; guarded countdown 45; source/output cursors 67; count parameter reference
+// 54; shared existing count 34; staged total 34; capacity lifetime first 34; independent loop
+// indices 34; named candidate party 34; descriptive scalar homes 34; independent indices with
+// candidate 34; earlier imbalance output 65; standard party maximum in either order 100; standard
+// excess maximum in either order 61; both maxima 118; guarded standard fill 55; maxima with fill 119;
+// total after copy 74; phase-accumulated total 74; shared party value 73; strict maximum update 35;
+// early imbalance 66; explicit excess clamp 46; result from combined tests 67; separate noinline
+// declaration 34; parameter orders (extra, parties, player) 35, (player, extra, parties) 34,
+// (parties, player, extra) 34, (parties, extra, player) 35, (extra, player, parties) 35;
+// extra-first sum 35. Round 94: copy then max from the copy 75; fill counted by extra count 62
+// (moves extra count to the stack); clamp as `excess > 0 ? excess : 0` 43; open slots from the
+// sum written out 71; `party >= next_party` 81. Screened without a role change: all 60 declaration
+// orders, local and parameter names, another caller, inline fill/copy helpers, clamp spellings.
+// frame 0x48 agrees; +0x14 player count arrives in EDX where retail has
 // EAX (extra count EAX/EDX swapped), which rotates the copy, fill, call setup and final clamp
 // registers; the body, not the parameter order, decides it. Tried: result first 34; guarded
 // countdown 45; source/output cursors 67; count parameter reference 54; shared existing count

@@ -154,6 +154,10 @@ bool function_14ddc0(long local_player_index);
 // local_player_exists unit ternary 89. All restored.
 // Round 116: the unit read through 0x14de70 44; `if (split && function_14ddc0(i))` 96 (208 bytes),
 // with the 0x14de70 read too 96; split as `exists ? ... : false` 44; both flags at loop scope 44.
+// Round 30 (0xbafb0's file is on another lane's list, so its parameters stay): two existence
+// tests with the player getter in the unit ternary 89 (our second call sets ESI before EAX, so
+// the unit cannot stay in ESI); player getter then NONE-test ternary 42; that with the unit test
+// nested 42; the first form with the hierarchy test nested 89; `exists && split` 44. Restored.
 // @retail 0x18d4f0
 void function_18d4f0(long object_index, char *audible, long *local_player_index)
 {

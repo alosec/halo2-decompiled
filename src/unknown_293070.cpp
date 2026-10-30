@@ -547,6 +547,15 @@ void function_295320(point3f const *point)
 // Native datum iterator with inlined scan, data/index seed, missing-index seed, null-datum seed,
 // complete seed 116/116/116/116; calling-scan counterparts 152/152/152/152.
 // Original captured activity and complete walk restored; the live-null exhaustion join remains.
+// Why the walk costs the callers: they are built as if this function wrote memory. With
+// the walk, LTCG sees it as free of side effects; any store added to the walk body (a
+// function-static, diagnostic) gives all three callers back (callee 82). Our forms that
+// keep the callers reach the step through flock_iterator_next with the iterator at +4
+// of its pointer parameter, which LTCG cannot follow; with the same step written in the
+// body, or through a helper whose iterator sits at offset 0, the callers break again,
+// even where this body is unchanged at 69. __stdcall declared (retail ret 4) changes
+// nothing. Round 14: the helper storing the flock only when the step finds one 69;
+// the helper with a local result 72.
 // @retail 0x2958a0
 long function_2958a0(long name)
 {

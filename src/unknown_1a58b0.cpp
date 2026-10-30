@@ -749,6 +749,9 @@ dword function_1a7ad0(long owner_index)
 // the source local 153; nullable definition pointer tested 123; source/definition declarations
 // swapped 96; both declared before the owner 96.
 // Every-use tag table with indexed/direct definition, native/library copy and primary/fallback-first region: eight combinations 96 each.
+// Overlap-safe primary/fallback/both transfers 165/166/140; both with every-use tags, readonly
+// source, separate primary scope, default-first fallback or indexed definition 138/140/140/121/140.
+// Original transfers restored.
 // @retail 0x1a7b30
 void function_1a7b30(s_flag_bits *result, long owner_index)
 {
@@ -1904,6 +1907,9 @@ PRIVATE __forceinline s_target_link_definition *function_1a5c01(long object_inde
 // list accepted count after/before 11/11; list next count 127; post-query marker advance 11, with accepted counts 11/11;
 // marker advance with next count/candidate-next 123/127. Loop-wide lists lose the matched caller; every nullable selector remains exact-only and is rejected.
 // Actual descriptor cursor with nullable record: native/short query [165, 168]; shared output [165, 168]; metadata bound [169, 171]; both [169, 171]. All exact-only forms restored.
+// Descriptor reference across nullable conversion: pointer/reference table, mutable/readonly
+// descriptor and iteration/entry query output all 13 at 565 bytes. Exact-only selectors restored;
+// query and count ranks remain.
 // @retail 0x1a5c00
 long function_1a5c00(s_sort_weight_view const *weights, long object_index, bool alternate,
 	point3f const *origin, vector3f const *direction, long count, s_sort_candidate_view *candidates)

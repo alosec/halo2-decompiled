@@ -610,6 +610,8 @@ long function_189400(s_sound_position const *position, long object_index, long t
 // retail's eax/ecx inputs and only the second scan differs (short/word 56, dword/long 70).
 // Callee entry index through its address 77; volatile effect read 90 (retail inputs);
 // aggregate effect point 77; typed effect-direction local 77; point and description first 77.
+// Round 94 (lane 6): with 0x1883e0's parameters as c_type_47f957 (held to 2026-11-02) and the
+// second scan on a 32-bit index, 77 -> 46.
 // Round 36: query inline 77; query and target inline 77; target inline 77; array-decay outputs 77;
 // function-scope counters 77; aggregate sound position 77; compression last 76 (rejected); vector assign 77.
 // Round 116: named effect index 77; named sound index 77; both 77; dword second scan with the named

@@ -488,6 +488,12 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
 // loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
 // first on the word form 77, carrier on the word form 78.
+// computed before the branch 133; union plus carrier 91.
+// Round 94: a plain `word old_team_mask` gives retail's entry (`mov cx`, word store), but the compare
+// then reads the mask from memory where retail reloads it into ECX before the first branch and
+// shares it with the update (one instruction short, the rest shifts) 77; with the team-bit carrier 83;
+// the mask read and stored through globals 129; `*team_mask |= present` 130; compares as
+// old != new 33.
 // Retail reloads the word mask once into ecx before the first test and ORs present into
 // it for the store. `*team_mask |= present_teams` (the old mask then only compared, word
 // or dword; or the field re-read in the test) 130/130/130; word mask with the tests'
@@ -499,6 +505,11 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // before the present update 41; a bit local for the present update only 29. A non-volatile
 // present gives retail's loop RMW, the mask reload before the first branch and the folded
 // `or reg, [present]`, but 384/378 bytes (the entry and compare forms then differ).
+// computed before the branch 133; union plus carrier 91; word mask with the field stored
+// directly and the OR uncast (either operand order) 77, the word mask read straight from the
+// field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
+// loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
+// first on the word form 77, carrier on the word form 78.
 // @retail 0x158140
 void function_158140(void)
 {
