@@ -2506,7 +2506,7 @@ done:
 }
 
 void function_b9c60(long object_index, bool flag);
-void function_ba690(long object_index, unsigned char **states, long *state_count, long *a, long *b);
+void function_ba690(long object_index, long *state_count, unsigned char **states, long *a, long *b);
 void __stdcall function_d1360(long vehicle_index, long seat_index, bool a, bool b);
 void function_e5300(long unit_index, long a);
 
@@ -2534,7 +2534,7 @@ void __stdcall function_ea6b0(long unit_index, long type)
 			long state_count;
 			bool hidden = false;
 
-			function_ba690(unit->parent_object_index, &states, &state_count, NULL, NULL);
+			function_ba690(unit->parent_object_index, &state_count, &states, NULL, NULL);
 			if (*(long *)(seat + 0xac) < state_count)
 				hidden = states[*(long *)(seat + 0xac) * 8 + 1] < 3;
 			function_b9c60(unit_index, hidden);
