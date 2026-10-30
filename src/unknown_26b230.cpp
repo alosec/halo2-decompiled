@@ -1760,6 +1760,8 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 // Round 304: collected-count consumption/postdecrement 3/3; cursor consumption alone/with count 81/81;
 // word/long collection 4/12; populated-end traversal 85; collector write cursor 32.
 // Original body restored; cursor LEA still precedes the positive-count branch and extension.
+// Round 84: guarded signed/word do loops 40/93; comma and split for-initializers 3/3/3;
+// equality countdown 3; plain while 3; guarded signed inequality do 40. Original body restored.
 // @retail 0x269580
 void function_269580(long destination_index, long source_index)
 {

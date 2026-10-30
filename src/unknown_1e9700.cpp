@@ -83,6 +83,10 @@ void function_1ea770(byte code, long player_index, s_statborg *statistics, long 
 // Round 414: No frame; enable reloads and maximum-register allocation remain. Shared previous maximum
 // in long/short storage at phase/entry, with read-once or per-use consecutive field, 107 in all eight
 // forms. Independent original maxima and counter snapshot restored.
+// Round 85: caller-local inline declarations with the existing player/team getters 164/118
+// (401/413 bytes), and with the player setter 202 (362); index admission nested after the limit
+// reads 110 (420); early consecutive and row declarations 107/107; team-mode byte and nested
+// team guards 107/107. Original scalar limits, counter operations and guards restored.
 // @retail 0x1ea5b0
 void function_1ea5b0(long player_index, s_statborg *statistics, long threshold, byte code)
 {
