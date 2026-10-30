@@ -143,6 +143,9 @@ void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *fo
 // before y 96; `vector3f_scale` with the magnitude call 96; the existing decode_direction_194d30
 // helper 114 (aligned 34 -> 26: the final scale then matches retail and the hand-written decode copy
 // goes; the decode registers and x87 reload remain); that helper as plain inline 344 (not inlined).
+// Plain component loops (rows/normalization/output in seven subsets) 114/96/114/96/96/96/96; all
+// with complete normalized value 155 at 489 bytes. Row/output forms are 440 bytes; no count gain or
+// missing store/reload recovery. Original body and normalizer restored.
 // @retail 0x195070
 void function_195070(s_bitstream *stream, vector3f *out, real lo, real hi, long bits)
 {

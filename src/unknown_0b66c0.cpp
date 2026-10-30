@@ -145,6 +145,18 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // retail's: start EDI, walk EDX, length ECX) but LTCG passes start in EDX, not ECX: 28 with
 // 0xb5f10 6; with count before start in every declaration and call 28; the length test nested
 // 28; a plain string parameter 41; early returns 48.
+// retail moves the start from ECX into EDI at entry so the inlined length scan
+// counts in ECX and walks in EDX (as matched 0xb61d0 does); ours keeps the start in ECX, counts in
+// EDX and walks in EDI, so EDI is saved with EBX around the scan. Tried: count before start in the
+// parameter list 40; the length in a named local after the sign tests 40; string + start with start
+// unmodified 28 but start then arrives in edx and the matched caller 0xb5f10 differs (also as
+// `&string[start]`); that with a plain string parameter 41; start = string + start 40; cursor
+// displacement with fixed/explicit maximum, unequal/ordered end tests and signed/unsigned returns:
+// eight forms 36 each (shared find changed). Round 35, one-file harness (aligned/positional,
+// current 16/40): early returns 21/42 (--fast 48); nested length test 16/40 (--fast 40);
+// `length >= start + count` 17/40; all 23 other parameter orders 16-17/40; a const method of the
+// text struct, with or without noinline, 18/41 (0xb5f10 then differs); no `volatile` with a
+// noinline declaration 22/34 (0xb5f10 differs).
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -344,6 +356,12 @@ bool function_7af40(s_type_99af70 const *address);
 // Lane 8 r79: an early `return false` for a bad address 32; `count = count + 1` 32; the failed
 // open closing and returning first 33; `connection->endpoint` read at each use 119 (0xb40b0 61);
 // the endpoint read before the address check 64.
+// Round 35: an early invalid-address exit with the failed open closing and returning first 35 at
+// 245 bytes (the open test inverts; the false exits then go to the close path's return); the copy
+// helper as plain inline 32 (identical); the state stored before the counter 33; the flag and the
+// open call reading the connection's endpoint again 111 (the split counter takes ebx, the address
+// then arrives in eax and 0xb40b0 stops matching). A compile-only copy without link-time code
+// generation splits the counter even with the copy written out, so it cannot screen this.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

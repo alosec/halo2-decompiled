@@ -1385,6 +1385,8 @@ PRIVATE __forceinline bool function_274a51(long arg_0, s_object_seat const *arg_
 // pointer-result for traversal 274, with shared dot 274; capacity-first admission 45,
 // with traversal 278; existing request output/seat reference formals 41/41. All restored.
 // Round 251: bounded candidate count/index byte-short, char-short, short-byte, short-char, byte-byte, byte-char, char-byte, char-char 188/90/182/269/78/190/190/148. Original short counters and body restored.
+// Round 255: native complete candidate record, four construction lifetimes with aggregate assignment
+// 204/204/204/204; library-copy counterparts 204/204/204/204 (861 bytes). All restored.
 // @retail 0x274a50
 void function_274a50(long ai_index, long vehicle_index, long filter_range, bool load)
 {
@@ -2551,6 +2553,7 @@ struct s_scenario_scripting_view
 // combinations 80/87/96/92/96/98/95/99. All 367 bytes; exact wrapper survives. Original getter,
 // selector, early counter and complete search restored; actor/counter homes and delayed data
 // observation remain.
+// Round 255: complete point-set fields at every use with data/root observation and short-counter scope subsets 102/86/102/87/101/88/101/89. All restored; wrapper unchanged.
 // @retail 0x2769d0
 void function_2769d0(long point_reference)
 {
