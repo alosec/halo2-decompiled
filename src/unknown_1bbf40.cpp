@@ -328,7 +328,28 @@ bool function_1f8660(long actor_index);
 real function_1f8940(long actor_index);
 real function_1e3920(long actor_index);
 
-// score 46 (was 46): aligned 0x764 frame agrees; actor-index and search-result carriers differ after scratch allocation.
+// score 46 (was 46): aligned 0x764 frame agrees; actor-index and search-result carriers differ after
+// scratch allocation. Retail reloads the actor index into EBX for the search and keeps the result in
+// EAX until the success branch (then ESI); ours reloads the index into EDX and copies the result to
+// EBX at once. Earlier result-first 53; output/reference and failure-cleanup forms did not close the
+// carrier gap. Per-use actor receiver with nested failure-first and output-home names 117/117; early
+// admission 140/140; success-first 116/116; success-first/early admission 138/138. All forms grow to
+// 368 or 372 bytes. Typed request reference fields 46; complete request Boolean 89; named movement
+// kind 46; typed fields/kind 46; Boolean with fields/kind/both 89/89/89; aggregate zero with
+// fields/Boolean 99. Round 110: selection compared inside the else-if 46; reference declared before
+// the scratch call 46; success branch first 46; flag store before the result 46; out locals swapped
+// 46; the reference compared as a long value 46; the search part as an inline helper 223 (its callee
+// inlined). The scratch release written in each branch 47 (342 bytes, same carriers); the failing
+// actor re-read into `actor` 46; the selection tested without a local 46; the search outputs or the
+// reference declared at the top of the function 46/46. Separate raw/admitted reference values with
+// immutable raw value and entry request/scratch declarations: 46/46/48/48/46/46/48/48, all 344 bytes.
+// Original lifetimes and body restored. Round 37: the matched siblings 0x1a9400, 0x1b0ab0 and 0x1c1730
+// keep the actor index in a callee-saved register across 0x261280 and leave the reference in EAX, as
+// retail does here; ours rematerialises the index from the stack and gives EBX to the reference.
+// Reference declared, then assigned 46; scratch fetched after the search outputs are declared 46;
+// actor before result 65; both comparisons with the sentinel first 46; the request declared at the
+// top of the function 48.
+// aligned 0x764 frame agrees; actor-index and search-result carriers differ after scratch allocation.
 // Retail reloads the actor index into EBX for the search and keeps the result in EAX until the success
 // branch (then ESI); ours reloads the index into EDX and copies the result to EBX at once.
 // Earlier result-first 53; output/reference and failure-cleanup forms did not close the carrier gap.
@@ -447,7 +468,13 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
-// score 85 (was 166): entry NONE homes, predicate setup and proximity SSE scheduling differ.
+// score 47 (was 85): NONE in EBP (retail EBX) and the special flag in BL (retail CL: the special
+// path does `mov cl, 1; jmp tail`, the scan stores 0 at its start) remain; the tail and the
+// proximity block now match. Round 78: the tail's prop node as a named pointer 85 -> 51 and the
+// deltas x, y, z 51 -> 47 (kept); on that, `&&` flag 200; flag set in if/else arms 200;
+// function-scope false flag with the scan in the else 223; bitwise operands swapped 47 (same
+// code); conditional-expression flag 194; bitwise flag declared first at function scope 47;
+// false flag set to the field on the type-6 path 99 (NONE in EBX, flag memory-only).
 // Earlier: retail keeps the special-vehicle flag in CL at the shared tail (the
 // special path does `mov cl, 1; jmp tail`, the scan's exits reload it from the dead actor
 // argument slot) and lays the tail out after the passenger scan; ours reloads the flag from
@@ -520,10 +547,10 @@ short __stdcall function_1bbf40(long actor_index, s_slot *slot)
                         point3f unit_point;
                         function_b9dd0(actor->unknown26c, &vehicle_point);
                         function_b9dd0(unit_index, &unit_point);
-                        real z = unit_point.z - vehicle_point.z;
-                        real y = unit_point.y - vehicle_point.y;
                         real x = unit_point.x - vehicle_point.x;
-                        if (z * z + y * y + x * x < 6.25f)
+                        real y = unit_point.y - vehicle_point.y;
+                        real z = unit_point.z - vehicle_point.z;
+                        if (x * x + y * y + z * z < 6.25f)
                         {
                             short minimum = (short)real_to_long((real)g_510c54->field_2_3 * 3.0f);
                             if (*(short *)actor->unknown2f4 < minimum)
@@ -546,11 +573,14 @@ short __stdcall function_1bbf40(long actor_index, s_slot *slot)
             else
                 allow_exit = true;
         }
-        if (special && actor->prop_index != NONE && prop_node_get(actor->prop_index)->unknown24 >= 1 &&
-            prop_node_get(actor->prop_index)->unknown24 <= 2 && !function_1b9200(actor->unknown26c, actor->prop_index))
+        if (special && actor->prop_index != NONE)
         {
-            *(short *)actor->unknown2f4 = 0;
-            allow_exit = true;
+            s_prop_node_view *prop = prop_node_get(actor->prop_index);
+            if (prop->unknown24 >= 1 && prop->unknown24 <= 2 && !function_1b9200(actor->unknown26c, actor->prop_index))
+            {
+                *(short *)actor->unknown2f4 = 0;
+                allow_exit = true;
+            }
         }
         if (allow_exit && *(short *)actor->unknown2f4 <= 0)
             function_e68c0(0x1d, actor->unknown018);

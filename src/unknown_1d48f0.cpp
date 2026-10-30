@@ -189,6 +189,11 @@ const dword g_455978[81] = {
 // Round 181: complete table-sample/ray-origin/output coordinate-copy subsets 395/306/306/395/395/306/395; all with basis-row loops 430. Original native copies and body restored.
 // Round 397: scan-lifetime bounds descriptor; entry constructor, native endpoint copy and shared table-sample masks 0..7
 // 465/470/486/491/465/470/486/491; all restored.
+// Round 185: Optional/required/both registration returns 307/312/313; integrated
+// optional/both-return/required/both construction 307/313/330/331; early count 424. Required-result frame
+// shrinks to 0x194; actual transform descriptor through scan/cleanup restores 0x1d4 at 326/327/320/321, with
+// both complete native copies the same four scores. All original ownership, scopes, copies, query inputs and
+// body restored; optional homes and selective helper expansion remain.
 // @retail 0x1d48f0
 bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long arg_2, point3f const *arg_3,
  vector3f const *arg_4, s_location *arg_5, real arg_6, real arg_7, bool arg_8,

@@ -45,6 +45,10 @@ void function_2d140(long, real const *, long, long, s_filter_vector const *);
 // Native offset/resource/sequence data declarations, all seven combinations 120;
 // complete native graph plus case-local converted pairs/default point 163.
 // Mode/resource/point homes, offset join and bound scheduling remain; original declarations retained.
+// Round 208: native four-float grid with pointer-selected offsets, bounds read
+// everywhere/from reused integer inputs 146/120; case-converted offsets 159/139.
+// Early grid declaration repeats those four scores. All body/type changes restored;
+// mode/resource/point homes and offset/bound schedule remain.
 // @retail 0x22b8e2
 void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 {

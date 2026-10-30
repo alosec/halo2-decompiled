@@ -64,6 +64,9 @@ PRIVATE __forceinline real extent_length(__m128 vector)
 // Native length producer: immutable input/staged identical sum/both 95; low-lane
 // result extraction with all input/sum subsets 627/2249; ordinary inline 945/1721.
 // Original helper and body restored; case-4/5/6 tail direction remains.
+// Conditional vertex-extent accumulation 97; complete data receiver 95; aggregate/memcpy transform
+// copies 685/685; accumulation with direct receiver 95, with aggregate/memcpy 685/685, all three
+// 685. Row copies and original producer restored.
 // @retail 0x182d90
 real __stdcall function_182d90(c_extent_shape *shape, real radius,
 	s_extent_transform const *transform, real *minimum, real *maximum)

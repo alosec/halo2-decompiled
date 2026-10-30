@@ -1121,6 +1121,9 @@ struct s_game_engine_globals_connections_view
 // Round 279: native byte input domains for glyph, dim and hidden-place flags,
 // all seven subsets and all four input flags together: eight calibrated scores 170.
 // Original Boolean signature and complete body restored; deferred icon tail remains.
+// Round 291: Default validity before construction for place/icon, score, both, time, place/time,
+// score/time and all: 256/252/258/252/246/247/268; all with connection default 267. All exact-only forms
+// restored (calibrated fast control 170).
 // @retail 0x1603f0
 void game_engine_player_row_build(short const *position, real alpha, long player_index, word const *name, long place,
 	long score, long seconds, bool hide_connection, bool show_icon, bool hide_place, color3f const *color, bool dim,
@@ -1695,6 +1698,13 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 262: non-template rectangle/widget-prefix text contracts 122/122;
 // with indexed team traversal 148/148; widget-prefix byte/short validity offsets
 // 122/122; ordinary inline prefix and invalid-widget exit 122/122. Restored.
+// Round 184: plain consecutive-header loops, background/text/both 559/555/830;
+// both with short/dword/byte counters 830 each; text loop with indexed team 539;
+// both loops with actual indexed team-row receiver 830. All stay rolled.
+// Existing default drawer with coordinated inline/force-inline declarations 122/122;
+// ordinary inline plus indexed team 148, force-inline plus reused row 120 (two-point gain dropped).
+// All helper bodies, external declarations and original traversal restored; team induction and
+// receiver/bounds scheduling remain.
 // Round 413: actual text receiver/word buffer/color/text bounds as the single member base
 // 150 each; each with indexed team traversal 148. All are 1863/1851; original helper and body restored.
 // @retail 0x161420

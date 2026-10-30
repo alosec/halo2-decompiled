@@ -1169,10 +1169,13 @@ void __stdcall unit_action_throw_grenade_interrupted(long unit_index, long type)
 }
 
 /* puts away the weapon in a unit's hand */
-// score 55 (was 66): pool/hand allocation, slot comparison width and repeated receiver lookup differ.
-// Short/long slot domains 59/66; long hand with char/short/long slot 67/60/67;
-// short hand and slot 58; existing ordinal/boolean hand getters 60/55.
-// Ordinary boolean hand getter 55; retained.
+// score 55 (was 55): retail computes the hand index first (EDI, kept for the final store), keeps the
+// pool pointer in EBP and reloads its data field for the second unit lookup (byte offset shared);
+// ours reuses the first unit pointer and keeps the unit index in EBP. Short/long slot domains 59/66;
+// long hand with char/short/long slot 67/60/67; short hand and slot 58; existing ordinal/boolean
+// hand getters 60/55 (boolean kept). Round 31: hand index first with the hand getter 60 (retail's
+// entry and final store, no reload); header form for the second/first lookup 60/60; one header
+// pointer for both 56; the second lookup at the store 54 (177/172).
 // @retail 0xe8460
 void function_e8460(long unit_index, bool primary)
 {
@@ -1194,40 +1197,38 @@ void function_e8460(long unit_index, bool primary)
 
 /* starts putting away the weapon in a unit's hand: its put away animation,
    or at once */
-// score 81 (was 117): incoming unit stays in ESI instead of a stack home; cleanup tails differ.
-// Result first 117; common bool exit 107; nested/positive admission 107/107;
-// long common result 94; byte nested result 81 (plain, kept); entry name 107; explicit name 107.
+// score 81 (was 81): retail sinks the EDI save past the weapon test and returns that path's
+// true from AL (mov al, 1 before the branch, shared with the store); ours saves EDI at entry and
+// reloads the result there. Result first 117; common bool exit 107; nested/positive admission
+// 107/107; long common result 94; byte nested result 81; entry name 107; explicit name 107.
+// Round 31: result after the lookup (retail's store between the lookup and its test keeps the
+// NONE default, and the unit then arrives on the stack as retail) with nested ifs 108; with
+// `result = !animation || immediate` 89, with the ternary on the animation call 81 at 263/263
+// (kept: 0xe8b20 matches); the if/else form 81; `immediate || !animation` 89; early NONE return
+// of result/true 80 (EDI save sunk as retail, `mov al, 1` stays in the exit); result after the
+// early return 96; char result 92, with the early return 84.
 // @retail 0xe8510
 bool function_e8510(long unit_index, bool immediate, bool silent, bool primary)
 {
-	byte result = true;
 	long weapon_index = unit_action_hand_weapon_get(UNIT_ACTION_UNIT_GET(unit_index), !primary);
+	bool result = true;
+
 	if (weapon_index != NONE)
 	{
 		long name = primary ? 0x8000025 : 0xd000539;
+
 		if (function_114040(unit_index, name) && !immediate)
-			result = false;
-		else
+			return false;
+		if (!(silent && immediate) && function_100130(weapon_index, immediate))
 		{
-			if (!(silent && immediate))
-			{
-				if (function_100130(weapon_index, immediate))
-				{
-					function_c86e0(unit_index, 0);
-					if (!silent)
-						function_ee7f0(unit_index, primary ? 0x12 : 0x13);
-					if (function_113e90(unit_index, name, 0.267f, NULL, primary ? 0 : 3))
-					{
-						result = immediate;
-						if (!immediate)
-							goto done;
-					}
-				}
-			}
-			function_e8460(unit_index, primary);
+			function_c86e0(unit_index, 0);
+			if (!silent)
+				function_ee7f0(unit_index, primary ? 0x12 : 0x13);
+			result = function_113e90(unit_index, name, 0.267f, NULL, primary ? 0 : 3) ? immediate : true;
 		}
+		if (result)
+			function_e8460(unit_index, primary);
 	}
-done:
 	return result;
 }
 
@@ -1418,10 +1419,6 @@ bool __stdcall unit_action_weapon_switch(long unit_index, s_unit_request *reques
 }
 
 /* a weapon switch waiting for the old weapon to be put away */
-// score 47 (was 76): type preload, hand/table homes and put-away call convention differ.
-// Numeric-hand helper 70; helper with single result 47 (kept); result/primary first
-// 70/71; short/bool hand 71/83; direct fields 57; hand name 70; direct/result 82;
-// short/result 45 (-2, restored); five coherent callee orders 47, all restored.
 // @retail 0xe8b20
 bool __stdcall function_e8b20(long unit_index, long type)
 {
@@ -3524,6 +3521,8 @@ void function_e5750(long unit_index);
 // score 52 (was 72): unit lookup is at use; the final helper remains expanded (95/67).
 // Early guard, comparison local, byte/long/short type, const pointer and header lookup
 // all 72; direct post-call unit lookup 52.
+// Lane 16 r31: the unit pointer read before the 0xec0d0 call matches with __declspec(noinline) on
+// function_e5750's declaration (not allowed, docs/DECOMPILING.md); without it 0xe5750 inlines here: 72.
 // @retail 0xec330
 void __stdcall function_ec330(long unit_index, long type)
 {
