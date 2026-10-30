@@ -656,6 +656,16 @@ struct s_1f9762
 // A compile-only layout screen moved the approach block with none of ~10 forms.
 // Selected projection by value across four three-vector lexical orders, last/validity-first guards
 // 133/264 in every order; extra vector storage grows the frame and does not recover native tails.
+// Round 16: the approach call written in each arm of the previous-point choice 114 (arms swapped
+// 118, the magnitude test in each arm too 114); `!last` then `direction_valid` nested 67; the
+// reverse nesting 191; the approach inside the not-last arm under or after its direction test
+// 104/104; the projection as a forced-inline test called from both paths 320 (not cross-jumped).
+// Compile-only screens (~70 forms): the previous-point false arm and the approach call are
+// compiler-made copies; a `direction_valid`-first approach test appends them before the final
+// exit block as retail does, but the reached path then keeps a runtime projection test (pointer
+// live from entry); a `last`-first test threads every path and keeps the copies in place.
+// `!reached` or `!projection_direction` guards, the last arm's test as `<=` or nested, and the
+// last arm written first change neither.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)

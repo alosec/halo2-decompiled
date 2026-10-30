@@ -364,6 +364,11 @@ short *function_e70b0(long unit_index, short *value);
 // Round 114: final mode test as a call to the existing 0x1f86f0 138 (kept out of line); through the
 // existing actor pointer 132; nested timer test 49; nested final test 49; named action value 49;
 // a 26-try permuter run found nothing below 49.
+// Round 16: every instruction is retail's except the ECX/EDX roles (the actor pointer and its
+// reloads, and so every temporary beside it); dropping the index from the 0x1f86a0, 0x1fb7e0 or
+// 0x1f4f40 call, or the final mode read through `actor`, leaves the index in ECX. The final mode
+// read as a raw indexed field 49; the action query through a fresh actor lookup 120; the timer
+// test as `== 0` 49; the ticks test as `< 1` 108; the timer guard as `>= 1` 126.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {
