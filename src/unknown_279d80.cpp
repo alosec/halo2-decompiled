@@ -1623,10 +1623,6 @@ __forceinline void function_288572(long arg_0, long arg_1, bool arg_2,
 							{
 								root_offset_scale(arg_1, arg_4, arg_5);
 							}
-							if (arg_0 == 0)
-							{
-								__assume(0);
-							}
 							function_288573(arg_0, arg_4, local_1, arg_1 == 0 ? arg_5 : local_4);
 							g_sampling_settings.frame_index = local_5;
 							g_sampling_settings.next_frame_index = local_6;
@@ -1967,6 +1963,10 @@ void function_27dd10(void)
 }
 
 // score 2 (was 2): the two stack slots are read in the opposite order inside the inlined helper.
+// The order is a register-allocator tie that follows the constants live in the walk's loops (any
+// new one flips it) and not the source shape. Tried: blend-1 translation and scale through
+// interpolate_real 159; a node lookup returning the index or NONE 382; the per-arm walk as a
+// template 2114 (out of line); orientation_vector_blend taking the fraction by value 147.
 // @retail 0x27dff0
 void function_27dff0(void)
 {
@@ -2040,6 +2040,8 @@ void function_2818e0(void)
 }
 
 // score 2 (was 2): the two stack slots are read in the opposite order inside the inlined helper.
+// The same allocator tie as 0x27dff0. Tried: blend-2 `+=` and `*=` 2; the blend-2 translation as a
+// loop over vector.n 364; the multiply's sign mask as long 2, as `1UL << 31` 2, as real lanes 245.
 // @retail 0x281b60
 void function_281b60(void)
 {
@@ -2213,6 +2215,10 @@ void function_289580(void)
 }
 
 // score 2 (was 2): the two stack slots are read in the opposite order inside the inlined helper.
+// The same allocator tie, reversed (node count first in retail). Tried: the per-arm walk 4; a node
+// lookup returning the index or NONE 391; the translation interpolation through
+// orientation_vector_blend 2 (13 others lost); orientation_scale_blend by value 2 (4 lost); the
+// inheritance read from the sampling state at the lookup 2.
 // @retail 0x2898b0
 void function_2898b0(void)
 {

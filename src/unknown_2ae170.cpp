@@ -1153,6 +1153,9 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // Round 414: joint front/rear/both endpoint producers 137/151/141; routing-result arms
 // alone/front/rear/both 137/137/152/142; routing default with both pairs 133 at 396/396
 // (gain four, below eight; test-produced routing also exact-only). Original complete body restored.
+// Round 81: zero-case switch 141; full-width front endpoints on that switch 137; gain after endpoints 137;
+// explicit default 137; capacity first 141; separate gain assignment 137; integer-bit zero with
+// full-width/byte endpoints 158/196 (exact-only, no match). Original body restored.
 // Round 421: signed-byte routing/pair/quad truth carriers, all seven nonempty subsets
 // 137 each; all three as signed short 144/404. Original Boolean carriers, real-bin
 // loops, gains and body restored. Source/bin homes and runtime zero remain.

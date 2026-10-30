@@ -563,6 +563,13 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 // Round 406: direct nonnegative magnitude guard, length return and shared setter
 // 76/76/76/76; original magnitude expression at the caller boundary with the same
 // return/setter choices 89/89/89/89. All restored.
+// Round 22 (one-file harness, base 52 for the build's 51): the scale operand order of
+// each component, all 8 orders, makes no difference (with the third read through out-> 89
+// for every order and for sums i-j-k and j-i-k, 105 for j + (i + k)); component locals in
+// every subset and declaration order 52 when k is declared before j, 57 otherwise, 89 for
+// i alone; magnitude returned (early or else-zero) 52; `>=` guard 80; i/j scaled with *=
+// 52; the normalize written on w directly 91; cross3f_staged/cross3f (up, forward) into
+// out->left 77/82, through a local 105/105 (371 bytes).
 // @retail 0x142390
 void function_142390(
 	plane3f const *plane,

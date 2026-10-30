@@ -1841,6 +1841,12 @@ PRIVATE __forceinline bool audio_target_is_current(byte *actor, long object_inde
 // score 527 (was 527): Frame 0x28 versus 0x2c and separate friendly/required-bit homes remain.
 // Round 291: Existing hostility/known-target/current-target result graphs, all seven subsets, then all
 // with mode read at each test: eight fast scores 545 (control 545; full 527).
+// Round 224: complete request-word/team/actor live-observation masks 1..7 and
+// all with direct priority 545/610/610/545/545/610/610/660 (reduced control 545, full 527).
+// Two-consumer required-friendly policy with bool/byte/short/long requirement and
+// bool/long friendliness 549/545/549/545/551/610/544/610 reduced. Boolean pair restores
+// frame 0x2c and first +0x37, but plain 530 at 2273/2243 regresses; restored.
+// Original frame, observation points and all helper/call inputs retained.
 // @retail 0x20d8c0
 short function_20d8c0(long source_index, s_audio_priority_table *table, byte const *request,
     long object_index, long target_index, long previous_index, long *tag_index, real *weight)
