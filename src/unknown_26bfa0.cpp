@@ -60,6 +60,9 @@ long function_26d100(vector3f const *up, long *unknown, s_collision_result_1697c
 // index/object/index-object/marker/index-marker/object-marker/all 82/82/85/83/84/83/124; all with
 // independent early points 124. Early indices with native center copy/point setter 102/82.
 // Seven-point forms excluded; original complete body restored.
+// Round 209: Delayed final query result with independent early indices, shared point and native
+// failure-point copy, all eight combinations 105 at 374 bytes; each loses seven matched callers. Entire
+// original body restored; common defaults, query homes and case/copy scheduling remain.
 // @retail 0x26bfa0
 void function_26bfa0(long object_index, long *location_index, s_location_view *location)
 {

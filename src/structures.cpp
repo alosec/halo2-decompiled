@@ -512,9 +512,11 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 /* the collision record's object index, re-read at each use as retail does (no local copy) */
 #define COLLISION_OBJECT_14A8E0 (*(long *)((byte const *)collision + 0x40))
 
-// score 70 (was 78): with the part list read through its 0x48-byte range records and the part
-// offset read at each use, only the model/collision registers (EBX/EDI swapped), the lookup address
-// (retail keeps it in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differ.
+// score 70 (was 70): frame 0x58 and initial model/collision homes agree; bounds timing,
+// lookup-address reuse and triangle-test registers differ.
+// Earlier: with the part list read through its 0x48-byte range records and the part offset read
+// at each use, the model/collision registers (EBX/EDI swapped), lookup address (retail keeps it
+// in ESI for the second call) and BLOCKED-BY 0x11e800's argument registers differed.
 // Round 8 (lane 10): range-record list 95 (kept); part offset at each use 78 (kept); section groups
 // after the node search 208; bounds read at its use in the vertex call 274; separate local for the
 // second object lookup 78; lookup declared at the top 78; object lookup before the model 219;
@@ -597,6 +599,9 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // Round 194: shared first/second/both object acquisitions, node-matrix accessor alone,
 // either/both acquisitions with that accessor and shared headers with it 78 each.
 // Model/collision homes, bounds timing, lookup reuse and triangle-call inputs remain.
+// Round 209: Borrowed collision-point input with original/branch-owned point production, do/for vertex
+// loop 70/70/70/70; corresponding bounded short vertex ordinals 102/102/102/102. Original body
+// restored; bounds timing, lookup reuse and triangle-test registers remain.
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)
