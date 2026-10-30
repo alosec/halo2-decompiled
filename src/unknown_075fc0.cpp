@@ -73,7 +73,7 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
 // score 408 (was 408): retail's frame is 0x34 and it holds `this` in edi, forming the channel
 // pointer as observer + index*0x528 with the 0xa8 folded into every field displacement; ours has a
 // 0x3c frame, spills `this` and adds 0xa8 to the channel base, and composes the counter's halves.
-// score 408 (was 408): frame 0x3c/0x34; channel/result homes and the counter copy remain.
+// Earlier: frame 0x3c/0x34; channel/result homes and the counter copy remain.
 // Native channel 434; primary/both counter products 448/419; native products 446/423;
 // native live flag/callback/both 441/439/432; direct counter product 419;
 // both/primary word concatenation 423/431; native both/primary concatenation 415/441.
@@ -108,6 +108,9 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
 // Round 270 M: sequential snapshot OR/add low word 408/418; scratch declared first
 // 408/418; packet output initialized first 424/420; both entry lifetimes 424/420.
 // Same counter bits throughout; original composition, lifetimes and complete body restored.
+// Round 314: Persistent cursor with pointer/indexed fields and ternary/branch window: state-first
+// 407/430/413/419; identity-first 407/430/413/419. One-count best is rejected; original finder,
+// channel/counter/result graph and body restored at 408; frame 0x3c versus 0x34 remains.
 // @retail 0x75fc0
 bool s_network_observer::connection_v05(long arg_1,
 	bool arg_2, bool arg_3, bool arg_4, bool *arg_5, bool *arg_6,

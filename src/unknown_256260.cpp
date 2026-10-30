@@ -138,7 +138,12 @@ void __stdcall function_2562c0(long actor_index, s_slot *slot)
 // returning g_470be8 gives retail's comiss; the started success then jumps into the nearby
 // g_470be8 epilogue instead of the final one, so the code is 12 bytes short (70). Also
 // tried: that form with `<` 75 or `!(<)` 75, with an early `if (!character)` return 75; the
-// plain `>=` test without the local 97.
+// plain `>=` test without the local 97. Round 89: the 70 form's started success jumps into the
+// g_470be8 epilogue, so its jb is short and the loop head loses its pad; one final `return result`
+// (found path result/global; started failure return or assignment) 97/97/125 (load sunk into the
+// return); result in the started path and one not-started return 97/97/19/19; started failure falling
+// to the outer return 78/60/84; on the 70 form: early !character return 70, outer returns merged 91,
+// result declared before the character call 74 or at the top 97, a final extra return 70.
 // @retail 0x256300
 short __stdcall function_256300(long actor_index, s_slot *slot, bool active)
 {

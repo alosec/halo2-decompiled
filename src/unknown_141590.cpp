@@ -573,6 +573,12 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 // i alone; magnitude returned (early or else-zero) 52; `>=` guard 80; i/j scaled with *=
 // 52; the normalize written on w directly 91; cross3f_staged/cross3f (up, forward) into
 // out->left 77/82, through a local 105/105 (371 bytes).
+// Round 27 (fast): the file's own unused normalize3d 88; the shared normalize3d.h normalize (dot3f and
+// vector3f_scale) in place of it and the local normalize 68 at 353 bytes: the first component is then
+// scaled as retail (a copy of the inverse times the component in memory, only the second loaded before
+// the test), but the join keeps the first in xmm2 and moves the third to xmm4 (retail xmm4/xmm0) and the
+// cross products run in the other order; that with the position products before the normalize 83; the
+// local normalize without the third-component local 88; with dot3f for the magnitude 88.
 // @retail 0x142390
 void function_142390(
 	plane3f const *plane,
@@ -582,7 +588,7 @@ void function_142390(
 }
 
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 
 // @retail 0x1424f0
 vector3f *matrix4x3_rotation_between(
@@ -598,7 +604,7 @@ vector3f *matrix4x3_rotation_between(
 	function_141590(a, &inverse);
 	function_142a60(b, &inverse, &relative);
 	function_141f60(&relative.rotation, &rotation);
-	function_11d790(&rotation, out, &angle);
+	function_11d790(&rotation, &angle, out);
 	out->i *= angle;
 	out->j *= angle;
 	out->k *= angle;

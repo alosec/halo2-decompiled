@@ -1016,110 +1016,124 @@ PRIVATE __forceinline byte *unit_action_seat_get(s_unit_action_unit *unit)
 }
 
 /* starts throwing a grenade (type 22) */
+// score 19 (was 272): Frame, setup and width domains agree; success pop/store/result schedule and
+// failure-branch spans remain. The slot index masked once into a local and the macro's lookup
+// written out by hand at its three uses gave 16 (not kept: a hand copy of UNIT_ACTION_UNIT_GET).
+// Hand getter/result-first/both/split/all-ordinal setup 266/272/266/272/266/272/266/265; common
+// exit 185, plus word hand 174, Boolean active field 39, native player selector 22; ordinal 19
+// (three-point form dropped), without final domains 171; one scope/late false 19/22; success before
+// commit 19/22; paired NULL/false setup 16, result after selection 29. Keep real common result,
+// existing word hand getter, Boolean active field and long player value; only constant setup
+// reordered. Every field read, call tuple and success commit is
+// unchanged.
 // @retail 0xe7fb0
 bool __stdcall function_e7fb0(long unit_index, s_unit_request *request)
 {
-	s_unit_request_throw_grenade *throw_request = (s_unit_request_throw_grenade *)request;
-	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
-	s_unit_actions *actions = UNIT_ACTIONS_GET(unit);
-	long weapon_index = unit_action_weapon_get(unit, false);
-	s_unit_action_grenade *grenade = NULL;
-	bool result = false;
-
-	if (unit->current_grenade_index != NONE)
-		grenade = unit_action_grenade_get(unit);
-
-	if (unit->object_type != 0 || function_101440(weapon_index))
-		return result;
-	if ((function_110ab0(unit_index) || (TEST_FIELD_BIT((UNIT_ACTION_UNIT_GET(unit_index)->flags_134 >> 25) & 1))) &&
-		!throw_request->immediate)
+	bool result;
 	{
-		return result;
-	}
+		s_unit_request_throw_grenade *throw_request = (s_unit_request_throw_grenade *)request;
+		s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
+		s_unit_actions *actions = UNIT_ACTIONS_GET(unit);
+		s_unit_action_grenade *grenade = NULL;
+		long weapon_index = unit_action_hand_weapon_get(unit, 0);
+		result = false;
 
-	bool animate = true;
+		if (unit->current_grenade_index != NONE)
+			grenade = unit_action_grenade_get(unit);
 
-	if (unit->parent_object_index != NONE && unit->seat_index != NONE)
-	{
-		byte *seat = unit_action_seat_get(unit);
-		dword seat_flags = *(dword *)seat;
-
-		if (!(TEST_FIELD_BIT((seat_flags >> 5) & 1)))
-			animate = false;
-		if (TEST_FIELD_BIT((seat_flags >> 11) & 1))
+		if (unit->object_type != 0 || function_101440(weapon_index))
+			goto done;
+		if ((function_110ab0(unit_index) || (TEST_FIELD_BIT((UNIT_ACTION_UNIT_GET(unit_index)->flags_134 >> 25) & 1))) &&
+			!throw_request->immediate)
 		{
-			long marker_name = *(long *)(seat + 0x10);
-			s_object_marker marker;
-
-			if (!marker_name || function_b8d30(unit->parent_object_index, marker_name, &marker, 1, false) != 1)
-				return result;
+			goto done;
 		}
-	}
 
-	if (!grenade || function_cdff0(unit_index, UNIT_ACTION_UNIT_GET(unit_index)->current_grenade_index) <= 0)
-	{
-		if (animate && unit_get_player_index(unit_index) != NONE)
+		bool animate = true;
+
+		if (unit->parent_object_index != NONE && unit->seat_index != NONE)
 		{
-			short player_value = *(short *)(g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c + 0x28);
+			byte *seat = unit_action_seat_get(unit);
+			dword seat_flags = *(dword *)seat;
 
-			if (player_value != NONE)
-				function_2007b3(player_value, 0, 1, NONE);
+			if (!(TEST_FIELD_BIT((seat_flags >> 5) & 1)))
+				animate = false;
+			if (TEST_FIELD_BIT((seat_flags >> 11) & 1))
+			{
+				long marker_name = *(long *)(seat + 0x10);
+				s_object_marker marker;
+
+				if (!marker_name || function_b8d30(unit->parent_object_index, marker_name, &marker, 1, false) != 1)
+					goto done;
+			}
 		}
-		return result;
-	}
 
-	if (!throw_request->immediate && UNIT_ACTION_ACTIVE(actions, 0x16))
-		return result;
+		if (!grenade || function_cdff0(unit_index, UNIT_ACTION_UNIT_GET(unit_index)->current_grenade_index) <= 0)
+		{
+			if (animate && unit_get_player_index(unit_index) != NONE)
+			{
+				long player_value = *(short *)(g_4e8c24->data + (unit_get_player_index(unit_index) & 0xffff) * 0x21c + 0x28);
 
-	c_animation_channel *channel = NULL;
+				if (player_value != NONE)
+					function_2007b3(player_value, 0, 1, NONE);
+			}
+			goto done;
+		}
 
-	animate = function_ee8a0(unit_index, 0);
-	function_e69c0(unit_index, 0x16);
-	function_e69c0(unit_index, 8);
-	function_e69c0(unit_index, 0x12);
-	function_e69c0(unit_index, 0);
-	function_e69c0(unit_index, 0xa);
-	function_e69c0(unit_index, 0x1b);
-	function_e68c0(0x13, unit_index);
+		if (!throw_request->immediate && TEST_FIELD_BIT(UNIT_ACTION_ACTIVE(actions, 0x16)))
+			goto done;
 
-	if (throw_request->immediate)
-	{
+		c_animation_channel *channel = NULL;
+
+		animate = function_ee8a0(unit_index, 0);
+		function_e69c0(unit_index, 0x16);
+		function_e69c0(unit_index, 8);
+		function_e69c0(unit_index, 0x12);
+		function_e69c0(unit_index, 0);
+		function_e69c0(unit_index, 0xa);
+		function_e69c0(unit_index, 0x1b);
+		function_e68c0(0x13, unit_index);
+
+		if (throw_request->immediate)
+		{
+			actions->grenade_state = 1;
+			actions->grenade_throw_count = 0;
+			actions->grenade_cancelled = false;
+			function_e7730(unit_index);
+			function_e7900(unit_index, false, &throw_request->origin, &throw_request->direction);
+			goto done;
+		}
+
+		if (!(animate && function_113e90(unit_index, 0x1000006c, 0.1335f, &channel, 0)) &&
+			!function_113e90(unit_index, 0xd000021, 0.1335f, &channel, 0))
+		{
+			goto done;
+		}
+
 		actions->grenade_state = 1;
 		actions->grenade_throw_count = 0;
-		actions->grenade_cancelled = false;
-		function_e7730(unit_index);
-		function_e7900(unit_index, false, &throw_request->origin, &throw_request->direction);
-		return result;
+		actions->grenade_throw_maximum = 0;
+		actions->grenade_cancelled = throw_request->cancel;
+
+		real event_time = channel->get_event_time();
+
+		if (event_time >= 0.0f)
+			actions->grenade_throw_maximum = (char)function_1469f0(event_time);
+		if (unit->parent_object_index == NONE)
+		{
+			function_edff0(unit_index);
+			function_ee7f0(unit_index, 0x1a + (animate != false));
+			function_c86e0(unit_index, 0);
+		}
+		if (*(long *)((byte *)grenade + 8) != NONE)
+			function_176780(unit_index, NULL, 0.0f, *(long *)((byte *)grenade + 8), 0.0f, NULL, NULL);
+		if (*(long *)((byte *)grenade + 0x20) != NONE)
+			function_bbe90(*(long *)((byte *)grenade + 0x20));
+		function_a8c10(unit_index);
+		actions->active[0] |= 0x400000;
+		result = true;
 	}
-
-	if (!(animate && function_113e90(unit_index, 0x1000006c, 0.1335f, &channel, 0)) &&
-		!function_113e90(unit_index, 0xd000021, 0.1335f, &channel, 0))
-	{
-		return result;
-	}
-
-	actions->grenade_state = 1;
-	actions->grenade_throw_count = 0;
-	actions->grenade_throw_maximum = 0;
-	actions->grenade_cancelled = throw_request->cancel;
-
-	real event_time = channel->get_event_time();
-
-	if (event_time >= 0.0f)
-		actions->grenade_throw_maximum = (char)function_1469f0(event_time);
-	if (unit->parent_object_index == NONE)
-	{
-		function_edff0(unit_index);
-		function_ee7f0(unit_index, 0x1a + (animate != false));
-		function_c86e0(unit_index, 0);
-	}
-	if (*(long *)((byte *)grenade + 8) != NONE)
-		function_176780(unit_index, NULL, 0.0f, *(long *)((byte *)grenade + 8), 0.0f, NULL, NULL);
-	if (*(long *)((byte *)grenade + 0x20) != NONE)
-		function_bbe90(*(long *)((byte *)grenade + 0x20));
-	function_a8c10(unit_index);
-	actions->active[0] |= 0x400000;
-	result = true;
+done:
 	return result;
 }
 
@@ -3291,118 +3305,150 @@ struct s_unit_request_seat_animation
 
 /* plays a seat animation (type 36): the request's, or the one following
    the unit's current animation */
+// score 76 (was 252): Frame and entry carriers agree; one extra byte, provider output role and
+// selector tail blocks remain. All original values retained.
+// Shared dispatch 134; selected-name result 159; Boolean result 144; vector copies 134; live mode
+// 159; scalar reservation 134; vector role names 159; if chains 140; false-result exits 134/134;
+// initial/per-branch context 113/132; common exits 109/122; query-spanning contexts 127/133; common
+// result with precise/initial context 76/125; reverse/third-first case orders 76/76. Keep precise
+// contexts, one dispatch and one real result exit; original case order and selected provider output
+// retained.
 // @retail 0xebb40
 bool __stdcall function_ebb40(long unit_index, s_unit_request *request)
 {
-	s_unit_request_seat_animation *seat_request = (s_unit_request_seat_animation *)request;
-	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
-	short mode = seat_request->mode;
-	point3f point;
-	vector3f facing;
-	long state_name;
-
-	if (mode != 0 && UNIT_ACTIONS_GET(unit)->unknown36 != 7)
+	bool result = false;
 	{
-		point = seat_request->point;
-		facing = seat_request->facing;
-		switch (mode)
+		s_unit_request_seat_animation *seat_request = (s_unit_request_seat_animation *)request;
+		s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
+		short mode = seat_request->mode;
+		point3f point;
+		vector3f facing;
+		long state_name;
+		long context;
+
+		if (mode != 0 && UNIT_ACTIONS_GET(unit)->unknown36 != 7)
 		{
-		case 1:
-			state_name = 0x110001b4;
-			break;
-		case 2:
-			state_name = 0x120001b5;
-			break;
-		case 3:
-			state_name = 0xc0006c3;
-			break;
-		default:
-			return false;
+			point = seat_request->point;
+			facing = seat_request->facing;
+			context = 0x5000049;
+			switch (mode)
+			{
+			case 1:
+				state_name = 0x110001b4;
+				break;
+			case 2:
+				state_name = 0x120001b5;
+				break;
+			case 3:
+				state_name = 0xc0006c3;
+				break;
+			default:
+				goto done;
+			}
 		}
-		return function_ee090(unit_index, state_name, 6, 0x5000049, &point, &facing);
+		else
+		{
+			function_b9dd0(unit_index, &point);
+			unit_action_seat_facing_get(unit, &facing);
+			context = 0x400000c;
+
+			long field_c_4;
+			long current_action;
+
+			if (!function_10f630(unit_index, &current_action, &field_c_4))
+				goto done;
+			switch (field_c_4)
+			{
+			case 0xb0006c4:
+				state_name = 0xc0006c3;
+				break;
+			case 0x10000229:
+				state_name = 0x110001b4;
+				break;
+			case 0x1100022a:
+				state_name = 0x120001b5;
+				break;
+			default:
+				goto done;
+			}
+		}
+		result = function_ee090(unit_index, state_name, 6, context, &point, &facing);
 	}
-
-	function_b9dd0(unit_index, &point);
-	unit_action_seat_facing_get(unit, &facing);
-
-	long field_c_4;
-	long current_action;
-
-	if (!function_10f630(unit_index, &current_action, &field_c_4))
-		return false;
-	switch (field_c_4)
-	{
-	case 0xb0006c4:
-		state_name = 0xc0006c3;
-		break;
-	case 0x10000229:
-		state_name = 0x110001b4;
-		break;
-	case 0x1100022a:
-		state_name = 0x120001b5;
-		break;
-	default:
-		return false;
-	}
-	return function_ee090(unit_index, state_name, 6, 0x400000c, &point, &facing);
+done:
+	return result;
 }
 
 /* plays the return from a seat animation (type 37): the request's, or the
    one following the unit's current animation */
+// score 76 (was 252): Frame and entry carriers agree; one extra byte, provider output role and
+// selector tail blocks remain. All original values retained.
+// Related common result and precise contexts 76; reverse/third-first case orders 76/76; initially
+// selected request context 113; isolated common exit 109; precise contexts without common result
+// 133; shared dispatch 134; selected-name result 159. Keep original case order, one dispatch,
+// genuine contexts and one Boolean completion exit; selected provider output unchanged.
 // @retail 0xebd30
 bool __stdcall function_ebd30(long unit_index, s_unit_request *request)
 {
-	s_unit_request_seat_animation *seat_request = (s_unit_request_seat_animation *)request;
-	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
-	short mode = seat_request->mode;
-	point3f point;
-	vector3f facing;
-	long state_name;
-
-	if (mode != 0 && UNIT_ACTIONS_GET(unit)->unknown36 != 6)
+	bool result = false;
 	{
-		point = seat_request->point;
-		facing = seat_request->facing;
-		switch (mode)
+		s_unit_request_seat_animation *seat_request = (s_unit_request_seat_animation *)request;
+		s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
+		short mode = seat_request->mode;
+		point3f point;
+		vector3f facing;
+		long state_name;
+		long context;
+
+		if (mode != 0 && UNIT_ACTIONS_GET(unit)->unknown36 != 6)
 		{
-		case 1:
-			state_name = 0x10000229;
-			break;
-		case 2:
-			state_name = 0x1100022a;
-			break;
-		case 3:
-			state_name = 0xb0006c4;
-			break;
-		default:
-			return false;
+			point = seat_request->point;
+			facing = seat_request->facing;
+			context = 0x5000049;
+			switch (mode)
+			{
+			case 1:
+				state_name = 0x10000229;
+				break;
+			case 2:
+				state_name = 0x1100022a;
+				break;
+			case 3:
+				state_name = 0xb0006c4;
+				break;
+			default:
+				goto done;
+			}
 		}
-		return function_ee090(unit_index, state_name, 7, 0x5000049, &point, &facing);
+		else
+		{
+			function_b9dd0(unit_index, &point);
+			unit_action_seat_facing_get(unit, &facing);
+			context = 0x400000c;
+
+			long field_c_4;
+			long current_action;
+
+			if (!function_10f630(unit_index, &current_action, &field_c_4))
+				goto done;
+			switch (field_c_4)
+			{
+			case 0xc0006c3:
+				state_name = 0xb0006c4;
+				break;
+			case 0x110001b4:
+				state_name = 0x10000229;
+				break;
+			case 0x120001b5:
+				state_name = 0x1100022a;
+				break;
+			default:
+				goto done;
+			}
+		}
+		result = function_ee090(unit_index, state_name, 7, context, &point, &facing);
 	}
-
-	function_b9dd0(unit_index, &point);
-	unit_action_seat_facing_get(unit, &facing);
-
-	long field_c_4;
-	long current_action;
-
-	if (!function_10f630(unit_index, &current_action, &field_c_4))
-		return false;
-	switch (field_c_4)
-	{
-	case 0xc0006c3:
-		state_name = 0xb0006c4;
-		break;
-	case 0x110001b4:
-		state_name = 0x10000229;
-		break;
-	case 0x120001b5:
-		state_name = 0x1100022a;
-		break;
-	default:
-		return false;
-	}
-	return function_ee090(unit_index, state_name, 7, 0x400000c, &point, &facing);
+done:
+	return result;
 }
 
 /* plays a named seat animation where the unit is (type 38) */

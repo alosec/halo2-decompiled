@@ -378,6 +378,13 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // cross terms computed 2, 3, 1 as retail schedules them 43 (same code); the rotation reading the forward
 // copy instead of the direction 86; the cross terms named with their 0.5 scale 75; the rows accumulated
 // in place in the direction (i as one expression) 57.
+// Lane 13 round 18: the matched 0x11d3b0 (same turn-limiting algorithm, out of line) compiles its
+// rotation with exactly our colours (axis k/j in xmm3/xmm4, the projection copied for j), so
+// retail's 0x1fddd0 comes from another shape. An inline rotation helper (vector, axis,
+// projection, sine, cosine) called with the projection 43 (same code); one computing the
+// projection itself 43; either with single-expression rows 57 (38/11 aligned against 46/17: the
+// cosine is then held in a register as in retail, colours still ours); with the projection term
+// first in every row 57.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)
