@@ -654,7 +654,10 @@ bool function_119380(long arg_0, s_119380 *arg_1)
 void function_1e54d0(void *arg_0, long arg_1);
 bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 
-// score 83 (was 83): the object table base and the looked up object are kept in different
+// score 83 (was 83): the object table base and the looked-up object are kept in different
+// registers, one word field is loaded zero-extended here and as a plain word in retail, and the
+// value stored at the 0x134 slot is sign-extended differently. Retail passes the size to 0xbc380
+// as a 16-bit argument, which needs that callee's shared declaration changed.
 // registers, one word field is loaded zero extended here and as a plain word in retail, and the
 // value stored at the 0x134 slot is sign extended differently. Round 81: retail passes the
 // size to 0xbc380 as a 16-bit argument (xor eax, eax; mov ax, ...), which needs that callee's
@@ -765,7 +768,10 @@ void function_1e68a0(s_character_physics_update_input_datum_a *arg_0, s_source_a
     long arg_2, long arg_3, long arg_4, bool arg_5, bool arg_6, bool arg_7,
     bool arg_8, bool arg_9, point3f *arg_10, point3f *arg_11, point3f *arg_12);
 void function_1e5a60(s_biped_physics_result *arg_0, s_biped_physics_input const *arg_1, void *arg_2);
-// score 78 (was 78): Frame 0x6c and builder setup agree; literal-one test allocation, separate result mask and final byte stores remain.
+// score 78 (was 78): the frame and the builder setup agree. Left: retail keeps the literal 1 in
+// AL for the definition-bit test (`mov al, 1; shr ecx, 4; test al, cl`) and stores the result from
+// AL, ours folds it into the test (`test cl, 1`); retail also tests the result bit separately,
+// writes the output bytes with byte read-modify-writes and evaluates the 3.0f/1.0f scale per arm.
 // Earlier: the builder now gets retail's values (0xc0 bit 8 as its first flag, the
 // 0x12c bit 5 as its second; they were in the first and fourth places) and the parent handle is
 // chosen in an if/else. Left: retail loads the definition word with `mov al, 1; test al, cl`,
@@ -788,7 +794,6 @@ void function_1e5a60(s_biped_physics_result *arg_0, s_biped_physics_input const 
 // parent/read-only tag receivers 95/95; admission word/mask 136/166; native output byte 95;
 // shared counter and output decision 123; shared counter carrier 95; byte with shared counter 95;
 // reversed adjacent output publications 95; final native word 102.
-
 // Previous forms at 87 and 95: Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
 // Previous forms at 87 (was 95): Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
 // Earlier: Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.

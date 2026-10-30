@@ -53,6 +53,13 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // second limit 77. Retail preloads one axis component across fsin and
 // reloads the rest from [eax] each use; ours keeps one more component
 // live, so the zero lands in xmm6 and cos in xmm4 (retail xmm4/xmm3).
+// Round 76: the first difference is the inlined 0x11cc90's cross product (retail loads b.j and
+// then a.j first; ours, like the out-of-line 0x11cc90, b.j and b.i). The two point parameters
+// swapped at the definition and both calls 71 (0x29cb10 still matches; flips the other product
+// and the dot); the rotation helper's parameters as (axis, vector, ...), (out, vector, axis,
+// angle) or (angle, vector, axis, out) 67 each; named facing/target pointer locals for the
+// call and the source vector 71. A compile-only harness reproduces the 0x11cc90 part but not
+// the rotation (the points arrive in registers only under LTCG).
 // Shared dot/cross with cosine/projection/turn scale phases: single 81/100/84, pairs 105/84/80,
 // all 91, native output loop 122; basic product controls 82/80/84. Zero/axis/trig homes remain.
 // Native vector return with component output, original/dot/cross/both 78/74/82/89;
@@ -66,6 +73,11 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // 2-D vector type 67; the cross vector declared before the dot 67; a separate result
 // vector copied out 78; the rotation straight into the output 97; one named 2-D view of
 // the source point for both uses 78.
+// at the definition and both calls 71.
+// Shared dot/cross with cosine/projection/turn scale phases: single 81/100/84, pairs 105/84/80,
+// all 91, native output loop 122; basic product controls 82/80/84. Zero/axis/trig homes remain.
+// Native vector return with component output, original/dot/cross/both 78/74/82/89;
+// aggregate output counterparts 78/74/82/89. Original helper and all game-call inputs restored.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)

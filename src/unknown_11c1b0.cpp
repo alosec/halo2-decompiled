@@ -67,6 +67,11 @@ struct s_11c1b0
 // argument's home only when defined after the argument's first read); validity bool first, one
 // or two variables 130/130, with the false result first 132; local copy of the requested index
 // read first 128.
+// Round 16 (lane 10): on the one-variable form, arg_0 copied first 128 and the variable renamed 128
+// (still its own slot), the body in an inner block 100. Byte-for-byte match (plain check, all seven
+// callers unchanged) only when the saved index lives in the parameter variable itself: copy arg_0
+// into a requested-index local, assign arg_0 = local_0 at entry and arg_0 = g_4e6948->index after
+// function_137da0, and test the requested local everywhere else. Not kept: a reused parameter.
 // Round 406: Initial index/zero registers and saved-index publication remain. Consistent unsigned-
 // word current/saved/request equality with 0xffff sentinel, parameter-read ordering, saved entry
 // lifetime and byte late-success combinations. Scores 75/75/133/133/91/91/137/137. All restored.

@@ -151,7 +151,19 @@ PRIVATE __forceinline void function_1befd1(long arg_0)
 
 static __forceinline long real_to_long(real value);
 
-// score 35 (was 35): our frame reserves eight bytes where retail reserves
+// score 35 (was 35): our frame reserves eight bytes where retail reserves four, so the two temporaries
+// sit four bytes higher; retail also scales the first draw before it converts the second one, loads
+// the tick source after the slot reference (which puts the reference in ECX, not EDX) and stores the
+// actor's 0x5b0 field before its 0x4ac and 0x504 fields. Named reals give retail's frame but finish
+// both range products late (second draw spilled unscaled): reals 53, doubles 39, double/real 49,
+// real/double 52; the header random-range helper 55 (57 in the pair); the reset without its volatile
+// casts 43 in either store order; named reals through a seconds-to-ticks inline 53. Round 74: the slot
+// data block through slot->unknownc 80 (retail folds +0xc into each access); the existing out-of-line
+// reset called 115 (its file is /Ob1, so it stays a call); named reals 53, with the reset's plain
+// stores in the out-of-line order 55, with the products written seconds first 53. The named reals'
+// first draw sinks to the reset (fimul), where the aggregate field keeps it early.
+// our frame reserves eight bytes where retail reserves
+// our frame reserves eight bytes where retail reserves
 // four, so the two temporaries sit four bytes higher; retail also scales the
 // first draw before it converts the second one, loads the tick source after
 // the slot reference (which puts the reference in ECX, not EDX) and stores the
@@ -160,6 +172,13 @@ static __forceinline long real_to_long(real value);
 // unscaled): reals 53, doubles 39, double/real 49, real/double 52; the header
 // random-range helper 55 (57 in the pair); the reset without its volatile
 // casts 43 in either store order; named reals through a seconds-to-ticks
+// inline 53; the existing actor_reset_state for the reset 40 (0x5ac/0x5b0
+// stores after the zero stores); with named reals 55, doubles 41, double/real
+// 51, real/double 54; named reals declared first/at the top/wait first 55;
+// product operands swapped, an explicit (real) tick conversion or the
+// seconds-to-ticks inline 55 each. Named reals spill the second draw before
+// the reset where retail keeps both draws on the FPU stack until the first
+// conversion.
 // inline 53.
 // Existing reset call with native payload and original/scalar delay storage, ordinary/forced
 // reset declaration: 121/126/121/126; whole slot 115/125/115/125 (219/211 or 213/205 bytes).
