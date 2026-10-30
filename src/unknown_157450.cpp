@@ -3387,11 +3387,14 @@ void function_19e0f0(word const *string, long size, word *buffer, s_event *event
 
 int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *format, ...);
 
-// score 82 (was 214): frame 0x200 and buffer ESI/ret 8 now agree; failure exits
+// score 82 (was 82): frame 0x200 and buffer ESI/ret 8 now agree; failure exits
 // and the event text-zero store schedule differ. Separate fallback buffers for ending,
 // waiting, both, complete, ending/complete, waiting/complete, all: 186/185/158/167/185/186/214.
 // Common bool result 82; one success goto 82; direct parameter reads 82 (kept, plain).
 // Natural immediate failure 148; event direct return 220; explicit rejected failure 148.
+// Round 298: event-admission return result 199; entry result 94; both 200;
+// entry text workspace 82; with admission/result/both 199/94/200; native long
+// admission result 189. All restored; separate failure-result paths remain.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {
