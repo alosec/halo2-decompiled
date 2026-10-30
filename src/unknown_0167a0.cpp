@@ -80,6 +80,8 @@ PRIVATE inline byte const *material_parameters(long tag)
 // BLOCKED-BY 0x18a90 (retail passes the state in EBX, ours pushes it; the later calls
 // then shift by one instruction) and the `second` load of the restore block, scheduled after the table
 // loads in retail and right after the entry `lea` here; frame, entry and logarithm agree.
+// Direct entry publication with staged chain index/subscript/pointer/table-reload/accessor/parameter-address
+// forms 47 each; original reference with staged index 47; separate restored-entry local 183. Original body restored.
 // Earlier 95 from 132: frame four, the logarithm and the tail agree; left are the restore block (retail reloads
 // the range field before each call; ours keeps it in a register) and BLOCKED-BY 0x18a90, which retail passes
 // the state in ebx (ours pushes it).
