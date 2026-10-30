@@ -541,6 +541,9 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // components/projection/cross, components/cross/projection, cross/projection/components and cross/components/projection
 // 219/219/219/225/225/225; uniform projected-axis parts on first/last orders 102/237.
 // Original helper, input snapshots and body restored; ring conversion and rotation spill remain.
+// Round 253: Per-spoke query producer before direction/angle/sine/cosine, default-if versus
+// conditional, 163/247/153/246/281/281/147/241. All exact-only; no match. Original query
+// observation, rotation helper, input copies, inherited local qualifier and complete body restored.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
