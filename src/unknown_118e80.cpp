@@ -667,6 +667,10 @@ bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 // Four-use long ordinal with retained/per-use tag and bitwise/logical predicates
 // 83/89/129/136; native word ordinal 151/164/144/155. Initial table/object and
 // result homes still differ; original body and shared allocator interface restored.
+// Round 414: Post-reset table/object/result homes, allocation-size acquisition and saved-key tests
+// remain. Native external input fields at selected/controller/allocation subsets 1-7 scored 83 each;
+// complete native input with promoted repeated selection 90. Original void input, callback declaration
+// and byte-offset reads restored.
 // @retail 0x118510
 bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
 {
@@ -1187,6 +1191,9 @@ void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped
 // with signed force 62.
 // Round 263: object/input/both flags read at each use 156/132/121; existing basis helper
 // inline/noinline declarations 94/94; inline with those observations 156/132/121. All restored.
+// Round 414: Frame 0x1f0 agrees; first basis MOV/LEA, component loads and force publication remain.
+// Existing vector assignment at requested/output-basis/velocity copy masks 1-7 scored
+// 269/149/290/101/280/162/302; all copies with terminal flag setter 302. Native copies restored.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {
