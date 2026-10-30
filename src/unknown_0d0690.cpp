@@ -1297,6 +1297,10 @@ PRIVATE __forceinline real lighting_normalize_ordered(vector3f *v, real square)
 // 529/551/551; separate bounded input with lower-exclusive/lower-independent/
 // upper-independent/upper-exclusive tests 529/529/551/551; existing returning pin 529.
 // Original mapper, complete body and every caller contract restored.
+// Round 207: reverse ordinal last-applicable search with current-entry receiver,
+// complete admission mask and final-pointer result subsets 0-7:
+// 568/562/525/563/576/582/576/592. Combined-mask 525 is only four lower, dropped;
+// original forward scan, positive result and complete body/helper contracts restored.
 // @retail 0xd37f0
 bool function_d37f0(s_lighting_parameter_block *block, long type, s_effect_color_query const *query,
 	s_lighting_record *record, color3f const *base, color3f const *lightmap)
@@ -1439,6 +1443,9 @@ real function_30bf0(vector3f *vector);
 // Round 257: Projection-before-cross orders SCAPX/SACPX/CSAPX/CAPSX/CAPXS/ACPSX/
 // ACSPX/ASCPX 474/474/474/442/442/442/474/474. The three 442 forms recover frame
 // 0x40 and length 1870; all regress. Original helper and whole body restored.
+// Round 207: staged cross/complete rotation setter/both 364/364/364; complete
+// normalizer setter with neither/cross/rotation/both 430 each (retail frame and length);
+// all three with native-value rotation input 490. Original helper/output graph restored.
 // @retail 0xd4080
 void function_d4080(long type, s_effect_color_query const *query, s_lighting_record *record, long flag)
 {
@@ -1793,7 +1800,8 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
     point->weight[3] = dequantize16(source[4]);
 }
 
-// score 782 (was 782): Frame 0x90 agrees; status/mesh/sample homes and material/magnitude expansion remain.
+// score 761 (was 782): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
+// +0x24 versus +0x20, sample homes and material/magnitude expansion remain.
 // Earlier: Frame 0x90 agrees; result +0x3c versus +0x24, mesh +0x2c versus +0x20, and helper expansion
 // remain. Existing scalar clamp output pointer 811; weight loop 819; native sample table 819;
 // block-success samples 831; parallel running luminance 818; clamp plus narrow samples 799; with
@@ -1867,6 +1875,11 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Round 257: Scalar color-pin lower/upper independent, upper exclusive and lower/upper
 // guard returns 782 each; native lower/upper scalar results 828/828; existing returning pin
 // 843. Original conditional stores, helper and complete body restored.
+// Round 207: structure/model UV, ordinal, both UV, structure-ordinal/model-ordinal/all/entry
+// captures 838/790/787/866/773/776/803/807. One-path UV caching is match-only; restored.
+// Complete captures with late-structure/early-model/both phases 761/803/761; early-structure
+// with original/early model 772/772; readonly late-structure/early-model/both 761/803/761.
+// Consistent reused UV and ordinal inputs at the natural structure phase kept, plain 761.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {
@@ -1910,9 +1923,12 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
             color3f lightmap = *g_46872c;
             long material = function_13da30((s_13da30_owner const *)(
                 *(byte **)((byte *)g_4e0348 + 0xa8) + *(short *)(part + 4) * 0x20));
+            real barycentric_u = triangle->u;
+            real barycentric_v = triangle->v;
+            long triangle_index = triangle->lightmap_part_index;
             if (!per_vertex)
             {
-                function_d2bf0(mesh, triangle->lightmap_part_index, triangle->u, triangle->v, &u, &v);
+                function_d2bf0(mesh, triangle_index, barycentric_u, barycentric_v, &u, &v);
                 result = function_d2f90(flags, bitmap_index, palette_index, u, v, &lightmap);
             }
             else
@@ -1920,16 +1936,16 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
                 s_vertex_block *block = function_d35a0(index, (s_surface_colour_group *)bsp, true, NONE);
                 if (block)
                 {
-                    function_d3630(block, triangle->lightmap_part_index, mesh, triangle->u, triangle->v, &lightmap);
+                    function_d3630(block, triangle_index, mesh, barycentric_u, barycentric_v, &lightmap);
                     result = 0;
                 }
                 else
                     result = 1;
             }
-            function_d2dc0(mesh, triangle->lightmap_part_index, triangle->u, triangle->v, &base_u, &base_v);
+            function_d2dc0(mesh, triangle_index, barycentric_u, barycentric_v, &base_u, &base_v);
             if (!function_d30d0(material, flags, base_u, base_v, &base))
                 base.red = base.green = base.blue = 0.5f;
-            function_d31c0(mesh, triangle->u, triangle->v, triangle->lightmap_part_index, &normal);
+            function_d31c0(mesh, barycentric_u, barycentric_v, triangle_index, &normal);
             surface_pin_color(&base);
             surface_pin_color(&lightmap);
             query->color_a = pack_color3f(&base);
@@ -1946,6 +1962,9 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
         byte *definition = g_4e3b44[*(long const *)(record + 0xc) & 0xffff].bytes;
         s_mesh *mesh = *(s_mesh **)(*(byte **)(definition + 0x28) + section_index * 0x5c + 0x34);
         word const *vertices = (word const *)((byte *)mesh->triangles + triangle->part_offset * 2);
+        real barycentric_u = triangle->u;
+        real barycentric_v = triangle->v;
+        long triangle_index = triangle->lightmap_part_index;
         bool dynamic_valid = false;
         color3f dynamic_color;
         vector3f dynamic_normal;
@@ -1974,15 +1993,15 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
                     a = &point_a; b = &point_b; c = &point_c;
                 }
                 dynamic_valid = function_0241c0(*(long const *)(record + 8), *(long const *)triangle->unknown2c,
-                    &dynamic_normal, *(long const *)(record + 0x1c), a, b, c, triangle->u, triangle->v,
+                    &dynamic_normal, *(long const *)(record + 0x1c), a, b, c, barycentric_u, barycentric_v,
                     (vector3f *)&dynamic_color);
             }
             result = dynamic_valid ? 0 : 1;
         }
         color3f base;
         vector3f normal;
-        bool base_valid = function_d33a0(mesh, triangle->lightmap_part_index, triangle->u, triangle->v, &base)
-            && function_d31c0(mesh, triangle->u, triangle->v, triangle->lightmap_part_index, &normal);
+        bool base_valid = function_d33a0(mesh, triangle_index, barycentric_u, barycentric_v, &base)
+            && function_d31c0(mesh, barycentric_u, barycentric_v, triangle_index, &normal);
         if (dynamic_valid && base_valid)
         {
             real dynamic_weight = dynamic_color.blue * 0.11f + dynamic_color.green * 0.59f + dynamic_color.red * 0.3f;
@@ -2049,7 +2068,7 @@ long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, 
             *(vector3f *)query = *g_4687b0;
         }
         real u, v;
-        function_d2dc0(mesh, triangle->lightmap_part_index, triangle->u, triangle->v, &u, &v);
+        function_d2dc0(mesh, triangle_index, barycentric_u, barycentric_v, &u, &v);
         byte *part = *(byte **)((byte *)mesh + 4) + triangle->part_index * 0x48;
         long material = function_13da30((s_13da30_owner const *)(
             *(byte **)(definition + 0x64) + *(short *)(part + 4) * 0x20));

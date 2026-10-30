@@ -198,6 +198,10 @@ void function_2232a0(void)
 // Separate candidate/result on the recovered prefix: long/int with original/pretested
 // traversal 106/172 each; short/word counterparts 160/192 each. Three-count gains rejected;
 // original scan restored. Outer pretest, optional-source homes and tail transport remain.
+// Round 208: advancing native output receiver on the recovered source arms:
+// scan-boundary acquisition, numeric/pointer terminal, do/for 111/170/141/192;
+// layout-boundary counterparts 130/171/158/192. All restored; outer pretest,
+// source homes and outside tail transport remain.
 // @retail 0x2234e0
 void function_2234e0(void)
 {
