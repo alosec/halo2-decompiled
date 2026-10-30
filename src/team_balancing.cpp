@@ -387,7 +387,17 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 }
 #pragma function(_ReadWriteBarrier)
 
-// score 80 (was 80): frame 0x2694 agrees; the full build now scores as the reduced image (80). Left:
+// score 67 (was 80): the count delta now matches retail (the delta named, then the two new team
+// counts); what remains is the order of the spread queries: retail calls the candidate's
+// count_spread first in both comparisons (and the reference's cost first), ours calls the
+// reference's first whatever the operand order, which also adds a `mov ebx, esi` (514 bytes).
+// Round 37 (on the named delta): every comparison with the reference on the left 65; only the
+// equality/only the less-than so 66/66; cost operands swapped 67; candidate spread named after the
+// selection 65; the selection as a reference 65; `bool better` chain 81; candidate spread named
+// before the selection 74. Compile-only screens of ~60 one-tree delta spellings all reassociate
+// (they do not show the named-delta effect, which only the LTCG build gives).
+// Earlier (score 80/116): count homes, signed party delta and pure-query ownership remain.
+// frame 0x2694 agrees; the full build now scores as the reduced image (80). Left:
 // our build reassociates the new count difference into 2*(b-a) - B + A (retail keeps (A - 2*(a-b)) - B
 // with `lea ecx, [eax+eax]`), so the inner party pointer takes EAX (retail ECX), the A/B count-address
 // homes swap (+0x34/+0x2c against +0x2c/+0x34), and every later line is offset by one; retail also
@@ -492,7 +502,10 @@ void s_balance_optimizer::try_swap(long team_a, long team_b)
 			s_balance_party const *party_b = &b->parties[j];
 			if (party_a->flagged != party_b->flagged)
 				continue;
-			long new_difference = a->players.count - (party_a->count - party_b->count) * 2 - b->players.count;
+			long delta = party_a->count - party_b->count;
+			long new_count_a = a->players.count - delta;
+			long new_count_b = b->players.count + delta;
+			long new_difference = new_count_a - new_count_b;
 			if (new_difference < 0)
 				new_difference = -new_difference;
 			if (new_difference > difference)

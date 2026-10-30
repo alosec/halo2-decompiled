@@ -730,6 +730,9 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
 // Round 290: Activity/player result and implied-activity graphs 573/651/651; explicit session test
 // combinations 571/651/651; native campaign/state combinations 658/651. Two-point gain rejected.
 // Original executable source restored.
+// Round 308: Complete primary-slot/team-mode/paired-total input subsets 636/606/662/668/687/667/680;
+// all with long primary-slot result 679. All regress and retain ordinary EBP; original observations,
+// count expressions and executable body restored. Frame bias and flag/time homes remain.
 // @retail 0x2b65b8
 void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const *friend_, s_friend_session_2b642e *session)
 {

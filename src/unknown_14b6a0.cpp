@@ -118,7 +118,7 @@ void function_14bac0()
 	s_record_pool_iterator *iterator_reference = &iterator;
 	players_pending_creation_process(iterator_reference);
 }
-// score 222 (was 230): Frame 0x50 (original 0x44) versus retail 0x3c; centre/second-iterator slot sharing, readiness homes and the second scan's call remain.
+// score 222 (was 222): Frame 0x50 (original 0x44) versus retail 0x3c; centre/second-iterator slot sharing, readiness homes and the second scan's call remain.
 // Round 9 (lane 11, fast): second loop through data_datum_iterator_next as retail calls it 257 (frame 0x44:
 // center 0x10, destination 0x1c, alternate 0x28, second iterator 0x34; retail packs the iterator over the
 // probe point at 0x1c); plus a bare block around the probe/center code 257 (identical code); per-marker
@@ -251,6 +251,12 @@ void function_14bac0()
 // Distinct native 16-byte iterator role names and entry recipient reservation, all seven
 // non-original subsets, 259 each; both named native workspaces at entry 259. Frame 0x48;
 // original iterator identities, reservation lifetimes and complete body restored.
+// Returned relocation output 243; paired initial marker snapshots 230; both 243;
+// selected-unit reuse alone 245; returned output plus unit reuse 222 kept (1036 bytes);
+// marker/unit snapshots 245; complete graph 222; with native recipients 228. Four complete
+// returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
+// identities retained; selected-unit value begins at its original bounds read and serves every
+// subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
 // Round 212: complete origin value with pointer/value destination and scalar/shared difference
 // 319/316/319/316; native recipient counterparts 318/361/318/361 (fast control 230). Original input
 // observations, points and both traversals restored; frame/readiness sharing remains.
@@ -271,6 +277,10 @@ void function_14bac0()
 // returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
 // identities retained; selected-unit value begins at its original bounds read and serves every
 // subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
+// Round 431: relocation buffer reused as accepted destination, original/native recipients 222/237;
+// with shared query/bounds point 233/237; accepted alternate 222/237, with shared query/bounds 231/237.
+// Accepted-output reuse shrinks frame to 0x44; query/bounds sharing reaches 0x38, native recipients stay 0x44;
+// retail needs 0x3c. Original returned-output/selected-unit graph restored at frame 0x50.
 // @retail 0x14b6a0
 void function_14b6a0()
 {

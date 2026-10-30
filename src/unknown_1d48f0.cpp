@@ -43,7 +43,8 @@ const dword g_455978[81] = {
  0x0, 0x3f3504f3, 0xbf3504f3, 0x0, 0xbf3504f3, 0xbf3504f3, 0x3f13cd3a, 0x3f13cd3a, 0xbf13cd3a,
  0x3f13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0xbf13cd3a, 0x3f13cd3a, 0xbf13cd3a
 };
-// score 298 (was 306): aligned frame 0x1d4 agrees; first +0x21 is bounds/exclusion homes.
+// score 298 (was 298): aligned frame 0x1d4 agrees; optional bounds/exclusion homes and selective helper expansion remain.
+// Earlier: aligned frame 0x1d4 agrees; first +0x21 is bounds/exclusion homes.
 // Round 87: the sample end as `point3f p = *arg_11;` plus in-place adds (retail's three dword copies and
 // `movss x, [home]; addss x, [vector]`) gives retail's homes for the bounds/exclusion locals and the loop
 // spills, 341 (2106 bytes; the entry esi/edi roles swap back while 0x11bed0 stays inlined). With that form
@@ -201,6 +202,9 @@ const dword g_455978[81] = {
 // 0x1d4 and optional-state homes remain; original admission tests, zero products and cleanup preserved.
 // Typed row-pointer planar read 298; the same radial row, two input components,
 // vertical zero product, query inputs and original admission tests are preserved.
+// Round 224: complete affine input aggregate with output-first, readonly input and
+// native matrix identity subsets: eight forms 298 each. Original complete input
+// producer, separate output matrix and every call restored.
 // @retail 0x1d48f0
 bool function_1d48f0(point3f *arg_11, s_havok_component *arg_0, long arg_1, long arg_2, point3f const *arg_3,
  vector3f const *arg_4, s_location *arg_5, real arg_6, real arg_7, bool arg_8,

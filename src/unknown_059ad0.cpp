@@ -3556,6 +3556,9 @@ long network_observer_attach_channel(s_network_observer *observer, long owner_in
 // Round 403: copy scope 131; const copy scope 131; scoped input output 131; scoped input state 131;
 // const input copy 131; reservation output lifetime 131; output first 131; scoped result lifetime
 // 136. Opening body restored.
+// Round 81 (fast): direct state time 173; direct now 137; direct age 173; age condition order 137;
+// reservation output at reserve scope 131; counter at reserve scope 131; const reason parameter 131;
+// reason-store return expression 131. Original body restored.
 // Round 422: observer snapshot 188; owner snapshot 163; both attach snapshots 167; per-player
 // identity address 131; observer/identity 188; owner/identity 163; all repeated inputs 167; all
 // inputs/entry snapshots 200. Opening body restored.
