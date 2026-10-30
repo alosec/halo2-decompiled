@@ -260,7 +260,7 @@ struct s_havok_component_rigid_body
 	vector3f angular_velocity;
 	byte unknown24[0x30 - 0x24];
 	/* the velocity of the surfaces the body rests on (function_1d87b0) */
-	hkVector4 surface_velocity;
+	hkVector4 unknown30;
 	hkRigidBody *rigid_body;
 	byte unknown44;
 	byte flags45;
