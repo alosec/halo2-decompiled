@@ -382,10 +382,10 @@ __forceinline void function_183672(point3f *arg_0, point3f const *arg_1, __m128 
 // opposite order (retail j, first, i; ours first, i, j). Shared component base 8; i, j, k
 // declared at the top 8; chained FLT_MAX stores 8; contact pointer walk 8; shape calls
 // through the field pointers 168; about 300 natural forms compiled alone keep the slot order.
-// opposite order.
-// First component/outer index/inner index spill cycle remains. Indexed second/first/both shape reads
-// fast 24/79/8; indexed second kind 24; both/second entry shape reads 135/135;
-// indexed second/both shape addresses 24/8. All new scores reduced; original frame and loops restored.
+// Indexed second/first/both shape reads 24/79/8; indexed second kind 24; both/second entry
+// shape reads 135/135; indexed second/both shape addresses 24/8; first body through an entry
+// pointer 8; contact index declared outside the loops 8; first body read in the outer loop 211;
+// second's body array in a local 158; second's count in a local 151.
 // @retail 0x183670
 bool __stdcall function_183670(long component_a, long component_b, point3f *a, point3f *b, real *distance)
 {

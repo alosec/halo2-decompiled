@@ -743,6 +743,8 @@ union s_60403
 // Round 420: New-to-old map scoped through member emission with late retained mask; union/bool discriminator and
 // pointer/value map receiver 336/343/351/357, repeated with iteration-scope discriminator declarations
 // 336/343/351/357. Original lifetimes and union restored.
+// Round 311: shared current active-player mask with full-count/value-index/bool subsets
+// 394/390/376/273/400/390/381/276; original observations and discriminator restored.
 // @retail 0x60400
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update)
 {

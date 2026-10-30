@@ -159,6 +159,9 @@ static __forceinline c_widget *widget_last_sibling(c_widget *widget)
 // The ternary step (`widget = next ? next : first sibling`) keeps the body as retail: 12; the same as a for
 // loop, through a next-or-first ternary helper, with an if/do-while entry guard, or `widget = this` first 12;
 // a named entry result 35 (entry as retail, but the inverted loop tests the name, so no shared tail).
+// From another lane (all with the old candidate copy): candidate-tested while with a body widget 26; one
+// stepping loop from this 64; break then focus under if (widget) 47; widget assigned before the loop and at
+// its end 20; first-sibling walk local 20.
 // @retail 0x22ebc3
 void c_widget::v16()
 {

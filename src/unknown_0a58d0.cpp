@@ -1135,6 +1135,9 @@ PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const
 // Reused axis/angle output pointers 10; reused angle output pointer 6; saved/current output
 // pointer pairs 10/10; extraction calls swapped 7; axis declarations swapped 4; axis names 4;
 // forced orientation inline 4.
+// Held (coordinator 2026-10-30): matches with 0x11d790's parameters declared (q, angle, axis) at its
+// definition and every caller (lane 12 r44); applied once the callers in src/vehicles.cpp and
+// src/unknown_141590.cpp are free. Don't retry this function before then.
 // @retail 0xa9b40
 void function_a9b40(long index, s_z_copy_state *state)
 {

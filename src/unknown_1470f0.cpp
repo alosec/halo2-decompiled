@@ -136,6 +136,9 @@ void *c_game_havok_memory::allocate_aligned(long alignment, long size, long memo
 // with third base 19; primary/second branch inversions 19/19; third-before-second 19; fallback local 19;
 // second predicate 19. First start/end 41; with second return/concrete/end/receiver 41/41/42/41;
 // inclusive tests and inclusive returns 42/42; first start/end without the barrier 41.
+// 0x147160's shared first/third dispatch with inclusive ends and the barrier 9 (not kept: redundant
+// end tests), without the barrier 49; four plain calls with inclusive / exclusive ends 38/29;
+// shared dispatch with exclusive ends 47.
 // @retail 0x147240
 void c_game_havok_memory::deallocate_aligned(void *address)
 {
