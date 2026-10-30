@@ -2456,12 +2456,11 @@ static __forceinline long local_player_find(long const *local_list, long player)
 
 /* fills the lobby's player list (players, count of them), with the local
    players' chosen teams; hides the slots past the count */
-// score 111 (was 111): the locals live in the other stack slots, ours keeps
-// the count at ebp-8 and the flags byte at ebp-0xc while retail keeps them at
-// ebp-0xc and ebp-8, and the switch's table and the words it loads sit in
-// the other order
-// Earlier: retail sign-extends the bitmap index before find_bitmap (a long parameter,
-// like find_text), and reloads players[i] after the voice-state query; named pointer to
+// score 95 (was 111): the locals live in the other stack slots (shown count, the first
+// loop's player, the second loop's four widget indices), retail reloads players[i] after the
+// voice-state query, and the last loop keeps the screen in edi and bitmap_a in ebx where
+// ours keeps the screen in ebx and false in edi.
+// Earlier: find_bitmap now takes a long like find_text (round 104); named pointer to
 // players[i] in the first loop 111; renamed count, flag, player and slot locals 111.
 // Round 184: shared count 301; result-first voice 129; native team byte 165; count/voice 307;
 // scoped text/all receivers 111/111; late team-result constants 171; complete combined graph 307.
@@ -2473,6 +2472,9 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Round 77: second-loop element pointer 180; element pointers in both loops 180; counter before count 111;
 // counter before query 111; final receiver address reads 111; voice parameter address reads 111; player
 // pointer arithmetic 111; interleaved widget-helper parameters 111. Original body and helper restored.
+// Round 104 (on the long find_bitmap, 95): a separate counter per loop 93 (gives retail's two element-
+// pointer slots, ebp-8 and ebp-0x18); with it the four widget indices declared in reverse 93, shown count
+// declared after the matchmaking flag 98, no_team before team_index 93, a screen copy for the last loop 93.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {

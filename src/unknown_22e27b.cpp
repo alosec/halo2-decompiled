@@ -723,9 +723,9 @@ c_class_1a2c81 *c_class_1a2c81::find_text(long index)
 }
 
 // @retail 0x22ee27
-c_class_1a2c81 *c_class_1a2c81::find_bitmap(short index)
+c_class_1a2c81 *c_class_1a2c81::find_bitmap(long index)
 {
-	return find_child(8, index, false);
+	return find_child(8, (short)index, false);
 }
 
 // @retail 0x22ee37
