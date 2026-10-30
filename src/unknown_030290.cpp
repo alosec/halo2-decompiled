@@ -659,6 +659,10 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
 // Round 309: On split constant/runtime helpers, byte/short/word/long runtime controls
 // 27 each; with complete Boolean source-bit producers 213 each. Original controls,
 // producer, helpers and whole executable body restored; final-section pad remains.
+// Lane 13 r20: group helper with the sibling's list flags (true, false) and a dead first-list
+// `|= 0x3000` loop: match (invented dead loop, not kept); with real group-filtered first/third loops 177
+// (definition pointer to EBX), first only/third only/unfiltered/first unfiltered 177 each; the two group
+// passes as a two-entry table loop 250; nested final count test 27. The pad never shows compile-only.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)

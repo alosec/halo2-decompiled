@@ -1359,6 +1359,12 @@ bool function_17afd0(long effect_index, long value);
 // existing calling iterator with aggregate/field initialization 252/252 (exact-only). Coordinated
 // cluster-provider inline alone/pool/iterator/advance 102/102/252/150. All provider declarations
 // and the original body restored.
+// Lane 13 r20 (fast): with view read from the global at each use, bit 9 as ((dword)word >> 9) & 1 and
+// availability as one `view != NONE && !query`: 123; owner declared first 125; availability as false-init
+// plus conditional set 138; owner assigned in an if/else 113 at retail length (effect index in EDI as
+// retail; NONE stays in EBX because availability lands in AL); bit 9 form alone 128; if/else owner with the
+// false-init availability 138 (availability spilled, same-view takes BL), without the bit form 150, with a
+// view local 138.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {
