@@ -695,6 +695,7 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
 // Round 409: complete pool observations 251; one admitted unit handle throughout 262; both 251;
 // unsigned full handle alone/pool/unit/all 257/257/247/247; all with Boolean result 274.
 // Direct radius in all; original complete body restored.
+// Round 293: Consumer-stage visibility receiver/word ordinal/bit, all seven subsets, then all with unsigned bit production: 239 each. Both known callers preserved; direct original radius in each trial. Complete original body, inherited radius storage and interfaces restored.
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {

@@ -275,6 +275,8 @@ void c_window_channel::v9()
 // Round 419: callback from the completed request, derived/base request storage,
 // native multi-use request pointer and direct callback-result subsets 4/25/4/25
 // and 4/25/4/25. All regress; original callback observation and body restored.
+// A twice-used callback snapshot, with both request types and both result
+// declaration orders, scored 29 in all eight forms (79/78 bytes).
 // @retail 0x23531c
 void c_window_channel::v10()
 {

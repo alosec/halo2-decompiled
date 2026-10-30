@@ -750,6 +750,10 @@ void __stdcall function_bc300(long object_index)
 // noinline together 42.
 // Round 197: Full alignment power carried across allocation, signed/unsigned power x short/long
 // old size x outcome/allocation result 43, 102, 72, 109, 43, 102, 72, 109.
+// Lane 8 r79: retail loads the pool's data before masking the index and keeps the header in EBP
+// and the extent in EDI (ours EDI and EBP). A pool-data local then `&headers[index & 0xffff]`
+// (0xbba20's form) 42; the header or the extent renamed 42 each; a dword extent 42; the header
+// declared before the result 42.
 // Round 29: retail keeps the header in ebp and extra in edi (ours edi/ebp) and reads size
 // with a 16-bit load. A named short length 42; the header table in its own local first 42;
 // mask and extra declared at the top 42; the header declared before result 42; single exit

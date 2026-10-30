@@ -727,6 +727,9 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
 // Round 189: real widget-array discovery cursor, long/short/byte/char query ordinals,
 // bounded ordinal latch 637/614/619/619; real array-end latch 628/610/607/607. Original
 // discovery restored; frame bias and initial flags/clock homes remain unresolved.
+// Round 290: Activity/player result and implied-activity graphs 573/651/651; explicit session test
+// combinations 571/651/651; native campaign/state combinations 658/651. Two-point gain rejected.
+// Original executable source restored.
 // @retail 0x2b65b8
 void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const *friend_, s_friend_session_2b642e *session)
 {

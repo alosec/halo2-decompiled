@@ -1269,6 +1269,10 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 // matched 0x2af7b0 (27); all count-retention forms restored. Actual pair pointer/reference
 // reservation before both stores 226/226, between bin and volume 218/218; each loses
 // the same caller. Original append producer and complete body restored.
+// Round 185: Actual shared append provider inline at definition/all declarations, front/rear/all 200 each;
+// force-inline also 200 each but dispatcher loses its match at 26; early level with either provider 212. All
+// provider metadata, shared header, private append graph, input samples and body restored; frame 0x10 and x87
+// tail remain.
 // @retail 0x2af920
 void c_sound_effects::add_sends(s_sound_send_parameters *parameters, long unused, long mode, s_mixbin_settings *mixbins)
 {

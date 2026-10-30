@@ -157,6 +157,9 @@ struct s_free_state_23d260
 // 288/251/257/105/102/286/257; all three plus normalization truth test 290.
 // Keep projection and every output row accumulated at 102, 1326 bytes; row-only 105
 // fails the eight-point gate. Zero/side/normalization and up/roll carriers still differ.
+// Round 194: existing shared rotation/staged up cross/direct trig/both 285/221/224/220;
+// those four with alternate normalization 289/307/293/299. Staged forms recover zero
+// and first +0xa6 but regress the complete body. Original rotation, normalizer and all includes restored.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {

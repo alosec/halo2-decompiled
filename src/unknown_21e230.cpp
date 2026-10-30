@@ -6,6 +6,12 @@
 #include <math.h>
 #include "unknown_21e230.h"
 
+// score 8 (was 8): Decibel/bin scheduling and count-volume register roles remain; native pair aggregate/field
+// production, with original/sampled index and postincrement publication, six forms 15 each; retained index
+// with live count increment 11; reservation before conversion 21. Original field-wise append and body
+// restored.
+// Provider inline/force-inline at definition and shared declaration: own score 8/8;
+// ordinary shared callers tie 200, forced caller graph loses dispatcher at 26. All restored.
 // @retail 0x21e230
 void sound_mixbins_add(s_mixbin_settings *settings, long mixbin, real decibels)
 {
