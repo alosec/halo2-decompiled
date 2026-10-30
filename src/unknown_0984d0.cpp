@@ -99,6 +99,10 @@ bool function_986d0(c_handle_table_450cd0 *self, long index, s_bitstream *stream
 // assignment 18; index declaration initializer 18. All restored.
 // Round 136, natural spill graph: bool/long/short/byte callback outcomes 18,18,18,18;
 // callback outcome with entry/owner/long-entry/both snapshots 18,18,18,18. All nonmatching exact-only forms restored.
+// Round 44: retail's entry index uses ECX (`lea ecx, [eax+eax*4]`), which keeps its receiver loads
+// after the entry value; ours uses EAX and hoists them. `if (result && call)` without the outer else
+// 113; inner update false-first 18; receiver through `peers` 108; `handles[i]` at each use 18;
+// permuter 56 tries, best 18.
 // @retail 0x98750
 bool function_98750(c_handle_table_450cd0 *self, s_bitstream *stream, long index, long a3, long reserved_bits)
 {
@@ -346,6 +350,10 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // cursors 207; for loop over the parallel items/b arrays with the direct call 207; helper taking
 // the cursors by const reference 207; the volatile read on the data cursor only 207, on the items
 // cursor only 210; cursors grouped in a local struct (diagnostic) 210.
+// Round 40: index loop with items[i], b[i], &data.v[i * 4] passed straight to 0x991d0 207 (data
+// cursor and counter in memory as retail, but the items cursor takes EDI and the handle spills);
+// through the helper 208; handle/index renamed three ways 207; handle/index declared in each
+// case block 166 (with the index loop 189).
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {

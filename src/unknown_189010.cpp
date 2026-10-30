@@ -602,8 +602,10 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // Round 30: named result with one return 51; velocity/root/point/compression 52;
 // point/velocity/root/compression 49; compression/velocity/point/root 52;
 // point/root/velocity/compression 52. Restored; still BLOCKED-BY 0xba300's convention.
+// The play record comes before the marker name: callers set up register arguments last to first, and retail's
+// 0xc5890 loads the marker (eax) before the play record (edi).
 // @retail 0x189210
-long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
+long function_189210(long object_index, s_sound_label_play const *play, long marker_name)
 {
 	s_object_marker marker;
 	s_sound_position position;
@@ -622,8 +624,14 @@ real function_30bf0(vector3f *vector);
 long function_1895f0(s_sound_position const *position, real scale, long tag_index);
 
 #pragma inline_depth(0)
-// score 2 (was 2): success result/pop schedule. BLOCKED-BY 0xf8eb0: a reduced build without
-// that caller matches and one with it reproduces the swap. Round 52 (fast, caller included):
+// score 2 (was 2): success result/pop schedule (retail pops ESI before `mov al, 1`). It follows
+// the link-time context, not this body or its caller's call: a 67-source reduced image matches,
+// any image of 541+ sources (0xf8eb0's, or any of 0xfc330/0xfcdd0/0x10c880/0x17a8a0/0x184440)
+// gives the swap, and in 0xf8eb0 the result ignored or the call removed still gives it; the
+// 0x189fe0 tick conversion simplified, 0x189210's result used, `inline` on 0x1895f0 2 each.
+// Round 25: early false returns 175; one nested eligibility condition, no gotos 157; the
+// distance test written `distance_squared <` 2; 0x1895f0 reading tag_index plainly 2 (0x1895f0 8).
+// Earlier, BLOCKED-BY 0xf8eb0 (a reduced build without that caller matched). Round 52 (fast, caller included):
 // noinline declaration 2; plain returns 175; no inner block 2; success falling through to the
 // label 2. Earlier: result before submit/request 181/181;
 // forward/velocity/location library copies 2/2/2; location before velocity 23;

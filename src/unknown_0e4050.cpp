@@ -47,6 +47,13 @@ bool function_e4050(long object_index)
    (0x21e230 keeps `this` in esi across the call); noinline keeps the call */
 inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool flag);
 
+// Round 19: with the outcome in a long (so the compare is at full width, as in retail) the edge
+// path is written as a ternary, an if with two returns, an if/else with two returns, the same
+// with the != polarity, the edge path in an else block of the clamp, and with int returns that
+// MSVC folds to the same floats; all score 10. MSVC if-converts the two edge returns into one
+// shared exit and hoists the materialised value before the compare, so retail's two separate
+// returns are not reproduced. Dropping noinline from the declaration leaves the body unchanged.
+// The word outcome and body are restored.
 // score 8 (was 8): retail compares (a > c) with flag at full width and gives the edge path two
 // separate returns after the clamp's exit; ours compares words and loads 0.0 before the test (select).
 // Tried: (a > c) == flag in a ternary, an if with two returns, a long local, != with swapped
@@ -60,6 +67,9 @@ inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool fl
 // Round 202: independent clamp bounds 8; native bound returns 34; upper-first bounds 13;
 // existing shared real clamp with word/full/direct edge outcomes 8/10/10, edge-first 27,
 // one real result 35. All bodies and helper declarations restored.
+// Round 48: word outcome with two returns 8; signed word with two returns 9; inverted word returns 8;
+// eager word outcome 49; entry-declared/late-assigned word 8; shared real clamp with word returns 8,
+// full-width returns 10 and direct full-width returns 10. Original body and declarations restored.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {

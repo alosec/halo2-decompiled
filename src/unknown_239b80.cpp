@@ -40,14 +40,21 @@ PRIVATE __forceinline bool polygon_clip_intersection_23a430(plane2f const *plane
 	return false;
 }
 
-// score 5 (was 101): loop setup stores [esp+0x10]/[esp+0x18] in another order, and the first
-// intersection's x product loads the plane before the point. Round 72 (full build): helper
+// score 5 (was 101): loop setup stores [esp+0x10]/[esp+0x18] in another order (retail stores
+// previous*4, loads the output, then current*8 and current*4; ours current*8 first), and the
+// first intersection's x product loads the plane before the point. A compile-only build of this
+// file reproduces both; the product operand orders follow the whole function (a no-op product in
+// the classification loop rotates them), not the helper's spelling. Round 45: a plane-distance
+// helper for the classification and the numerator 11 (x-first body 11); for the numerator only
+// 7, with dy computed first 25; dot product numerator with dy first 25; a named current-side
+// local 7; 576 compile-only combinations (distance spellings, dx/dy and output store orders,
+// result placement, epsilon compare, returned count) never fixed the x product without flipping
+// the denominators or the second numerator, and none moved the setup stores.
+// Round 72 (full build): helper
 // parameters (first, second, plane) 7 and (first, plane, second) 7, both making the second
 // intersection's x product plane-first too; (plane, second, first) 5; a separate input pointer
 // for the points or their copy 9 (x term first in the first intersection), declared first 9.
 // The fraction defaulted first,
-// loop setup stores [esp+0x10]/[esp+0x18] in another order, and the first
-// intersection's x product loads the plane before the point. The fraction defaulted first,
 // x-first displacements and the scale inside the output expressions gave retail's XMM homes
 // and length (101 -> 5). Then: current declared before previous 5; named current/previous
 // point pointers 28; dot_product2d numerator 5; fraction shared with the classification
@@ -697,6 +704,9 @@ PRIVATE __forceinline bool clip_points_equal_23a6f0(point2f const *a, point2f co
 // Round 217: shared final-copy predicate with original/positive-first policy and copy
 // after/before normalization 279/299/287/291; with reused byte extent 292/308/296/300. Original
 // body restored; count ECX, prior-side byte and SIMD homes remain.
+// DL196: coordinated equality parameter priorities 129/129/129/129/129;
+// complete intersection and two priority interactions 255/255/255.
+// Original executable body and all supporting contracts restored.
 // @retail 0x23a6f0
 short function_23a6f0(point2f *output, short count, point2f const *points,
 	plane2f const *plane, short capacity, dword *point_mask, bool *clipped, real epsilon)

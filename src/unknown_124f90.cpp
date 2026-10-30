@@ -617,6 +617,13 @@ static __forceinline void sound_environment_reset_1253d0(s_sound_environment *en
 	environment->unknown10 = angle;
 }
 
+// score 3 (was 3): retail schedules the inner counter's `inc esi` after the voice's first two
+// stores; ours puts it right after `inc edi`. Earlier rounds: while loop with the increment after
+// those stores 3; voice index as its own statement 3; long voice index 56; word counter 5; both
+// increments in the for 10; typed per-type count member 3; other store orders 3 (harness).
+// Round 39: every store through the array element 3; voice reference 3; the first two stores
+// through the array element ahead of the pointer 3 (they then precede `inc edi` too, which keeps
+// `inc esi` beside it); index advanced after the first two stores 3, or at the end 3/3.
 // @retail 0x1253d0
 void function_1253d0(void)
 {
@@ -949,48 +956,11 @@ void sound_voice_restart_stream(short voice_index)
 }
 
 struct s_permutation_group;
-long function_219290(short index, s_permutation_group *group);
+long function_219290(s_permutation_group *group, short index);
 real function_21f650(long channel_index, long mode);
 
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
-// score 2 (was 2): the two argument loads of function_219290 differ (ours group-first, retail index-first);
-// retail's callee takes (group, index), so its order has to change in src/unknown_219110.cpp — outside this file.
-// score 2 (was 2): only function_219290's two arguments differ: they load group-first (retail
-// index-first), BLOCKED-BY 0x219290 (a contributor's matched function; its parameters swapped would fix
-// it, and caller 0x21c400 calls the present order). Naming the voice's chunk (released,
-// then the queued one requested) fixed the rest. Tried: a function-wide channel_index local 113; the last
-// block's locals folded into one expression 42; elapsed_time read into a local before the rate call 42; a
-// stream pointer for the last state test 42; the table pointer declared at the outer scope 42; a named
-// rate 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
-// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42.
-// function_219290's two arguments load group-first (retail index-first; its
-// parameters swapped would fix it, but contributor caller 0x21c400 calls the present order), one
-// store sits after the permutation copy, the second release hoists the chunk-table load, and the
-// last block swaps ecx/edx with the post-call SOUND_SYSTEM load in edx (retail eax). Tried: a
-// function-wide channel_index local 113; the last block's locals folded into one expression 42;
-// elapsed_time read into a local before the rate call 42; a stream pointer for the last state
-// test 42; the table pointer declared at the outer scope 42.
-// Round 181: per-use chunk table 42; retained chunk base 85; per-use voice array 180; native
-// loaded-field comparison 66; early queued-pointer clear 42; exact-size transfer memcpy 42;
-// queued/current permutation lifetimes 74/102. EAX global-load allocation remains.
-// Round 192: twice-used current ordinal short/long 93/92;
-// ordinal plus permutation short/long 127/115; native query-result comparison 17;
-// conditional time publication short/long query 83/76;
-// short ordinal plus native comparison 92. All restored; the two argument-load orders remain.
-// index-first). BLOCKED-BY 0x219290 (a contributor's matched function): with its parameters declared
-// (group, index) at the definition and both calls, this function and 0x219290 both match; contributor
-// caller 0x21c400 calls the present order. Naming the voice's chunk (released, then the queued one
-// requested) fixed the rest. Tried: a function-wide channel_index local 113; the last block's locals
-// folded into one expression 42; elapsed_time read into a local before the rate call 42; a stream
-// pointer for the last state test 42; the table pointer declared at the outer scope 42; a named rate
-// 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
-// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42; per-use chunk
-// table 42; retained chunk base 85; per-use voice array 180; native loaded-field comparison 66; early
-// queued-pointer clear 42; exact-size transfer memcpy 42; queued/current permutation lifetimes 74/102;
-// a named chunk index for the call 2; the call result in a short local 2; a group local 2; the release
-// argument written in place 2; one permutation local for the chunk and the call 104; the test in a
-// bool local 2.
 // @retail 0x12a450
 void sound_voice_update_chunks(short voice_index)
 {
@@ -1007,7 +977,7 @@ void sound_voice_update_chunks(short voice_index)
 			s_sound_cache_request_result result;
 
 			sound_reference_release((s_sound_reference_holder *)chunk);
-			if ((short)function_219290(voice->chunk_index, (s_permutation_group *)voice->permutation) == NONE)
+			if ((short)function_219290((s_permutation_group *)voice->permutation, voice->chunk_index) == NONE)
 				voice->unknown10 = 0.0f;
 			voice->permutation = voice->next_permutation;
 			voice->chunk_index = voice->next_chunk_index;
@@ -1513,6 +1483,10 @@ void looping_sound_controller_release(long index);
 // pool local 5; decrement helper (kept out of line by the pragma) 29, forced inline 29.
 // Final pool-release inline/noinline declarations 5/5; controller/playback/both direct lookups
 // 58/59/81; unsigned cyclic remainder 5; shared cleanup exit 5; controller-first predicate 40.
+// Round 39: controller declared at function scope 5; unknown03 test in a bool before the lookup 5;
+// pool release in both arms 33; controller test outside the unknown03 test 40; byte cast before the
+// mask 5. Without the depth pragma the release inlines (122); with either test removed the pool
+// still takes EBP, so the byte store's register is what moves it.
 // @retail 0x127390
 void sound_playback_delete(long sound_index)
 {
@@ -1784,7 +1758,7 @@ void function_126360(long sound_index)
 /* fades one playing sound in and another out over a duration in seconds,
    along a curve */
 // @retail 0x126df0
-void function_126df0(long fade_in_index, long fade_out_index, short curve, real duration)
+void function_126df0(short curve, long fade_in_index, long fade_out_index, real duration)
 {
 	if (fade_in_index != NONE)
 	{
@@ -2124,6 +2098,13 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 // Round 29: target-first helper on the first three/four clamps 33/33; forceinline 33;
 // third clamp only 130; symmetric bounds 106; value-first 122; both fades 96;
 // clamp-first addition 33; named delta 104; target pointer 99. Original restored.
+// Round 39: the third/fourth add forms follow position, not spelling: written third, the helper,
+// `+=`, `x = x + PIN` and `x = PIN + x` all add in place (the two swapped: 19, now in retail's
+// add forms but stores 14/18 reversed). Fourth through the helper adds in place as retail but
+// lengthens the rest (102). Both helper 133; both `+=` 34; `x = PIN + x` forms 34/34/17; named
+// `0 - step` bound 140/119, with a named `0 - maximum` 152; a target-taking helper (delta inside)
+// at the third 126/87, also on the first two 134; all 27 helper/`+=`/target combinations of the
+// third, fourth and fade 34-136.
 // @retail 0x126660
 void sound_environments_update(s_sound_environment const *requests)
 {
@@ -2902,16 +2883,6 @@ void function_129380(vector3f const *const *voice_values, vector3f const *const 
 	}
 }
 
-// score 3 (was 3): Fade-call EDI/EAX/EBX setup remains; pool scope 3, metadata scope 3, fixed receiver
-// 3, direct pool 3, listener home names 3, stored location reference 3, distance outcomes 23, index
-// workspace first 3.
-// frame 0xc and length agree; fade-call EDI/EAX/EBX setup order differs.
-// Clear helper/listener declaration/query test 3 each; accepted listener first 34;
-// shared playback flags/direct location flags 3 each; fading field 8; fading helper 3;
-// shared next-index helper 3; shared slot index 176.
-// Separate noinline and inline+noinline declarations 3 each; noinline replacing inline-depth 3;
-// long and unsigned-word curve declarations 3 each; fading-test local 3; byte-wide clear 3;
-// native listener store 3; per-iteration index 3.
 // @retail 0x128020
 void function_128020(void)
 {
@@ -2990,7 +2961,7 @@ void function_128020(void)
 				if (TEST_FIELD_BIT(sound->flag2))
 				{
 #pragma inline_depth(0)
-					function_126df0(sound_index, NONE, 0, 0.5f);
+					function_126df0(0, sound_index, NONE, 0.5f);
 #pragma inline_depth()
 					sound->flag2 = false;
 				}
@@ -3416,7 +3387,7 @@ void function_1257b0(void)
 		{
 			do
 			{
-				function_126df0(NONE, local_2, 0, 0.3f);
+				function_126df0(0, NONE, local_2, 0.3f);
 				local_2 = data_datum_index(local_1, function_16bc00(local_1, local_2 == NONE ? 0 : (local_2 & 0xffff) + 1));
 			} while (local_2 != NONE);
 			real local_4 = (real)local_0;

@@ -701,6 +701,9 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 424: selected-type-derived point presence in short/word/long/dword at entry
 // 384/384/387/387; consumed directly at successful normalization 392/392/394/394.
 // All restored; native result/point-valid homes and case-specific point transport remain.
+// Round 436 (fast control 301, full 290): point-presence assigned after each successful
+// point producer, bool/byte/word/long 310/310/368/364; assigned at the two
+// geometry consumers 372/372/393/393. All nonexact presence-lifetime forms restored.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)
@@ -1114,6 +1117,9 @@ struct s_actor_looking_structure_view
 // copy, as retail, but flips other product operands); the existing cross-file rotation helpers with
 // sine/cosine arguments (cross-first scalars / dot3f with a cross vector) 146/140; the candidate array
 // declared before forward 23; forward copied member-wise 199.
+// Round 27: fraction as a ternary after the query 144; `1 - cosine` named in the helper 23; cross terms
+// before the projection 158 (931 bytes); the 0.6 clamp as an if statement 141 (927 bytes); the dot in its
+// own local beside the score 33.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {

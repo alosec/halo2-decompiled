@@ -2238,7 +2238,7 @@ void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_ind
     if (material_count == 0)
     {
         havok_entity_property_2003_set((hkEntity *)body->rigid_body, 0);
-        component_surface_vector_clear(&body->surface_velocity);
+        component_surface_vector_clear(&body->unknown30);
         body->unknown44 = 0;
         return;
     }
@@ -2280,7 +2280,7 @@ void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_ind
         velocity.k = velocity.k * inverse;
     }
     real speed = ((bool)((component->unknown04 >> 18) & 1) ? 1.0f : 2.5f) * speed_sum / material_count;
-    hkVector4 *result = &body->surface_velocity;
+    hkVector4 *result = &body->unknown30;
     result->set(speed * velocity.i, velocity.j * speed, velocity.k * speed);
     if (other_contacts == 0)
     {
@@ -2770,6 +2770,8 @@ PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
 // Round 183: target entry inline/noinline 50/50; state-update inline alone/with entry
 // inline/noinline 50/50/50; state-update noinline alone/with entry inline/noinline 50/50/50.
 // Paired getter unchanged; all contracts restored.
+// Round 47: array operator[] at all five/first-only/late-three sites 10/7/10; array reference for the
+// bound/all reads 7/10; size reference 7; shared data pointer 171; final call scope 7. Original body restored.
 // @retail 0x1ced00
 void function_1ced00(s_havok_component *component)
 {
@@ -3013,7 +3015,7 @@ struct s_1cf531
 // magnitude then shares the friction pointer's slot, as in retail; a new one-caller helper, not kept). With
 // that helper: element fields read at each use 105; the rigid body read before the vector 25; the corrected
 // vector updated in place in the impulse 44; impulse/difference vectors renamed 25/25; `index + data` 25
-// (same code); the 0.6 scale declared before the vector 25. Typed surface_velocity field and named flag18 bit
+// (same code); the 0.6 scale declared before the vector 25. Typed field at +0x30 and named flag18 bit
 // (kept, same code). Still differ: (B) element address data + offset in retail; (C) y stored after z;
 // (D) the corrected vector spills to 0x30 in retail (ours 0x40).
 // @retail 0x1cf520
@@ -3047,7 +3049,7 @@ void function_1cf520(s_1cf520 *arg_1, c_1cf520 *arg_0, bool arg_2, bool arg_3, l
   if (local_6->unknown44 == 2 && !TEST_FIELD_BIT(local_2->flag18))
   {
    hkVector4 local_7;
-   local_7.set(local_6->surface_velocity(0), local_6->surface_velocity(1), local_6->surface_velocity(2));
+   local_7.set(local_6->unknown30(0), local_6->unknown30(1), local_6->unknown30(2));
    hkRigidBody *local_9 = local_6->rigid_body;
    __m128 scale = _mm_set_ss(0.6f);
    local_7.m_quad = _mm_mul_ps(_mm_shuffle_ps(scale, scale, 0), local_7.m_quad);

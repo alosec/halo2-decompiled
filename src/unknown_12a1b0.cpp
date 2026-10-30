@@ -985,6 +985,9 @@ long __stdcall function_125e60(s_looping_track_sound *sound);
 // Round 421: native short/real repeated class pitch 77/183; complete modifier copy 190;
 // shared lower pitch 74 (three-point gain rejected); short with record 190; real with lower 183;
 // scoped listener distance with record/real-and-lower 190/183. Original body restored.
+// Round 313: Computed modifier span, original/promoted previous: 77/131; with computed pitch offset
+// 77/131; entry result with span 71/126; with offset 71/126. Six-count gain rejected; original body
+// restored. Result-first recovers early spills; initialization and pitch scheduling remain.
 // @retail 0x21b940
 long function_21b940(long looping_sound_index, long definition_index, long pitch_range_index, short track_index, short state, dword *seed)
 {
@@ -1122,7 +1125,7 @@ struct s_looping_promotion_table
 	s_looping_promotion *entries;
 };
 
-void function_126df0(long new_sound, long old_sound, short curve, real duration);
+void function_126df0(short curve, long new_sound, long old_sound, real duration);
 
 /* fades out every playing sound of a track's ring over a duration in seconds */
 // @retail 0x21bd00
@@ -1144,7 +1147,7 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 			s_looping_promotion_table *promotions = (s_looping_promotion_table *)g_4e3b44[header->datum_index & 0xffff].bytes;
 			s_looping_promotion *promotion = &promotions->entries[(short)promotion_index];
 			bool curve = !(promotion->flags & 0x400);
-			function_126df0(NONE, index, curve, duration);
+			function_126df0(curve, NONE, index, duration);
 		}
 	}
 }
@@ -1188,7 +1191,7 @@ void looping_sound_fade_in(long first_sound_index, short curve, real duration)
 		while ((index = track_sound_iterator_next(&iterator)) != NONE)
 		{
 			if (SOUND_PLAYBACK_GET(index)->state == 2)
-				function_126df0(index, NONE, curve, duration);
+				function_126df0(curve, index, NONE, duration);
 		}
 	}
 }
@@ -1600,7 +1603,7 @@ void function_21b0e0(bool update)
 						if (replacement != NONE)
 						{
 							track_sound_get(g_4e637c, replacement)->pitch = playing->pitch;
-							function_126df0(replacement, track->sound_index, 1, 0.75f);
+							function_126df0(1, replacement, track->sound_index, 0.75f);
 							track->sound_index = replacement;
 						}
 					}
@@ -1796,7 +1799,7 @@ struct s_bink_sound_settings;
 extern s_bink_sound_settings *g_51ebe4;
 
 s_unknown_5c *function_221810(short index);
-long function_219290(short index, s_permutation_group *group);
+long function_219290(s_permutation_group *group, short index);
 void function_12a420(short voice_index);
 void sound_voice_queue_chunk(short voice_index, s_sound_permutation const *permutation, short chunk_index);
 void function_12a1b0(short voice_index, s_looping_track_sound *sound, s_looping_channel_spatialization const *spatialization, s_looping_channel_properties *properties);
@@ -1968,7 +1971,7 @@ prepare_chunk:
 					sound_voice_queue_chunk(voice_index, (s_sound_permutation const *)permutation, playing->current_chunk_index);
 					playing->transition_pending = false;
 					if (primary && !(byte)looping_sound_track_has_next_sound(track, track_definition) &&
-						(short)function_219290(playing->current_chunk_index, (s_permutation_group *)permutation) == NONE)
+						(short)function_219290((s_permutation_group *)permutation, playing->current_chunk_index) == NONE)
 					{
 						if (playing->state == 1)
 							playing->state = 2;
@@ -2236,7 +2239,7 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 									if (replacement == NONE)
 										continue;
 								}
-								function_126df0(replacement, track->sound_index, 1, track_definition->crossfade_duration);
+								function_126df0(1, replacement, track->sound_index, track_definition->crossfade_duration);
 								track->sound_index = replacement;
 								track->field_c_4 = track_alternate ? 4 : 1;
 								track->next_state = track->field_c_4;
@@ -2254,9 +2257,9 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 								if (replacement != NONE)
 								{
 									if (state != 0)
-										function_126df0(replacement, NONE, 1, 0.5f);
+										function_126df0(1, replacement, NONE, 0.5f);
 									else if (track_definition->flags & 1)
-										function_126df0(replacement, NONE, 1, track_definition->fade_in_duration);
+										function_126df0(1, replacement, NONE, track_definition->fade_in_duration);
 									track->sound_index = replacement;
 									track->field_c_4 = track->next_state;
 								}
