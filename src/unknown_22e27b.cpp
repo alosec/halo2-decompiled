@@ -214,6 +214,9 @@ static inline real interpolate_linear(real a, real b, real t)
 // Round 190 on the recovered graph: native bit-1 reader 127; native bit-0 reader 233; native
 // bits 1/0 237; native bit-3 reader 182; native bits 1/3 186; native bits 0/3 229; all native
 // flag readers 230; all widened macro readers 225.
+// Round 79: fraction-first with outer next time 206; active fraction scope 206; outer elapsed 206;
+// outer frame time 206; outer next with active fraction 206; all outer timing 206;
+// sum-only/full per-iteration direction on that graph 206/206. Original 96 body restored.
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {
