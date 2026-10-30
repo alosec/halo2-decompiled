@@ -3452,6 +3452,9 @@ int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *forma
 // Round 298: event-admission return result 199; entry result 94; both 200;
 // entry text workspace 82; with admission/result/both 199/94/200; native long
 // admission result 189. All restored; separate failure-result paths remain.
+// Round 225: suppression/text nested decision trees, either order, split sentinel/zero,
+// with or without complete notice-type capture: 82/104/104/82/82/104/104/82.
+// Original result graph restored; distinct failure exits and event clear schedule remain.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {
@@ -4309,6 +4312,11 @@ void function_15fe20(long team_index, color3f *color);
 // Round 295: common team/individual selection storage for score, rival score, both,
 // rival index, score/index, rival score/index, all three, all with field selector:
 // 133/88/133/88/133/88/133/133. Original branch-local storage restored; color transfers remain.
+// Round 225: ordinary native-size color copies, rival/own/both team, rival palette
+// alone/with rival/own/both team and all four: 88 each. Original body restored.
+// Same-type color construction rival/own/both team 65/405/46; palette subsets
+// 88/65/405/46/46; earlier weapon default/presence/both on that graph 77/46/77.
+// The plain 46 construction form was excluded as cast steering; no gain retained.
 // @retail 0x15f3a0
 bool function_15f3a0(long local_index, s_player_score_display *display)
 {
@@ -5396,6 +5404,9 @@ void __stdcall function_d6bc0(long object_index);
 // Round 295: true-default reset 151; complete distance/query result 144; both 144;
 // entry storage for placement/object/index, all three, all plus schedule: 144 each.
 // All original producers and body restored; frame and timer/base homes remain.
+// Round 225: reset-counter pointer/reference, before query/at update,
+// with ordinary/entry countdown declarations: 174/172/174/172/174/172/174/172.
+// Original field reads and body restored; independent timer home remains missing.
 // @retail 0x15ae70
 void __stdcall function_15ae70(s_netgame_entry_state *entries)
 {
