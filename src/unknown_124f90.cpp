@@ -1784,7 +1784,7 @@ void function_126360(long sound_index)
 /* fades one playing sound in and another out over a duration in seconds,
    along a curve */
 // @retail 0x126df0
-void function_126df0(long fade_in_index, long fade_out_index, short curve, real duration)
+void function_126df0(short curve, long fade_in_index, long fade_out_index, real duration)
 {
 	if (fade_in_index != NONE)
 	{
@@ -2902,16 +2902,6 @@ void function_129380(vector3f const *const *voice_values, vector3f const *const 
 	}
 }
 
-// score 3 (was 3): Fade-call EDI/EAX/EBX setup remains; pool scope 3, metadata scope 3, fixed receiver
-// 3, direct pool 3, listener home names 3, stored location reference 3, distance outcomes 23, index
-// workspace first 3.
-// frame 0xc and length agree; fade-call EDI/EAX/EBX setup order differs.
-// Clear helper/listener declaration/query test 3 each; accepted listener first 34;
-// shared playback flags/direct location flags 3 each; fading field 8; fading helper 3;
-// shared next-index helper 3; shared slot index 176.
-// Separate noinline and inline+noinline declarations 3 each; noinline replacing inline-depth 3;
-// long and unsigned-word curve declarations 3 each; fading-test local 3; byte-wide clear 3;
-// native listener store 3; per-iteration index 3.
 // @retail 0x128020
 void function_128020(void)
 {
@@ -2990,7 +2980,7 @@ void function_128020(void)
 				if (TEST_FIELD_BIT(sound->flag2))
 				{
 #pragma inline_depth(0)
-					function_126df0(sound_index, NONE, 0, 0.5f);
+					function_126df0(0, sound_index, NONE, 0.5f);
 #pragma inline_depth()
 					sound->flag2 = false;
 				}
@@ -3416,7 +3406,7 @@ void function_1257b0(void)
 		{
 			do
 			{
-				function_126df0(NONE, local_2, 0, 0.3f);
+				function_126df0(0, NONE, local_2, 0.3f);
 				local_2 = data_datum_index(local_1, function_16bc00(local_1, local_2 == NONE ? 0 : (local_2 & 0xffff) + 1));
 			} while (local_2 != NONE);
 			real local_4 = (real)local_0;

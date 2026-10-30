@@ -1122,7 +1122,7 @@ struct s_looping_promotion_table
 	s_looping_promotion *entries;
 };
 
-void function_126df0(long new_sound, long old_sound, short curve, real duration);
+void function_126df0(short curve, long new_sound, long old_sound, real duration);
 
 /* fades out every playing sound of a track's ring over a duration in seconds */
 // @retail 0x21bd00
@@ -1144,7 +1144,7 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 			s_looping_promotion_table *promotions = (s_looping_promotion_table *)g_4e3b44[header->datum_index & 0xffff].bytes;
 			s_looping_promotion *promotion = &promotions->entries[(short)promotion_index];
 			bool curve = !(promotion->flags & 0x400);
-			function_126df0(NONE, index, curve, duration);
+			function_126df0(curve, NONE, index, duration);
 		}
 	}
 }
@@ -1188,7 +1188,7 @@ void looping_sound_fade_in(long first_sound_index, short curve, real duration)
 		while ((index = track_sound_iterator_next(&iterator)) != NONE)
 		{
 			if (SOUND_PLAYBACK_GET(index)->state == 2)
-				function_126df0(index, NONE, curve, duration);
+				function_126df0(curve, index, NONE, duration);
 		}
 	}
 }
@@ -1600,7 +1600,7 @@ void function_21b0e0(bool update)
 						if (replacement != NONE)
 						{
 							track_sound_get(g_4e637c, replacement)->pitch = playing->pitch;
-							function_126df0(replacement, track->sound_index, 1, 0.75f);
+							function_126df0(1, replacement, track->sound_index, 0.75f);
 							track->sound_index = replacement;
 						}
 					}
@@ -2236,7 +2236,7 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 									if (replacement == NONE)
 										continue;
 								}
-								function_126df0(replacement, track->sound_index, 1, track_definition->crossfade_duration);
+								function_126df0(1, replacement, track->sound_index, track_definition->crossfade_duration);
 								track->sound_index = replacement;
 								track->field_c_4 = track_alternate ? 4 : 1;
 								track->next_state = track->field_c_4;
@@ -2254,9 +2254,9 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 								if (replacement != NONE)
 								{
 									if (state != 0)
-										function_126df0(replacement, NONE, 1, 0.5f);
+										function_126df0(1, replacement, NONE, 0.5f);
 									else if (track_definition->flags & 1)
-										function_126df0(replacement, NONE, 1, track_definition->fade_in_duration);
+										function_126df0(1, replacement, NONE, track_definition->fade_in_duration);
 									track->sound_index = replacement;
 									track->field_c_4 = track->next_state;
 								}
