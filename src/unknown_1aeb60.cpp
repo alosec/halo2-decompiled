@@ -225,29 +225,19 @@ bool __stdcall function_1aefc0(long actor_index, s_slot *slot)
 	return true;
 }
 
-// score 8 (was 8): the branch on the flag falls through where retail jumps to the end of the
-// block, so the two halves are laid out the other way round (retail tests unknown13 with je to
-// result = other, placed last). Goto-free forms keep 8: a do/while (false) with break, a keep
-// flag, if/else-if with an empty then, nested ifs. Tried: one || / && condition (22), early
-// returns (58), a use_other flag (43), return other / g_46fbe8 after a final label (62, 63).
-// State fields through parameter 8; output fields through parameter 8; both direct slot parameters 8;
-// prop lookup at field use 60; selection result names 8; chained activation flags 8;
-// activation result before stores 17; strict prop threshold 9.
-// alternate conjunction 8; conjunction with direct other 62; inner default return 58;
-// direct inner returns 42; alternate global at assignment 35; alternate before lookup 54;
-// immutable prop 8; result after actor 8; outer-scope alternate split 8.
 // @retail 0x1af0a0
 short __stdcall function_1af0a0(long actor_index, s_slot *slot, s_slot *arg_2)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	s_slot_0f *state = (s_slot_0f *)slot;
 	s_slot_0f *local_0 = (s_slot_0f *)arg_2;
-	short result = g_46fbe4;
+	short finished = g_46fbe4;
+	short result;
 
 	if (actor->prop_index != NONE)
 	{
 		s_prop_datum_0f *prop = (s_prop_datum_0f *)prop_node_get(actor->prop_index);
-		short other = g_46fbe8;
+		result = g_46fbe8;
 		if (state->unknown12)
 		{
 			local_0->timer = 3;
@@ -257,17 +247,14 @@ short __stdcall function_1af0a0(long actor_index, s_slot *slot, s_slot *arg_2)
 			local_0->unknown0c = true;
 			result = 5;
 		}
-		else
+		else if (prop->unknown27 < 2 &&
+			(REFERENCE_EQUAL(actor->unknown418, g_470fa0) || !function_1f8660(actor_index) || state->unknown13))
 		{
-			if (prop->unknown27 >= 2)
-				goto local_1;
-			if (REFERENCE_EQUAL(actor->unknown418, g_470fa0) || !function_1f8660(actor_index) || state->unknown13)
-				goto local_2;
-local_1:
-			result = other;
+			result = finished;
 		}
 	}
-local_2:
+	else
+		result = finished;
 	return result;
 }
 

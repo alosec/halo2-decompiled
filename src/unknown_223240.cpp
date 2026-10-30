@@ -202,6 +202,9 @@ void function_2232a0(void)
 // scan-boundary acquisition, numeric/pointer terminal, do/for 111/170/141/192;
 // layout-boundary counterparts 130/171/158/192. All restored; outer pretest,
 // source homes and outside tail transport remain.
+// Round 81: combined entry/found source clears in do/for traversal 124/120; entry clear with
+// original arms 109/138; entry clear without the empty-arm store 122/158; entry clear without
+// the final null-arm store 123/160. Original source assignments and traversal restored.
 // @retail 0x2234e0
 void function_2234e0(void)
 {

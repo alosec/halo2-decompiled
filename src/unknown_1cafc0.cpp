@@ -1506,18 +1506,6 @@ void s_animation_state::movement_rate_get(long object_index, vector3f *vector, r
 	}
 }
 
-// score 5 (was 106): the blend range is now tested with the two negated
-// comparisons retail uses, so the branch layout matches; the inlined channel
-// multiply of the second component still loads its value from memory where
-// retail copies the scale into a register.
-// score 5 (was 5): inlined fallback middle-component load/multiply still differs.
-// Completed delta/velocity/both values 113/84/145; logical/failure/initial success 85/89/92;
-// shared fraction helper 175; helper with completed output vectors 241.
-// fallback result local, trailing else, uninitialized result first, vector declaration
-// order, base-channel pointer local, const fraction after the vectors, else plus result,
-// channels+N arithmetic: all the same bytes; call&&result swap 85; fraction after the
-// first channel call 13. The commuted middle multiply sits in the inlined copy of the
-// matched 0x1c6c00 (load form in its own body); caller-side forms do not reach it.
 // @retail 0x1cdcd0
 bool s_animation_state::velocity_get(vector3f *delta, vector3f *velocity)
 {

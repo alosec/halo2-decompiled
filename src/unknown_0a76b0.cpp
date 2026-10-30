@@ -1244,6 +1244,9 @@ void __stdcall function_fff40(long weapon_index, bool silent, bool immediate);
 // ours keeps the default name in ebp. The seat flags as the seat definition's bitfields give
 // retail's shift-and-test reads after the weapon lookup, and the hand helper's short slot index
 // gives retail's movsx; the seat flags read as a dword after the weapon 88, with the hand helper 85.
+// Round 432: chained defaults 73; parent/seat/both snapshots 73/73/77;
+// shared header/tag/both/full producers 73/73/73/74; all restored.
+// Name-home renames/action-first declarations/state-first acquisitions 73/73/73/73/73/73/72/72; restored.
 // @retail 0xe8620
 void __stdcall function_e8620(long unit_index, bool flag)
 {
@@ -2017,6 +2020,11 @@ __forceinline char unit_action_round(real value)
 
 /* starts a melee attack: the animation for the attack's mode (or the next
    in a combo), its damage frames, and the lunge */
+// score 235 (was 235): frame 0x14 agrees; pool/type/name homes, fallback tree and result residence differ.
+// Numeric hand 297; Boolean active bit 251; both 302; first result 235; all 302;
+// shared actions receiver 328; single exit with hand/bit 315; per-use speed with hand/bit 302.
+// Entry name default/or hand/or bit/or both 312/314/299/299; with single exit 362;
+// original-graph single exit 241; per-use speed 235; entry name/single exit/per-use speed 362.
 // @retail 0xe9a20
 bool __stdcall function_e9a20(long unit_index, long mode, long target_index, byte flags)
 {
@@ -4350,6 +4358,10 @@ extern vector3f *g_4687a8;
 
 /* plants a unit's deployable weapon: the deployed object at the weapon's
    plant marker (on the ground under it), the weapon dropped and deleted */
+// score 248 (was 248): frame 0x208 agrees; initial pool load and position/axis/query homes differ.
+// Numeric hand 249; shared marker position 264; destination name 248; hand/position 256;
+// hand/name 249; position/name 264; all 256; with early axes 257. Shared probe scale 248;
+// shared point/probe producers 248; recovered hand/position/name with both 256, early axes 257.
 // @retail 0xeda70
 void __stdcall function_eda70(long unit_index)
 {

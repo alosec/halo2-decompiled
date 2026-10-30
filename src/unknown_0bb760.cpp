@@ -265,6 +265,8 @@ void function_bb8f0(long a)
 // delta to that, so the four instructions that build the time differ.
 // Delta-first clock getter 4; old-deadline declaration before sum 4; branch-entry declaration homes 4;
 // const old deadline 4; const delta 4; const object pointer 4; const header pointer 4; scoped favor-size 88.
+// delta + game time 4; the deadline started as delta, the game time added 4; the old deadline
+// read in the select 4; if-form max 4; the select as if/else stores 32; a conditional store 32.
 // @retail 0xbb950
 void function_bb950(long object_index, bool add, long delta)
 {

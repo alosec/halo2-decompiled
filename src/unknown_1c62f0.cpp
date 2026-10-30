@@ -6,6 +6,7 @@
 #include "unknown_1c62f0.h"
 #include "unknown_1cafc0.h"
 #include "unknown_0259d0.h"
+#include "normalize3d.h"
 #include "unknown_xd56787.h"
 #include "unknown_11cb00.h"
 #include <float.h>
@@ -143,6 +144,9 @@ void c_animation_channel::clear()
 // Round 83: retail order 42 (callers lose); unknown0e stored right after unknown0d 42 (stored at
 // once, ECX free for the id copy); the two NONE id words as one chained assignment, retail
 // order/current 41/36; the two zero words chained 38.
+// Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
+// lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
+// frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
 // the id copy 36; flags stored next to the derived byte 36.
 // Round 42 (all with graph in ESI and the six matched callers off by 1-68): retail order with
 // unknown0e stored first/before unknown0d 40/42, graph stored last 42, id stored last 44; existing
@@ -822,9 +826,7 @@ bool c_animation_channel::velocity_get(vector3f *delta, vector3f *velocity) cons
 		vector3f position;
 
 		c_animation_channel_frame_sample(this, frame_position, &position, delta);
-		velocity->i = position.i * scale;
-		velocity->j = position.j * scale;
-		velocity->k = position.k * scale;
+		vector3f_scale(&position, scale, velocity);
 		result = true;
 	}
 	return result;

@@ -1510,11 +1510,12 @@ void function_2422d0(long slot)
 	}
 }
 
-// score 7 (was 65): the object index is kept in EDI and the object in EBP, retail keeps them the other
-// way round.
-// score 7 (was 7): native index/eligibility/object reference 7; team-index/team-object/
+// score 7 (was 7): the object index is kept in EDI and the object in EBP, retail keeps them the other
+// way round. Native index/eligibility/object reference 7; team-index/team-object/
 // other-count names 7; second-loop element address/nested accept 7; native slot table/
-// const object pointer/table-entry address 7; slot-field address 60. Original body restored.
+// const object pointer/table-entry address 7; slot-field address 60; the object getter at each
+// use 86 (reloads after the call); index or object local renamed to sort first or last 7 each;
+// the reject arm first 7; the rejected count advanced in its own statement 7.
 // @retail 0x2423f0
 bool function_2423f0()
 {
