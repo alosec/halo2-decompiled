@@ -174,6 +174,12 @@ long function_10f5f0(long object_index);
 // Round 413: comparison-result short/long/word/dword/byte 32/31/32/31/32;
 // short/long result tested against one 39/32; label result stored before mode 32.
 // Wider comparison results save two bytes but only one score point; original Boolean restored.
+// Earlier: retail pushes esi and edi at the top and keeps a zero in esi for the
+// Round 206: Shared query/label success with conditional/if modes, constant/accepted/long-query/seat-flag
+// results [54, 13, 54, 28, 52, 41, 88, 102]. Mode complement 12; result-first/complement/immutable query [51, 51, 51].
+// Named label, label-first admission, common mode result, query-valued direct success [13, 39, 95, 91].
+// Shared-guard forms (13 plain; 12 fast) repeat the query test and require an exact match; all restored.
+// Native short/long mode results by conditional / complete arms [30, 36, 30, 36]; preselected modes [55, 55].
 // @retail 0x155810
 short function_155810(long unit_index, short *mode)
 {

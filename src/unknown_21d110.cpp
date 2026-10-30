@@ -409,6 +409,8 @@ PRIVATE __forceinline void function_21dcf1(long effect_index)
 // Round 258: accessor word/short/dword inputs 213/213/204; separate noinline
 // declarations with those inputs 256 each; external inline word/short inputs
 // 213/213. All eight sensitive callers preserved; original accessor restored.
+// Round 206: Native C contracts on private starter/allocator/record accessor, seven subsets
+// [204, 204, 204, 204, 204, 204, 204]; all three standard callee-cleanup 204. Original contracts restored.
 // @retail 0x21d110
 long function_21d110(s_sound_play_state *state, long tag_index)
 {
