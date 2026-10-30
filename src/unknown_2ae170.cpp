@@ -1081,6 +1081,11 @@ void c_sound_effects::set_i3dl2(s_sound_i3dl2_parameters *parameters, long unuse
 	IDirectSoundBuffer_SetFilter(m_buffers->buffer10, &filter);
 }
 
+// score 44 (was 55): retail reads the settings gain again for each mode-one send (movss xmm0, [edi+0x18]
+// twice, once per send) and adds the GPR-held gain through its slot with SSE; reading m_settings.gain into
+// a named local per send gives exactly that SSE sum and retail's 279-byte length. One copy for both sends
+// 79 (the copy stays in a register and the sums spill it), a copy for the first send only 52, the gain pun
+// on the parameter 86, the sums assigned to the parameter 44, the pun hoisted above the switch 44.
 // score 55 (was 55): our body is 12 bytes shorter: retail adds the gain with
 // SSE (the gain's bits copied through ebx into a stack temp) while our
 // union pun makes MSVC use x87; five more rewrites of the pun scored 55 or
@@ -1111,10 +1116,12 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 		long gain_bits = *(long *)&gain;
 		s_send_level first;
 		first.bits = gain_bits;
-		sound_stream_append_mixbin(mixbins, mixbin, m_settings.gain + first.value);
+		real settings_gain = m_settings.gain;
+		sound_stream_append_mixbin(mixbins, mixbin, settings_gain + first.value);
 		s_send_level second;
 		second.bits = gain_bits;
-		sound_stream_append_mixbin(mixbins, mixbin, m_settings.gain + second.value);
+		real settings_gain2 = m_settings.gain;
+		sound_stream_append_mixbin(mixbins, mixbin, settings_gain2 + second.value);
 		break;
 	}
 	}
@@ -1222,6 +1229,9 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 	}
 }
 
+// score 177 (was 200): add_send's mode-one sends are SSE now that the settings gain is read into a named
+// local per send (0x2af800 55 -> 44), which also gives retail's 606-byte length; the frame 0x10 versus
+// consumed incoming homes and the tail sums remain.
 // score 200 (was 200): Frame 0x10 versus consumed incoming homes; inherited send x87 sums remain.
 // Round 55: retail copies parameters->level into the dead parameters slot with an integer move and adds it
 // to the offset at entry (xmm0 = offset + slot) before the appends; the inlined add_send then copies the sum
