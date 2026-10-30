@@ -82,6 +82,11 @@ bool g_47f05b;
 // 0x22c3e0 lose their matches), a buffer/size description struct read by the base constructor 36 (146
 // bytes; the reads are forwarded before the store is dropped). Harness only: memset in the abstract
 // constructor, size by reference bound to a local, buffer by reference: store dropped each time.
+// inline target 34. Round 5 (g_479888 read at both placements, which puts the reload on the
+// constructed arm, while only the `block` form keeps the 1 in edx): chained flag assignment 38;
+// pool address through a byte pointer named after the first construction 38; if/else on the
+// placement result 38; bool flag first 38; NONE flag last 38. Four explicit base-constructor
+// stores in place of the loop still drop the vtable store (30, 0x146b80 lost).
 // @retail 0x146a20
 void function_146a20(void)
 {

@@ -630,6 +630,12 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // Round 402: current-graph shared byte count, seek-position home, both, full signature
 // outputs, count/signatures, position/signatures, all outputs and role-named signatures
 // 68 each; all restored. Frame 0x2c agrees; dispatch/buffer and signature registers remain.
+// Retail's reloads after the getter's stores come back with the scratch object's 0x8000-byte
+// storage as its first member (address taken by `pointer = storage`); with the per-arm
+// remaining size as well 175 (aligned 50 against 51: entry sum and dispatch body-size load,
+// size/position homes in esi/edi swapped), without it 173; per-arm form alone 179; body size
+// first in the total/position sums 175 (same code); size-first body test 176; getter owner
+// store before the flag 176.
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {

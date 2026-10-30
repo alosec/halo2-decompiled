@@ -97,7 +97,21 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 /* slot type 0x23, update: once the actor stands at its prop's position, it
    turns to face it; then it lets the prop go */
 // score 47 (was 47): the actor index, actor, view and state registers differ (retail EBP/EDI/EBX/ESI,
-// ours EDI/EBX/EBP/ESI), and retail saves EBX late, giving the NONE path its own epilogue.
+// ours EDI/EBX/EBP/ESI), and retail saves EBX late, giving the NONE path its own epilogue. The forms
+// with one actor lookup at the top give index EBP and view EBX as retail, but actor ESI and the state
+// EDI, loaded and pushed late. Tried: typed slot data block/current/entry 61/62; on that block actor
+// once/at use 66/85; long/word/byte readiness 76/78/77; the readiness stored in the field and tested
+// from it 47 (kept, retail's mov eax, 1); on it, one actor lookup at the top 52, plus the state
+// declared first 52, a prop index local 52, the typed slot data block 52, node/view declared at the
+// top 52, slot cast at each use 52, the last test as if/else-return 52; the NONE case as an early
+// store and return 91 (actor EDI as retail, index and state then in scratch registers); getter in
+// both NONE test and node lookup 47; actor before the view test 97; actual input/required/done byte
+// fields, all subsets, 61 each; completion byte field 61; role names in all index/actor/view subsets
+// 47; indexed data block with complete names 47; direct concrete callback input 47/52; native
+// success/else-return gates, all subsets 47; native node reference with/without the data block
+// 47/47; actor reference after the view 47; entry actor reference variants 52; the slot read once
+// through its address 47, with the top actor 52, with the top actor and the state first 52; the
+// getter at the 0x262800 call instead of the inner actor local 88 (276 bytes).
 // Round 76: retail keeps one actor pointer across the calls (EDI, read at +0x418 at the end); a second
 // lookup at the final call reloads the pool after the calls here 71, so the source looks the actor up
 // once at the top. That form (52) gives retail's index EBP and view EBX and the shared final store

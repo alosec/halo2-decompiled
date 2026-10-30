@@ -134,6 +134,9 @@ void function_1d56f0(s_havok_component *component)
 // retail's index-first `[eax+edx+0x40]`. Direct `.data[index]` 77; array pointer read into a local first
 // 77; index-first subscript 77; the component parameter renamed to sort last 77; the source transform
 // through a const reference 77; the setter call's index replaced by a constant (diagnostic) 87.
+// Round 5: direct `.data[index]` lookup 77; `index[data]` subscript 77; index copied to a local at
+// entry for the lookup and the setter 77; entry reference through the array's operator[] 77;
+// forceinline getter declaration 77 (the SIB order ignores source operand order).
 // @retail 0x1d5120
 bool function_1d5120(s_havok_component *arg_0, long arg_1, long arg_2, long arg_3,
  real arg_4, long *arg_5, long arg_6)
