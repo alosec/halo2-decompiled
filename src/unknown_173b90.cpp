@@ -945,6 +945,9 @@ public:
 // caller/provider bodies restored; entry completion, flag publication and child/tint homes remain.
 // Round 290: Native long/bool/byte/short emptiness results 295/346/346/292; with existing shared
 // word-flag publication 369/366/366/367. Original executable source restored.
+// Round 427: uninitialized child/successor/selector declarations at entry, all seven
+// subsets, then all with lexical handle names, 292 each. Original declaration scopes,
+// value observations and complete body restored; entry result/flags and child/tint homes remain.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {

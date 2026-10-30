@@ -655,6 +655,9 @@ PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, v
 // 564; present-first-face region + missing-candidate continue + ordered geometry rejection guards 564;
 // present-first-face region + missing-candidate continue + ordered geometry rejection guards + single
 // angle result 564. Original body restored.
+// Round 429: exact-frame count order 563 (one-point gain rejected); edge fields at use 694;
+// both 694; complete group-owned selection workspace 769; count/workspace 768; edge/workspace
+// and all three 790/790; all with ring anchor at use 707. Original body restored.
 // @retail 0x17fd20
 void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 	s_decal_output_17dd80 *output, s_decal_projection_17fd20 *projection, s_decal_placement const *placement)

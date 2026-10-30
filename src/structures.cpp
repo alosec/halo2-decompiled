@@ -405,6 +405,7 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 // Round 207: native point-value getter with bool/byte/long/dword validity outputs,
 // default-first result 284/284/278/278; eligibility-owned return 284/284/278/278.
 // Frames 0x68/0x6c and shorter code regress; original Boolean fetch and defined failures restored.
+// Round 426: captured instance key through publication with long/short/word/dword plane storage 232/180/197/232; Boolean results 242/187/194/242. Original collision observations and defined vertex failures restored.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
@@ -746,6 +747,7 @@ done:
 // Round 207: actual skipped/failed/found model state, signed byte/word/long/dword
 // in object scope 134/136/133/133; function-scope declarations 134/136/133/133.
 // Byte state reaches retail length; prologue/result/NONE allocation remains. All restored.
+// Round 426: native byte/signed-byte/short/long retry state 125 each; all four with the existing point setter at retry advance 125 each. Original body restored; exclusion/result/direction allocation remains.
 // @retail 0x14af40
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)

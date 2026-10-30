@@ -1238,6 +1238,10 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 // target/aggregate 133; offset/aggregate 101; all producers 135; read-only projected point 135.
 // Clock conversion/copy and direction/ahead/target homes remain; all producers restored.
 // Round 293: Uninitialized difference/decay/blend entry declarations, all seven subsets, and all with rounded-count entry declaration: 99 each. Every value producer stays in place; complete original declarations, existing local qualifier and body restored.
+// Round 427: exact quarter/player-window/hold clock products using double literals, seven
+// subsets 423/256/425/133/424/257/426; all with the rounded-count name 426. Every signed-short
+// product remains exactly representable. Original literals, count name and full body restored;
+// hoisted clock conversion, joined count copy and geometry homes remain.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {

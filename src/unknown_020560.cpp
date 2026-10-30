@@ -276,6 +276,9 @@ void function_16f60(byte *state, word const *range)
 // Native common suffixes, two/three/four setters across modes 3/4/6: 121/243/236;
 // with mode 5: 217/244/243; all enabled modes, two/four setters: 269/313.
 // Selected suffix results shorten the body but do not recover selective expansion; original tails restored.
+// Round 428: enabled-first complete group orders (1=one/two, 3=three/four):
+// 13560 201; 13650 199; 15360 209; 15630 223;
+// 16350 197; 16530 205; 10365 158; 10635 146. Original complete arm order and body restored.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -884,6 +887,10 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
 // Native point-difference producer subsets nearest/anchor/both/opposite/nearest+opposite/
 // anchor+opposite/all: 626/627/626/685/668/685/668; all plus shared dot 668 (exact-only).
 // The one-point nearest gains are ineligible; original scalar producers and arithmetic restored.
+// Frame 0x1c versus 0x2c; count/selection/projection and fraction homes differ.
+// Round 428: complete squared products in both searches, projection products and both 627 each;
+// actual selected-record common copy tail, with either/both products and common distance storage,
+// 748 each at 1944/2122 bytes. All original sums, copy paths and body restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
