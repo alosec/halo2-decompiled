@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "unknown_11cc90.h"
 #include <math.h>
+#include "vector_products.h"
 
 real g_5476c8;
 vector3f *g_4687bc;
@@ -141,6 +142,13 @@ void function_11d610(quaternionf *q)
 
 // score 11 (was 15): output-first parameters recover the call setup and dot product;
 // the cross-product multiply and reciprocal reload schedule still differs.
+// Round 45: the cross product through the existing cross3f_staged into out, scaled in
+// place, gives the same code (kept: it replaces a hand-written copy of that helper's body).
+// The reciprocal after the cross terms gives retail's cross schedule exactly (s shares xmm2
+// with the j product), but the 1.0/reciprocal and zero/s registers swap (xmm2 <-> xmm3) and
+// two scale products take the copy form: 32. Also: w as s / 2.f 11; a named dot local 18;
+// 2.f * (1.f + dot) 11. Compile-only screens: 288 cross/reciprocal/store orders and 324
+// clamp/root/threshold/else-order forms, none closer.
 // Earlier at 15: cross i,j,k 23; reciprocal after cross 36; j as a.k*b.i-a.i*b.k 15;
 // separate square root 15; clamp s<=0 17. With output first: cross k,i,j or i,k,j 11;
 // j,k,i / j,i,k / i,j,k 19; reciprocal after cross 32; w store first 21;
@@ -179,12 +187,10 @@ void function_11d6a0(
 	if (s >= 0.001f)
 	{
 		real inv = 1.f / s;
-		real k = a->i * b->j - a->j * b->i;
-		real j = b->i * a->k - b->k * a->i;
-		real i = a->j * b->k - a->k * b->j;
-		out->i = i * inv;
-		out->j = j * inv;
-		out->k = k * inv;
+		cross3f_staged(a, b, (vector3f *)out);
+		out->i *= inv;
+		out->j *= inv;
+		out->k *= inv;
 		out->w = s * 0.5f;
 	}
 	else
