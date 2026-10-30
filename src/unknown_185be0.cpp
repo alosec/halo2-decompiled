@@ -274,6 +274,9 @@ union s_185be7
 // index/word/float 783, word/float/index 783, word/index/float 783;
 // split admission 780; inactive update/return 1026; chained indices first 782.
 // Original six-store producer and complete body restored.
+// Round 417: native output one-bit groups at 18/1c/20, subsets 1-7:
+// 1008/958/993/803/995/825/938; all Boolean bitfield domains 1066.
+// Output size/offsets agree; every native view and store form restored.
 // @retail 0x185be0
 void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s_186ab4 *arg_4, s_186ab3 *arg_5)
 {

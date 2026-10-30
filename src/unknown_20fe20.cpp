@@ -1838,6 +1838,9 @@ PRIVATE __forceinline bool audio_target_is_current(byte *actor, long object_inde
     return false;
 }
 
+// score 527 (was 527): Frame 0x28 versus 0x2c and separate friendly/required-bit homes remain.
+// Round 291: Existing hostility/known-target/current-target result graphs, all seven subsets, then all
+// with mode read at each test: eight fast scores 545 (control 545; full 527).
 // @retail 0x20d8c0
 short function_20d8c0(long source_index, s_audio_priority_table *table, byte const *request,
     long object_index, long target_index, long previous_index, long *tag_index, real *weight)

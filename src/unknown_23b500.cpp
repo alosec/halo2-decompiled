@@ -628,7 +628,7 @@ void function_23b500(long player_index, s_spawn_influence_list *list)
 			bool no_unit_child = true;
 			bool friendly = true;
 			s_object_child_iterator children;
-			function_d0620(objects.iterator.object_index, &children);
+			function_d0620(&children, objects.iterator.object_index);
 			while (function_d0690(&children))
 			{
 				s_spawn_moving_object_23b500 *child = (s_spawn_moving_object_23b500 *)
