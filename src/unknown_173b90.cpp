@@ -471,7 +471,7 @@ real function_3eb70(void);
 typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_particle_value_cache *, point3f const *, vector3f const *, real, color4f const *, void *);
 
 
-// score 42 (was 56): both in-place rotations go through the shared rotate helper (it copies the
+// score 42 (was 42): both in-place rotations go through the shared rotate helper (it copies the
 // input when the output is the input), which gives retail's j and k rows. Left: row i sums the up
 // product before the forward one (retail forward first, loading forward.i into a register); the
 // offset's zero store comes before the list test (retail after); the two 1.0 stores are swapped; and
@@ -525,6 +525,9 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // this body the translation as `+=` 56, a named scale value at both scale sites 119 (1136 bytes), the
 // 0x107f0 mask named 55 (second rotation's register numbering only); on the indexed form with scale
 // first (117, every non-rotation difference fixed): `+=` 117, named scale value 121, named mask 117.
+// Round 307: Complete per-emitter alpha/color/scale policy subsets 248/267/261/255/246/241/282;
+// one raw flag observation 260. Policy homes enlarge the frame; original property observations
+// and shared in-place rotations restored.
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
