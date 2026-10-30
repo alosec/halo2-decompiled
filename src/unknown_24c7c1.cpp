@@ -561,7 +561,7 @@ void function_24ce9d(word const *text, long left, long top, short_rectangle2d *b
 /* draws a local player's HUD messages: the scripted message at the top,
    the list of messages, then the timed message and the status text at the
    bottom */
-// score 143 (was 143): frame 0x264 agrees; predicate packing, color/rectangle/scalar homes and the text-buffer call convention still differ.
+// score 115 (was 143): frame 0x264 agrees; predicate packing, color/rectangle/scalar homes and the text-buffer call convention still differ.
 // Earlier: frame slots differ (the scripted flag packs beside the split-screen
 // byte, shifting colour, view, left and the loop index); BLOCKED-BY 0x15f120, whose text
 // buffer retail passes in esi (our push is the extra byte). Tutorial colour as three calls 233;
