@@ -2464,6 +2464,8 @@ dword __cdecl function_131fc0(real alpha);
 // Original arrays, fallback order, products and complete body restored.
 // Round 261: actual four-corner vertex table, byte/word/long/dword with long ordinal
 // 337/337/353/353; with short ordinal 339/339/343/343. Original unrolled draws restored.
+// Native mutable/immutable normalized texture rectangles, combiner order and shared
+// alpha-clamp combinations 313/313/313/313/313/313/313/313; frame 0x38 versus 0x28. Original body restored.
 // @retail 0x2a8d0 standard
 void __stdcall function_2a8d0(long tag, long bitmap_index, real const *source,
     real const *destination, long arg_af5a49, color3f const *color,
@@ -2959,6 +2961,8 @@ struct s_2a2f0_record
 // the existing lookup called in a full-depth window 258 (out of line); plain count read 167;
 // separate count copy 145 (propagated); file-local forced lookup 258/297 (in a window, spills).
 // Round 187: Ordinal/remainder byte/short 273, short/short 273, word/short 273, long/long 184, long/dword 188, long/word 186, byte/word 265, short/long 190; unsigned forms omit the implied negative guard. All restored; missing count copy remains.
+// Native current/element/fallback type subsets and readonly complete graph 166/166/166/166/166/166/166/166;
+// all with ordinary count and independent dimensions. Original body restored; count copy remains.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3209,6 +3213,8 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // Round 261: shared quantizer byte/word/dword results 985/1007/853; quantizer/output/both
 // formal orders 853 each; byte/word results with both orders 985/1007. Original helpers restored.
 // Round 187: Integral slope cap long/short/word/dword 1141/1161/1161/1082; each with inverse-span entry workspace 1141/1161/1161/1082. All restored; frame/save and state expansion remain.
+// Upper-default shared clamp, branch/entry result with original/Boolean permission and
+// sampled/live alpha: 1118/1120/1101/1103/1105/1109/1085/1089. Retail length in all forms; original helper/body restored.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
