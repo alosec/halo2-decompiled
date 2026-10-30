@@ -232,7 +232,12 @@ static __forceinline bool structure_bsp_collision_available()
 // screen, 66 = the old form there): the final test `found && !excluded` 113; the flag as long or
 // byte 66; the collision read through the source at each use 66; on the kept form, a bool result 63
 // (aligned 43 -> 41), `return false` on the excluded arm 58 (same code), `return` of the final query
-// 128 (257 bytes).
+// 128 (257 bytes). Lane 13 r14 (also: retail stores the requery's collision into the by-value
+// source's slot, a dead store, and reads the source's collision from that slot after each call): a
+// bool result 64; `return false` on the excluded arm 61; the flag from the && expression guarding the
+// model query with `if (excluded) return result;` 65; the model result stored in `result` and the
+// requery reading the source's collision 64; the flag set in the scenery arm, the model query in an
+// else-if and the requery in `if (!excluded)` 82 (258 bytes).
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {

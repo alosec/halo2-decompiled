@@ -335,6 +335,14 @@ done:
 // the name preset to NONE with the call guarded by `name_id != NONE` 49/54 (identical code: the guard
 // is threaded away); a file-static buffer 49; explicit empty cases 5 and 6 on the retail-order body
 // 54. The name typed as dword 49/54.
+// Round 35 (more): retail's case order alone 54; with `name_id = NONE` and an `if (name_id != NONE)`
+// guard in place of the default's `goto done` 54; with `if (!globals) goto done;` 54; retail's order
+// with the tag read in the call plus the guard 45, plus the early exit 45. DL179: the getter/wrapper
+// declaration crosses keep 37/37/39/39/37/37/39/39 code rows.
+// Round 103 (fast; parse_variant stays matched): the copy called directly 49; `(word *)&g_55c6e4` at
+// the translator 49; the tag read in the shared call 45 (171 bytes); the name declared at the top 49;
+// the tag read before the variant call 55 again (171 bytes; a repeat of the listed form); the unused
+// `string_handle` parameter holding the case's string handle 49.
 // our size-optimized build keeps the buffer address in EBX for its two uses; retail
 // our size-optimized build hoists the buffer address 0x55c6e4 into EBX for its
 // two uses (saved in the prologue); retail pushes it as an immediate for the translator and moves

@@ -356,6 +356,9 @@ extern real g_47f05c;
 // Round 297: Entry false-result/selection/best-alignment constants and all four
 // combinations 192 each; all three with uniform shape-height reads 204 (frame 0xd4,
 // 869 bytes). Original constant/result lifetimes, height snapshot and body restored.
+// Round 195: Complete base-point/up-vector/step observations and their four combinations
+// 251/266/223/234/231/265/239; all with scan role names 239. Original contact
+// observations, point provider, center/difference producer and full body restored.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)
@@ -520,6 +523,10 @@ PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f
 // Round 297: Existing staged cross at first/selected-zero/selected-other/first+zero/
 // first+other/both selected/all sites 144/182/144/182/144/218/218; all with
 // averaging-only support scope 218. Original helpers and direct-output body restored.
+// Round 195: Selected two-/three-contact normal values and both 213/300/336;
+// existing three-contact value scale/add alone/with either/both values 365/377/384/423;
+// complete three-contact computed result 263. All original observations, helpers and body
+// restored; request/count homes and selected-cross tail sharing remain.
 // @retail 0x1f2a80
 void function_1f2a80(byte const *request, bool moving,
     vector3f const *desired, long const *indices, long count, vector3f *out, vector3f const *velocity)
@@ -909,6 +916,10 @@ struct s_flags_1f0870
 // Round 297: Native flying/ground basis values, shared staged flying crosses and
 // their four combinations 646/642/591/666/646/631/666; all with the remaining
 // crosses staged 666. Original basis observations, helpers and full body restored.
+// Round 195: Native damping/direct consumers 633/612; two-component direct delta
+// 589 (one-point gain rejected); both consumers 628; damping-delta/direct-delta/all
+// 633/612/628; all with complete horizontal assignment 634. Original flags, vector
+// types, copies, helpers and full body restored; frame 0x34 and direct/vector homes remain.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {

@@ -509,7 +509,6 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
 // loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
 // first on the word form 77, carrier on the word form 78.
-// computed before the branch 133; union plus carrier 91.
 // Round 94: a plain `word old_team_mask` gives retail's entry (`mov cx`, word store), but the compare
 // then reads the mask from memory where retail reloads it into ECX before the first branch and
 // shares it with the update (one instruction short, the rest shifts) 77; with the team-bit carrier 83;
@@ -521,6 +520,12 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // operands swapped 78, without the store's cast 77; word old playing mask too 59; word
 // mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
 // the bit from `player->team` 46.
+// Lane 13 r14: the word mask (aligned 21 -> 19, one instruction long after the loop: its compare
+// folds a movzx from memory and the update reloads it) 77; with the store's cast dropped 77;
+// `old_team_mask != present_teams` 77; `old_playing_teams != playing_teams` 78; the store as
+// `(word)(present_teams | old_team_mask)` 77, with the swapped compare 77; `present_teams |
+// old_team_mask` uncast 77; the team mask pointer and word mask declared before the old playing
+// mask 82, the pointer alone first 77.
 // Round 116: the mask as a local copy updated in place (`mask |= present_teams;` then stored
 // through the field pointer) 77, dword 102; that with present not volatile 63; the playing test
 // before the present update 41; a bit local for the present update only 29. A non-volatile

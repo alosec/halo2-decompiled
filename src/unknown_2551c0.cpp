@@ -289,6 +289,9 @@ struct s_2556c0
 // the address is the same. Immutable index 1; index predeclared/read before the blocked test 1 each;
 // edge predeclaration, a post-bounds edges base, a field-base flag pointer and an exact flag pointer 1 each;
 // scoped favor-speed-off 37; bool return, as its caller's tests of al show, 1 (kept).
+// Index first defined at entry 1; trace field read at each use 1; a forceinline (data, index) edge
+// accessor, element or sum form, 1/1; element address taken before the bounds test 1. In every
+// matched speed function whose shifted index is loaded from memory (19 sites), it comes first.
 // @retail 0x2556b0
 bool function_2556b0(point3f const *arg_0, vector3f const *arg_1, long arg_2, real *arg_3)
 {

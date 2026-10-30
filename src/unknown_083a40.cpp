@@ -587,6 +587,11 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // its update named first 32 (both identical code); the occupant key from `&collection->players[i]`
 // 32 (identical); the conflict scan through `collection` 263; `collection` declared before the
 // player-mask test 32.
+// Round 103 (one-file harness exact: 0 rows differ from the real listing): `slot`/`occupied`
+// declared at the loop top 32, with the round-35 swap order 36; the occupied key as
+// `&collection->players[i].key` 32 (36); the occupied index stored before its type 34 (38);
+// the session-player source declared before `collection` with the swap order 36; the player-mask
+// test through `collection` 197 (1063 bytes).
 // Round 19 (lane 11), on the swap order above: the swap's update through the local `update` 36;
 // the occupied key through `watcher->players.players[i]` 292; the second loop's player and mask
 // through `collection` 271, its player alone 267. With it the occupied key is still

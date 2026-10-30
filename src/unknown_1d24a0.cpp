@@ -201,6 +201,10 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
 // Round 41: Native signed body-slot and composed owner/other activity carriers:
 // [997, 1001, 921, 970, 956, 1010, 1011, 1008]. Narrow byte/short slots recover entry ECX/EAX at unchanged frame 0x1f0;
 // body and record/vector homes still differ. Original slot, predicates, helpers and body restored.
+// Round 195: Complete wide-dot/real-dot/planar product groups and their four
+// combinations 947/938/938/954/947/920/954; all with projected-vector result
+// 958. Original kernels, short scale loop, coefficient pair, solver response
+// sharing and full body restored; entry, frame and record/vector homes remain.
 // @retail 0x1d24a0
 void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
 {
