@@ -216,6 +216,8 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // Full output with stamp byte/native payload, stamp signed byte, near byte, near signed byte,
 // both bytes and the three mixed/signed combinations: eight forms 140 at 955 bytes.
 // Native status declarations do not fix the post-stamp register rotation; all types/body restored.
+// Round 289: Computed proximity bool/byte/short/long on the complete collision/native-payload graph; then each with one result exit:
+// [247, 247, 252, 250, 231, 231, 226, 228]. All executable source and temporary types restored.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {

@@ -75,6 +75,10 @@ struct s_11c1b0
 // Round 406: Initial index/zero registers and saved-index publication remain. Consistent unsigned-
 // word current/saved/request equality with 0xffff sentinel, parameter-read ordering, saved entry
 // lifetime and byte late-success combinations. Scores 75/75/133/133/91/91/137/137. All restored.
+// Round 18 (lane 10): an inline helper for the four global clears (both sites) 50; the saved index
+// declared at the top and first assigned in the block 50 (still the argument's home: the def, not the
+// scope, decides); the copy used in the early true test 50, in both tests 50; the copy re-read from
+// the global 50 (all identical code).
 // Round 93: the saved index already shares arg_0's slot; left are local_0/zero in di/ebx (retail
 // bx with xor ebx, ebx / edi) and the slot store after the range test (retail: before it, as only
 // a reassigned parameter gives). Both NULL-clear blocks as one inline helper 50; early return false

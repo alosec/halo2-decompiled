@@ -222,6 +222,9 @@ void function_07b3e0(void)
 // Earlier iterator form 58. Round 415: direct scan/identifier/both forced declarations
 // 39/39/39; outlined declarations 74/44/91; live pool 45, captured tail 42.
 // Original helper declarations, pool snapshot, loop and final global stores restored.
+// Kimi lane 2 round 37 also reached 39 by scanning by absolute index with the salted-index helper
+// (pool in EBP rather than EBX/EBP). Its other forms: direct expression 39; copied/independent/const
+// scan pools 39/64/39; counted for scan 121; refreshed pool 39; absolute-datum getter 71; split pools 39.
 // @retail 0x7b430
 void function_07b430(void)
 {
@@ -1055,7 +1058,8 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 	default: __assume(0);
 	}
 }
-// score 766 (was 766): retail's frame is 0xb4 and it takes the session in EAX and the output pointer
+// score 766 (was 766): Frame 0xd4/0xb4, stacked session and protected opening lookup expansion remain.
+// Earlier: retail's frame is 0xb4 and it takes the session in EAX and the output pointer
 // on the stack, while ours has a 0xd4 frame and takes both on the stack; retail also calls the matched
 // 0x192e60 out of line, ours inlines it.
 // frame 0xd4 versus 0xb4, opening session home and lookup expansion remain; tried byte
@@ -1126,6 +1130,9 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 // Original counter names and declaration lifetimes restored; frame/session/lookup remain.
 // Round 261: explicit initial histogram memset with word/short/long/dword cells
 // 820/820/844/844; each with byte balance argument 871/871/870/870. Original clear and cells restored.
+// Round 414: type-four-first conditional minimum/maximum/spread selectors, each pair
+// and all three 766 each; all with type-five-first limited predicate 803 at 2832/2828.
+// Original selectors, predicates and complete body restored.
 // @retail 0x7e210
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {

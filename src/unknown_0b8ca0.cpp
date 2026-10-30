@@ -630,7 +630,9 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
     return (*(short *)(data->data + data->size * absolute) << 16) | absolute;
 }
 
-// score 231 (was 231): Caller-dependent alignment and scalar/angle homes remain.
+// score 231 (was 231): retail self-aligns its frame (`and esp, -8`, esp-relative locals,
+// bool result byte) while ours keeps EBP for the global base and a dword result; retail's
+// x87 block computes atan2(radius, magnitude) (swapping ours scores 230).
 // Round 89: the reduced image self-aligns like retail, so trials were measured there (baseline 247)
 // and confirmed plain: the existing function_baf80 for the root walk 280 (stays out of line; retail
 // calls it out of line from 48 other functions, so this loop is its own); the table read inside the

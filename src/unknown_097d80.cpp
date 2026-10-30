@@ -50,7 +50,14 @@ struct c_aggregate : c_child
 	void v8(long a, long b);
 
 };
-// score 85 (was 85): Completion-output home, ordinal dispatch and allocator reload remain. Cumulative boundaries with
+
+
+// score 85 (was 85): frame 0x8024 against 0x8020 (retail packs the completion output with two later
+// Round 73: ordinal/child-cursor dispatch 115; explicit inner length on ordinal/range forms 102/99;
+// guarded count-down block traversal 130; shared output/output as count/result 84/84/84;
+// produced count reused as cleanup total 130. Opening body restored.
+// our frame is 0x8024 against retail's 0x8020 (retail packs the completion
+// Completion-output home, ordinal dispatch and allocator reload remain. Cumulative boundaries with
 // carried total/direct table/local output/table cursor, original and ordinal dispatch, scored
 // 134/155, 140/157, 132/141, 142/157. Direct boundary outputs recover frame 0x8020 but lengthen
 // dispatch; original collection and cleanup restored.

@@ -784,6 +784,8 @@ PRIVATE inline real initial_dot(const vector3f *a, const vector3f *b)
 // plus `!(fabs(angle) < 0.0001f)` 178, plus an in-place rotate of it 155 at 1382 B (retail re-reads
 // each axis component and puts cosine in the angle's dead slot +0x34, sine at +0x44; ours caches the
 // axis and swaps them); cosine declared first 155; five sine/cosine name pairs 155. Original restored.
+// Round 206: Complete scalar first/second cross inputs and rotation-axis observations, seven subsets
+// [194, 202, 192, 298, 339, 306, 336]; all with immutable original 336. Original restored.
 // @retail 0x1e5bb0
 void function_1e5bb0(s_biped_physics_output *output, void *physics, void *animation_state, real speed_scale,
  long component_index, long object_index, void const *definition, long value, bool b, bool turning,
