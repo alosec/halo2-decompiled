@@ -519,24 +519,18 @@ void __stdcall function_148893(s_name_request *request, long mode);
 struct s_online_game_invite;
 void online_game_invite_answer(DWORD controller_index, const s_online_game_invite *invite, long answer);
 
-/* a game invite message: its title and when it was sent */
-struct s_invite_message_view
-{
-	byte unknown00[0x24];
-	DWORD title_id;
-	byte unknown28[0x30 - 0x28];
-	FILETIME time;
-};
-
 /* joins the game a message invites the selected player to */
 // score 2 (was 2): retail stores the type before the second half of the
 // FILETIME copy, ours stores it after, so the two stores trade places.
+// Tried: the type set inside the answer call's argument 2; the time copied
+// high half first 5; the high half loaded into a local before the type store
+// 3 (it takes ebx); the message cleared at the case's start 24, after the
+// answer call or at the case's end 57; the invite pointer set at the top 39.
 // @retail 0x238f3f
 void __stdcall function_238f3f(long controller_index, void *message, unsigned __int64 session_id)
 {
-	void **message_reference = &message;
 	s_online_selection selection;
-	s_invite_message_view *invite;
+	s_game_invite_message_view *invite;
 
 	((s_online_selection *)&g_54d598.settings)->join_pending = false;
 	function_14887e((s_screen_settings_54dc6c *)&selection);
@@ -544,7 +538,7 @@ void __stdcall function_238f3f(long controller_index, void *message, unsigned __
 	{
 	case 1:
 	{
-		invite = (s_invite_message_view *)*message_reference;
+		invite = (s_game_invite_message_view *)message;
 		XONLINE_FRIEND friend_;
 
 		if (!invite || !session_id)
@@ -552,7 +546,7 @@ void __stdcall function_238f3f(long controller_index, void *message, unsigned __
 			return;
 		}
 		online_friend_from_user(&friend_, &selection.user);
-		friend_.dwFriendState |= 0x8000001;
+		friend_.dwFriendState |= XONLINE_FRIENDSTATE_FLAG_ONLINE | XONLINE_FRIENDSTATE_FLAG_RECEIVEDINVITE;
 		selection.friend_ = friend_;
 		*(unsigned __int64 *)&selection.friend_.sessionID = session_id;
 		selection.friend_.dwTitleID = invite->title_id;
@@ -565,13 +559,12 @@ void __stdcall function_238f3f(long controller_index, void *message, unsigned __
 		break;
 	}
 	}
-	invite = (s_invite_message_view *)*message_reference;
+	invite = (s_game_invite_message_view *)message;
 	if (invite && session_id)
 	{
-		((dword *)&selection.friend_.sessionID)[1] = (dword)(session_id >> 32);
+		*(unsigned __int64 *)&selection.friend_.sessionID = session_id;
 		selection.friend_.dwTitleID = invite->title_id;
 		selection.friend_.gameinviteTime = invite->time;
-		((dword *)&selection.friend_.sessionID)[0] = (dword)session_id;
 		function_148893((s_name_request *)&selection, 1);
 	}
 	function_2395dc(&selection.friend_, controller_index, 0);

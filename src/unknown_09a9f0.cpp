@@ -690,6 +690,11 @@ bool c_projectile_type::v8(long a, long b)
 // one (flags & 0x800) && group != NONE test (24, 12), unsigned index (12),
 // 0x9d450's object address form (12); (dword)(word)index is unchanged (5).
 // Dropping the volatile this copy loses retail's push ecx/[esp] store (55).
+// With the mask, any extra use of object (an added read at the end) gives it
+// esi again, so the swap is a use-count tie that the separate word read of
+// (word)index breaks. Also tried with the mask: bit tests as (flags >> 10) & 1
+// (12), result declared first (12), the compares' operands swapped (17), a
+// group_index local (12); the base class v27 call without the copy (52).
 // @retail 0xa3df0
 long c_device_type::v27(long a, long b, long c, long d)
 {
