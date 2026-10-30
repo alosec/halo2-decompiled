@@ -307,17 +307,10 @@ struct s_23600_object_header
 	byte *object;
 };
 
-// score 3 (was 3): the section's number is loaded into eax and the table of
-// numbers into ecx, ours loads the table into eax and the number into ecx.
-// Swapping the operands of the address, copying the two parameters into
-// locals and dropping the address hacks all leave the load order alone
 // @retail 0x23600
-void *function_23600(long tag, long object_index, byte const *indices, long section_index, long node_index)
+void *function_23600(long tag, byte const *indices, long section_index, long object_index, long node_index)
 {
 	void *result = NULL;
-	(void)&indices;
-	(void)&section_index;
-	(void)&node_index;
 	if (tag != NONE)
 	{
 		s_23600_definition *definition = (s_23600_definition *)g_4e3b44[tag & 0xffff].bytes;
@@ -1191,8 +1184,13 @@ void __cdecl function_24970(s_histogram_state *state)
 // use in case 3 sits: without the out[3] store, or with it before out[2],
 // the registers are retail's (37: store order). Tried: one subtraction
 // (globals on both sides) 66; begin declared first 17; a span local 17;
-// the scale read plainly in case 4 17; ~70 harness forms of the clamp,
-// declarations, scopes and the top test, all 17
+// the scale read plainly in case 4 17 (kept); ~70 harness forms of the clamp,
+// declarations, scopes and the top test, all 17; the bounds through a range
+// pointer 17 (same code); out[2] from the begin local 65; a span local with
+// the globals 66; a shared bounds point helper for cases 1 and 4 17. In a
+// compile-only build every form that merges the two subtractions gets
+// retail's pair, and every two-subtraction form (~190: mixes, declaration
+// orders, compare sides, scopes) gets ours unless begin stays live to out[2]
 // @retail 0x27520
 bool __stdcall function_27520(long mode, real const *bounds, real const *t, real *out, long unused)
 {
@@ -1229,8 +1227,7 @@ scaled:
         out[2] = 0.0f;
         out[3] = 1.0f;
         out[0] *= g_4b9d90;
-        // Read the scale again after the first output store.
-        out[1] *= *(real const *)&g_4b9d90;
+        out[1] *= g_4b9d90;
         return true;
     default:
         return false;
@@ -2029,7 +2026,12 @@ static __forceinline void *surface_texture_get(long index)
 }
 
 // score 2 (was 2): the loop's head reloads the two bounds from the stack in
-// the other order, ours reloads the low bound first and retail the high bound
+// the other order, ours reloads the low bound first and retail the high bound.
+// The order follows the code after the curve loop: without the fill loops (or
+// without the swizzle call in them) a compile-only build gives retail's order.
+// Tried: the lock as the method 2, as the compatibility wrapper 3 (one, low,
+// high), with an unlock 3, the method with an unlock 2, a dword bits local 2;
+// mode as the first parameter 2 (with the method 2, the wrapper 2, an unlock 3)
 // @retail 0x24ee0
 void function_24ee0(s_24ee0_state const *state, short mode)
 {
@@ -2074,18 +2076,15 @@ void function_24ee0(s_24ee0_state const *state, short mode)
     }
     if (mode == 2)
     {
-        D3DResource_BlockUntilNotBusy(texture);
-        byte *bits;
-        dword pitch, width, height, slice;
-        D3D::PixelJar::FindSurfaceWithinTexture(texture, (D3DCUBEMAP_FACES)0, 0,
-            &bits, &pitch, &width, &height, &slice);
+        D3DLOCKED_RECT rectangle;
+        D3DTexture_LockRect(texture, 0, &rectangle, NULL, 0);
         for (long y = 0; y < 64; ++y)
         {
             byte component = curve[y * 4];
             for (long x = 0; x < 64; ++x)
             {
                 dword color = D3DCOLOR_XRGB(component, curve[x * 4], component);
-                ((dword *)bits)[function_024e50((word)y, (word)x)] = color;
+                ((dword *)rectangle.pBits)[function_024e50((word)y, (word)x)] = color;
             }
         }
         real bounds[4];
@@ -2721,7 +2720,7 @@ bool __stdcall function_23690(s_coefficient_layout const *layout, short order, l
                     if (sample) function_0235a0(source + 12, &matrix);
                     if (use_samples)
                     {
-                        point3f const *position = (point3f const *)function_23600(tag, object_index, indices, bucket, sample);
+                        point3f const *position = (point3f const *)function_23600(tag, indices, bucket, object_index, sample);
                         if (position)
                         {
                             byte *bsp = *(byte **)(structure + 0x84);

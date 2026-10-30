@@ -457,6 +457,9 @@ bool function_7af40(s_type_99af70 const *address);
 // store differs (after the call, retail before it): 15 at 245 bytes, but the mixed reads can only
 // be kept with a match. Other orders of the counter, state and copy 35/35/37/111; the flag alone
 // re-read 42; the open alone re-read 109; `= count + 1` 111.
+// Actual open completion from false entry or validity result, bool/long carrier, direct/shared
+// endpoint initialization 106/100/128/124/109/105/131/128. False joins, endpoint flag scheduling
+// and split attempt increment remain; original body restored.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {

@@ -1058,7 +1058,9 @@ bool function_14ed80(void)
 // after the player 8, the outputs assigned after their declarations 8 (third
 // first 9), the representation pointer declared at the top 8, const views 8,
 // dword outputs 8. The globals pointer always takes the register the player
-// lookup frees.
+// lookup frees. Round 41: the clamp through the file's PIN macro 19 (166 bytes); maximum at
+// function scope 8; globals declared after the index 8; player declared first 8; the bound
+// read from the globals at each use without the maximum local 21.
 // @retail 0x14f040
 void player_get_representation(long player_index, long *field_b4, long *third_person)
 {

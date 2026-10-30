@@ -79,7 +79,12 @@ void __stdcall function_1fbac0(long unknown, long unit_index, bool unknown2, lon
 // score 21 (was 21): the scaled-index computation swaps registers: ours uses EAX/EDX,
 // retail uses EDX/EAX. Tried: a forceinline record getter for both lookups 21,
 // for the first only 21; the masked index in a local first 21; typed record
-// pointer arithmetic for both lookups 21; a record reference 21
+// pointer arithmetic for both lookups 21; a record reference 21; the field read into a
+// local before the flag store 21; a block-scoped record for each lookup 21; the pool in a
+// local 21; the lookup, store and call through an inline helper taking both indices 21 (all
+// identical code); record initialised to NULL at its declaration 222 (callers change).
+// Only this lookup differs: retail colours pool/record eax, index/field edx (lea), ours
+// index/record/field eax (add).
 // @retail 0x20d570
 void __stdcall function_20d570(short arg_1, long arg_0, long arg_2, void *arg_3)
 {

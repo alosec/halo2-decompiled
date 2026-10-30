@@ -271,6 +271,9 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // copy and advance with one first/index variable 163; with the named long count, entries declared
 // before first or before the count 140/140, the copy source indexed and entries set after the
 // advance 155. The block form stays the closest.
+// Plain group reset loops count/first/flags, count/flags/first, first/count/flags,
+// flags/count/first with block and indexed receivers 54/54/54/54/144/144/144/144. Scaled-index
+// and copy/count homes remain; original body restored.
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {

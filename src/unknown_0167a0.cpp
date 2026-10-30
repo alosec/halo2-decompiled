@@ -952,6 +952,9 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
 // 209; store as a macro: original calls 291, mask/value locals 198, direct reads 209. With the original
 // store: entry step at the end of both bodies 155; plus direct value/mask locals 155; plus the mapped
 // value/mask locals and store in both category arms 168.
+// Round 437: Symmetric preserved/incoming operand graphs 1-7 with body cursor steps 155 each; all-
+// commuted graph with one shared masked input 185, matched writer sibling 88. Two-point forms
+// rejected; full writer and both walks restored.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {

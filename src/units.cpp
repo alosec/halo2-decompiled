@@ -67,25 +67,6 @@ struct s_unit_definition
 
 bool function_1cb920(void *data, long label);
 
-// score 22 (was 22): ours keeps the object pool pointer in esi and reloads its data
-// pointer for the unit lookup; retail copies unit_index (ecx) to esi at entry and keeps the
-// data pointer in ecx for both lookups (141 bytes, retail 140). LTCG hands ecx to whichever
-// of unit/seat is referenced more: one or two unit lookups share the data pointer as retail
-// but pass the seat in ecx (callers 0x11ade0/0x1b8eb0 lost); three give retail's convention
-// and the reload. The parameters are in retail's (unit, object, seat) order: the callers'
-// setup orders (0x1b8f30 seat-object-unit, 0x11b0c0 object-unit-seat) fit it, and it
-// matched 0x11b0c0. Tried: one lookup 24/140 (retail's body except the seat/unit roles, also
-// under the new order); the parameters swapped in the definition 24 (same code); two lookups
-// 22/24; result declared first 24/63; through a header pointer 24; direct success 47; unit
-// copies 27; shared headers 24; result ternary 27; entry unit 61; direct lookups 64; delayed
-// lookup 24; declaration swaps 27; split result 27; unit header 30; object header 27; three
-// lookups declared in reverse 22; early-return guards 46; a header-table local for every
-// lookup 24, for the object lookup only 22, mixed with macro lookups 61/38; the label read
-// before the lookups 43, inside the call 34 (26 with the header-table local); a forced-inline
-// helper (unit index, definition, seat) doing the type test and the call 24, its variants:
-// seat definition pointer argument 45, label local 47, `||` return 33, own result 33,
-// inverted test 24, call-only helper 109; a forced-inline unit or type getter 24; two 600 s
-// permuter runs (one-lookup and helper forms), best 23 (a steering flag, steering casts).
 // @retail 0xc8200
 bool function_c8200(long unit_index, long object_index, short seat_index)
 {
@@ -94,13 +75,7 @@ bool function_c8200(long unit_index, long object_index, short seat_index)
 
 	if (seat_index >= 0 && seat_index < definition->seat_count)
 	{
-		/* the unit is looked up three times: here, for the animation
-		   lookup and for the header-block getter it calls; those extra
-		   references give retail's register convention (unit in ecx,
-		   seat in edx) */
 		s_unit_object *unit = UNIT_OBJECT(unit_index);
-		s_unit_object *animated = UNIT_OBJECT(unit_index);
-		s_unit_object *object = UNIT_OBJECT(unit_index);
 
 		if (unit->type == 1)
 		{
@@ -109,8 +84,9 @@ bool function_c8200(long unit_index, long object_index, short seat_index)
 		else
 		{
 			long label = definition->seats[seat_index].label;
+			byte *data = (byte *)unit + unit->field_x69a903.offset;
 
-			if (function_1cb920((byte *)object + animated->field_x69a903.offset, label))
+			if (function_1cb920(data, label))
 				result = true;
 		}
 	}

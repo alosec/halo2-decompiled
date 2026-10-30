@@ -301,6 +301,12 @@ void __stdcall function_1160c0(real dt)
 // N226: Current position owns the constrained target; direction-workspace/axis-scale/
 // blend-owned-stiffness masks 0..7 give 208/252/208/252/285/334/285/334.
 // All shorten the body and lose the original frame; complete original body restored.
+// Round 46: retail's low frame slots run length +0, segment/scale +4, axis +8..+0x10, rest offset
+// +0x40, previous +0x4c; ours run axis, segment/scale, length and previous +0x40 (the order is
+// reversed). Retail scales axis j/k in place on reloaded values (`mulss xmm3, xmm0`). Length declared
+// before axis 179; inverse time step before the loop 189; segment pointer before node 276; vertical
+// before the loop 301; existing normalize3d for the axis 179 (identical code, not kept: round 62
+// found it costs 0x73360 in the full build).
 // @retail 0x1161f0
 void __stdcall function_1161f0(s_chain_record *record, s_chain_definition *definition, real dt)
 {

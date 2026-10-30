@@ -26,7 +26,12 @@ void function_1e04a0(long primary_tag, long character_index, long unit_index, lo
 
 // score 2 (was 2): retail writes the request's fields in the order type (0x31),
 // arguments[0] and arguments[2], ours writes arguments[0], type and
-// arguments[2]
+// arguments[2]. Retail's time-field load precedes the type store, so the
+// product is evaluated before it. Tried: all six store orders 2-15 (type
+// first leaves the field load below the type store); a named short, long or
+// word duration local in each order 2-25 (it takes AX from the dying time
+// pointer and its store moves above `mov eax, ebx`); named duration and
+// request-value locals 20.
 // @retail 0x1e0dc0
 long function_1e0dc0(short team, long unit_index, short request_value, short squad_index)
 {
