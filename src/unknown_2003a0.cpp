@@ -1609,6 +1609,8 @@ PRIVATE __forceinline s_squad_datum *function_200d83(s_squad_record_iterator *ar
 // @retail 0x204b20
 // score 2 (was 2): the record pool's pointer is reloaded after the branch on the index,
 // retail reloads it before, so the jump lands on the shared reload.
+// Pool read before the active test 2; record address size * index + data 2; not-found
+// stores swapped 2; datum index written index | salt 2; early return when inactive 20.
 long function_204b20(long actor_index, short mode)
 {
     byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;

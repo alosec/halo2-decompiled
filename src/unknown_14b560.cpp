@@ -2216,6 +2216,10 @@ static __forceinline long player_round_ticks(real value)
 // both activity result accumulators alone/with direct inputs 723/709; two real function-scope
 // requests with direct decay/decay-clock recover frame 0x74 at 2813/2812 bytes, scores 778/777.
 // Original body restored.
+// Round 433: Repeated unit/player/both absolute slots at getter inputs, shared/separate requests;
+// both slots with direct decay and either request extent; late unit-slot acquisition and native
+// unsigned word slot domains; fast 764/769/825/827/871/923/792/856/765/745/745/827.
+// Original body and existing helper restored.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {
@@ -2629,6 +2633,9 @@ static inline bool player_datum_iterator_next(s_data_datum_iterator *iterator)
 // Round 423: stage status published at the join as short/long/byte 191/191/163;
 // each with early globals scope 191/191/163; short status with retry accumulation 178,
 // also with early scope 178. Complete original body restored.
+// Round 433: Existing first iterator with direct data observations, returned datum ownership and
+// exhaustion-first arms; direct-data forced expansion; fast 103/103/103/102/102/102/102/103.
+// Original body and existing helper restored.
 // @retail 0x14cdd0
 void function_14cdd0(void)
 {

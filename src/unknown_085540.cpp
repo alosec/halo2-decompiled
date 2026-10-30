@@ -981,7 +981,8 @@ bool function_685f0(void *block, long *size, byte *destination, long capacity);
 // score 2 (was 2): the constant 0xffff is loaded before the address of the buffer; retail loads
 // the address first. The registers that carry the destination and the capacity are the
 // callee's choice, and function_685f0 in src/unknown_067e10.cpp is three instructions
-// off retail.
+// off retail. BLOCKED-BY 0x685f0 (round 14: it takes the destination in eax, retail's
+// in edx; its body is contributor code).
 // @retail 0x869a0
 bool function_869a0(c_simulation_view *view, void *block)
 {

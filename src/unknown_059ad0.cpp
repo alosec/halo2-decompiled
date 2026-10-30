@@ -1381,42 +1381,21 @@ static inline char *function_x91aa57(char *destination, const char *source, dwor
 	return destination;
 }
 
-/* retail inlines 0x58d50 and 0x58d20 into the parameter setters; their
-   definitions live in another file, so these local copies stand in */
-static inline bool session_member_is_value50(c_class_58d20 *s)
-{
-	bool result = false;
-	if (s->state > 2 && s->state <= 8)
-	{
-		result = s->current_member == s->value50;
-	}
-	return result;
-}
-
-static inline bool session_state_in_5_8(c_class_58d20 *s)
-{
-	bool result = false;
-	long current = s->state;
-	if (current == 5 || current == 6 || current == 7 || current == 8)
-	{
-		result = true;
-	}
-	else
-	{
-		/* retail's dead stack store of the state, as in 0x58d20 */
-		volatile long unused = current;
-	}
-	return result;
-}
-
+// score 9 (was 9): the host arm's exit: retail pops EDI before the update count's store and the
+// failed tests jump to the request arm's exit; ours falls from the host arm into the shared exit.
+// The host arm written first (as 0x5b8e0) gives retail's block order, but the string then
+// arrives in EBX (callers 0x63f50 17, 0x71480 227). Tried: host arm first with the existing
+// helpers 91; with the explicit copy 89; the copy helper in the request too 91; the copy before
+// the stores 91; earlier rounds: count before the copy 95, explicit copy 15, `return true` from
+// the host arm 85, result set in each arm 91, early `return false` 92, request at function scope 9.
 // @retail 0x5b790
 bool network_session_parameters_set_value4d08(c_class_58d20 *session, long value4d08, long value4d0c, const char *string)
 {
 	bool result = false;
 
-	if (session_state_is_live(session) && session_member_is_value50(session))
+	if (session_state_is_live(session) && function_058d50(session))
 	{
-		if (!session_state_in_5_8(session))
+		if (!session->function_058d20())
 		{
 			s_network_message_parameters_request request;
 			parameters_request_initialize(session, &request);
