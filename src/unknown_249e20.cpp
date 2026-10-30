@@ -193,6 +193,12 @@ void function_249d10(s_structure_bsp_view *bsp, dword *bits, long index)
 // Round 135 byte decode helper writing through a result pointer (255 default) 77, with a zero
 // default 87, on a word 72; returning decode helper 77; decode helper with a constant
 // maximum argument 80 (the dead constant argument is dropped too).
+// Round 11 (byte value, statement interpolation unless noted): result 0 default under
+// `if (a != b)` with 0xff then nonzero tests 88 (159 bytes); early returns 81 (163); one
+// if/else-if result chain with the expression interpolation 79 (168: retail's code and
+// epilogues except the entry constants) and with the statement interpolation 76 (171); the
+// 255 default with the decode written as two stages (0 / 0xff, then `value != 0 && value !=
+// 0xff`) loads retail's 255 at entry at retail's 182 bytes but re-tests the byte, 65.
 // Round 177: Entry cluster extrema with original/normalized equality: word interval/
 // zero-first 66/71, byte interval/zero-first 72/76 for each. Original late extrema,
 // receiver, sample, interpolation and fallback restored.

@@ -266,6 +266,9 @@ void function_16f60(byte *state, word const *range)
 // Round 85: separate mode 3 and 4 bodies in mode order 196 (860 bytes: modes 3 and 4 inline
 // more calls than retail); orders 0/12/6/3/4/5 154 (824), 12/3/4/5/6/0 307, 0/12/3/4/6/5 235;
 // break with one selector store after the switch 279.
+// Round 182: Native prefix-table masks and a complete mode/state table do not recover selective setter expansion
+// Trials 1-8: 176, 134, 101, 124, 198, 192, 216, 226.
+// Trials 9-9: 832.
 // @retail 0x15370
 void function_15370(short mode)
 {
