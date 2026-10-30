@@ -277,6 +277,9 @@ void c_window_channel::v9()
 // and 4/25/4/25. All regress; original callback observation and body restored.
 // A twice-used callback snapshot, with both request types and both result
 // declaration orders, scored 29 in all eight forms (79/78 bytes).
+// Round 26 (lane 10): a header inline method on s_screen_request calling 0x149f49 on `this`,
+// used by v9 and v10, matched both; not kept (an inline twin of an existing function used only
+// where it helps). Request at function scope 13; `request.type = 0` after the call 12.
 // Round 78: type-field callback address 3; shared request pointer/reference 3/3;
 // message-cast callback 3; result before builder/at function scope 3/3; type-field
 // builder and callback 3; shared message pointer 3. Original body restored.

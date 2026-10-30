@@ -44,6 +44,8 @@ public:
 
 struct s_contact_body_view
 {
+	/* the shape at this level of the body */
+	c_contact_shape_view *get_shape() const { return shape; }
 	c_contact_shape_view *shape;
 	long key;
 	long unknown08;
@@ -141,12 +143,12 @@ PRIVATE __forceinline long contact_metadata_pin(long value, long lower, long upp
 
 PRIVATE __forceinline bool contact_shape_has_material(s_contact_body_view const *body)
 {
-	if (body->shape->type() == 0x18)
+	if (body->get_shape()->type() == 0x18)
 		return false;
-	long metadata = body->shape->metadata;
+	long metadata = body->get_shape()->metadata;
 	if (!metadata)
 		return false;
-	if (contact_metadata_pin(body->shape->metadata, 1, 16) == metadata)
+	if (contact_metadata_pin(body->get_shape()->metadata, 1, 16) == metadata)
 		return false;
 	return *(byte *)(metadata + 0x1e) != 0xff;
 }
@@ -160,9 +162,9 @@ PRIVATE __forceinline long function_1d4884(long arg_0)
 
 PRIVATE __forceinline bool function_1d4885(s_contact_body_view const *arg_0)
 {
- if (arg_0->shape->type() == 0x18)
+ if (arg_0->get_shape()->type() == 0x18)
   return false;
- long local_0 = arg_0->shape->metadata;
+ long local_0 = arg_0->get_shape()->metadata;
  if (!local_0)
   return false;
  long bounded = function_1d4884(local_0);
@@ -818,6 +820,8 @@ void function_1c54b0(char const *variants, long object_index)
 // after the discard call: entity_count renamed total/size/a_count, i renamed entity_index/j, count
 // renamed matched, island renamed group, removed renamed discarded: 18 each (names never move the
 // ebx/ebp swap).
+// Round 42 (a compile-only build reproduces all four; 158 forms screened there): entity count read at each use 4,
+// with the flag after the call 18; world local read at each iteration 4; entity local 4; nested tests 4.
 // @retail 0x1c50c0
 void function_1c50c0(void)
 {
@@ -1079,6 +1083,10 @@ struct s_1c4040
 // Round 163: coordinated cdecl/stdcall with bool, byte, signed-char active and
 // unsigned-long attempt transport 187/193 in every pair. All original declarations
 // and bodies restored; frame 0x14 agrees, but active remains DL rather than AL.
+// Round 42, in a diagnostic custom regime (0x1c51c0's call removed: 30, attempt EAX, active CL): world declared
+// first 30; island-array store without the volatile cast 27; long active 30; fixed island read through g_51e9a4
+// (world local only for the array choice) 31 with retail's AL/ECX ranking but the world load hoisted into EDX
+// before sub esp; every world read through g_51e9a4 32.
 // @retail 0x1c4040
 bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_unknown, long excluded_component_index)
 {
@@ -1401,21 +1409,6 @@ PRIVATE __forceinline hkBool contact_metadata_flag(long metadata)
  return result;
 }
 
-// score 4 (was 4): retail joins the two child-shape arms in EAX and copies the
-// shape into ESI there, ours assigns ESI in each arm. Kept: the flag through an
-// hkBool helper 14 (it replaced a volatile byte copy), the root's rigid body as
-// `type == 1 ? entity : NULL` 4. Shape join tried: if/else 14 (before the rigid
-// body form), inverted if/else 19, default shape then child 80, inline shape helper
-// 4, inline unwrap helper 4, child copy 13, inverted ternary 9.
-// Round 166: Native full-width key/filter-child/readonly receiver contracts, all seven subsets 4;
-// one hidden result on the recovered flag/rigid-body graph 65. Original contracts and body
-// restored.
-// Round 213: native aligned scratch
-// vector/renamed-vector/real/renamed-real/long/renamed-long/renamed-byte/renamed-SIMD [4, 4, 4,
-// 4, 4, 4, 4, 4]. Child-result join remains.
-// Round 70: selected-shape copy 13; shared root walk forced 4, plain 69; key predicate 4;
-// reduced if/else 4; forced walk with if/else 4; forced walk with key predicate 4;
-// initial forced walk only 4. Original body restored.
 // @retail 0x1c32d0
 hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view const *a, s_contact_body_view const *b,
  c_contact_shape_container *container, long key)
@@ -1426,7 +1419,7 @@ hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view con
   root = root->parent;
  if ((hkEntity *)g_47f048 == root->entity)
  {
-  c_contact_shape_view *shape = key != NONE ? container->child(key, buffer) : b->shape;
+  c_contact_shape_view *shape = key != NONE ? container->child(key, buffer) : b->get_shape();
   if (shape->type() == 0x15)
    shape = *(c_contact_shape_view **)((byte *)shape + 0xc);
   if (shape->type() == 0x17)
@@ -1500,6 +1493,8 @@ PRIVATE inline void contact_motion_vector(vector3f *out, hkVector4 const *value)
 // Round 88: while loop 3; index shared with the fill loop 3; mirror initialised from the index 3;
 // `count > i` 5; count initialised 3. This is 0x1d10b0's only caller, so its parameters can be
 // reordered to (component, index, change) in src/unknown_1cec30.cpp for the register-argument order.
+// Round 42 (0x1d10b0's file on the avoid list again): index declared before the mirror 3; mirror declared with
+// the selection locals 3; index declared outside the for 3; int index 3; fill loop counting into count 139.
 // @retail 0x1c4c50
 bool __stdcall function_1c4c50(long object_index, long node_index, point3f const *point,
  vector3f const *change_a, vector3f const *change_b, long *result_object, vector3f *linear, vector3f *angular)

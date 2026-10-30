@@ -71,6 +71,9 @@ inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool fl
 // comparison-first 20 (AL input, five caller losses), flag-first 33 (same five losses);
 // edge-first/unsigned outcome 27/10; double difference 9 (qword epsilon load, broad match losses).
 // Original Boolean contract and float producer restored; full-width independent edge exits remain.
+// Round 48: word outcome with two returns 8; signed word with two returns 9; inverted word returns 8;
+// eager word outcome 49; entry-declared/late-assigned word 8; shared real clamp with word returns 8,
+// full-width returns 10 and direct full-width returns 10. Original body and declarations restored.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {

@@ -985,6 +985,9 @@ long __stdcall function_125e60(s_looping_track_sound *sound);
 // Round 421: native short/real repeated class pitch 77/183; complete modifier copy 190;
 // shared lower pitch 74 (three-point gain rejected); short with record 190; real with lower 183;
 // scoped listener distance with record/real-and-lower 190/183. Original body restored.
+// Round 313: Computed modifier span, original/promoted previous: 77/131; with computed pitch offset
+// 77/131; entry result with span 71/126; with offset 71/126. Six-count gain rejected; original body
+// restored. Result-first recovers early spills; initialization and pitch scheduling remain.
 // @retail 0x21b940
 long function_21b940(long looping_sound_index, long definition_index, long pitch_range_index, short track_index, short state, dword *seed)
 {

@@ -121,6 +121,10 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // nine match losses, restored); native component array with inherited/ordinary reads 6/47;
 // all three tail declarations at entry 6; tail local names 6; reciprocal/squared-speed declaration
 // at entry separately 6/6. Original frame, helper, field accesses and qualified reads restored.
+// Round 16: normalisation operands swapped 6 (same code); without the casts, compound `*=` 47, tail
+// stores through particle->velocity 105, tail reads through particle->velocity 88 (that one keeps
+// retail's load-multiply-store order: the loads and stores sit on two unrelated bases); case 1 with
+// the zero stores last 21, a chained zero 6, a cosine local 504.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

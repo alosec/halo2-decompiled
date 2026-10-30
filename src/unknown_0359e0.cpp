@@ -59,6 +59,11 @@ PRIVATE inline long swizzle_log2(dword value)
 // Tried: log2_floor 87 (the loops then match), the minimum as if/else 87 (msvc
 // if-converts it), short copies or no copies 119 (the long copies fix the argument
 // registers, and without them the matched caller 0x136140 no longer matches).
+// Round 22: the two entry copies are what hold the argument registers (row in cx,
+// column in dx), so retail's 16-bit row copy in si and its late column promotion
+// cannot be reached from here: a 16-bit copy or a copy placed after the mask moves
+// that argument onto the stack (130, 85), and swapping the two copies gives 79 but
+// swaps the argument roles, so the matched caller 0x136140 no longer matches.
 // until 1; ours shifts first and tests for 0), the minimum is a branch (ours cmov),
 // and the parameters stay 16-bit until the mask is built: y is moved to si at entry
 // and both are sign-extended there (ours extends both at entry). Tried: swizzle_log2
