@@ -511,8 +511,15 @@ PRIVATE __forceinline void physics_mass_copy(byte const *body, s_physics_mass_ar
 
 // score 4 (was 4): retail loads the 1.0f constant after it stores the array pointer, and
 // loads the allocator global before it stores the centre; ours does both the other way round.
+// Round 26: g_480118 defined in a /GL- library file instead of src/globals.cpp fixes the second
+// (LTCG counts an LTCG-defined global as aliased by pointer stores): 2, not kept (a global's
+// definition moved for a gain without a match).
 // Vector set 454; repeated zero intrinsic 4; explicit quad stores 197; direct lane stores 4;
 // explicit centre store 4; centre memcpy 125; plain copy inline 4; const centre 4; transform set 4.
+// Round 26: allocator local between the mass and centre copies 4; forceinline identity 4; mass
+// array built by an inline constructor 4; on 2: count read before the allocator local 2, a first-entry
+// pointer for the identity 2, aggregate declared before the array 2, zero intrinsic per identity
+// store 2, identity columns set one at a time 2.
 // @retail 0x1d5ec0
 c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *component,
     s_physics_model_owner *owner, char const *kinds, char *output, long *output_count,
