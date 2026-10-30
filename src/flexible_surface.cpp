@@ -651,6 +651,11 @@ static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)
 // Both orientation passes and all call argument roles are preserved; other forms restored.
 // Round 429: Positive admission/entry result declarations/lexical result homes and their four
 // combinations 453 each; all with native record/cull names 453. Original body restored.
+// DL201: pointer-distance first matches, cached/direct type observations and shared/phased defaults
+// 500 each. Standard searches give 390/388/374/372 and frame 0x2c, but outline one new
+// search provider with only this caller: rejected. Literal values, readonly iterators and
+// force-inline declarations before/after the include 372 each; no inline recovery.
+// Original searches, signed orientation, APIs and helper graph restored.
 // @retail 0x116b00
 void __stdcall function_116b00(long tag_index, long unused, long group, long variant, long pass, long index, void *context)
 {

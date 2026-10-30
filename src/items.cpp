@@ -594,6 +594,10 @@ struct s_item_collision_bsp
 // Round 434: complete axis/impulse/both snapshots 342/345/351; with the existing staged cross
 // 342/345/351; both with a native material index, without/with staged cross 350/350. Combined
 // captures grow the frame to 0xac; original observations, plane interface, spin workspaces and body restored.
+// DL202: Double pending spin scale, with uniform factor ownership and native linear/angular/both
+// output initializers, all eight subsets 252 each (1342/1361 bytes, frame 0xa4 versus 0xa0).
+// Original real factor, native outputs and complete body restored; protected plane-index
+// width, plane joins and pending spin-k homes remain.
 // @retail 0x10cf80
 void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effect)
 {

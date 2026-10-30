@@ -122,6 +122,11 @@ struct s_spawn_scenario_23aea0
 // the record pointer (2..13 or 0..11) gives the base code; an out-of-file copy function is not inlined into
 // this /Ob1 file even when its definition is `inline` (called). Retail's 12 * type offset with the table
 // address folded into the displacement looks like a loop strength-reduced over a register base.
+// DL200: Overlap-safe default/override/both tuple copies 258/146/282, each with a new reduced
+// caller loss at 0x1574c0; all rejected. Consistent tuple byte-field orders 0/8/4, 4/0/8, 4/8/0,
+// 8/0/4 and 8/4/0 give 117/117/111/111/117. Original two-by-six copies, real field values, scalar
+// overrides, signed guards and includes restored at 105. Integer destination induction and
+// definition receiver remain.
 // @retail 0x23aea0
 void function_23aea0()
 {
