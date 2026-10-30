@@ -87,6 +87,10 @@ bool g_47f05b;
 // pool address through a byte pointer named after the first construction 38; if/else on the
 // placement result 38; bool flag first 38; NONE flag last 38. Four explicit base-constructor
 // stores in place of the loop still drop the vtable store (30, 0x146b80 lost).
+// Round 37: the fixed, fixed-base and abstract constructors each defined out of line in another file (LTCG
+// inlines them) 34/34/34, no other function changes; the block typed as its layout (fixed allocator, buffer,
+// pool) 34; the count flag stored first 38. With the vtable store forced (diagnostic only) 12 at 147 bytes:
+// the rest is the pool placement's reload of g_479888 at the join, where retail reloads on the constructed arm.
 // @retail 0x146a20
 void function_146a20(void)
 {
