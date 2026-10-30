@@ -1952,6 +1952,9 @@ struct s_summary_player_sort_entry
 // Round 216: complete state-field observations 378; with native membership/player/selected-member
 // references 378/378/377; membership-player/membership-member/player-member 378/377/377;
 // all three 377. Frame remains 0xa9c. Original complete body and external type declarations restored.
+// Round 434: scalar type snapshot 353; with existing variant getter/statistics producer 371/381.
+// Scalar type with member-index capture 393; with existing membership provider 353; provider/index
+// 393; provider/index with statistics/getter 380/369. Frames 0xaa0/0xaa4 still miss 0xaa8; all restored.
 // @retail 0x64d70
 bool __stdcall function_64d70(s_session_browser_summary *output)
 {
