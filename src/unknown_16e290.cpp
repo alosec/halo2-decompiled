@@ -345,7 +345,7 @@ struct s_word_bit_iterator
 
 bool function_44690(s_word_bit_iterator *iterator, long *out);
 
-// score 125 (was 125): Frame 0xf0 agrees; padded-count/byte-count lifetime, scalar homes and memcmp carriers remain.
+// score 111 (was 125): Frame 0xf0 agrees; padded-count/byte-count lifetime, scalar homes and memcmp carriers remain.
 // Earlier 125 (was 142): retail keeps count + 31 in EBX (word count shifted from it after the copies),
 // frame 0xf0 agrees; padded-count retention and iterator/portal homes differ.
 // Earlier at 125 (was 142): retail keeps count + 31 in EBX (word count shifted from it after the copies),
@@ -366,6 +366,10 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // ordinary inline resolver 125; symmetric memcmp buffer order 125; copy-versus-exit
 // arms 125, with symmetric compare 125; native aggregate iterator on ordinary-inline
 // resolver/byte-derived word-count graph 125. Original body/declarations restored.
+// Round 413: Boolean convergence-result do-loop 111 (811 bytes); int/long/dword result
+// 128 each (815 bytes). Native iterator aggregate gives the same 111/128/128/128;
+// condition named changed 111. Keep original iterator initialization and the natural Boolean
+// copy/repeat condition; padded-count retention and scalar homes still differ.
 // @retail 0x16de20
 void function_16de20(short index, s_16e150_bits const *table, dword *output)
 {
@@ -380,7 +384,8 @@ void function_16de20(short index, s_16e150_bits const *table, dword *output)
 		memcpy(expanded, output, bytes);
 		memset(visited, 0, ((table->portal_count + 31) >> 5) * sizeof(dword));
 		long word_count = bytes / sizeof(dword);
-		for (;;)
+		bool changed;
+		do
 		{
 			s_word_bit_iterator iterator;
 			iterator.count = (short)word_count;
@@ -414,10 +419,10 @@ void function_16de20(short index, s_16e150_bits const *table, dword *output)
 					}
 				}
 			}
-			if (!memcmp(expanded, output, bytes))
-				break;
-			memcpy(output, expanded, bytes);
-		}
+			changed = memcmp(expanded, output, bytes) != 0;
+			if (changed)
+				memcpy(output, expanded, bytes);
+		} while (changed);
 	}
 	else
 		memcpy(output, base, bytes);
