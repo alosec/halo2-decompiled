@@ -1088,8 +1088,8 @@ PRIVATE __forceinline bool surface_status_failed(long status)
     return status == 1 || status == 2 || status == 3;
 }
 
-// score 2 (was 44): the retry call computes `flags & ~1` after pushing the object
-// index; retail computes it before.
+// score 2 (was 2): the retry call computes `flags & ~1` after pushing the object index; retail
+// computes it before (`flags ^ 1` keeps the same order, so the operator is not the cause).
 // Earlier, with volatile tag pointer and flags locals (44): zero then OR 148; const tag 44;
 // byte tag bitfield 135; dword object bitfield 44; named query failure 44;
 // explicit final exits 181; inverse failure result 44; retry flag update 44.
@@ -1102,13 +1102,14 @@ PRIVATE __forceinline bool surface_status_failed(long status)
 // failed set after the retry 104.
 // Current bitfield forms (fast): nonzero retry 85; exact retry flag 131; word flags 117;
 // short flags 117; bool option 115; first failure workspace 120; combined bits 147;
-// initial object option 140. Retry AND/push scheduling remains.
-// score 2 (was 2): retry AND still follows the object-index push. XOR 2; subtract 18; clear
-// extracted bit 2; subtract extracted bit 133; retry status scope 2; one failure store 98; long
-// failure 83; entry status 2.
-// score 2 (was 2): retry AND still follows the object-index push; mask assignment in the call 2;
-// nested retry status predicate 2; direct status initialization 2; two-call index local 2;
-// read-only point 2; byte failure 2; negated return 2; guarded mask assignment 87.
+// initial object option 140. XOR 2; subtract 18; clear extracted bit 2; subtract extracted
+// bit 133; retry status scope 2; one failure store 98; long failure 83; entry status 2;
+// mask assignment in the call 2; nested retry status predicate 2; direct status
+// initialization 2; two-call index local 2; read-only point 2; byte failure 2; negated
+// return 2; guarded mask assignment 87. Round 44: in-place clear with `failed = failed(status)
+// || failed` 93; forceinline query wrapper for both calls 2; failure assigned from the
+// predicate then tested 120; sky decision as a per-type bool 62; dword flags parameter in
+// the query and its callers 2.
 // @retail 0xd1850
 long function_d1850(long object_index, bool value, s_effect_color_query *query)
 {
