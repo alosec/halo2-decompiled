@@ -148,6 +148,7 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // workspaces, all eight subsets 118/118/118/118/157/118/118/118. Seven forms retain 103 code
 // differences; separation-only gives 142. Both callers survive, all tables unchanged. Original
 // getter, common workspace and complete cases restored.
+// Round 255: marker-facing rejection direct orders 113/121/113; immediate bool results in original/OR/AND/both orders 118/113/121/113; long result 118. The 113 forms reach 2416 bytes but gain only five and worsen the code window 103 -> 110. All restored.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {

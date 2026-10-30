@@ -1209,7 +1209,10 @@ point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *p
 // its arm 78; the overflow flag declared first 70 (same code); forward/up output pointer locals 86;
 // the location pointer taken at the top 155; the marker flag tested as a byte 70 (same code);
 // diagnostics on the shared header (restored): the helper's components loaded j,k,i / k,j,i / i,k,j /
-// j,i,k / k,i,j 78/76/78/75/81 (i,j,k stays best).
+// j,i,k / k,i,j 78/76/78/75/81 (i,j,k stays best). Round 38: an explicit final return and the marker
+// after the early guard 70 each; a rotation for loop 158 (1005 bytes); a local matrix 306 (1067);
+// rotations before the point transform 124 (1027); the returned position 77; the existing scaled
+// rotation callee 391 (893); a rotation do loop 286 (890). Original body restored.
 // @retail 0xc2d00
 void __stdcall function_c2d00(long light_index)
 {

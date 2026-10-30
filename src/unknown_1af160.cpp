@@ -31,6 +31,11 @@ void function_265c30(long arg_0, long arg_1, bool arg_2);
 // Round 197 fast trials (unchanged reduced preview 207; full 36): Native reference member
 // comparisons, short-circuit/bitwise tests x aggregate/member copy x original/forced-inline
 // conversion 279, 275, 348, 350, 346, 353, 402, 405.
+// Round 77 (plain checks): forceinline conversion declaration 44 (retail's inline fld/fistp; only
+// frame slots then differ: retail pairs the offset temporary with local_16 and local_13 with the
+// conversion result, and orders local_1, local_14, local_2 at the top); with 0x1af530's second
+// output in its own block local 44; local_14 renamed 44 (names move nothing); with the +0x14
+// result field read once 46; the separate output local alone 67.
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {
