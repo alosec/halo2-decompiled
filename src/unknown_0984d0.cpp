@@ -312,7 +312,7 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 	long local_1 = arg_1[0];
 	return function_991d0(arg_0, local_1, local_0, arg_2);
 }
-// score 115 (was 115): the case 1/3 loop still differs in registers: retail keeps the items
+// score 105 (was 115): the case 1/3 loop still differs in registers: retail keeps the items
 // pointer and the index in different registers than ours, and the argument order of the
 // 0x991d0 call is not reproduced.
 // pointer in eax and the data pointer in edx and enters the loop past the items reload; ours uses
@@ -354,6 +354,17 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // cursor and counter in memory as retail, but the items cursor takes EDI and the handle spills);
 // through the helper 208; handle/index renamed three ways 207; handle/index declared in each
 // case block 166 (with the index loop 189).
+// Round 19 (lane 13), all without the volatile reads: the loop written with a label and a backward
+// goto (diagnostic) 207, so the loop weighting is not syntactic; the items and data read by index in
+// a for loop 208; the cursors passed to the helper by address 207, the helper also advancing them
+// 206 (inlining promotes them back to registers); the result declared first in the function 218;
+// the cursors and counter declared at the function top 207.
+// Round 42 (lane 16): the case 5 owner call through a peers local 105 (the case 1 local declared
+// for the whole function and assigned in both cases: the case 5 tail then matches, retail reuses
+// EBX for the table; reverted at review: a one-use copy is kept only with a match); count read into one local for the ==1 test, chain and loop 176; memcmp
+// sized by info.count 158; peers local also in case 2/4 for the flag tests and the chain query 126;
+// 0x991d0 called directly from the loop 137; entry state tested first as an early return 105; loop
+// cursors declared before the count test 195.
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {

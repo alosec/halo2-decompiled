@@ -220,6 +220,9 @@
 // N226: Complete linear/quadratic/cubic product-stage band subsets
 // 59/59/59/139/139/139/139; all with constant root-five/root-seven initialization
 // at declaration 139. Original complete body, precision and expression trees restored.
+// Round 27 (lane 11): `>= 3`/`>= 4` order tests 61 (the compare changes); the direction copied into a
+// vector local first 165 (645 bytes); `0.5f * inverse_sqrt_pi` 59; a double 1.0 numerator for the
+// inverse root 60; the first-band products with the constant first 59.
 // Round 84: all cubic roots double with a double final accumulator 79; two-stage zz5 79;
 // early coefficient 15 151; independent cubic X/Y accumulators 42; in-place depth polynomial 53;
 // native linear/quadratic roots on that graph 37; original/renamed in-place depth 49/49;

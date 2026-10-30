@@ -471,7 +471,16 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
     return result;
 }
 
-// score 278 (was 278): frame 0x40 and length agree. Retail moves pathfinding to EBX at entry and
+// score 278 (was 278): frame 0x40 and length agree; early root EBX retention, actor ownership and paired-edge float/vector scheduling remain.
+// Earlier: Frame 0x40 agrees; early root EBX retention and float/vector scheduling remain.
+// Earlier 278 (was 278): frame 0x40 agrees; early pathfinding EBX ownership and float scheduling differ.
+// entry root retention and floating-point scheduling differ;
+// result first 299; surface first 299; vector names 299; vector helper 299;
+// score 278 (was 278): frame 0x40 and length agree. Retail loads actor_index into EAX at entry (case
+// 5 tests it first) and so moves pathfinding into EBX (pushed at entry); ours loads actor_index in
+// case 5 and keeps pathfinding in EAX, which re-colours every case; paired-edge float/vector
+// scheduling also differs. Tried: result first 299; surface first 299; vector names 299; vector helper 299;
+// frame 0x40 and length agree. Retail moves pathfinding to EBX at entry and
 // loads actor_index (first stack argument) into EAX there for case 5's test, which also forces
 // result into the dead out slot; ours keeps pathfinding in EAX and loads the actor at its use.
 // Everything after the entry follows (case 2 differs only in the pops).
@@ -502,6 +511,11 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
 // Round 434: parent value captured in paired/actor/trace cases 395/384/330; paired-actor/
 // paired-trace/actor-trace 421/399/388; all cases 421, all with native radius snapshot 420.
 // Parent records grow the frame to 0x44/0x4c/0x50; original field observations and body restored.
+// Round 41 (fast): actor_index declared first (every declaration and call) 278; the actor test
+// nested 278; projection terms in z, y, x order (both/one/other) 278; dot3f for both projections,
+// either argument order, 278 (identical code). Diagnostic only, reverted: actor_index read at entry
+// through a volatile cast gives retail's EBX entry (aligned 199 -> 134, masked 58 -> 39) but swaps
+// the EAX/ECX parameters (318, 1284 bytes); a plain entry copy is propagated away (280).
 // Round 46: one vertices base for the case 1/6 corners 280; writable start-out parameter 279;
 // reversed entry declarations 278; case 5 fallback first 278; shared function-scope position 278.
 // Diagnostics: no actor in case 2 326, extra actor tests 360, actor declared first 278 (no entry load).
