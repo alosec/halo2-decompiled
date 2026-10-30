@@ -154,7 +154,8 @@ bool function_c17f0(long light_index, s_light_shape_ab *shape, bool respect_engi
 void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_index,
     s_view_flags *flags, real unused_scale, bool enabled, real scale);
 
-// score 54 (was 54): retail multiplies the index into edx and clears the globals before the loop, ours
+// score 54 (was 54): count, mode and first-index homes conflict across the inline copy. Retail
+// multiplies the index into edx and clears the globals before the loop, ours
 // computes the index in eax and stores the table pointer later. Without the block pointer (count and
 // entries indexed at each use) the head is retail's (scaled index in edx, spilled) and so is the loop
 // tail, but count lands in cx/edx (retail ax/eax, zero in ecx) and first stays in eax where retail
@@ -220,6 +221,11 @@ void function_4a1e0(s_view_source *source, s_view_camera *camera, long resource_
 // so first stays in EAX across the copy and the entries pointer is spilled at once); one index
 // variable with entries before the copy 163 (cache_index in EAX); a short count local for the
 // guard, copy size and advance 177 (cache_index in ECX).
+// Round 10 (lane 13): the indexed form is now 144 (492 bytes) but aligned 30 against the block form's 55:
+// only the head and the cursor's reload at the loop head differ. On it: a separate cursor set before
+// the loop 164 and the cursor defined after the copy 164 (the scaled index then takes EBP in LTCG's
+// first pass and both parameters go to the stack); one variable for first and the loop index 163
+// (stack convention too). The block as a reference 54 (the same code).
 // @retail 0x402b0
 void function_402b0(long cache_index, long mode)
 {

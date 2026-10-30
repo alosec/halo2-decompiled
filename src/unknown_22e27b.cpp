@@ -214,6 +214,10 @@ static inline real interpolate_linear(real a, real b, real t)
 // Round 190 on the recovered graph: native bit-1 reader 127; native bit-0 reader 233; native
 // bits 1/0 237; native bit-3 reader 182; native bits 1/3 186; native bits 0/3 229; all native
 // flag readers 230; all widened macro readers 225.
+// Round 9: the fraction before the key reads gives frame 0xc with next time in EBX and the zero
+// constant no longer cached in EBX (retail keeps next time at [ebp-0xc] and `xor ebx, ebx` at the
+// loop head for every `cmp reg, ebx`/`sub reg, ebx`) 207; on it, long next time 207, the loop test
+// as `next_time <= time` 207, elapsed before next time 206, dword frame time 216.
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {

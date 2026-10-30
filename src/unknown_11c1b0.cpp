@@ -77,6 +77,11 @@ void function_16e2c0(long arg_0);
 // load follows the test and the success flag takes a stack byte); saved index declared after the
 // callback loop 87; success flag declared before the dispose test 127; the early true through the
 // single exit 50 (same code); the global read at each early test with no current-index local 108.
+// Round 10 (lane 13): retail's `xor ebx, ebx; mov bx` then a dword store into the slot before the
+// range test is the shape of an assignment to the short parameter itself. Without that: one result
+// carrier (no separate success flag) 130; the success flag defined before the true test 127; the
+// unload pointer in the call 50; the true test's operands swapped 50; a named callback pointer in the
+// loop 50.
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {

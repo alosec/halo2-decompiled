@@ -113,6 +113,12 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 // vector3f_assign 93 (both need the two helpers as plain definitions, which 0x1c1e70 accepts);
 // forward and left summed per component, up through add-scaled 93. Retail stores nothing of
 // velocity until all three sums are done and loads up.j early (xmm7), spilling two left products.
+// Round 9 (fast): `forward`/`up` pointer locals for every read 75 (378 bytes); those with velocity
+// written directly 84 (0xc frame and retail's cross-product operand order, but velocity is
+// stored component by component as each sum finishes, where retail stores all three at the end);
+// forward scaled into the working vector, left scaled into velocity and the two added with
+// vector3f_add, then up added in place, with/without the pointers 84/83; `velocity = scaled;`
+// 83, with the pointers 82.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {

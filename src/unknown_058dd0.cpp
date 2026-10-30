@@ -222,6 +222,11 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 // Round 81: the success test nested under the 0x58d20 test with `result = true` inside 69; one
 // condition with `result = true` inside 69; the 0x6dfa0 result tested in an if/else-if chain
 // 84; owner read at each use 88; the owner and session locals after the 0x6dfa0 call 90.
+// alone 65. Round 11 (0x6e720's file held by another lane; relink screen, current form 55 there):
+// `result = true` inside one && test 60 (aligned 23 -> 17, 174 bytes); the 0x58d20 test outer with
+// the other two inside and `result = true` 60; the outer test on 0x58d20 and 0x6e720 with `result =
+// 6e6b0` 65; an early `return result` after 0x6dfa0 54 (183 bytes); an early return on a false result
+// in the type-2 arm 55 (same code).
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -770,6 +775,12 @@ void c_session_client::function_06dbc0()
 // busy flag set by the switch 47; an early return on an equal id 43; session at each use 46; one
 // combined condition 43; harness: a memcmp result local (worse), a sized compare helper, a __stdcall
 // member or __cdecl callee, /arch:SSE, /G7, /Ob1, /Ox or /G5 all keep this in edx.
+// in memory, give retail's push ebx. Round 11: the existing 0x58d90 called in the test 100 (stays
+// out of line, 84 bytes); an early return on the mode/type test, the mode test outer with the type
+// and id tests inside and a member id pointer local 43 each (same code); the session read at each
+// use (no local) worse (this in eax). Compile-only, all with this in edx: 32 combinations of the
+// condition shape (also the type test first), truthy memcmp, a copy of this as the call argument and
+// grouped or separate case 7/8; an inline copy of 0x58d90's body gives retail's direct table only.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
@@ -1811,6 +1822,9 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // Round 81: a bool ready with the failure arm written first (`!a || !b`) 96; a bool ready false at
 // its declaration 90; the pending value as the remaining time 91; the integer pending with the
 // failure arm first 48; the same with pending set in each arm 52.
+// seconds 48. Round 11 (0x6e720's file held by another lane): nested ifs with the timer reset in both
+// else arms 48 (same code); the leave arm first (`mode != 3`) worse (51 on a relink screen where the
+// current form is 43); result set before the mode call 48.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {
