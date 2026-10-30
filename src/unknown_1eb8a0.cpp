@@ -260,6 +260,8 @@ void function_1eb6f0(s_ease_input *input, s_ease_state *state, s_ease_output *ou
 // Round 189: original velocity observed at the first output producer, native at-use/entry
 // value and output readback with conditional/native zero 661/661/687/676; each with the
 // shared output dot 670/670/672/668. Original observations, math and counter result restored.
+// Round 290: Native dword/word/byte/signed-byte completion fields with original result arms all
+// 642; direct ordered completion stores 744/648/646/646. Original executable source restored.
 // @retail 0x1eb8a0
 long function_1eb8a0(
 	s_ease_state *s,

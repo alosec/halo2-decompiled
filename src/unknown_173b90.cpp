@@ -915,6 +915,8 @@ public:
 // Round 173: coupled count/visibility/cleanup/unlink inline summaries, all six pairs,
 // count/visibility/cleanup and all four 292 each. Original declarations and complete
 // caller/provider bodies restored; entry completion, flag publication and child/tint homes remain.
+// Round 290: Native long/bool/byte/short emptiness results 295/346/346/292; with existing shared
+// word-flag publication 369/366/366/367. Original executable source restored.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {
@@ -1307,6 +1309,9 @@ bool function_17afd0(long effect_index, long value);
 // Arm-specific draw calls with original/word flag 134/137; camera scoped 143/129;
 // arm-specific draw and camera 144/121; direct other-view eligibility 144/121.
 // NONE/owner sharing and Boolean homes remain; original shared draw call retained.
+// Round 290: Complete effect observations, pass-selected draw and shared cluster-bit boundary
+// subsets 106/143/144/102/106/143/144; complete pass result arms 144. Original executable source
+// restored.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {
