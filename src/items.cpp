@@ -858,6 +858,9 @@ void function_b92d0(long index, s_object_marker const *old_parent, transform4x3f
 
 // score 130 (was 130): frame 0xc0 versus 0xb4 and initial product ranks differ. Shared scale 130; inline
 // depth one 130; size preference 277; complete rotated vector 207; fallback vector initializer 130.
+// The axis as three real locals (no cross3f address) gives retail's frame 0xb4 and 848 bytes but 159.
+// The square's products come out i, k, j whatever their source order; retail's j, i, k come only
+// from a separate statement for the dot product, which then folds facing loads into mulss: 173-175.
 // @retail 0x10d710
 void function_10d710(vector3f const *facing, long object_index, point3f const *origin, point3f *position)
 {
@@ -1371,6 +1374,9 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // Round 259: Complete contact/event/owner/impulse workspace-name families, eight
 // lexical home orders 154 each. Original helper and all workspaces restored; release
 // byte RMW/tail and event-point homes remain.
+// Round 205: immutable addressed impulse output, with none/rate/gain/both/
+// direction/direction-rate/direction-gain/all input snapshots 154/200/200/200/194/194/194/194.
+// Original mutable output and input graph restored; release-byte RMW/tail and event homes remain.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {

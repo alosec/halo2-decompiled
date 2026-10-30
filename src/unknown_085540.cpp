@@ -807,6 +807,7 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
 // score 49 (was 49): the length and the frame match retail's. Left: the prologue (retail pushes
+// the length and the frame match retail's. Left: the prologue (retail pushes
 // ebp before ebx and copies the count into the compressed size's slot), the loop head (retail sets
 // the header's zero and kind 1 at the head, before the count test, and rebuilds the ring base each
 // pass; ours peels the test) and the count and data-address registers in the loop body.

@@ -227,6 +227,8 @@ struct s_weapon_definition_view
 // 634 bytes and the two slot queries reload the object table as retail does; with the trigger
 // state's address formed first in the trigger loop retail advances that cursor first (35; not
 // kept, a gain under 8 on a function still above 30).
+// state's address formed first in the trigger loop retail advances that cursor first (35, under
+// the keep bar: not kept).
 // Left: retail tests the trigger count twice before the trigger loop (`test eax, eax; jle`,
 // then `xor ebp, ebp` and the loop's own test); with an `if (definition->trigger_count > 0)`
 // guard every register and the trigger loop are retail's (4 left), but a guard that repeats the

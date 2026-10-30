@@ -1271,6 +1271,9 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // bitfields 35; byte flags view 35; byte bitfields with masks 35; combined header
 // predicates 39; byte flags with masks 35. Opening executable body restored.
 // Device/unit saved registers and the second mask temporary differ.
+// constant indices 32; unsigned indices 32; index names 32; early unit offset 39; word slots 53;
+// byte mask 35; typed word slots 69; shifted membership masks 38.
+// Complete device/unit classification 32/32/32; deferred eligibility 49/51;
 // constant indices 32; unsigned indices 32; index names 32; early unit offset 39; word slots 53; byte mask 35; typed word slots 69; shifted membership masks 38.
 // Earlier: complete device/unit classification 32/32/32; deferred eligibility 49/51;
 // negative classification exits 32; explicit membership 53; contiguous byte domains 66.
@@ -1279,6 +1282,13 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // same with the object read from a re-read table 33, or through the existing object_get 33; device
 // and unit header pointers 52; unit header pointer from a re-read table 54; re-read table for both
 // unit reads 54 (device then sits in EDI as in retail, but the table moves to EDX).
+// Round 6: device-first guard alone 33; the matched 0xa3420's form (typed headers, one combined
+// type test, object from a re-read table) with/without result and object locals 33 each. A pool
+// pointer local read for the headers and again for the object gives retail's device EDI / unit EBP
+// 30 (also nested, or with an object local); the pool still dies after the first read where
+// retail keeps it in EAX until the object read (hence its EBX temporary). Pool headers with a
+// global object read, or the reverse, 33/33; object through the headers 54; every unit read from
+// the pool 52; pool unit header pointer 52.
 // Complete native unit-header value, late/early ownership with original/device-first guards:
 // current table 62/66/62/66; table re-read 62/66/62/66. All add a 0xc frame.
 // Native handle-array loop/two original stores 194/32 (exact-only grouping; restored).
@@ -1288,6 +1298,10 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // object through a re-read table) 33; plus a header pointer from a re-read table before the
 // unit test 33; plus `bool result = false;` first 33; the object through the file's
 // OBJECT_FROM_INDEX 33, also as a third `&&` term 33: the re-read always merges here.
+// Round 30: object read from a re-read table 32 (same code: ours merges it, where matched
+// 0xa3420 keeps the pool pointer and copies the data base); with the device-first guard 33;
+// matched 0xa3420's typed form (device-first, typed reads, re-read object) 33; object through
+// the file's object macro 32 (same code); unit header pointer from the same table 54.
 // @retail 0xa4540
 bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
 {

@@ -4081,7 +4081,7 @@ transform4x3f *function_b8c00(long object_index, long *node_count);
 point3f *function_b9dd0(long object_index, point3f *point);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *point, point3f *out);
-void object_get_root_location(long object_index, s_location *location);
+s_location *object_get_root_location(long object_index, s_location *location);
 void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner);
 long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 void function_a7d50(long index, long group, long target, short node, point3f const *point);
