@@ -774,7 +774,13 @@ bool function_2715a0(byte *buffer)
 	return result;
 }
 
-// score 501 (was 533): two mask tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 501 (was 501): State/node/link registers, scalar homes and heap-helper expansion differ.
+// Earlier field-bit mask forms 501 (from 533).
+// State EBX/EBP, node/link cursors and scalar homes remain. Force-inline insertion 577 (loses matched caller);
+// scalar role names 501; early inherited result 503; squared-length helpers 500; point setter 501; plain
+// result 517; shared inherited result 538; plain shared result 501; direct views 510; early projection margin
+// 502; ordinary inline insertion 497 (four-count gain below threshold). All restored; one-count helper gain
+// rejected.
 // @retail 0x271630
 PRIVATE bool function_271630(s_type_f17a25 *state)
 {
@@ -1068,7 +1074,12 @@ struct s_flag_word_bits
    vertex indices are unsigned words: its comparisons with long NONE do not
    reject 0xffff. Only destination sector words have an effective NONE test.
    Link type stores write the low short; the upper short stays untouched. */
-// score 452 (was 475): flag 1 of the surface read through a word bitfield view gives retail's load-and-shift; the rest still differs.
+// score 452 (was 452): Frame 0x2c/0x34, data/count registers and vector endpoint homes differ.
+// Earlier surface word-bit view 452 (from 475).
+// Frame 0x2c/0x34, data/count registers and endpoint homes remain. Signed edge byte 464; direct parameter 452;
+// native surface bits 452; long surface cursor 483; output cursor 541; indexed vector helper 452; native
+// flags/direct parameter 464; paired cursors 555; ring-anchor reads at use 469; cached node array 474; reused
+// start vertices 485. All restored.
 // @retail 0x272020
 PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 	s_path_node_key_view const *node, s_path_link_view *links, s_type_f17a25 const *state)

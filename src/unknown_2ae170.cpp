@@ -574,7 +574,8 @@ __forceinline void sound_stream_append_mixbin(s_mixbin_settings *settings, long 
 	settings->mixbins.dwMixBinCount++;
 }
 
-// score 328 (was 336): frame 0x130 versus 0x94; our LTCG CSEs and hoists the identical 0x12aff0(-64, 0, -64)
+// score 328 (was 328): The 0x130 versus 0x94 frame and repeated conversion coalescing remain; restore the full opening body.
+// Earlier: frame 0x130 versus 0x94; our LTCG CSEs and hoists the identical 0x12aff0(-64, 0, -64)
 // conversions (6 calls versus retail's 15; BLOCKED-BY 0x12aff0: retail's callers treat it as opaque).
 // Round 75: SetMixBins (retail calls 0x37c5e4) for SetMixBinVolumes 449 (kept); the existing 0x2216f0 with a
 // NULL list for the three submissions 393 (kept); explicit sends, one object 613, three objects 544; set-2 rear
@@ -674,6 +675,8 @@ __forceinline void sound_stream_append_mixbin(s_mixbin_settings *settings, long 
 // Round 285: complete member-record memmove on complete-zero descriptors, original/first/second/first-second/third/first-third/last-two/all scopes
 // 315/315/321/378/320/353/361/402 fast (control 334). Original-scope memmove 338 plain;
 // third initialized scope with memmove 328 plain at 1015/1071, kept. Frame and conversion reuse remain.
+// Round 191: Reduced control 320/1031 versus full 328/1015. Complete phase-zero descriptor reuse first-second/first-third/second-third/all 369/361/376/407 fast.
+// Round 191: The same phase-zero reuse with the one routing table static 410/385/392/455. All reuse/static forms restored; the all-reuse static frame is 0x90 and the missing-conversion gap grows.
 // @retail 0x2aeb20
 void c_sound_effects::initialize(s_sound_effect_settings *settings, s_sound_effect_buffers *buffers, bool rear)
 {

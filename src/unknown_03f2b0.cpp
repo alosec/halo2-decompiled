@@ -928,53 +928,7 @@ void __stdcall function_2cbc0(bool enabled)
 	function_133720(current, enabled);
 }
 
-// score 95 (was 95): frame 0x1c0 and camera/query registers agree; x87 offset,
-// dropped identifier and scan jump/padding remain. Earlier: frame four bytes larger,
-// camera home displaced, subtraction x87. Existing camera/effect/visibility noinline
-// boundaries, all seven subsets 95; cursor-result scan 76/297, but normalized
-// instruction edits worsen 9 to 33; restore the Boolean scan and all declarations.
-// @retail 0x3f2c0
-void function_3f2c0(s_planar_camera_source const *source, byte const *view, long object_index, long identifier)
-{
-	byte camera[0x1bc]; // a whole s_planar_camera: function_441b0 fills 0x1bc bytes
-	real offset = 0.0f;
-	function_441b0(source, (s_planar_camera *)camera, view);
-	byte *effect = (byte *)function_01fd20(0);
-	bool enabled = effect && effect[0x3c];
-	if (enabled)
-	{
-		offset = *(real *)(effect + 0x40) - *(real *)(camera + 0x70);
-	}
-	function_3d600();
-	s_bit_vector_pool *data = function_1320f0(0, 1, enabled, 0, camera,
-		camera + 0x60, 1024.0f, NULL, offset, g_4b9ee4);
-	if (object_index != NONE)
-	{
-		struct s_entry_list_view
-		{
-			long maximum;
-			word count;
-			short *shorts_b;
-			long *longs_a;
-			long *longs_c;
-			short *shorts_d;
-		};
-		s_entry_list_view *list = (s_entry_list_view *)data->lists[2];
-		bool found = false;
-		for (long i = 0; i < (short)list->count && !found; ++i)
-			found = list->longs_a[(short)i] == object_index;
-		if (!found && list->count < list->maximum - 1)
-		{
-			list->longs_a[list->count] = object_index;
-			list->shorts_b[list->count] = 0;
-			list->longs_c[list->count] = 0;
-			list->shorts_d[list->count] = NONE;
-			++list->count;
-		}
-	}
-	function_2cbc0(true);
-	function_44720();
-}
+void function_3f2c0(s_planar_camera_source const *source, byte const *view, long object_index, long identifier);
 
 extern byte g_4ba025;
 void __stdcall function_3f830(byte const *tree, point3f const *center);
