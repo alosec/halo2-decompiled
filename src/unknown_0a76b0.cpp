@@ -1269,6 +1269,10 @@ void __stdcall function_e8620(long unit_index, bool flag)
 
 /* takes out the weapon in a unit's slot for a hand: its animations and
    ready animation */
+// score 148 (was 195): frame 0x18 agrees; entry lookup/hand homes and ready-call scheduling remain.
+// Numeric primary/shared unit/both 195; direct hand and its combinations 200; conditional state
+// with direct hand 148, alone 192; scan fallback exit 148 (kept), with direct hand 203, numeric
+// primary 148, both 203; hand before unit lookup 203, with scan 198, with state and scan 201.
 // @retail 0xe8720
 void __stdcall function_e8720(long unit_index, long unknown, bool immediate, bool silent, bool primary)
 {
@@ -1293,55 +1297,55 @@ void __stdcall function_e8720(long unit_index, long unknown, bool immediate, boo
 		for (i = 0; i < 2; i++)
 		{
 			if ((&unit->current_weapon_index)[i] == slot)
-				break;
-		}
-		if (i == 2)
-		{
-			long weapon_index = unit->weapon_object_indices[slot];
-
-			if (weapon_index != NONE)
 			{
-				byte *s_type_67e06b = g_4e3b44[UNIT_ACTION_UNIT_GET(weapon_index)->definition_index & 0xffff].bytes;
-				long state_name = *(long *)(s_type_67e06b + 0x288);
-
-				if (has_other)
-					state_name = 0x400054b;
-				if (function_10fcd0(unit_index, unknown, state_name, *(long *)(s_type_67e06b + 0x28c)) || is_vehicle)
-				{
-					function_10fd40(unit_index, *(long *)(s_type_67e06b + 0x28c), state_name, primary);
-				}
-				else if (unit->seat_index == NONE)
-				{
-					function_e8620(unit_index, primary);
-					return;
-				}
-
-				function_d0870(weapon_index, unit_index, hand != 0);
-				(&unit->current_weapon_index)[hand] = (char)slot;
-				unit->weapon_ready_times[slot] = g_510c54->game_time;
-
-				bool animate = function_ee8a0(unit_index, primary != false);
-
-				function_fff40(weapon_index, silent, immediate);
-				if (!silent)
-				{
-					long type = primary ? 0x14 : 0x15;
-
-					if (animate)
-						type = 0x16;
-					function_ee7f0(unit_index, type);
-				}
-				function_c86e0(unit_index, 0);
-				if (immediate || has_other && primary)
-					return;
-				if (animate &&
-					function_113e90(unit_index, primary ? 0x1000006e : 0x15000538, 0.267f, NULL, primary ? 0 : 3))
-				{
-					return;
-				}
-				function_113e90(unit_index, primary ? 0x5000024 : 0xa000537, 0.267f, NULL, primary ? 0 : 3);
+				function_e8620(unit_index, primary);
 				return;
 			}
+		}
+		long weapon_index = unit->weapon_object_indices[slot];
+
+		if (weapon_index != NONE)
+		{
+			byte *s_type_67e06b = g_4e3b44[UNIT_ACTION_UNIT_GET(weapon_index)->definition_index & 0xffff].bytes;
+			long state_name = *(long *)(s_type_67e06b + 0x288);
+
+			if (has_other)
+				state_name = 0x400054b;
+			if (function_10fcd0(unit_index, unknown, state_name, *(long *)(s_type_67e06b + 0x28c)) || is_vehicle)
+			{
+				function_10fd40(unit_index, *(long *)(s_type_67e06b + 0x28c), state_name, primary);
+			}
+			else if (unit->seat_index == NONE)
+			{
+				function_e8620(unit_index, primary);
+				return;
+			}
+
+			function_d0870(weapon_index, unit_index, hand != 0);
+			(&unit->current_weapon_index)[hand] = (char)slot;
+			unit->weapon_ready_times[slot] = g_510c54->game_time;
+
+			bool animate = function_ee8a0(unit_index, primary != false);
+
+			function_fff40(weapon_index, silent, immediate);
+			if (!silent)
+			{
+				long type = primary ? 0x14 : 0x15;
+
+				if (animate)
+					type = 0x16;
+				function_ee7f0(unit_index, type);
+			}
+			function_c86e0(unit_index, 0);
+			if (immediate || has_other && primary)
+				return;
+			if (animate &&
+				function_113e90(unit_index, primary ? 0x1000006e : 0x15000538, 0.267f, NULL, primary ? 0 : 3))
+			{
+				return;
+			}
+			function_113e90(unit_index, primary ? 0x5000024 : 0xa000537, 0.267f, NULL, primary ? 0 : 3);
+			return;
 		}
 	}
 	function_e8620(unit_index, primary);
@@ -2828,6 +2832,11 @@ bool function_1df560(short team_a, short team_b);
 
 /* whether a unit (an actor) can board a vehicle's seat: no friend in it,
    and no player boarding it */
+// score 203 (was 203): frame 0x18 versus 0x14; vehicle arrives in ECX instead of EDI and the second
+// checked object lookup expands. Separate noinline 203; Boolean seat bit 199, with noinline 199;
+// team guard 206, with noinline 206; bit plus guard 202 with/without noinline; combined iterator
+// initializer 202; native team carriers plus bit 200; five coordinated parameter orders 203 each;
+// shared raw getter for unit/vehicle/both 203 each, both plus Boolean seat bit 199. All restored.
 // @retail 0xeaf50
 bool function_eaf50(long unit_index, long vehicle_index, short seat_index)
 {

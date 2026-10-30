@@ -310,6 +310,9 @@ void function_264940(long actor_index, long prop_ref_index)
 // Round 240: Native tracking-record receiver with distinct current-state, sequential
 // object-vector workspace and positive-view arm combinations 426/425/426/425/428/427/428/427.
 // Frame remains 0x24/0x20; original separate view, states, vectors and body restored.
+// DH round 252: Twice-used normalized distance/buildup/both; each with complete update, all three;
+// both with distinct current state, all four
+// 353/386/386/441/453/453/385/452. Original complete executable body restored.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)
@@ -520,6 +523,8 @@ void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *samp
 // Round 238: Concrete motion/context/both output types 420 each; motion/context/both with the
 // native actor receiver 420 each; both with context-first declarations 420; all with entry
 // workspaces 420. All original types, declarations, fields, qualifier and directives restored.
+// Round 250: dispatch release bool/byte/short/long at dispatch entry 420/420/420/420;
+// node entry 420/420/420/420. All exact-only result flags restored; frame and actor homes remain.
 // @retail 0x262ba0
 void function_262ba0(long actor_index)
 {
@@ -913,6 +918,9 @@ real function_296600(long actor_index, long prop_ref_index);
 // producer orders 360/360/376/394/391/387; first two with the saved-pointer declaration
 // before actor construction 360/360 (fast control 356, full 331).
 // Original observations, qualified local pointer and complete body restored.
+// Round 250: paired ancestry category outputs in char/byte/short/long, category-first
+// 375/375/381/377, priority-first 375/375/381/377 (fast control 372, full 331).
+// All exact-only field-result forms restored; actor ESI/EBX and saved/squad homes remain.
 // @retail 0x264b50
 void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *sample, s_2640c0 *motion)
 {

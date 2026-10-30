@@ -179,7 +179,8 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 	}
 }
 
-// score 38 (was 38): retail computes both logarithms before either product, keeps
+// score 38 (was 38): four-byte frame and both-logs-first scheduling remain unresolved.
+// retail computes both logarithms before either product, keeps
 // the upper one on the x87 stack until the division (FILD n + FDIVP) and stores the
 // integer weights in the dead lo/hi argument slots (PUSH ECX frame); ours multiplies
 // the lower product first, divides with FIDIV and needs a second slot. Implicit
@@ -195,6 +196,8 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // frame 8 vs 4; log/weight scheduling prevents argument-slot reuse;
 // limit before compare/read/call 41/44/60; limit/log local renames 38;
 // earlier weight declarations 38; integer weights 43; named weighted logs 38.
+// Double weight pair and double logs/weights 38/38; complete double products, sum and exponent with real logs 38/38/38;
+// complete double products, sum and exponent with double logs 38/38/38; float logs/exponent/both 38/38/38.
 // Both builds keep the upper log past its use only because the exp follows in the same
 // expression (an exponent stored first consumes it); retail pops it after the division because
 // both logs come first. In-place accumulator starting from the lower log 43; logs before the
