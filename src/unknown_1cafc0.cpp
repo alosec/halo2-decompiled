@@ -596,6 +596,9 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 // Round 280: Urgent-helper entries/index/resource role-name subsets all 399; all with outer source/graph-
 // ordinal names 399. Original helper locals, native queries and request graph restored.
 // Round 188: Ordered fallback-query table diagnostics: mutable/index, mutable/cursor, const/index, const/cursor with byte success 619/622/619/622; Boolean success 630/645/630/645. All native record arrays fail the exact-match requirement and are removed; original queries and helpers restored.
+// Round 193: Success false after resolution/name copy/primary query: byte 457/457/460, bool 507/507/510;
+// signed byte after resolution/query 457/460. Late status collapses the frame to four, away from retail
+// twelve; original byte lifetime and hidden query homes restored.
 // @retail 0x1cc3f0
 bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_names *found, long mode, long weapon_class,
 	long weapon_type, long set, long lookup_flags, c_type_709360 *result)

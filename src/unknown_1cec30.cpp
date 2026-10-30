@@ -2212,6 +2212,9 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 184: Native contact/material/both add boundaries 157/162/210; reversed complete inputs
 // 157/162/210; existing vector assignment at contact/material sums 144/114. Original sums and
 // matched sample boundary restored.
+// Round 193: Magnitude pointer inline and vector-reference forced/ordinary inline 109/109/109; vector-value
+// forced/ordinary inline 490/490; scalar-value forced/ordinary inline 193/193; scalar-reference input 109.
+// Original helper contract restored; first normal XMM ownership and velocity preloads remain.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {
