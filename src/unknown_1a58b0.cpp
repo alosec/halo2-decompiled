@@ -796,7 +796,7 @@ void function_25aba0(long actor_index);
 
 
 
-// score 58 (was 69): only the state-one pop and the `= {0}` workspace remain (aligned 7); earlier: actor/result ESI/EDI (0x1a7b30's result arrives in ESI,
+// score 58 (was 58): only the state-one pop and the `= {0}` workspace remain (aligned 7); earlier: actor/result ESI/EDI (0x1a7b30's result arrives in ESI,
 // retail EDI), the state-one level pop (ours `dec [mem]`, retail load/dec/store around the handler
 // store), the `= {0}` workspace (retail clears it as a memset, rep stosd x16) and 0x1a8080's argument
 // set-up order differ. memset plus 0x1a8080 as (type, owner, level) leave only the entry registers and
@@ -856,6 +856,10 @@ void function_25aba0(long actor_index);
 // measured): the state-one arm splits as retail only when another arm fuses or a choice-failure pop
 // splits too (43-137); stamping through the handler table in each arm 81-314; `--level`, `level = level - 1`,
 // kind-2 state store first and the else-if chain 134 each.
+// DL199: Shared parent-level short/int/long/dword gives 321/285/285/285; with the library
+// workspace clear 330/292/292/292. The common value changes loop and frame allocation; original
+// 0x4c frame, six pops and aggregate workspace restored. State-one split decrement and zero-fill
+// remain.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

@@ -117,6 +117,10 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Original six differences remain: ring trig/zero order and the first normalization product pair.
 // On the original case-home graph, pointer-returning shared normalization/speed/both scales 47/47/47;
 // paired ring sine/cosine values alone or with each scale combination 497 each (exact-only, restored).
+// Round 16: normalisation operands swapped 6 (same code); without the casts, compound `*=` 47, tail
+// stores through particle->velocity 105, tail reads through particle->velocity 88 (that one keeps
+// retail's load-multiply-store order: the loads and stores sit on two unrelated bases); case 1 with
+// the zero stores last 21, a chained zero 6, a cosine local 504.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

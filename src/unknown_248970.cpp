@@ -54,6 +54,10 @@ public:
 // score 198 (was 227): activation AL and stacked location agree; frame 0x0c/0x14,
 // retained head/position homes and x87 cleanup differ.
 // Earlier metadata/head/count homes differed.
+// retail returns the activation flag in AL with five stacked words where our
+// declaration takes six; the declaration and its only caller live in another file.
+// score 227 (was 227): activation AL and stacked location agree; frame 0x10/0x14,
+// metadata/head/count homes and x87 cleanup differ.
 // Earlier: retail's convention since round 67 (flag in AL, location stacked, 0x175270
 // retail's convention since round 67 (flag in AL, location stacked, 0x175270
 // the child loop advances a 0xb8-stride cursor over the child table instead
