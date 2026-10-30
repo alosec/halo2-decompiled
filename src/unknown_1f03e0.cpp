@@ -352,6 +352,9 @@ extern real g_47f05c;
 // Round 411: Double best-alignment storage with entry success/selection defaults and
 // immutable count in all eight subsets 259 each (890 bytes); frame remains 0xd0 and
 // the accumulator uses x87 work. Original float accumulator, defaults and count restored.
+// Round 297: Entry false-result/selection/best-alignment constants and all four
+// combinations 192 each; all three with uniform shape-height reads 204 (frame 0xd4,
+// 869 bytes). Original constant/result lifetimes, height snapshot and body restored.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)
@@ -513,6 +516,9 @@ PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f
 // DL179: Complete parallel projection products, paired first sums, normalization squares,
 // products+squares, sums+squares, joint products, joint products+squares and that graph
 // with the input-preserving first cross 146 each (991/977); original direct-output body restored.
+// Round 297: Existing staged cross at first/selected-zero/selected-other/first+zero/
+// first+other/both selected/all sites 144/182/144/182/144/218/218; all with
+// averaging-only support scope 218. Original helpers and direct-output body restored.
 // @retail 0x1f2a80
 void function_1f2a80(byte const *request, bool moving,
     vector3f const *desired, long const *indices, long count, vector3f *out, vector3f const *velocity)
@@ -899,6 +905,9 @@ struct s_flags_1f0870
 // 590/613/619/716; initial+history/fallback+history/all/all with direct output
 // 710/692/686/680. Initial copy reaches retail length without a score gain;
 // complete original body, copies, history publication and output receiver restored.
+// Round 297: Native flying/ground basis values, shared staged flying crosses and
+// their four combinations 646/642/591/666/646/631/666; all with the remaining
+// crosses staged 666. Original basis observations, helpers and full body restored.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {

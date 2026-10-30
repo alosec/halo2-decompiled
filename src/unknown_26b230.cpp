@@ -467,7 +467,7 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 	return result != NULL;
 }
 
-// score 3 (was 3): initial team load width and push scheduling remain.
+// score 3 (was 3): Initial signed team load and EBP-save schedule remain; frame and the complete walk agree.
 // Earlier forms:
 // with a fifth word in the clump iterator (shared with 0x26bc60 and 0x269040;
 // reverted in review, two points) the frame agrees at 66; retail sign-extends the
@@ -507,6 +507,7 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 // getter/complete side 15; getter/per-use receiver 113; complete side/per-use receiver 114;
 // all three 114; typed initial pool array 3, on the recovered native calling walk.
 // Round 247: early prop receiver 26; Boolean side 100; both 103; early receiver/promoted team 93; Boolean side/promoted team 102; all three 106; early receiver/entry walk 26; receiver/Boolean side/native handle 90. Initial extension and push schedule remain.
+// Round 296: Side-query inline declaration alone/with predicate/lookup/both 3/3/3/3; with native short/promoted team 31/31; full side result 15; native team/full side 42. All executable source and declarations restored.
 // @retail 0x26b900
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {
@@ -1719,7 +1720,8 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 	return function_26a780(clump, &candidate);
 }
 
-// score 128 (was 128): retail caches the generation in ebx (reloaded after each mark store and call) and reloads the prop pool at each use; ours caches the prop pool in ebx and loads the generation at each use.
+// score 3 (was 128): the array cursor LEA precedes the initial JLE/MOVZX instead of following them.
+// Earlier: retail caches the generation in ebx (reloaded after each mark store and call) and reloads the prop pool at each use; ours caches the prop pool in ebx and loads the generation at each use.
 // frame 0xd8; entry generation scheduling, child-next register and count/end traversal differ; fresh destination head 171f; short plus fresh head 167 plain; short/end 216f; typed object views 192f; delayed source base 219f; source first 211f; masked slots 198f.
 // Round 280: remaining-count traversal 128 plain; current-child handle 164; collection write cursor 172; array scope 167; early active flag 199.
 // Child/countdown 125; short remaining 125; unsigned remaining 125 (each only three below the retained countdown).
@@ -1736,12 +1738,19 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 // Round 263: shared datum validation with object-query inline/global-noinline/scoped-noinline
 // declarations 288/288/288; each with ordinary-inline prop iterator 288/288/288;
 // inline/global-noinline query with positive validation blocks 288/288. Frame 0xdc; all restored.
+// Round 299: shared member iterator, entry workspace/native prop-field subsets 130 each;
+// generation after destination/source/head on that graph 224/120/138; source timing
+// with complete twice-used mark slots 84 plain. Short/unsigned-long/word remaining
+// 81/84/81; positive validation with latch cursor and long/short/unsigned-long/word
+// remaining 80/3/80/3. Shared members, source timing, mark slots and short latch kept,
+// 3 plain at 737/737 bytes; counter/cursor declaration placements, const cursor and
+// joint copy-role names 3 each. All other forms restored.
 // @retail 0x269580
 void function_269580(long destination_index, long source_index)
 {
-	g_4de2fc++;
 	s_clump_activity_view *destination = (s_clump_activity_view *)(g_502420->data + (destination_index & 0xffff) * sizeof(s_clump_activity_view));
 	s_clump_activity_view *source = (s_clump_activity_view *)(g_502420->data + (source_index & 0xffff) * sizeof(s_clump_activity_view));
+	g_4de2fc++;
 	g_4de2f8 = true;
 	s_iterator iterator;
 	iterator.next = ((s_clump_activity_view *)(g_502420->data + (destination_index & 0xffff) * sizeof(s_clump_activity_view)))->first_prop;
@@ -1756,44 +1765,48 @@ void function_269580(long destination_index, long source_index)
 			byte *extra = object + *(short *)(object + 0x13a);
 			if (extra && *(long *)(extra + 8) != NONE)
 			{
-				long index = perception_get(*(long *)(extra + 8))->object_index;
-				while (index != NONE)
+				s_ai_object_iterator members;
+				members.next_index = perception_get(*(long *)(extra + 8))->object_index;
+				while (swarm_creature_iterator_next(&members) != NULL)
 				{
-					byte *child = (byte *)object_get(index);
-					long next = NONE;
-					if (*(long *)(child + 0x134) == 0)
-					{
-						byte *child_extra = child + *(short *)(child + 0x13a);
-						if (child_extra) next = *(long *)(child_extra + 0xc);
-					}
-					if (g_4de300[index & 0xffff] != g_4de2fc)
-						g_4de300[index & 0xffff] = g_4de2fc;
-					index = next;
+					long member_slot = members.index & 0xffff;
+					if (g_4de300[member_slot] != g_4de2fc)
+						g_4de300[member_slot] = g_4de2fc;
 				}
 				continue;
 			}
 		}
-		if (g_4de300[object_index & 0xffff] != g_4de2fc)
-			g_4de300[object_index & 0xffff] = g_4de2fc;
+		long object_slot = object_index & 0xffff;
+		if (g_4de300[object_slot] != g_4de2fc)
+			g_4de300[object_slot] = g_4de2fc;
 	}
 	long indices[50];
 	short count = 0;
 	iterator.next = ((s_clump_activity_view *)(g_502420->data + (source_index & 0xffff) * sizeof(s_clump_activity_view)))->first_prop;
 	while (clump_next_prop(&iterator)) indices[count++] = iterator.index;
 	long *cursor = indices;
-	for (long remaining = count; remaining > 0; --remaining)
+	for (short remaining = count; remaining > 0; --remaining)
 	{
 		long index = *cursor;
+		if (index != NONE && (index & 0xffff) < g_50241c->high_water_index)
+		{
+			s_prop_copy_view *copy = (s_prop_copy_view *)(g_50241c->data + g_50241c->size * (index & 0xffff));
+			if (copy->salt && copy->salt == (index >> 16))
+			{
+				long object_index = copy->object_index;
+				if (function_badc0(object_index, (dword)NONE))
+				{
+					long object_slot = object_index & 0xffff;
+					if (g_4de300[object_slot] != g_4de2fc)
+					{
+						g_4de300[object_slot] = g_4de2fc;
+						long added = function_26a860(destination, copy);
+						if (added != NONE) function_26a960((s_clump *)destination, added);
+					}
+				}
+			}
+		}
 		++cursor;
-		if (index == NONE || (index & 0xffff) >= g_50241c->high_water_index) continue;
-		s_prop_copy_view *copy = (s_prop_copy_view *)(g_50241c->data + g_50241c->size * (index & 0xffff));
-		if (!copy->salt || copy->salt != (index >> 16)) continue;
-		long object_index = copy->object_index;
-		if (!function_badc0(object_index, (dword)NONE)) continue;
-		if (g_4de300[object_index & 0xffff] == g_4de2fc) continue;
-		g_4de300[object_index & 0xffff] = g_4de2fc;
-		long added = function_26a860(destination, copy);
-		if (added != NONE) function_26a960((s_clump *)destination, added);
 	}
 	g_4de2f8 = false;
 	if (*(real *)((byte *)source + 0x2c) > *(real *)((byte *)destination + 0x2c))
@@ -2069,6 +2082,9 @@ void function_269250(long clump_index, long actor_index)
 // Round 249: Complete deletion/live-prop arms with common completion, ownership/replacement
 // comparison priority and original/reversed category declarations 196/144/197/146;
 // changed published after deletion 196/178/197/180. All exact-only forms restored.
+// Round 299: chained category initialization in both assignment orders, with
+// invariant-first completion and native node-datum subsets: 87/89/87/89/87/89/87/89.
+// Two-count forms restored; category homes and deletion/pool scheduling remain.
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {

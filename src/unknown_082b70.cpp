@@ -222,7 +222,7 @@ struct s_weapon_definition_view
  byte *barrels;
 };
 
-// score 41 (was 41): the unit is looked up again for each slot query, the barrel is kept as a
+// score 41 (was 41): Lookup base/index order and trigger ownership remain. The barrel is kept as a
 // long and clamped without the count guard, so the frame is retail's 0x1c, the length is retail's
 // 634 bytes and the two slot queries reload the object table as retail does; with the trigger
 // state's address formed first in the trigger loop retail advances that cursor first (35; not
@@ -281,6 +281,7 @@ struct s_weapon_definition_view
 // unrolled); the weapons array declared first 4; a per-hand active row pointer 10. Without
 // the guard: a while loop (index declared before it) 35, no second count test. Retail's own
 // matched siblings use both base/index orders (0x82b70 has [edi + ecx] and [ecx + edi]).
+// Round 296: word/short lookup inputs 178/178; native byte slot 159; word/short lookup plus byte slot 178/178; actual definition field 41, with word lookup/byte slot 178/159. All helper inputs, fields and body restored.
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {

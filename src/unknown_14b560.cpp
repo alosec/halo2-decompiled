@@ -820,6 +820,9 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 // fetched after the walk 100; the in-body inline_depth pair removed 185 (0xbaf40/0xbadc0 inline,
 // 508 bytes). Screened (one-file LTCG): the walk as an inline or cross-module function, under a
 // nested `if` for the unit test, or with a named object pointer: no entry test, or EAX unit.
+// Round 294: Selected-handle/return-result common output, signed/unsigned handle, entry/late
+// storage and positive/failure completion, all eight 86 (404 bytes). Exact-only
+// output copies and complete body restored; player/unit roles and walk entry remain.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {

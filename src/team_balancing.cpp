@@ -439,6 +439,43 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // locals 80; nested tests instead of the continues 80; candidate declared at function scope 184
 // (558 bytes); the candidate's spread named before the comparison 80 (the reference's query still
 // runs first: LTCG treats count_spread as pure and reorders the calls); permuter 58 tries, best 80.
+// count homes, signed party delta and pure-query ownership remain.
+// Earlier: count-address homes, party registers, delta and query order differ.
+// Reduced control 80 (full 116); count fields A/B/both 80/80/80; early roots 173;
+// players A/B/both 78/75/80; reverse count roots 173; B players root before A/first/
+// between views 82/88/82; immutable B root 75. B players plain 115 is an ineligible
+// one-count gain; all subobject forms restored.
+// frame 0x2694 agrees; team-pointer homes, delta and query ownership differ.
+// Reduced baseline 80 (full 116); team/party/both lexical priority 80/80/80;
+// short outer/inner/both ordinals 142/142/155; accepted scope and comparison names 80/80.
+// Earlier: count homes, signed delta and query ownership remain.
+// Reduced candidate/reference/both spread values 135/127/137; spread delta 132;
+// candidate A/B/both team roots 80/150/150; outer party cursor 91 (reduced baseline 80).
+// Reduced trials (opening 80; full 116):
+// first spread order 80; equal spread order 80; spread orders 80; cost order 78;
+// first spread/cost order 78; equal spread/cost order 78; query orders 78; inner party cursor 132;
+// cursor/spread orders 132; reused signed team delta 161; reused party delta 80;
+// reused team and party deltas 161; A count reference 80; B count reference 80; count references 80;
+// early count references 173; inline count spread 225; inline total spread 80;
+// inline spread queries 225.
+// the inner party pointer takes EAX (retail ECX), so the count delta is
+// built as 2*(b-a) and the A/B count-address homes swap; the full build also calls each pair of
+// queries in the other order (reference spread first, candidate cost first; retail the reverse).
+// The reduced image scores 80 and orders the cost calls as retail: trust only the plain check.
+// Plain-checked: first party pointer in the outer loop 116; nested ifs instead of continues 116;
+// teams read in full at each use 146 (loses 0x91dd0); comparison operands swapped 116 (the call
+// order follows the operands, not their position); explicit outer party pointer stepping 116.
+// No-link screens: every delta spelling (named, doubled, parenthesised, count-after-swap, abs
+// forms) folds to the same 2*(b-a) sequence; reference/local/method forms keep reference first.
+// Earlier (reduced-image) forms: control 80; count fields A/B/both 80/80/80; early roots 173;
+// players A/B/both 78/75/80; reverse count roots 173; B players root before A/first/between views
+// 82/88/82; immutable B root 75 (B players plain 115, an ineligible one-count gain);
+// team/party/both lexical priority 80/80/80; short outer/inner/both ordinals 142/142/155;
+// scope and comparison names 80/80; candidate/reference/both spread values 135/127/137; spread
+// delta 132; candidate A/B/both team roots 80/150/150; outer party cursor 91.
+// Round 295: separate noinline declarations for count/total/rank query methods,
+// all seven nonempty subsets, 80 each; rank-only inline declaration 80. Every
+// declaration and body restored; count homes, inner party and query ownership remain.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {

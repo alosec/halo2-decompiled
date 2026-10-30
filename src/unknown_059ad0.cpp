@@ -3759,6 +3759,9 @@ bool function_07ab10(long key_index, s_type_99af70 *address, long local, word po
 // the shared clock forceinline declaration 145/145/145. Native full-record
 // copies with resolver alone/all boundaries 136/145. Host/session staging,
 // cleanup placement and clock expansion remain; all declarations and bodies restored.
+// Round 299: entry address/address-and-remote workspaces 136/136; false result
+// after lookup/close/transport 139/143/153, each with entry address 139/143/153.
+// Original workspaces, result lifetime and body restored; host/session and cleanup remain.
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,
@@ -4461,6 +4464,9 @@ bool session_peer_map_set_connected(s_session_peer_map *map, const s_session_mem
 // On native-equality/distinct-policy exits: byte/char acceptance, with original or paired-byte
 // selection, 406/406/406/406; word/short acceptance with either selection domain 410 each.
 // All larger than retail; original truth carriers and body restored.
+// Round 301: Complementary acceptance/preference/equality result storage, seven nonempty
+// combinations 429/305/429/305/429/305/429; all three with complementary identity 429.
+// Original truth carriers and complete body restored; Boolean homes and acknowledgement placement remain.
 // @retail 0x5e7f0
 bool __stdcall function_05e7f0(c_class_58d20 *session, const s_type_99af70 *address, const void *message,
  long *reason, bool *has_identity, s_session_member_identity *identity)
@@ -4677,7 +4683,7 @@ bool __stdcall function_05d9e0(c_class_58d20 *session, const void *message_)
 
 void __stdcall function_60400(c_class_58d20 *session, const byte *current, const byte *previous, byte *update);
 
-// score 122 (was 122): frame 0x9148 versus retail 0x914c and mask homes remain; held mark-message owner spill is missing.
+// score 110 (was 122): frame 0x9148 versus retail 0x914c and mask homes remain; held mark-message owner spill is missing.
 // Earlier: missing owner spill leaves frame 0x9148 versus 0x914c (BLOCKED-BY 0x76930:
 // retail passes the owner to the mark-message call as an unused argument; its file is held);
 // mask/counter role names 122, first-loop cursor 122, eligibility guard 122,
@@ -4688,6 +4694,9 @@ void __stdcall function_60400(c_class_58d20 *session, const byte *current, const
 // Round 403: live sequence 138; live channel 137; readonly state 122; default buffer 135; default
 // live sequence 138; default live channel 150; readonly live sequence 138; readonly live channel 137.
 // Opening body restored.
+// Round 299: member-entry channel/observer/both/sequence/channel-sequence/observer-sequence
+// snapshots 138/110/137/137/134/137; native unsigned sequence 122; all snapshots
+// with unsigned sequence 136. Uniform observer snapshot 110 plain, 417/416 bytes, kept.
 // @retail 0x62640
 void function_62640(c_class_58d20 *session)
 {
@@ -4698,11 +4707,11 @@ void function_62640(c_class_58d20 *session)
  for (long i = 0; i < session->member_count; i++)
  {
   s_network_session_member_state *state = &session->member_states[i];
-  if (state->flag1 && !state->flag3 && session->observer->channels[state->unknown04].state == 7 &&
+  s_network_observer *observer = session->observer;
+  if (state->flag1 && !state->flag3 && observer->channels[state->unknown04].state == 7 &&
    state->unknown08 != session->value4c)
   {
    long channel = state->unknown04;
-   s_network_observer *observer = session->observer;
    long sequence = state->unknown08;
    if (network_observer_channel_ready(observer, channel, 0x19))
     network_observer_mark_message(observer, channel, 0x19);
@@ -4834,233 +4843,232 @@ struct s_membership_update_snapshot
 	s_network_session_player players[16];
 };
 
+// score 697 (was 777): Frame 0x2684 recovered; 2591/2589 bytes. Stale-exit placement and loop/index scheduling remain.
+// Round 296: Reduced control 804; result after map clear 805; native snapshot copy 804; version/count/both snapshots 801/802/782; map names 804; result/copy and map combination 805/805.
+// First/second/both pass index field reads 824/731/733; both with late result 730; first/second destination-only reads 823/783; accepted scope 803, with field reads 732; branch results with late initialization 730; version-test result with field reads 696, plain 697 (kept).
 // @retail 0x5cb80
 bool __stdcall function_05cb80(c_class_58d20 *session, const void *message)
 {
-	bool result = true;
 	const byte *update = (const byte *)message;
-	if (*(const long *)(update + 0xc) != NONE && *(const long *)(update + 0xc) != session->value4c)
-		goto stale_update;
-	s_membership_update_snapshot previous;
-	memcpy(&previous, &session->value4c, sizeof(previous));
-	s_network_session_member_state previous_states[16];
-	memcpy(previous_states, session->member_states, sizeof(previous_states));
-	session->value4c = *(const long *)(update + 8);
-	session->update7618++;
-	dword added = 0;
-	dword moved = 0;
-	dword removed = 0;
-	dword retained = 0;
-	long old_to_new[16];
-	memset(old_to_new, NONE, sizeof(old_to_new));
-	if (*(const long *)(update + 0xc) != NONE)
-		for (long i = 0; i < session->member_count; i++)
-			old_to_new[i] = i;
-	for (long i = 0; i < *(const short *)(update + 0x10); i++)
+	bool result = *(const long *)(update + 0xc) == NONE || *(const long *)(update + 0xc) == session->value4c;
+	if (result)
 	{
-		const byte *entry = update + 0x14 + i * 0x104;
-		short from = *(const short *)entry;
-		short to = *(const short *)(entry + 2);
-		if (from == NONE)
+		s_membership_update_snapshot previous;
+		memcpy(&previous, &session->value4c, sizeof(previous));
+		s_network_session_member_state previous_states[16];
+		memcpy(previous_states, session->member_states, sizeof(previous_states));
+		session->value4c = *(const long *)(update + 8);
+		session->update7618++;
+		dword added = 0;
+		dword moved = 0;
+		dword removed = 0;
+		dword retained = 0;
+		long old_to_new[16];
+		memset(old_to_new, NONE, sizeof(old_to_new));
+		if (*(const long *)(update + 0xc) != NONE)
+			for (long i = 0; i < session->member_count; i++)
+				old_to_new[i] = i;
+		for (long i = 0; i < *(const short *)(update + 0x10); i++)
 		{
-			if (to < 0 || to >= 16 || !entry[0x28]) goto failed;
-		}
-		else if (to == NONE)
-		{
-			if (*(const long *)(update + 0xc) == NONE || from < 0 || from >= previous.member_count ||
-				entry[0x28] || memcmp(previous.members[from].words, entry + 4, 0x24) || old_to_new[from] != from)
-				goto failed;
-			old_to_new[from] = NONE;
-		}
-		else
-		{
-			if (*(const long *)(update + 0xc) == NONE || from < 0 || from >= previous.member_count ||
-				to < 0 || to >= 16 || memcmp(previous.members[from].words, entry + 4, 0x24) || old_to_new[from] != from)
-				goto failed;
-			old_to_new[from] = to;
-		}
-	}
-	if (*(const long *)(update + 0xc) != NONE)
-		retained = (1 << previous.member_count) - 1;
-	for (long i = 0; i < *(const short *)(update + 0x10); i++)
-	{
-		const byte *entry = update + 0x14 + i * 0x104;
-		short from = *(const short *)entry;
-		short to = *(const short *)(entry + 2);
-		if (from == NONE)
-		{
-			if (to < 0 || to >= 16 || !entry[0x28]) goto failed;
-			s_session_member *member = &session->members[to];
-			bool occupied = false;
-			if (*(const long *)(update + 0xc) != NONE)
-				for (long j = 0; j < previous.member_count; j++)
-					if (old_to_new[j] == to) occupied = true;
-			if (occupied) goto failed;
-			memset(member, 0, sizeof(*member));
-			member->properties_valid = *(const bool *)(entry + 0x29);
-			memcpy(member->words, entry + 4, 0x24);
-			for (long j = 0; j < 4; j++) member->player_indices[j] = NONE;
-			session_parameters_apply_update(&member->properties, (const s_session_parameters_update *)(entry + 0x2c));
-			added |= 1 << to;
-		}
-		else if (to == NONE)
-		{
-			if (*(const long *)(update + 0xc) == NONE || from < 0 || from >= previous.member_count ||
-				entry[0x28] || memcmp(previous.members[from].words, entry + 4, 0x24)) goto failed;
-			removed |= 1 << from;
-			retained &= ~(1 << from);
-		}
-		else
-		{
-			if (*(const long *)(update + 0xc) == NONE || from < 0 || from >= previous.member_count ||
-				to < 0 || to >= 16 || memcmp(previous.members[from].words, entry + 4, 0x24)) goto failed;
-			s_session_member *member = &session->members[to];
-			if (from != to) *member = previous.members[from];
-			if (entry[0x28])
+			const byte *entry = update + 0x14 + i * 0x104;
+			if (*(const short *)entry == NONE)
 			{
-				member->properties_valid = *(const bool *)(entry + 0x29);
-				session_parameters_apply_update(&member->properties, (const s_session_parameters_update *)(entry + 0x2c));
+				if (*(const short *)(entry + 2) < 0 || *(const short *)(entry + 2) >= 16 || !entry[0x28]) goto failed;
 			}
-			if (from != to)
+			else if (*(const short *)(entry + 2) == NONE)
 			{
-				old_to_new[from] = to;
-				moved |= 1 << to;
-				retained &= ~(1 << from);
+				if (*(const long *)(update + 0xc) == NONE || *(const short *)entry < 0 || *(const short *)entry >= previous.member_count ||
+					entry[0x28] || memcmp(previous.members[*(const short *)entry].words, entry + 4, 0x24) || old_to_new[*(const short *)entry] != *(const short *)entry)
+					goto failed;
+				old_to_new[*(const short *)entry] = NONE;
 			}
-			if (!entry[0x28] && from == to) goto failed;
-		}
-	}
-	if (*(const long *)(update + 0xc) == NONE)
-	{
-		long count = *(const short *)(update + 0x10);
-		if (added != (dword)((1 << count) - 1)) goto failed;
-		session->member_count = count;
-		for (long i = 0; i < previous.member_count; i++)
-		{
-			for (long j = 0; j < session->member_count; j++)
-				if (!memcmp(previous.members[i].words, session->members[j].words, 0x24)) old_to_new[i] = j;
-			if (old_to_new[i] == NONE) removed |= 1 << i;
-		}
-	}
-	else
-	{
-		dword mask = retained | moved | added;
-		long count = NONE;
-		for (long i = 0; i < 16; i++)
-		{
-			if (mask & (1 << i))
-			{
-				if (count != NONE) { result = false; break; }
-			}
-			else if (count == NONE) count = i;
-		}
-		if (count == NONE) count = 16;
-		session->member_count = count;
-		if (!result) goto finish;
-	}
-	{
-		long new_to_old[16];
-		memset(new_to_old, NONE, sizeof(new_to_old));
-		for (long i = 0; i < previous.member_count; i++)
-			if (!(removed & (1 << i))) new_to_old[old_to_new[i]] = i;
-		for (long i = 0; i < previous.member_count; i++)
-			if (removed & (1 << i)) network_session_member_state_dispose(session, i);
-		memset(session->member_states, 0, sizeof(session->member_states));
-		for (long i = 0; i < session->member_count; i++)
-		{
-			if (new_to_old[i] != NONE) session->member_states[i] = previous_states[new_to_old[i]];
 			else
 			{
-				memset(&session->member_states[i], 0, sizeof(session->member_states[i]));
-				long channel = network_observer_attach_channel(session->observer, session->value10, (const XNADDR *)session->members[i].words);
-				if (channel != NONE) network_session_member_state_initialize(session, i, true, channel);
-				else result = false;
+				if (*(const long *)(update + 0xc) == NONE || *(const short *)entry < 0 || *(const short *)entry >= previous.member_count ||
+					*(const short *)(entry + 2) < 0 || *(const short *)(entry + 2) >= 16 || memcmp(previous.members[*(const short *)entry].words, entry + 4, 0x24) || old_to_new[*(const short *)entry] != *(const short *)entry)
+					goto failed;
+				old_to_new[*(const short *)entry] = *(const short *)(entry + 2);
 			}
 		}
-	}
-	if (!result) goto finish;
-	if (old_to_new[session->member_index] == NONE) result = false;
-	else session->member_index = old_to_new[session->member_index];
-	if (old_to_new[session->current_member] == NONE) result = false;
-	else session->current_member = old_to_new[session->current_member];
-	if (*(const long *)(update + 0xc) != NONE)
-	{
-		for (long i = 0; i < 16; i++)
+		if (*(const long *)(update + 0xc) != NONE)
+			retained = (1 << previous.member_count) - 1;
+		for (long i = 0; i < *(const short *)(update + 0x10); i++)
 		{
-			if (session->player_mask & (1 << i))
+			const byte *entry = update + 0x14 + i * 0x104;
+			if (*(const short *)entry == NONE)
 			{
-				long member = old_to_new[session->players[i].member_index];
-				if (member == NONE)
+				if (*(const short *)(entry + 2) < 0 || *(const short *)(entry + 2) >= 16 || !entry[0x28]) goto failed;
+				s_session_member *member = &session->members[*(const short *)(entry + 2)];
+				bool occupied = false;
+				if (*(const long *)(update + 0xc) != NONE)
+					for (long j = 0; j < previous.member_count; j++)
+						if (old_to_new[j] == *(const short *)(entry + 2)) occupied = true;
+				if (occupied) goto failed;
+				memset(member, 0, sizeof(*member));
+				member->properties_valid = *(const bool *)(entry + 0x29);
+				memcpy(member->words, entry + 4, 0x24);
+				for (long j = 0; j < 4; j++) member->player_indices[j] = NONE;
+				session_parameters_apply_update(&member->properties, (const s_session_parameters_update *)(entry + 0x2c));
+				added |= 1 << *(const short *)(entry + 2);
+			}
+			else if (*(const short *)(entry + 2) == NONE)
+			{
+				if (*(const long *)(update + 0xc) == NONE || *(const short *)entry < 0 || *(const short *)entry >= previous.member_count ||
+					entry[0x28] || memcmp(previous.members[*(const short *)entry].words, entry + 4, 0x24)) goto failed;
+				removed |= 1 << *(const short *)entry;
+				retained &= ~(1 << *(const short *)entry);
+			}
+			else
+			{
+				if (*(const long *)(update + 0xc) == NONE || *(const short *)entry < 0 || *(const short *)entry >= previous.member_count ||
+					*(const short *)(entry + 2) < 0 || *(const short *)(entry + 2) >= 16 || memcmp(previous.members[*(const short *)entry].words, entry + 4, 0x24)) goto failed;
+				s_session_member *member = &session->members[*(const short *)(entry + 2)];
+				if (*(const short *)entry != *(const short *)(entry + 2)) *member = previous.members[*(const short *)entry];
+				if (entry[0x28])
 				{
-					session->player_mask &= ~(1 << i);
-					session->player_count--;
+					member->properties_valid = *(const bool *)(entry + 0x29);
+					session_parameters_apply_update(&member->properties, (const s_session_parameters_update *)(entry + 0x2c));
 				}
-				else session->players[i].member_index = member;
+				if (*(const short *)entry != *(const short *)(entry + 2))
+				{
+					old_to_new[*(const short *)entry] = *(const short *)(entry + 2);
+					moved |= 1 << *(const short *)(entry + 2);
+					retained &= ~(1 << *(const short *)entry);
+				}
+				if (!entry[0x28] && *(const short *)entry == *(const short *)(entry + 2)) goto failed;
 			}
 		}
-	}
-	if (!result) goto finish;
-	if (*(const long *)(update + 0xc) == NONE && !update[0x4894]) goto failed;
-	if (update[0x4894])
-	{
-		long host = *(const long *)(update + 0x4898);
-		if (host < 0 || host >= session->member_count) goto failed;
-		session->value50 = host;
-	}
-	if (*(const long *)(update + 0xc) == NONE)
-	{
-		session->player_count = 0;
-		session->player_mask = 0;
-		for (long i = 0; i < session->member_count; i++)
+		if (*(const long *)(update + 0xc) == NONE)
 		{
-			for (long j = 0; j < 4; j++) session->members[i].player_indices[j] = NONE;
-			session->members[i].player_count = 0;
-		}
-	}
-	for (long i = 0; result && i < *(const short *)(update + 0x12); i++)
-	{
-		const byte *entry = update + 0x2094 + i * 0x140;
-		short player = *(const short *)entry;
-		if (player < 0 || player >= 16) { result = false; continue; }
-		switch (*(const short *)(entry + 2))
-		{
-		case 0:
-			if (!(session->player_mask & (1 << player))) { result = false; break; }
-			network_session_remove_player(session, player);
-			break;
-		case 1:
+			long count = *(const short *)(update + 0x10);
+			if (added != (dword)((1 << count) - 1)) goto failed;
+			session->member_count = count;
+			for (long i = 0; i < previous.member_count; i++)
 			{
-				short member = *(const short *)(entry + 0x10);
-				short slot = *(const short *)(entry + 0x12);
-				if ((session->player_mask & (1 << player)) || member < 0 || member >= session->member_count ||
-					slot < 0 || slot >= 4 || session->members[member].player_indices[slot] != NONE ||
-					network_session_find_player(session, (const dword *)(entry + 4)) != NONE)
-				{ result = false; break; }
-				network_session_add_player(session, member, (const XUID *)(entry + 4), player, slot);
+				for (long j = 0; j < session->member_count; j++)
+					if (!memcmp(previous.members[i].words, session->members[j].words, 0x24)) old_to_new[i] = j;
+				if (old_to_new[i] == NONE) removed |= 1 << i;
 			}
-		case 2:
-			if (!(session->player_mask & (1 << player))) { result = false; break; }
-			session->players[player].unknown14 = *(const long *)(entry + 0x18);
-			memcpy(session->players[player].properties18, entry + 0x1c, 0x90);
-			memcpy(session->players[player].propertiesa8, entry + 0xac, 0x90);
-			session->players[player].unknown138 = *(const long *)(entry + 0x13c);
-			break;
-		default: result = false; break;
 		}
+		else
+		{
+			dword mask = retained | moved | added;
+			long count = NONE;
+			for (long i = 0; i < 16; i++)
+			{
+				if (mask & (1 << i))
+				{
+					if (count != NONE) { result = false; break; }
+				}
+				else if (count == NONE) count = i;
+			}
+			if (count == NONE) count = 16;
+			session->member_count = count;
+			if (!result) goto finish;
+		}
+		{
+			long new_to_old[16];
+			memset(new_to_old, NONE, sizeof(new_to_old));
+			for (long i = 0; i < previous.member_count; i++)
+				if (!(removed & (1 << i))) new_to_old[old_to_new[i]] = i;
+			for (long i = 0; i < previous.member_count; i++)
+				if (removed & (1 << i)) network_session_member_state_dispose(session, i);
+			memset(session->member_states, 0, sizeof(session->member_states));
+			for (long i = 0; i < session->member_count; i++)
+			{
+				if (new_to_old[i] != NONE) session->member_states[i] = previous_states[new_to_old[i]];
+				else
+				{
+					memset(&session->member_states[i], 0, sizeof(session->member_states[i]));
+					long channel = network_observer_attach_channel(session->observer, session->value10, (const XNADDR *)session->members[i].words);
+					if (channel != NONE) network_session_member_state_initialize(session, i, true, channel);
+					else result = false;
+				}
+			}
+		}
+		if (!result) goto finish;
+		if (old_to_new[session->member_index] == NONE) result = false;
+		else session->member_index = old_to_new[session->member_index];
+		if (old_to_new[session->current_member] == NONE) result = false;
+		else session->current_member = old_to_new[session->current_member];
+		if (*(const long *)(update + 0xc) != NONE)
+		{
+			for (long i = 0; i < 16; i++)
+			{
+				if (session->player_mask & (1 << i))
+				{
+					long member = old_to_new[session->players[i].member_index];
+					if (member == NONE)
+					{
+						session->player_mask &= ~(1 << i);
+						session->player_count--;
+					}
+					else session->players[i].member_index = member;
+				}
+			}
+		}
+		if (!result) goto finish;
+		if (*(const long *)(update + 0xc) == NONE && !update[0x4894]) goto failed;
+		if (update[0x4894])
+		{
+			long host = *(const long *)(update + 0x4898);
+			if (host < 0 || host >= session->member_count) goto failed;
+			session->value50 = host;
+		}
+		if (*(const long *)(update + 0xc) == NONE)
+		{
+			session->player_count = 0;
+			session->player_mask = 0;
+			for (long i = 0; i < session->member_count; i++)
+			{
+				for (long j = 0; j < 4; j++) session->members[i].player_indices[j] = NONE;
+				session->members[i].player_count = 0;
+			}
+		}
+		for (long i = 0; result && i < *(const short *)(update + 0x12); i++)
+		{
+			const byte *entry = update + 0x2094 + i * 0x140;
+			short player = *(const short *)entry;
+			if (player < 0 || player >= 16) { result = false; continue; }
+			switch (*(const short *)(entry + 2))
+			{
+			case 0:
+				if (!(session->player_mask & (1 << player))) { result = false; break; }
+				network_session_remove_player(session, player);
+				break;
+			case 1:
+				{
+					short member = *(const short *)(entry + 0x10);
+					short slot = *(const short *)(entry + 0x12);
+					if ((session->player_mask & (1 << player)) || member < 0 || member >= session->member_count ||
+						slot < 0 || slot >= 4 || session->members[member].player_indices[slot] != NONE ||
+						network_session_find_player(session, (const dword *)(entry + 4)) != NONE)
+					{ result = false; break; }
+					network_session_add_player(session, member, (const XUID *)(entry + 4), player, slot);
+				}
+			case 2:
+				if (!(session->player_mask & (1 << player))) { result = false; break; }
+				session->players[player].unknown14 = *(const long *)(entry + 0x18);
+				memcpy(session->players[player].properties18, entry + 0x1c, 0x90);
+				memcpy(session->players[player].propertiesa8, entry + 0xac, 0x90);
+				session->players[player].unknown138 = *(const long *)(entry + 0x13c);
+				break;
+			default: result = false; break;
+			}
+		}
+		if (result) goto local_0;
+		finish:
+		session->flag48 = true;
+		if (!result) network_session_close(session);
+		goto local_0;
+		failed:
+		result = false;
+		goto finish;
 	}
-	if (result) goto local_0;
-	finish:
-	session->flag48 = true;
-	if (!result) network_session_close(session);
+	else
+		network_session_host_lost(session);
 	local_0:
 	return result;
-	failed:
-	result = false;
-	goto finish;
-	stale_update:
-	network_session_host_lost(session);
-	result = false;
-	goto local_0;
 }
 
 void network_session_expire_reservations(c_class_58d20 *session);

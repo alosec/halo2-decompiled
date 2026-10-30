@@ -1217,6 +1217,9 @@ real function_11cc90(vector2f const *a, vector2f const *b);
 // Round 79: length test `!(0.0f < length)` 172 (same code); side directions by direct initialisers
 // 380 (aligned 74 -> 70: forwarding, no y preload); both 380; plus no first-side volatile 365;
 // `0.0f <` test with no first-side volatile 379.
+// Round 301: Existing shared magnitude inside the retained normalizer, with distance roots,
+// side dots, both, ordinary first side, ordinary/distance, ordinary/dots and all:
+// 172/172/372/372/379/379/363/363. Original magnitude graph, qualifier, projections and body restored.
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
@@ -1441,6 +1444,10 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // frame 0x104, aligned unmatched 442 -> 317); both 517; no output_index volatile (retail: di) 486,
 // with the step pointer 541 (aligned 308); no source-radius volatile 469/498; source pointer before
 // the loop identical code.
+// Round 301: Full count / named terminal ordinal / both 496/474/500;
+// with paired word corner results 490/472/491; complete bound graph
+// with ordinary radius, without/with word corners 500/491. Original count,
+// ordinal expressions, Boolean corner carriers, radius qualification and body restored.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)

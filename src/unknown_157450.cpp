@@ -3424,11 +3424,17 @@ void function_19e0f0(word const *string, long size, word *buffer, s_event *event
 
 int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *format, ...);
 
+// score 82 (was 82): frame 0x200 and buffer ESI/ret 8 now agree; failure exits
+// and the event text-zero store schedule differ. Separate fallback buffers for ending,
+// waiting, both, complete, ending/complete, waiting/complete, all: 186/185/158/167/185/186/214.
+// Common bool result 82; one success goto 82; direct parameter reads 82 (kept, plain).
+// Natural immediate failure 148; event direct return 220; explicit rejected failure 148.
+// Round 298: event-admission return result 199; entry result 94; both 200;
+// entry text workspace 82; with admission/result/both 199/94/200; native long
+// admission result 189. All restored; separate failure-result paths remain.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {
-	long const *size_reference = &size;
-	long const *suppress_reference = &suppress_score;
 	long user_index = engine_player_get(player_index)->local_index;
 	bool result = false;
 	if (game_engine_get())
@@ -3442,13 +3448,14 @@ bool function_15f120(long player_index, word *buffer, long size, long suppress_s
 				s_engine_notice_settings *settings = ((s_engine_notice_root *)g_4e3b44[g_4e034c->index & 0xffff].bytes)->settings;
 				s_engine_notice_definition *definition = &settings->notices[g_4e9af0.players[user_index].value08];
 				long string_handle = function_15eaf0() ? definition->team_text : definition->text;
-				if ((!(byte)*suppress_reference || (g_4e9af0.players[user_index].index != 25 && g_4e9af0.players[user_index].index != 5 && g_4e9af0.players[user_index].index != 26 &&
+				if ((!(byte)suppress_score || (g_4e9af0.players[user_index].index != 25 && g_4e9af0.players[user_index].index != 5 && g_4e9af0.players[user_index].index != 26 &&
 					g_4e9af0.players[user_index].index != 6 && g_4e9af0.players[user_index].index != 27 && g_4e9af0.players[user_index].index != 7)) && string_handle != NONE && string_handle != 0)
 				{
 					text[0] = 0;
 					function_1a0180(settings->string_list, string_handle, text);
-					function_19e0f0(text, *size_reference, buffer, 0);
-					return true;
+					function_19e0f0(text, size, buffer, 0);
+					result = true;
+					goto done;
 				}
 			}
 			buffer[0] = 0;
@@ -3457,24 +3464,25 @@ bool function_15f120(long player_index, word *buffer, long size, long suppress_s
 		{
 			text[0] = 0;
 			function_161ef0(0x0c000108, text);
-			unicode_string_vsnprintf(buffer, *size_reference, text);
-			return true;
+			unicode_string_vsnprintf(buffer, size, text);
+			result = true;
 		}
 		else if (state == 2)
 		{
 			text[0] = 0;
 			function_161ef0(0x0d000109, text);
-			unicode_string_vsnprintf(buffer, *size_reference, text);
-			return true;
+			unicode_string_vsnprintf(buffer, size, text);
+			result = true;
 		}
 		else if (state == 3)
 		{
 			text[0] = 0;
 			function_161ef0(0x1900010a, text);
-			unicode_string_vsnprintf(buffer, *size_reference, text);
-			return true;
+			unicode_string_vsnprintf(buffer, size, text);
+			result = true;
 		}
 	}
+done:
 	return result;
 }
 
@@ -3966,6 +3974,9 @@ static __forceinline long nonnegative_15ce70(long value)
 // Round 226: paired existing initializer/cause/effect/sender boundaries 602/609/592/588/567/583;
 // initializer/cause/effect 637, complete event lifecycle 659. Original body and all inline
 // boundaries restored; frame 0xe4/0xe0 and attacker/category/NONE/event homes remain.
+// Round 301: Ascending chain notification, descending streak notification and ascending chain
+// result recognition, seven combinations 470/470/470/543/543/543/543; all plus reversed
+// fixed streak results 532. Original predicate order, values and complete body restored.
 // @retail 0x15ce70
 void function_15ce70(long attacker_index, long victim_index, bool betrayal, byte damage)
 {
@@ -4275,6 +4286,9 @@ void function_15fe20(long team_index, color3f *color);
 // color transfers, final NONE carrier and byte shift count remain.
 // Round 187: Native color consumer scope masks 1-7 on the direct weapon initializer graph
 // 88/88/88/88/88/88/88; sequential team workspace 252.
+// Round 295: common team/individual selection storage for score, rival score, both,
+// rival index, score/index, rival score/index, all three, all with field selector:
+// 133/88/133/88/133/88/133/133. Original branch-local storage restored; color transfers remain.
 // @retail 0x15f3a0
 bool function_15f3a0(long local_index, s_player_score_display *display)
 {
@@ -5359,6 +5373,9 @@ void __stdcall function_d6bc0(long object_index);
 // frame slot); ours keeps `entries` in edi and folds the timer. A c_engine_equipment method 144;
 // `entries` read through its address 144; timer pointer before the reset block (used there) 155;
 // char kind with long modifier 178; timer pointer at the loop top 249.
+// Round 295: true-default reset 151; complete distance/query result 144; both 144;
+// entry storage for placement/object/index, all three, all plus schedule: 144 each.
+// All original producers and body restored; frame and timer/base homes remain.
 // @retail 0x15ae70
 void __stdcall function_15ae70(s_netgame_entry_state *entries)
 {

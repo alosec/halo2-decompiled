@@ -88,6 +88,10 @@ static inline byte *bsp_bit_vector(long index)
 // registers).
 // Round 42: completed index with bound-i 8, i-i 6, last-iteration reset 14, i-bound 5,
 // index mask 5, modulo 5, xor 6; external declaration alone 6. Original body restored.
+// improvement.
+// Round 302: Occupied-slot-only clear with continue/nested/branch-owned/mode-exit
+// publication 7/7/29/29; the same with a shared identifier snapshot 7/7/29/29.
+// Original unconditional clear and complete loop restored; element/byte induction remains.
 // @retail 0x185a30
 void function_185a30(void)
 {

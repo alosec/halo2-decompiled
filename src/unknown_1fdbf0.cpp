@@ -359,6 +359,9 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // parallel product first 57; axis scaled in place before the rows 80; valid at the state block's
 // scope with the rotation after the dot block 43; the fallback normalizing 0x11d000's returned
 // pointer 57 (axis/forward slots swap).
+// Round 302: Actual axis at state/entry scope, forward at state/entry scope,
+// each with original/role vector names: all eight 43. Original declarations,
+// homes and body restored; axis/direction register colors and parallel copy remain.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

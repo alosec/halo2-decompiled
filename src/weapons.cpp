@@ -2864,6 +2864,9 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // Round 410: Complete callback object observations with complete dispatch, early zero-result
 // lifetime and full-width selector subsets 398/409/399/410/424/417/425/418. Original object
 // receiver, result lifetime, signed-word selector, dispatch and activity helper restored.
+// Round 300: Actual barrel maximum field reference, both callback scalar field references,
+// both, interpolation complement, barrel/complement, fields/complement, all and all with readonly
+// receivers 423/398/423/398/423/398/423/423. Original helper and body restored at 398.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {
@@ -3323,6 +3326,9 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // 652/655/570/637; the four direct-parameter forms give the same scores.
 // Barrel/holder before definition, original/direct inputs, ordinary 619/619.
 // Original holder qualification, producer order, parameter aliases and body restored.
+// Round 300: Existing point/vector marker setters, both, workspace lexical names, point/names,
+// vector/names, both/names, and complete graph with entry workspaces:
+// 660/657/674/637/660/657/674/674 (fast control 637; full 565). Original body restored.
 // @retail 0x102fb0
 void __stdcall function_102fb0(long weapon_index, short barrel_index)
 {
