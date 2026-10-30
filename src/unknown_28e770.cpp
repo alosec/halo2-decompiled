@@ -144,6 +144,11 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // Round 250: complete case orders 12034567/12304567/12340567/12345067
 // 277/329/398/454; 12345607/12345670/40123567/41230567
 // 475/479/424/420. All complete cases and original order restored; idle relocation breaks the prefix.
+// Round 253: Existing native object getter with independent idle/marker/separation direction
+// workspaces, all eight subsets 118/118/118/118/157/118/118/118. Seven forms retain 103 code
+// differences; separation-only gives 142. Both callers survive, all tables unchanged. Original
+// getter, common workspace and complete cases restored.
+// Round 255: marker-facing rejection direct orders 113/121/113; immediate bool results in original/OR/AND/both orders 118/113/121/113; long result 118. The 113 forms reach 2416 bytes but gain only five and worsen the code window 103 -> 110. All restored.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {

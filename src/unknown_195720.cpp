@@ -214,6 +214,12 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // earlier weight declarations 38; integer weights 43; named weighted logs 38.
 // Double weight pair and double logs/weights 38/38; complete double products, sum and exponent with real logs 38/38/38;
 // complete double products, sum and exponent with double logs 38/38/38; float logs/exponent/both 38/38/38.
+// Both builds keep the upper log past its use only because the exp follows in the same
+// expression (an exponent stored first consumes it); retail pops it after the division because
+// both logs come first. In-place accumulator starting from the lower log 43; logs before the
+// limit test 41; limit as a conditional in one expression 47; inline helper taking lo/hi and
+// returning the exponent 38; named real count and exponent 52; log types, product orders,
+// statement splits, scopes and file flags (screened) give the same lower-product-first order.
 // @retail 0x194ff0
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 {

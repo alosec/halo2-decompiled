@@ -834,6 +834,7 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // first 157; round 149's entry rebuilt 71 (entry matches but for the g_4cf980 load target and upper in EAX
 // coalesced with the count); on it: those link stores 70, count path lower first 72, named count 71,
 // flag declared first 71, flag set after the decrements 73, flag declared after the removal 71.
+// Round 183: actual endpoint 389; plain endpoint 396; one count 89 (frame 0x10); endpoint/count 380; plain endpoint/count 394; endpoint relation 387; plain relation 394; combined count/relation 384. Original body restored.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {

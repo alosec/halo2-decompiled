@@ -208,6 +208,13 @@ owner_selected:
 // Round 248: Per-use reference handle, late/early headers 67/110;
 // typed counterparts 67/110; wide narrowed category 76/77, typed 76/77.
 // All restored; header-base retention and the second object lookup still differ.
+// Round 78: a compile-only build of this body (every callee opaque) keeps the header base and
+// fetches the object again after the calls exactly as retail; only LTCG's knowledge that
+// function_30bf0 and function_264260 write no object memory merges the second lookup into the
+// first (function_264260 is a pure leaf in an avoid-listed file). Direction through
+// vector3d_from_points3d 67; header base read before the position call 109; facing copied
+// member-wise 102; direction before the object lookup 75; object lookup after the zero-length
+// fallback 154.
 // @retail 0x264940
 void function_264940(long actor_index, long prop_ref_index)
 {
@@ -310,6 +317,9 @@ void function_264940(long actor_index, long prop_ref_index)
 // Round 240: Native tracking-record receiver with distinct current-state, sequential
 // object-vector workspace and positive-view arm combinations 426/425/426/425/428/427/428/427.
 // Frame remains 0x24/0x20; original separate view, states, vectors and body restored.
+// DH round 252: Twice-used normalized distance/buildup/both; each with complete update, all three;
+// both with distinct current state, all four
+// 353/386/386/441/453/453/385/452. Original complete executable body restored.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)

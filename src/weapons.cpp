@@ -1975,6 +1975,9 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // first/other/both roots with unit observations 231/227/226; both roots with live handle
 // 180, also with unit observations 211. The two-point retail-length form is restored;
 // magazine, availability/transfer and pooled receiver homes remain.
+// Round 271: consistent header-data snapshot with retained/live handle, entry/gate
+// counter and short/long reserve values: 182/221/191/217/201/234/184/211.
+// All restored; magazine/availability and receiver homes still differ.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -2249,6 +2252,9 @@ static __forceinline long real_to_long(real value);
 // Round 194: trigger/settings/both array roots 148/116/150; direct trigger/settings/both
 // elements 143/185/192; late trigger with settings root 154; read-only paired roots 150.
 // Original three timing homes and release/age interference remain.
+// Round 271: native trigger bits with byte/char age, nested/direct equality result,
+// and long/short threshold: 89/113/125/131/87/116/125/131. The two-point
+// signed-byte form is restored; timing homes and released/age/delta registers remain.
 // @retail 0x1027b0
 void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool *held, bool *released)
 {
@@ -4075,7 +4081,7 @@ transform4x3f *function_b8c00(long object_index, long *node_count);
 point3f *function_b9dd0(long object_index, point3f *point);
 void function_141590(transform4x3f const *in, transform4x3f *out);
 point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *point, point3f *out);
-void object_get_root_location(long object_index, s_location *location);
+s_location *object_get_root_location(long object_index, s_location *location);
 void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner);
 long __stdcall function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 void function_a7d50(long index, long group, long target, short node, point3f const *point);

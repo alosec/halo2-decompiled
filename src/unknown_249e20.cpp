@@ -165,6 +165,8 @@ void function_249d10(s_structure_bsp_view *bsp, dword *bits, long index)
 }
 
 /* the distance sound travels between two clusters */
+// The default is a ternary on the same test as the branch below: VC then loads both
+// constants before the branch, as retail does, and threads the repeated test.
 // score 60 (was 60): No local frame; shared zero/default entry values and native endpoint/exit ownership remain.
 // retail tests the byte for 0 first, then 0xff, keeps a 255 default in XMM0
 // and a shared zero in XMM1; ours tests the word interior first and builds each zero. Kept: no
@@ -205,28 +207,31 @@ void function_249d10(s_structure_bsp_view *bsp, dword *bits, long index)
 // @retail 0x249d60
 real function_249d60(s_structure_bsp_view *bsp, long cluster_a, long cluster_b)
 {
-	real local_0 = 255.0f;
-	if (cluster_a == cluster_b)
-		local_0 = 0.0f;
-	else if (bsp->audibility_count > 0)
+	real local_0 = cluster_a != cluster_b ? 255.0f : 0.0f;
+	if (cluster_a != cluster_b)
 	{
-		s_structure_audibility *audibility = bsp->audibility;
-		long low = cluster_minimum(cluster_a, cluster_b);
-		long high = cluster_maximum(cluster_a, cluster_b);
-		word value = audibility->cluster_pair_distances[cluster_pair_index(low, high, bsp->cluster_count)];
-		if (value > 0 && value < 0xff)
+		if (bsp->audibility_count > 0)
 		{
-			real local_1 = audibility->distance_lower;
-			real local_2 = audibility->distance_upper;
-			local_0 = (real)(value - 1) * (1.0f / 253.0f);
-			local_2 -= local_1;
-			local_0 *= local_2;
-			local_0 += local_1;
+			s_structure_audibility *audibility = bsp->audibility;
+			long low = cluster_minimum(cluster_a, cluster_b);
+			long high = cluster_maximum(cluster_a, cluster_b);
+			byte value = audibility->cluster_pair_distances[cluster_pair_index(low, high, bsp->cluster_count)];
+			if (value == 0)
+				local_0 = 0.0f;
+			else if (value == 0xff)
+				local_0 = 256.0f;
+			else
+			{
+				real local_1 = audibility->distance_lower;
+				real local_2 = audibility->distance_upper;
+				local_0 = (real)(value - 1) * (1.0f / 253.0f);
+				local_2 -= local_1;
+				local_0 *= local_2;
+				local_0 += local_1;
+			}
 		}
 		else
-			local_0 = value ? 256.0f : 0.0f;
+			local_0 = (real)(function_249ed0((short)cluster_a, (short)cluster_b, bsp) & ~0x80) * (256.0f / 127.0f);
 	}
-	else
-		local_0 = (real)(function_249ed0((short)cluster_a, (short)cluster_b, bsp) & ~0x80) * (256.0f / 127.0f);
 	return local_0;
 }

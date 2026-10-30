@@ -707,7 +707,7 @@ long function_1e4a50(long character_index);
 void __stdcall function_26c2d0(long prop_index);
 void function_270590(s_path_source *source, s_type_c3b527 const *point, long node_index);
 
-// score 210 (was 225): frame 0xb4 and a common result exit agree; the signed-word
+// score 160 (was 160): frame 0xb4 and a common result exit agree; the signed-word
 // default load, field tests, output scheduling and later register homes still differ.
 // Earlier: the shared default loads as a signed word rather than a dword; frame homes differ.
 // Unsigned-word/dword result 306/225; byte preparation with long/word/dword result 225/306/225;
@@ -719,6 +719,7 @@ void function_270590(s_path_source *source, s_type_c3b527 const *point, long nod
 // result: 225/225/224/224/210/210/210/210. Original payloads with guarded/positive admission
 // 210/210; plain 210, 1188/1177 bytes. Keep only positive admission and one result exit;
 // temporary payload types restored.
+// Round 183: short/word/dword result 250/250/160; word/scalar-word flags 266/266; selection at entry/after result 248/248; preparation after acquisition 162, with early selection 249; short plus word flags 251; early selection plus word flags 191; middle-phase selection 244, with either word view 220/220; shared candidate state 160; named weighted distance 160. All restored.
 // @retail 0x1b99d0
 short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 {

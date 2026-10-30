@@ -358,6 +358,9 @@ short *function_e70b0(long unit_index, short *value);
 // Round 7 (lane 15): random scale times the tick rate 49; `(real)` tick rate 49; action local at function
 // scope 49; slot cast before the actor 49 (identical code each time); a permuter run ended at its
 // 2400 s timeout with no result (its full-image baseline takes most of that).
+// Round 114: final mode test as a call to the existing 0x1f86f0 138 (kept out of line); through the
+// existing actor pointer 132; nested timer test 49; nested final test 49; named action value 49;
+// a 26-try permuter run found nothing below 49.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {
