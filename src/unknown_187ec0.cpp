@@ -441,7 +441,9 @@ bool function_172750(long mode, point3f const *point, real radius);
 /* element_index starts the parent walk of 0x1882d0's fallback lookup, and
    entry_element_index (the fifth argument, which retail reads into esi) is
    the element whose values and seat entries are looked up */
-// score 118 (was 118): frame 0x1c agrees; tag/remapped-index ownership and the dead-argument output home remain.
+// score 118 (was 118): frame 0x1c agrees; tag/remapped-index ownership and the dead-argument output home remain
+// (ret 0x28 against 0x30: the entry index arrives in eax, the tag index on the stack; retail passes only the
+// tag index, in ebx).
 // Earlier: frame 0x1c agrees; tag/remapped-index registers and output homes remain.
 // Earlier forms and observations:
 // Defaults before element 175; index before element 165; both before element 151;
@@ -466,6 +468,10 @@ bool function_172750(long mode, point3f const *point, real radius);
 // existing material class for the 4th/5th parameters (and 0x1882d0's) it matches (fast;
 // tag index in EBX, first index on the stack): BLOCKED-BY the declarations in src/impacts.cpp
 // and src/projectiles.cpp, which name the old parameter types.
+// Round 21: in the all-stack first pass the entry index is loaded once at entry into a free register (so
+// LTCG makes it the register argument) in every source order tried: element lookup moved to its use 191;
+// both entry pointers declared at the top 170; second entry declared first 118; first index as an if
+// statement 118; first index computed inside the distance arm 124.
 // @retail 0x1883e0
 void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long entry_element_index, long index, long variant,
 	long *first_value04, long *second_value04, long *first_value, long *second_value, long *first_value0c, long *second_value0c)

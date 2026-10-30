@@ -51,7 +51,13 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // a short 70 (identical); `if (arg_1 == NONE) return local_0;` as a guard 109 (the
 // exit is duplicated at the top, NONE immediate); the call result in its own local
 // returned directly 108 (370 bytes); that local copied to local_0 inside an
-// `!= NONE` test 136.
+// `!= NONE` test 136. Round 21: retail's -1 is a constant register (esi free once arg_0 takes ebx
+// and the cell-table temporary ecx); ours has no free callee-saved register for it, so all NONE exits
+// merge into one `or eax, -1`. A single exit keeps the result in eax in the all-stack first pass, so
+// arg_1 is loaded into dx (early returns load it into cx, as retail). Inline squad and cell getters
+// 69/70; single exit through `goto done` 100, nested 100; `local_8 = local_4` default 109; the marker
+// lookup nested under `arg_0 != NONE` 109; the marker declared first 70; literal `return NONE` guards 70;
+// the cell index in a long local first 70.
 // @retail 0x203780
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3)
 {
