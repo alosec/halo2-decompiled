@@ -397,7 +397,7 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 	long region_index, s_damage_region_accumulator *accumulator);
 void function_d9d60(long marker_name, long object_index, bool at_marker, long effect_index,
 	s_damage_owner const *owner);
-void function_ba690(long object_index, byte **states, long *state_count, long *a, long *b);
+void function_ba690(long object_index, long *state_count, byte **states, long *a, long *b);
 void function_a8360(long object_index, long region_index, long permutation_index, long a);
 void function_dbfb0(long object_index, s_damage_owner const *owner, bool a, bool b, bool c);
 void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index,
@@ -1592,11 +1592,6 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 /* whether a permutation's model state allows it: false when its state index
    (+0x22) is in range and that region's chosen state (ba690's fifth array,
    8 bytes per region, state at +1) is at or above the permutation's (+0x20) */
-// score 2 (was 39): only the order of the lea instructions that load the out-parameter
-// addresses differs (retail edi=states before esi=state_count, ours the reverse); the
-// frame and every other instruction are identical.
-// Tried: declaration order of the locals (no effect), `state_count > state_index` (4),
-// locals declared before the permutation pointer (2).
 // @retail 0xd9f70
 bool function_d9f70(long region_index, long permutation_index, s_damage_info *info, long object_index)
 {
@@ -1607,7 +1602,7 @@ bool function_d9f70(long region_index, long permutation_index, s_damage_info *in
 	long choices;
 	bool result = true;
 
-	function_ba690(object_index, &states, &state_count, &saved_states, &choices);
+	function_ba690(object_index, &state_count, &states, &saved_states, &choices);
 	if (permutation->unknown22 >= 0 && permutation->unknown22 < state_count)
 	{
 		if ((short)(char)((byte *)choices)[permutation->unknown22 * 8 + 1] >= permutation->unknown20)

@@ -514,7 +514,7 @@ struct s_vertex_source_23ac30;
 struct s_vertex_bounds_23ac30;
 struct s_table_holder;
 void *function_1efd80(s_table_holder *holder, dword position);
-void function_ba690(long object_index, byte **states, long *state_count, long *a, long *b);
+void function_ba690(long object_index, long *state_count, byte **states, long *a, long *b);
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node);
 
@@ -640,7 +640,7 @@ bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 		byte *model = g_4e3b44[model_index & 0xffff].bytes;
 		byte *regions;
 		long region_count;
-		function_ba690(COLLISION_OBJECT_14A8E0, &regions, &region_count, NULL, NULL);
+		function_ba690(COLLISION_OBJECT_14A8E0, &region_count, &regions, NULL, NULL);
 		byte *region_data = *(byte **)(model + 0x20) + (*(short *)((byte const *)collision + 0x44)) * 16;
 		if (regions[(*(short *)((byte const *)collision + 0x44))] != 0xff)
 		{
