@@ -118,7 +118,11 @@ short __stdcall function_2551c0(long actor_index)
 // the rotation's dot then sums j, k, i and the score's k, j, i) 70, with its local declared at the top
 // or before the length test 70/70, with the score's dot operands swapped 70; the early exit as a
 // nested if 43 (70 with the call); forward/direction renamed (three spellings) 43 each; the state
-// point copied as a point 43.
+// point copied as a point 43. Round 101: the rotation as Rodrigues with `cross3f(axis, vector)`
+// added (`+ cross * sine`) 159 (820 bytes); the same with three scalar axis-by-vector cross terms
+// 139 (814 bytes; the early products become retail's pair but the whole rotation reschedules);
+// found declared before best_score 45; found set before the best score and direction 48; the
+// direction loop as a do/while 43 (same code).
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {
