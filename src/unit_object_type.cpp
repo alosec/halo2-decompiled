@@ -671,11 +671,14 @@ bool function_c4970(long unit_index)
 }
 
 /* plays one of the globals' sounds at the object's marker 0x4000095 */
-// score 10 (was 10): BLOCKED-BY 0x189210, whose retail form takes the play record in edi
+// score 2 (was 2): only marker-immediate/play-address setup order differs; frame and callee registers agree.
+// Earlier at 10: BLOCKED-BY 0x189210, whose retail form takes the play record in edi
 // (ours pushes it); play fields tag first 10; named globals pointer 10; 0x189210 parameter
 // orders play first/middle 10/10; 0x189210 reading the play fields at entry 16 (80 bytes).
 // Full/partial/const aggregate records 10/10/10; entry record 10; lookup assigned in the test 10;
 // 0x189210 inline with test assignment/original body 10/10; noinline declaration 10.
+// Eight alternate label/tag/scale/variant schedules 2/4/5/4/5/4/5/4; direct tag-field lookup 11,
+// with scale/variant/label order 14; absent-tag early return 2, with scale/variant/tag/label order 5. Restored.
 // @retail 0xc5890
 void function_c5890(long object_index, short index)
 {
@@ -2309,7 +2312,8 @@ bool function_c7750(s_unit_motion const *motion, real position, real velocity, r
 
 /* once: sets the unit's flag 21 and a random angle at +0x2d8 around its
    actor's direction (or its own facing) */
-// score 5 (was 20): Frame 0xc versus 0x10 (retail keeps the atan2 temp in the query buffer's first dword,
+// score 5 (was 5): only frame 0xc versus retail 0x10 and the angle temporary home remain; x87 adds now agree.
+// Earlier at 20: Frame 0xc versus 0x10 (retail keeps the atan2 temp in the query buffer's first dword,
 // ours with range) and the last two x87 adds (retail adds the bound before the angle) differ; the query
 // writes a 12-byte vector, which the 8-byte buffer only gets away with here. Native vector, 12-byte scratch
 // and real[3] 23; bool flag 60; native/bool 60; outer workspace 23; field angle 57; random-first native/bool
@@ -2320,6 +2324,8 @@ bool function_c7750(s_unit_motion const *motion, real position, real velocity, r
 // declared at the top 5 each; range assigned before the atan2/store 50/53/38. Round 89: the buffer as a
 // vector3f/real[3]/point3f 10/10/10 (frame 0x14: no temp packs into a 12-byte local); vector3f with the
 // locals renamed four ways 10; the query test inverted 7; the angle wrap as a ternary 7.
+// Common selected-angle publication with byte/native-vector output, zero-angle initialization and fallback-range
+// initialization combinations 53/53/74/74/60/60/75/76. Original query buffer and body restored.
 // @retail 0xcfec0
 void function_cfec0(long unit_index)
 {
@@ -7114,6 +7120,10 @@ static void unit_vector_from_frame(vector3f *out, transform4x3f const *frame, ve
    a frame, when given), keeping an angular velocity: plans both angles'
    motions under a speed limit and an acceleration (0xc7300), evens them
    (0xc75d0), steps them (0xc7750), snapping when both are done */
+// score 700 (was 723): frame 0x94 versus retail 0x80, input staging, vector homes and prediction/call scheduling remain.
+// Paired role names 723; angular-velocity value 700 (kept); complete direction values 653; shared axes rotation 697;
+// shared final cross 723; direction plus velocity values 628 (rejected: lose matched 0x1e5af0), with names 628 (unconfirmed);
+// parallel predicted-angle results 723. The angular-velocity value alone preserves all matches.
 // @retail 0xc7840
 void function_c7840(vector3f const *desired, vector3f *current, transform4x3f const *frame, real rate, vector3f *velocity,
 	real const *limits, real max_speed, real acceleration)
@@ -7190,7 +7200,8 @@ void function_c7840(vector3f const *desired, vector3f *current, transform4x3f co
 	}
 	real yaw_speed = 0.0f;
 	real pitch_speed = 0.0f;
-	real speed = (real)sqrt(velocity->i * velocity->i + velocity->k * velocity->k + velocity->j * velocity->j);
+	vector3f angular_velocity = *velocity;
+	real speed = (real)sqrt(angular_velocity.i * angular_velocity.i + angular_velocity.k * angular_velocity.k + angular_velocity.j * angular_velocity.j);
 	if (!(0.0001f > (real)fabs(speed)) && speed != 0.0f)
 	{
 		real inverse = 1.0f / speed;
@@ -7200,9 +7211,9 @@ void function_c7840(vector3f const *desired, vector3f *current, transform4x3f co
 		real sine = (real)sin(angle);
 		real cosine = (real)cos(angle);
 
-		axis.i = inverse * velocity->i;
-		axis.j = velocity->j * inverse;
-		axis.k = velocity->k * inverse;
+		axis.i = inverse * angular_velocity.i;
+		axis.j = angular_velocity.j * inverse;
+		axis.k = angular_velocity.k * inverse;
 		real along = (axis.i * local_263186.i + axis.k * local_263186.k + axis.j * local_263186.j) * (1.0f - cosine);
 		predicted.i = local_263186.i * cosine + along * axis.i -
 			(local_263186.j * axis.k - local_263186.k * axis.j) * sine;

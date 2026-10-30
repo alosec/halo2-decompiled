@@ -272,6 +272,9 @@ void c_window_channel::v9()
 // after the same call. One tested link-order change left the score unchanged.
 // Other locals, address forms and control flow scored 3 or worse; the 600 s
 // permutation run found no improvement.
+// Round 419: callback from the completed request, derived/base request storage,
+// native multi-use request pointer and direct callback-result subsets 4/25/4/25
+// and 4/25/4/25. All regress; original callback observation and body restored.
 // A twice-used callback snapshot, with both request types and both result
 // declaration orders, scored 29 in all eight forms (79/78 bytes).
 // Round 78: type-field callback address 3; shared request pointer/reference 3/3;

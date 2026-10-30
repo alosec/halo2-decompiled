@@ -544,6 +544,9 @@ void function_117dd0(long index, vector3f *wind)
 // 159/159/115/124; with native normal projection 166/166/109/118 (frames 0x54/0x60/0x6c).
 // Native projection plus early weights and history vertex cursor, then force first/acceleration
 // first/both, 112/112/111/111 at 744 bytes. Original body restored.
+// Round 425: projected normal and early weights with shared tangent scale 104; force loop 112;
+// paired weighted-point loop 118; tangent/force 114, tangent/weights 119, force/weights 118, all 119;
+// all with final position loop 119. Five-point best rejected; all original source restored.
 // @retail 0x118140
 void function_118140(long index)
 {
@@ -626,7 +629,7 @@ public:
 static inline byte *surface_tag(long index) { return g_4e3b44[index & 0xffff].bytes; }
 static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)(base + offset); }
 
-// score 473 (was 473): frame 0x44 versus 0x2c; attribute scans and D3D call expansion differ.
+// score 453 (was 473): frame 0x44 versus 0x2c; attribute scans and D3D call expansion differ.
 // Integer orientation 529; null-first lighting 522; per-scan results 530; real type
 // cursors 574; existing format/state helpers 473 (kept, full); cursors/orientation
 // 573; helpers/orientation 471 (two-point addition dropped); all three 516.
@@ -655,6 +658,11 @@ static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)
 // original body restored.
 // Round 39: independent search orders T/N/B/U, N/B/T/U, N/T/U/B, B/T/N/U,
 // U/N/T/B, T/B/U/N, B/U/N/T, U/B/T/N all 473. Original search order and APIs restored.
+// Round 425: signed orientation loop 468; C++ APIs 473; unsigned attributes 510; loop/APIs 468,
+// loop/unsigned 505, APIs/unsigned 510, all 505, short orientation 539. Late sign on the signed loop
+// 453 (kept); shared vector scales alone/with late sign 468/453; opposite winding 482, late 483,
+// scales 480, both/named cull 481/481. Late sign on the original side loop 485, integer producer 469.
+// Both orientation passes and all call argument roles are preserved; other forms restored.
 // @retail 0x116b00
 void __stdcall function_116b00(long tag_index, long unused, long group, long variant, long pass, long index, void *context)
 {
@@ -695,10 +703,10 @@ void __stdcall function_116b00(long tag_index, long unused, long group, long var
 	function_1ccb0(59);
 	function_1cd90();
 	function_1cf50();
-	for (long side = 0; side < 2; ++side)
+	for (long orientation = 1; orientation >= -1; orientation -= 2)
 	{
-		real sign = side == 0 ? 1.0f : -1.0f;
-		D3DDevice_SetRenderState(D3DRS_CULLMODE, side == 0 ? D3DCULL_CCW : D3DCULL_CW);
+		D3DDevice_SetRenderState(D3DRS_CULLMODE, orientation > 0 ? D3DCULL_CCW : D3DCULL_CW);
+		real sign = orientation;
 		if (tangent != NONE) D3DDevice_SetVertexData4f(tangent, g_4687ac->i*sign, g_4687ac->j*sign, g_4687ac->k*sign, 1.0f);
 		if (binormal != NONE) D3DDevice_SetVertexData4f(binormal, g_4687a8->i, g_4687a8->j, g_4687a8->k, 1.0f);
 		D3DDevice_Begin(D3DPT_TRIANGLESTRIP);

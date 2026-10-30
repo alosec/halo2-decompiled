@@ -212,6 +212,9 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 // Round 415: existing hoisted-bound first/second pool scans and shared salted-index
 // producer, seven subsets 886/886/886/924/924/924/924; all with forced datum getter 924.
 // Original scanners, identifier expressions, getter and complete body restored.
+// Round 424: positive uniqueness bool/byte/short/long decisions 886 each;
+// each with default-first detail completion 884 (two-point gain rejected).
+// Original duplicate result, detail expression and complete body restored.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)

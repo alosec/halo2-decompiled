@@ -149,7 +149,8 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 	return ticks;
 }
 
-// score 110 (was 110): Frame 0xa8 and request EAX agree; first class-query expansion and header homes differ.
+// score 110 (was 110): Frame 0xa8 and incoming request agree; class-query expansion and state/flag/result homes remain.
+// Frame 0xa8 and request EAX agree; first class-query expansion and header homes differ.
 // BLOCKED-BY 0x21d110 and 0x221810 (their tag/state registers): retail homes the request in EBX and
 // reloads the state flags after the first 0x221810 call, ours forwards them in a callee-saved
 // register across it, and retail builds the flag word in eax where ours builds it in edx.
@@ -203,6 +204,10 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 // snapshots 110/110/110/110; each with priority from the request 109/109/109/109 (472 bytes).
 // Reduced-image context differs; all one-point gains are rejected. All restored; first class-query
 // expansion, header homes and playback convention remain.
+// Round 419: existing rounding helper with explicit short/long/real rate inputs, each
+// rate first/last, and native millisecond input in both orders 110/110/110/110/110/110/110/110.
+// All tie; original helper and body restored. Query expansion, state/flags/result homes and
+// clock-conversion spill remain.
 // Round 194: native source-location mutable/const with source/copied priority 181/181/110/110;
 // the same four with library publication 181/181/110/110. Original location-first
 // body restored; input ownership regresses, and single-consumer copies only tie.

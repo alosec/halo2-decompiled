@@ -1420,7 +1420,7 @@ s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
 void function_1e3400(long actor_index, short squad_index);
 void function_201ad0(long squad_index, long object_index);
 
-// score 218 (was 218): frame 0x32c and length agree; the driver byte spills
+// score 216 (was 216): frame 0x32c and length agree; the driver byte spills
 // where retail retains BL, the squad pointer uses EBX instead of EDI, and the
 // seat walk and conversion homes differ.
 // Current-vehicle/root-index and seat-count/total-seats home names, each with
@@ -1430,6 +1430,9 @@ void function_201ad0(long squad_index, long object_index);
 // Round 400: Consistent per-use vehicle squad field with native count/root-input/seat-array
 // scope in masks 0-7: 256/256/285/285/256/256/285/285. Original field snapshot, roots and seat
 // walk restored.
+// Round 420: Existing child-iterator initializer with native short squad-call conversions in masks 0-7: eight
+// forms, all 216. Original handwritten initialization, casts and declarations restored; driver/squad and
+// seat/conversion homes remain.
 // @retail 0x1bb570
 void __stdcall function_1bb570(long vehicle_index, long actor_index)
 {

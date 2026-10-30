@@ -1148,6 +1148,9 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 // Round 414: type-four-first conditional minimum/maximum/spread selectors, each pair
 // and all three 766 each; all with type-five-first limited predicate 803 at 2832/2828.
 // Original selectors, predicates and complete body restored.
+// Y423: Balance-call-first logical result with independent all/eligible word/dword
+// histograms 768/824/821/831; bitwise result 766/829/826/844 fast (control 766).
+// Native dword workspaces recover frame 0xb4 but regress; original body restored.
 // @retail 0x7e210
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {
