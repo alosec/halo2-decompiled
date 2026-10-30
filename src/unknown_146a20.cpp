@@ -104,6 +104,9 @@ bool g_47f05b;
 // inlines them) 34/34/34, no other function changes; the block typed as its layout (fixed allocator, buffer,
 // pool) 34; the count flag stored first 38. With the vtable store forced (diagnostic only) 12 at 147 bytes:
 // the rest is the pool placement's reload of g_479888 at the join, where retail reloads on the constructed arm.
+// Round 235: publish fixed identity before construction, saved/published placement
+// and published buffer 35/35/46; pool identity with saved/published placement 52/52;
+// both identities 53/53/64. All original publications and executable code restored.
 // @retail 0x146a20
 void function_146a20(void)
 {

@@ -455,6 +455,9 @@ void function_1d90e0(long render_model_index, long node_index, transform4x3f *no
 // 0xb8d30 on its pointer does not (42). Trials: the set ahead of the 0x1d90e0 call 46, a direct `|=` ahead
 // of it 46, the iterator pair as named locals 53, only the target name 50, the pair names with the mask
 // test 52.
+// Round 235: complete/conditional native pair-admission bool/byte, shift/shared mask
+// tests 37/42/37/42/37/42/37/42. The mask still splits the update; original admission
+// and complete executable body restored.
 // @retail 0x113980
 void __stdcall function_113980(long object_index, long target_index, bool alternate, real weight,
 	s_animation_state *state, s_graph_pair_iterator *iterator, long node_count, transform4x3f *nodes)
