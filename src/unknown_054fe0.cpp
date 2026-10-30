@@ -1258,26 +1258,6 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 	}
 }
 
-/* a player's properties (0x90 bytes) */
-struct s_player_properties
-{
-	wchar_t name[32];
-	long unknown40[4];
-	byte unknown50[32];
-	long unknown70[3];
-	char team;
-	byte unknown7d;
-	byte unknown7e;
-	byte unknown7f;
-	byte unknown80;
-	byte unknown81;
-	byte unknown82[2];
-	long unknown84;
-	short unknown88;
-	short unknown8a;
-	long unknown8c;
-};
-
 /* the host gives the players their properties: unique names, and teams when
    the game has teams */
 // score 184 (was 184): frame 0xe4 agrees; owner/count/zero allocation and requested cursor remain.

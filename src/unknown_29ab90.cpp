@@ -60,6 +60,9 @@ PRIVATE __forceinline void function_29ab94(vector3f const *arg_0, real arg_1, ve
 }
 
 // score 383 (was 383): frame 0x5c versus 0x64, actor/input transport and x87 homes differ.
+// MiniMax D: the requested direction read through its own address (a stack argument, as
+// retail's) 366, not kept (an address-taken read needs a byte match); the magnitude summed in
+// i/j/k order alone 383.
 // frame 0x5c/0x64, actor/requested-vector transport and x87 homes differ.
 // Earlier: frame 0x5c versus 0x64, actor/input transport and x87 homes differ.
 // Earlier 396 from 428: magnitude helpers now give retail's copies, memory-operand products and epsilon;
