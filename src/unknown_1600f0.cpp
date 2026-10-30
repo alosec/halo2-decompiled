@@ -1121,6 +1121,9 @@ struct s_game_engine_globals_connections_view
 // Round 279: native byte input domains for glyph, dim and hidden-place flags,
 // all seven subsets and all four input flags together: eight calibrated scores 170.
 // Original Boolean signature and complete body restored; deferred icon tail remains.
+// Round 291: Default validity before construction for place/icon, score, both, time, place/time,
+// score/time and all: 256/252/258/252/246/247/268; all with connection default 267. All exact-only forms
+// restored (calibrated fast control 170).
 // @retail 0x1603f0
 void game_engine_player_row_build(short const *position, real alpha, long player_index, word const *name, long place,
 	long score, long seconds, bool hide_connection, bool show_icon, bool hide_place, color3f const *color, bool dim,
