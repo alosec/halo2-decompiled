@@ -1796,7 +1796,7 @@ struct s_bink_sound_settings;
 extern s_bink_sound_settings *g_51ebe4;
 
 s_unknown_5c *function_221810(short index);
-long function_219290(short index, s_permutation_group *group);
+long function_219290(s_permutation_group *group, short index);
 void function_12a420(short voice_index);
 void sound_voice_queue_chunk(short voice_index, s_sound_permutation const *permutation, short chunk_index);
 void function_12a1b0(short voice_index, s_looping_track_sound *sound, s_looping_channel_spatialization const *spatialization, s_looping_channel_properties *properties);
@@ -1968,7 +1968,7 @@ prepare_chunk:
 					sound_voice_queue_chunk(voice_index, (s_sound_permutation const *)permutation, playing->current_chunk_index);
 					playing->transition_pending = false;
 					if (primary && !(byte)looping_sound_track_has_next_sound(track, track_definition) &&
-						(short)function_219290(playing->current_chunk_index, (s_permutation_group *)permutation) == NONE)
+						(short)function_219290((s_permutation_group *)permutation, playing->current_chunk_index) == NONE)
 					{
 						if (playing->state == 1)
 							playing->state = 2;
