@@ -185,32 +185,31 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // score 62 (was 62): format 3 loads the buffer data into EBP where retail uses EBX, and
 // format 4 forms a vertex pointer where retail addresses every field as base + index * 8
 // and keeps the index for the late node read. Indexing format 4 gives exactly retail's
-// format-4 code but the allocator then swaps EBX/EDI (node arrives in EBX, the source on
-// the stack): 175. Tried: indexed format 4 or both packed arrays 175, format 2 62, format 3
-// 60; node formats/ordinary index/range producer 175; concrete packed pointer 62; concrete
-// reference 62; native value 173; coordinate-array pointer 62; coordinate-array reference 62;
-// returned point 62; native input/output 62; concrete indexed input 175; indexed native
-// decoder 582; ordinary index 582; native input reference/value 578/549; native axis bounds
-// 62; range value input 267; range output reference 62; natural format case order 127;
-// static indexed/input templates 582/578; shared point constructor 228; aggregate point 62;
-// range stages 62; range decoder/producer inline 62/537; buffer fields at use 190; ordinary
-// scalar index 62; packed cases together 111; node/plain/both point memcpy 62/62/62;
-// node/packed/both record references 62/62/62; native coordinate loop 62; native range and
-// coordinate loops 62; format-3 sum written offset first 62; formats 3 and 4 indexed 175;
-// format-4 pointer for the coordinates with the node read by index 175; the index read once
-// into a local for every case with format 4 indexed 175; indexed format 4 with node declared
-// before point (definition, declaration and call) 175; node before point alone 62 (caller +2);
-// formats 2, 3 and 4 all indexed 175; format-4 record as a packed position member plus node,
-// indexed/pointer 175/62.
-// into a local for every case with format 4 indexed 175; with format 4 indexed, the format read into a
-// local 175, one node store after the switch 187, the index read directly 175 (the source still arrives
-// on the stack, the switch index in EDI, the node in EBX); the buffer pointer read at each use 190;
-// the index read through its own address (index_reference) dropped 62 (index stays on the stack: kept);
-// format 3 indexed 60 (retail's format-3 code exactly, EBX for the offset); a shared node store after
-// the switch with formats 3/4 returning 172, with format 4 indexed 175. One-file LTCG harness: only the
-// format-4 form decides the convention (removing any other case never flips it); format 4 keeps
-// retail's EDI node and EDX source only when its node read re-derives the buffer base (the full base
-// expression at each access, or the node read through it) instead of keeping base and index live.
+// format-4 code but the allocator then swaps EBX/EDI (node arrives in EBX, the switch index and
+// base take EDI, the source moves to the stack): 175. Tried: indexed format 4 or both packed
+// arrays 175, format 2 62, format 3 60; node formats/ordinary index/range producer 175; concrete
+// packed pointer 62; concrete reference 62; native value 173; coordinate-array pointer 62;
+// coordinate-array reference 62; returned point 62; native input/output 62; concrete indexed
+// input 175; indexed native decoder 582; ordinary index 582; native input reference/value
+// 578/549; native axis bounds 62; range value input 267; range output reference 62; natural
+// format case order 127; static indexed/input templates 582/578; shared point constructor 228;
+// aggregate point 62; range stages 62; range decoder/producer inline 62/537; buffer fields at use
+// 190; ordinary scalar index 62; packed cases together 111; node/plain/both point memcpy
+// 62/62/62; node/packed/both record references 62/62/62; native coordinate loop 62; native range
+// and coordinate loops 62; format-3 sum written offset first 62; formats 3 and 4 indexed 175;
+// format-4 pointer for the coordinates with the node read by index 175; the index read once into
+// a local for every case with format 4 indexed 175; indexed format 4 with node declared before
+// point (definition, declaration and call) 175; node before point alone 62 (caller +2); formats
+// 2, 3 and 4 all indexed 175; format-4 record as a packed position member plus node,
+// indexed/pointer 175/62; with format 4 indexed, the format read into a local 175, one node store
+// after the switch 187, the index read directly 175; the index read through its own address
+// (index_reference) dropped 62 (index stays on the stack: kept); a shared node store after the
+// switch with formats 3/4 returning 172, with format 4 indexed 175. One-file LTCG harness: only
+// the format-4 form decides the convention (removing any other case never flips it); format 4
+// keeps retail's EDI node and EDX source only when its node read re-derives the buffer base.
+// Round 23 (lane 10): with format 4 indexed: the coordinates read into short locals first 175; a
+// const node parameter 175; the switch on a format-minus-one local 175; the full base expression
+// at each format-4 access 107 (636 bytes, retail convention), with format 3 indexed too 105.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)
