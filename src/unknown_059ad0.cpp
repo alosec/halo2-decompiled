@@ -3556,6 +3556,9 @@ long network_observer_attach_channel(s_network_observer *observer, long owner_in
 // Round 403: copy scope 131; const copy scope 131; scoped input output 131; scoped input state 131;
 // const input copy 131; reservation output lifetime 131; output first 131; scoped result lifetime
 // 136. Opening body restored.
+// Round 422: observer snapshot 188; owner snapshot 163; both attach snapshots 167; per-player
+// identity address 131; observer/identity 188; owner/identity 163; all repeated inputs 167; all
+// inputs/entry snapshots 200. Opening body restored.
 // @retail 0x5c720
 bool __stdcall function_5c720(c_class_58d20 *session, const s_session_member_identity *identity,
 	long player_count, const dword *identities, const long *values, bool reserve,
@@ -3680,6 +3683,9 @@ bool network_observer_channel_timed_out(s_network_observer *observer, long chann
 // Round 403: native protocol 101; native id fields 101; native identity 101; native zero 101; native
 // reply lifetime 101; native reply order 94; native host default 124; native chained flags 101.
 // Opening body restored.
+// Round 422: shared member-state base 101; shared identifier source 101; both native sources
+// 101; const reply id 101; state base/const reply 101; id source/const reply 101; both
+// sources/const reply 101; shared sources after lookup 101. Opening body restored.
 // @retail 0x5e3f0
 bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *address)
 {
@@ -4744,6 +4750,9 @@ void function_62640(c_class_58d20 *session)
 // Read-only first-loop member / unsigned sequence / immutable observer binding,
 // all seven subsets 98; signed-int cursors in both ordinary loops 98. Original
 // metadata domains and body restored; owner spill, mask homes and send base remain.
+// Round 422: current payload base 105; previous payload base 142; both payload bases 148; opaque
+// message 98; current base/opaque message 105; previous base/opaque message 142; both
+// bases/opaque message 148; both bases/current at encoding 134. Opening body restored.
 // @retail 0x627e0
 void function_627e0(c_class_58d20 *session)
 {

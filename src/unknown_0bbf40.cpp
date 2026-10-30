@@ -740,27 +740,30 @@ void __stdcall function_bc300(long object_index)
 	record_pool_release(g_4e0300, object_index);
 }
 
-// score 42 (was 42): the mask is applied to the index before the record pointer is loaded; retail
-// loads the pointer first. Tried: a shared absolute index 42; the header reused for the refreshed
-// lookup 68; a function-scope block pointer 42; allocator noinline 42; old size read before allocation
+// score 5 (was 5): the only difference left is the size parameter's load: retail reads it with a
+// 16-bit load (a short parameter), ours with a 32-bit one, which shifts every later byte by one.
+// With `short size` in the definition and in every declaration (src/unknown_0b7b40.cpp,
+// src/unknown_0b8ca0.cpp, src/unknown_118e80.cpp, src/unit_object_type.cpp) the function matches
+// byte for byte, but 0x118510 rises 83 -> 102 (its call site then loads the size into ECX where
+// retail uses EAX): BLOCKED-BY 0x118510.
+// Forms (score 42 then): a shared absolute index 42; the header reused for the refreshed lookup
+// 68; a function-scope block pointer 42; allocator noinline 42; old size read before allocation
 // 81; size optimization 107; global optimization off 151; shared index, block scope and allocator
-// noinline together 42. A short size parameter (every declaration) gives retail's word load of it,
-// 40, but the header still takes edi and the extent ebp where retail has them the other way round
-// (0x118510 83 -> 102 with it); with it: mask and extent declared first 89; a named object-slot
-// pointer for the reallocation and the clear 40; shared absolute index 40; single-exit result 40;
-// mask and extent declared at the top, assigned in place 40; header declared before the result
-// 40; extent as mask + size 40.
-// noinline together 42.
-// Round 197: Full alignment power carried across allocation, signed/unsigned power x short/long
-// old size x outcome/allocation result 43, 102, 72, 109, 43, 102, 72, 109.
-// Lane 8 r79: retail loads the pool's data before masking the index and keeps the header in EBP
-// and the extent in EDI (ours EDI and EBP). A pool-data local then `&headers[index & 0xffff]`
-// (0xbba20's form) 42; the header or the extent renamed 42 each; a dword extent 42; the header
-// declared before the result 42.
-// Round 29: retail keeps the header in ebp and extra in edi (ours edi/ebp) and reads size
-// with a 16-bit load. A named short length 42; the header table in its own local first 42;
-// mask and extra declared at the top 42; the header declared before result 42; single exit
-// 42. A short size parameter gives the 16-bit load (40) but every declaration must change.
+// noinline together 42; full alignment power carried across allocation, signed/unsigned power x
+// short/long old size x outcome/allocation result 43, 102, 72, 109, 43, 102, 72, 109; a named
+// short length 42; the header table in its own local first 42; mask and extra declared at the top
+// 42; the header declared before the result 42; single exit 42; a pool-data local then
+// `&headers[index & 0xffff]` (0xbba20's form) 42; the header or the extent renamed 42 each; a
+// dword extent 42. With a short size parameter (score 40 then): mask and extent declared first
+// 89; a named object-slot pointer for the reallocation and the clear 40; shared absolute index
+// 40; single-exit result 40; mask and extent declared at the top, assigned in place 40; header
+// declared before the result 40; extent as mask + size 40.
+// Round 21 (lane 10): the existing object_get_0bbf40 for the refreshed object only 42, for both
+// object reads 8 (header and extent then take retail's EBP/EDI); plus a named new size 6, plus
+// `header->size += (short)extra` 7, both 5 (kept); the new size as extra + old_size 8 (same code).
+// Round 23 (lane 10): with the long parameter every 16-bit read of it is widened to a 32-bit
+// load: the test through a short pointer to the parameter 5; a named short length 5; `!(word)size`
+// 5; `(size & 0xffff) == 0` 6; `!(short)size` 5.
 // @retail 0xbc380
 bool function_bc380(long object_index, long block_offset, long size, long alignment_bits)
 {
@@ -768,19 +771,19 @@ bool function_bc380(long object_index, long block_offset, long size, long alignm
 	s_object_memory_header_ab *header = (s_object_memory_header_ab *)g_4e0300->data + (object_index & 0xffff);
 	if ((short)size == 0)
 	{
-		s_object_block_ab *block = (s_object_block_ab *)((byte *)header->object + (short)block_offset);
+		s_object_block_ab *block = (s_object_block_ab *)((byte *)object_get_0bbf40(object_index) + (short)block_offset);
 		block->offset = NONE;
 		block->size = 0;
 		return true;
 	}
 	long mask = (1 << (byte)alignment_bits) - 1;
 	long extra = (short)size + mask;
-	if (loop_reallocate((s_loop_allocator *)g_4de2ec, &header->object, header->size + extra, 0, 0))
+	long new_size = header->size + extra;
+	if (loop_reallocate((s_loop_allocator *)g_4de2ec, &header->object, new_size, 0, 0))
 	{
 		short old_size = header->size;
-		header->size = (short)(old_size + extra);
-		s_object_memory_header_ab *current = (s_object_memory_header_ab *)g_4e0300->data + (object_index & 0xffff);
-		s_object_block_ab *block = (s_object_block_ab *)((byte *)current->object + (short)block_offset);
+		header->size += (short)extra;
+		s_object_block_ab *block = (s_object_block_ab *)((byte *)object_get_0bbf40(object_index) + (short)block_offset);
 		block->offset = (short)((old_size + mask) & ~mask);
 		block->size = (short)size;
 		memset((byte *)header->object + old_size, 0, extra);

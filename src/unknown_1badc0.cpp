@@ -115,6 +115,9 @@ real normalize2d(point2f *arg_0);
 // Round 269: displacement workspace 260; separation workspace 211; both 260; direction-scale workspace 251;
 // displacement/scale 207; separation/scale 251; all 207; all with entry point storage 207.
 // Four-point best below the retention margin; original executable body restored.
+// J198: existing complete point/word getter, crossed with entry point/collision storage
+// and coherent input, 296/296/296/296/300/300/300/300. Scalar output cast exact-only; all nonmatching forms restored.
+// Output EBX/EBP, vector homes and geometric schedules remain.
 // Round 302: Clearance after successful normalization, with shared expanded radius,
 // distinct squared/root length and existing scaled-add subsets: all eight 270.
 // Original clearance lifetime, output access and body restored; output/vector homes remain.

@@ -77,12 +77,20 @@ static inline byte *bsp_bit_vector(long index)
 	return &((s_bsp_bit_vectors *)g_4ed280)->bits[g_4686c4][index];
 }
 
+// MiniMax I run 16: an `if (i == NUMBEROF(g_4eca60))` after the loop with the same store in both
+// branches keeps the slot index live and matches; not kept (a test with identical branches only
+// steers the register allocator).
 // score 6 (was 6): retail keeps the slot index in esi ([esi*4 + g_4eca60],
 // inc esi, cmp esi, 8); ours steps a byte offset ([esi + g_4eca60], add esi, 4,
 // cmp esi, 0x20). The other differing lines are the same instructions one byte
 // apart. dword, short and byte indices, do/while, a post-increment, a counter
 // in a struct, inline read, clear and release helpers, and a plain global array
 // keep the byte offset or score worse; the 600 s permutation run found no
+// improvement. Kimi 2 r41: an if/else after the loop whose two branches both clear the active
+// slot count keeps the index live and matches; not kept (identical branches that only steer
+// registers).
+// Round 42: completed index with bound-i 8, i-i 6, last-iteration reset 14, i-bound 5,
+// index mask 5, modulo 5, xor 6; external declaration alone 6. Original body restored.
 // improvement.
 // Round 302: Occupied-slot-only clear with continue/nested/branch-owned/mode-exit
 // publication 7/7/29/29; the same with a shared identifier snapshot 7/7/29/29.

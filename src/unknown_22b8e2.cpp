@@ -49,6 +49,9 @@ void function_2d140(long, real const *, long, long, s_filter_vector const *);
 // everywhere/from reused integer inputs 146/120; case-converted offsets 159/139.
 // Early grid declaration repeats those four scores. All body/type changes restored;
 // mode/resource/point homes and offset/bound schedule remain.
+// Round 424: actual 0..2 mode in signed byte/byte/short/word 210/210/210/210;
+// each with both native integer spans named at the reciprocals 210/210/210/210.
+// All restored; mode/resource/point homes and offset/bound schedule remain.
 // @retail 0x22b8e2
 void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 {

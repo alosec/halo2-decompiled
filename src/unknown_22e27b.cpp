@@ -217,6 +217,10 @@ static inline real interpolate_linear(real a, real b, real t)
 // Complete type/disposal/restart end-policy predicate ownership subsets 237/236/227/241/233/239/233;
 // complete graph with native frame-count ownership 233. Original field observations, frame
 // and timing stream restored.
+// Round 9: the fraction before the key reads gives frame 0xc with next time in EBX and the zero
+// constant no longer cached in EBX (retail keeps next time at [ebp-0xc] and `xor ebx, ebx` at the
+// loop head for every `cmp reg, ebx`/`sub reg, ebx`) 207; on it, long next time 207, the loop test
+// as `next_time <= time` 207, elapsed before next time 206, dword frame time 216.
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {

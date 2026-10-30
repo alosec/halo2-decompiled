@@ -202,6 +202,9 @@ PRIVATE __forceinline dword function_224551(s_draw_sprite_seed const *arg_0,
 // tint pointer/reference and native color return 445/519/519/592; lexical array
 // homes 445/519/519/592. Exact-only grouping did not match; all native
 // separate outputs and complete helper restored, including every in-place input capture.
+// Round 214: lower-first conditional clamp 391; upper-first conditional/early-return/complete-result clamps 401 each.
+// Real component-end walks with those four producers 494/497/497/497. Original helper and traversal restored;
+// frame 0x50/0x60, overlapping tint/second UV and cache/interval homes remain.
 // @retail 0x224550
 void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
 	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)

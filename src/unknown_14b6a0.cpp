@@ -257,6 +257,20 @@ void function_14bac0()
 // returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
 // identities retained; selected-unit value begins at its original bounds read and serves every
 // subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
+// Round 212: complete origin value with pointer/value destination and scalar/shared difference
+// 319/316/319/316; native recipient counterparts 318/361/318/361 (fast control 230). Original input
+// observations, points and both traversals restored; frame/readiness sharing remains.
+// Round 56: retail's frame is 0x3c and its locals (relative to the post-prologue esp E) are:
+// the readiness byte at E+0x13, the player at E+0x14, the scenario (reused for the radius) at E+0x18,
+// the height at E+0x1c, the destination point at E+0x20, one shared point at E+0x2c (the marker
+// point, the alternate marker point and the centre written by the capsule call), the alternate
+// point at E+0x3c and the first scan's iterator at E+0x40/E+0x48; the second scan's 16-byte
+// iterator sits on the shared point's slot at E+0x2c and is stepped by the out-of-line 0x6b380.
+// Our frame is 0x44. Merging the centre into the marker point and moving the second iterator
+// into its block gives 0x34, keeping the marker point as a 16-byte iterator 0x38, and using the
+// out-of-line 0x6b380 for the second scan 0x44/0x48; all of those score 233-262 against the
+// retained 230, so the original body stands. What is left is the frame size itself and the
+// point/destination slot order, which our compiler keeps the other way round.
 // @retail 0x14b6a0
 void function_14b6a0()
 {

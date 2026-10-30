@@ -500,11 +500,35 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // operands swapped 78, without the store's cast 77; word old playing mask too 59; word
 // mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
 // the bit from `player->team` 46.
+// Round 116: the mask as a local copy updated in place (`mask |= present_teams;` then stored
+// through the field pointer) 77, dword 102; that with present not volatile 63; the playing test
+// before the present update 41; a bit local for the present update only 29. A non-volatile
+// present gives retail's loop RMW, the mask reload before the first branch and the folded
+// `or reg, [present]`, but 384/378 bytes (the entry and compare forms then differ).
 // computed before the branch 133; union plus carrier 91; word mask with the field stored
 // directly and the OR uncast (either operand order) 77, the word mask read straight from the
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
 // loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
 // first on the word form 77, carrier on the word form 78.
+// retail; after the loop retail reloads it once into ecx before the first test and shares it
+// between the compare (`movzx eax, cx`) and the update (`or ecx, [present]`), where ours reads it
+// from memory at each use; the comparison, the update and the input counter loop then take
+// other registers.
+// Tried: team-bit carrier 29 (the loop then matches; below the keep threshold); carrier with the
+// engine lookup hoisted 29; carrier with the mask compare swapped 29; two-width union view of the
+// mask 90; union with a named wide copy 90; union plus carrier 91; word local with a promoted copy
+// 134; updated mask computed before the branch 133; a plain `word old_team_mask` 77 (retail's entry,
+// `mov cx` and word store, but the compare reads memory); with the carrier 78/83; the word mask with
+// the field stored directly and the OR uncast (either operand order) 77; the word mask read straight
+// from the field 129 (re-read after the loop); the mask read and stored through globals 129;
+// `*team_mask |= present` (word or dword, or the field re-read in the test) 130; compares as
+// old != new 33; word mask with the tests' operands swapped 78; word old playing mask too 59; present
+// not volatile 102 (63 with the word mask: present takes edi for the loop and globals is re-read
+// after it); `(void)&present` on a non-volatile present 102/63 (same); the loop as a force-inlined
+// helper writing through mask pointers 139; the engine lookup named first on the word form 77;
+// `present = present | bit` 32; the bit from `player->team` 46; an early return when nothing
+// changed 32 (77 with the word mask); a char team local 32; signed long masks 32; a 600 s
+// permuter run (50 variants), none below 32.
 // @retail 0x158140
 void function_158140(void)
 {
@@ -2451,6 +2475,19 @@ void function_1e9ce0(long player_index, long counter, s_statborg *statistics, lo
 // named score-to-win 44; one change local for all calls 125; early equal-score return 44;
 // short-cast delta at the 0x1e9df0 call 44; change local for that call only 44; delta + old
 // score 44; mode read before the statistics getter 85; const statistics pointer 44.
+// Round 116: mode tested from the field without the local 44; score declared first 60; iterator
+// at function scope 44; the loop's switch on the mode local 120; score set to the minimum only
+// in the iterator arm 51. Diagnostic (reverted): with g_4e6948 address-taken anywhere this gives
+// 3 at 359 bytes (only the 0x1e9df0 setup left), but matched 0x15b3a0/0x1582d0 then reload it
+// after a pointer store, and retail 0x241620 keeps it in EBP across 0x1967d0 calls.
+// score 44; mode read before the statistics getter 85; const statistics pointer 44; short old score
+// 121; score-to-win local inside `score > old_score` 44; the change test as old != new 45; the
+// counter switch cases in the order 9/3/1 or 3/9/1 44.
+// Round 81: the final test nested under the score test 44; old score read before the mode 44;
+// the mode read in its test (no local) 44; an options pointer local for the final test 44; the
+// score declared before the old score 44. Our build keeps the variant pointer in EBX across
+// 0x1967d0, where retail reloads it (retail's compiler treats 0x1967d0's counter store as one
+// that may reach the variant global; ours knows it only writes the counter table).
 // @retail 0x15b650
 void __stdcall function_15b650(long team, long delta)
 {

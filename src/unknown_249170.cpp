@@ -68,7 +68,17 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
-// score 65 (was 82): what is left is per-case stack homes (conversion temporaries, angles, seed
+// score 57 (was 65): what is left is per-case stack homes (conversion temporaries, angles, seed
+// and extents in cases 0, 1, 5, 7 and 9), the case 1 fsin/xorps order and the first normalisation
+// product (scale first in retail, one byte shorter). Round 40: the position.z clear written in
+// cases 0 and 9 (no labels) lets case 0 jump to case 9's store as in retail, 65 -> 58; the side test
+// with the converted value on the left 58 -> 57. Then: normalisation operands swapped 57 (same code);
+// volatile-free normalisation and speed scale 98, through the existing scale helper 98/98; case 0
+// with the angle as the first operand, polar declared first or angle declared at the top 57 each;
+// case 1 with a chained zero, no sine local (309) or the zero store first 57.
+// Round 129 (82): side test with the converted value on the left 81 (fixes the ucomiss only);
+// case conversion/angle/seed/extent homes, trigonometric order, side test and normalization loads differ.
+// Earlier at 65: what is left is per-case stack homes (conversion temporaries, angles, seed
 // and extents in cases 0, 1, 5, 7 and 9), the case 1/9 fsin/xorps order, the side test's ucomiss
 // operands and the first normalisation product (scale first in retail, one byte shorter).
 // extents) differ in cases 0, 1, 5, 7 and 9; also the case 1/9 fsin/xorps order, the side
@@ -93,6 +103,9 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Ordinary pooled scaling with fraction result reference-first/pointer 106/106; returned real 82;
 // ordinary-inline reference-first/pointer/return 819/819/976; returned real plus ordinary extent query
 // 443; ordinary-inline original reference 819.
+// Round 421: cone velocity setter 114; ring velocity setter 548; cone/ring setters 552; fixed/direction setter 99;
+// cone/fixed setters 107; ring/fixed setters 558; all velocity setters 562; all velocity setters/final scale
+// helper 562.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {
@@ -116,7 +129,8 @@ void function_249170(real const *values, s_particle_spawn_state *particle, s_par
 		particle->velocity.i = (real)cos(polar);
 		particle->velocity.j = (real)sin(azimuth) * radial;
 		particle->velocity.k = (real)cos(azimuth) * radial;
-		goto zero_z;
+		particle->position.z = 0.f;
+		break;
 	}
 	case 1:
 	{
@@ -196,7 +210,7 @@ void function_249170(real const *values, s_particle_spawn_state *particle, s_par
 		point2f const *extents = particle_spawn_extents(system);
 		real polar = function_246cd0(&definition->angle, values) * 0.017453292f;
 		dword *seed = &g_4e7408->seed;
-		bool side = 0.f == (real)(long)(random_next(seed) & 1);
+		bool side = (real)(long)(random_next(seed) & 1) == 0.f;
 		particle->position.x = 0.f;
 		particle->velocity.i = (real)cos(polar);
 		random_next(seed);
@@ -270,14 +284,11 @@ void function_249170(real const *values, s_particle_spawn_state *particle, s_par
 		particle->velocity.i = (real)cos(polar);
 		particle->velocity.j = (real)sin(azimuth) * radial;
 		particle->velocity.k = (real)cos(azimuth) * radial;
-		goto zero_z;
+		particle->position.z = 0.f;
+		break;
 	}
 	default: __assume(0);
 	}
-	goto normalize;
-zero_z:
-	particle->position.z = 0.f;
-normalize:
 	vector3f *velocity = &particle->velocity;
 	real speed_squared = velocity->i * velocity->i + velocity->j * velocity->j + velocity->k * velocity->k;
 	if (speed_squared != 0.f)
