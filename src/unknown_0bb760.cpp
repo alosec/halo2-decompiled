@@ -464,6 +464,12 @@ void function_3dd10(long object_index, bool force);
 // found-path subtraction (132f), but our not-found exit then rejoins the block's 1.0 load instead
 // of reloading it, so the tail sits 8 bytes short of retail's and every later branch target
 // shifts; a while-loop second scan adds an entry guard (196f, 1045 bytes). Original restored.
+// Round 55: with the inverse inside the found branch (hsv3f a,b,mixed first, then the inverse, then
+// the two conversions) our found path is byte-identical to retail's, the blend and choices stack
+// homes match, and the 1.0/0.0 materialisation order matches; the one difference left there is
+// retail's not-found exit reloading 1.0 into xmm5 (8 bytes) where ours rejoins the block's load, so
+// the tail sits 8 bytes short and every later branch target shifts (132f). Putting the inverse
+// after the two conversions also moves the subtraction (138f). Original restored.
 // Round 53: the inverse at the top of the found block gives retail's blend slot, subtraction and
 // 1.0/0.0 order but loses the 1.0 reload at the not-found exit (one instruction short) 132f; with
 // the variant byte read before the blend value 123f, read at its uses 134f; with a pre-incremented
