@@ -1254,11 +1254,14 @@ bool function_0bfe60(dword const *flags, long bit);
 
 // score 52 (was 52): the zeroed register is EDI in ours and EBP in retail, and the block the
 // test jumps to is laid out differently.
-// score 52 (was 52): the code is retail's apart from the colours (loop counter and total
+// The code is retail's apart from the colours (loop counter and total
 // EDI where retail has EBP, the test index EBP where retail has EDI) and ADD for retail's LEA
 // of the bitset row; push pointer without volatile 56; device as a field pointer 56 (52 with
 // volatile); total zeroed in an else arm 139; one combined query-result test 52;
 // &bitsets[set][0] 52; slots + index 52; the push expansion in a forced-inline helper 52.
+// Round 271: plain completed-pointer/per-store packet advancement crossed with
+// long/short remainder and lower/upper-first saturation: 56/103/137/131/92/117/128/140.
+// All restored; loop/count and test-index colours plus bitset row address remain.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {
@@ -1329,6 +1332,9 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // with a slot pointer 91; the global and valid tests nested, both else arms written out 87; the
 // frame computed before the slot pointer 99; the frame read before it 93; one clamped
 // assignment from a named product 87; the key built in an inline helper 108.
+// Round 271: independent amount with cleared/nonzero-only or full aggregate request
+// initialization, early/trailing lookup failure and direct/shared bit test:
+// 119/133/120/129/135/140/131/139. All retain frame 0x1c; original body restored.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {

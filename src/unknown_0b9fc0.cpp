@@ -371,12 +371,15 @@ void __stdcall function_115220(long machine_index)
 	}
 }
 
-// score 286 (was 368): its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 286 (was 286): its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // Frame 0xc8 agrees; early flag carriers, the extra clamp spill, floating schedule and portal/movement homes remain.
 // Round 269: motion workspace 368; position snapshot 455; both 455; shared ordinal 368;
 // motion/ordinal 368; position/ordinal 455; all 455; all with the twice-used position predicate 344.
 // Position predicate alone/motion/position/ordinal/motion-position/motion-ordinal/position-ordinal
 // 286/286/344/286/344/286/344. Only the predicate alone retained after ordinary whole-image validation.
+// Round 271: full-width unsigned/signed flag storage composed with bool/byte/short/long
+// position predicates: 465/465/345/465/465/465/345/465, all 1899 bytes.
+// All restored; early flag carriers and the initial clamp spill remain.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {
