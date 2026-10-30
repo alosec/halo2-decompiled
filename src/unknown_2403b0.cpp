@@ -110,6 +110,9 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // Complete object-data, object-pointer and object-index ownership: seven subsets 95 each;
 // complete graph with native short slot 237/922. Original pool observations, identifiers
 // and pointer lifetimes restored.
+// Round 79: nested blocked assignment 93; default-true admission 128; peer receiver 95;
+// flag pointer arithmetic 95; clock-first product 95; final-team assignment 121; positive blocked
+// assignment 132; nested blocked with peer 93. Two-point gains and one-use receiver forms restored.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {

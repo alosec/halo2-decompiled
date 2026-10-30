@@ -1963,6 +1963,11 @@ extern dword g_54d5b8;
 // Round 76: case 4 outside 55; its timestamp copy 48; case 4 after the switch 57; case 4 with case 5
 // or the high cases outside 55/55; early guarded case 4 71; entry dialog with case 4 outside 55;
 // case 4 outside with its timestamp 60. Original body restored.
+// Round 13 (lane 13): all 120 case orders lay out the same (compile-only); the call follows
+// case 4 only when case 4 has its own call that VC tail-merges (compile-only, fastcall), but
+// here case 4's call pushes a constant: 81 with `dialog` or 0xad. Also: the switch only picks
+// the dialog and `state != 4 || !g_51ec99` guards the call 55; a forced-inline dialog helper
+// returning NONE 85; case 4 `if (!g_51ec99) break;` then store and return 48.
 // @retail 0x250804
 void c_session_lobby_screen::show_session_state()
 {

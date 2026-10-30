@@ -271,6 +271,12 @@ void function_14bac0()
 // out-of-line 0x6b380 for the second scan 0x44/0x48; all of those score 233-262 against the
 // retained 230, so the original body stands. What is left is the frame size itself and the
 // point/destination slot order, which our compiler keeps the other way round.
+// Returned relocation output 243; paired initial marker snapshots 230; both 243;
+// selected-unit reuse alone 245; returned output plus unit reuse 222 kept (1036 bytes);
+// marker/unit snapshots 245; complete graph 222; with native recipients 228. Four complete
+// returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
+// identities retained; selected-unit value begins at its original bounds read and serves every
+// subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
 // @retail 0x14b6a0
 void function_14b6a0()
 {

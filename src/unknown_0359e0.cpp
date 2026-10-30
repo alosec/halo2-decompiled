@@ -76,6 +76,9 @@ PRIVATE inline long swizzle_log2(dword value)
 // 95/99/94/94. Original result locals and both helper calls restored.
 // Round 211: existing logarithm signed short/long inputs crossed with bounded short/long counts
 // and short/long results, scores 82/82/82/82/82/82/82/82. Original executable form restored.
+// Round 428: genuine masked coordinates as long/short in both arms 99/102; only low arm
+// 82/85; only high arm 83/92; both with second-result shift at production 99/102.
+// Original coordinate captures, helper, table expressions and tail restored.
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

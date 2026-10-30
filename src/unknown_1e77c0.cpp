@@ -495,6 +495,8 @@ struct s_request_profile
 // Round 421: matched full-value query in one native 32-entry loop, indexed long/short/word/dword
 // counters 348/321/321/348; advancing destination with those counters 349/321/321/349.
 // All remove the inherited qualified global data read; original body restored at 108/540.
+// DL192: Native transition record publication, Boolean/full query, flat/grouped loops 221/222/196/189;
+// complete array clear before those queries 196/163/196/187. Ordinary global load throughout; all restored.
 // @retail 0x1e73b0
 void function_1e73b0()
 {

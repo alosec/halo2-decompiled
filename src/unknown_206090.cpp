@@ -244,6 +244,10 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 // 1364; all pointer-root names 1364; separate velocity declarations 1364; direct native byte admission 1417;
 // existing point setter 1364.
 // Original body retained; frame 0x5d0 versus 0x58c, component/velocity homes and contact induction remain. All checked matches survive.
+// Round 41: Native impact list/pool/both schemas and signed list count, then list/count,
+// pool/count, all three and all with direct kind equality:
+// 1368/1364/1368/1365/1382/1365/1382/1404. List-only schema reaches 6238 bytes;
+// frame stays 0x5d0 and component/velocity homes still differ. All original types and body restored.
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {

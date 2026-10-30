@@ -221,6 +221,9 @@ static inline real interpolate_linear(real a, real b, real t)
 // constant no longer cached in EBX (retail keeps next time at [ebp-0xc] and `xor ebx, ebx` at the
 // loop head for every `cmp reg, ebx`/`sub reg, ebx`) 207; on it, long next time 207, the loop test
 // as `next_time <= time` 207, elapsed before next time 206, dword frame time 216.
+// Round 79: fraction-first with outer next time 206; active fraction scope 206; outer elapsed 206;
+// outer frame time 206; outer next with active fraction 206; all outer timing 206;
+// sum-only/full per-iteration direction on that graph 206/206. Original 96 body restored.
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {

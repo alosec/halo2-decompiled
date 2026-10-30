@@ -240,6 +240,9 @@ void function_07b3e0(void)
 // the local 64, the reverse 65; the iterator's own fields with data_find_index/data_datum_index 60; the
 // iterator without the datum_index init 58. Original helper declarations, pool snapshot, loop and final global
 // stores restored.
+// Round 20 (iterator form unless noted): the datum through data_datum_index on the iterator's
+// pool 57, on the global 69 (both pool registers and the pad appear, the datum pointer spills),
+// on a pool local 57; index set before the pool 58; this form with the scan on the global 64.
 // @retail 0x7b430
 void function_07b430(void)
 {
