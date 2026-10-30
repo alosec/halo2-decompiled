@@ -175,7 +175,7 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
 
-// score 355 (was 444): Entry ESI save, direction/opposite homes and x87 normalization storage still differ.
+// score 355 (was 355): Entry ESI save, direction/opposite homes and x87 normalization storage still differ.
 // Round 291: Paired double-square terms, complete direction-square terms, both, ordered accumulator
 // clamp, and clamp combinations 410/414/420/402/410/414/420; all with disjoint clears before common
 // remaining initialization 454 (fast control 402; full 444).
@@ -187,6 +187,9 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 // word side ordinal 441; readonly direct index 374 (unchanged fast control 402).
 // Plain direct index 355 at 1893/1892 kept; descriptor conditional 361 at 1888/1892,
 // null-first descriptor 433 at 1886/1892. Entry ESI save, vector homes and x87 storage remain.
+// N227: Complete color-by-value/accumulator/angle-copy subsets 571/947/1184/367/676/970/1197;
+// all with native input CRT copy 1197 (fast control 374). Seven-point preview lead below gate;
+// original helper and complete body restored.
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {

@@ -201,6 +201,11 @@ step:
 // Separate entry/step results with for-walks 44 (loop body as retail; the entry result joins the
 // widget in ESI and the head test is copied); with cursor walks 44; existing wrapped helper for the
 // entry, step in place 42 (92 bytes); one candidate for both scans 20; original head with for-walks 20.
+// The body's uses of the widget are copy-propagated to the candidate, so the candidate
+// lives across the call in ESI; retail keeps the candidate in EAX and the widget in ESI.
+// Out-pointer step helper 20 (identical code); single-exit forceinline next-or-first
+// helper for entry and step 44 (96 bytes), plain inline 74 (61 bytes); widget local at
+// the loop top 28; head test with a do-while 28; forceinline eligibility helper 20.
 // @retail 0x2c8f56
 void c_button_widget_45d5d0::v8()
 {
@@ -255,6 +260,11 @@ void c_button_widget_45d5d0::v8()
 // widget in ESI and the head test is copied); with cursor walks 44; existing wrapped helper for the
 // entry, step in place 42 (92 bytes); one candidate for both scans 20; original head with the step in
 // its own result copied to the candidate 44.
+// The body's uses of the widget are copy-propagated to the candidate, so the candidate
+// lives across the call in ESI; retail keeps the candidate in EAX and the widget in ESI.
+// Out-pointer step helper 20 (identical code); single-exit forceinline previous-or-last
+// helper for entry and step 44 (96 bytes), plain inline 74 (61 bytes); widget local at
+// the loop top 28; head test with a do-while 28; forceinline eligibility helper 20.
 // @retail 0x2c8fb4
 void c_button_widget_45d5d0::v9()
 {

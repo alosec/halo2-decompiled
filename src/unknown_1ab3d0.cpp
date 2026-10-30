@@ -7,6 +7,7 @@
 #include "ai_actor.h"
 #include "vector_products.h"
 #include "unknown_26c380.h"
+#include "unknown_0259d0.h"
 
 /* the state of a slot of type 0x53 */
 struct s_slot_53
@@ -138,7 +139,10 @@ static __forceinline long real_to_long(real value);
 // final i-product load/multiply operands differ at +0xf4.
 // Projection in the existing helper 6; Boolean projection 6; facing first 6;
 // Boolean facing first 6; product scalars kji/ijk 2/2; Boolean scalars 2;
-// facing first with scalars 2.
+// facing first with scalars 2. Round 14: the data block through slot->unknownc (FORMS
+// report) 6; the else branch through vector3d_from_points3d 2 (kept); the helper's result
+// ignored 2; a facing pointer before the call or before the test 6/6 (j term first); the
+// direction declared from the helper's result 51. Retail keeps each product's text order.
 // @retail 0x1ab4b0
 bool __stdcall function_1ab4b0(long actor_index, s_slot *slot)
 {
@@ -157,9 +161,7 @@ bool __stdcall function_1ab4b0(long actor_index, s_slot *slot)
 			direction = function_1ab4b1(&state->velocity, 0.5f, &state->position, &actor->position, direction);
 			if (0.0f > actor->unknown290.k * direction->k + actor->unknown290.j * direction->j + direction->i * actor->unknown290.i)
 			{
-				direction->i = state->position.x - actor->position.x;
-				direction->j = state->position.y - actor->position.y;
-				direction->k = state->position.z - actor->position.z;
+				vector3d_from_points3d(&actor->position, &state->position, direction);
 			}
 			slot_state->direction.k = 0.0f;
 			if (function_30bf0(direction) > g_45dbd8)

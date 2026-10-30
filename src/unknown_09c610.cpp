@@ -139,7 +139,12 @@ struct s_9cca0
 
 // score 9 (was 9): the two vector copies and the global's test are ordered
 // differently; retail sinks the k component's store past the global's test and
-// loads the tag after it, ours stores the tag before the test
+// loads the tag after it, ours stores the tag before the test. The test can only
+// move above the event's stores when LTCG knows the event's address does not
+// escape: passing it to a small non-capturing callee instead of 0x184440 gives
+// retail's order, so this waits on 0x184440's body (BLOCKED-BY 0x184440).
+// Tried: the first zeroing through the member array 9; the tag in a local 58;
+// the tag test on the input 9; the vectors copied with memcpy 9; `&field_7e` 9.
 // @retail 0x9cca0
 bool c_breakable_surface_damage_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {
