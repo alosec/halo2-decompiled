@@ -353,13 +353,17 @@ static void run_test_commands(void)
 				byte *object = *(byte **)(header + 8);
 				if (!*(short const *)header || !object || header[3] > 1)
 					continue;   /* bipeds and vehicles */
-				real const *p = (real const *)(object + 0x64);
+				/* the bounding centre (+0x30) is in world space; the origin
+				   (+0x64) of an attached unit is in its parent's (03b's Scarab
+				   pilots) */
+				real const *p = (real const *)(object + 0x30);
 				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
 				if (dx * dx + dy * dy + dz * dz > radius * radius)
 					continue;
-				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f",
+				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx",
 					(long)(((dword)*(short const *)header << 16) | (dword)index), header[3],
-					*(short const *)(object + 0x138), *(real const *)(object + 0xec), p[0], p[1], p[2]);
+					*(short const *)(object + 0x138), *(real const *)(object + 0xec), p[0], p[1], p[2],
+					*(long const *)(object + 0x14));
 				host_h2_log(line);
 			}
 			host_h2_log("h2-test units end");
@@ -509,6 +513,27 @@ static void run_test_commands(void)
 				done = function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
 			}
 			host_h2_log(object_index == NONE ? "h2-test goto_object none" : done ? "h2-test goto_object done" : "h2-test goto_object failed");
+		}
+		else if (command_is(command, "goto_unit", &rest))
+		{
+			/* beside a unit by the datum index "units" lists, for waits on
+			   the distance to a command script's own actor (03b's Scarab
+			   pilots wait for the player within 7 and then 3 units) */
+			dword datum = 0;
+			while (*rest == ' ')
+				++rest;
+			for (; (*rest >= '0' && *rest <= '9') || (*rest >= 'a' && *rest <= 'f'); ++rest)
+				datum = datum * 16 + (dword)(*rest <= '9' ? *rest - '0' : *rest - 'a' + 10);
+			byte const *header = (byte const *)g_4e0300->data + (datum & 0xffff) * 0xc;
+			byte const *object = (long)(datum & 0xffff) < g_4e0300->maximum_count &&
+				*(word const *)header == (word)(datum >> 16) ? *(byte * const *)(header + 8) : NULL;
+			bool done = false;
+			if (object)
+			{
+				point3f point = *(point3f const *)(object + 0x30);
+				done = function_c5460(player->unit_index, NONE, &point, NULL, 0, 1.0f, 0);
+			}
+			host_h2_log(!object ? "h2-test goto_unit none" : done ? "h2-test goto_unit done" : "h2-test goto_unit failed");
 		}
 		else if (command_is(command, "kill_player", &rest))
 		{

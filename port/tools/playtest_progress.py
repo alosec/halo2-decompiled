@@ -31,6 +31,8 @@ from hs_decompile import Scripts  # noqa: E402
 BSP_WAIT = re.compile(r"\(= \(structure_bsp_index\) (\d+)\)")
 SEAT_LABEL = re.compile(r"\(vehicle_test_seat \(.*?\) (\w+) \(unit")
 OBJECT_NEAR_WAIT = re.compile(r"\(< \(objects_distance_to_object \(players\) (\w+)\)")
+ACTOR_NEAR_WAIT = re.compile(r"\(< \(objects_distance_to_object \(players\) \(ai_get_object ai_current_actor\)\)")
+UNIT_LINE = re.compile(r"unit (\w+) type \d+ team (-?\d+) body (\S+) at (\S+) (\S+) (\S+) parent (\w+)")
 HEALTH_WAIT = re.compile(r"\(<= \(object_get_health (\w+)\) 0\)")
 DEVICE_WAIT = re.compile(r"\(device_(?:get_position|group_get) (\w+)\)")
 VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (\S+) \((players|player0|player1)\)\)")
@@ -205,6 +207,7 @@ def main():
     skip = ",".join(f"{frame}:a:8" for frame in range(5000, 9000, 400))
     acted = {}
     waited = {}      # (script, node) -> polls spent inside its volume, still waiting
+    waves = {}       # (script, node) -> kill-enemies tries that found someone
     elsewhere = {}   # (script, node) -> (the bsp its place is not in, volume name)
     tried = {}       # (script, node) -> every bsp its place was found not to be in
     done = False
@@ -330,6 +333,33 @@ def main():
                               [r for r in g.test_replies[replies:] if r.startswith(("enter_vehicle", "killed"))],
                               flush=True)
                         acted[key] = count + 1
+                    elif ACTOR_NEAR_WAIT.search(text) and count < 8:
+                        # near the command script's own actor (03b's Scarab
+                        # pilots): visit the living units of other teams
+                        # nearby, nearest first, one a try
+                        replies = len(g.test_replies)
+                        g.guest("units 150")
+                        g.wait(2)
+                        units = [UNIT_LINE.match(r) for r in g.test_replies[replies:]]
+                        me = g.state and g.state.get("unit")
+                        mine = next((m for m in units if m and me and int(m.group(1), 16) == int(me, 16)), None)
+                        team = mine.group(2) if mine else "1"
+                        here = g.state["pos"] if g.state else (0, 0, 0)
+                        # units attached to something first (the pilots ride
+                        # the Scarab), then the nearest
+                        others = sorted((m for m in units if m and m.group(2) != team and float(m.group(3)) > 0),
+                                        key=lambda m: (m.group(7).lower() == "ffffffff",
+                                                       sum((float(m.group(4 + i)) - here[i]) ** 2 for i in range(3))))
+                        reply = "no units"
+                        if others:
+                            target = others[count % len(others)]
+                            replies = len(g.test_replies)
+                            g.guest("goto_unit " + target.group(1))
+                            g.wait(30)
+                            reply = next((r for r in g.test_replies[replies:] if r.startswith("goto_unit")), "no reply")
+                            reply += " " + target.group(1)
+                        print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
+                        acted[key] = count + 1
                     elif OBJECT_NEAR_WAIT.search(text) and count < 6:
                         # near a named object (07a's mausoleum holograms)
                         replies = len(g.test_replies)
@@ -369,9 +399,15 @@ def main():
                         print("frame", g.frame, thread["script"], node, "-> kill enemies", reply, flush=True)
                         # a helper's wait serves wave after wave (07b's
                         # e12_safe_to_spawn_flood): only a try that found
-                        # nobody counts
+                        # nobody counts, but at most 24 that killed some
+                        # (03b's e23 pelicans bring reinforcements forever)
                         if reply in ("killed 0", "no reply"):
                             acted[key] = count + 1
+                        else:
+                            waves[key] = waves.get(key, 0) + 1
+                            if waves[key] >= 24:
+                                acted[key] = count + 1
+                                waves[key] = 0
                     elif count == 0:
                         print("frame", g.frame, thread["script"], node, "waits:", text[:160], flush=True)
                         acted[key] = 1
