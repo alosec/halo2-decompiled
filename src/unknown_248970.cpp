@@ -51,6 +51,8 @@ public:
 		s_247fd0 *arg_3, transform4x3f const *arg_4, dword arg_5);
 };
 
+// score 227 (was 227): retail returns the activation flag in AL with five stacked words where our
+// declaration takes six; the declaration and its only caller live in another file.
 // score 227 (was 227): activation AL and stacked location agree; frame 0x10/0x14,
 // metadata/head/count homes and x87 cleanup differ.
 // Earlier: retail's convention since round 67 (flag in AL, location stacked, 0x175270

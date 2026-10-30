@@ -93,6 +93,9 @@ static inline void point_along_vector_1c19b0(point3f const *point, vector3f cons
 // native initial origin with both output copies 215. Original producers and complete body restored.
 // Round 90: end named below/ground/target 23/26/23; both conversions passed straight to the call 26;
 // a position pointer for the final call 160; the step scale written in the call 23; tick names 23.
+// Round 40: helper storing a local point once 316; end from a by-value point producer 226;
+// end/delta/start/origin renamed 23 each (frame unchanged); ticks and call as an inline/forceinline
+// helper 267/335.
 // @retail 0x1c19b0
 bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_type_f17a25 *path)
 {

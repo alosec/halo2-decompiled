@@ -374,6 +374,13 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // (dot * c) per row 43, the i projection before the cross terms 43, parallel first in j/k 57;
 // harness only: scalar axis locals in any order, all six dot orders as one expression (43) or
 // accumulated (ds_kji 43, the others worse), product operands swapped per row (no change).
+// Lane 13 round 18: the matched 0x11d3b0 (same turn-limiting algorithm, out of line) compiles its
+// rotation with exactly our colours (axis k/j in xmm3/xmm4, the projection copied for j), so
+// retail's 0x1fddd0 comes from another shape. An inline rotation helper (vector, axis,
+// projection, sine, cosine) called with the projection 43 (same code); one computing the
+// projection itself 43; either with single-expression rows 57 (38/11 aligned against 46/17: the
+// cosine is then held in a register as in retail, colours still ours); with the projection term
+// first in every row 57.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

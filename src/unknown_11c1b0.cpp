@@ -91,6 +91,9 @@ void function_16e2c0(long arg_0);
 // gets its own slot: the copy is propagated, so the argument's first read follows the definition);
 // the copy first with the saved index still in the block 50; saved index defined after `result` 130;
 // a named validity bool, then the saved index, then `if (valid)` 130.
+// Round 233: phase-local tag table 73; loaded-index snapshot 126; published BSP value 50;
+// entry-list value 50; tag/index 122; tag/BSP 50; index/entries 126; all four 126.
+// Original index/result lifetimes and global read-backs retained; entry slot and BX/EDI remain.
 // @retail 0x11c1b0 standard
 bool __stdcall function_11c1b0(short arg_0, bool arg_1)
 {

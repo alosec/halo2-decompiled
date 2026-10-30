@@ -44,7 +44,11 @@ s_player_state *function_16f3a0(long index);
 // and `(0.0f - height)` at each use 39; a state pointer and the negated read at each use 57 (x/y
 // right, z multiplied in place); that with a named height for z only 39 (CSE folds it); z first 38;
 // a displacement vector 46; the state pointer first 67; eye sums forward-first, feet declared
-// first, z written temp-first 57.
+// first, z written temp-first 57; the height as a unary minus 28; the feet set through a
+// point-along-vector helper 28; y row before x 37; the height before the eye sums 38; every
+// product written memory-first 28. Retail multiplies a register by a writable global only
+// here and at 0x224fd0 (no matched model); compile-only screens give x/y right only when
+// the negation is an expression at each use, which then multiplies z in place.
 // @retail 0x1396c7
 void function_1396c7(long a, point2f *point)
 {
