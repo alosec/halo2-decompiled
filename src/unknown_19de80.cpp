@@ -371,6 +371,11 @@ static inline bool teams_enabled_19e1c0()
 // Round 218: Result/text/maximum lexical names, seven subsets, 390 each; complete opponent-scan
 // role names 390. Frame 0x208 and copy/result homes remain; all original identities and body
 // restored.
+// Round 42: complete signed copy-count lifetimes with final result after copy,
+// player names/team names/fallback token 460/484/568; player+team/player+fallback/
+// team+fallback 620/450/457; all counts 674; all with ordinary final result 691.
+// Original result storage and complete body restored; frame 0x208 versus 0x204,
+// capacity/token/result allocation and separate name-copy tails remain.
 // @retail 0x19e1c0
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining)
 {
