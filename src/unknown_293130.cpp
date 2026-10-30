@@ -181,6 +181,9 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // Round 191: native sentinel/zero/both chains 47/44/48; complete helper axis/source/both
 // input captures 211/186/242; axis with sentinel chain 211; both with all chains 242.
 // All restored; rotation input/register ranking and final sentinel scheduling remain.
+// Round 82: projection factor first 43; projection declared before trig 43; angle declared before draws 43;
+// output-returning rotation 43; cosine first 55; output/axis/angle parameters 43; i projected sum axis-first 43;
+// named dot and cosine complement 60 (1409 bytes). All restored; the dot order and sentinel schedule remain.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {
