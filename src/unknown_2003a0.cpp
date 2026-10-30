@@ -1199,6 +1199,9 @@ struct s_squad_tree_definition
 // group getter 56; pass-4 call argument through a fresh squad getter 44 (the getter falls under
 // the depth-zero pragma and goes out of line); the pragma pair around the whole pass-4 test 31;
 // the pass-4 group index read once into a named local 42.
+// Round 436: native external group/squad/both count-and-element descriptors 31/31/31;
+// actual group/squad/paired descriptor receivers 31/31/31/31, readonly pair 31.
+// All native descriptor declarations and executable forms restored; folded parent loads remain.
 // @retail 0x2009d0
 void function_2009d0(void)
 {
@@ -1783,7 +1786,7 @@ extern s_reference g_471004;
 point3f *function_b9dd0(long object_index, point3f *point);
 void __stdcall function_2628f0(long actor_index, s_reference reference);
 
-PRIVATE __forceinline byte *squad_area_get(short palette_index, short area_index)
+PRIVATE __forceinline byte *squad_area_get(long palette_index, short area_index)
 {
     byte *result = NULL;
     byte *scenario = (byte *)g_4e0350;
@@ -1814,7 +1817,7 @@ PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definiti
     }
 }
 
-// score 257 (was 257): Frame 0x3c agrees; count/definition/best/point homes, entry loads and packed reference tests remain.
+// score 224 (was 257): Frame 0x3c agrees; count/definition/best/point homes, entry loads and packed reference tests remain.
 // Packed comparisons 393; shared actor walk 344; split point scopes 344; early target 365;
 // native reference indices 350; entry fields at use 344; inline distance call 678.
 // Native player iterator 305; native entry cursor 316; word validation 305; matching-area
@@ -1871,6 +1874,9 @@ PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definiti
 // actor equality and the three-use signed index, plain-confirmed with no other measurement change.
 // Coordinator review: the 242 needs a union/pragma-pack view of the shared s_reference type in globals.h;
 // a shared-header layout change for one compare is not kept. Body restored (257).
+// Round 436: lookup palette long 224 plain (kept); lookup area/both long 261/253;
+// consideration palette/area/both long 259/304/305; both palette inputs/all indices long 258/276.
+// The four-point lookup-both gain is below threshold; all other formal widths restored.
 // @retail 0x204450
 void function_204450(long definition_index, long squad_index)
 {
@@ -2706,6 +2712,9 @@ bool function_1fb8a0(long arg_0, short arg_1);
 // (folded); a local copy of the index for the first part 50 (copy propagated); declaration
 // orders of the ticks/index, task/pending, threshold/count and the actor iterator 50 each; the
 // task pointer filled by an if 107 (the NULL test goes); permuter 600 s, no gain (49 = 49).
+// Round 436: native trigger table, raw/native entries and mutable/read-only cached receivers
+// 50/50/50/50; the same complete tables observed at every use 91/91/91/91.
+// All table/entry declarations and executable forms restored; the index reload remains.
 // @retail 0x202be0
 void function_202be0(long arg_0, long arg_1)
 {
