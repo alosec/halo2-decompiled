@@ -911,7 +911,7 @@ bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  long count, const dword *identities, const long *values, const long *other_values,
  bool reserve, long timeout, const s_session_id *id, const void *extra);
 
-// score 9 (was 40): the four unrolled copies of the member's twelve bytes now match
+// score 9 (was 9): the four unrolled copies of the member's twelve bytes now match
 // retail; what is left is that our destination's base address is computed before the
 // branch, so the flag byte is loaded into cl instead of al and the player mask into
 // ecx instead of eax, while retail computes the base after the mask has been stored.
@@ -926,6 +926,11 @@ bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
 // destination in the other registers, ours copies from esi to ecx and retail
 // from ecx to esi, and the count's increment sits before the loop counter's
 // reload in ours and after it in retail
+// Round 15: the destination declared or assigned inside the branch (also at function top) 195/195/195 (the count
+// leaves ebx for the state pointer); with a mask local 357; indexed destination `identities[count]` 195, through a
+// destination local 195, `identities[count++]` 40 (retail's setup, the copy's registers swapped); the destination
+// set before the memset 216; the destination inside the branch with the count first/last 203/216; the count
+// after the pointer step 17.
 // @retail 0x6fe90 standard
 bool __stdcall function_6fe90(c_session_state_joining *state, bool all_players, bool reserve)
 {

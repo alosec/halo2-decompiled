@@ -6,9 +6,8 @@
 #include "globals.h"
 #include "sound_sources.h"
 #include "impacts.h"
+#include "main_messages.h"
 #include <math.h>
-
-#define k_maximum_local_players 4
 
 struct s_player_datum
 {
@@ -40,18 +39,6 @@ struct s_object_header
 	s_pitch_object *object;
 };
 
-static inline long local_player_first_index(void)
-{
-	for (long i = 0; i < k_maximum_local_players; i++)
-	{
-		if (g_4e8c20->entries[i] != NONE)
-		{
-			return i;
-		}
-	}
-	return NONE;
-}
-
 static inline s_player_datum *player_get(long player_index)
 {
 	return (s_player_datum *)g_4e8c24->data + (player_index & 0xffff);
@@ -59,6 +46,11 @@ static inline s_player_datum *player_get(long player_index)
 
 // score 3 (was 3): ours computes the record address in ecx and copies it into esi, retail computes it in esi
 // directly; ours is padded with three int3s.
+// Round 15: the record pointer computed before the index test 5 (retail's three instructions, ahead of the test);
+// the index defaulted to NONE outside the player test 3; the player field read at each use with the pointer 3;
+// the shared first-local-player helper 3 (kept: identical code); the pointer set under the test and tested 16.
+// Every form without a pointer local (direct copy, memcpy, a typed table, value/out/flag lookups, a reused
+// index) loads the index into esi (16).
 // @retail 0x187ec0
 bool function_187ec0(void)
 {
@@ -359,7 +351,11 @@ s_seat_animation_entry *function_188130(long tag_index, long index, long type, s
 	return seat_animation_entry_find(tag_index, index, type, element_index);
 }
 
-// score 22 (was 22): EBP holds the table instead of the requested index; native walk index 21, direct input 33;
+// score 22 (was 22): the element index is loaded as a dword (retail a word), EBP holds the hoisted table instead of
+// the requested entry index, and the element address is `add ecx, esi; mov ebx, ecx` (retail `lea ebx, [ecx+edx];
+// test ebx, ebx`). BLOCKED-BY 0x1883e0: retail's convention needs the one-short index class on 0x1883e0's
+// parameters too, whose declarations sit in held/contributor files.
+// Native walk index 21, direct input 33;
 // native parent assignment 21; native requested index 22; both indices 21, direct input 33; native hit return 21; result first 21.
 // Native parent/request/both formals 22/14/14; register parameter second/third/last 22/22/22;
 // native parent with register last 22; native indices with register second 14. All restored: unmatched index wrappers rejected.
@@ -375,12 +371,15 @@ s_seat_animation_entry *function_188130(long tag_index, long index, long type, s
 // native entry formal 22; native parent formal 22; both native formals 22;
 // direct tag field 22; current-element traversal 141; separate inline declaration 22;
 // separate noinline declaration 22; existing element query 59.
-// score 22 (was 22): long requested index 22; both indices as a block-index class 11 (word load,
+// Long requested index 22; both indices as a block-index class 11 (word load,
 // requested index in EBP, the table reloaded per tag; only `lea ebx, [ecx+edx]; test ebx, ebx`
 // left); with 0x1883e0's two material parameters of the same class too, 0x1883e0 matches and
 // 0x188180 drops 89 -> 70, but 0x1883e0's callers in held/contributor files declare short/long;
 // requested index only as the class 11; without the element reference 23; declaration orders,
 // names, loop guard 11; early-return or ternary lookup helper 12 (0x188690/0x188130 lose).
+// Round 15: walking index as the material class built through the parameter's address 21 (word load only);
+// the class walk local built from the parameter 33; result declared first 22; tag field read at each use 22;
+// parent step before the lookup 35; the entry index as a class local at the top 22.
 // @retail 0x1882d0
 s_seat_animation_entry *function_1882d0(long type, short element_index, long index, short entry_element_index)
 {
