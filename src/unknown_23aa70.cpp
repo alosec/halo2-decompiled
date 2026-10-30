@@ -239,6 +239,21 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // Round 23 (lane 10): with format 4 indexed: the coordinates read into short locals first 175; a
 // const node parameter 175; the switch on a format-minus-one local 175; the full base expression
 // at each format-4 access 107 (636 bytes, retail convention), with format 3 indexed too 105.
+// store after the switch 187, the index read directly 175 (the source still arrives on the
+// stack, the switch index in EDI, the node in EBX); the buffer pointer read at each use 190;
+// the index read through its own address (index_reference) dropped 62 (index stays on the
+// stack: kept); format 3 indexed 60 (retail's format-3 code exactly, EBX for the offset); a
+// shared node store after the switch with formats 3/4 returning 172, with format 4 indexed
+// 175; one vertex-base local shared by every case, format 4 indexed 201; format 4 indexed with
+// the node stored before the decode 75 (keeps retail's convention, EBX base, EDI node, EDX
+// source: only the node store's position differs, but 0x14a8e0 168); the node read through the
+// re-derived base 192 (buffer fields reloaded after the point stores); the full base
+// expression at each format-4 access 107 (keeps the convention, but reloads the buffer after the
+// point stores); the array local named to sort before `node` 175 (names do not break the tie). One-file LTCG harness: only the
+// format-4 form decides the convention (removing any other case never flips it); format 4
+// keeps retail's EDI node and EDX source only when its node read re-derives the buffer base
+// (the full base expression at each access, or the node read through it) instead of keeping
+// base and index live.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)

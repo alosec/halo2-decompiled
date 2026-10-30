@@ -44,11 +44,31 @@ void function_265c30(long arg_0, long arg_1, bool arg_2);
 // the bool for 0x1f4a20 declared at the top 44; the long and bool outputs of 0x261280 declared
 // the other way round 44; 0x261280's outputs scoped to a block ending after 0x2626b0 (the empty
 // result branch returning early) 206.
+// retail rounds the delay with its own fld/fistp straight into the long that
+// also takes 0x261280's count output and 0x1af530's second output (the matched 0x1bd230 writes the
+// same random-delay rounding in its body); the real_to_long helper's separate result cannot share
+// that home. Left: three dword homes rotate (the actor spill, ours 0x2c / retail 0x24; the
+// 0x25d690 result spill, 0x30 / 0x2c; the 0x261280 bool output, 0x24 / 0x30): retail sorts the
+// bool output last, ours first, probably because it reaches the stubbed 0x260670 (BLOCKED-BY
+// 0x260670, whose real body is disabled in the held src/unknown_261280.cpp).
+// Tried: `static __forceinline long real_to_long(real value);` 44 (retail's fld/fistp, but the
+// helper's result shares the actor offset's home, so every small slot moves): with local_16
+// before local_17 46; local_13 declared at the top 44; the product passed straight to the
+// conversion 44; names swapped 44; a separate local for 0x1af530's unused output 44 (67 without);
+// local_14 renamed 44; the +0x14 result field read once 46. Native reference member comparisons,
+// short-circuit/bitwise tests x aggregate/member copy x original/forced-inline conversion 279,
+// 275, 348, 350, 346, 353, 402, 405 (fast). `local_13 = real_to_long(...)` with the forceinline
+// helper 148 (981 bytes), without it 133; the 0x261280 outputs in a block closing after the
+// 0x2626b0 call (equal case returning early) 206. Round 41: the in-body fld/fistp into a
+// block-scoped long 44 (as the forceinline helper); into local_13 9 (kept). On that form: the bool
+// output declared first 9; it renamed 9 (names do not order these homes); the existing actor and
+// prop-node getters 9 (identical code, kept); the 0x262b40 result declared before its flag 13;
+// a separate long for 0x1af530's second output 45.
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {
-    s_actor_view *local_0 = (s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view));
-    s_prop_node_view *local_1 = (s_prop_node_view *)(g_502418->data + (local_0->prop_index & 0xffff) * sizeof(s_prop_node_view));
+    s_actor_view *local_0 = actor_get(arg_0);
+    s_prop_node_view *local_1 = prop_node_get(local_0->prop_index);
     s_type_5cfb45 *local_2 = function_25d690((s_prop_datum *)local_1);
     s_reference local_3 = local_0->unknown418;
     dword *local_4 = (dword *)function_1e4be0(arg_0);
@@ -85,7 +105,7 @@ bool function_1af160(long arg_0, s_1af160 *arg_1)
         }
         else
         {
-            ((s_actor_view *)g_4f55f0->data)[arg_0 & 0xffff].unknown040 = false;
+            actor_get(arg_0)->unknown040 = false;
             local_5 = false;
         }
     }
@@ -112,7 +132,13 @@ bool function_1af160(long arg_0, s_1af160 *arg_1)
         if (!REFERENCE_EQUAL(local_15, local_3))
         {
             real local_20 = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, 5.0f, 5.0f) * g_510c54->field_2_3;
-            arg_1->field_0 = (short)real_to_long(local_20);
+
+            __asm
+            {
+                fld local_20
+                fistp local_13
+            }
+            arg_1->field_0 = (short)local_13;
         }
         if (!REFERENCE_EQUAL(local_15, g_470fa0))
         {

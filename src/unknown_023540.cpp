@@ -3911,6 +3911,18 @@ void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 // flag clear after the second block copy or before the kind store 34/34 (the
 // compiler places both stores the same way); the flag passed from the saved
 // frame record 96.
+// the stores to g_4ba038 (the counter lands after the kind byte) and g_4ba010
+// (the flag clear sinks past the camera copy) land in other places than retail's, and the tail
+// calls 0x13680 with the flag pushed (loaded as a dword) where retail passes it in bl (one bool in
+// bl, plain ret: BLOCKED-BY 0x13680). Both store orders are placed by the compiler, not by the
+// statements: with the addresses of g_4ba038 and g_4ba010 taken anywhere in the program they land
+// exactly where retail puts them (diagnostic only, 26), so retail keeps them in address-taken
+// storage whose definitions are in other files. Tried: flag clear before the first copy 34, as the
+// first store 34, after the camera copy 34; counter increment one statement earlier 34, as the
+// first store 34, after the sky index 34; kind stored after the sky index 37; camera default as a
+// named source local 153; the flag passed from the frame's copy 34; native mode-word/auxiliary-
+// word/final-byte parameter widths 34 (auxiliary-word forms lose caller 0x2b790); the whole camera
+// struct as the copy destination 34; the frame-records field as the first copy's destination 34.
 // @retail 0x2ba10
 void function_2ba10(s_2f970_view const *view, long cluster, long player,
     byte const *camera, bool enabled, long leaf, bool invalid, vector3f const *sky_color,

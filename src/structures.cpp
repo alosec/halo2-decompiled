@@ -171,67 +171,37 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
-// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL, so the
-// collision lives in its parameter slot: stored after the requery, reloaded after the model
-// query). Read-only object 68; unsigned object handle 68; word query buffer 68; native collision
-// record 71; external triangle reference 68; source publication 68; byte result merge 68; query
-// workspace names 68; model inline/noinline 68/68; state inline 68; both contracts 68; probe
-// result 68; model result 68; final found result 111; triangle inline 68; the collision re-read
-// from the parameter at the join 68 (with a block-local flag 68); the flag as one && expression
-// tested twice, with returns 68; the same with an else-if tail and a final else for the no-object
-// case 71 (286 bytes); assigned with the && expression, tests unchanged 68; an inline helper for
-// the scenery test stays out of line and is threaded 113/111; a switch on the object type with
-// the scenery case falling into the general case 68, or the flag set in a one-case switch 68; the
-// flag from the && expression with the model query nested under `if (!excluded)` 68; the requery
-// in an inline helper that updates the collision through its address 90; found cleared in the
-// scenery arm with no flag 68.
-// Exclusion BL and source-slot join still differ. Read-only object 68;
-// VC threads the exclusion flag on every edge (retail keeps it in BL, so
-// &triangle->c takes EDI and the source slot is reloaded after 0xbf9a0), and the byte result
-// is converted with setne. Read-only object 68; unsigned object handle 68; word query buffer 68;
-// native collision record 71; external triangle reference 68; source publication 68; byte
-// result merge 68; query workspace names 68; native record retested with byte result storage;
-// model inline 68; model noinline 68; state inline 68; both contracts 68; probe result 68; model
-// result 68; final found result 111; triangle inline 68. The collision re-read from the
-// parameter at the join 68 (with a block-local flag 68); the flag as one && expression tested
-// twice, with returns 68; the same with an else-if tail and a final else for the no-object case
-// 71 (286 bytes); assigned with the && expression, tests unchanged 68; an inline helper for the
-// scenery test stays out of line and is threaded 113/111. Round 76: bool result 78 (262 bytes:
-// setne gone, aligned closer); the flag set in both arms with `if (excluded) goto done;` 68, and
-// with a bool result 78; a pointer parameter passed by address to an inline probe helper 134
-// (LTCG drops the address: collision in EAX, 0xd2bb0 22); the by-value source passed by address
-// to that helper 86/76 (bool/byte result; 0xd2bb0 5).
-// Exclusion BL and source-slot join still differ. Read-only object 68;
-// unsigned object handle 68; word query buffer 68; native collision record 71;
-// external triangle reference 68; source publication 68; byte result merge 68;
-// query workspace names 68. Native record retested with byte result storage.
-// BL exclusion and source-slot reload remain; model inline 68; model noinline 68; state inline 68; both contracts 68; probe result 68; model result 68; final found result 111; triangle inline 68.
-// Earlier: VC threads the exclusion flag on every edge. The collision re-read from the
-// scenery test stays out of line and is threaded 113/111.
-// Multi-consumer object policy, short/long and bool/byte found in object scope 117/117/116/116;
-// function-scope policy 68/68/61/61. Long policy reaches 286 bytes but its seven-point gain
-// is below the gate; BL exclusion and source-slot reload remain. Original body restored.
-// VC threads the exclusion flag on every edge (retail keeps it in BL, so the
-// collision lives in its parameter slot: stored after the requery, reloaded after the model
-// query). Read-only object 68; unsigned object handle 68; word query buffer 68; native collision
-// record 71; external triangle reference 68; source publication 68; byte result merge 68; query
-// workspace names 68; model inline/noinline 68/68; state inline 68; both contracts 68; probe
-// result 68; model result 68; final found result 111; triangle inline 68; the collision re-read
-// from the parameter at the join 68 (with a block-local flag 68); the flag as one && expression
-// tested twice, with returns 68; the same with an else-if tail and a final else for the no-object
-// case 71 (286 bytes); assigned with the && expression, tests unchanged 68; an inline helper for
-// the scenery test stays out of line and is threaded 113/111; a switch on the object type with
-// the scenery case falling into the general case 68, or the flag set in a one-case switch 68; the
-// flag from the && expression with the model query nested under `if (!excluded)` 68; the requery
-// in an inline helper that updates the collision through its address 90; found cleared in the
-// scenery arm with no flag 68.
-// Round 78: the flag assigned `excluded = function_10a0b0(...) != 2` inside the type test, with
-// `if (excluded) goto done` or `if (!excluded)` guards 54/54 (286 bytes, but aligned worse: setne
-// and the threaded exit stay); the object part in an inline helper returning `!excluded` 106
-// (keeps the flag in BL and the join test, adds a sete); the final test nested in the requery
-// arm 77; `return function_14a8e0(...)` with an && flag 77 (263 bytes). A compile-only screen of
-// 177 flag/guard/tail forms threads the 0x10a0b0 compare in every one; only a computed value in
-// the join (a negation, a widening, a store) keeps retail's un-threaded flag test.
+// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL: `mov bl, 1;
+// jmp` in the scenery arm, `xor bl, bl` before 0xbf9a0 and `test bl, bl` again after it, so
+// &triangle->c takes EDI and the collision lives in its parameter slot: stored after the requery,
+// reloaded after 0xbf9a0); the byte result is converted with setne. Retail 0x14af40 has the
+// identical idiom. Tried: read-only object 68; unsigned object handle 68; word query buffer 68;
+// native collision record 71; external triangle reference 68; source publication 68; byte result
+// merge 68; query workspace names 68; native record retested with byte result storage; model
+// inline/noinline 68/68; state inline 68; both contracts 68; probe result 68; model result 68;
+// final found result 111; triangle inline 68; the collision re-read from the parameter at the join
+// 68 (with a block-local flag 68); the flag as one && expression tested twice, with returns 68; the
+// same with an else-if tail and a final else for the no-object case 71 (286 bytes); assigned with
+// the && expression, tests unchanged 68; an inline helper for the scenery test stays out of line
+// and is threaded 113/111; a switch on the object type with the scenery case falling into the
+// general case 68, or the flag set in a one-case switch 68; the flag from the && expression with
+// the model query nested under `if (!excluded)` 68; the requery in an inline helper that updates
+// the collision through its address 90; found cleared in the scenery arm with no flag 68; bool
+// result 78 (262 bytes: setne gone); the flag set in both arms with `if (excluded) goto done;` 68,
+// and with a bool result 78; a pointer parameter passed by address to an inline probe helper 134;
+// the by-value source passed by address to that helper 86/76; multi-consumer object policy,
+// short/long and bool/byte found in object scope 117/117/116/116, at function scope 68/68/61/61
+// (long policy reaches 286 bytes); `excluded = function_10a0b0(...) != 2` inside the type test
+// with `if (excluded) goto done` or `if (!excluded)` guards 54/54 (286 bytes, setne and the
+// threaded exit stay; a flag set inside a test, not kept); the object part in an inline helper
+// returning `!excluded` 106 (keeps the flag in BL and the join test, adds a sete); the final test
+// nested in the requery arm 77; `return function_14a8e0(...)` with an && flag 77 (263 bytes); a
+// named `instance` bool from `!excluded && 0xbf9a0` 68; the exclusion clearing found with a
+// found-only final test 68; the flag in two steps (type test, then `!= 2`) 92 (298 bytes: keeps
+// the join test after 0xbf9a0, but as sete/setne); an inverted `lightmapped` flag from `||` 68; a
+// single-exit `handled` flag also set after 0x14a8e0 68. A compile-only screen of ~190 flag,
+// guard and tail forms threads the flag in every one; only a computed value in the join (a
+// negation, a widening, a store, a setcc result) keeps retail's un-threaded flag test.
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {

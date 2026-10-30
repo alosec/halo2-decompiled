@@ -776,66 +776,49 @@ bool network_session_get_membership(c_class_58d20 *session, long *value4c, long 
 }
 
 
-struct s_64310
-{
-	long field_0;
-	long field_4;
-	dword field_8;
-	s_session_member *field_c;
-	s_network_session_player *field_10;
-};
-
-// score 43 (was 43), as 0x643f0: retail keeps the player mask in ebp and the
-// address of the players array in edi (lea edi, [eax + 0x1120]), then reads a
-// player's member index through it; ours folds the array into the load
-// ([ecx + eax + 0x112c]), needs no ebp and is 6 bytes shorter. Plain locals,
-// the struct's fields in another order or layout, const references to the
-// players or members pointer, an inline function filling the struct and a
-// player pointer score 43 to 53; the 600 s permutation run found no match.
+/* passes the member record of a player's machine to 0x5aba0, when the
+   session's current member is its value50 member */
 // @retail 0x64310
 bool network_session_interface_kick_player(long player_index)
 {
-	volatile bool result = false;
-	c_class_58d20 *session = network_session_get_live();
-	if (session)
+	bool result = false;
+	c_class_58d20 *session;
+	long host_member_index;
+	long value50;
+	s_session_member *members;
+	dword player_mask;
+	s_network_session_player *players;
+	if (network_session_get_current_if_valid(&session) &&
+		network_session_get_membership(session, NULL, &host_member_index, NULL, &value50, NULL, &members, NULL, &player_mask, &players) &&
+		host_member_index == value50 && (player_mask & (1 << player_index)))
 	{
-		s_64310 local_0;
-		local_0.field_0 = session->current_member;
-		local_0.field_4 = session->value50;
-		local_0.field_8 = session->player_mask;
-		local_0.field_c = session->members;
-		local_0.field_10 = session->players;
-		if (local_0.field_0 == local_0.field_4 && (local_0.field_8 & (1 << player_index)))
-		{
-			long member_index = local_0.field_10[player_index].member_index;
-			if (member_index != local_0.field_0 && network_session_delegate_leader(session, (const s_session_member_identity *)local_0.field_c[member_index].words))
-				result = true;
-		}
+		s_network_session_player const &player = players[player_index];
+		if (player.member_index != host_member_index &&
+			network_session_delegate_leader(session, (const s_session_member_identity *)members[player.member_index].words))
+			result = true;
 	}
 	return result;
 }
 
-// score 43 (was 43): the same as 0x64310 above, which differs only in the
-// function it calls.
+/* the same, through 0x5acc0 */
 // @retail 0x643f0
 bool network_session_interface_ban_player(long player_index)
 {
-	volatile bool result = false;
-	c_class_58d20 *session = network_session_get_live();
-	if (session)
+	bool result = false;
+	c_class_58d20 *session;
+	long host_member_index;
+	long value50;
+	s_session_member *members;
+	dword player_mask;
+	s_network_session_player *players;
+	if (network_session_get_current_if_valid(&session) &&
+		network_session_get_membership(session, NULL, &host_member_index, NULL, &value50, NULL, &members, NULL, &player_mask, &players) &&
+		host_member_index == value50 && (player_mask & (1 << player_index)))
 	{
-		s_64310 local_0;
-		local_0.field_0 = session->current_member;
-		local_0.field_4 = session->value50;
-		local_0.field_8 = session->player_mask;
-		local_0.field_c = session->members;
-		local_0.field_10 = session->players;
-		if (local_0.field_0 == local_0.field_4 && (local_0.field_8 & (1 << player_index)))
-		{
-			long member_index = local_0.field_10[player_index].member_index;
-			if (member_index != local_0.field_0 && network_session_boot_machine(session, (const s_session_member_identity *)local_0.field_c[member_index].words))
-				result = true;
-		}
+		s_network_session_player const &player = players[player_index];
+		if (player.member_index != host_member_index &&
+			network_session_boot_machine(session, (const s_session_member_identity *)members[player.member_index].words))
+			result = true;
 	}
 	return result;
 }

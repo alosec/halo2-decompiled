@@ -496,6 +496,11 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // EBX, entry matches, but the flag stays in memory and the tail follows the special
 // path); the tail as a forced-inline helper taking the flag by value 47 (same code),
 // with the `&&` flag 189.
+// Round 39 (m3 lane 12): the bitwise flag is already spilled around the scan to the dead
+// actor-index slot as retail, but its byte def before the branch takes BL (so NONE takes EBP);
+// every branchy def gives NONE in EBX but threads the known-true flag by copying the tail's
+// first block onto the special path (flag memory-only, 872 bytes): `&&` 200, false then if
+// 202, `&& != 0` 200, function-scope `&&` 200; const bitwise flag 47. All restored.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

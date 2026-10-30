@@ -276,6 +276,11 @@ struct s_weapon_definition_view
 // outside/inside 17/7 (aligned; no flip; in the build, inside 41); the relevance record cleared through a
 // pointer local that also feeds the final call 32 (build 134). The SIB order still needs an odd change in
 // the opening's distinct stores.
+// Round 41, on the guard form (4): the query helper taking the unit index (the lookup inside
+// it) 180 (one shared lookup; 0x82c10 50); the two slot queries as a plain loop 347 (not
+// unrolled); the weapons array declared first 4; a per-hand active row pointer 10. Without
+// the guard: a while loop (index declared before it) 35, no second count test. Retail's own
+// matched siblings use both base/index orders (0x82b70 has [edi + ecx] and [ecx + edi]).
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {

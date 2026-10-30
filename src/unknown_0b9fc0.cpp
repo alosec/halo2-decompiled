@@ -691,6 +691,13 @@ struct s_component_property_view
 // first, second, third or last 13; the component written in the call 14; offset
 // before the data pointer 13; 0xa0-byte element indexing 13; result declared
 // first 13; one && test with the call 14.
+// permutation run found no improvement. Round 39 (m3 lane 12): ours also
+// hoists the g_51e9b8 load to the front, where retail loads it into eax after
+// the index scaling. Pointer-typed value/positive parameters (table type too)
+// 13; the component expression inside the call 14 (positive then loads
+// early); result declared first 13; index term first in the address 13;
+// 0x1d3550 declared (key, value, positive) 13 (diagnostic only, its file was
+// held this round). All restored.
 // @retail 0x11bd60
 bool __stdcall function_11bd60(long object_index, long key, long value, long positive)
 {
