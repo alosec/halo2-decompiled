@@ -73,6 +73,14 @@ void havok_entity_component_index_set(hkEntity *entity, s_havok_property_word co
 // score 71 (was 71): the -1 is built with OR here and pushed as a constant there;
 // later differences are the two-byte shift. BLOCKED-BY 0x1cf2b0: VC7.1 builds every by-value
 // class argument in a register, so retail's `push -1` needs that function to take a long (as
+// 0x1cf3b0 does; a compile-only copy with a long stack parameter gives `push -1`). Unqualified
+// global 76; entry construction 124; construction before the final allocation 77; default
+// construction there 71; earlier/later local names and declaration before the descriptor 71
+// each; copy-initialised, member-assigned or const local 71/71/71; the local declared at entry
+// 124, after the global store 71. Round 218: property/descriptor/final-owner/shape-owner inline
+// and noinline declarations 71 each. Round 91: a long local passed through a property-word view
+// 71; implicit conversion from NONE 76; a static const property word 125; a plain temporary 71
+// (kept: same code without the assignment inside the argument); a copy-initialised local 71.
 // 0x1cf3b0 does). Unqualified global 76; entry construction 124;
 // construction before the final allocation 77; default construction there 71;
 // earlier/later local names and declaration before the descriptor 71 each; copy-initialised,

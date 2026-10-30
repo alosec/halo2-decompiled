@@ -98,6 +98,12 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
    turns to face it; then it lets the prop go */
 // score 47 (was 47): the actor index, actor, view and state registers differ (retail EBP/EDI/EBX/ESI,
 // ours EDI/EBX/EBP/ESI), and retail saves EBX late, giving the NONE path its own epilogue.
+// Round 76: retail keeps one actor pointer across the calls (EDI, read at +0x418 at the end); a second
+// lookup at the final call reloads the pool after the calls here 71, so the source looks the actor up
+// once at the top. That form (52) gives retail's index EBP and view EBX and the shared final store
+// (retail duplicates it for the NONE path); left are actor/state ESI/EDI swapped, EBX saved at entry and
+// the 0x1f4f40/0x262800 argument temporaries. On it: the slot parameter cast at each use 52; the view
+// computed first as NULL-or-view and tested once 52; the NONE case as an early store and return 91.
 // Round 198: typed slot data block/current/entry 61/62; on that block actor once/at use 66/85; long/word/byte readiness 76/78/77; stored readiness 47 (exact-match-only, restored). Opening body restored.
 // Round 238: actual input/required/done byte fields, all seven subsets, 61 each;
 // completion byte field 61. Original Boolean field types and body restored.

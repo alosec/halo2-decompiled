@@ -858,12 +858,18 @@ bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  long count, const dword *identities, const long *values, const long *other_values,
  bool reserve, long timeout, const s_session_id *id, const void *extra);
 
-// score 40 (was 40): the twelve bytes of the member's record are copied with the
+// score 9 (was 40): the four unrolled copies of the member's twelve bytes now match
+// retail; what is left is that our destination's base address is computed before the
+// branch, so the flag byte is loaded into cl instead of al and the player mask into
+// ecx instead of eax, while retail computes the base after the mask has been stored.
+// Tried: the copies through a struct, a local and byte or dword source pointers (all
+// 40); the count incremented separately (244), before the copy (331) or through a
+// running destination pointer (9, kept); the destination pointer assigned inside the
+// branch (195) and a local player mask (359).
 // source and the destination in the other registers, and the two stores that
 // follow are scheduled in the other order.
 // Retail aligns its frame; 0x6fcc0, 0x6f940 and 0x6fa60 push all three arguments.
 // The body still differs; this boundary preserves those callers.
-// score 40 (was 40): the three copies in the loop keep the source and the
 // destination in the other registers, ours copies from esi to ecx and retail
 // from ecx to esi, and the count's increment sits before the loop counter's
 // reload in ours and after it in retail
@@ -876,11 +882,16 @@ bool __stdcall function_6fe90(c_session_state_joining *state, bool all_players, 
  network_session_close(joining);
  __declspec(align(8)) dword identities[16][3];
  memset(identities, 0, sizeof(identities));
+ dword *dest = identities[0];
  if (all_players)
  {
   for (long i = 0; i < 16; i++)
    if (current->player_mask & (1 << i))
-    memcpy(identities[count++], &current->players[i], 12);
+   {
+    memcpy(dest, &current->players[i], 12);
+    count++;
+    dest += 3;
+   }
  }
  else
  {

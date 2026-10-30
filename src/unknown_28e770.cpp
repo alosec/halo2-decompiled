@@ -141,6 +141,9 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 // 141/141; native point publication alone 118; planar vector/point constructors with
 // pipeline 143. All restored; marker-clear receiver join and contribution schedule remain.
 // Round 247: complete published-motion observation, with facing/forward/both 410/448/443/476; complete candidate-motion observation, with facing/forward/both 417/450/464/481. Each worsens the matching prefix; marker-clear join and contribution schedule remain.
+// Round 250: complete case orders 12034567/12304567/12340567/12345067
+// 277/329/398/454; 12345607/12345670/40123567/41230567
+// 475/479/424/420. All complete cases and original order restored; idle relocation breaks the prefix.
 // @retail 0x28e770
 void __stdcall function_28e770(long arg_0, long arg_1)
 {

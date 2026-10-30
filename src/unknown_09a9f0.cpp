@@ -229,6 +229,9 @@ void c_turret_entity_definition::v21(s_entity *entity)
 
 // score 49 (was 49): false BL lifetime, temporary EBP save and independent header/object lookups remain.
 // retail holds a bool result in BL from before the creation call, saves
+// retail holds a bool result in BL from before the creation call, saves
+// EBP only around the header test and loads the header and the object separately; ours keeps
+// a long result in EBP and shares one header address.
 // EBP only around the header test and loads the header and the object separately; ours
 // keeps a long result in EBP and shares one header address. Incoming output flags 87; later
 // result 80; both 89; invalid header first 75; shared header 77; incoming flags and header

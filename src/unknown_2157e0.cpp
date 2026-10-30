@@ -54,6 +54,10 @@ static inline long file_handle_build_2170e0(long generation, short index, bool f
 }
 
 // score 91 (was 91): adjusted-table spill, removed pre-copy clears and current-index spill remain;
+// MiniMax round: a files local in the last block 90 (one point, under the keep bar, not kept);
+// the 64-byte copy as memcpy(&location, entry, sizeof(location)) gives the same code; current
+// assigned after the copy 132; direct copy with next - 1 128; current after the copy with the
+// entry local kept 126. Every form that moves the progression later also rewrites the prologue.
 // progression after copy 139f; direct copy with late progression 139f; source before index 139f; unsigned
 // current with late progression 139f; role homes 91f; late progression/role homes 139f; library copy/late
 // progression 139f; single real index 122f.
