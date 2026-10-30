@@ -1119,7 +1119,7 @@ struct s_flag_word_bits
 // homes, the node distance is three named components summed in z, y, x order and the link fields
 // are stored in retail's order; the state pointer and the flag mask still use swapped registers,
 // the case 0 edge comparison uses another register and the ring walk still differs.
-// score 427 (was 452): retail's pathfinding, node-array, count and node-index registers and the
+// score 383 (was 452): retail's pathfinding, node-array, count and node-index registers and the
 // local homes now agree with ours, and the length matches retail's 1760 bytes; the frame is 0x30
 // against retail's 0x34, the flag mask and the edge index still use different registers, and the
 // two edge endpoints are not kept in retail's stack homes.

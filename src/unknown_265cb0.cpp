@@ -497,7 +497,7 @@ real function_30bf0(vector3f *vector);
 // score 150 (was 144): the volatile result anchor and the pointer-to-whole-local side
 // operand are gone, so the result, range and delta stack homes and the delta/motion SIMD
 // register blocks differ from retail again.
-// score 144 (was 152): the facing branch is entered on retail's negated condition and the cross
+// score 152 (was 152): the facing branch is entered on retail's negated condition and the cross
 // product's multiply operands now follow retail's order; the result, range and delta stack homes
 // and the delta/motion SIMD register blocks still differ.
 // Coordinator review: the facing branch on the negated condition with the volatile result kept scores 150 (was 152);
