@@ -2788,14 +2788,18 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
     return elapsed;
 }
 
-// score 52 (was 61): frame 0x3c versus 0x38, action/decision and input homes remain. Measured from
+// score 52 (was 52): frame 0x3c versus 0x38, action/decision and input homes remain. Measured from
 // the frame top every slot agrees except the action short (ours 4-aligned below the 4-byte slots,
 // retail 2-aligned with the two flag bytes under it) and the control/definition pair; VC7.1 gives a
 // lone 2-byte local, word, char[2], one-short struct or inlined short parameter a 4-aligned slot, so
 // the packing needs a 4-byte aggregate. Round 17: success exit as `*flag = result = true` 52 (kept,
 // retail's AL store and length); control declared before state 61; definition declared last 55; flag
 // initializations before the lookup 206; force flag declared first 52; block-scoped action 52;
-// overlay initialized at its declaration 54.
+// overlay initialized at its declaration 54. Round 19: the action query in an inline helper owning
+// the short 167 (kept out of line, so the frame is 0x38 but the bytes stay at +2/+3), forceinline 145
+// (0xe70b0 then inlines too), forceinline with 0xe70b0 declared noinline 52 (the inlined short is
+// 4-aligned as well); control renamed so it sorts after definition 52 (slot unchanged); only the force
+// flag initialized before the lookup 206.
 // Returned action comparison plus a separate existing channel-copy statement recover
 // native query/play ordering at retail length; the shared result exit is retained.
 // frame 0x3c versus 0x38; the escaped action short has its own
