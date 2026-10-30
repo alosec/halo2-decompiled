@@ -2661,7 +2661,7 @@ PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
     return limited;
 }
 
-// score 7 (was 50): the saves are staged as retail's; the five rigid-body reads address
+// score 7 (was 7): the saves are staged as retail's; the five rigid-body reads address
 // [offset + data] where retail has [data + offset], and the 0x1d1010 call copies the component to ESI
 // before the index to ECX. The entry saves came from this function's own double-typed scale: with a
 // named double here, any image holding 0x2056e0's double cap or unknown_0350e0.cpp pins the saves at
@@ -2669,6 +2669,12 @@ PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
 // last multiply); quotient per component 77; the two-caller cap helper with the quotient as
 // scale_vector_by_double's argument 7 (kept), with a named double scale 50; operator[] reads at the
 // first two sites 7; negated change product 7; existing keyframed helper at both/the last test 151/29.
+// Round 31: a compile-only build of this file reproduces the [offset + data] order; it turns to
+// retail's [data + offset] at all sites only without the inline kind test at the loop head (or with
+// the kind test as the out-of-line keyframed method); pre-loop code, the last block, loop/index forms,
+// inline test helpers and a short index (no strength reduction) never flip it. Real trials: keyframed
+// method/free wrapper at the first test 156/156; separate inline linear/angular getters 128; while
+// loop 7; a body pointer for the test and the velocity read 152.
 // Earlier rounds (the full image then pushed ebx/ebp/esi at entry):
 // Earlier: Frame 0x30 agrees; admission save staging and paired fixed/zero velocity homes remain.
 // staggered register saves and paired velocity homes differ;
