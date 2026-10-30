@@ -94,6 +94,11 @@ PRIVATE __forceinline long function_2b2ed6(XUID const *xuid, bool *active)
 // title, friend_ before them, title/suffix at the top of the status block, title at function
 // scope: 358 each (same code). The friends test as `!friends ? >> 10 : >> 12` 359; negated per arm
 // 605/607 (retail keeps the >> 10 arm out of line after the session lookup).
+// Lane 14 r16 (aligned difference 62: the four text buffers' and the final layout's homes, the
+// child-pointer slots and four block spots): title renamed to sort before the name buffer 358 (same
+// code); the bit test inside each arm of the friends/players shift ternary 605; that ternary inverted
+// 359; the final text test inverted 496; separate title and suffix clears in retail's order 358.
+// Body restored.
 // @retail 0x2b2ed4
 void __stdcall function_2b2ed4(c_y_menu_list *list, bool friends, bool empty,
     c_class_1a2c81 *item, s_friend *datum)

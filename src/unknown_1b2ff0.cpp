@@ -113,8 +113,8 @@ s_slot_handler_2 g_47e1c0 =
 // Round 196: separate displacement/output with precopy: native/shared difference/component loop/double
 // squared distance 235 each; branch-assigned normalized output with those four producers 172 each.
 // Extra input/output homes regress the frame; original in-place direction and all producers restored.
-// Round 77: the natural `while (squad != NONE && current < 32)` loop (identical code), dot3f for the
-// score (retail's x87 dot order) and length_sq3f for the magnitude (retail's store/fmul interleave) 107
+// Round 77: the natural `while (squad != NONE && current < 32)` loop (identical code), dot3f for
+// the score (retail's x87 dot order) and length_sq3f for the magnitude (retail's store/fmul interleave) 107
 // (under the keep bar, restored);
 // 0x210c90 called with `inline` on its definition 246 (0x210850 stays a call, 0x1e3370/0x28f290 inline
 // it too); the reset loop as a plain for 141 (unrolled); forceinline copies of 0x210c90/0x210850 107
@@ -138,6 +138,9 @@ s_slot_handler_2 g_47e1c0 =
 // Round 307: Complete tried-mask/encounter-key/const actor lifetime subsets
 // 194/107/194/107/194/107/194; all with unsigned ordinal 199. Original context reads,
 // actor lifetime, ordinals and shared math restored; direction SIMD homes and reciprocal copy remain.
+// Round 42 (a compile-only build reproduces the colouring; 176 forms, the reciprocal always takes xmm0):
+// transform branch first 139; transform success folded into the test 170; point declared in the transform
+// branch 107; one fallback assignment with a shared subtraction 196; three arms 169.
 // @retail 0x1b3070
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {

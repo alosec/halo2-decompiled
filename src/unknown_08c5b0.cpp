@@ -88,7 +88,10 @@ static inline long bungienet_user_voice_setting(short kind)
 // local_0/local_1 copy form. Tried: plain read (32); kind read inside the condition (32);
 // controller index read first (12); if/else and `setting = 1; if` forms (11, 15);
 // `switch (kind)` (17, puts setting in ECX but movsx/dec the kind); word kind (11);
-// bool temp for the condition (41); `changed = setting != old` (25).
+// bool temp for the condition (41); `changed = setting != old` (25); without the volatile:
+// helper reading the kind from the request 32, kind by const reference 32, single-exit setting
+// helper 30, nested kind test 32 (every matched function with retail's unfolded word load and
+// register compare tests the value twice, e.g. `type == 3 || type == 4`).
 // @retail 0x8c5f0
 bool __stdcall bungienet_user_voice_apply(s_bungienet_user_request *request)
 {
