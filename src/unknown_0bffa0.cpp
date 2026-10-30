@@ -454,7 +454,11 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // load and the BSP index word load remain).
 // early default length 34. Round 10 (lane 14): normalize3d 79 (the sum stays i, k, j); the direction
 // declared first 108; the BSP pointer declared first 36; the length declared before the direction 34; the
-// step and distance declared after the normalize 116.
+// step and distance declared after the normalize 116. Round 12 (lane 14): normalize3d again 79 (sum i, k, j,
+// frame 0x1c; matched 0xaa4d0 gets retail's k, j, i from the same two helpers); the BSP index read at its use
+// 36 (retail's word load, but in BX with the BSP pointer in EBP); with the BSP pointer at its use too 37;
+// with the structure at its use 36; all three globals at their use 37; the BSP pointer alone at its use 34;
+// the result declared after travelled/step 34.
 // @retail 0xc0840
 bool function_c0840(point3f const *start, point3f const *end, point3f *out, real *distance)
 {
@@ -1253,6 +1257,11 @@ point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *p
 // (890). Round 10 (lane 14): the file's s_light_ab type for the light 38; const matrix with the definition
 // flag as a byte 38; the word flag tests as bytes 46; the existing function_2477b1 rotation 306; an
 // s_light_frame_ab pointer for the frame fields 352. Original body restored.
+// Round 12 (lane 14): the node matrix through the out-of-line 0xb8bd0 184 (1002 bytes); with `inline` on
+// 0xb8bd0's definition 38 (identical, but 0xbcc20/0x11b710 then inline it too); the rotation inputs
+// through one `vector3f const *` axes pointer 40; the light re-read for the second rotation 266; the node
+// matrix fetched again for the second rotation 304. Compile-only screens (no gain): second output via a
+// local, second input copied first, both inputs copied before the point call, both outputs via locals.
 // @retail 0xc2d00
 void __stdcall function_c2d00(long light_index)
 {
@@ -1493,7 +1502,9 @@ extern s_object_list *g_4de2f4;
 // pointer declared with the colours 88. Round 10 (lane 14): the tint read through a `color3f const *`
 // local 49; the four definition colours (0x40, 0x4c, 0x58, 0x64) as one `color3f *` array for the copies
 // 417, and in every arm 370; `real *const fraction` 49; the function flags as a named local for both
-// calls 399.
+// calls 399. Round 12 (lane 14): the fraction pointer at the function top 93 (computed at entry in EDI),
+// also for the arm's later reads 93; at the arm's top with every read through it 88; every arm read through
+// it 49 (same code); the four alpha stores before the copies 49 (same code).
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {

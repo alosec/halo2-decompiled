@@ -7,6 +7,7 @@
 #include "unknown_1cec30.h"
 #include "unknown_0259d0.h"
 #include "normalize3d.h"
+#include "vector_products.h"
 #include "data_array.h"
 #include <math.h>
 #include "object_list.h"
@@ -1111,21 +1112,25 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
         copy = *input;
         input = &copy;
     }
-    real product_forward_i = input->i * matrix->forward.i;
-    real product_left_i = input->j * matrix->left.i;
-    real product_up_i = input->k * matrix->up.i;
-    out->i = product_left_i + product_up_i + product_forward_i;
-    real product_forward_j = input->i * matrix->forward.j;
-    real product_left_j = input->j * matrix->left.j;
-    real product_up_j = input->k * matrix->up.j;
-    out->j = product_forward_j + product_left_j + product_up_j;
-    real product_forward_k = input->i * matrix->forward.k;
-    real product_left_k = input->j * matrix->left.k;
-    real product_up_k = input->k * matrix->up.k;
-    out->k = product_forward_k + product_left_k + product_up_k;
+    out->i = (input->j * matrix->left.i + input->k * matrix->up.i) + input->i * matrix->forward.i;
+    out->j = (input->j * matrix->left.j + input->k * matrix->up.j) + input->i * matrix->forward.j;
+    out->k = (input->j * matrix->left.k + input->k * matrix->up.k) + input->i * matrix->forward.k;
 }
 
-// score 50 (was 50): Frame 0x58 agrees; final override load order and rotation coefficient residency remain.
+// score 9 (was 50): frame 0x58 and length 1043 agree; left: the first rotation's k-row product copies the
+// kept matrix element where retail multiplies the loaded input, and the second rotation multiplies up before left
+// (each row still sums (L + U) + F, as retail). Round 24 (lane 10) kept: carrier delta and first rotation through
+// the existing vector3f_add/vector3f_rotate_into_axes 32; both position adds through vector3f_add, the file rotate
+// helper as one expression per row and the count clamp as a ternary 17; the support add as velocity + position 15;
+// the file helper's rows as (left + up) + forward, parenthesised 9 (coordinator: the lane's accumulated rows
+// i F,L,U; j/k L,U,F scored 13 but summed the i row as (F + L) + U, away from retail's order, so not kept; without
+// the parentheses the compiler regroups the terms, 15; (up + left) + forward and forward + (left + up) also 9;
+// temporaries summed L + U + F 73; accumulated L,U,F 79). Tried on those: override add alone 86, override
+// subtraction from the source 269, support add alone 88, both adds alone 38; helper rows i L,F,U 12, F,U,L 16,
+// L,U,F 70 (harness; 1016 bytes); `support = false` at its declaration 218; carrier delta through vector3f_add
+// 88; override add as velocity + position 19. Unparenthesised term order inside a row is canonicalised (216 orders
+// alike in a compile-only harness). Earlier notes follow.
+// Earlier: Frame 0x58 agrees; final override load order and rotation coefficient residency remain.
 // Earlier: Frame 0x58 agrees; final override loads and rotation coefficient residency remain.
 // Earlier: Frame 0x58 agrees; final override loads and rotation coefficient residency remain.
 // final override load order and rotation input/coefficient schedule differ.
@@ -1261,21 +1266,16 @@ void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrie
     function_1f0870((byte *)history, &current, data, out);
     if (override_velocity)
     {
-        *(real *)(out + 0xc) += *(real *)(out + 0x64);
-        *(real *)(out + 0x10) += *(real *)(out + 0x68);
-        *(real *)(out + 0x14) += *(real *)(out + 0x6c);
+        vector3f_add((vector3f *)(out + 0xc), (vector3f *)(out + 0x64), (vector3f *)(out + 0xc));
     }
     else if (support || carrier)
     {
-        *(real *)(out + 0xc) += velocity.i;
-        *(real *)(out + 0x10) += velocity.j;
-        *(real *)(out + 0x14) += velocity.k;
-        shape_rotate_vector(&rotation, (vector3f *)(out + 0x18), (vector3f *)(out + 0x18));
+        vector3f_add(&velocity, (vector3f *)(out + 0xc), (vector3f *)(out + 0xc));
+        vector3f_rotate_into_axes(&rotation, (vector3f *)(out + 0x18), (vector3f *)(out + 0x18));
         shape_rotate_vector(&rotation, (vector3f *)(out + 0x24), (vector3f *)(out + 0x24));
     }
     long count = *(byte *)((byte *)history + 0x62) + 1;
-    if (count > 0xfe) count = 0xfe;
-    *(byte *)((byte *)history + 0x62) = (byte)count;
+    *(byte *)((byte *)history + 0x62) = (byte)(count > 0xfe ? 0xfe : count);
 }
 
 

@@ -67,6 +67,9 @@ void function_213970(void);
 // query before all resets 142 (three-point gain dropped), after first bulk clears 144;
 // requested-value-first comparisons and explicit void tail return 145/145. Original body restored;
 // the separate allocations still prevent both complete bulk clears.
+// Round 79: enum language result 145; first-element array clears 145; reversed progress fields 145;
+// existing language wrapper 145; query after file/copy clears 144/144; version validation first 141;
+// joint preference guard 158. All gains below the retention threshold; original body restored.
 // Round 193: Native nonzero reset ownership at cache/copy/enabled phases, seven combinations 145 each;
 // complete payload clears before scalar publication 131 kept, plain confirmed at 229 bytes. Two retail-wide
 // blocks and expanded language query still differ.
