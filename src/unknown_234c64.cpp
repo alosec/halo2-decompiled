@@ -280,6 +280,10 @@ void c_window_channel::v9()
 // Round 78: type-field callback address 3; shared request pointer/reference 3/3;
 // message-cast callback 3; result before builder/at function scope 3/3; type-field
 // builder and callback 3; shared message pointer 3. Original body restored.
+// Round 7 (m3 lane 2): every other caller of 0x149f49 that uses its request afterwards reuses ECX
+// (they call the local request's own load field). The request at function scope 13; type cleared after
+// the builder call 12; builder through a forced-inline helper's parameter 3; type cleared before the
+// request's declaration 5; `screen` declared first and assigned later 3.
 // @retail 0x23531c
 void c_window_channel::v10()
 {

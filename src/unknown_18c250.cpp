@@ -170,6 +170,11 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // Round 431: common word/long datum slots 151/23; with machine receiver reacquired 151/23;
 // root-location returned output original/word/long slot 172/108/172; long slot with overlap-safe location copy 53.
 // Frame and normal block agree; machine receiver, cluster-map registers and final publication order remain.
+// Round 7 (m3 lane 2): `object` reassigned from the header for the machine read 23; local names sorted
+// first/last 23/23; `indices[...] * 18 + row` 23; the requested-audible nibble read into a char before the
+// location copy 17 (after-call DL as retail; one-use read ahead of a store, kept only on a match), the same
+// read after the copy 22; with the early read, a 64-bit copy 17; the copy's high dword written first
+// (cast form, diagnostic) 21, retail's first loads and stores, so the copy order follows source order.
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
