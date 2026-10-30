@@ -220,6 +220,9 @@
 // N226: Complete linear/quadratic/cubic product-stage band subsets
 // 59/59/59/139/139/139/139; all with constant root-five/root-seven initialization
 // at declaration 139. Original complete body, precision and expression trees restored.
+// Round 27 (lane 11): `>= 3`/`>= 4` order tests 61 (the compare changes); the direction copied into a
+// vector local first 165 (645 bytes); `0.5f * inverse_sqrt_pi` 59; a double 1.0 numerator for the
+// inverse root 60; the first-band products with the constant first 59.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

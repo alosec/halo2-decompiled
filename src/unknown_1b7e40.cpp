@@ -265,6 +265,11 @@ evaluate:
 // Round 37 (the single-exit form, all 88 at 278 bytes, the call still inlined): as is; with
 // the existing magnitude3d; with the direct function_25d740 call; with the actor and prop
 // node lookups written out (as matched 0x1b7b90 does); written out with magnitude3d.
+// Round 27 (lane 11, on the single-exit form, 90 at 292 bytes): a const view 90; velocity declared
+// before the view 90; `view != NULL` 90; the velocity query before the view lookup 59 at 264 bytes
+// (the lookup still inlined; only the calls' new order realigns the listing, not kept). Our LTCG
+// keeps 0x25d740 out of line in 0x1aa0d0/0x1aab50/0x1ca2d0/0x262ba0/0x264b50 and inlines it only
+// here and in 0x261510.
 // @retail 0x1b81c0
 short __stdcall function_1b81c0(long actor_index, s_slot *slot, bool active)
 {

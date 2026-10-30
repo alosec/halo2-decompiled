@@ -1296,6 +1296,10 @@ bool function_0bfe60(dword const *flags, long bit);
 // 52; the clamp as if/else 52; a const set 52. Without LTCG every spelling of the bitset row
 // (row pointer, &row[0], flat index, pointer arithmetic, const, a separate global or struct row)
 // gives ADD; retail's LEA costs the one byte that shifts the exits.
+// Round 27 (lane 11): status set S_OK in an else arm 139 (441 bytes); the loop counter declared
+// before the loop 52; the push pointer read as `*(dword volatile **)device` 52; the test index written
+// at both calls 142 (as lane 13); status declared before the test index 53; `slot->b == player` 52;
+// `player == g_5234c4` 53.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {

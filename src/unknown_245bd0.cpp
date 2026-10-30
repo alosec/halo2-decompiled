@@ -278,6 +278,9 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // the plane dot's i product, as the dot swap fixes; a single-exit result 57; the test inverted 58;
 // a center pointer used twice 170 (669 bytes); single exit with length_sq3f 150; x and z summed
 // before y 59; the difference written out as plain assignments (diagnostic) 57-61 in every order.
+// Round 27 (lane 11, real builds): the sphere helper forced inline 57; its parameters (point, sphere,
+// plane, depth) 57, (sphere, point, depth, plane) 57, (point, sphere, depth, plane) 57; the sphere
+// passed as `shapes->spheres + index` 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
