@@ -901,28 +901,27 @@ bool __stdcall function_2399da(long controller_index)
 }
 
 /* sets the selected player's rank in the clan (NONE removes them) */
-// score 90 (was 90): frame 0xf00 agrees; selected identity ECX/rank EAX and the extra removal move remain.
-// Earlier 90 (was 90): identity/rank registers and the extra move before removal remain; selection guard,
-// frame 0xf00 agrees; selected identity ECX/rank EAX and extra removal move remain.
-// identity/rank registers and the extra move before removal remain; selection guard,
-// permission guard and both 90 each; update-first branch with neither/either/both guards 92 each;
-// requested-rank lifetime 90. Frame and all call arguments preserved on restore.
-// selected identity ECX/rank EAX and extra remove-call copy remain.
-// Producer pointer scope/name, parameter-only rank name/both names 90/90/90/90;
-// own-rank/task lifetime, immutable pointer and native Boolean homes 90/90/90/90.
-// Rank dispatch nested/deny-first shapes with task/own-rank scopes 90 each; have_member block as a
-// negated test 114/92; rank stored before the rank-3 test 89; nested identity tests 90; explicit
-// comparisons 90; identity/own-rank declaration positions 90 each; permission denial first 90/90.
-// Earlier 90 (was 90): selected identity ECX/rank EAX and extra remove-call copy remain.
-// Membership inline/outline/both 90/90/90; remove inline/outline/both 90/90/90;
-// paired inline and paired inline/outline contracts 90/90.
-// Permission operands reversed at the conjunction/outer disjunction/both 92/95/94;
-// library identity copy 90; copy plus those orders 92/95/94; native own-rank value 90.
-// Task result from complete dispatch 139 at 464 bytes; with named removal/rank tests or
-// selected-validity expression in all seven combinations 139 each at 464 bytes.
-// Round 413: selected-identity producer reversed cases 90; if returns/definite result arms
-// 180/180 (frame 0xefc); direct case returns 156. Forceinline forms repeat 90/180/180/156.
-// All six return-form variants lose a matched peer; original shared producer restored.
+// score 90 (was 90): frame 0xf00 agrees; only allocation differs: retail loads the selected identity
+// pointer into EAX for its test (so the removal call needs no move) and the rank into ECX; ours ECX/EAX
+// plus the extra move before removal (register-masked difference 3).
+// Tried: selection guard, permission guard and both 90 each; update-first branch with neither/either/both
+// guards 92 each; requested-rank lifetime 90; producer pointer scope/name, parameter-only rank name/both
+// names 90/90/90/90; own-rank/task lifetime, immutable pointer and native Boolean homes 90/90/90/90; rank
+// dispatch nested/deny-first shapes with task/own-rank scopes 90 each; have_member block as a negated test
+// 114/92; rank stored before the rank-3 test 89; nested identity tests 90; explicit comparisons 90;
+// identity/own-rank declaration positions 90 each; permission denial first 90/90; membership
+// inline/outline/both 90/90/90; remove inline/outline/both 90/90/90; paired inline and paired
+// inline/outline contracts 90/90; permission operands reversed at the conjunction/outer disjunction/both
+// 92/95/94; library identity copy 90; copy plus those orders 92/95/94; native own-rank value 90; task
+// result from complete dispatch 139 at 464 bytes; with named removal/rank tests or selected-validity
+// expression in all seven combinations 139 each at 464 bytes; selected-identity producer reversed cases
+// 90; if returns/definite result arms 180/180 (frame 0xefc); direct case returns 156; forceinline forms
+// repeat 90/180/180/156 (all six return-form variants lose a matched peer).
+// Round 36 (one-file harness with the callees' files, identical to the full build): the identity
+// pointer declared at each of the 14 other positions and 12 random orders of all declarations (same
+// code); grouped permission test, `own_rank >= rank`, block-scoped identity, the membership copy's bool
+// result kept (same code); rank dispatch inverted (rank != NONE first) worse; own rank read at each use
+// (same code), operands swapped and `own_rank > 1` worse.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

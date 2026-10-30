@@ -4728,13 +4728,19 @@ void function_62640(c_class_58d20 *session)
  memcpy(&session->value24e0, &session->value4c, 0x2494);
 }
 
-// score 98 (was 98): the two masks are cleared in the other order and live in
-// the other stack slots, the frame is four bytes shorter, the bit is shifted
-// in the other register and merged in a register instead of in memory, and the
-// second loop walks the member states from the flag byte
-// Read-only first-loop member / unsigned sequence / immutable observer binding,
-// all seven subsets 98; signed-int cursors in both ordinary loops 98. Original
-// metadata domains and body restored; owner spill, mask homes and send base remain.
+// score 98 (was 98): the frame is four bytes shorter: retail loads the session's
+// owner before the readiness call and spills it (BLOCKED-BY 0x76930, the unused owner
+// argument of the mark-message call, as for 0x62640); then the two masks are cleared
+// in the other order and live in the other stack slots, the bit is shifted in the other
+// register and merged in a register instead of in memory, and the second loop walks the
+// member states from the flag byte.
+// Tried: read-only first-loop member / unsigned sequence / immutable observer binding,
+// all seven subsets 98; signed-int cursors in both ordinary loops 98; the second loop's
+// member-state pointer at the top of its body 118 (retail's flag-byte walk, one
+// instruction shorter); that pointer after the `continue`s 98 (same code); a
+// NULL-initialised message with one `continue` 98 (same code); masks declared delta
+// first, buffers swapped, renamed masks and counter (same slots); arms inverted (same
+// code); compared operands swapped and the sequence read first (one-file harness worse).
 // @retail 0x627e0
 void function_627e0(c_class_58d20 *session)
 {
