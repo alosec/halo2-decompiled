@@ -198,6 +198,9 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
 // and read stayed at its producer; original declarations and complete body restored.
 // Round 268: Shared constraint error/axial speed/residual speed, seven subsets, then all with speed
 // change: 975/979/991/974/974/991/974/974. Original body restored.
+// Round 41: Native signed body-slot and composed owner/other activity carriers:
+// [997, 1001, 921, 970, 956, 1010, 1011, 1008]. Narrow byte/short slots recover entry ECX/EAX at unchanged frame 0x1f0;
+// body and record/vector homes still differ. Original slot, predicates, helpers and body restored.
 // @retail 0x1d24a0
 void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
 {

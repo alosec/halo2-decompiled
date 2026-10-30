@@ -73,6 +73,15 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 // base folds, so the two differences are one; it hoists 2 into ESI only with a fifth use of short 2
 // (384 store-order/nesting/polarity forms never did). The fast check needs 0x25d740 in the image
 // (106 without it).
+// Tried (lane 13 r12): splitting the view test into `if (unknown00 >= 5) { 41c = 2; 420 = 2; } else if
+// (unknown69 && unknown4c) { the same two stores }` inside `if (view)` matches byte for byte (the six stores of 2 keep
+// 2 in a register, then the two blocks merge), but both arms are the same code written twice to steer registers,
+// which is not kept even with a match.
+// score 32 (was 32): retail keeps 1 in EBX and reuses ESI, after the node-pool base, for the
+// constant 2, so the view pool's base folds into `add eax, [edx+0x44]`; ours uses EDI for both pool
+// bases and immediate 2s (four-byte extent excess, +0x29 default target). A compile-only screen with
+// the view lookup inlined reproduces ours exactly: once 2 sits in a callee-saved register the view
+// base folds, so the two differences are one.
 // Tried: paired mode result short/long 62/63; flags before paired state short/long 81/82; guarded
 // mode result short/long 46/45; view rejection first 32; conditional view acceptance 32; state/mode
 // destination pointers 32/32; both destinations 32; default flag destinations 33; readonly view 32
@@ -122,6 +131,9 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 // (`a = b = true`) 36; first test `>= 2` with `> 0` 36 (2 hoisted from entry, 1 no longer hoisted:
 // five byte stores alone do not hoist it); the range test inverted with the view in its arm 32; view-arm
 // stores swapped 32; `> 0` for the lower bound alone 33.
+// Round 430: Primary classification result reused for activity, bool/byte/short/long, with secondary
+// state-to-mode field readback 32/32/32/32; reverse field readback 32/32/32/32. Original executable
+// body restored.
 // Round 96 (one-file LTCG harness with src/unknown_25d690.cpp, reproduces the build): any fifth use of
 // short 2 (a diagnostic extra field store in either arm) gives retail's whole allocation (ESI = 2 after the
 // node lookup, the view pool base folded); so retail's source has a fifth use that leaves no instruction.

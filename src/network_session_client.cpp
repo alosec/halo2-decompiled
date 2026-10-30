@@ -39,10 +39,10 @@ bool network_session_host_set_summary(c_class_58d20 *session, const s_session_su
 // score 9 (was 9): Frame and both scans agree; final summary address is reused rather than rematerialized.
 // only the summary address still differs: retail recomputes `lea eax,[esp+0x24]`
 // after the push, ours reuses the `ebx` copy of `&summary`.
+// Round 296: Explicit inline/noinline call-summary subsets for cancellation/removal/publication (all seven combinations) 9 each; named removal result 9. Complete body and declarations restored.
 // Round 44: post-remove pointer/reference 9 each; read-only source 9; one-element summary array 9;
 // output-pointer copy 9; direct tail session reads 9; final-call session local 9;
 // direct summary initialization 9. Opening body restored.
-// Round 296: Explicit inline/noinline call-summary subsets for cancellation/removal/publication (all seven combinations) 9 each; named removal result 9. Complete body and declarations restored.
 // @retail 0x6d380
 void __stdcall function_06d380(c_session_client *client, const s_session_id *id)
 {

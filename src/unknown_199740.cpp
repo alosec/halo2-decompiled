@@ -17,30 +17,20 @@ typedef void *(__stdcall *block_allocate)(void *, long, long);
 typedef void (__stdcall *block_free)(void *, void *);
 long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte const *source, long source_size, block_allocate allocate, block_free release, void *opaque);
 
-// score 52 (was 52): BLOCKED-BY 0x2cb5b0: retail passes it source in eax, source size in ecx,
-// destination in edx and the destination size in edi (three pushes); its stub is built without
-// /GL, so ours pushes all seven, and the argument loads after the pool setup differ. Retail also
-// keeps the low half of the start time in ebp and the high half in edi (ours the other way round)
-// and stores the timer zero after the edi save. A real 0x2cb5b0 body (an inflate wrapper over
-// stubbed 0x2cc8d0/0x2cc9d0/0x2cc890) takes eax/ecx/edx but the size in esi: 64 (323 bytes);
-// stdcall or cdecl stubs 64; retail's field store order 66; one-exit result 64. Retail's esi comes
-// from 0x2cc8d0 taking its stream in esi, so its real body (and its library callees 0x2cc850,
-// 0x2cc890, 0x2ce950) is needed first. Round 158: unsigned start 52; start read before the result
-// local 52; elapsed as a separate subtraction 52; plain-inline pool helper 301 (not inlined);
-// retry counter declared before the test 52.
-// retail keeps the low half of the size in ebp and the high
-// half in edi, ours keeps them the other way round, and retail saves the third
-// argument after the push, so the stores and the subtraction differ.
-// BLOCKED-BY 0x2cb5b0: retail passes it source in eax, source size in
-// ecx, destination in edx and the destination size in edi (three pushes); its stub is built
-// without /GL, so ours pushes all seven. A real 0x2cb5b0 body (an inflate wrapper over
-// stdcall or cdecl stubs 64; retail's field store order 66; one-exit result 64. Retail's esi
-// comes from 0x2cc8d0 taking its stream in esi, so its real body is needed first.
-// Native unpack status at entry/after allocation 130/102; raw storage/unsigned bytes/both
-// 52/52/52; entry status with raw storage/unsigned bytes 130/130; later status with both 102.
-// Round 96: result declared after the allocation 89; the retry loop with break/continue (the
-// matched 0x194260 form) 52; the allocator local before the pool setup 57; elapsed as a read
-// then `-= start` 52; the timestamp read before the result default 52.
+// score 3 (was 3): only the first timer-zero dword store precedes PUSH EDI and the result-byte
+// store; retail puts it after both. The frame, timestamp pair, retry work and decompressor
+// convention now agree. Earlier with the standard decompressor: real wrapper 64 (323/319 bytes),
+// stdcall/cdecl stubs 64; field store order 66; one-exit result 64. Unsigned start 52;
+// start before the result local 52; separate elapsed subtraction 52; plain-inline pool helper
+// 301; retry counter before the test 52. Native unpack status at entry/after allocation
+// 130/102; raw storage/unsigned bytes/both 52/52/52; entry status with raw storage/unsigned
+// bytes 130/130; later status with both 102. Result after allocation 89; break/continue retry
+// loop 52; allocator local before pool setup 57; elapsed read then -= start 52; timestamp
+// before the result default 52.
+// Round 202 with the recovered callee contract: byte/signed-byte/short success 105/105/106;
+// direct test result 54; success from pool admission 66; inverse failure result 120;
+// result assigned in both allocation outcomes 124; entry allocator-output workspace 22.
+// All result forms and workspace lifetimes restored; shared helper bodies and qualifiers unchanged.
 // @retail 0x199740
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
 {

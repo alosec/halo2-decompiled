@@ -67,6 +67,9 @@ extern short const g_44aee8[20] =
 // DH round 257: Typed 0x74 input record with native source bits and first/second output bitfields, eight
 // combinations 90/90/90/90/94/94/94/94. All record, interface, caller and body changes restored; flag
 // mask/store gaps remain.
+// Round 200: shared byte/word second-bit setters 92/92; word first bit with original/byte/word
+// second bit 103/107/103; byte first bit with original/byte/word second bit 106/106/106.
+// Shared setters do not recover the word mask or per-arm memory stores; original body restored.
 // @retail 0x200c20
 void function_200c20(byte const *definition)
 {
@@ -485,6 +488,8 @@ s_squad_definition_entry *function_203330(s_squad_definition_view const *squad);
 // DH round 257: Reused flag/mode carriers in parameter/word/long domains, eight non-original pairs
 // 92/92/160/160/158/92/92/92. Every carrier and body restored; parent registers and persistent zero
 // remain.
+// Round 200: getter inline/cdecl/stdcall/inline-cdecl/inline-stdcall contracts 92 each;
+// inline/cdecl/stdcall with branch-owned next 89 each. Original getter and iterator restored.
 // @retail 0x204ec0
 void function_204ec0(s_squad_iterator *iterator, short squad_index, short flags, short mode)
 {
@@ -1853,6 +1858,13 @@ PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definiti
 // Round 176: Native player record 257; datum iterator 262; both 262; native squad state 257;
 // squad/player 257; squad/datum 262; all three 262; all/shared actor walk 262.
 // Datum storage grows the frame to 0x40; original records and both private helpers restored.
+// Round 201: Size4/alignment2 packed view: best/actor/both 243/248/258; native index 254;
+// best/index 255; actor/index 242 kept; both/index and word init 260/260. Guard-owned index 235,
+// entry index 242; count or best/point homes retain those scores. Long/short/signed-byte/byte
+// validation on the guard graph 235 each. Seven-point guard gain is below threshold. Keep native
+// actor equality and the three-use signed index, plain-confirmed with no other measurement change.
+// Coordinator review: the 242 needs a union/pragma-pack view of the shared s_reference type in globals.h;
+// a shared-header layout change for one compare is not kept. Body restored (257).
 // @retail 0x204450
 void function_204450(long definition_index, long squad_index)
 {
@@ -2059,6 +2071,10 @@ bool function_1df5d0(short team_a, short team_b);
 // Round 179: Actual first iterator initialization before disjoint header resets, with
 // receiver/hostility lifetimes and chained zeroes, 228/228/227/227/234/234/237/237.
 // Original begin order and complete body restored; cursor/contribution homes remain.
+// Round 201: Independent marked aggregation/centroid begin boundaries 266/238/281; next boundaries
+// 250/259/249; whole aggregation/centroid boundaries 284/249. Shared byte setter at opening/every
+// bit store 218/179. Original complete body and include set restored; cursor/contribution homes
+// remain.
 // @retail 0x203360
 void function_203360(long squad_index)
 {
@@ -2238,6 +2254,11 @@ PRIVATE __forceinline long squad_tick_round(real ticks)
 // Round 176: Complemented squad/overlap/both/actor/squad-actor/overlap-actor/all carriers
 // 330/307/316/322/345/336/330; all with shared raised-point scaled add 330.
 // Original complete result graph and every eager call restored.
+// Round 201: Native area result/resolved point/both 294/281/291; direct iterator handle 275; handle
+// with area/point/both 294/281/291; complete graph with word flag 293. Private iterator
+// inline/ordinary 432; forced cdecl/stdcall 275/275; inline or ordinary cdecl/stdcall 432 each,
+// losing matched 200d80/201df0/204ca0. Original target and both private helper declarations
+// restored. Public area contracts were blocked by a held declaration file.
 // @retail 0x201ea0
 void function_201ea0(void)
 {
@@ -3060,6 +3081,9 @@ void function_2011f0(long arg_0);
 // Round 179: Natural short attempt counter on recovered category/seat-output frame 338;
 // with promoted difficulty/signed placement/both 344/359/357; full-width fallback on
 // those four graphs 354/359/354/359. Frame 0x134 and original body retained.
+// Round 200: native creation/request/final-chain getter subsets 355/338/355/338/355/338/355;
+// all with first cached squad receiver 403. Creation subsets reach 1328 bytes but worsen
+// instruction allocation. Original lookup producers, narrowed values and complete body restored.
 // @retail 0x201520
 void function_201520(short arg_0, long arg_1, long arg_2, long arg_3, long arg_4)
 {

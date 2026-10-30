@@ -337,10 +337,16 @@ extern "C" void _ReadWriteBarrier(void);
 // (BLOCKED-BY 0xf0fd0 for that call). Barrier removed alone 161; finished arm first 149; if/else
 // finished flag 123 (same code); early continue to the release 162; deletion test in one
 // condition 127; the codec pairs as writable globals (diagnostic) change nothing.
+// DL192: Native word flag views for admission/publication/cleanup subsets 1-7 on ordinary traversal:
+// 152/154/154/156/161/160/160; complete view with native four-field iterator 160. All target changes and the
+// external flag declaration restored; pool homes remain.
 // Round 298: ordinary shared traversal without the target barrier, unit/flag producer
 // inline/plain/forceinline declaration pairs except inline/inline: eight times 152.
 // All bodies and declarations restored. Current flag call uses retail CL; two pool homes,
 // object-pool reloads and frame 0x14 remain unresolved.
+// DL192: Native word flag views for admission/publication/cleanup subsets 1-7 on ordinary traversal:
+// 152/154/154/156/161/160/160; complete view with native four-field iterator 160. All target changes and the
+// external flag declaration restored; pool homes remain.
 // @retail 0x1fb510
 void function_1fb510(void)
 {

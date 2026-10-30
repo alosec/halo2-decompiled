@@ -459,7 +459,9 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 	vector->k = axis->k * along + k * cosine - (axis->j * i - axis->i * j) * sine;
 }
 
-// score 90 (was 90): frame 0xd8 agrees; the ring counter is converted in x87 where retail converts
+// score 90 (was 90): frame 0xd8 agrees; the ring conversion (fild where retail converts in SSE) and the
+// rotation schedule (one spilled component, register homes) differ; 1085 bytes against 1089.
+// frame 0xd8 agrees; the ring counter is converted in x87 where retail converts
 // it in SSE, and the rotation schedule and component registers differ; 1085 bytes against 1089.
 // frame 0xd8 agrees; x87 ring conversion and rotation component spill/register scheduling remain.
 // rotation schedule (one spilled component) differ; 1085 bytes against 1089.
@@ -546,6 +548,17 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // conditional, 163/247/153/246/281/281/147/241. All exact-only; no match. Original query
 // observation, rotation helper, input copies, inherited local qualifier and complete body restored.
 // Round 255: unsigned-word ring with short/word/byte/char spokes 117/117/246/246; signed-byte ring with short/word/byte/char spokes 130/130/247/247. All restored; x87 ring conversion and rotation spill remain.
+// Round 121: the missing frame slot is retail's SSE ring conversion temp (cvtsi2ss, a store, fld). The
+// rotation helper in the form that took 0x29c860 to 2 (j and k cross terms in a vector first, the i
+// cross term in the i row; in place) gives retail's rotation structure but 100 (frame 0xd4); with the
+// ring phase named before the distance as well 96 (frame 0xd8, SSE ring conversion and rotation core as
+// retail; the radius copy then moves to integer registers and the dot's sum order and integer register
+// names differ); with 0x29c860's operand orders 100/96; on that: angle terms swapped, dot written j/i/k,
+// phase after the distance 96 each; a named (real)ring 100/96 (with the phase); plain radius 222;
+// sector index before the radius 263.
+// Round 200: output-pointer rotation with four formal priorities 90/90/90/90;
+// with native phase before distance 143/143/143/143 (frame 0xdc). Original void helper,
+// input copies and complete body restored; output-result lifetime does not resolve the spill.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {

@@ -226,6 +226,9 @@ void function_07b3e0(void)
 // stores exactly; only the second pool register (push ebx, mov ebp, ebx) and the loop padding
 // are missing; without the datum_index init 58; the pool through a local 58;
 // data_iterator_next_calling 94 (0x16bc00 stays a call); data_next_absolute_index_inlined scan 39.
+// Round 20 (iterator form unless noted): the datum through data_datum_index on the iterator's
+// pool 57, on the global 69 (both pool registers and the pad appear, the datum pointer spills),
+// on a pool local 57; index set before the pool 58; this form with the scan on the global 64.
 // retail holds the pool in two registers (ebx for the high-water/bitmap scan, ebp, copied
 // from ebx before the loop, for the datum's size and data), puts the found path after the exit with a dead
 // datum `add`, stores immediate zeros at the end and pads the scan loop; ours keeps one pool register, NONE in
@@ -240,6 +243,9 @@ void function_07b3e0(void)
 // the local 64, the reverse 65; the iterator's own fields with data_find_index/data_datum_index 60; the
 // iterator without the datum_index init 58. Original helper declarations, pool snapshot, loop and final global
 // stores restored.
+// Round 20 (iterator form unless noted): the datum through data_datum_index on the iterator's
+// pool 57, on the global 69 (both pool registers and the pad appear, the datum pointer spills),
+// on a pool local 57; index set before the pool 58; this form with the scan on the global 64.
 // @retail 0x7b430
 void function_07b430(void)
 {

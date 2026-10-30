@@ -621,6 +621,11 @@ s_projectile_material_response g_547660;
 // without the reference 51/65 (the index then arrives in EDX); a pointer to the index walked from
 // the parameter to each parent field 49 (word loads, but at the loop head), with the counted loop
 // 47; the existing global_material_get (inline in damage.cpp) for the lookup 34 (same code).
+// Round 12: a counted scan gives retail's shape but colours index/material/counter/pointer EDI/ECX/
+// EDX/ESI (retail ESI/EDI/ECX/EDX) with the dword entry load: a named response base indexed 54,
+// the element indexed off the definition 56, a walk local read through the reference 56, the
+// material declared before the loop 56; the pointer scan with a walk local read through the
+// reference 34 (same code). A read through the reference loads a word only when no loop carries it.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -976,6 +981,9 @@ real function_30bf0(vector3f *v);
 // Round 294: Entry a/two_a/discriminant-base storage, seven nonempty subsets, all 232;
 // all with b storage 232. Every original producer and complete body restored;
 // frame 0x28/0x30, rounded-root scheduling and separate divisions remain.
+// Round 222: found byte/short/long/dword with result first at entry, all 245; arc-only result,
+// all 257. Original body restored; frame 0x28/0x30, rounded horizontal root and separate
+// divisions remain.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1189,6 +1197,9 @@ extern vector3f *g_4687ac;
 // consistent radius-field reads 198/193/179/185. Full-width result reaches 756 bytes but
 // regresses. Original result exits, cached radius, simultaneous endpoints and body restored;
 // frame/tag/query homes remain.
+// Round 430: complete repeated positive/negative offsets, native products or existing scale producer,
+// with actual long query result and bounded first-ray combinations 168/170/167/169 each.
+// All reach 756 bytes; unbounded/bounded frames 0x3c/0x30 still miss 0x34. Original body restored.
 // Round 213: existing staged cross with original/shared input differences and original/bounded
 // initial ray 163/163/165/165; consistent radius-field counterparts 181/188/173/180.
 // Original body restored; tag EBP and native frame 0x34 endpoint/query overlap remain.
@@ -1499,6 +1510,9 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 294: Entry ticks/arming-ticks/speed storage, seven nonempty subsets, all 332;
 // all with owner-index storage 332. All producers and the complete callback restored;
 // frame four agrees, slot/input allocation and speed-update expansion remain.
+// Round 222: shared zone predicate 346, with shared scaled sum 332; both library copies tie each
+// form. Shared zone with cached tag, with/without scaled sum or copies, 381 each. Original
+// body/include restored; slot/input allocation and speed-update expansion remain.
 // @retail 0xf8200
 bool __stdcall function_f8200(long projectile_index, byte const *data, long unused)
 {
@@ -1671,6 +1685,9 @@ real function_17c900(short function_type, real input);
 // DH round 236: lead/turn/drift vector storage promoted without moving their input reads,
 // all seven subsets 348 each; complete promoted graph with role-based point/vector names 348.
 // Original branch storage and complete body restored; input transport and vector homes remain.
+// Round 430: complete lead-offset/staged turn-cross/clock receiver subsets
+// 344/348/344/362/365/362/365; complete graph with point/direction names and declaration order 365.
+// Four-point lead-offset forms reach retail length but are below the keep margin; original body restored.
 // Round 294: Unsigned word/dword salt 360/371; paired word/dword phase counters 354/371;
 // word-word/dword-word/word-dword/dword-dword 354/354/371/371. Complete body
 // restored; stacked-index/output-EBX transport and vector homes remain.
@@ -2473,7 +2490,7 @@ real function_1201a0(vector3f *v, vector3f const *fallback);
 void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *seed, real min_angle, real max_angle);
 struct s_globals_element;
 s_globals_element *function_188690(short index);
-void function_184060(long unknown3c, byte unknown59, s_type_1e6529 *data, long unknown50);
+void function_184060(long unknown3c, long unknown59, s_type_1e6529 *data, long unknown50);
 void function_a85c0(long projectile_index, s_collision_result_1697c0 const *collision, vector3f const *direction,
 	bool unknown, real scale_a, real scale_b);
 
@@ -2528,6 +2545,9 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 // Round 284: Independent effect/sound long or dword counters at their producers, four
 // combinations 1162 each; those with the collision routine declared inline 1162 each.
 // Original shared counter and declaration restored; frame and velocity contract remain.
+// Round 430: marker/request producer declarations and complete effect/sound phase scope,
+// seven subsets 1162/1162/1162/1162/1162/1208/1208; complete graph with request before spatial input 1208.
+// Last three recover frame 0x218 but shrink to 4768/4828 bytes; velocity stays stacked. Original restored.
 // Round 213: existing final-velocity friction/noise/rest helper producers, seven subsets,
 // 1162 each; complete graph with reflected receiver setter 1162. Original body restored;
 // frame 0x220/0x218 and velocity/request homes remain.

@@ -68,7 +68,8 @@ bool actor_has_joint_invitation(long actor_index, short type);
 long function_25d810(long object_index, long actor_index, bool create);
 bool function_25d9b0(long prop_index);
 
-// score 131 (was 131): retail passes the actor index to function_26f060 in ECX and
+// score 125 (was 125): Frame 0xc and invitation call agree; actor/node EBX/EBP roles and fallback/evaluation placement remain.
+// Earlier: retail passes the actor index to function_26f060 in ECX and
 // the invitation type in EDI, ours passes them in EAX and ESI; that choice also swaps
 // the prop index and the node between ESI/EBP and EBP/EDI through the body. The
 // convention is set by function_26f060 (src/unknown_26e370.cpp), not editable here.
@@ -92,6 +93,9 @@ bool function_25d9b0(long prop_index);
 // 170/152/169/151; the existing view getter ties all four. Both late-query/long-priority
 // forms plain 124 at 554 bytes (seven below 131), rejected; original body restored.
 // The invitation convention, initial property/node ranks and fallback placement remain.
+// Round 223: complete eligibility bool/byte/short/long with short priority 150/150/150/150 reduced;
+// with long priority 166/166/171/169. Minimal bool form plain 119 at 556 bytes (six below 125), rejected.
+// Original body restored; current invitation call agrees, actor/node ranks and fallback placement remain.
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {
@@ -242,6 +246,25 @@ evaluate:
 // all 102 at 231/264 bytes. Entire body, payload and getter declaration restored.
 // Complete final rejection with native payload/self-dot 87/87; staged final failures 90/90;
 // whole-slot forms 87/90/87/90, all 277 bytes. Original 264-byte body and getter restored.
+// call and matches byte for byte with the call held out of line; in that form the direct
+// call, a noinline declaration in this file, `unknown20 >= 1` and the swapped prop compare
+// all stay inlined (90/90/96/91). Earlier: typed slot payload 73; payload/result first 73;
+// payload/wide result 74; payload/single result 88, with wide result 92; native node/view
+// plus payload/self-dot/final-result graphs 73/73/73/73/78/78/78/78; early returns 74;
+// direct function_25d740 call 73, with early returns 74; named actor 74; prop test nested
+// again 79; with the call kept out of line the tails merge (102 at 231 bytes); a separate
+// view-getter noinline with default status, direct proximity return, native payload,
+// unsigned-word status and double speed consumer, eight forms all 102 at 231 bytes;
+// whole-slot forms 87/90/87/90 at 277 bytes; complete final rejection with native
+// payload/self-dot 87/87; staged final failures 90/90; early returns with `return 0x10` 74
+// (`mov ax`); the slot field on the left of the prop compare 74; a named actor with that
+// compare 91; the existing magnitude3d for the speed 73, with early returns 74; a noinline
+// declaration in this file 73 (ignored across files: still inlined); per-level returns 87
+// (277 bytes), with `return 0x10` 87. A noinline on the definition would change the 21
+// matched functions that inline it in retail.
+// Round 37 (the single-exit form, all 88 at 278 bytes, the call still inlined): as is; with
+// the existing magnitude3d; with the direct function_25d740 call; with the actor and prop
+// node lookups written out (as matched 0x1b7b90 does); written out with magnitude3d.
 // @retail 0x1b81c0
 short __stdcall function_1b81c0(long actor_index, s_slot *slot, bool active)
 {

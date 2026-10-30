@@ -245,6 +245,11 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // 105, one six-term sum 95, squares grouped t * (t * k) 86; the arrays in one local struct 88;
 // peaks filled by a chained assignment 114 (both peaks one register, no frame). The preloads keep
 // four coefficients in xmm4-7 in every form; retail spills the peaks and the acceleration.
+// Round 85 (compile-only screens reproduce this function's float code; the written-order `+=` chain
+// gives retail's add order and shared clamp tail, but all 720 `+=` orders, all 720 fill orders and the
+// 2x3/3x2 arrays keep one coefficient spilled, retail three; fills after the clamps spill none):
+// `+=` chain cc2, c2, aa0, a0, bb1, b1 50; written-order `+=` chain 55, with the 2x3 array 54, with
+// PIN clamps 90, with both 88.
 // Round 98 (retail's memory operands for rates[1], rates[2] and accelerations[0] look like array homes
 // that were never scalar-replaced): PIN clamps into a long segment-ticks array summed in a three-pass
 // loop 88 (aligned 82); the same with the casts at each use 88 (287 bytes); the two peak rates filled
@@ -262,6 +267,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // arrays at function scope 49; the two peak elements swapped in the sum 52; the tick conversions as
 // locals declared at the sum 83 (289 bytes); the peaks filled by a loop over segments 1..2 56; a named
 // peak rate for both peak elements 112 (263 bytes).
+// Round 42: arrays and tick locals at function scope 49 (identical); short tick locals 119; the
+// conversions written in the sum 83; PIN + 2x3 with the segment times in a float array 88, with
+// per-segment {rate, acceleration} pairs 88; compile-only, all 720 orders of the six 2x3 fills, a
+// time array, a time loop and factored per-segment terms keep the same single spilled peak.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

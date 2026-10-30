@@ -25,13 +25,13 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // compares and two exits use it) with arg_0 in ebx and ebp/edi pushed past
 // the first guard; ours keeps arg_0 in esi, NONE in eax for the first exit
 // only (immediates elsewhere), pushes all four at entry, and shares one fail
-// exit (345 vs 369 bytes). Early returns 109 (shrink-wrap appears but NONE
+// exit (345 vs 369 bytes). No source form enregisters the NONE constant: VC
+// propagates it per web. Early returns 109 (shrink-wrap appears but NONE
 // stays immediate); only the arg_1 guard early 109; local_8 initialized at
 // declaration 109; the marker && split into nested ifs 75; marker index as a
 // ternary 70; marker-found through a bool 70; result assigned inside the test
 // 70; store through an address local 70; global optimization off 210
-// (diagnostic). No source form enregisters the NONE constant: VC propagates
-// it per web. Round 78: single exit with every guard nested 115 (arg_1 then
+// (diagnostic). Round 78: single exit with every guard nested 115 (arg_1 then
 // arrives in dx), with `if (local_0 == NONE) return NONE;` kept 100, plus an
 // early `return NONE` for arg_1 123; the squad-index product named first 70;
 // the actor store under `if (local_0 != NONE)` 71. Lane 11 r12 (aligned
@@ -60,12 +60,27 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // a short 70 (identical); `if (arg_1 == NONE) return local_0;` as a guard 109 (the
 // exit is duplicated at the top, NONE immediate); the call result in its own local
 // returned directly 108 (370 bytes); that local copied to local_0 inside an
+// `!= NONE` test 136. Round 21: retail's -1 is a constant register (esi free once arg_0 takes ebx
+// and the cell-table temporary ecx); ours has no free callee-saved register for it, so all NONE exits
+// merge into one `or eax, -1`. A single exit keeps the result in eax in the all-stack first pass, so
+// arg_1 is loaded into dx (early returns load it into cx, as retail). Inline squad and cell getters
+// 69/70; single exit through `goto done` 100, nested 100; `local_8 = local_4` default 109; the marker
+// lookup nested under `arg_0 != NONE` 109; the marker declared first 70; literal `return NONE` guards 70;
+// the cell index in a long local first 70.
 // `!= NONE` test 136. Round 82: every guard nested with the call-fail
 // `return NONE` kept 100 (local_0 in eax, arg_1 in dx); the call result in its
 // own local copied to local_0 on success 70 (identical code now); local_8
 // initialized to the cell and overwritten by the marker branch 109; the index
 // guards returning NONE 70 (identical); the arg_1 guard early with the rest
 // nested 123.
+// `!= NONE` test 136. Round 120 (real checks of an 18-form grid: arg_1 guard
+// nested / `return local_0` / `return NONE`, x range guards the same three
+// ways, x the call tail `== NONE return NONE` or `!= NONE store`): every early
+// arg_1 guard 109 (366 bytes, arg_0 in esi), with nested range guards 123/138;
+// nested arg_1 guard with early range returns 70/71; all nested 100/115
+// (arg_0 in ebx and retail's schedule, but local_0 in eax, arg_1 in dx); the
+// call result in its own local with `return NONE` at the end 134; NONE
+// assigned in each failing arm of an if/else chain to one exit 109/134.
 // @retail 0x203780
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3)
 {

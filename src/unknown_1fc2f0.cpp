@@ -267,6 +267,16 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
 // stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
 // (394 bytes); the rate read from the global at each use 99 (375 bytes).
+// Round 37 (lane 16): the tick conversion after the chains gives retail's first 22 instructions
+// (j, i, k chains, ticks in xmm3) but the tick products then take the ticks as their left operand
+// (copies) 64; the same with the tick stage through local_scale3d, also with (real)ticks passed
+// directly, 64/64; conversion at the top with local_scale3d for the tick stage 43 (same code);
+// the conversion after each of the first nine chain statements 72 each; the chains written stage
+// by stage (all rate products, then all adds, then all subtractions) with the conversion before
+// the rate stage/after it/after the adds/after the subtractions 107/115/106/106.
+// DL192: Common native velocity publication 61; scaled add 96; in-place scale/add 50; reused squared length
+// 77; late tick conversion 45; with native input copy 137, squared length 54, squared length/scaled add 95.
+// Late ticks move first difference to +0x5a but enlarge by four bytes; all restored.
 // Round 21 (lane 10): the prediction through vector3f_add_scaled + vector3d_from_points3d 43 and the
 // delta scaled in place 43 (both identical code); the correction through vector3f_add_scaled 97
 // (frame); a named squared length before the limit 79 (lockstep shift: the limit, the early j
@@ -281,6 +291,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // tick products j, i, k 73; one `scale` local for rate then ticks 66. The subtraction fused into
 // the tick product (`velocity.i = (velocity.i - p0.x) * tick_scale;`) scales in place in XMM3
 // but loses the j-first schedule: 66; with chain/product/delta orders 48/54/71 (best at 366 bytes).
+// DL192: Common native velocity publication 61; scaled add 96; in-place scale/add 50; reused squared length
+// 77; late tick conversion 45; with native input copy 137, squared length 54, squared length/scaled add 95.
+// Late ticks move first difference to +0x5a but enlarge by four bytes; all restored.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {
