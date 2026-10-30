@@ -336,7 +336,12 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // in the i row, or the parallel term first in the j/k rows) 43-50 aligned in the harness (current
 // 34 aligned), every row computed into locals before the stores 45, the dot accumulated 34, the
 // first two terms of a row as one expression 34 (all three rows 35), the sine term second 41, a
-// named cross vector 48, a by-value axis helper 42, an axis-pointer helper 35.
+// named cross vector 48, a by-value axis helper 42, an axis-pointer helper 35. Round 80 (LTCG harness
+// of the file, which reproduces this block exactly): all 128 accumulated or single-expression row
+// orders, 24 declaration orders and 6 dot orders on the best; the j/k rows as cosine, sine, parallel
+// (one instruction longer; aligned 30 against 33, positional 56); the other files' rotation helper
+// forms (projection or cross first, cross struct or scalars, copied components) 57 and up; named
+// parallel components, the axis or a copy scaled through vector3f_scale 34-49 aligned (no closer).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

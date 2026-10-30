@@ -108,7 +108,10 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // transform 62; step count as a decoder parameter 62; point2f grid scaled in place 68; a compiled-out
 // `do {} while (false)` between the decode and the normalization 62 (identical code: no join); zero
 // after y / between x and y / after the face pointer 73/81/62; the decoder returning its output
-// pointer into the normalization 62.
+// pointer into the normalization 62. Round 80: the file's decoded-direction normalizer with its sum in
+// i, j, k order (here and/or in 0x195070) 61 (the reduced build keeps the decoded k on x87 either way;
+// an LTCG harness of the file alone popped it); the face pointer before the grid 81; y before x 75;
+// compound face scaling 61.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {

@@ -822,6 +822,12 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // mutable removal with upper-first declarations 66; shared range-direction relation 381;
 // indexed destination with native timestamp member 168. Original body restored.
 // Round 183: actual endpoint 389; plain endpoint 396; one count 89 (frame 0x10); endpoint/count 380; plain endpoint/count 394; endpoint relation 387; plain relation 394; combined count/relation 384. Original body restored.
+// Round 80: plain entry (removed = NONE, set in the full test), `removed <= position ? removed : position`,
+// an explicit `>` arm clearing the flag, the flag set before the decrements and the count path upper
+// first with its flag cleared 73 (aligned 41 against 58: the entry and the three-way test match; upper
+// still takes EAX, so the forward copy index takes EBP and a jump over the loop padding shifts the
+// rest); on it: lower first in the count path 74, upper declared first 73, upper before lower 75, the
+// lower ternary on `position < removed` 73, bounds left unset and zeroed in a final else 73.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {
