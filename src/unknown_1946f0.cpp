@@ -120,6 +120,9 @@ static __forceinline void decode_direction(long index, vector3f *direction)
 // transform 62; step count as a decoder parameter 62; point2f grid scaled in place 68; a compiled-out
 // `do {} while (false)` between the decode and the normalization 62 (identical code: no join); zero
 // after y / between x and y / after the face pointer 73/81/62; the decoder returning its output
+// pointer into the normalization 62. Round 20: constant-first doubling 61; `x *= face->scale` 61;
+// face pointer before the grid values 81; the equal-direction arm first 61; zero between the grid
+// products and the doubling 72; the rows written in both scale arms 224 (no tail merge).
 // pointer into the normalization 62.
 // Round 13, on the grid decoder (harness, the region scored alone): normalize_inline (sums k, i,
 // then j) and normalize_decoded_direction no gain; the rows into scalars, a result local copied

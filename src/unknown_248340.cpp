@@ -45,6 +45,10 @@ struct s_emitter_248340
 // Volatile tag at function scope 4; all three locals at function scope 4; group declared before the
 // volatile tag 4; without the volatile, (void)&tag 27 and tag at function scope 27 (particle moves to
 // the stack and caller 0x247140 138).
+// Round 39: nested queries as a diagnostic (27: no spill and particle stays in ebx, but the two stack
+// arguments are pushed before the queries, so retail used named locals); the tag local set by the
+// guard's query and re-queried in the block 27 (31 with the volatile); the emitter decrement before
+// the particle store 8; the definition as a reference 4.
 // @retail 0x248340
 void function_248340(s_particle_system_datum *system, s_object_246eb0 *particle,
 	s_emitter_248340 *emitter)

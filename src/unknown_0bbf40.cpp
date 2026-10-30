@@ -764,6 +764,9 @@ void __stdcall function_bc300(long object_index)
 // Round 23 (lane 10): with the long parameter every 16-bit read of it is widened to a 32-bit
 // load: the test through a short pointer to the parameter 5; a named short length 5; `!(word)size`
 // 5; `(size & 0xffff) == 0` 6; `!(short)size` 5.
+// Round 202: entry normalization of size/offset/both/alignment/size-alignment/offset-alignment/
+// all domains 89/57/79/5/89/57/79; size normalization with the zero-size result producer 90.
+// Original parameters, body and result restored; formal narrowing still needs protected declarations.
 // @retail 0xbc380
 bool function_bc380(long object_index, long block_offset, long size, long alignment_bits)
 {

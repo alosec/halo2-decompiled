@@ -1733,6 +1733,7 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // position/forward/up input pointers, masks 1/2/3/4/5/6/7, 285/283/283/283/283/283/283.
 // The two-point pointer forms are exact-match-only and rejected; original declaration and body
 // restored. Accepted header-table reload, expanded node query and transform carriers remain.
+// Round 194: Node-address/inverse phases after node, link and header writes 290/281/289/291/292/287; before first parent write 281/285. Native activity on inverse phases 278/286/283/280. On 278, hidden/connection/component shift subsets 285/281/278/284/285/281/284. Best 278 gains seven, rejected; original header and body restored.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {
