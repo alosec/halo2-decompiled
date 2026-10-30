@@ -1165,11 +1165,11 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 						link->index = edge_index;
 						*(short *)&link->type = NONE;
 						link->flags = nodes[next_node].flags;
-						point3f const *start_vertex = &pathfinding->vertices[edge->vertices[0]];
-						point3f const *end_vertex = &pathfinding->vertices[edge->vertices[1]];
-						link->point.point = *start_vertex;
+						point3f const *first_vertex = &pathfinding->vertices[edge->vertices[0]];
+						point3f const *second_vertex = &pathfinding->vertices[edge->vertices[1]];
+						link->point.point = *first_vertex;
 						link->point.output_index = output_index;
-						vector3d_from_points3d(start_vertex, end_vertex, &link->vector);
+						vector3d_from_points3d(first_vertex, second_vertex, &link->vector);
 						link->unknown2c = ((dword)edge->flags >> 7) & 1;
 						link->unknown2d = true;
 						link->unknown2e = false;
@@ -1340,11 +1340,11 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 				link->unknown2c = ((dword)edge->flags >> 7) & 1;
 				link->unknown2d = false;
 				link->unknown2e = false;
-				point3f const *start_vertex = &pathfinding->vertices[edge->vertices[0]];
-				point3f const *end_vertex = &pathfinding->vertices[edge->vertices[1]];
-				link->point.point = *start_vertex;
+				point3f const *first_vertex = &pathfinding->vertices[edge->vertices[0]];
+				point3f const *second_vertex = &pathfinding->vertices[edge->vertices[1]];
+				link->point.point = *first_vertex;
 				link->point.output_index = output_index;
-				vector3d_from_points3d(start_vertex, end_vertex, &link->vector);
+				vector3d_from_points3d(first_vertex, second_vertex, &link->vector);
 				++count;
 			}
 			if (count == 64)
