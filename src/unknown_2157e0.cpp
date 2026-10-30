@@ -53,7 +53,7 @@ static inline long file_handle_build_2170e0(long generation, short index, bool f
 	return (handle << 8) | (type & 15);
 }
 
-// score 82 (was 91): the table from the existing cache getter with the header's table and location
+// score 82 (was 82): the table from the existing cache getter with the header's table and location
 // types gives retail's pre-copy clears and table spill; the table still stays in memory through the
 // loop (retail keeps it in eax, reloaded only after strncmp) and the current index is spilled (retail
 // esi, set after the copy). Round 21: the table cast from the files pointer with the header types
@@ -95,6 +95,9 @@ static inline long file_handle_build_2170e0(long generation, short index, bool f
 // Round 303: completed-search index before handle encoding, long/short/dword/word
 // carriers 93/94/93/94; each with the complete library copy 93/94/93/94. Original
 // encoding boundary, copy and body restored; adjusted-table and successful-index spills remain.
+// Round 313: Initial cache cursor with branch/entry cached result 141/142; retained cache 130/132;
+// plain while cursor repeats 141/142/130/132, versus reduced control 100. All regress; full baseline
+// 82 retained. Original scan, cache observations, copies and encoding restored.
 // @retail 0x2170e0
 long function_2170e0(long file_index)
 {
