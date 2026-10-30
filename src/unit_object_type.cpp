@@ -5606,15 +5606,15 @@ void function_cf040(long unit_index, short type)
    free, its seat group's partner friendly and willing, no enemy riding
    (outside state 2), and for players a clear line to the vehicle; also
    the seat's occupant and whether the seat is grouped */
-// score 17 (was 274): what is left is the scratch registers of the last block: retail reads the
-// unit's +0x13c through ECX/EDX where ours uses EAX/ECX (and so the lea/push pairs of the call
-// rotate), and the header lookup of the weapon loop has its address operands swapped
-// ([edi+eax+8] versus [eax+edi+8]). Fixes made: the team test takes the unit's team first, the bit 16
-// and 17 tests are two separate ifs, the seat flags are read in place, the group flag is declared
-// after the result (274 -> 24), the root walk is a guarded do-while with its index declared first
-// (24 -> 17). Tried: a while or a for for the root walk 24, a copy of the vehicle index 24,
-// unit_at_masked_index or an explicit offset for the weapon loop's header 24, the two tail
-// conditions swapped 20.
+// score 1 (was 274): what is left is the header lookup of the weapon loop, whose address operands are
+// swapped (ours [eax+edi+8], retail's [edi+eax+8]). Fixes made: the team test takes the unit's team first,
+// the bit 16 and 17 tests are two separate ifs, the seat flags are read in place, the group flag is
+// declared after the result (274 -> 24), the root walk is a guarded do-while with its index declared
+// first (24 -> 17), a blocked line of sight clears the result instead of returning false (17 -> 1).
+// Tried for the lookup: unit_at_masked_index, the holder declared before the loop, a local header
+// array, two lookups, a volatile read of the weapon index (all 1); a short hand counter 180, a char
+// weapon slot 71. Before the tail change: a while or a for for the root walk 24, a copy of the vehicle
+// index 24, an explicit offset for the header 24, the two tail conditions swapped 20.
 // @retail 0xc92c0
 bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_index, long *blocker_index, bool *grouped)
 {
@@ -5750,7 +5750,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 		if (function_1697c0(0x80080d, &origin, &direction, unit_index, vehicle_index,
 			(s_collision_result_1697c0 *)collision))
 		{
-			return false;
+			result = false;
 		}
 	}
 	return result;
