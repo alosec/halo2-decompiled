@@ -379,6 +379,9 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // the same through the entity's index 82 (157 bytes); without the table local 77; `if (index !=
 // NONE && flagged) entity->object_index = NONE;` then `if (entity->object_index != NONE)` 61 (the
 // memory retest is not threaded); the same on the local, published before the retest, 68.
+// Round 439: complete native 12-byte header value, native/library copies at lookup/entry
+// storage, 104 each; actual post-attachment Boolean success with those four copies, 82 each.
+// Both result graphs grow a frame; original pointer observations and virtual calls restored.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {

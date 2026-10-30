@@ -73,6 +73,9 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // Original body restored.
 // Mapped cache-index search result, long/unsigned-long/word/signed-byte 133/133/140/137;
 // new-result arm first 188/188/185/188. All restored.
+// Round 231: existing tokenizer null guard / empty guard / nested result / result-first
+// 217/206/213/221; each with current table-entry token observations 217/206/213/221.
+// Original tokenizer and body restored; outer EBP preservation and read-size homes remain.
 // @retail 0x121fc0
 void function_121fc0(void)
 {

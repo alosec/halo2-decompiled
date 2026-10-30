@@ -554,6 +554,11 @@ struct s_1af5c6
 
 // score 20 (was 20): the index is masked in EAX where retail masks it in ECX; the argument is
 // passed in the other register.
+// Also: retail loads the 0x1697c0 object argument before the first ray difference, keeps the distance in
+// the slot at +0x14 (ours +0x10) and loads it first in the hit product.
+// Round 15: the ray vector built in the call's argument list (the point-difference helper returning its
+// output) 20; the existing distance3d for the distance 31; the second object index in its own local 20;
+// the second header read inside the test 20; the hit fraction read into a local after the test 19.
 // @retail 0x1af5c0
 long function_1af5c0(long arg_0, long arg_1, point3f const *arg_2, long arg_3)
 {

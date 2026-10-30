@@ -684,6 +684,11 @@ done:
 // scoring as an inlined helper, ordinary or qos reads through the entry, 60 random combinations.
 // Earlier at 113: the details cursor was entry+0x1f8, so every field
 // offset differed, and the kind/count homes differ. Cursor taken from the results before the
+// a typed details block over the entry's own data leaves the cursor re-based on
+// the score field (entry+0x1f8) instead of retail's entry+0x10c, and the valid load is still not
+// hoisted above the score store; the kind/count homes and the search pointer in EDI still differ.
+// score 113 (was 111): the details cursor is entry+0x1f8 (retail entry+0x10c), so every field
+// offset differs, and the kind/count homes differ. Cursor taken from the results before the
 // end pointer gave retail's results reuse after the compare (128 -> 113). Round 52:
 // single-exit compare 128; typed details block 128; separate details cursor 154, with the typed
 // block 154; then on the kept form: distance local 113; typed details block 113; count/value/kind
@@ -737,6 +742,9 @@ done:
 // the same with unknown01 on the entry 164 (base entry+0x120); a screen of the 31 combinations of
 // header/ordinary/details-input/qos/score field groups moved between entry and cursor gives bases 0x1f8
 // (113 at best), 0x1, 0x11c or no cursor, never retail's 0x10c.
+// Round 233: native search target/threshold/both/row/target-row/threshold-row/all fields
+// and all fields with explicit score additions: 113/113/113/113/113/113/113/113. Original search schema
+// and body restored; details cursor, kind/count homes and search residency remain.
 // @retail 0x91000
 void __stdcall session_search_score_and_sort(s_session_search *search)
 {

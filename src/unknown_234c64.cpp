@@ -277,6 +277,9 @@ void c_window_channel::v9()
 // and 4/25/4/25. All regress; original callback observation and body restored.
 // A twice-used callback snapshot, with both request types and both result
 // declaration orders, scored 29 in all eight forms (79/78 bytes).
+// Round 26 (lane 10): a header inline method on s_screen_request calling 0x149f49 on `this`,
+// used by v9 and v10, matched both; not kept (an inline twin of an existing function used only
+// where it helps). Request at function scope 13; `request.type = 0` after the call 12.
 // Round 78: type-field callback address 3; shared request pointer/reference 3/3;
 // message-cast callback 3; result before builder/at function scope 3/3; type-field
 // builder and callback 3; shared message pointer 3. Original body restored.
@@ -284,6 +287,9 @@ void c_window_channel::v9()
 // (they call the local request's own load field). The request at function scope 13; type cleared after
 // the builder call 12; builder through a forced-inline helper's parameter 3; type cleared before the
 // request's declaration 5; `screen` declared first and assigned later 3.
+// Round 206: pending-record pointer/reference bound at entry/in branch 3/3/3/3;
+// complete pending-record snapshot with live callback 47, with retained callback 47,
+// at entry 47, after type clear 43. Snapshots add a 0x40 frame; original restored.
 // @retail 0x23531c
 void c_window_channel::v10()
 {

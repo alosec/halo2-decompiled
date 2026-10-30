@@ -176,6 +176,8 @@ void function_221490(
 // in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
 // initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
 // read after the mixbin compare 135.
+// Round 439: native field/aggregate output-pair publication, each with four real cache/mask/count
+// completion orders, 95 each (286 bytes). Original complete append and input observations restored.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,

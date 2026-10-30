@@ -118,6 +118,9 @@ static inline vector3f *function_x84d9e8(vector3f *vector, vector3f const *axis,
 // code or worse). Axis/vector pointer aliases in the helper 11 (fixes those two, flips the k-row
 // second product), vector alias first 12; axis local before the call 39; point-typed helper 6;
 // input alias 13; cross/rotation statement orders 7-39; helper in another file 6; angle wrapper 38.
+// Round 26: components computed k, j, i into locals before the stores 6; both helpers forceinline 6;
+// axis/vector aliases in the cross helper 11 (only the k-row second product then loads the axis),
+// with that product's operands swapped 11; aliases for the i and j rows only 46.
 // @retail 0x18c250
 bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
@@ -175,6 +178,9 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // location copy 17 (after-call DL as retail; one-use read ahead of a store, kept only on a match), the same
 // read after the copy 22; with the early read, a 64-bit copy 17; the copy's high dword written first
 // (cast form, diagnostic) 21, retail's first loads and stores, so the copy order follows source order.
+// Round 42: named machine object 23; header local in the machine arm 23; indices local 23; object local
+// reassigned from the header 23; one header local for the type and machine reads 137. Only dropping the (word)
+// cast gives retail's cluster lea/base order, but retail zero-extends the index.
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {

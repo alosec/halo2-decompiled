@@ -1449,14 +1449,18 @@ long function_2421d0(long team)
 	return result;
 }
 
-// @retail 0x242210
-// score 17 (was 26): the enabled peer is loaded before the compare on the engine type and into
+// score 17 (was 17): the enabled peer is loaded before the compare on the engine type and into
 // EDX, retail loads it after the compare and into ECX.
 // Tried: the peer read inside each arm 74 (212 bytes: the two arms colour the peer loads
 // differently, so they never merge above the branch); that with the else-if's type test kept 64
 // (one arm right, the other rotated by a register); a bool for the type test used twice 59; nested
 // arms with the peer local 17; a named block, tag or index local in each arm 17/64 (the block
 // pointer keeps the next scratch register, retail reuses eax); a 600 s permuter run, none below 17.
+// Round 24: the type test nested under one peer test 57 (also with a bool for the type); one
+// ternary 55; nested arms with the peer read after the type 30 (before NONE 35); a plain
+// `else if (enabled)` 35 (193 bytes); NONE in a final else 56; the peer tested first in each && 55;
+// the existing game_engine_get() in each arm 74.
+// @retail 0x242210
 long function_242210(point3f const *point)
 {
 	s_object_placement data;

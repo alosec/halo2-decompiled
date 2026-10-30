@@ -89,6 +89,10 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // 144; plain count with one-expression appends 281.
 // Earlier: carried-payload reloads, memory count and ranking handoff remain;
 // receiver/count reloads and ranking dispatch remain; retail reads the
+// frame 0xd8 agrees; carried-item receiver reloads, append-count observations and ranking handoff remain.
+
+// Earlier: carried-payload reloads, memory count and ranking handoff remain.
+// Earlier: receiver/count reloads and ranking dispatch remain; retail reads the
 // count once per append (no volatile re-read) yet keeps it in memory, and holds the found
 // candidate apart from the best-ranked one (0x5000720 is a switch case there).
 // Typed fallback entries 171; end cursor 173; signed-word count 168; byte count 195; carried tag
@@ -120,6 +124,9 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // 183; indexed scan with the preferred case 176; indexed scan with the preferred pre-test 139 (subthreshold);
 // completed-count snapshot 165; known-zero carried append 196; known-zero fallback append 179;
 // one-observation second append 147. Opening body restored.
+// Round 231: complete priority-zero result, long / unsigned / short / enum
+// 176/176/181/176; each with ordinary cardinality 280/280/276/280. Original
+// ranking, inherited count and body restored; receiver reloads and ranking handoff remain.
 // @retail 0x13c250
 void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
 {

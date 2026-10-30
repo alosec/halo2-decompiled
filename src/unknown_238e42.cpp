@@ -941,6 +941,9 @@ bool __stdcall function_2399da(long controller_index)
 // code); grouped permission test, `own_rank >= rank`, block-scoped identity, the membership copy's bool
 // result kept (same code); rank dispatch inverted (rank != NONE first) worse; own rank read at each use
 // (same code), operands swapped and `own_rank > 1` worse.
+// Round 439: complete selected-identity copies before lookup/after membership, native/library
+// copies at producer/entry lifetimes, 174/174/174/174 and 147/147/147/147. Exact-only snapshots
+// regress and grow the frame; original producer pointer and all callees restored.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

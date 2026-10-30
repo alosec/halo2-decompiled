@@ -2424,6 +2424,12 @@ struct s_weapon_target_model
 
 bool function_106280(long object_index, long *out_index, byte *out_entry);
 
+// score 83 (was 130): the loop now reads the pool state before the magazine definition
+// pointer, which matches retail's frame, prologue and loop register roles (definition in edx,
+// entry weapon in ebx, magazine pointer in edi); the entry weapon and definition still swap their
+// spill slots ([esp+0x18]/[esp+0x1c]), the scaled weapon index stays in esi instead of the stack
+// slot retail reloads it from, and the target-position copy uses edx/eax/ecx where retail uses
+// ecx/edx/eax.
 // score 130 (was 130): frame 0x88 versus 0x84 and current-object spill remain; loop register
 // roles and the post-loop scratch registers (ours eax/ecx/edx where retail uses edx/eax/ecx) differ.
 // Retail tests `idle` through the entry weapon pointer (ebx), not the reloaded one: that form
@@ -2456,13 +2462,12 @@ void function_100520(long weapon_index, s_weapon_status *status)
 	for (short i = 0; i < definition->magazine_count; i++)
 	{
 		bool active = false;
-		s_weapon_magazine_definition *magazine = &definition->magazines[i];
-		s_weapon *current = WEAPON_GET(weapon_index);
-		long state = current->magazines[i].state;
+		long state = WEAPON_GET(weapon_index)->magazines[i].state;
 		if (state > 0 && state <= 6)
 			active = true;
+		s_weapon_magazine_definition *magazine = &definition->magazines[i];
 		status->magazines[i].active = active;
-		status->magazines[i].idle = current->magazines[i].state == 0;
+		status->magazines[i].idle = weapon->magazines[i].state == 0;
 		status->magazines[i].loaded = WEAPON_GET(weapon_index)->magazines[i].rounds_loaded;
 		status->magazines[i].loaded_maximum = magazine->rounds_loaded_maximum;
 		status->magazines[i].unloaded = (short)function_1008f0(i, weapon_index, false);

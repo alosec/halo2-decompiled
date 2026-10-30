@@ -212,14 +212,30 @@ void function_07b3e0(void)
 	g_4cf8d8 = data_new_inlined("transport qos attempts", 0x20, 8, 0, g_468758);
 }
 
-// score 39 (was 39): the scan uses the pool's own index search and datum index, so it keeps
-// retail's do-while shape and the hoisted count and bitmap; retail keeps the pool in two registers
-// (ebx for the scan, a hoisted `mov ebp, ebx` copy for the datum), lays the found path out after
-// the exit and pads the scan loop; ours holds the pool in ebp only and lays the found path first.
+// score 39 (was 39): retail keeps the pool in two registers (ebx for the high-water/bitmap scan, a
+// `mov ebp, ebx` copy made after the index init for the datum's size and data), puts the found path
+// after the exit with a dead datum `add`, stores immediate zeros at the end and pads the scan loop;
+// ours holds the pool in ebp only, keeps NONE in edx and lays the found path first. The iterator
+// form (s_record_pool_iterator + data_iterator_next_inlined, as ai.cpp's player walk) gives all of
+// retail's code except the second pool register (11 bytes short: push/pop ebx, the copy and the
+// 7-byte pad that the copy brings), 58 positional.
 // Tried: earlier iterator form 58. Round 415: direct scan/identifier/both forced declarations
 // 39/39/39; outlined declarations 74/44/91; live pool 45, captured tail 42. Kimi lane 2 round 37:
 // absolute-index scan with the salted-index helper 39; direct expression 39; copied/independent/
 // const scan pools 39/64/39; counted for scan 121; refreshed pool 39; absolute-datum getter 71;
+// split pools 39. Round 17 / lane 11: the iterator form 58; without the datum_index init 58; the
+// pool through a local 58; data_iterator_next_calling 94 (0x16bc00 stays a call);
+// data_next_absolute_index_inlined scan 39. Lane 14 round 10: data_datum_iterator_next_inlined 58;
+// the scan reading the global with the datum from the local 64, the reverse 65; the iterator's own
+// fields with data_find_index/data_datum_index 60. Round 20 (iterator form): the datum through
+// data_datum_index on the iterator's pool 57, on the global 69 (both pool registers and the pad
+// appear, the datum pointer spills), on a pool local 57; index set before the pool 58; this form
+// with the scan on the global 64. Lane 13 round 18: the iterator form moved into the /Ob1 QoS file
+// beside 0x7b4c0 58 (same code), this body there 39 (same code); the out-of-line 0x16bb70 step 86
+// (stays a call); one pool local for the iterator and the final store 64 (copies coalesce); the
+// out-of-line 0x16bb50 datum index 44 (stays a call); diagnostics: a step copy reading the pool
+// separately for the scan and the datum 58, the index stored before that second read 59 (one pool
+// register each time).
 // split pools 39.
 // Round 17: s_record_pool_iterator with data_iterator_next_inlined (as ai.cpp's player walk) 58:
 // 120 bytes, retail's block layout, found-path compare, dead datum add and immediate final
@@ -243,9 +259,8 @@ void function_07b3e0(void)
 // the local 64, the reverse 65; the iterator's own fields with data_find_index/data_datum_index 60; the
 // iterator without the datum_index init 58. Original helper declarations, pool snapshot, loop and final global
 // stores restored.
-// Round 20 (iterator form unless noted): the datum through data_datum_index on the iterator's
-// pool 57, on the global 69 (both pool registers and the pad appear, the datum pointer spills),
-// on a pool local 57; index set before the pool 58; this form with the scan on the global 64.
+// Round 198: Native unsigned absolute cursor, with immutable receiver and/or chained terminal
+// zero stores, 54 each; signed long/int cursor with chained zero stores 39. Original body restored.
 // @retail 0x7b430
 void function_07b430(void)
 {

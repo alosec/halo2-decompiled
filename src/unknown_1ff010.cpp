@@ -585,6 +585,10 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // lane's file this round). Horizontal pair as an aggregate of the two components 166 (835 bytes);
 // only the normalized turned pair stored back into the direction 176 (801); the k copy dropped
 // (pair stored back) 159 (818); integer-zero magnitude test 130; speed-first output products 130.
+// magnitude/x/y at function scope 130 each (identical).
+// Round 231: facing-first positive / both positive predicates / facing-first nonzero /
+// both nonzero predicates 205/231/211/237; with direct component output
+// 175/193/181/199. Original admission and aggregate output restored.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

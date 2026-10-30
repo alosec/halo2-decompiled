@@ -190,6 +190,13 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 // N227: Complete color-by-value/accumulator/angle-copy subsets 571/947/1184/367/676/970/1197;
 // all with native input CRT copy 1197 (fast control 374). Seven-point preview lead below gate;
 // original helper and complete body restored.
+// Lane 14 r16 (fast control 374 at 1892 bytes; the fast build shrink-wraps esi like retail, the plain
+// build saves it at entry and shifts every loop offset by 4): angle call as (axis, view_direction),
+// the callee being symmetric, 374 (retail's ecx/edx setup); each switch case selecting its own sample
+// set 402 fast (retail's switch block and [esp+8] counter); opposite renamed to sort first 402
+// (same code); the existing normalize_inline for the opposite vector with both 347 fast, 367 plain
+// (retail's vector homes; plain still saves esi at entry and spills the third remaining weight);
+// the existing normalize 0x30bf0 called instead 526. Body restored.
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {
