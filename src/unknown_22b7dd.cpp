@@ -55,22 +55,21 @@ struct s_bitmap_tag_22b7dd
 /* predicts the texture of the bitmap a widget shows in its current mode;
    false when the texture is not ready */
 // score 38 (was 38): the register that holds zero is EBX where retail uses EDX, so the index and the
-// count are kept in the other registers. Ours folds the frame index to the constants 0 and 1 (the 0 is
-// the shared zero, the 1 `xor/inc`); retail keeps it in ESI (`xor esi, esi` in each arm, `inc esi`).
-// Round 18 (lane 10, plain checks): the index declared in each arm 49; a shared forceinline frame
-// helper 49 (plain `inline` stays out of line under /O1, 72); the index as `cond ? 1 : 0` or as the
-// `&&` value 80; a bool frame flag 100 (271 bytes: zero in EDX and everything before the frames as
-// retail, but `movzx` at both uses); an unsigned index 38 (same code).
 // count are kept in the other registers. Our frame index takes the zero register (its 0 and the
-// shared zero merge, so the zero moves to a saved register); retail keeps index in ESI (xor esi, esi;
-// inc esi) and zero in EDX, as the matched 0x22ae21 does. Round 93 (plain checks): shared frame-offset
-// helper 83 (out of line), forceinline 49; index as the && value 80 (two constant arms); per-branch
-// index with ++ 49, with = 1 (0x22ae21's form) 49; short index 73; dword index 38; index declared at
-// the top 39; a bool frame choice 100 (271 bytes, but zero in EDX and aligned 19: only the bool's
-// byte register and movzx differ); per-branch bools set in the test 105 (aligned 18: every
-// instruction retail's but the bool sits in BL with movzx where retail's index is ESI, and the
-// sequence in ESI where retail uses EBX); bools initialised from the && 84 (constant arms);
-// no sequence-block pointer local 60.
+// shared zero merge, so the merged value must survive 0x22acb4's call and moves to a saved
+// register); retail keeps the index in ESI (`xor esi, esi` in each arm, `inc esi`), the sequence in
+// EBX and the zero in EDX, as the matched 0x22ae21 does (there the arms' extra live values keep
+// the two apart). Tried (plain checks): the index declared in each arm 49, with ++ 49, with = 1
+// (0x22ae21's form) 49, with `+= 1` and the index-first sum 49; a shared frame-offset helper 83 (out
+// of line), forceinline 49; the index as `cond ? 1 : 0` or as the && value 80 (two constant arms);
+// a bool frame flag 100 (271 bytes: zero in EDX, but the bool takes BL with movzx at each use);
+// per-branch bools set in the test 105 (aligned 18: the bool in BL where retail's index is ESI, the
+// sequence in ESI where retail uses EBX); bools initialised from the && 84; short index 73; dword
+// or unsigned index 38 (same code); index declared at the top 39; index declared at function
+// scope and zeroed in each arm 49; index declared before the sequence pointer 38; the frame test
+// as nested ifs 38; no sequence-block pointer local 60; a byte/long result 47/96; short/char
+// sequence selector 81/74; result declared first 62; one mode dispatch 91; a structured body
+// without gotos (NONE reference default, NULL bitmap test) 84 (269 bytes).
 // @retail 0x22b7dd
 bool function_22b7dd(byte const *arg_1, long arg_2)
 {
