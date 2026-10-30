@@ -296,6 +296,9 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 // Round 211: outgoing up/forward/turn overlap-safe transfers in all seven subsets, then all three
 // with the late position transfer, scores 224/223/233/223/233/230/241/251. Original executable
 // form restored.
+// Round 230: complete object-element observations alone 326; with saved header base 294;
+// with named slot 305; with both 292; those four with per-use tag elements
+// 382/349/422/332. Original body and producer restored.
 // @retail 0x1197b0
 void function_1197b0(long object_index)
 {
@@ -898,7 +901,7 @@ void __stdcall function_d6bc0(long arg_0);
 void function_b75a0(long arg_0, point3f const *arg_1, vector3f const *arg_2, vector3f const *arg_3,
     s_location const *arg_4, bool arg_5);
 void __stdcall function_b93b0(long arg_0, long arg_1, short arg_2);
-// score 156 (was 156): Frame 0x124 agrees; quotient/query, sweep/impact/location homes, word loads and owner-call transport remain.
+// score 156 (was 156): Frame 0x124 agrees; quotient/query, sweep/impact/location homes and word loads remain.
 // Round 67: query count declared after saved outputs 156; existing assignment helper after the
 // query 156 and before it 292; pre-query helper with later best fraction 283; explicit pre-query
 // stores with saved outputs before count 283; pre-query long saved words 285 and first/third/
@@ -1005,6 +1008,10 @@ void __stdcall function_b93b0(long arg_0, long arg_1, short arg_2);
 // DL175: Actual candidate-pointer countdown on query-first/long-third graph, with native short
 // remaining, pre-query sweep and readonly candidate subsets [281, 287, 208, 278, 281, 287, 208, 278].
 // Original indexed scan, query-first sweep and saved words restored.
+// Round 230: unsigned source-record first/second/both words 156/156/156;
+// signed full-width third bitfield, alone/with those source words, 156/156/156/156;
+// all three signed full-width short bitfields 156. Original source record and body restored;
+// owner-query argument setup now agrees; query/sweep, selected homes and merged word reads remain.
 // @retail 0x119c10
 long function_119c10(long arg_0)
 {
@@ -1193,6 +1200,9 @@ void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped
 // helper inline/noinline declarations 94/94, inline with those observations 156/132/121; existing vector
 // assignment at requested/output-basis/velocity copy masks 1-7 269/149/290/101/280/162/302, all copies with the
 // terminal flag setter 302.
+// Round 47: real output workspace with pointer/direct movement field 94/94; real movement workspace 94;
+// two-use velocity copy 109; read-only query result 94; split query declaration 94; late declarations
+// swapped 94; complete movement workspace 103 (frame 0x1ec). Original body restored.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {

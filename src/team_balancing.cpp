@@ -387,7 +387,7 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 }
 #pragma function(_ReadWriteBarrier)
 
-// score 67 (was 80): the count delta now matches retail (the delta named, then the two new team
+// score 67 (was 67): the count delta now matches retail (the delta named, then the two new team
 // counts); what remains is the order of the spread queries: retail calls the candidate's
 // count_spread first in both comparisons (and the reference's cost first), ours calls the
 // reference's first whatever the operand order, which also adds a `mov ebx, esi` (514 bytes).
@@ -486,6 +486,9 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // Round 295: separate noinline declarations for count/total/rank query methods,
 // all seven nonempty subsets, 80 each; rank-only inline declaration 80. Every
 // declaration and body restored; count homes, inner party and query ownership remain.
+// Round 230: solution selection at every query, alone, with A/B/both team observations,
+// outer-party lifetime, both candidate-team roots, shared candidate spread and equality-first
+// acceptance: 112/179/150/186/112/182/107/115. Original selection, named post-swap counts and body restored.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
@@ -666,6 +669,10 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // (retail player count in EAX, extra count in EDX) and flow through the copy, fill, call setup and
 // the final clamp's register: our loop temporaries take EDI/EAX (retail EDX/EDI), leaving EDX for the
 // player count. The body, not the parameter order or the caller, decides them.
+// Round 22: retail's only caller 0x7e210 (src/unknown_07a9a0.cpp) loads the player count
+// into EAX and the loop count into EDX before the call; the call to 0x91e30 then keeps its
+// arguments in ECX/EDX/EAX (retail) where ours keeps them in EDX/EAX/ECX, the same rotation
+// as the two counts, so the exchange reaches the call setup from that out-of-lane caller.
 // Tried: result first 34; guarded countdown 45; source/output cursors 67; count parameter reference
 // 54; shared existing count 34; staged total 34; capacity lifetime first 34; independent loop
 // indices 34; named candidate party 34; descriptive scalar homes 34; independent indices with
@@ -716,6 +723,9 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // open_slots)` (compile-only); in the build it loads the maximum into ECX early and keeps EDX for
 // the mask: `MAX(0, ...) <= maximum` 45 (192 bytes), the same through a local 45, as `maximum >=
 // MAX(...)` 45, as an `if` clearing the result 45, the `< 0 ? 0 :` form written out 45.
+// Separate maximum reduction and guarded memcpy, copy before/after scan, indexed/advancing
+// source and if/conditional maximum 93/93/83/83/79/79/88/88. Count register exchange and clamp
+// homes remain; original body restored.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

@@ -1800,6 +1800,9 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // declared first 77 (same code); normalize3d on 0x11d000's returned pointer 187; forward stored
 // before the 0x11d000 call 111; node copied first with the matrix read from the source at each use
 // 202 (768 bytes).
+// Round 170: node copy first 107 (the marker index extension hoists into the entry); with a per-arm
+// long index 107; with the branches inverted 173; forward components at function scope 77; read
+// before the position block 236 (795 bytes).
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -1983,6 +1986,10 @@ static inline bool effect_location_in_zone_178c80(s_location const *location, po
 // matches retail, base in EDI and the add unfolded; the entry's missing color loads keep the count up), with
 // an inline color helper shared with 0x177040 181, with `multiplied()` as the argument 172; colors read into
 // locals before the spawn stores 187; color B then A read early 185.
+// Round 170: colours as locals after the spawn stores 184, with multiplied() as the argument 178; a
+// colour helper (system, A, B) 178 (frame 0x44, but colour A lands in the dead `unknown` slot and the
+// cursor in the new frame slot, retail the reverse); colours inside the update block 184; zone read
+// at each use 165; helper with that zone 181.
 // @retail 0x178c80
 void function_178c80(real scale, s_effect_datum *effect, s_particle_system_datum *particle_system, s_effect_particle_system_definition *definition, real unknown, bool field_b4)
 {
@@ -2719,6 +2726,8 @@ void function_177f60(s_effect_datum *effect, dword a_scales, dword b_scales, dwo
 // Round 383: native light/sound/both matrix subobject references 30/30/30; sentinel-result
 // assignments for light/sound/both with matrix receivers/all nodes 30/30/30/30; joint receiver/result
 // graph with the sound workspace renamed 30. Original executable source restored.
+// Round 170: detached sound velocity before location/before the compression 47/49; compression before
+// the point copy 35; attached light matrix pointer before the node index 30; attached sound scale local 30.
 // @retail 0x17a8a0
 void function_17a8a0(s_effect_location_datum *location, bool detached, s_effect_datum *effect, vector3f const *up, s_effect_part *part, point3f const *point, vector3f const *forward, real scale)
 {
@@ -2971,6 +2980,13 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // Round 307: Coordinated effect-first/system-second inputs with mode/tint/cursor lifetimes
 // 93/94/106/112/120/110/117/113; direct mode reads also lose the matched caller.
 // Original definition, declaration, input order and caller restored; frame 0x4c versus 0x54 remains.
+// Round 170: retail's 0x54 frame holds the particle-location cursor as `spawn.location_index` of an
+// s_particle_system_spawn local (its two unused dwords sit before it): that alone 90 (frame and every
+// slot home agree, 0x176f60 matches; gain under 8, not kept); with the mode read per call as retail
+// 109 (the effect index turns into a register argument, 0x176f60 25), plus an address read of the
+// effect index 128; system looked up first 114. On the spawn form: colours after the cursor 90, mode
+// first 90, mode after the colours 89, colour B in the call 129, b4 first 111, early return 94, shared
+// colour helper (system, A, B) 90; per-call-mode colour/scope/b4/next variants 107-122.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3012,7 +3028,10 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 	return next_index;
 }
 
-// score 176 (was 176): Frame 0x50 agrees; early false BL, bitmap/count/unit carriers and point/advance scheduling remain.
+// score 12 (was 176): only rows x and y of the node point transform differ: retail sums them as
+// left*y + forward*x + up*z (row z as written), the function-wide reassociation order. Round 170: the
+// single exit (`result = true; goto done;`) gave the early BL, and 0x152450's `next` player search the rest.
+// Before round 170: frame 0x50 agrees; early false BL, bitmap/count/unit carriers and point/advance scheduling remain.
 // Frame 0x50 agrees; early false BL, player bitmap/count carriers and point/advance scheduling remain.
 // frame 0x50 agrees; early false-result, player bitmap/count carriers and point scheduling remain.
 // Persistent effect pool 194; persistent player pool 189; outer for 189;
@@ -3064,14 +3083,17 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 // Round 303: raw first-query slot owns empty admission, signed-long failure-first/
 // test-produced conversion/conversion-first/positive admission 250/176/269/246;
 // unsigned-long equivalents 269/265/269/267. Original salted-handle entry and body restored.
+// Round 170 on the 12 form: radius operands swapped 12; named distance/squared radius/both 20/20/20;
+// flipped compare 28, with either name 36; radius before the point 104; reversed delta 95; matrix,
+// point and delta declared at the loop top/first/unit scope/entry 12 each; location index before the
+// unit 15; 0x179fb0's mode-0 iterator 12 (0x179fb0 46); a `players` pool local 20; while-form search
+// 234.
 // @retail 0x1778d0
 bool function_1778d0(void)
 {
 	bool result = false;
 	long effect_index = data_datum_index(g_4ea93c, function_16bc00(g_4ea93c, 0));
 
-	if (effect_index == NONE)
-		return result;
 	while (effect_index != NONE)
 	{
 		s_effect_datum *effect = DATUM(g_4ea93c, s_effect_datum, effect_index);
@@ -3083,12 +3105,14 @@ bool function_1778d0(void)
 
 			for (;;)
 			{
-				player_index = data_find_index(g_4e8c24, player_index + 1);
-				if (player_index == NONE)
+				long next = data_find_index(g_4e8c24, player_index + 1);
+
+				if (next == NONE)
 					break;
 
-				s_effect_player *player = (s_effect_player *)(g_4e8c24->data + g_4e8c24->size * player_index);
+				s_effect_player *player = (s_effect_player *)(g_4e8c24->data + g_4e8c24->size * next);
 
+				player_index = next;
 				if (!player)
 					break;
 				if (player->unit_index != NONE)
@@ -3118,13 +3142,17 @@ bool function_1778d0(void)
 						real radius = unit->field_xc9d3f8 + definition->unknown08;
 
 						if (length_sq3f(&delta) <= radius * radius)
-							return true;
+						{
+							result = true;
+							goto done;
+						}
 					}
 				}
 			}
 		}
 		effect_index = data_datum_index(g_4ea93c, data_find_index(g_4ea93c, effect_index == NONE ? 0 : (effect_index & 0xffff) + 1));
 	}
+done:
 	return result;
 }
 
@@ -3181,6 +3209,9 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 // native scale-only forms preserve it but give no gain. All original point/normal helpers, scale selection,
 // source observations, in-place behavior and call tuples restored. Original 88 retained; contributor-owned
 // 0x2dba0 contract remains untouched.
+// Round 170 (plain checks; the reduced image scores 416 here): default-if scale 272 (1518 bytes);
+// point transformed from the location's position 332; scale before the copies 95; `scale_b * scale`
+// 88; default-if with `scale_b * scale` 272.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {

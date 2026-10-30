@@ -289,6 +289,10 @@ struct s_pending_message_storage : s_pending_message_header
 // Direct capacity field reads 14; storage-first guard 40; full-width unsigned result 92;
 // optimistic result with failure arms 98; request/allocation shared exits 14/14;
 // native int capacity 14; direct capacity with full-width result 92.
+// Round 89 (frame probe): ours packs the first time stamp with pumps and gives start's spilled high half
+// its own slot; retail packs start with the time stamp (pumps alone). Renames, declaration moves, clamp
+// spellings and start as a parameter keep this layout; it changes only when start is fully spilled.
+// Named now in the helper 14; elapsed -= start 94 (0x8c790 67); result declared first 14.
 // @retail 0x80e10
 bool function_80e10(s_pending_message_storage *request, void **output, long *size)
 {

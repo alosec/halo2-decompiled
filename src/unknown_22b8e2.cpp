@@ -36,6 +36,17 @@ bool function_22acb4(long);
 void function_1396c7(long, point2f *);
 void function_2d140(long, real const *, long, long, s_filter_vector const *);
 
+// score 64 (was 64): the offsets switch's default block still comes first instead of last and the
+// sums still sit in xmm4/xmm5 instead of xmm5/xmm6; the two zero tests are still test reg,reg
+// instead of cmp against the zero register.
+// score 64 (was 114): the offsets switch sums each case's pair onto the point and the default
+// copies the point, the x reciprocal comes first with the four bounds converted in retail's
+// dd2, dd6, dd4, dd0 order, and the grid's column 0/1 stores precede the four blends.
+// Still: the offsets switch keeps its default block first instead of last and the sums sit in
+// xmm4/xmm5 instead of xmm5/xmm6, and two of the zero tests are test reg,reg instead of cmp.
+// score 114 (was 120): permuted declaration order (local_9 before local_8, local_16 before
+// local_15), the case-2 offset written 4 + field_44 and the short local_10 split from its
+// initialiser. Mode/resource/point homes and offset/bound schedule remain.
 // score 120 (was 120): mode/resource/point frame homes permuted, offset join and bound schedule.
 // Retail's offset switch has no return: each case converts its pair and shares the adds, the
 // default keeps the point. Per-case sums with a default copy 157 (switch shape retail's, frame
@@ -62,8 +73,8 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 {
 	long local_0 = function_13a690(arg_0->field_1c);
 	long local_1;
-	long local_2;
 	point2f local_4;
+	long local_2;
 	switch (local_0)
 	{
 	case 0: local_1 = arg_0->field_2c; break;
@@ -87,8 +98,8 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 		if (local_3 >= 0 && local_3 < *(long const *)(local_5 + 0x3c))
 		{
 			byte const *local_7 = *(byte const *const *)(local_5 + 0x40) + local_3 * 0x3c;
-			long local_8 = *(long const *)(local_7 + 0x34);
 			long local_9 = 0;
+			long local_8 = *(long const *)(local_7 + 0x34);
 			if (local_8 > 0)
 			{
 				if (local_8 > 1 && function_22acb4(arg_1))
@@ -97,7 +108,8 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 			}
 			else
 			{
-				short local_10 = *(short const *)(local_7 + 0x22);
+				short local_10;
+				local_10 = *(short const *)(local_7 + 0x22);
 				if (local_10 > 0)
 				{
 					if (local_10 > 1 && function_22acb4(arg_1))
@@ -110,26 +122,21 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 			local_2 = 0;
 	}
 	function_1396c7(arg_0->field_1c, &local_4);
-	short const *offsets;
+	real local_26;
+	real local_27;
 	switch (local_0)
 	{
-	case 0: offsets = arg_0->field_44; break;
-	case 1: offsets = arg_0->field_44 + 2; break;
-	case 2: offsets = arg_0->field_44 + 4; break;
-	default: return;
+	case 0: local_26 = (real)arg_0->field_44[0] + local_4.x; local_27 = (real)arg_0->field_44[1] + local_4.y; break;
+	case 1: local_26 = (real)arg_0->field_44[2] + local_4.x; local_27 = (real)arg_0->field_44[3] + local_4.y; break;
+	case 2: local_26 = (real)arg_0->field_44[4] + local_4.x; local_27 = (real)arg_0->field_44[5] + local_4.y; break;
+	default: local_26 = local_4.x; local_27 = local_4.y; break;
 	}
-	real local_26 = (real)offsets[0] + local_4.x;
-	real local_27 = (real)offsets[1] + local_4.y;
-	real local_11 = (real)g_4b9dd2;
-	real local_12 = (real)g_4b9dd0;
-	real local_13 = (real)g_4b9dd6;
-	real local_14 = (real)g_4b9dd4;
 	real local_15 = 0.5f / (g_4b9dd6 - g_4b9dd2);
 	real local_16 = 0.5f / (g_4b9dd4 - g_4b9dd0);
-	real local_17 = 1.0f - (local_26 - local_11) * local_15;
-	real local_18 = 1.0f - (local_13 - local_26) * local_15;
-	real local_19 = 1.0f - (local_27 - local_12) * local_16;
-	real local_20 = 1.0f - (local_14 - local_27) * local_16;
+	real local_11 = (real)g_4b9dd2;
+	real local_13 = (real)g_4b9dd6;
+	real local_14 = (real)g_4b9dd4;
+	real local_12 = (real)g_4b9dd0;
 	real local_21[9][4];
 	local_21[8][0] = local_21[5][0] = local_21[2][0] = local_13;
 	local_21[6][0] = local_21[3][0] = local_21[0][0] = local_11;
@@ -137,6 +144,10 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2)
 	local_21[8][1] = local_21[7][1] = local_21[6][1] = local_14;
 	local_21[2][1] = local_21[1][1] = local_21[0][1] = local_12;
 	local_21[5][1] = local_21[4][1] = local_21[3][1] = local_27;
+	real local_17 = 1.0f - (local_26 - local_11) * local_15;
+	real local_18 = 1.0f - (local_13 - local_26) * local_15;
+	real local_19 = 1.0f - (local_27 - local_12) * local_16;
+	real local_20 = 1.0f - (local_14 - local_27) * local_16;
 	local_21[0][2] = local_17;
 	local_21[0][3] = local_19;
 	local_21[1][2] = 1.0f;
