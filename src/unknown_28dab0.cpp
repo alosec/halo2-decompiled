@@ -66,6 +66,14 @@ void __stdcall swarm_delete(long arg_0);
 // Every definition/declaration/call changed together; original complete contract restored.
 // Tag-query/placement/deletion ordinary inline declaration subsets (seven forms),
 // and all three separate noinline declarations: eight at 44. Original declarations restored.
+// Round 8: retail's store order alone 53 positional but aligned 34 -> 25; with the limit as
+// `short local_4 = 10; if (arg_1->field_2e > 0) local_4 = arg_1->field_2e;` 92 positional, aligned 24
+// and register-masked 30 -> 11: retail's cmovg into EBX, the spilled definition index and the loop
+// call setup exactly; only the tag pointer/NONE roles (ours ESI/EDI, retail EDI/ESI) remain, which keep
+// NONE live into the record stores (retail rematerializes `or eax, -1`) and the loop's zero in DI
+// early. Not kept (the positional score rises). On that form: result declared after the tag pointer,
+// nested condition tests, a named flag for the type test, chained NONE stores either way 92 each;
+// early returns 88.
 // @retail 0x28dab0
 long __stdcall function_28dab0(long arg_0, s_28dab2 const *arg_1)
 {
