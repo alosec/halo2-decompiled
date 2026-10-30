@@ -79,6 +79,14 @@ PRIVATE inline long swizzle_log2(dword value)
 // Original coordinate captures, helper, table expressions and tail restored.
 // Round 211: existing logarithm signed short/long inputs crossed with bounded short/long counts
 // and short/long results, scores 82/82/82/82/82/82/82/82. Original executable form restored.
+// Lane 15 r17: the existing log2_floor 87 (both loops retail's); retail's minimum is a branch
+// although its neighbour 0x359e0 uses cmov, and the same body moved (diagnostic) into an existing
+// /O2 /Gr file without /arch:SSE compiles it as a branch: 86, with the minimum as
+// `common_bits = width_bits; if (width_bits > height_bits) common_bits = height_bits;` 86 (retail's
+// jle/mov shape, but the short minimum stays in EBX and the height count is spilled, retail the
+// reverse); there x and y used directly 122 and long copies after the mask 100 (both pass y on the
+// stack, matched caller 0x136140 lost), the x copy first 83 (y in ESI as retail, 0x136140 lost).
+// So 0x358d0 looks like a lone object built without /arch:SSE between 0x35850 and 0x359e0.
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

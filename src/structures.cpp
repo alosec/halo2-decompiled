@@ -743,6 +743,13 @@ done:
 #undef COLLISION_OBJECT_14A8E0
 
 // score 125 (was 125): frame 0x64 agrees; exclusion BL, NONE/EBX and spilled result allocation still differ.
+// Lane 15 r17: the pointers to the direction, ignored object and surface parameters removed (each
+// identical code; only the triangle pointer holds the convention: without it 158 and matched caller
+// 0xd2a50 lost). Object branch first (`object_index != NONE`, retail's fall-through with `je` to the
+// shared lightmap call) 130; with the exclusion set by an if 130; result as a local with the fourth
+// parameter unread 131 (0xd2a50 lost); every parameter used plainly 156 (0xd2a50 lost). Retail gives
+// ESI to the direction (reloaded after the calls that reuse ESI) and leaves the result in its
+// parameter slot; ours gives the result EBX and NONE ESI.
 // Earlier: retail keeps the exclusion flag in BL (`mov bl, 1` / `xor bl, bl`, tested again
 // after the failed lightmap query), NONE in EBX and the result in its parameter slot; VC threads our
 // flag. Flag as a helper out-parameter 168 (kept in memory); early-outs through the availability
@@ -762,10 +769,7 @@ done:
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)
 {
-    vector3f const *const *direction_reference = &direction;
-    long const *ignore_object_reference = &ignore_object_index;
-    void *const *surface_reference = &surface;
-    s_structure_lightmap_triangle *triangle = (s_structure_lightmap_triangle *)*surface_reference;
+    s_structure_lightmap_triangle *triangle = (s_structure_lightmap_triangle *)surface;
     s_structure_lightmap_triangle *const *triangle_reference = &triangle;
     struct { long flags; long attempts; byte collision[0x5c]; } state;
     state.flags = include_objects ? 0x4480000d : 0x4800c0d;
@@ -783,7 +787,7 @@ bool function_14af40(bool include_objects, point3f const *point, vector3f const 
     do
     {
         retry = false;
-        if (!function_1697c0(state.flags, probe, *direction_reference, *ignore_object_reference, NONE,
+        if (!function_1697c0(state.flags, probe, direction, ignore_object_index, NONE,
             (s_collision_result_1697c0 *)state.collision)) break;
         long object_index = *(long *)(state.collision + 0x40);
         if (object_index == NONE)
@@ -799,16 +803,16 @@ bool function_14af40(bool include_objects, point3f const *point, vector3f const 
             else if (!excluded)
             {
                 state.flags = 0x4800005;
-                if (function_1697c0(state.flags, probe, *direction_reference, NONE, NONE,
+                if (function_1697c0(state.flags, probe, direction, NONE, NONE,
                     (s_collision_result_1697c0 *)state.collision))
                     result = structure_get_lightmap_triangle((s_structure_collision_result *)state.collision, *triangle_reference);
             }
         }
         if (!result && (state.collision[0x58] & 1) && ++state.attempts < 3)
         {
-            probe->x += (*direction_reference)->i * 0.02f;
-            probe->y += (*direction_reference)->j * 0.02f;
-            probe->z += (*direction_reference)->k * 0.02f;
+            probe->x += direction->i * 0.02f;
+            probe->y += direction->j * 0.02f;
+            probe->z += direction->k * 0.02f;
             retry = true;
         }
     } while (retry);
