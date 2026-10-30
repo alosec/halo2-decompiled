@@ -537,7 +537,8 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 	graph_weapon_type_request(graph, mode, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME);
 	graph_weapon_type_request(graph, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME, DEFAULT_WEAPON_NAME);
 }
-// score 399 (was 399): frame eight versus twelve; primary/fallback result homes entry +16/+16 versus retail +4/-4.
+// score 399 (was 399): Frame eight versus twelve and independent hidden-result homes remain; request graph/name allocation still differs.
+// frame eight versus twelve; primary/fallback result homes entry +16/+16 versus retail +4/-4.
 
 // Earlier 399 (was 399): frame 8 versus 12 and hidden-result homes still differ.
 // Earlier: frame eight versus twelve and hidden query-result homes still differ.
@@ -594,6 +595,7 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 // lookup entry alone/with each/both contracts 399 each; all with urgent while 399. All restored.
 // Round 280: Urgent-helper entries/index/resource role-name subsets all 399; all with outer source/graph-
 // ordinal names 399. Original helper locals, native queries and request graph restored.
+// Round 188: Ordered fallback-query table diagnostics: mutable/index, mutable/cursor, const/index, const/cursor with byte success 619/622/619/622; Boolean success 630/645/630/645. All native record arrays fail the exact-match requirement and are removed; original queries and helpers restored.
 // @retail 0x1cc3f0
 bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_names *found, long mode, long weapon_class,
 	long weapon_type, long set, long lookup_flags, c_type_709360 *result)
