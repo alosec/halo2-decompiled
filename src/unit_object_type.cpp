@@ -2600,7 +2600,7 @@ struct s_unit_placement
 /* places the unit from the scenario: its +0xec and flags, and, when the
    placement says so, starts it dead (animation, damage, no weapons or
    grenades) */
-// score 10 (was 22): Frameless entry and animation lookup agree; retail passes 0xc98a0's direction in ECX
+// score 10 (was 10): Frameless entry and animation lookup agree; retail passes 0xc98a0's direction in ECX
 // (ours pushes it) and pushes 0xcaa60's unit (ours EAX). Animation owner 22; initial scale local 65;
 // scale/owner 65; chained zero stores 22; dead-placement guard 22; const animation 22; owner/const
 // animation 22; owner/scale/chained stores 65. Round 151: 0xc98a0 declared __stdcall (the /Gr default
@@ -2609,6 +2609,9 @@ struct s_unit_placement
 // separate output local for its value 10; its direction test named at entry 10. Round 89 (through
 // 0xc98a0, BLOCKED-BY 0xc98a0 and 0xcaa60 conventions): 0x11cc90 operands in retail's order 10; TEST_FIELD_BIT
 // definition tests 10/10; angle/turn/flag declared first 10; `!(time >= 0.0f)` 10.
+// Round 204: 0xcaa60 inline; shared flag-6 setter alone/inline; initial flag-12/15
+// setters alone/inline; all three setters alone/inline; all setters/byte predicates/inline:
+// eight forms 10 each. Original callee declaration and all flag operations restored.
 // @retail 0xc42e0
 void __stdcall function_c42e0(long unit_index, void const *placement)
 {
@@ -3096,7 +3099,7 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 49 (was 78): the team test and the notify loads now agree. Left: the pool and time pointers
+// score 49 (was 49): the team test and the notify loads now agree. Left: the pool and time pointers
 // sit in EBX/EBP (retail EBP/EBX), retail keeps 0.0 in XMM1 and 1.0 in XMM2 (ours the other way:
 // the register follows which constant the source names first), the two notify copies are only
 // partly cross-jumped, and the bit-4 test is `test byte` (retail load and shift).
@@ -3107,6 +3110,9 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
 // notify through a fresh unit local as 0xd0e60 49 (kept); bit 4 as TEST_FIELD_BIT 83 alone, 63
 // with both (pool/time registers right); the 2b0 branches swapped 65 (constants right, branch
 // order wrong); `value < 0.0f` 63; notify index in a long local 69; existing 0x2ac270 flag getter 49.
+// Round 228: computed primary/secondary/both fade values 49/49/49; shared progression
+// steps alone/with primary/with secondary/with both 96/96/96/96; all with Boolean
+// fourth bit 91. Original body restored; pool/time and constant-register roles remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
@@ -3474,6 +3480,9 @@ void function_c6990(long unit_index)
 // match); a 600 s permuter run reached 34 only by swapping the label and table arguments (wrong
 // call). Retail stores the seat bit before reading the marker name; ours keeps it in AL until the
 // call, and every later temporary then takes the next register (EAX/ECX/EDX rotated).
+// Round 228: winning table ordinal long/short 91/101; entry long/short 90/100;
+// missing-result-first comparison with the same four lifetimes 109/117/108/116.
+// Original result value, complete spatial arithmetic and body restored.
 // @retail 0xc7160
 long __stdcall function_c7160(long unit_index, short seat_index, long a, long vehicle_index, long b)
 {
@@ -4323,9 +4332,9 @@ store:
    speed in a cone around the unit's aim on top of the unit's velocity
    (capped at 4 unless the unit's +0xc0 bit 1 is set), and deletes it in
    state 1 when it has nowhere to go and is not a predicted copy (0xa7670) */
-// score 4 (was 4): the cone call's argument setup is scheduled differently: retail stores the
-// cone angle and then sets up the three register arguments in order, ours sets up the forward
-// pointer first and the result pointer last.
+// score 4 (was 4): cone setup differs: retail spills sampled speed before forming the forward
+// pointer, then forms the output pointer before copying the seed. Ours swaps both pairs.
+// The 0x98 frame and every other instruction agree.
 // existing length/dot helpers, direction lifetime/name and named angle 13;
 // existing random-real helper 111; scale/add component loops 80/13; seed global at each
 // use, compound adds, direction-first adds, speed-first scaling 13 each; speed scaled
@@ -4333,6 +4342,9 @@ store:
 // cone result pointer local, separate thrown-speed local, two-use scale snapshot, seed renamed,
 // velocity at function scope and forward pointer local 4 each; existing scale helper 80;
 // inline-product scale helper 93; direction pointer used throughout 48.
+// Round 204: existing random-range call 38; raw generator, force-inline step declaration,
+// named normalized fraction, shared velocity addition and first/second/both library copies 4 each.
+// Frame and all other instructions agree; the cone argument setup remains.
 // @retail 0xce6b0
 void function_ce6b0(long unit_index, long name, long object_index, real scale)
 {
@@ -5589,15 +5601,15 @@ void function_cf040(long unit_index, short type)
    free, its seat group's partner friendly and willing, no enemy riding
    (outside state 2), and for players a clear line to the vehicle; also
    the seat's occupant and whether the seat is grouped */
-// score 17 (was 274): what is left is the scratch registers of the last block: retail reads the
-// unit's +0x13c through ECX/EDX where ours uses EAX/ECX (and so the lea/push pairs of the call
-// rotate), and the header lookup of the weapon loop has its address operands swapped
-// ([edi+eax+8] versus [eax+edi+8]). Fixes made: the team test takes the unit's team first, the bit 16
-// and 17 tests are two separate ifs, the seat flags are read in place, the group flag is declared
-// after the result (274 -> 24), the root walk is a guarded do-while with its index declared first
-// (24 -> 17). Tried: a while or a for for the root walk 24, a copy of the vehicle index 24,
-// unit_at_masked_index or an explicit offset for the weapon loop's header 24, the two tail
-// conditions swapped 20.
+// score 1 (was 274): what is left is the header lookup of the weapon loop, whose address operands are
+// swapped (ours [eax+edi+8], retail's [edi+eax+8]). Fixes made: the team test takes the unit's team first,
+// the bit 16 and 17 tests are two separate ifs, the seat flags are read in place, the group flag is
+// declared after the result (274 -> 24), the root walk is a guarded do-while with its index declared
+// first (24 -> 17), a blocked line of sight clears the result instead of returning false (17 -> 1).
+// Tried for the lookup: unit_at_masked_index, the holder declared before the loop, a local header
+// array, two lookups, a volatile read of the weapon index (all 1); a short hand counter 180, a char
+// weapon slot 71. Before the tail change: a while or a for for the root walk 24, a copy of the vehicle
+// index 24, an explicit offset for the header 24, the two tail conditions swapped 20.
 // @retail 0xc92c0
 bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_index, long *blocker_index, bool *grouped)
 {
@@ -5733,7 +5745,7 @@ bool __stdcall function_c92c0(long unit_index, long vehicle_index, short seat_in
 		if (function_1697c0(0x80080d, &origin, &direction, unit_index, vehicle_index,
 			(s_collision_result_1697c0 *)collision))
 		{
-			return false;
+			result = false;
 		}
 	}
 	return result;

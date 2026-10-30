@@ -215,6 +215,9 @@ __forceinline long loop_path_start(s_record_pool *pool, long tag, real gain)
 // Round 424: positive uniqueness bool/byte/short/long decisions 886 each;
 // each with default-first detail completion 884 (two-point gain rejected).
 // Original duplicate result, detail expression and complete body restored.
+// Round 434: complete native choice/converted-target publication and applied-target
+// value, seven subsets 937/947/925/945/938/953/926; all with CRT publication 926.
+// Original records, field computations, query counts, gain trees and body restored.
 // @retail 0x18ae80
 void __stdcall function_18ae80(s_portal_path_bsp *bsp_data, long listener, point3f const *point,
 	long cluster, long override_tag, real elapsed)
@@ -552,6 +555,9 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 // and caller declaration restored; frame and BSP/camera/duration homes remain.
 // Round 425: Three native missing-tail library fills in six orders, then a shared
 // signed/unsigned byte extent, 284 each. Original merged fill loop and body restored.
+// Round 434: existing player-slot helper with complete original camera guard;
+// shared first-player search/native BSP/live duration in eight graphs 294/297/294/297/281/279/281/279.
+// Original guard, helpers, duration observation, query and cue calls restored.
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)
 {

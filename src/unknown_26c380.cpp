@@ -206,6 +206,9 @@ bool function_26c380(point3f const *origin, s_pathfinding_data const *pathfindin
 // Round 215: first-edge constant at sector/pre-iterator/pre-edge phases in word storage 426/426/427;
 // bool storage 420/420/429; original-phase bool 417; pre-iterator byte 420. Original first word and
 // producer phase restored; frame 0x5c/0x64, full/planar overlap and byte/tail homes remain.
+// Round 434: valid-walk edge seed, post-initialization success/sector seeds and all domain subsets
+// 422/404/421/404/421/403/422/422; last includes the early planar declaration. Frame remains 0x5c at 1605 bytes.
+// Post-initialization success plus sector 403 is a rejected one-point form; original complete body restored.
 // @retail 0x26c590
 bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origin, long sector_index,
 	long target_sector_index, vector3f const *direction, real distance, s_path_location const *location,

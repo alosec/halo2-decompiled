@@ -68,7 +68,7 @@ struct s_unit_definition
 bool function_1cb920(void *data, long label);
 
 // @retail 0xc8200
-bool function_c8200(long object_index, short seat_index, long unit_index)
+bool function_c8200(long unit_index, long object_index, short seat_index)
 {
 	s_unit_definition *definition = UNIT_DEFINITION(UNIT_OBJECT(object_index));
 	bool result = false;

@@ -704,6 +704,9 @@ PRIVATE __forceinline bool clip_points_equal_23a6f0(point2f const *a, point2f co
 // Round 217: shared final-copy predicate with original/positive-first policy and copy
 // after/before normalization 279/299/287/291; with reused byte extent 292/308/296/300. Original
 // body restored; count ECX, prior-side byte and SIMD homes remain.
+// DL196: coordinated equality parameter priorities 129/129/129/129/129;
+// complete intersection and two priority interactions 255/255/255.
+// Original executable body and all supporting contracts restored.
 // @retail 0x23a6f0
 short function_23a6f0(point2f *output, short count, point2f const *points,
 	plane2f const *plane, short capacity, dword *point_mask, bool *clipped, real epsilon)

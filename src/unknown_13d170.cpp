@@ -232,6 +232,9 @@ struct s_block_candidate
 // end, retail keeps them in the loop); case 1 as `if (...) better = true;` 382. Retail keeps the
 // offset in EBX through the scan and spills `next` (+0x4c); ours keeps `next` and the tail.
 // DL190: Existing calling iterator with fields/aggregate 424/424; direct step 418/418; native datum iterator 409/404 (frame 0x1054, but out-of-line). Allocated lookup/absolute getter 367/367 at retail length (three-point gains rejected). Original iteration, allocation and body restored; page/ring carriers remain.
+// Round 228: earlier head retirement/tail commitment/both 369/370/369; too-small
+// candidate continue alone/with head/with tail/with both 370/381/370/386; all plus timestamp
+// maximum 367 at retail length (three-point lead rejected). Original body restored.
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {
