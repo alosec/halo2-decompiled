@@ -53,7 +53,8 @@ static __forceinline void king_settings_verify(s_game_variant_king_settings *set
 
 /* clamps every setting of a variant into its range; a variant that needed
    any change is replaced by the slayer defaults */
-// score 57 (was 57): retail masks the flags in eax after the inlined defaults'
+// score 57 (was 57): frame 0x330 agrees; post-copy flags and zero chains exchange EAX/ECX, adding four bytes.
+// retail masks the flags in eax after the inlined defaults'
 // wcsncpy call and keeps the zero in ecx; ours the other way round, which also
 // makes the and/or two bytes longer each and so moves the jump table by 4 (its
 // entries and padding then differ too).
@@ -72,6 +73,10 @@ static __forceinline void king_settings_verify(s_game_variant_king_settings *set
 // Native input snapshots in the long, short and char clamps, separately and together, 57 in
 // all seven forms; store-on-change clamps 727 at 1928 bytes. Original clamp reads and stores
 // restored; the shared defaults initializer is unchanged.
+// Round 29: retail also stores flags48 after the zero stores; the helper's second flags48
+// statement moved there 75 (0x19d220 118); `valid = memcmp(...) == 0` 455; `valid = false`
+// before the defaults call 57; the original copy declared first 57; valid declared just
+// before the compare 459.
 // @retail 0x19d650
 bool function_19d650(s_game_variant *variant)
 {

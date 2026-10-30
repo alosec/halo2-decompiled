@@ -391,7 +391,7 @@ PRIVATE __forceinline real function_1de2c2(point3f const *arg_0, point3f const *
    inlines it into 0x1de2c0 and 0x1ddea0 */
 real *function_120810(real const *point, short axis, byte side, real *out);
 
-// score 36 (was 44): retail restores ebx (the side flag) before ebp (the surface) after the first
+// score 36 (was 36): retail restores ebx (the side flag) before ebp (the surface) after the first
 // loop's inlined insertion; before the projection loop it loads the side flag with `mov cl` and widens
 // it later (ours `movzx ecx, byte ptr`); inside the loop it reads 0x21e before 0x21c; and the second
 // cross product multiplies into the near vertex's y difference (ours into the far vertex's x).
@@ -405,7 +405,12 @@ real *function_120810(real const *point, short axis, byte side, real *out);
 // of hand-scaled byte offsets 36 (kept); the side copy not volatile 74; the 0x21c read not volatile
 // 94; one side flag and edge pointer for all three loops 55; both vertices through 0x120810 74; the
 // far difference's subtractions swapped 36; the second product's factors swapped 36; a separate
-// projected point then the difference 36.
+// projected point then the difference 36. Round 19: a short axis and a bool side local before the
+// third loop for the far projection 42 (the short is loaded `mov cx` and widened later, retail's shape
+// but on the axis), side then axis 42; a bool side local alone 36, a byte one 36, a byte one with
+// field_21e typed byte 36 (all fold into `movzx ecx, byte ptr`); a char side local into 0x120810's
+// byte parameter 96 (retail's `mov cl` and later `movzx ecx, cl`, but a second widening, and the
+// near vertex's in-loop side read merges into it).
 // @retail 0x1de2c0
 void function_1de2c0(s_1de2c0 *arg_0, long arg_1)
 {

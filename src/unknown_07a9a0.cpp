@@ -1055,7 +1055,8 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 	default: __assume(0);
 	}
 }
-// score 766 (was 766): retail's frame is 0xb4 and it takes the session in EAX and the output pointer
+// score 766 (was 766): Frame 0xd4/0xb4, stacked session and protected opening lookup expansion remain.
+// Earlier: retail's frame is 0xb4 and it takes the session in EAX and the output pointer
 // on the stack, while ours has a 0xd4 frame and takes both on the stack; retail also calls the matched
 // 0x192e60 out of line, ours inlines it.
 // frame 0xd4 versus 0xb4, opening session home and lookup expansion remain; tried byte
@@ -1126,6 +1127,9 @@ static inline long ratings_allowed_imbalance(s_surface_description *variant)
 // Original counter names and declaration lifetimes restored; frame/session/lookup remain.
 // Round 261: explicit initial histogram memset with word/short/long/dword cells
 // 820/820/844/844; each with byte balance argument 871/871/870/870. Original clear and cells restored.
+// Round 414: type-four-first conditional minimum/maximum/spread selectors, each pair
+// and all three 766 each; all with type-five-first limited predicate 803 at 2832/2828.
+// Original selectors, predicates and complete body restored.
 // @retail 0x7e210
 bool function_7e210(c_class_58d20 *session, s_matchmaking_ratings *out)
 {
