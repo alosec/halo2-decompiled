@@ -106,7 +106,7 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	arg_2->k = projected_term_k - cross_term_k;
 }
 
-// score 43 (was 52): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
+// score 43 (was 43): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
 // Earlier: y/z range-add order, rotation registers and final sentinel
 // three causes remain. The y/z point draws add the point component before the range
 // start (x is right); the rotation's xmm registers are retail's shifted by one (xmm1..xmm5 cycle) with
@@ -178,6 +178,9 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // flag 60/43/60/43. Fraction raw-draw/seed-step normalization 43/43; original raw draw without cast 60;
 // direct real-fraction operand 62. The direct fraction-call copy at 43 was dropped. Arithmetic grouping,
 // draw order and game-call tuples stay fixed.
+// Round 191: native sentinel/zero/both chains 47/44/48; complete helper axis/source/both
+// input captures 211/186/242; axis with sentinel chain 211; both with all chains 242.
+// All restored; rotation input/register ranking and final sentinel scheduling remain.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {
