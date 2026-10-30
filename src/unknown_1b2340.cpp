@@ -111,8 +111,10 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 /* slot type 0x24's update: moves the actor to its prop (to the point the
    prop names, or along its direction) and flags the slot when it is there
    or cannot get there (always returns true) */
-// score 144 (was 144): entry actor-pool/view carriers, category width and movement/failure
-// placement remain.
+// score 123 (was 144): entry actor-pool/view carriers (retail forms the actor offset in EAX and
+// the actor with `lea`), the actor index kept in ESI around the near-target calls, the 16-bit type
+// tests and the arm layout remain (retail places the type 1 arm and the unsupported-type return
+// after the first part of the result check); 1070 bytes against 1077.
 // Earlier: frame 0x48 and retail length agree; entry pool/view carriers, category width and movement/failure placement remain.
 // Earlier: frame 0x48 and length 1077 agree; the entry registers (actor offset in
 // EBP, ours, against EAX plus lea), the actor index kept in ESI (retail reloads it from its
@@ -154,6 +156,14 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // Bounded distance in the actual trace result: native field alone 144; native category 190; entry trace
 // lifetime 144/190; shared squared length 144/190; both lifetime and shared length 144/190. Original body
 // restored.
+// Round 423: returned probe/failure/both points 195/159/199; each with native category
+// 220/197/225; probe return/cluster arms 195; both returns/category/cluster arms 225. Restored.
+// Lane 14 r11: the unsupported type returned first inside the nonzero-type arm (`if (type != 1)
+// { ...; return true; }` then the type 1 body) 123 (kept). Before it: type tests read from the field
+// 190; short type 190; target point through the existing vector3f_add_scaled 144 (identical); with
+// the field tests 190. On the kept form: field tests 194; short type 194; a guard return for the
+// inactive actor 123 (identical); type declared at its read 123; result declared before the type
+// arms 123.
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {
@@ -235,16 +245,16 @@ bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 			}
 			actor->unknown4cc = 0.7f;
 		}
-		else if (type == 1)
+		else
 		{
+			if (type != 1)
+			{
+				function_1f4280(actor_index);
+				return true;
+			}
 			function_2628f0(actor_index, g_470fa0);
 			result = function_1f4460(actor_index, &view->unknown78, *(long *)((byte *)view + 0x74), NONE, false);
 			target = view->unknown78;
-		}
-		else
-		{
-			function_1f4280(actor_index);
-			return true;
 		}
 		if (!result)
 		{

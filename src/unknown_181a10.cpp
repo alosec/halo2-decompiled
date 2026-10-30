@@ -581,6 +581,10 @@ PRIVATE __forceinline bool batch_shape_pointer(c_batch_contact_shape const *shap
 // Key-continuation node/shape 322/353; shared admitted normal Z 317; native-position
 // combinations 313/378/340/373 (exact-only grouping, rejected); position alone 344;
 // shape plus shared Z 349. Original body restored; frame and plane/output homes remain.
+// Round 427: complete scalar transformed normals with plane/side/material entry-scope
+// masks 0..7, 334 each (1243 bytes, frame 0x3c); native shape entry/surface/kind bitfields
+// with uniform at-use encoded data, masks 0..7, 358 each. Original shape layout, snapshots,
+// normal workspace and full body restored; frame 0x48 versus 0x44 and classifier homes remain.
 // @retail 0x1822f0
 void c_query_batch_collector::collect(s_batch_contact const *contact)
 {

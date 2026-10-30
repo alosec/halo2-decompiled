@@ -4,6 +4,7 @@
 
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
+#include "matrix_transform.h"
 #include "data_array.h"
 #include "vector_products.h"
 #include "globals.h"
@@ -232,81 +233,45 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 	out->unknown0d = source->unknown0d;
 	out->unknown0e = source->unknown0e;
 }
-// score 57 (was 57): the sphere test's normal: retail multiplies the x and z
 
 // score 57 (was 57): the sphere test's normal: retail multiplies the x and z differences in
 // place (normal x/y/z in xmm1/xmm3/xmm2, differences x/z/y in xmm1/xmm2/xmm4) and loads 1.0 in
 // each arm; ours multiplies copies of the scale, keeps z/y in xmm4/xmm3 and hoists 1.0 into xmm0
 // before the fsqrt. The products go in place only when the sum's first reads of x and z are
 // pointer reads and y's is not: a pointer local to the difference read for x and z in a
-// statement sum x, z, y, the dot's inputs swapped and the unit-z zeros stored separately matches
-// (not keepable). Tried: unit-z zeros chained y-first 57 (y or z first 57, x first 61), stored
-// separately 61; unit-z arm first 62; depth before plane->d 61-65; distance-squared orders i,k,j
-// 61, k,i,j 59, regrouped 57-61, direct statement sums in each order 61; squared-length/self-dot
-// helpers 152 (also with both fixes); the scale helper's statement orders 61-158, operand orders
-// 57; scale declared first 61; reciprocal in the call 57; double reciprocal 397; the difference
-// by fields 61, in the plane normal 177-181; in-place scale + copy 397; separate/default normal
-// workspace 397; radius-square local 61; component-square lifetimes 61; immutable distance,
-// sphere and point references 61; shared scaled difference 57; squared-distance accumulator and
-// paired difference 61/61; normal memset and accumulator/reset 176/180; component scale loops
-// 57/57, with a normal reset 175; outside-sphere exit 57; root declared first 57; default output
-// before normalization 174; center/sphere value copies 397/396; center plus squared helper 397;
-// late radius after normal/before root/after root, shared double-factor scale, in-place input,
-// late radius with scale, native factor, partial squared distance 62/65/65/397/397/397/397/61;
-// containment-test return, plane/depth pointer returns, normal-first projection, projection
-// value, existing reverse dot in either order, test/projection result 57; dot swap 57. Round 11:
-// length_sq3f with the existing vector3f_scale(&d, 1 / distance) and separate zeros 152;
-// dot3f(&d, &d) 152; a radius local 176 (668 bytes); the sphere helper's 24 parameter orders and
-// __forceinline give identical code (compile-only); a nested unit-vector helper taking the
-// distance (reciprocal inside it) with length_sq3f gets the in-place products (compile-only xmm
-// diff 13) but swaps x/y and folds the last dot term, 129 (and a one-caller helper).
-// the sphere test's normal: retail multiplies the x and z
-// differences in place (normal x/y/z in xmm1/xmm3/xmm2) and loads 1.0 in each arm;
-// ours multiplies copies of the scale and hoists 1.0 into xmm0 before the fsqrt.
-// The unit-z arm's zero stores chained (y first, then x) 57 (each order with y or z
-// first 57, x first 61); depth before plane->d 61-65; distance-squared order i,k,j 61,
-// k,i,j 59; the scale helper's statement orders 61-158, operand orders 57;
-// scale declared first 61; the difference vector by fields 61; in-place scale + copy 397.
-// the first float of the pair is loaded into XMM2 here and
-// into XMM1 in retail, so the registers of the following subtractions are
-// swapped as well.
-// separate normal workspace 397; default normal workspace 397;
-// displacement in output normal 181; radius-square local 61; component-square lifetimes 61;
-// immutable distance 61; sphere reference 61; point reference 61. Sphere XMM homes still differ.
-// sphere displacement/normal homes and reciprocal-one hoisting remain.
-// Shared scaled difference 57; original-grouping squared-distance accumulator and paired
-// difference 61/61; normal memset and accumulator/reset 176/180; plain component scale
-// loop and shared-difference loop 57/57; normal reset with scale loop 175.
-// sphere displacement XMM homes and the early reciprocal-one load remain.
-// Shared squared length/self product 152/152; outside-sphere exit 57; root declared first 57;
-// default output before normalization 174; center/sphere value copies 397/396; center plus squared helper 397.
-// displacement/normal XMM homes and early reciprocal-one load remain;
-// late radius with scale, native factor and partial squared distance 62, 65, 65, 397, 397, 397, 397, 61.
-// sphere displacement/normal coalescing and reciprocal-one hoisting remain.
-// Containment-test return, successful plane/depth pointer returns, normal-first projection,
-// projection value, existing reverse dot in either input order and test/projection result all 57.
-// the normal's x and z products go in place only when the sum's first reads of
-// the difference's x and z are memory reads and y's is not; a pointer local to the difference read
-// for x and z in a statement sum x, z, y, with the dot product's inputs swapped and the unit-z
-// zeros stored separately, matches. Unit-z arm first 62; double reciprocal 397; reciprocal in the
-// call 57; regrouped sums 57-61; direct statement sums in each order 61; dot swap 57; zero stores
-// 61; difference in the plane normal 177; squared-length/self-dot helpers with both fixes 152.
-// Y405: Squared-distance axial array loop, original j term then axes 2 and 0, long/short
-// ordinal with either projection input order and chained/separate zeros: all eight 397 at
-// 456/678 (sphere helper outlined). Existing helper forced inline on the same eight graphs:
-// 235/235/244/244/257/257/262/262. Original helper/query restored; displacement/normal homes
-// and reciprocal-one hoisting remain.
-// Scale helper with the factor as its first parameter 57; unit-z through vector3f_assign 61;
-// arms swapped 170; depth stored before the normalization branch 173; sqrtf 57.
-// Round 160: existing vector3f_scale with the reciprocal in the call 57, with a scale local 57,
-// plus dot(normal, center) 57, plus vector3f_assign unit z 61; length_sq3f with the reciprocal
-// passed to shape_scale3d 152; a 72-form compile screen of these helpers (squared distance,
-// scale, unit-z arm, dot order) found none below 57.
-// Round 7 (lane 14): fast MATCH with a one-caller helper returning the x and z squares (statements,
-// through its pointer) plus `+= d.j * d.j`, with the unit-z zeros stored separately or chained j
-// first (not kept: a new one-caller helper only steering the products); that helper alone 2 (the
-// unit-z zero stores in the other order), with the dot inputs swapped 2; every square through a
-// pointer local plus the dot swap 148; products written by fields after an x,z,y statement sum 57.
+// statement sum x, z, y, the dot's inputs swapped and the unit-z zeros stored separately matches,
+// and so does a one-caller helper returning the x and z squares through its pointer plus
+// `+= d.j * d.j` (fast MATCH; neither keepable).
+// Tried: unit-z zeros chained y-first 57 (y or z first 57, x first 61), stored separately 61,
+// through vector3f_assign 61; unit-z arm first 62; arms swapped 170; depth before plane->d 61-65,
+// before the normalization branch 173; distance-squared orders i,k,j 61, k,i,j 59, k,j,i 57,
+// regrouped 57-61, direct statement sums in each order 61, products by fields after an x,z,y
+// statement sum 57; squared-length/self-dot helpers (length_sq3f, dot3f(&d, &d), the existing
+// reverse dot on the difference) 152 (also with both fixes, with vector3f_scale or the reciprocal
+// passed to shape_scale3d); every square through a pointer local plus the dot swap 148; the scale
+// helper's statement orders 61-158, operand orders 57, the factor as its first parameter 57;
+// existing vector3f_scale with the reciprocal in the call or a scale local 57 (plus dot(normal,
+// center) 57, plus vector3f_assign unit z 61); scale declared first 61; reciprocal in the call
+// 57; double reciprocal 397; the difference by fields 61, in the plane normal 177-181; in-place
+// scale + copy 397; separate/default normal workspace 397; radius-square local 61; a radius local
+// 176 (668 bytes); component-square lifetimes 61; immutable distance, sphere and point references
+// 61; shared scaled difference 57; squared-distance accumulator and paired difference 61/61;
+// normal memset and accumulator/reset 176/180; component scale loops 57/57, with a normal reset
+// 175; outside-sphere exit 57; the comparison's operands swapped 57; root declared first 57;
+// sqrtf 57; default output before normalization 174; center/sphere value copies 397/396; center
+// plus squared helper 397; late radius after normal/before root/after root, shared double-factor
+// scale, in-place input, late radius with scale, native factor, partial squared distance
+// 62/65/65/397/397/397/397/61; containment-test return, plane/depth pointer returns, normal-first
+// projection, projection value, existing reverse dot in either order, test/projection result 57;
+// dot swap 57; squared-distance axial array loop (j term then axes 2 and 0, long/short ordinal,
+// either projection input order, chained/separate zeros) 397 at 456 bytes (sphere helper
+// outlined), forced inline 235-262; a nested unit-vector helper taking the distance (reciprocal
+// inside it) with length_sq3f 129 (and a one-caller helper); a named hit flag with if/else-if
+// arms 157 (669 bytes); depth and plane declared at function scope 57; the distance test against
+// the literal 0.f (0x45dbd8 is the 0.0 constant) 57. Compile-only (no gain):
+// the sphere helper's 24 parameter orders and __forceinline; statement differences x,z,y; scalar
+// component locals; radius square first; a 72-form screen of the squared-distance, scale, unit-z
+// and dot helpers.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -354,26 +319,25 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 	return a->k * b->k + a->j * b->j + a->i * b->i;
 }
 
-// score 40 (was 40): the float is loaded into XMM1 and moved to XMM0; retail loads it into XMM0 and
-// moves XMM5 into XMM1 (retail: radius, zero and a in XMM0, c in XMM1, b in XMM2; ours c XMM0,
-// radius and b XMM1, zero and a XMM2; instructions otherwise identical).
-// Existing offset/scale/plane-product force-inline declarations, all seven combinations 40;
-// native result byte 69.
-// Round 95: b accumulated in i,k,j statements 42 (retail's sum order, but the j product loads
-// direction->j first: 434 bytes); radius square subtracted inline after the sum 51; named after the
-// sum 40; `c <= 0.f` 40; a radius local squared after the sum 49. c stays in XMM0, the zero in XMM2.
-// native result byte 69. c as one expression 53; radius square in the subtraction 51;
-// length_sq3f/dot3f for c 55/57; radius square after the sum, c <= 0, length_sq3f for a, radius
-// local, named distance square, radius square first, result before *t: 40 (same code);
-// dot3f for b 42; reverse dot for b/a 42/42; result declared late 67 (caller 0x2469b0 170);
-// arms swapped 63. Round 160: c as one expression with the terms reversed 49; length_sq3f
-// for c 55; dot3f for b with dot3f for a 40, reverse dot for b with dot3f for a 40; reversed
-// one-expression c with reverse dot b 49; a 60-form compile screen of c, b and a through the
-// existing helpers or one expression found none below 40.
-// arms swapped 63. Round 7 (lane 14): b's retail order i,k,j comes from statements, but the last
-// term then loads first (compile-only); b as i,k statements plus j 46, i plus k,j 46, three
-// statements 42 (434 bytes each), through the existing reverse dot 42; the radius-square
-// declaration at any of five places gives the same code (compile-only).
+// score 4 (was 40): only b's sum order differs: retail adds the k product before the j product
+// (i, k, j, each a copy of the difference times the direction's memory operand); ours sums i, j, k.
+// The discriminant is compared with the literal 0.f (retail's 0x45dbd8 is the 0.0 constant), which
+// gave retail's radius/c/zero registers (40 -> 4).
+// Tried before that, at 40: existing offset/scale/plane-product force-inline declarations, all
+// seven combinations 40; native result byte 69; b in i,k,j statements 42; radius square subtracted
+// inline after the sum 51, named after the sum 40, first 40; `c <= 0.f` 40; a radius local squared
+// after the sum 49, plain 40; c as one expression 53, terms reversed 49; length_sq3f/dot3f for c
+// 55/57; length_sq3f for a, named distance square, result before *t: 40; dot3f for b 42 (with
+// dot3f for a 40); reverse dot for b/a 42/42 (b with dot3f for a 40); result declared late 67
+// (caller 0x2469b0 170); arms swapped 63; b as i,k statements plus j 46, i plus k,j 46, through the
+// reverse dot 42; compile-only: radius-square declaration at five places, a 60-form screen of c, b
+// and a through the existing helpers.
+// Round 11, at 4: b as statements i, k, j 7 (434 bytes: the last product loads direction->j first);
+// j + (i + k) 11 (the same load); dot3f for b 6 (also flips the plane dot's last product);
+// length_sq3f for a 4 (same code); radius square written in the subtraction 18. Compile-only: every
+// flat term order, every dot helper and five spellings before the sum give i, j, k; extra
+// arithmetic before the sum rotates it only among i,j,k / j,i,k / j,k,i; the difference computed
+// j, i, k by hand (diagnostic) gives i, k, j but moves other registers (13).
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
@@ -403,7 +367,7 @@ bool function_2461a0(
 		{
 			real a = direction->j * direction->j + direction->k * direction->k + direction->i * direction->i;
 			real discriminant = b * b - a * c;
-			if (discriminant >= g_45dbd8)
+			if (discriminant >= 0.f)
 			{
 				/* retail compares the unrounded root and divides the rounded one */
 				real root = b - sqrt(discriminant);
@@ -788,27 +752,6 @@ struct s_frame_2477b0
 	matrix3x3 rotation;
 	point3f position;
 };
-
-PRIVATE __forceinline vector3f *function_2477b1(
-	matrix3x3 const *matrix, vector3f const *vector, vector3f *out)
-{
-	vector3f copy;
-	if (vector == out)
-	{
-		copy = *vector;
-		vector = &copy;
-	}
-	out->i = matrix->left.i * vector->j + matrix->up.i * vector->k + matrix->forward.i * vector->i;
-	real j = matrix->left.j * vector->j;
-	j += matrix->forward.j * vector->i;
-	j += matrix->up.j * vector->k;
-	out->j = j;
-	real k = matrix->left.k * vector->j;
-	k += matrix->forward.k * vector->i;
-	k += matrix->up.k * vector->k;
-	out->k = k;
-	return out;
-}
 
 // @retail 0x2477b0
 void function_2477b0(

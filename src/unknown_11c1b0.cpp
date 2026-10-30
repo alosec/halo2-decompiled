@@ -73,6 +73,15 @@ void function_16e2c0(long arg_0);
 // a reassigned parameter gives). Both NULL-clear blocks as one inline helper 50; early return false
 // for the range test 122; saved index declared at function scope 50; early true test on the saved
 // copy 50; unload argument written in the call 50.
+// Round 100: one index variable assigned after a range guard that jumps to the single exit 142 (the
+// load follows the test and the success flag takes a stack byte); saved index declared after the
+// callback loop 87; success flag declared before the dispose test 127; the early true through the
+// single exit 50 (same code); the global read at each early test with no current-index local 108.
+// Round 10 (lane 13): retail's `xor ebx, ebx; mov bx` then a dword store into the slot before the
+// range test is the shape of an assignment to the short parameter itself. Without that: one result
+// carrier (no separate success flag) 130; the success flag defined before the true test 127; the
+// unload pointer in the call 50; the true test's operands swapped 50; a named callback pointer in the
+// loop 50.
 // Round 99 (lane 6): requested-index copy first with the saved index defined at the top, either order
 // of the copy and the current index, 128/128 (retail's BX/EDI and early store, but the saved index
 // gets its own slot: the copy is propagated, so the argument's first read follows the definition);

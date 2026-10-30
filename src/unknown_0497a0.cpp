@@ -127,6 +127,9 @@
 // Round 403: native double storage for rounded sine/modulation and complete maxima,
 // masks 1-7: 580/580/581/756/753/753/756; all with both wave factors 771.
 // One-point leads dropped; original scalar precision, frame graph and conversion restored.
+// Round 213: existing staged cross for first/final special view and paired projection
+// families, seven subsets, 581 each; all with independent second wave displacement 656.
+// Original body restored; frame 0x58/0x60 and shape/basis/wave homes remain.
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -508,6 +511,9 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Round 396: Direct state-range admission, invalid/valid arm first: native char
 // 637/637, short 633/633, long 647/647, consistent field observations 624/624.
 // All restored; definition/output carriers, endpoint placement and frame homes remain.
+// Round 213: existing staged side/normal/both products 615 each; each with complete
+// paired side offset 630, plus shared normal scales 630/630. Paired offset shrinks the
+// frame to 0xa8 and length to 2584. Original 0xac-frame body restored; carriers/layout remain.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {
@@ -725,6 +731,15 @@ void __stdcall function_43720(s_43740_input *input)
 // definition moves to the stack and 0x42b20 stops matching); the input record or the bitmap
 // declared at the top 62/62; the record filled count, shader, normal, slot, tag, then source,
 // definition, bitmap 63; the group lookup re-reading the tag field 62 (CSE gives the same code).
+// Round 213: complete mutable request/zero aggregate/library zero/readonly request
+// 91/100/105/91; direct-position counterparts 91/100/105/91. Original body restored;
+// tag admission before saved EBP and signed-slot/shader-relative homes remain.
+// Round 12: the tag field read at each use (test, call, group lookup) 62 and with a tag local
+// inside 62 (the reads merge into one value); the normal flag read through the stored
+// input.vertices.shader 67 (213 bytes, the definition moves to the stack, 0x42b20 62); the
+// position computed before the input fill 62 (retail computes it before the pushes; ours
+// still interleaves it); a named vertex count used for the field and the call 64, with the
+// position first 64 (0x42b20 4).
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {

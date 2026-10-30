@@ -193,7 +193,7 @@ void __stdcall function_254490(point2f const *arg_0, real arg_1, real arg_2, col
 	}
 }
 
-// score 18 (was 162): the texture-coordinate sums are computed at the first vertex and reused for
+// score 18 (was 18): the texture-coordinate sums are computed at the first vertex and reused for
 // the other three, and the colour is read through a pointer with the alpha as a byte; what is left
 // is that in the last quad's third and fourth vertices retail loads y into a register before it
 // adds the offset, where ours copies the offset and folds the load into the addition, and that
@@ -358,6 +358,11 @@ void __stdcall function_254490(point2f const *arg_0, real arg_1, real arg_2, col
 // Round 180: Final integral size selection long/dword/short/word 534/528/534/534; on the earlier
 // pointer-color/byte-alpha/per-use reservation graph 548/542/548/548 (reduced control 162). All
 // conversions and storage changes regress; original complete body and real size reference restored.
+// Round 39 (m3 lane 12): 13 of the 18 come from the `y + size` fold (ours is 2 bytes shorter, so the
+// three jumps to the else tail and the padding shift). A point pointer local for the last quad 18;
+// the quad through a forceinline helper 348 (not inlined under the region's inline_depth(0)); the
+// point parameter renamed to sort after the size 18; the size computed after 0x1cf50 26; the size's
+// address taken 18. All restored.
 // @retail 0x2548f0
 void __stdcall function_2548f0(point2f const *arg_0, real arg_1)
 {

@@ -349,6 +349,9 @@ bool function_1f45c0(long arg_0, s_type_c3b527 const *arg_1, long arg_2, bool ar
 // Original output declarations and complete body restored; actor/pool and request tails remain.
 // Round 288: complete native boarding/entry request initializers, all nonoriginal pairs
 // of aggregate initialization and CRT clearing 210, 226, 203, 232, 248, 244, 270, 282. All restored.
+// Round 427: both original request objects separately at entry, with approach/first/second
+// animation output entry-scope masks 0..7, 190 each (684 bytes, frame 0x7c). Original distinct
+// request scopes and complete body restored; actor/pool carriers and request tails remain.
 // @retail 0x1bff80
 bool __stdcall function_1bff80(long arg_0, s_slot *arg_1)
 {

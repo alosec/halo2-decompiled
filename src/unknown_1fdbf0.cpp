@@ -336,6 +336,12 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // in the i row, or the parallel term first in the j/k rows) 43-50 aligned in the harness (current
 // 34 aligned), every row computed into locals before the stores 45, the dot accumulated 34, the
 // first two terms of a row as one expression 34 (all three rows 35), the sine term second 41, a
+// named cross vector 48, a by-value axis helper 42, an axis-pointer helper 35. Round 80 (LTCG harness
+// of the file, which reproduces this block exactly): all 128 accumulated or single-expression row
+// orders, 24 declaration orders and 6 dot orders on the best; the j/k rows as cosine, sine, parallel
+// (one instruction longer; aligned 30 against 33, positional 56); the other files' rotation helper
+// forms (projection or cross first, cross struct or scalars, copied components) 57 and up; named
+// parallel components, the axis or a copy scaled through vector3f_scale 34-49 aligned (no closer).
 // named cross vector 48, a by-value axis helper 42, an axis-pointer helper 35.
 // Round 418 on accumulated rows: staged axis/turn/both crosses 67/69/51; complete
 // direction scalars 74, with staged axis 81; complete direction value with staged
@@ -345,6 +351,29 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // identical code at 43: axis-first products in the j/k rows, axis declared before forward, the
 // parallel part through dot3f, the i-row cross term computed last (the matched 0x11d3b0 colours
 // its axis the way ours does).
+// Round 119: retail multiplies axis j/k by the parallel part in their own registers (axis operand
+// first), so it frees a register, loads direction j/k before the i store and keeps the cosine in a
+// register; every source spelling of the product gives the parallel part first. Parallel term first
+// in the j/k rows 57; the rows as single expressions in 0x11d3b0's order 57; axis j/k scaled in
+// place after the i row 70; the rotation as a three-pass component loop (unrolled) 70; the i row
+// computed before the j/k cross terms 57. Harness only: the axis through a pointer, dot3f, a
+// cross3f vector, an inline rotate helper by pointer or by value, the parallel part scaled into a
+// vector, operand text orders (identical code).
+// Round 34: j/k rows as axis * parallel with the cosine term second 57; each row as one expression,
+// parallel product first 57; axis scaled in place before the rows 80; valid at the state block's
+// scope with the rotation after the dot block 43; the fallback normalizing 0x11d000's returned
+// pointer 57 (axis/forward slots swap).
+// Round 302: Actual axis at state/entry scope, forward at state/entry scope,
+// each with original/role vector names: all eight 43. Original declarations,
+// homes and body restored; axis/direction register colors and parallel copy remain.
+// Round 13 (lane 13): retail = projection times axis j/k in place in the axis registers (cos then
+// in a register), times axis i into a copy of the projection; ours copies it for i and j. Forms
+// that do give the in-place products all add a block copy of the axis (harness: a local copy,
+// a by-value inline helper; all three rows in place then); without one: grouped (d cos -
+// cross sin) in the j/k rows 56, 0x11d3b0's form with named const sine/cosine 57, projection as
+// (dot * c) per row 43, the i projection before the cross terms 43, parallel first in j/k 57;
+// harness only: scalar axis locals in any order, all six dot orders as one expression (43) or
+// accumulated (ds_kji 43, the others worse), product operands swapped per row (no change).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

@@ -108,10 +108,18 @@ point2f *function_13bec0(s_tag_data const *function, byte range_index, byte poin
 	return NULL;
 }
 
-// score 11 (was 364): the remaining differences are in square_root_ratio_approximate, in both
+// score 11 (was 11): the remaining differences are in square_root_ratio_approximate, in both
 // spline2 ranges (7 instructions in the low range, 4 in the high): retail spills the numerator into
 // the slot rsqrtss then reuses for its operand and stores the shifted root before that operand;
 // ours uses other slots and emits the two stores in the opposite order.
+// Tried: the shifted root in its own long/real local (any name or declaration order) 12; a
+// square-root helper and an rsqrtss helper multiplied in C 12, plus the high range's differences
+// x first like the low range 8 (retail's slots and store order, but the multiply is deferred past
+// the input load where retail multiplies in the asm), the same through a pow helper 8; an rsqrtss
+// helper that multiplies by a root parameter 12 (the root copy takes the numerator's slot), its
+// parameters swapped 12, the root as a long parameter 16; the root by an out parameter 12-16; the
+// ratio helper's parameters swapped 12-16; the root as `long bits` read back through a real
+// local that the asm multiplies by 12, with the x-first high range 16.
 // @retail 0x13b390
 real function_13b390(void const *function, real input, real range)
 {

@@ -145,6 +145,8 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // score 10 (was 30): Frame 0x88 agrees; two x-component adds remain: the second point-velocity first
 // linear add uses a register copy and memory add (retail loads linear.x and adds the cross term), and the
 // velocity update adds change.x as a load and add (retail copies change.x and adds the velocity from memory).
+// Frame 0x88 and first point block agree; the second point first linear add uses a register
+// copy and memory add instead of a direct load/add. The nonrotating scale/add schedule remains at retail length.
 // Earlier: point-velocity and nonrotating scale/add
 // Frame 0x88 and first point-velocity agree; second point-velocity and nonrotating schedules remain.
 // Frame 0x88 and first point block agree; second point inputs, nonrotating products and five extra bytes remain.
@@ -228,6 +230,7 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // scale for x and scales y and z in place); x, scale, z, y 18; on the kept form: velocity-add operands
 // swapped 10 (identical); one/two throwaway tuples at entry 163/172 (diagnostic; the adds never flip);
 // delta before the velocity add 61; `+=` component adds 37; displacement scaled in place 172.
+// Round 296: Point-transform/velocity-transform/publication inline-noinline summaries, all seven nonempty subsets, 30 each; clock after completed displacement on the first-staged graph 74. All declarations and arithmetic restored.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {
@@ -401,6 +404,15 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // Round 279: physics-array/count/both/index-list/array-list/count-list/all metadata
 // snapshots 247/135/247/169/247/171/247; all with existing center conversion 239.
 // Original search and center copy restored; entry registers and projection order remain.
+// Round 419: object record 112; physics record 112; object record/physics record 112; search body record
+// 112; object record/search body record 112; physics record/search body record 112; object record/physics
+// record/search body record 112; object record/physics record/search body record/existing center
+// conversion 149. Entry register pair, physics-record spill and center/projection scheduling remain.
+// Original body restored.
+// Complete previous-state library transfers: transform 112, three vectors 116, both 114;
+// with existing center conversion 151/154/149. Existing staged cross alone 112, with complete
+// transfers and center conversion 149. Original copies, search, products and caller restored;
+// object/entry input registers, physics-record spill and center/projection schedule remain.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {
