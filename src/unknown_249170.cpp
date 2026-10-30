@@ -68,7 +68,7 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
-// score 6 (was 57): what is left is the case 1 fsin/xorps order and the first normalisation product
+// score 6 (was 6): what is left is the case 1 fsin/xorps order and the first normalisation product
 // pair (retail folds i and loads j; ours loads i and folds j). Round 42: one function-scope seed
 // pointer assigned in cases 5, 6, 7 and 9 (it then shares one home, the dead system argument's, as
 // in retail) 57 -> 6; on it function-scope sine/azimuth/radius/polar/radial/all six 314/36/32/313/
@@ -112,6 +112,11 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Round 421: cone velocity setter 114; ring velocity setter 548; cone/ring setters 552; fixed/direction setter 99;
 // cone/fixed setters 107; ring/fixed setters 558; all velocity setters 562; all velocity setters/final scale
 // helper 562.
+// Round 431: complete velocity/position/both field receivers 647/534/647; reversed receiver declarations 647;
+// with shared tail scales 647/534/647; both receivers with local tail scales 647. All trial pooled reads ordinary.
+// Original six differences remain: ring trig/zero order and the first normalization product pair.
+// On the original case-home graph, pointer-returning shared normalization/speed/both scales 47/47/47;
+// paired ring sine/cosine values alone or with each scale combination 497 each (exact-only, restored).
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

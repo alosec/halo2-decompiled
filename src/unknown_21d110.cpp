@@ -747,7 +747,27 @@ bool function_21a250(long definition_index, dword sound_flags, long identifier, 
 PRIVATE long const g_44a200[] = { 0, 1, 2 };
 PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
-// score 60 (was 60): the local variables sit in stack slots that are four bytes apart from retail's,
+// score 30 (was 60): every remaining difference is a stack offset. Retail keeps the loop bool
+// in a dword-aligned unit (its low byte) between repeat_state and the listener; ours is a
+// one-byte home in the lowest unit, which shifts the lighter dwords by four and reorders the
+// heavier ones. Retail's order: sound flags, effect, entry offset, controller, state, index,
+// rate stage, repeat state, bool, listener, tag, definition.
+// Round 103: the 'lsnd' state/alternate if/else as two ternaries on one named condition gave
+// retail's register roles (60 -> 30). On it, holding repeat_state and the bool in one 8-byte local
+// record matches byte for byte (diagnostic only: a record that only groups locals is not kept).
+// Tried: the record before the ternaries 32; the tag lookup before the entry flags 78; the entry
+// flags read at each use 78; alternate as an if/else-if chain 133; state before alternate in the
+// looping arm 67; the group switch as if/else-if 114; renaming either local, or five locals to
+// either end of the alphabet (no slot moves); the two declared the other way round 67; both
+// initialised 92 (round 103, fast against 58: 80); the bool initialised 202 (fast); `(flags & 0x10)
+// != 0` 58 (fast, same as the base); listener/rate stage declared the other way round 58 (fast);
+// a byte flag 140; a char
+// repeat state 190; dword/word/byte flags with long/char/short state 151-199; a complete looping
+// snapshot 226; the existing sound-system availability helper for the 'snd!' case's three locals
+// 156 (816 bytes); the definition read from the effect at each use 188. Screened (one-file LTCG
+// and /FAs): bool types long/dword/short/word/char/byte, an inline out-parameter helper, const
+// definition, entry pointer arithmetic and the tag read after its test leave the frame unchanged.
+// the local variables sit in stack slots that are four bytes apart from retail's,
 // so every load and store of a local uses a different offset; the 'lsnd' case holds the entry flags in
 // eax and the tag base in ecx (retail the reverse).
 // The lone bool loop_alternate always takes a byte slot below the dwords; retail gives it a dword slot
@@ -884,19 +904,10 @@ void __stdcall function_21d630(long effect_index, long mode)
 			{
 				dword entry_flags = entry->flags;
 				dword *tag_flags = (dword *)g_4e3b44[tag_index & 0xffff].bytes;
-				long state;
-				bool alternate;
-				if ((entry_flags & 0x20) && effect->type == 2)
-				{
-					alternate = loop_alternate;
-					state = g_44a20c[repeat_state];
-				}
-				else
-				{
-					state = g_44a200[mode];
-					alternate = (entry_flags & 8) ||
-						((bool)effect->flag4 && (bool)effect->flag1 && (entry_flags & 0x10));
-				}
+				bool use_loop_state = (entry_flags & 0x20) && effect->type == 2;
+				long state = use_loop_state ? g_44a20c[repeat_state] : g_44a200[mode];
+				bool alternate = use_loop_state ? loop_alternate : (entry_flags & 8) ||
+					((bool)effect->flag4 && (bool)effect->flag1 && (entry_flags & 0x10));
 				dword sound_flags = (word)effect->priority;
 				if (*tag_flags & 8)
 					sound_flags &= ~1;

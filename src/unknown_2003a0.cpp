@@ -1347,6 +1347,10 @@ void __stdcall function_205320(long group_index)
 // Round 42: named scaled offset signed/unsigned 18/18; const squad, then both pointers 18/18;
 // identifier as a real short field 18; low-word helper 44; typed pointer increment/address-of-element 18/18;
 // low-word equality 21; early high-bits predicate 18. The pool/index registers and three-address lea remain.
+// Round 15: a link pointer to the first vehicle (0x201a50's form) 18; byte pointer squad 18; old squad
+// index in a local 18; header pointer local 19; high-word test by shift 18. Compile-only screens
+// reproduce ours exactly and ~20 squad/header/test forms (helper return, NULL-initialized squad, pool
+// local) all keep add eax,ecx; retail's other two sites of this lea (0x1f3430, 0x20d570) are unmatched.
 // @retail 0x201ad0
 void function_201ad0(long squad_index, long object_index)
 {
@@ -1602,6 +1606,8 @@ PRIVATE __forceinline s_squad_datum *function_200d83(s_squad_record_iterator *ar
 // @retail 0x204b20
 // score 2 (was 2): the record pool's pointer is reloaded after the branch on the index,
 // retail reloads it before, so the jump lands on the shared reload.
+// Pool read before the active test 2; record address size * index + data 2; not-found
+// stores swapped 2; datum index written index | salt 2; early return when inactive 20.
 long function_204b20(long actor_index, short mode)
 {
     byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;

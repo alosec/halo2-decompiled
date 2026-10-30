@@ -1282,6 +1282,11 @@ bool function_0bfe60(dword const *flags, long bit);
 // All restored; loop/count and test-index colours plus bitset row address remain.
 // Lane 8 r79: non-query draw first 140; bitset row declared between test and status 54; device
 // global at each use 93; bitset row global at each use 122; `(1 << slot->c) & mask` 52.
+// Lane 13 r14: retail gives the test index EDI and the device pointer EBX (status's register),
+// leaving EBP to the loop counter and the total; ours puts the counter, device and total in EDI and
+// the test index in EBP. The total declared at the top of the query block 139 (441 bytes); status
+// declared before the test index 53; `set + index * 3` 52; the test index written at both calls 142;
+// the clamped total stored in the arm with an else storing 0 132 (443 bytes).
 // Round 23 (lane 10): the SDK's begin-visibility-test call for the push expansion 158 (stays out
 // of line); the index from an if instead of the ternary 55; the result locals at the query block
 // 52; the clamp as if/else 52; a const set 52. Without LTCG every spelling of the bitset row

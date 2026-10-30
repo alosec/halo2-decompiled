@@ -1171,6 +1171,9 @@ bool function_a9940(long index, vector3f *up, vector3f *forward);
 // its flags pointer stepped (still matches) 234; no-model mirrored flag read before the matrix 234;
 // 0xb8bd0 marked inline and called in the no-model branch 397 (inlined at every site: matched 0xbcc20
 // and 0x11b710 break); node index declared at the top of the render branch 234.
+// Round 122 (fast, aligned 16): no-model parent through slot_handler.h's object_get/object_node_matrix 234;
+// with the current and render-branch lookups through object_get too 234/234; 0xbfed0 declared inline here 234,
+// and with its separate noinline declaration removed 234 (still called, the caller still trusts its ESI).
 // @retail 0xbd090
 void __stdcall function_bd090(long object_index)
 {

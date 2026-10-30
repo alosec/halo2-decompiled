@@ -853,6 +853,9 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // the same `lea ecx`; 0x869a0 2 -> 99); harness: byte source, forceinline copy, position local,
 // size local, kind cast, `memset(&header, 0, 8)`, header declared outside the loop, word kind,
 // a pointer-based kind store, `0 < remaining`, a long flag: no change.
+// Round 22 (one-file harness with src/unknown_199560.cpp, exact): `header.size = 0;` or
+// `header.offset = 0;` after the kind 14/14; the header value-initialised from a named type
+// (`= s_header()`, declared or assigned) 24/24; `= { 0, 0, 0 }` then the kind 117.
 // Round 84: the terminal arm written first 14; memset and kind 1 in each arm 74; a value-initialised
 // header (`= s_header()`) 24 (410 bytes); the clamp as `remaining < 1024 ? remaining : 1024` 17; a
 // do/while under `if (result)` 14. Compile-only probes (a constructor, a constant zero header copy,
@@ -978,7 +981,8 @@ bool function_685f0(void *block, long *size, byte *destination, long capacity);
 // score 2 (was 2): the constant 0xffff is loaded before the address of the buffer; retail loads
 // the address first. The registers that carry the destination and the capacity are the
 // callee's choice, and function_685f0 in src/unknown_067e10.cpp is three instructions
-// off retail.
+// off retail. BLOCKED-BY 0x685f0 (round 14: it takes the destination in eax, retail's
+// in edx; its body is contributor code).
 // @retail 0x869a0
 bool function_869a0(c_simulation_view *view, void *block)
 {
