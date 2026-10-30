@@ -218,7 +218,11 @@ void c_session_state_pre_game::enter(long a, long b, long c)
 // `xor bl, bl` exit), the success block after it 62, with session_state_is_live 62;
 // the outer if with `result = true` inside 69 (also with session_state_is_live 69);
 // the outer test on 0x58d20 and 0x6e720 with `result = 6e6b0` 75; session_state_is_live
-// alone 65.
+// alone 65. Round 11 (0x6e720's file held by another lane; relink screen, current form 55 there):
+// `result = true` inside one && test 60 (aligned 23 -> 17, 174 bytes); the 0x58d20 test outer with
+// the other two inside and `result = true` 60; the outer test on 0x58d20 and 0x6e720 with `result =
+// 6e6b0` 65; an early `return result` after 0x6dfa0 54 (183 bytes); an early return on a false result
+// in the type-2 arm 55 (same code).
 // @retail 0x6e500
 bool c_session_state_start_game::update()
 {
@@ -752,7 +756,7 @@ void c_session_client::function_06dbc0()
 	function_06dc60(this, 3);
 }
 
-// score 43 (was 44): this stays in edx where retail copies it to ebx at entry, so
+// score 43 (was 43): this stays in edx where retail copies it to ebx at entry, so
 // the mode and member index take esi; separate case 7 and 8 labels (retail's direct
 // table) with an inline compare-and-update helper 47, an inline id-compare helper 48,
 // a member-index local 47, an id copy 47, the mode in a local 47; a state local 43;
@@ -760,7 +764,12 @@ void c_session_client::function_06dbc0()
 // id 43; a goto single exit 43; copies of this before, after or at the call 43 (all
 // compile-only). With 0x58d90 inlined by the link (its file at /Ob1, a diagnostic) the
 // table is retail's but this stays in edx (47); only /Os or /G7, which compare the mode
-// in memory, give retail's push ebx.
+// in memory, give retail's push ebx. Round 11: the existing 0x58d90 called in the test 100 (stays
+// out of line, 84 bytes); an early return on the mode/type test, the mode test outer with the type
+// and id tests inside and a member id pointer local 43 each (same code); the session read at each
+// use (no local) worse (this in eax). Compile-only, all with this in edx: 32 combinations of the
+// condition shape (also the type test first), truthy memcmp, a copy of this as the call argument and
+// grouped or separate case 7/8; an inline copy of 0x58d90's body gives retail's direct table only.
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
@@ -1798,7 +1807,9 @@ bool network_session_host_become_leader(c_class_58d20 *session);
 // arm with the failure arm written first 96; a bool ready false at its declaration 90; both 100 (429
 // bytes); the integer pending with the named preparation result 47, tested `if (prepared)` 48, with
 // session_state_is_live 48; session_state_is_live alone 48; a named elapsed time 48; named countdown
-// seconds 48.
+// seconds 48. Round 11 (0x6e720's file held by another lane): nested ifs with the timer reset in both
+// else arms 48 (same code); the leave arm first (`mode != 3`) worse (51 on a relink screen where the
+// current form is 43); result set before the mode call 48.
 // @retail 0x72700
 bool c_session_state_start_match::update()
 {
