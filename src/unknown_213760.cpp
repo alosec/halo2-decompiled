@@ -1155,6 +1155,8 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
     data[0x198] = 0;
     data[0x1bc] = 0;
 }
+// score 104 (was 104): retail hands the file handle to the read call by value, which the declaration
+// in include/async.h and the callers outside this file cannot give; frame 0x1144 and the extent agree.
 // score 104 (was 104): frame 0x1144 and extent agree; file displacement, request-copy, the first read
 // call's handle copy and the write-success join remain.
 // frame 0x1144 and extent agree; file displacement (retail's product in ECX
@@ -1257,6 +1259,9 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
 // Round 31: post-open handle test through the s_file_handle view 104; file pointer after the path call 106;
 // range as `!(index < 1 || index > 1)` 104; the byte count itself as the write success (zeroed before the
 // resize test, close when != 0x800) 122 (retail's cmp/je join, no sete); `bool written = resized;` 104.
+// Round 233: complete post-completion success and failure decisions, each in bool/byte/short/long
+// widths, all 178 at 930 bytes; every form shrinks the frame to 0x1140. Original nested write
+// result/output storage restored; retail frame 0x1144 and file/request register homes remain.
 // @retail 0x213970
 void function_213970(void)
 {

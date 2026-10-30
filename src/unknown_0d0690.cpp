@@ -1626,6 +1626,10 @@ dword function_015cd0(long index, dword entry);
 // score 4 (was 4): the conversion destination uses ECX rather than EAX; the UV address uses EDX rather than ECX.
 // Scoped/entry two-use conversion pointers 4/4; multiuse UV pointer with and without it 4/4;
 // direct success return 93; UV/storage names 4/4; getter noinline 4; both/sample noinline 4/4.
+// Round 39: bsp pointer local 4; palette ternary at the colour call 18; flag test nested in the
+// bitmap block 83; zero-result arm first 68; named first texture 4; inverted 0xd1680 test 19.
+// Neither register moves with dead locals added, the flag block, the request arm or the palette
+// call removed, or the two functions' definitions swapped: the cause looks outside this body.
 // @retail 0xd2f90
 long function_d2f90(long flags, short bitmap_index, long palette_index, real u, real v, color3f *out)
 {

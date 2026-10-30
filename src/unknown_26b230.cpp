@@ -1901,6 +1901,9 @@ void function_269250(long clump_index, long actor_index);
 // but the exhaustion null test threads away and the homes rotate); with best declared first 128; score
 // local renamed 128 (slots do not follow names here); in-arm compare with clump-index selection 126;
 // each with the walk at function scope 128/126.
+// Round 83 (fast; unchanged control 89): two-arm score assignment 128; zero-initialized two-arm
+// assignment 128; reversed strict comparison 89; separate best publication 89; old-clump local
+// after/before the scan 141/147; flattened selection/creation tests 89; byte activity snapshot 89.
 // @retail 0x2689d0
 void function_2689d0(void)
 {

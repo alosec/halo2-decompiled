@@ -977,6 +977,9 @@ PRIVATE inline void channel_loop_clear(c_animation_channel *channel)
 // Round 218: Complete final name-change result byte/short/long/dword 210/249/250/250; all-equal
 // bool/byte/short/long 210/210/249/250. Identifier homes and protected-query blend residency
 // remain; original eager change producer restored.
+// Round 197: Existing validity provider at prior/phase/publication masks 1..7 gives
+// 251/209/329/245/286/243/313; all with native-byte prior-loop truth 313.
+// The one-point phase gain is rejected; original predicates and body restored.
 // @retail 0x1cd070
 bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_type, long set, long state_flags, long channel_flags)
 {
