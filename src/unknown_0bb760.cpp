@@ -526,6 +526,9 @@ void function_3dd10(long object_index, bool force);
 // Round 183: direct field observations in weight/selection/both scans 150/161/161; live count
 // alone/with weight/selection/both 84/150/161/161; all with the signed first bound 619
 // (unrolled). Original rolled scans, receiver graph and arithmetic restored.
+// Round 212: carried eligibility bit with original/cursor first scan and independent second bit
+// 224/225/228/229; signed bounds on those graphs 599/544/639/529 (fast control 84). Signed scans still
+// unroll; original mask arithmetic and scans restored.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
@@ -667,6 +670,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // count before base 174; current from base each pass 98; copy before the entry 133; memcpy copy 91.
 // Shared count/inner-array/both snapshots 177/164/194; outer-array snapshot 206; outer plus
 // count/inner/both 213/210/228; shared inner index with count and array 188.
+// Round 212: complemented bool/byte/short/long return on plain pointer-body traversal 159/159/131/132;
+// with admitted current lifetime 158/158/129/130 (fast control 91). Original return, pointer lifetimes
+// and traversal restored; saved receiver roles remain.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {
