@@ -1262,7 +1262,9 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
     return result;
 }
 
-// score 32 (was 32): +0x12 device/unit EDI/EBP roles differ; the second
+// score 32 (was 32): the device and unit indices take retail's EDI/EBP roles the other way
+// round, and the second type mask has no saved EBX temporary; retail also copies a second
+// table value into EAX for the unit type test.
 // type mask lacks the saved EBX temporary and header-base copy. Earlier guard,
 // declaration/result lifetime, header/table and unsigned-mask forms gave 32-54.
 // Tried: named device mask 32; named unit mask 32; both masks 32; byte suppression

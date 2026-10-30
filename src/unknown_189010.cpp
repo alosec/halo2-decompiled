@@ -199,6 +199,10 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 // in EBX it arrives in EAX (retail). Retail reloads the state flags after the first 0x221810 call (its
 // compiler treats that call as opaque); ours forwards them in a callee-saved register across it,
 // which pushes the request into EBP. BLOCKED-BY 0x21d110 (its tag/state registers) and 0x221810.
+// Round 410: Joint source/object, source/platform, object/platform and all-three two-use header
+// snapshots 110/110/110/110; each with priority from the request 109/109/109/109 (472 bytes).
+// Reduced-image context differs; all one-point gains are rejected. All restored; first class-query
+// expansion, header homes and playback convention remain.
 // @retail 0x189fe0
 long function_189fe0(s_sound_request const *request, long tag_index)
 {

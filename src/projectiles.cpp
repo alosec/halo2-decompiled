@@ -989,6 +989,8 @@ real function_30bf0(vector3f *v);
 // Round 402: native double denominator/optimal-time/horizontal lifetimes and their pairs/all
 // 257/285/232/295/257/285/295; both native float division numerators named 232.
 // All restored; frame 0x28/0x30, rounded horizontal root and separate divisions remain.
+// Round 269: squared-distance workspace 232; root workspace 232; both 232; default flight time 266;
+// distance/default 266; root/default 266; all 266; all with the twice-used time square 266. Original body restored.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,

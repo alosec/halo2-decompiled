@@ -149,6 +149,20 @@ static inline void particle_cross_product3d(vector3f const *a, vector3f const *b
 // differently; the cross-product multiplies interleave with the axis copies in another order.
 // The sums already associate as retail's ((y*l + z*u) + x*f, (x*f + y*l) + z*u); 0x143070 is not
 // the inlined helper (its y/z sums associate differently).
+// Tried: 40 random product operand/sum orders 52-58 (best 52/52); axis copies before the cross product
+// 56, forward copy only 52, up copy first 50 positional, cross product of the copied axes 85 positional;
+// point declared at its copy 52; matrix inline/noinline 52/52; cross force-inline 52; matrix aggregate
+// 107; left-axis construction 140; point first/renamed 52/52; consumed matrix output 54; shared cross
+// product 55; rotation memcpy/const point/point memcpy 52; indexed rotation 92; accumulated components
+// 95; indexed translation 85; position output first 54; existing axis-matrix helper 73; scalar point
+// coordinates 98; paired cross products 55; six cross products 52; compound cross components 52; cross
+// value result 140; frame-mode return 104; offset at construction 52; shared point setter 78; forward/up
+// snapshots 107/111; both axes and up-first 137/135; scoped axes 137; both/up/forward publication before
+// cross 137/137/137; complete point result/aggregate 121/121; shared result setter 114; planar/
+// horizontal/vertical results 51/52/53; immutable input with complete result 121; scoped input/result
+// 121. Round 93: cross product into a separate left vector copied into the matrix and used by the
+// products 128 (490 bytes); point copied before the 0x142eb0 call 91; point-first products in natural
+// row order 59, with retail's x-row order 59; member-wise point copy 98 (442 bytes).
 // Round 49: 40 random product operand/sum orders 52-58 (best 52/52); axis copies before the
 // cross product 56, forward copy only 52 (screened), up copy first 50 positional (screened),
 // cross product of the copied axes 85 positional; point declared at its copy 52.
