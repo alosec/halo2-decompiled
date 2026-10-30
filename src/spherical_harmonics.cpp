@@ -10,7 +10,28 @@
 #define k_spherical_harmonics_pi 3.14159265f
 
 /* the basis functions of the first order*order bands in a direction */
-// score 59 (was 59): cubic homes and retained common-root lifetime remain; early schedules have an unkept 54 form.
+// score 59 (was 59): +0x50 x87/SSE scheduling, the cubic band's spill homes and the root lifetimes
+// differ: retail keeps sqrt(2) and sqrt(105) on the x87 stack to the end (fmul st(1)/st(2), two
+// fstp st(0)), computes coefficient 15 in SSE right after band3_35 (-0.125 already in xmm3), keeps
+// zz*5 in zz's slot and band3_35 in sqrt(15)'s. Forms (123 at the start): outer/cubic order
+// return 123/123; roots before inputs 137; early Z square 128; first-band Z store first 128;
+// repeated inline sqrt(2.0)/sqrt(105.0) 158-162; /Op 383; first-band, first-Y, square-difference,
+// quadratic mixed-product stagings 123; cubic Y staging 129; mixed-root staging 123; final-root
+// product chain 113; XZ product chain 59 (kept); second cubic root chain, coefficient 8/12/9/5/6
+// chains, root/edge combination 113; repaired XZ plus early coefficient 15 147/148; cubic X chain
+// 139; first cubic root chain 59; linear Y/Z/X/all values 59; late root-five/depth square 59/59;
+// linear scope 59; later common root 59; isotropic result lifetime, band-two normalization,
+// Z-square, cubic-axis/polynomial accumulators 59; repaired XZ plus cubic-Y chain 137; external
+// direction reference, both double root chains 59; per-use common root 59; per-use mixed/both
+// roots 78/78; completed cubic X/Y/paired results 59; complete mixed result 59; first Y store
+// before isotropic 59; linear factor after isotropic 143; quadratic root after squares 138;
+// axis-root scope 59; depth/edge/axis/joint scalar homes 59; double root 158; root rounded per
+// factor 158; plus early coefficient 15 140; early coefficient 15 alone 147; retail store order
+// 144; all three roots double 77; sqrt(105)+sqrt(7) double 66; sqrt(105) double 73; zz scaled in
+// place 70; all double with coefficient 15 ahead of 9 150; double roots with `(real)` casts at
+// both/one/other sqrt(105) use 80/82/82; double sqrt(2)/sqrt(105) with a real sqrt(7) 82;
+// coefficient 15 recomputing `(real)(sqrt(35.0) * sqrt2)` 130.
+// cubic homes and retained common-root lifetime remain; early schedules have an unkept 54 form.
 // Y/scalar homes and retained x87 roots differ: retail never consumes sqrt(2)
 // or sqrt(105) at their last use (fmul st(1)/st(2), two fstp st(0) before the return; result[14] in
 // source order), ours folds them in (fmulp st(2), result[14] reassociated around sqrt105).

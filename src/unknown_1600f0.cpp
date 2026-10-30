@@ -1702,6 +1702,8 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // ordinary inline plus indexed team 148, force-inline plus reused row 120 (two-point gain dropped).
 // All helper bodies, external declarations and original traversal restored; team induction and
 // receiver/bounds scheduling remain.
+// Round 413: actual text receiver/word buffer/color/text bounds as the single member base
+// 150 each; each with indexed team traversal 148. All are 1863/1851; original helper and body restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

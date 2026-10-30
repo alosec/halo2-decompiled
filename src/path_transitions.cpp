@@ -146,7 +146,7 @@ bool function_26f8f0(s_object_marker const *marker)
 }
 
 // @retail 0x26f930
-short function_26f930(long object_index, s_object_marker *markers, short capacity, long flags)
+short function_26f930(long object_index, s_object_marker *markers, short capacity, word flags)
 {
     short count = 0;
     if (flags & 1)
@@ -326,30 +326,6 @@ bool function_26fe90(long actor_index, long object_index, real distance, s_objec
     return false;
 }
 
-// score 31 (was 31): BLOCKED-BY 0x26f930 (its `long flags`; retail pushes the 16-bit flags with
-// `xor edx, edx; mov dx, ...`, which a word parameter gives). With `word flags` on 0x26f930 and its
-// declaration in src/unknown_2c0d00.cpp, short i and best, best declared before best_distance and
-// markers[i] at each use (no marker pointer), this matches (plain check). With the long parameter
-// the 31 is positional: the short form is retail's code shifted by one line (154).
-// Tried: single exit 167; long best 199; long loop index 202; point names 199; vector helper 202;
-// single exit with long best 181; the helpers with the alignment written out 154; dot3f operands
-// swapped 154; 0.95f < dot 154; a named alignment 154; the alignment through markers[i] 154; both
-// dots written out with the delta and normalize helpers 141; input-only marker/actor/character/all
-// receivers 154 each; wide count 106; word selection 156; word induction 106; combined native scan
-// 113; wide count with wide scan/selection/both 66/120/33; actual marker cursor with wide count 67,
-// with wide scan 63, with short count 153; paired wide scan/selection with short count 31 (kept);
-// unsigned-word scan 120; all-wide marker cursor 30; candidate/delta/selected-point uninitialized
-// entry storage, all subsets, with and without the native marker array, 154 each; query before
-// defaults 32; false result after providers 164; entry short count 31; query/result 164;
-// query/count 32; result/count 164; all three 164; selected-index Boolean 98; native point setter
-// at final/capture/both 51/50/166; short selection with original count and wide scan 66, plus the
-// three setters 169/170/142; selected marker pointer 196; separate geometric/weighted distances
-// with scale/update/admission guards 31-33; six selected/candidate/delta storage-name orders 31
-// each; the workspaces before the marker array 31/31; short i and best 154; best before
-// best_distance 31; markers[i] at each use 33; the matching body with a long count 173.
-// Round 76: short index and selection 154 (aligned 12 -> 8); short index with long selection 127;
-// that plus dot3f operands swapped 154 (same code); index declared before the loop 154; named
-// alignment on the short graph 154 (j product unchanged).
 // @retail 0x26f990
 bool function_26f990(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point)
 {
@@ -359,21 +335,20 @@ bool function_26f990(long actor_index, long object_index, real distance, s_objec
     if (character)
     {
         s_object_marker markers[32];
+        short best = NONE;
         real best_distance = FLT_MAX;
-        long best = NONE;
         point3f best_point;
         short count = function_26f930(object_index, markers, 32, character->marker_flags);
-        for (long i = 0; i < count; i++)
+        for (short i = 0; i < count; i++)
         {
-            s_object_marker *marker = &markers[i];
-            if (dot3f(&marker->matrix.forward, g_4687b0) > 0.95f)
+            if (dot3f(&markers[i].matrix.forward, g_4687b0) > 0.95f)
             {
                 point3f candidate;
-                function_270130(marker, &actor->position, distance, &candidate);
+                function_270130(&markers[i], &actor->position, distance, &candidate);
                 vector3f delta;
                 vector3d_from_points3d(&candidate, &actor->position, &delta);
                 real length = normalize3d(&delta);
-                real dot = dot3f(&delta, &marker->matrix.left);
+                real dot = dot3f(&delta, &markers[i].matrix.left);
                 length *= (real)(3.f / (1.f + 2.f * fabs(dot)));
                 if (best_distance > length)
                 {
