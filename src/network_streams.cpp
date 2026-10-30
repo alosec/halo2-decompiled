@@ -1277,6 +1277,10 @@ bool network_message_read_header(s_bitstream *stream, long *type, c_type_659ceb 
 // Terminal-condition graph: actual decoder-result completion, long/bool/byte/short
 // 262/175/190/259; common success exit, long/bool/byte/short 184/235/233/220.
 // Original dword result, completion edges and every helper restored at 141.
+// Round 184: child-window receivers, scan/copy/all with long result 162/248/263;
+// scan/all/copy with byte result 259/178/261; scan/all with Boolean result 281/199.
+// Shared empty-window exit, long/Boolean/byte/short result 260/242/224/259.
+// All restored; oldest/false carriers, nullable copy lookup and allocator save remain.
 // @retail 0x95840
 bool __stdcall function_095840(s_network_stream_header *header, long *message_type, long *message_size, void *message_data)
 {

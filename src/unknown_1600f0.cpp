@@ -1691,6 +1691,13 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 262: non-template rectangle/widget-prefix text contracts 122/122;
 // with indexed team traversal 148/148; widget-prefix byte/short validity offsets
 // 122/122; ordinary inline prefix and invalid-widget exit 122/122. Restored.
+// Round 184: plain consecutive-header loops, background/text/both 559/555/830;
+// both with short/dword/byte counters 830 each; text loop with indexed team 539;
+// both loops with actual indexed team-row receiver 830. All stay rolled.
+// Existing default drawer with coordinated inline/force-inline declarations 122/122;
+// ordinary inline plus indexed team 148, force-inline plus reused row 120 (two-point gain dropped).
+// All helper bodies, external declarations and original traversal restored; team induction and
+// receiver/bounds scheduling remain.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {
