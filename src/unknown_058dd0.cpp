@@ -1234,6 +1234,8 @@ static __forceinline long function_724a6(s_surface_description *arg_0)
 // Entry level/type declarations and a shared variant workspace, alone and combined: eight forms 7.
 // Width helper declared inline in its own unit and every prototype 7; force-inline 235 (584 bytes).
 // All restored; the member/level-address/type scratch-register rotation remains.
+// Round 14: level declared at function scope (first/after the collection) 7/7; variant or type
+// declared at function scope 7/7; the collection at each of its three uses 44.
 // @retail 0x72330
 void function_72330(c_session_state_matchmaking *state)
 {

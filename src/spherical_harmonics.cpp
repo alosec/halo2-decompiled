@@ -217,6 +217,9 @@
 // product written at both uses 176; xx - yy unnamed 133; all roots double with `zz5 - 1.0f` at both
 // uses 97, plus result[11] staged 94; operand-order respellings of 18 other statements, one at a
 // time, all the same code.
+// N226: Complete linear/quadratic/cubic product-stage band subsets
+// 59/59/59/139/139/139/139; all with constant root-five/root-seven initialization
+// at declaration 139. Original complete body, precision and expression trees restored.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

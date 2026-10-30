@@ -52,7 +52,7 @@ struct c_aggregate : c_child
 };
 
 
-// score 45 (was 74): the release reads the allocator global again (allocator_globals_release, retail's
+// score 45 (was 45): the release reads the allocator global again (allocator_globals_release, retail's
 // reload into eax then edi) at retail's length; left: frame 0x8024 against 0x8020 (`produced` keeps its own
 // slot where retail packs the loop-2 cursor and loop-3 count into it), request/child cursor in EBP/EBX
 // (retail EBX/EBP) and the starts[i]/starts[i + 1] load order.
@@ -127,6 +127,9 @@ struct c_aggregate : c_child
 // boundaries read in the inner loop's test 121; boundaries swapped 45; child-cursor walk 45; the
 // query and release through an inline free-block helper 45. /GL- diagnostic: frame 0x8020 and every
 // slot as retail, 20 left (EBX/EBP and the boundary loads).
+// N227: Published absolute child origin at capacity/output-address/completion consumers,
+// seven subsets 45 each; complete graph with final boundary as cleanup limit 45. Original
+// produced output, cumulative publications, dispatch and release graph restored.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {
