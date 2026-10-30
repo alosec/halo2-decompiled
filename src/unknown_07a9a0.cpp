@@ -212,13 +212,16 @@ void function_07b3e0(void)
 	g_4cf8d8 = data_new_inlined("transport qos attempts", 0x20, 8, 0, g_468758);
 }
 
-// score 39 (was 58): the scan uses the pool's own index search and datum index,
+// score 39 (was 39): the scan uses the pool's own index search and datum index,
 // so it keeps retail's do-while shape and the hoisted count and bitmap; what
 // is left is the register allocation (retail holds the pool in ebp and the
 // bitmap bit in ebx, ours holds the pool in ebx and copies it to ebp), the
 // loop padding and retail's zero-tail stores.
 // bitmap scan, ebp for the datum address) and aligns the scan loop; ours uses
 // one register and no loop padding (the 11 missing bytes).
+// Earlier iterator form 58. Round 415: direct scan/identifier/both forced declarations
+// 39/39/39; outlined declarations 74/44/91; live pool 45, captured tail 42.
+// Original helper declarations, pool snapshot, loop and final global stores restored.
 // Kimi lane 2 round 37 also reached 39 by scanning by absolute index with the salted-index helper
 // (pool in EBP rather than EBX/EBP). Its other forms: direct expression 39; copied/independent/const
 // scan pools 39/64/39; counted for scan 121; refreshed pool 39; absolute-datum getter 71; split pools 39.

@@ -680,6 +680,7 @@ real g_55e618;
 // both producers 191/191/191/191. Separate placement inline/noinline declarations with that
 // consumer 285/191; alone 289/102. All restored; sweep/collision homes and projection spills
 // remain.
+// Round 293: Destructive normal-copy projection/velocity-copy tangent/both 265/283/332; scaled response 101 (one-count gain rejected); projection/response 264, tangent/response 278, all stages 337, all with direct velocity producer 285. Original vectors and complete body restored.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

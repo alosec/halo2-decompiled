@@ -58,6 +58,15 @@ static __forceinline long floor_to_long_inline(real value)
 // retail keeps the new kind word in esi, takes the instance bit from a copy and stores the word just
 // before the 0x449e0 call (ours stores it at once and spills instance_bit to `mode`'s home); retail
 // sets edx to the state before the bit-count test.
+// packed-word load order (ours reads the old word first), the intensity
+// packed-word load order, intensity spill and final word home.
+// the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
+// shifted the listing, 46 at 1036 bytes) and the loader's two flags are named before the call, so
+// the load test is set first as in retail. Left: retail ORs the incoming flags and category before
+// the kept top bits; the scaled intensity spills to `outside`'s home (ours `level`'s); retail keeps
+// the new kind word in esi, takes the instance bit from a copy and stores the word just before the
+// 0x449e0 call (ours stores it at once and spills instance_bit to `mode`'s home); retail sets
+// edx to the state before the bit-count test.
 // Tried: separate allocation increment, entry reference, position memcpy and early group-pointer
 // scope 80; object-tag result first 97; object-index guard first 175; separate inline floor results
 // 80; missing-geometry guard first 276; flags-first or-chain, two-statement split and &=/|= split 80
@@ -87,7 +96,6 @@ static __forceinline long floor_to_long_inline(real value)
 // store 89; old word copied to a local 91; only the instance named 38; only the load named 79;
 // instance named first 39; both named with the field-bit test 73; flags-last and category-first
 // word-one or-chains 46 (reassociated); a bitfield view for the kind store (diagnostic) 80.
-// packed-word load order, intensity spill and final word home.
 // packed-word load order (ours reads the old word first), the intensity
 // spill (ours in level's dead slot, retail in outside's: retail's callers push level as a
 // word, BLOCKED-BY 0x133390 and 0x133520, whose file holds the byte declaration) and the new kind word

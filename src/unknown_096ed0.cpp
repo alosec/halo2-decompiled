@@ -168,6 +168,14 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // pending counter spills); with one shared counter for both loops 170; with the pending type assigned
 // after its loop 241; with the pending handle read once into a named local 170; that local on the
 // cursor form 55 (same code).
+// Round 95 (one-file harness, predictive here: indexed form 38 aligned = 170 in the build): the
+// two chain counters trade places; whichever is in a register, the other loop loses. A short
+// active index (spilled into the shared slot) gives back the pending loop's type spill, as the
+// cursor does. With the active chain indexed: a pending item-handle local, an int pending
+// index, type declared last, the blocked test first, the pending index declared at the top of
+// its block 170 each; in the harness also int/dword/unsigned indices, swapped zero stores,
+// pre-increment, blocked declared first, `size = size + item_size` and 36 random
+// combinations of those, none with type spilled.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {

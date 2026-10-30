@@ -1964,6 +1964,8 @@ static inline bool effect_location_in_zone_178c80(s_location const *location, po
 // its arguments 178 (frame 0x44 and early color loads, but the system keeps EDI, color B EBX, tinted spilled);
 // multiplied() as the call's argument 135; helper with colors first 185; inline member color update 185;
 // a loop-only definition copy 128; a cluster-array base local 128.
+// Round 417: spawn scale/unknown/location outputs before location propagation, masks 1-7,
+// 130/126/130/130/130/126/130; complete early aggregate 130. The 126 forms lose callers.
 // @retail 0x178c80
 void function_178c80(real scale, s_effect_datum *effect, s_particle_system_datum *particle_system, s_effect_particle_system_definition *definition, real unknown, bool field_b4)
 {
@@ -2313,6 +2315,9 @@ event_done:
 // Round 282: tag acquired before root query, after query and after root copies
 // 85/113/89, each with ordinary/read-only inputs; external tag references before query
 // and after copies 85/89. All restored; cached object across validity query remains.
+// Round 95: root index (0xbaf80's result) as 0x1794a0's first argument 197 (585 bytes; the index
+// stays in ESI); location stores cluster first 63, with the root index 197; chained NONE location
+// stores 63, with the root index 197. Original body restored.
 // Round 7 (lane 14): root index named and passed first 197 (585 bytes; aligned 72 -> 48), named
 // without the argument change 63, with the entry index local 176 (579 bytes); entry index local
 // alone 198 (571 bytes); validity result compared with 0 63. BLOCKED-BY 0xbadc0/0xbaf80
@@ -2908,6 +2913,8 @@ static inline vector3f *effect_matrix_transform_normal_17a380(transform4x3f cons
 // follows reference weight (no declaration position or form moved it in a /FAs probe). Bool detached 156; an inline
 // one-expression range helper 130 (a one-caller helper); the existing 0x259d0 353; bool flag locals 83 (one-use);
 // both 132.
+// Round 417: complementary mode rejection with bool/byte results, cached mode/reversal
+// 149 each; live mode 313 each, live reversal 227 each, both live 324 each. All restored.
 // @retail 0x17a380
 void __stdcall function_17a380(s_effect_datum *effect)
 {
@@ -3097,6 +3104,8 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 // Round 182: signed-short player ordinal with bool/long result and mutable/readonly
 // player receivers 257/257/257/257; signed-byte equivalents 265/265/265/265.
 // Original ordinal, result, receivers and complete executable body restored.
+// Round 417: external effect/player/unit record references, subsets 1-7:
+// 176/176/176/176/176/184/184; readonly complete records 184. All restored.
 // @retail 0x1778d0
 bool function_1778d0(void)
 {

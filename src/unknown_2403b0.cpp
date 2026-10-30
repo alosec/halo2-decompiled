@@ -98,6 +98,9 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // Native cause-setter/event-sender/notification noinline boundaries, all seven
 // subsets 95; native marker-query noinline boundary 95. Existing declarations,
 // helper bodies, pool observations, two stores and complete scoring graph restored.
+// Native type-reader/team-predicate/marker-query inline declarations in seven subsets
+// 95 each; all three with byte admission result 95. All outside declarations restored;
+// the pool-data spill remains on the repaired MIN/MAX and separate-byte-store graph.
 // Round 190 on the recovered graph: native completion read 95; native completion stores 187;
 // read/stores 187; native helper admission read 95; completion/admission reads 95;
 // stores/admission read 187; complete native flag graph 187; complete graph with short slot

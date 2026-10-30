@@ -63,6 +63,10 @@ void function_213970(void);
 // Native progress/handle/both reset records 174/168/187; reversed clear phases 145;
 // reversed with native progress/handle/both 175/168/187; native records after buffers 183.
 // Separate allocation still prevents the two retail-wide clears; original body restored.
+// Round 184: unsigned/native-int/immutable-signed/immutable-unsigned language results 145 each;
+// query before all resets 142 (three-point gain dropped), after first bulk clears 144;
+// requested-value-first comparisons and explicit void tail return 145/145. Original body restored;
+// the separate allocations still prevent both complete bulk clears.
 // @retail 0x2136c0
 void function_2136c0(void)
 {
