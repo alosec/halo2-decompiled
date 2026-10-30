@@ -824,6 +824,8 @@ real normalize2d(point2f *v);
 // short result 213. All restored.
 // Early trajectory-failure exit on the retained facing graph, bool/byte/long/short result
 // 135/186/151/159; each with direct request return 182/193/173/153. All restored.
+// Separate trajectory admission/final result, bool/byte/word/long carrier 199/157/149/150;
+// each with the final result declared before outputs 199/157/149/150. All restored.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
@@ -1059,7 +1061,7 @@ done:
 real function_50650(real cosine);
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 
-// score 137 (was 137): frame 0x1c agrees; actor/object homes, velocity preload and final minimum remain (fast control 117, full 137).
+// score 137 (was 137): frame 0x1c agrees; actor/object homes, velocity preload and final minimum remain (caller-inclusive fast 137).
 // Earlier: frame 0x1c agrees; two excess bytes, actor/object roles (EDI/ESI), the hoisted velocity j load,
 // the first clamp's x87 order and the epilogue pops' place in the final minimum remain.
 // Independent facing/velocity scopes 331; late turning minimum 350; branch-defined following
@@ -1092,13 +1094,16 @@ real function_50650(real cosine);
 // component but the first preloaded before fsqrt); a hand-written 2-D copy of that shape 128.
 // Direct speed-factor default 302; all minimum spans 117; speed/spans 302; paired closing
 // projections 117; speed/projections 302; spans/projections 117; all 302; all with facing default
-// first 300 (fast control 117, full 137). All restored; actor/object homes, velocity preload
+// first 300 (caller-inclusive fast 137). All restored; actor/object homes, velocity preload
 // and the final minimum/epilogue placement remain.
 // Round 403: native settings 117; readonly settings 117; native settings actor 117; readonly native
 // actor 117; readonly object 117; readonly settings actor 117; readonly native receivers 117; native
 // settings getter 117. Opening body restored.
 // Round 39: shared planar normalizer common/separate result, either arm first 117;
 // complete native input with those result forms 382 (fast control 117). Shared helper restored.
+// Ordered turn/approach, facing and following results, seven subsets
+// 334/137/334/137/334/137/334; all with the staged final velocity product 334.
+// All restored; the caller-inclusive unchanged preview is 137.
 // @retail 0x1f9e70
 real function_1f9e70(long actor_index, long object_index, point2f const *position,
     vector2f const *path_direction, vector2f const *facing, vector2f const *desired,
@@ -1422,6 +1427,8 @@ PRIVATE inline real movement_normalize2d(point2f *v)
 // Ordinary origin on the shared arc/trace graph, late side flag, early zero result and
 // both 255/288/262/292; each with existing normalizer force-inline 255/288/262/292.
 // All ordinary sources move the entry homes and regress; original body/helper restored.
+// Ordinary origin with paired radial/side/desired product stages, seven subsets 255 each;
+// all with the complete scalar fraction producer 255. All restored.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)
