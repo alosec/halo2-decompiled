@@ -62,7 +62,10 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // reverse). Rotation in place on the source vector 67; the helper in
 // 0x11d3b0's clean form 101; sine/cosine as helper arguments 67; source
 // vector initialised at the top 194; the two 2-D vector parameters swapped
-// at the definition and both calls 71.
+// at the definition and both calls 71. Round 29: the source vector read through the
+// 2-D vector type 67; the cross vector declared before the dot 67; a separate result
+// vector copied out 78; the rotation straight into the output 97; one named 2-D view of
+// the source point for both uses 78.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)
