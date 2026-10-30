@@ -118,7 +118,7 @@ void function_14bac0()
 	s_record_pool_iterator *iterator_reference = &iterator;
 	players_pending_creation_process(iterator_reference);
 }
-// score 222 (was 230): Frame 0x50 (original 0x44) versus retail 0x3c; centre/second-iterator slot sharing, readiness homes and the second scan's call remain.
+// score 222 (was 222): Frame 0x50 (original 0x44) versus retail 0x3c; centre/second-iterator slot sharing, readiness homes and the second scan's call remain.
 // Round 9 (lane 11, fast): second loop through data_datum_iterator_next as retail calls it 257 (frame 0x44:
 // center 0x10, destination 0x1c, alternate 0x28, second iterator 0x34; retail packs the iterator over the
 // probe point at 0x1c); plus a bare block around the probe/center code 257 (identical code); per-marker
@@ -277,6 +277,10 @@ void function_14bac0()
 // returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
 // identities retained; selected-unit value begins at its original bounds read and serves every
 // subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
+// Round 431: relocation buffer reused as accepted destination, original/native recipients 222/237;
+// with shared query/bounds point 233/237; accepted alternate 222/237, with shared query/bounds 231/237.
+// Accepted-output reuse shrinks frame to 0x44; query/bounds sharing reaches 0x38, native recipients stay 0x44;
+// retail needs 0x3c. Original returned-output/selected-unit graph restored at frame 0x50.
 // @retail 0x14b6a0
 void function_14b6a0()
 {
