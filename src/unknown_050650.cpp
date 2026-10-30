@@ -240,6 +240,8 @@ static inline real actor_looking_normalize2d(point2f *vector)
 // named dot 68, named factors 47, pointers to the locals 38; none better than the plain single exit.
 // Round 398: paired real squares, uniform scalar inputs, both, squares plus sum; each with original/conditional reference-projection lifetime
 // 8/38/122/128/122/128/8/38; all restored.
+// Round 113: unnamed helper square 6; helper with an else-zero single exit 2 (same code); sqrtf 2;
+// brace-initialised reference copy 23; `>=` epsilon test 34; permuter (48 variants) none below 2.
 // @retail 0x296d60
 PRIVATE bool function_296d60(real cosine, vector3f const *reference, vector3f const *aim, bool three_dimensional)
 {
@@ -1091,7 +1093,7 @@ struct s_actor_looking_structure_view
 };
 
 /* Name inferred from the path traces and the idle-direction caller. */
-// score 68 (was 80): counter homes, candidate cursor and expanded rotation scheduling differ.
+// score 68 (was 68): counter homes, candidate cursor and expanded rotation scheduling differ.
 // entry result order now agrees; loop homes, rotation scalar scheduling and return tail remain.
 // Result first 139; existing angular wrapper 468; vector producer 261; both 466;
 // native header/body induction with those producers 137/468/266/466.
@@ -1116,6 +1118,10 @@ struct s_actor_looking_structure_view
 // Round 246: Actual candidate workspace/staged candidate dot/staged selected dot, seven combinations: 211/68/215/84/215/150/211/226.
 // Eighth form adds native byte success storage to the complete candidate/score form.
 // Kept t02, plain 68; original helper bodies and logical call inputs retained.
+// Round 204: Rotation projection/cross producers: shared cross/staged cross 156/156; shared projection
+// alone/with cross/with staged cross 142/149/149; same-order staged projection alone/with cross/with staged
+// cross 139/82/82. Counter/cursor homes and scalar schedule remain; original helper, include set and body
+// restored.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {
@@ -1278,6 +1284,9 @@ struct s_actor_looking_turn_request
 // DH round 239: Native marker/movement/turn-request record-name subsets 506 each;
 // all three with the uninitialized marker workspace at entry also 506. Original
 // names, workspace scope and whole body restored; frame 0xd0/0xc8 remains.
+// DH round 252: One sequential aiming/looking validity result, native long/short/byte/bool
+// with long idle, then each with short idle
+// 506/549/522/522/540/547/524/524. Original complete executable body restored.
 // @retail 0x298370
 void function_298370(long actor_index)
 {

@@ -152,7 +152,20 @@ evaluate:
 	return 0;
 }
 
-// score 73 (was 73): retail calls function_25d740 (LTCG keeps it out of line here, as in
+// score 73 (was 73): retail calls function_25d740 out of line (ECX node) and sinks the ESI/EDI
+// saves past each early exit; our build inlines it through the prop_node_view wrapper, so the
+// blocks are laid out differently. Typed slot payload 73; payload/result first 73; payload/wide
+// result 74; payload/single result 88, with wide result 92; native node/view plus
+// payload/self-dot/final-result graphs 73/73/73/73/78/78/78/78; early returns 74 (retail's late
+// ESI/EDI saves, view still inlined); direct function_25d740 call 73, with early returns 74; named
+// actor 74; prop test nested again 79; with the call kept out of line the tails merge (102 at 231
+// bytes); a separate view-getter noinline with default status, direct proximity return, native
+// payload, unsigned-word status and double speed consumer: eight forms all 102 at 231 bytes.
+// Early returns with `return 0x10` 74 (still `mov ax`, retail `mov eax`); the slot field on the
+// left of the prop compare 74; a named actor with that compare 91; the existing magnitude3d for
+// the speed 73, with early returns 74.
+// retail calls function_25d740, our build inlines it
+// retail calls function_25d740 (LTCG keeps it out of line here, as in
 // 0x1af810/0x1c9c80); our build inlines it through the prop_node_view wrapper, so the
 // blocks, the late ESI/EDI saves and the per-level tails differ.
 // Tried: typed slot payload 73; payload/result first 73; payload/wide result 74;

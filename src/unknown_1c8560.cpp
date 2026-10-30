@@ -24,7 +24,7 @@ void __stdcall swarm_delete(long arg_0);
 struct s_swarm_datum_walk
 {
 	s_data_datum_iterator iterator;
-	long swarm_index;
+	long walk_datum;
 };
 
 static inline void swarm_datum_walk_new(s_swarm_datum_walk *walk)
@@ -46,7 +46,7 @@ PRIVATE __forceinline s_1c8560 *swarm_datum_walk_next(s_swarm_datum_walk *walk, 
 	{
 		if (data_datum_iterator_next_inlined(&walk->iterator))
 			swarm = (s_1c8560 *)walk->iterator.datum;
-		walk->swarm_index = walk->iterator.datum_index;
+		walk->walk_datum = walk->iterator.datum_index;
 	}
 	return swarm;
 }
@@ -84,7 +84,7 @@ long __stdcall function_1c8560(long arg_0, void *arg_1, long arg_2, bool *arg_3,
 				swarm_delete(local_6);
 		}
 		else
-			swarm_delete(swarms.swarm_index);
+			swarm_delete(swarms.walk_datum);
 	}
 	*arg_3 = false;
 	return local_0;
