@@ -2450,6 +2450,9 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Promoted first-loop team with numeric/reverse and absent-first/last switch cases 238 at 915 bytes
 // in all four orders; default-result initialization on each 234 at 913. Scalar homes stay
 // displaced; original short team and switch restored.
+// Round 77: second-loop element pointer 180; element pointers in both loops 180; counter before count 111;
+// counter before query 111; final receiver address reads 111; voice parameter address reads 111; player
+// pointer arithmetic 111; interleaved widget-helper parameters 111. Original body and helper restored.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {
