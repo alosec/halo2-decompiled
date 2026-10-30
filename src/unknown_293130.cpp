@@ -104,7 +104,7 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	arg_2->k = arg_2->k * local_1 + arg_1->k * local_2 - local_5 * local_0;
 }
 
-// score 52 (was 68): y/z range-add order, rotation registers and final sentinel
+// score 52 (was 52): y/z range-add order, rotation registers and final sentinel
 // scheduling differ. Result, conversion and sine stack homes now agree.
 // retail packs the random-to-float temp at frame +8 and the
 // result at +0xc (the sine shares +0 with the first sum); ours swaps those two
@@ -148,6 +148,8 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // Transient creation handle with range result, trig input and shared cross boundaries:
 // 361/358/360/357/360/357/359/364. Result, conversion and sine homes plus rotation registers
 // remain.
+// Round 289: Coherent selected radius, radius/negative, two reused bounds, complete selected row; each with shared double trig input:
+// [247, 243, 242, 294, 250, 229, 229, 285]. All executable source and temporary types restored.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {

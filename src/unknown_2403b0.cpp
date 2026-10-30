@@ -102,6 +102,8 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // read/stores 187; native helper admission read 95; completion/admission reads 95;
 // stores/admission read 187; complete native flag graph 187; complete graph with short slot
 // 186.
+// Round 289: Terminal query completion/non-special-first/blocked completion subsets; full graph with final team result arms:
+// [95, 111, 111, 131, 131, 131, 131, 130]. All executable source and temporary types restored.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {

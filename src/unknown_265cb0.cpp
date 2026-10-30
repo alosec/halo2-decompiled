@@ -934,6 +934,10 @@ struct s_object_activity_flags
 // Round 244: separate activity rejection 80; uniform compound accumulator 79; both 80;
 // settings-first optional bonus 79, with rejections/compound/both 80/79/80;
 // joined rejection 80. Original conditional actor and complete body restored; input/save schedule remains.
+// Round 18 (lane 10): NULL actor then lookup re-measured 113 (header base EDI and first EBX, retail EBX/EDI);
+// on it: first declared before the actor index 113, actor/settings before the object 113, the entry copy
+// before the result 113 (identical code); plain parameter 140 (index in EBP, actor spilled to the
+// parameter's home); plain parameter read once through its address at the second call 140.
 // @retail 0x267370
 real function_267370(long volatile object_index)
 {

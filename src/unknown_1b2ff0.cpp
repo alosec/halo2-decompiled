@@ -87,7 +87,8 @@ s_slot_handler_2 g_47e1c0 =
 	(t_slot_proc)function_1b3380, 0, function_1b3540
 };
 
-// score 109 (was 109): Direction SIMD homes and the extra reciprocal copy remain in the native 0x44 frame; restore the full opening body.
+// score 109 (was 109): frame 0x44, loops, squares and dot agree; the direction's XMM registers (ours x1/y2/z3, retail x3/y0/z1) make the normalize copy the inverse for j, one extra movaps that shifts the tail.
+// Direction SIMD homes and the extra reciprocal copy remain in the native 0x44 frame; restore the full opening body.
 // Earlier: frame 0x44 and initial stores agree; direction XMM, square/store and normalization scheduling differ.
 // Earlier split direction plus rolled reset 116; selection initialization 109;
 // wider ordinals/saved pairs 192/164/128/132/199; source references and projection 109;
@@ -111,6 +112,12 @@ s_slot_handler_2 g_47e1c0 =
 // Round 196: separate displacement/output with precopy: native/shared difference/component loop/double
 // squared distance 235 each; branch-assigned normalized output with those four producers 172 each.
 // Extra input/output homes regress the frame; original in-place direction and all producers restored.
+// Round 77: the natural `while (squad != NONE && current < 32)` loop (identical code), dot3f for the
+// score (retail's x87 dot order) and length_sq3f for the magnitude (retail's store/fmul interleave) 107
+// (under the keep bar, restored);
+// 0x210c90 called with `inline` on its definition 246 (0x210850 stays a call, 0x1e3370/0x28f290 inline
+// it too); the reset loop as a plain for 141 (unrolled); forceinline copies of 0x210c90/0x210850 107
+// (same registers); all three components scaled in place 107 (operands are canonicalized).
 // Round 191: Existing displacement setter 107; fallback-point setter 188; both 188; normalized-vector setter 107; displacement/normalization 107; fallback/normalization and all three 188/188.
 // Round 191: Complete setters with existing projection helper 188. Two-point forms fail the retention margin; every setter and changed-sum form restored.
 // Round 194: complete native origin/destination/both/facing inputs 245/218/316/154;
