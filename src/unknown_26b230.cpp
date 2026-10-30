@@ -773,6 +773,14 @@ void function_26ac60(s_clump_link_view *node)
 PRIVATE __forceinline s_prop_node_view *clump_member_prop_next(s_iterator *iterator);
 PRIVATE __forceinline s_type_76cf92 *clump_next_prop(s_iterator *iterator);
 
+/* a walk over a clump's props that keeps the current prop ahead of its iterator,
+   as s_clump_pool_iterator keeps the current clump */
+struct s_clump_prop_walk
+{
+	s_type_76cf92 *prop;
+	s_iterator iterator;
+};
+
 // @retail 0x26b1d0
 void function_26b1d0(long actor_index)
 {
@@ -1944,18 +1952,8 @@ void function_2689d0(void)
 	}
 }
 
-// score 5 (was 5): node next is at stack +0x1c instead of +0x18; prop next is at +0x14 instead of +0x1c.
-// Member for-loop 204; prop for-loop 222; both for-loops 316; disjoint traversal scopes 5.
-// Scopes/member for-loop 204; scopes/prop for-loop 222; scopes/both for-loops 316; setup record references 5.
-// Member/prop/role iterator names 5/5/5; member/prop/both iterator references 5/5/5.
-// Member/prop ordinary inline 5/5; every plain whole-program trial preserves all baseline matches.
-// node/prop next homes 0x1c/0x14 versus 0x18/0x1c; setup scope 5; typed prop 5; both 5;
-// link references 5; array views 5; prop names 5; record references 5; joint declarations 5.
-// Prop iterator declared before the node iterator 5; both iterators in one array 69 (frame 0x14);
-// node iterator renamed to sort after props 5; prop iterator initialized before the node loop 125;
-// prop init through the clump view 174 (the clump-offset spill vanishes); helper definitions
-// swapped 5; both iterators brace-initialized 5; prop init by array indexing 5; an early dead
-// store into the prop iterator 5. The two homes do not move for any source-level reordering.
+/* adds an actor to a clump: links it into the clump's actors, moves the actor's prop
+   nodes onto the clump's props and gives it a node for each clump prop it lacks */
 // @retail 0x269250
 void function_269250(long clump_index, long actor_index)
 {
@@ -2003,26 +2001,25 @@ void function_269250(long clump_index, long actor_index)
 			record_pool_release(g_502418, nodes.index);
 		}
 	}
-	s_iterator props;
-	props.next = ((s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump)))->first_prop;
-	s_type_76cf92 *prop;
-	while ((prop = clump_next_prop(&props)) != NULL)
+	s_clump_prop_walk props;
+	props.iterator.next = ((s_clump *)(g_502420->data + (clump_index & 0xffff) * sizeof(s_clump)))->first_prop;
+	while ((props.prop = clump_next_prop(&props.iterator)) != NULL)
 	{
-		long slot = *(long *)((byte *)prop + 8) & 0xffff;
+		long slot = *(long *)((byte *)props.prop + 8) & 0xffff;
 		if (g_4de300[slot] != g_4de2fc)
 		{
 			g_4de300[slot] = g_4de2fc;
-			long index = function_26a8d0(props.index);
+			long index = function_26a8d0(props.iterator.index);
 			if (index != NONE)
 			{
-				s_clump_prop *current = (s_clump_prop *)(g_50241c->data + (props.index & 0xffff) * sizeof(s_clump_prop));
+				s_clump_prop *current = (s_clump_prop *)(g_50241c->data + (props.iterator.index & 0xffff) * sizeof(s_clump_prop));
 				s_clump_link_view *link = (s_clump_link_view *)prop_ref_get(index);
 				long first = current->first_node;
 				if (first != NONE)
 					((s_clump_link_view *)prop_ref_get(first))->previous = index;
 				link->next = first;
 				current->first_node = index;
-				link->prop_index = props.index;
+				link->prop_index = props.iterator.index;
 				function_26aa40(actor_index, index);
 			}
 		}
