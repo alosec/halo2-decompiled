@@ -1897,6 +1897,10 @@ void function_269250(long clump_index, long actor_index);
 // Round 422: persistent score 128; native selection handle 146; persistent score/native handle
 // 152; actor handle snapshot 89; persistent score/actor handle 128; native/actor handles 146;
 // all scan lifetimes 152; function-scope candidate 128. Opening body restored.
+// Round 31: in-arm compare with datum-index selection 128 (pool hoisted into EDI, selection memory-only,
+// but the exhaustion null test threads away and the homes rotate); with best declared first 128; score
+// local renamed 128 (slots do not follow names here); in-arm compare with clump-index selection 126;
+// each with the walk at function scope 128/126.
 // Round 83 (fast; unchanged control 89): two-arm score assignment 128; zero-initialized two-arm
 // assignment 128; reversed strict comparison 89; separate best publication 89; old-clump local
 // after/before the scan 141/147; flattened selection/creation tests 89; byte activity snapshot 89.
@@ -2096,6 +2100,10 @@ void function_269250(long clump_index, long actor_index)
 // original/invariant-first completion and direct/shared head; fast
 // 230/230/229/229/230/230/229/229.
 // Original body and existing helper restored.
+// Round 31: on the 3 form, prop loop as an explicit index loop with the lookup in its body 189 (the pools
+// are no longer hoisted); target-clear arm through prop_get at each use 220; the existing prop walk
+// struct 3; node iterator declared beside the prop iterator 3. On the opening body the deletion arm as
+// `if (unit) continue; break;` 89 (identical code).
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {

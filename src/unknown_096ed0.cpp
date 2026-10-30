@@ -179,6 +179,9 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // Round 24 (lane 10): the pending loop's callback through the peers local 222 (822 bytes); the active
 // loop's 253 (834 bytes); priority/size declared before handles_count/type 55 (same code); the active item
 // priority at block scope 55; the active blocked flag declared before its handles 55.
+// Round 31: short active index 148; type declared at function scope 55 (identical); plain long active
+// index 170 (814 bytes; the pending loop keeps type in EBX and spills its counter); pending loop also
+// walked by a cursor 216; plain active index with function-scope type 170.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
