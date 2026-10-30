@@ -658,6 +658,10 @@ struct s_1f9762
 // 133/264 in every order; extra vector storage grows the frame and does not recover native tails.
 // Boolean result/home role names in four lexical orders 67/67/67/67; each with a shared
 // output predicate used for both validity and vector publication 83/83/83/83 (616 bytes).
+// Round 82: the unknown456 arm without its `direction_valid = false` 127 (retail keeps that store);
+// an explicit `else direction_valid = false` in the not-last arm 111; validity assigned in every arm
+// with no initializer 128; the projection test as one condition without `remaining` 67; the
+// reached test inverted (`<= distance` arm first) 88; the output if/else inverted 67.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)
