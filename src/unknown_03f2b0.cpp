@@ -462,6 +462,9 @@ void function_1cf50(void);
 // Tag read at every use with all cache-store orders 99; store-order forms without that change
 // 100; bitmap read at every use 98. One- and two-point gains rejected. All original cache
 // stores and field observations restored.
+// Round 414: No frame; loop-wide zero, provider convention and SDK color/draw scheduling remain.
+// Material/color/draw workspace scope masks 1-7 scored 100 each; all scopes with native bitmap 98.
+// Two-count gain rejected; original scopes and bitmap restored.
 // @retail 0x44040
 void __stdcall function_44040(long cell, short mask)
 {
