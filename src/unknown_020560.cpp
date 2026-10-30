@@ -1368,6 +1368,10 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // Lane 8 r79: key and query as inline helpers 96-117; plain amount local 86 (frame 0x1c); with
 // this body: the frame computed before the slot pointer 75, the counter read first 72, read as an
 // __int64 copy, after the slot pointer, reassigned, 64-bit add or `+ 1` first: 6 each; permuter 6.
+// Round 20: the counter read at the storage block top with the set at the arm top 6 (the load
+// sinks), read before the storage test 6; written inside the bitset test 72 (the load stays, the
+// divide moves after the clamp); the bit test through function_0bfe60 90; the bit test before
+// the clamp 79.
 // Round 23 (lane 10): the existing bit-test helper (stays out of line) 90, with the counter read
 // at the top of the global block 88; the slot pointer before the global test 22; a const counter
 // copy before the slot pointer 6; the whole frame expression there 75; an inline query helper

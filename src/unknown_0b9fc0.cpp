@@ -381,6 +381,9 @@ void __stdcall function_115220(long machine_index)
 // Round 271: full-width unsigned/signed flag storage composed with bool/byte/short/long
 // position predicates: 465/465/345/465/465/465/345/465, all 1899 bytes.
 // All restored; early flag carriers and the initial clamp spill remain.
+// Round 426: shared completion exit, direct portal result, entry-first result and all
+// seven subsets 305/298/321/286/305/298/321; all with byte portal result 321.
+// Original result graph, initial clamp, two-use predicate and complete body restored.
 // Round 216: conditional mutable clamp 286; separate minimum and final selection 396;
 // lower-bound-first selection, zero-update minimum, both-outcome minimum and both-outcome result 396 each;
 // pure component lookup after selection 297; complete at-use flag observations with selection 396.
@@ -698,6 +701,10 @@ struct s_component_property_view
 // Locals or const references for the value pointer or the component offset,
 // a volatile read of the parameters, the call inline in the test, early
 // returns and the havok_component_get form score 13 to 23; the 600 s
+// permutation run found no improvement. Round 45: direct query result 26;
+// component declared before/after result 13/13; const component 13; value/key
+// through their own addresses 13/13; named validity 13; validity-initialized
+// result 23.
 // permutation run found no improvement. The callee's parameters in all five
 // other orders 13 (identical code); a free-function callee with the component
 // first, second, third or last 13; the component written in the call 14; offset

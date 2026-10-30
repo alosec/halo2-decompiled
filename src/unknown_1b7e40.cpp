@@ -68,7 +68,8 @@ bool actor_has_joint_invitation(long actor_index, short type);
 long function_25d810(long object_index, long actor_index, bool create);
 bool function_25d9b0(long prop_index);
 
-// score 131 (was 131): retail passes the actor index to function_26f060 in ECX and
+// score 125 (was 125): Frame 0xc and invitation call agree; actor/node EBX/EBP roles and fallback/evaluation placement remain.
+// Earlier: retail passes the actor index to function_26f060 in ECX and
 // the invitation type in EDI, ours passes them in EAX and ESI; that choice also swaps
 // the prop index and the node between ESI/EBP and EBP/EDI through the body. The
 // convention is set by function_26f060 (src/unknown_26e370.cpp), not editable here.
@@ -92,6 +93,9 @@ bool function_25d9b0(long prop_index);
 // 170/152/169/151; the existing view getter ties all four. Both late-query/long-priority
 // forms plain 124 at 554 bytes (seven below 131), rejected; original body restored.
 // The invitation convention, initial property/node ranks and fallback placement remain.
+// Round 223: complete eligibility bool/byte/short/long with short priority 150/150/150/150 reduced;
+// with long priority 166/166/171/169. Minimal bool form plain 119 at 556 bytes (six below 125), rejected.
+// Original body restored; current invitation call agrees, actor/node ranks and fallback placement remain.
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {

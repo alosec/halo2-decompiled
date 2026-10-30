@@ -139,7 +139,7 @@ short __stdcall function_1bef40(long actor_index)
 
 static __forceinline long real_to_long(real value);
 
-// score 19 (was 35): the frame and the x87 code agree. Left: the first draw's doubling and +3 sit
+// score 19 (was 19): the frame and the x87 code agree. Left: the first draw's doubling and +3 sit
 // one slot later in retail (after the seed store and the conversion store); retail stores the reset's
 // NONE fields after its first three zero stores and before 0x4ac/0x504 (ours after all five); and
 // our build loads the time-globals pointer above the reset's NONE stores and the reference store
@@ -168,7 +168,12 @@ static __forceinline long real_to_long(real value);
 // samples drawn first 19; the tick count in a local 43; the random step or the sample conversion
 // through a local 87/23. Round 22: the second scale after the reference store 35; the second draw
 // and its scale after the reset 75; the slot written through the parameter 19; the existing
-// slot_random() for both draws 61; double delay/wait 45.
+// slot_random() for both draws 61; double delay/wait 45. Round 24: actor_reset_state's stores in
+// retail's emitted order (50c, 5b4, 5b6, 5ac, 5b0, 4ac, 504) 19 (same code; 0x1b09b0 0 -> 4); the real
+// out-of-line reset called with `inline` on its definition 19 (then inlined at every caller); the first
+// draw inside its expression 46; both draws, wait before delay 53; the reference stored after the
+// tick stores 56. Retail here, in 0x1b3ee0 and in 0x1c0430 keeps 0x4ac/0x504 after the NONE stores; our
+// build sinks the NONE stores past them in all 240 statement orders screened (compile-only, 0x1b3ee0).
 // @retail 0x1befd0
 bool __stdcall function_1befd0(long actor_index, s_slot *slot)
 {

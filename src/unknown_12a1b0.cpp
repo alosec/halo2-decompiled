@@ -1371,7 +1371,7 @@ short function_128a60(long sound_index, short count, short const *voice_indices)
 /* retail expands the permutation getter in function_21c190 and calls it elsewhere */
 inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_definition *definition, s_looping_playback_definition *playback, long track_index, short arg_58ecd0, bool clear);
 
-// score 93 (was 137): frame 0x60 and the stack result byte now agree; left: our build keeps the
+// score 93 (was 93): frame 0x60 and the stack result byte now agree; left: our build keeps the
 // first track-index read across the pitch-range call (ESI), so the definition lives only on the stack
 // (retail ESI, spilled at +0x1c) and the permutation/pitch-range homes swap (+0x18/+0x1c against
 // +0x14/+0x18); the set path reads the track index inside its arm (`add eax, 7`) where retail reads
@@ -1393,6 +1393,9 @@ inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_
 // store through a second record lookup 156 (88 on 97); the set-path index read into a local before
 // the flag test 163 (still read inside the arm); the record before the definition 94; the track
 // definition before the state offset 93.
+// Round 307: Complete stable track/policy/range input subsets 109/174/179/194/195/188/199;
+// all with widened previous result 201. Original field observations and native scalars restored;
+// track-index retention, definition/mask/range homes and flag/index schedule remain.
 // @retail 0x21c190
 bool function_21c190(s_type_5ef569 *sound, s_type_06b94f *track, long sound_index, dword *seed)
 {

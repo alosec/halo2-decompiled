@@ -102,6 +102,12 @@ __forceinline void function_28e774(point3f const *arg_0, point3f const *arg_1, v
 }
 
 // score 118 (was 118): first alignment product, case-five clear join and contribution scheduling remain; staged alignment 136 plain, direct motion 235f, direct forward 253f, double-factor scaling 190f, signed-byte mode 504f.
+// Round 21: the case-five clear join is the 4-byte length difference (retail reloads esi ahead of one
+// shared NONE store; ours keeps two stores with different joins). Case-six forms leave the case 1/2,
+// 4 and 5 sum orders as they are (one product fewer 145f, two more 168f): no function-wide rotation.
+// Negating the first -1 product 105f (2416 bytes, but retail multiplies there, not kept); `2 - x * (2/3)`
+// 145f; `/ 3.0f` 118f; contribution through the existing vector3f_add 141f, through vector3f_add_scaled
+// 139f; case-five dot3f arguments swapped 118f.
 // Tried (MiniMax B run 19): the case-four NONE store reached by a goto into the else branch's
 // clear 76; not kept (a goto is kept only with a byte match).
 // Earlier 138 (was 140): alignment/clear-join/contribution schedules remain; fast preview 144.

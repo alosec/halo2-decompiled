@@ -23,6 +23,7 @@ unknown_0cd660.cpp, unknown_0d0690.cpp, unknown_0d0e00.cpp). */
 #include "object_iterator.h"
 #include "unknown_1cec30.h"
 #include "object_queries.h"
+#include "slot_handler.h"
 #include "unknown_11cc90.h"
 #include <math.h>
 #include <stddef.h>
@@ -1432,21 +1433,31 @@ void function_d0d20(long unit_index)
 
 /* sends request 0x13 when the unit holds two weapons and either of them
    fails 0x101640 */
-// score 68 (was 68): unit argument in EDI instead of retail stack/EBP; repeated pool-data
-// loads and the short-slot/default homes differ. Primary/secondary/both existing getters
+// score 51 (was 68): retail's length now; the unit argument is in EDI (retail on the stack, kept in
+// EBP), the second weapon's lookup reuses the first's (retail reloads the pool's data) and the
+// weapon reads are if/else (retail default-first). Primary/secondary/both existing getters
 // 72/74/74; masked guard getter 68, with primary/secondary/both 72/74/74; both getters
 // with a shared guard receiver 70. One parameter address read at first guard/request 57/57,
 // with both getters at first guard/second getter 66/66 (exact-match-only; restored).
-// Both weapon results default-first 70. All executable source restored.
+// Both weapon results default-first 70. Existing two-slot test 0xcd660 as the guard with both
+// 0xcbd50 reads 78 (called, not inlined); existing current-weapon getter + 0xcbd50 74; pool local
+// for both weapon lookups 51 (kept); with default-first reads 57; with the parameter address
+// read 40 (exact-match-only); second read through 0xcbd50 74; pool local in the guard instead
+// 57; named guard unit 51; pool local inside the block 51; guard through the pool local with
+// both 0xcbd50 reads 57; both 0xcbd50 arguments through the pool local 48 (stack argument in EBP
+// and ret 4 as retail, but the second read reuses the first's lookup); second argument through
+// UNIT_GET 74.
 // @retail 0xd1540
 void __stdcall function_d1540(long unit_index)
 {
+	s_record_pool *objects = g_4e0300;
+
 	if (UNIT_GET(unit_index)->current_weapon_index != NONE && UNIT_GET(unit_index)->next_weapon_index != NONE)
 	{
-		s_unit *unit = UNIT_GET(unit_index);
+		s_unit *unit = ((s_unit_header *)objects->data)[unit_index & 0xffff].unit;
 		short index = unit->current_weapon_index;
 		long weapon_index = index != NONE ? unit->weapon_object_indices[index] : NONE;
-		s_unit *other = UNIT_GET(unit_index);
+		s_unit *other = ((s_unit_header *)objects->data)[unit_index & 0xffff].unit;
 		short other_index = other->next_weapon_index;
 		long other_weapon_index = other_index != NONE ? other->weapon_object_indices[other_index] : NONE;
 
@@ -1497,16 +1508,6 @@ long function_ccd60(s_unit_starting_weapon const *weapon, long unit_index, bool 
 }
 
 /* whether either weapon the unit holds is in state 1 or 2 (+0x20c) */
-// score 19 (was 39): Only the register pair differs: retail keeps the unit in EDX and the slot/weapon
-// index in ECX, ours the other way round.
-// Success-only/reversed/result-first accumulators 58 each; explicit failure/success 54;
-// state at each test 54; OR accumulator 39; cached unit/success 60; hand pointer walk 92;
-// existing slot lookup 0xcbd50 per hand 41-53; pool local for the weapon lookups with
-// `result = result ||` 19 (kept: retail's per-weapon data reload and true-result join);
-// unit read once before the loop 24; with 0xcbd50 19; result declared first 19; nested slot
-// tests 19; long index 54; masked-index unit lookup 19; screened without change: local names,
-// function-scope index/weapon/holder declarations, char index, if-form weapon index, two
-// written-out hands.
 // @retail 0xcc0c0
 bool function_cc0c0(long unit_index)
 {
@@ -1521,9 +1522,11 @@ bool function_cc0c0(long unit_index)
 
 		if (weapon_index != NONE)
 		{
+			char *weapon;
+
 			result = result ||
-				((char *)((s_unit_header *)objects->data)[weapon_index & 0xffff].unit)[0x20c] == 1 ||
-				((char *)((s_unit_header *)objects->data)[weapon_index & 0xffff].unit)[0x20c] == 2;
+				(weapon = (char *)((s_unit_header *)objects->data)[weapon_index & 0xffff].unit)[0x20c] == 1 ||
+				weapon[0x20c] == 2;
 		}
 	}
 	return result;
@@ -2038,22 +2041,16 @@ struct s_unit_weapon_hands
 	byte unknown0b;
 };
 
-// score 65 (was 65): Output ESI versus EDI and true constant BL remain.
-// Round 387: Existing masked lookup at entry/current/next, all seven subsets 65; native
-// parent/seat values 65; paired hand predicates
-// 64 (below gate); both weapon fields at uses 74; shared initial unit receiver 76; native seat
-// mask 65. Original body restored.
 // @retail 0xcb430
 void function_cb430(long unit_index, s_unit_weapon_hands *hands)
 {
+	s_record_pool *objects = g_4e0300;
 	s_unit *unit = UNIT_GET(unit_index);
 
 	memset(hands, 0, sizeof(*hands));
-	s_unit *current = UNIT_GET(unit_index);
-	short index = current->current_weapon_index;
-	if (index != NONE && current->weapon_object_indices[index] != NONE)
+	if (function_cbd50(unit_index, UNIT_GET(unit_index)->current_weapon_index) != NONE)
 	{
-		s_unit *next = UNIT_GET(unit_index);
+		s_unit *next = ((s_unit_header *)objects->data)[unit_index & 0xffff].unit;
 		short next_index = next->next_weapon_index;
 
 		if (next_index != NONE && next->weapon_object_indices[next_index] != NONE)
@@ -2067,7 +2064,7 @@ void function_cb430(long unit_index, s_unit_weapon_hands *hands)
 	}
 	if (unit->parent_index != NONE && unit->parent_seat_index != NONE)
 	{
-		s_unit *parent = UNIT_GET(unit->parent_index);
+		s_unit *parent = ((s_unit_header *)objects->data)[unit->parent_index & 0xffff].unit;
 
 		hands->seat_allows = !((*(dword *)&UNIT_SEATS(UNIT_DEFINITION_GET(parent))[unit->parent_seat_index].flags >> 5) & 1);
 	}
@@ -2138,15 +2135,11 @@ bool __stdcall function_cd4e0(long unit_index, short hand, bool flag)
 
 /* the weapon the unit, or the first rider down its children with bit 27 of
    its definition's +0xbc, holds; which unit holds it */
-// score 77 (was 90): Frameless pool/argument/result allocation and first-lookup reload remain.
-// Complete pool snapshot 77 plain kept; header snapshot 94; separate initial/final result 90;
-// pool/result 77; headers/result 94; held-path exit 90; two-use unit lifetime 90; unit/result 90.
 // @retail 0xcbd80
 long __stdcall function_cbd80(long object_index, long *holder_index)
 {
 	s_record_pool *objects = g_4e0300;
-	long weapon_index = function_cbd50(object_index,
-		((s_unit_header *)objects->data)[object_index & 0xffff].unit->current_weapon_index);
+	long weapon_index = function_cbd50(object_index, UNIT_GET(object_index)->current_weapon_index);
 
 	if (weapon_index != NONE)
 	{
@@ -2159,7 +2152,7 @@ long __stdcall function_cbd80(long object_index, long *holder_index)
 	{
 		for (long child_index = ((s_unit_header *)objects->data)[object_index & 0xffff].unit->first_child_index; child_index != NONE;)
 		{
-			s_unit *child = ((s_unit_header *)objects->data)[child_index & 0xffff].unit;
+			s_unit *child = UNIT_GET(child_index);
 
 			if ((1 << child->type) & 3 && TEST_FIELD_BIT((*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 27) & 1))
 			{
@@ -2560,6 +2553,10 @@ void function_cce00(long unit_index, short starting_profile_index, bool reset, b
 // score 79 (was 98): Frame agrees; merged animation loads, retained object lookup and weapon-loop carriers still differ.
 // Direct rejection 79 plain (kept); retained pool 98; masked getter 98; native slot 101;
 // hand cursor 84; pool/direct rejection/cursor 79; shared flag mask 135; failure-first result 119.
+// Round 167: retail re-looks-up the unit after the 0xe6fe0 calls, ours keeps it (our LTCG treats
+// 0xe6fe0 as not writing memory). Pool local for the post-call lookup 79 (identical code); lookup
+// inside the hand loop 79 (identical); 0xcbd50 per hand 115 (kept out of line, but gives retail's
+// slot cursor and counter); action bits through a bitfield view 79; result declared first 79.
 // @retail 0xc85c0
 bool function_c85c0(long unit_index)
 {
@@ -3099,26 +3096,25 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 78 (was 78): its flag tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 49 (was 78): the team test and the notify loads now agree. Left: the pool and time pointers
+// sit in EBX/EBP (retail EBP/EBX), retail keeps 0.0 in XMM1 and 1.0 in XMM2 (ours the other way:
+// the register follows which constant the source names first), the two notify copies are only
+// partly cross-jumped, and the bit-4 test is `test byte` (retail load and shift).
 // Round 203: Boolean fourth flag 83; retained time receiver 75 (three-count gain rejected); both 79;
 // masked lookup helper 79; flag/helper 84; time/helper 76; all 80; twice-used notification index 80.
 // Hostility result alone/flag/time/both 119/125/113/119; common notification alone/flag/hostility/both
-// 77/74/94/110, exact-only and restored. Early Boolean normalization, shared notification and
-// constant-register allocation remain.
+// 77/74/94/110, exact-only and restored. Round 167: existing team_is_enemy(1, team) 63; with the
+// notify through a fresh unit local as 0xd0e60 49 (kept); bit 4 as TEST_FIELD_BIT 83 alone, 63
+// with both (pool/time registers right); the 2b0 branches swapped 65 (constants right, branch
+// order wrong); `value < 0.0f` 63; notify index in a long local 69; existing 0x2ac270 flag getter 49.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
 	s_unit *unit = UNIT_GET(unit_index);
 
-	if (unit->actor_index != NONE && g_4e6948->state == 1 && g_4f55dc[2])
+	if (unit->actor_index != NONE && g_4e6948->state == 1 && g_4f55dc[2] && team_is_enemy(1, unit->unknown138))
 	{
-		short team = unit->unknown138;
-
-		if (team == NONE || team < 0 || team >= 0x10 ||
-			!function_0bfe60((dword const *)((byte *)g_4f55ec + 0xc4), team + 0x10))
-		{
-			unit->flags_134 |= 8;
-		}
+		unit->flags_134 |= 8;
 	}
 	if (TEST_FIELD_BIT((unit->flags_134 >> 3) & 1))
 	{
@@ -3126,9 +3122,11 @@ void function_c6810(long unit_index)
 		if (unit->unknown2b0 > 1.0f)
 		{
 			unit->unknown2b0 = 1.0f;
-			if (UNIT_GET(unit_index)->unknown0d4 != NONE)
+			s_unit *current = UNIT_GET(unit_index);
+
+			if (current->unknown0d4 != NONE)
 			{
-				function_b58c0(UNIT_GET(unit_index)->unknown0d4, 0x800000);
+				function_b58c0(current->unknown0d4, 0x800000);
 			}
 		}
 	}
@@ -3138,9 +3136,11 @@ void function_c6810(long unit_index)
 		if (0.0f > unit->unknown2b0)
 		{
 			unit->unknown2b0 = 0.0f;
-			if (UNIT_GET(unit_index)->unknown0d4 != NONE)
+			s_unit *current = UNIT_GET(unit_index);
+
+			if (current->unknown0d4 != NONE)
 			{
-				function_b58c0(UNIT_GET(unit_index)->unknown0d4, 0x800000);
+				function_b58c0(current->unknown0d4, 0x800000);
 			}
 		}
 	}
