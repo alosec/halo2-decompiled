@@ -13,6 +13,8 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // Earlier: frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling differ;
 // tried position base 105; origin base 105; displacement base 105; geometry bases 105; unsigned component 104;
 // degenerate normal first 104; squared magnitude value 104; rejected direction loop 104.
+// Scale/add operand orders 104 each; split squared magnitude 105; inner += 117; earlier magnitude declaration 104;
+// component counter scope 104; mode stores before scaled output 104. Original body restored.
 // the rotated vector's XMM allocation differs - retail
 // keeps the two dot products in xmm1 and xmm0 where ours uses xmm5 and xmm3 -
 // and the second subtraction and the x87 sum are swapped.
@@ -26,6 +28,7 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // Round 412: complete normalization scale loop/shared scalar scale/direct division/shared double scale 105/177/105/184; with nonpositive projection first 105/184/105/184. Original body and precision restored.
 // Round 288: shared affine/difference producers with in-place/distinct output, ordinary/forced
 // difference declaration and original/earlier magnitude 262, 251, 262, 251, 262, 234, 262, 234. Original restored.
+// Round 194: Advancing position/scale-input/origin component pointers and complete subsets 105/105/104/105/105/104/105/105; complete second-projection differences/products/both 105/105/104; per-component named half-step 105. All preserve the original grouping but give no gain; original body and inherited inline boundary restored.
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {

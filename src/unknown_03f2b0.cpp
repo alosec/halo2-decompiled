@@ -465,6 +465,10 @@ void function_1cf50(void);
 // Round 414: No frame; loop-wide zero, provider convention and SDK color/draw scheduling remain.
 // Material/color/draw workspace scope masks 1-7 scored 100 each; all scopes with native bitmap 98.
 // Two-count gain rejected; original scopes and bitmap restored.
+// Round 122 (fast; retail reads colour bytes 2/3 from the global, 0/1 from al/ah): manager read at each use 100;
+// colour global as a dword/byte union read after the store 98, with the manager change 98 (union with anonymous
+// bytes / byte array 98/98); shifts of the global after the store 100; `& 0xff` channels of the global/local 98/100;
+// union colour local copied to the global, channels from either 98/98 (unions get a stack copy, `sub esp, 8`).
 // @retail 0x44040
 void __stdcall function_44040(long cell, short mask)
 {
@@ -1201,7 +1205,10 @@ static inline long render_memory_allocate(long bytes)
 // score 1 (was 1): the permutation pointer arrives in eax, retail passes it in ecx; the register is fixed by the caller function_4c690, which is not retail's yet
 // frame pointer 27; alias analysis off 1; global expressions off 62; inline depths one/zero 1/89; native result/count 1/1; input role names 1;
 // the permutations last or first (old order kept for the caller by a forwarding overload) 1/1; a const member of a 16-byte permutation type 1;
-// extra_bytes read once through its address 1; (void)&node_count 1.
+// extra_bytes read once through its address 1; (void)&node_count 1; the node-count callee's parameters
+// reordered (permutations first, both callers) 1; the count read back through node_count 1; the output
+// pointer as a conditional argument 27; the byte count as a conditional expression 54; bytes declared
+// before the count call 15. Every parameter position, __stdcall/__cdecl and flag set keeps eax.
 // @retail 0x3e380
 long function_3e380(long model_index, byte lod, transform4x3f const *nodes,
     byte const *permutations, long *node_count, long extra_bytes)
@@ -1455,6 +1462,9 @@ struct s_133f70;
 // Round 193: separate rendering input/shared allocated buffer/direct layout read 241/311/297;
 // input+buffer/input+layout/buffer+layout/all 324/298/317/327;
 // all with readonly rendering input 327. Complete original body restored.
+// Round 122 (plain; fast scores 353 and misleads): type stored through one ternary 175 (aligned 80); named
+// flag-byte pointer 175; header before the count store 176; entry-table test nested 175; one shared cache-index
+// local for both 0x3ddd0 lookups 175.
 // @retail 0x4b5d0
 void function_4b5d0(bool force, long override, long object_index, real distance, real priority,
     s_133f70 *record, point3f const *unused, bool project_nodes)

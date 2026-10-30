@@ -2466,6 +2466,11 @@ dword __cdecl function_131fc0(real alpha);
 // 337/337/353/353; with short ordinal 339/339/343/343. Original unrolled draws restored.
 // Native mutable/immutable normalized texture rectangles, combiner order and shared
 // alpha-clamp combinations 313/313/313/313/313/313/313/313; frame 0x38 versus 0x28. Original body restored.
+// On the standard-marker base: both default rectangles built unconditionally, source first, then
+// the source and destination defaults selected 260 (aligned 143 -> 128: retail's slots and test
+// order; retail also writes each selected default back into the parameter's home); as aggregate
+// initializers 260; offset converted once 260; selected by ternaries 260; with the reciprocals
+// before Begin 256. The zero constant (EDI against retail's EBP) follows the 0x144f0 call.
 // @retail 0x2a8d0 standard
 void __stdcall function_2a8d0(long tag, long bitmap_index, real const *source,
     real const *destination, long arg_af5a49, color3f const *color,
@@ -2837,6 +2842,12 @@ static __forceinline void texture_corner_rotate(real x, real y, real cosine, rea
 // Round 74: stage name 282; entry stage 443; entry stage with scaled-dimension names 443 and
 // with a reciprocal name 443; original-position stage with both scalar names 282; both scalar
 // names 282; scaled-dimension names 282; reciprocal name 282. Original executable body restored.
+// Positional counts here are dominated by the blocked stage call: the stage loop has a different
+// instruction count, so every later line is shifted. Aligned (difflib) leads: scales normalized in
+// their own parameters (retail's homes) 343 (aligned 134 -> 123); with half extents
+// `scale * width * 0.5f` 368 (aligned 110, 2007 bytes); a long first bitmap formal gives retail's
+// cmovne (with half extents 348, aligned 114; with both 374, aligned 95), but its declaration
+// is in a contributor file.
 // @retail 0x29b00
 void __stdcall function_29b00(long tag, short first_bitmap, real first_alpha,
     real first_angle, real first_scale, long second_bitmap, real second_alpha,
@@ -2959,13 +2970,22 @@ struct s_2a2f0_record
 };
 
 #pragma inline_depth(0)
-// score 145 (was 145): one missing register copy of the bitmap count before the bounds compare
-// (retail inlines the bitmap lookup 0x137550); everything else aligns. Swapped bounds compare 145;
+// score 145 (was 145): frame 0x64 and 1496-byte length agree; the bounded bitmap count register copy remains absent.
+// Earlier: one missing register copy of the bitmap count before the bounds compare
+// at bounded bitmap selection; the remaining instructions align. Swapped bounds compare 145;
 // the existing lookup called in a full-depth window 258 (out of line); plain count read 167;
 // separate count copy 145 (propagated); file-local forced lookup 258/297 (in a window, spills).
 // Round 187: Ordinal/remainder byte/short 273, short/short 273, word/short 273, long/long 184, long/dword 188, long/word 186, byte/word 265, short/long 190; unsigned forms omit the implied negative guard. All restored; missing count copy remains.
 // Native current/element/fallback type subsets and readonly complete graph 166/166/166/166/166/166/166/166;
 // all with ordinary count and independent dimensions. Original body restored; count copy remains.
+// Plain count read with the bounds compare re-reading the field 167; long index 148; plain
+// dimension locals (they take the other parameter homes) 151; selection tested on the
+// definition local 161; selection as a ternary 143 (realigned only). Not an inline of 0x137550:
+// linked inline (its file without /Ob1, diagnostic) reloads the group and compares the count in
+// memory (297), as do forced inline lookups by tag, by group or with the count passed.
+// Round 224: readonly real strip table, entry/branch constant initialization,
+// record-pointer/direct fields and long/short ordinal combinations with independent
+// dimensions and ordinary count reads: 166/272/175/230/205/268/215/255. All restored.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3218,6 +3238,17 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // Round 187: Integral slope cap long/short/word/dword 1141/1161/1161/1082; each with inverse-span entry workspace 1141/1161/1161/1082. All restored; frame/save and state expansion remain.
 // Upper-default shared clamp, branch/entry result with original/Boolean permission and
 // sampled/live alpha: 1118/1120/1101/1103/1105/1109/1085/1089. Retail length in all forms; original helper/body restored.
+// Aligned (difflib) leads, all longer than retail: the eleven stage states through sampler_state_write
+// (retail's per-state dirty-flag ors; it never calls 0x224f0 here) 1143 (aligned 218 -> 202); with a
+// bool small permission 1121 (192); with mode one's eight clamps as FILTER_PIN over fields read at
+// each use (0x25e50's form) 1174 (173: mode one then matches but for registers); with the offset and
+// gain clamps as FILTER_PIN too 1171 (102); a long alpha selector instead 1154 (204). Left: our link
+// inlines 0x222d0 at mode zero's eight blending states and the final depth state (retail calls all 36
+// out of line), and the offset clamp branches where retail stores 1.0 and conditionally overwrites it.
+// Round 224: existing blending helper inline/ordinary declarations with bool/byte/
+// short/long additive input 1457/1457/1453/1453/1457/1457/1453/1453. Actual-mode helper
+// long/short/byte/dword under force-inline 853 each, under inline 1446/1455/1534/1446.
+// Original helper contract, all call inputs and complete body restored.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
@@ -3490,28 +3521,28 @@ failure:
 
 dword g_4b8424;
 void function_27aa0();
-// score 5 (was 5): opening projection remains x/y/z with direction x first.
-// Z/y/x with all/first/third k copy-then-multiply 101/101/101; buffer after projection 16;
-// input view after projection 16; early buffer with late input view 16; early dot declaration 16;
-// first k-i-j row 23; multi-use first-scale local 101.
-// score 5 (was 16): retail adds the dot product's terms z, y, x and loads the
-// position's x before the direction's; here x, y, z with the direction's x
-// first. Tried: the terms z, y, x 16 (the k products then copy the scale);
-// y, x, z 7; x, z, y 20; y, z, x 20; z, x, y 18; one expression in any order,
-// dot3f either way round or partial sums 105-106; n[] subscripts 16; scale
-// first in the products 16; vector3f_scale for the rows 101-105; position as
-// the first parameter (with the caller) gives retail's dot with z, y, x but
-// the j products then load the component first, 14 (654 bytes)
-// New trials at 5: zero-initialized buffer 160; cleared buffer 160;
-// cleared trailing triple 105; first/third/second row component loops
-// 242/242/242; coefficient loop 242; first reciprocal divided in place 104.
-// score 5 (was 5): Opening projection loads x before z. Last projection term
-// after reciprocal one/two/three 38/151/149; y and z after first reciprocal
-// 51; split projection 59; fourth reciprocal at use 140; third reciprocal at
-// use 136; fade clamped in its output slot 63.
-// opening projection loads remain x/y/z rather than z/y/x.
-// Six-by-four buffer 5; branched reciprocal 72; full buffer initializer 155;
-// direction/scalar/tail/third-row ordering 100/148/143/75; shared span carrier 144.
+// score 5 (was 5): retail adds the dot product's terms z, y, x, loading the position's component
+// first in each; here x, y, z, and the x term loads the direction's first in every order.
+// Tried: the terms z, y, x 16 (the k products then copy the scale); y, x, z 7; x, z, y 20;
+// y, z, x 20; z, x, y 18; one expression in any order, dot3f either way round or partial sums
+// 105-106; n[] subscripts 16; scale first in the products 16; vector3f_scale for the rows
+// 101-105; position as the first parameter (with the caller) gives retail's dot with z, y, x but
+// the j products then load the component first, 14 (654 bytes). Z/y/x with all/first/third k
+// copy-then-multiply 101/101/101; buffer after projection 16; input view after projection 16;
+// early buffer with late input view 16; early dot declaration 16; first k-i-j row 23; multi-use
+// first-scale local 101; zero-initialized buffer 160; cleared buffer 160; cleared trailing triple
+// 105; first/third/second row component loops 242/242/242; coefficient loop 242; first
+// reciprocal divided in place 104; last projection term after reciprocal one/two/three
+// 38/151/149; y and z after first reciprocal 51; split projection 59; fourth reciprocal at use
+// 140; third reciprocal at use 136; fade clamped in its output slot 63; six-by-four buffer 5;
+// branched reciprocal 72; full buffer initializer 155; direction/scalar/tail/third-row ordering
+// 100/148/143/75; shared span carrier 144.
+// Round 14 (exact LTCG harness, aligned counts, 4 = this body): a product's operand order in
+// the dot never follows the text; each k/j row product copies the scale when its dot term is
+// not the last one. Every term order as statements 4-18; z/y/x with the sum's local renamed
+// 8; separate spans 60-64; buffer/settings declarations moved 4-18 (no effect); no settings
+// local 60-64; [6][4] buffer, same; mixed statement/expression sums 6-66; the three
+// plane-offset sums with either operand first, no effect.
 // @retail 0x25a10
 void function_25a10(vector3f const *direction, point3f const *position, byte const *state)
 {
@@ -3840,7 +3871,33 @@ void function_147af1(long first, long second, c_render_window *window);
 struct s_2f800_view;
 void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 
-// score 34 (was 34): the stores to g_4ba038 and g_4ba010 land in other
+// score 34 (was 34): two store orders and the tail differ. The counter g_4ba038 is stored
+// after the kind byte, and the g_4ba010 clear sinks past the camera copy; both land where
+// retail puts them once g_4ba038 and g_4ba010 are address-taken (diagnostic only, 26), so
+// retail keeps them in an address-taken struct (0x4ba074 is the only immediate retail takes
+// in 0x4ba000-0x4ba07f) whose members are defined in other lanes' files. The tail pushes the
+// flag as a dword where retail passes it to 0x13680 in bl (BLOCKED-BY 0x13680).
+// Tried: flag clear before the first copy 34; counter increment one statement earlier 34;
+// kind stored after the sky index 37; flag clear as the first store 34; camera default as a
+// named source local 153; mode-word/auxiliary-word/final-byte frame field widths, subsets
+// 1-7 and unsigned mode bits, 34 each (auxiliary-word forms lose the caller 0x2b790);
+// geometry copied into the frame-record block 34; whole camera/projection storage operands
+// 34; counter increment first 153; frame declared at the top 34; one shared final call 34.
+// the stores to g_4ba038 and g_4ba010 land in other places than retail's (the
+// counter before the kind byte, the flag clear between the two block copies). Both stores are placed
+// by the compiler, not by the order of the statements: with the addresses of g_4ba038 and g_4ba010
+// taken anywhere in the program they land exactly where retail puts them (probed by taking them in
+// src/unknown_02c560.cpp, which takes this function to 26), so retail keeps them in an address-taken
+// struct whose definitions are in other lanes' files. The flag is loaded as a dword where retail loads
+// a byte, and the tail calls 0x13680 with the flag pushed where retail passes it in bl; both follow
+// 0x13680's convention, which retail has as one bool in bl and a plain ret (BLOCKED-BY 0x13680).
+// Tried: the flag passed from the frame's copy 34. Round 93: flag clear before the first copy 34;
+// counter increment one statement earlier 34; kind stored after the sky index 37; flag clear as the
+// first store 34; camera default as a named source local 153. Round 187: native mode-word/
+// auxiliary-word/final-byte subsets 1/2/3/4/5/6/7 and all unsigned-mode bits 34 each (auxiliary-word
+// forms lose a caller). Round 83: flag clear as `false` 34; counter as `+= 1` 34; kind stored before
+// the counter 34; flag clear after the view copy 34; `enabled != false` passed to 0x13680 40.
+// the stores to g_4ba038 and g_4ba010 land in other
 // places than retail's. Both stores are placed by the compiler, not by the
 // order of the statements: with the addresses of g_4ba038 and g_4ba010 taken
 // anywhere in the program they land exactly where retail puts them (probed
@@ -3849,11 +3906,7 @@ void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 // The flag is loaded as a dword where retail loads a byte, and the tail calls
 // 0x13680 with the flag pushed where retail passes it in bl; both follow
 // 0x13680's convention, which retail has as one bool in bl and a plain ret
-// (BLOCKED-BY 0x13680).
-// is loaded where retail loads a whole word, and the calls at the end are in
-// a different order with their arguments set up differently. The tail is
-// 0x13680's convention (retail passes the flag in bl; BLOCKED-BY 0x13680);
-// the flag passed from the frame's copy 34.
+// (BLOCKED-BY 0x13680). The flag passed from the frame's copy 34.
 // Round 93: both store orders (the counter before the kind byte, the flag
 // clear between the two block copies) are retail's once g_4ba038 and
 // g_4ba010 are address-taken (diagnostic only, 26): retail keeps them in an
@@ -3862,6 +3915,22 @@ void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 // 34; kind stored after the sky index 37; flag clear as the first store 34;
 // camera default as a named source local 153.
 // Round 187: Native mode-word/auxiliary-word/final-byte subsets 1/2/3/4/5/6/7 and all unsigned-mode bits 34 each; auxiliary-word forms lose caller. Original declarations restored; shared-store alias and protected flag convention remain.
+// Round 18 (lane 11): counter increment first or after the sky index 34/34;
+// flag clear after the second block copy or before the kind store 34/34 (the
+// compiler places both stores the same way); the flag passed from the saved
+// frame record 96.
+// the stores to g_4ba038 (the counter lands after the kind byte) and g_4ba010
+// (the flag clear sinks past the camera copy) land in other places than retail's, and the tail
+// calls 0x13680 with the flag pushed (loaded as a dword) where retail passes it in bl (one bool in
+// bl, plain ret: BLOCKED-BY 0x13680). Both store orders are placed by the compiler, not by the
+// statements: with the addresses of g_4ba038 and g_4ba010 taken anywhere in the program they land
+// exactly where retail puts them (diagnostic only, 26), so retail keeps them in address-taken
+// storage whose definitions are in other files. Tried: flag clear before the first copy 34, as the
+// first store 34, after the camera copy 34; counter increment one statement earlier 34, as the
+// first store 34, after the sky index 34; kind stored after the sky index 37; camera default as a
+// named source local 153; the flag passed from the frame's copy 34; native mode-word/auxiliary-
+// word/final-byte parameter widths 34 (auxiliary-word forms lose caller 0x2b790); the whole camera
+// struct as the copy destination 34; the frame-records field as the first copy's destination 34.
 // @retail 0x2ba10
 void function_2ba10(s_2f970_view const *view, long cluster, long player,
     byte const *camera, bool enabled, long leaf, bool invalid, vector3f const *sky_color,

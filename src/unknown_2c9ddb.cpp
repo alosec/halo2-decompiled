@@ -95,21 +95,36 @@ extern long g_55c154;
 // Entry declarations with in-place assignments: source carrier 61; classification 61; both 61;
 // reversed pair 61; pair plus selected carrier 61; pair plus request workspace 61; pair plus
 // both buffers 61; pair with exchanged buffer declaration order 61.
+// Round 32 (lane 16): our link step inlines 0x13fac0 here because all three arguments fold (a
+// global destination, a local source, a constant count); 0x148c3e on main hits the same and reads
+// its count through a pointer. Two load arms (default first, selected first) 174/174, both with an
+// unbiased frame and the constant 1 in EBX; one load per arm into a shared result then the
+// original arms 110; 0x13fac0's terminator through a pointer to the last element 61 (callers kept,
+// copy still inlined); /arch:SSE on this file (diagnostic only) 72, still inlined.
 // Round 77: noinline declaration of the copy in its own file (retail's ecx/edi/esi call) 88
 // (one arm is short); two load arms 174, with that call 179 (EBX takes zero, saved and the
 // 0x54e4a0 constant, `this` spills to [ebp-4], unbiased frame); selected arm first 178;
 // saved declared at the top 179.
+// Round 21 (lane 10): a named count shared by the copy and the 0x238c69 call (`long maximum_count =
+// 0x20;`, as matched 0x148c3e passes it) keeps unicode_string_copy out of line with retail's
+// ecx/edi/esi call and no noinline. Two load arms with the inline copy 174; with the named count 179
+// (EBX holds saved and then &g_54e4a0, `this` moves to ESI and spills, unbiased frame); the count
+// declared at the arm's top 179; selected arm first 178; one load with the named count 88. Original
+// body restored.
+// Round 35: two load arms 174 again (`this` spills to [ebp-4], EBX takes the constant 1, unbiased
+// frame), with the shift bit test 174; the bit test as a signed shift 62 (sar); `selected == NONE`
+// tested twice without the classification local 77 (574 bytes). BLOCKED-BY 0x13fac0: our link
+// inlines the copy at this all-constant call site, where retail calls it.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {
-	struct s_variant_flags { unsigned long pad : 21; unsigned long bit21 : 1; };
 	if (*item == NONE) return;
 
 	s_variant_item *entry = &((s_variant_item *)data->data)[*item & 0xffff];
 	s_game_variant variant;
 	byte name[0x100];
 	long selected = entry->variant;
-	if (selected != NONE && !(flag_a && TEST_FIELD_BIT(((s_variant_flags const *)&entry->variant)->bit21)))
+	if (selected != NONE && !(flag_a && (bool)(((dword)entry->variant >> 21) & 1)))
 	{
 		if (entry->value2 != NONE)
 		{
@@ -311,6 +326,11 @@ void c_class_2c9e69::select_last_variant()
 // Without the receiver qualifier one reload of the text is hoisted into EDI ahead of both arms
 // (retail reloads it per arm, EDI and EBX): plain receiver 36; text used directly in both arms 36;
 // per-arm receiver locals 36; named arm first 38; icon declared first 36. 600 s permuter run, none below 23.
+// Both arms reload the spilled text first; when both reloads land in EDI the two identical
+// loads are merged ahead of the variant test (even two qualified reads), and retail keeps
+// them apart only because its name arm reloads into EBX. Copies in both arms 36; name-arm
+// copy declared before the test 36, or at function top 36; name-arm copy only (text read
+// directly in the empty arm) 13 at 159 bytes, the name arm then exact except EDI for EBX.
 // @retail 0x2c9ff4
 void c_class_2c9e69::v20(c_class_1a2c81 *item, long unused)
 {

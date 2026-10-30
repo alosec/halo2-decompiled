@@ -67,6 +67,9 @@ extern short const g_44aee8[20] =
 // DH round 257: Typed 0x74 input record with native source bits and first/second output bitfields, eight
 // combinations 90/90/90/90/94/94/94/94. All record, interface, caller and body changes restored; flag
 // mask/store gaps remain.
+// Round 200: shared byte/word second-bit setters 92/92; word first bit with original/byte/word
+// second bit 103/107/103; byte first bit with original/byte/word second bit 106/106/106.
+// Shared setters do not recover the word mask or per-arm memory stores; original body restored.
 // @retail 0x200c20
 void function_200c20(byte const *definition)
 {
@@ -485,6 +488,8 @@ s_squad_definition_entry *function_203330(s_squad_definition_view const *squad);
 // DH round 257: Reused flag/mode carriers in parameter/word/long domains, eight non-original pairs
 // 92/92/160/160/158/92/92/92. Every carrier and body restored; parent registers and persistent zero
 // remain.
+// Round 200: getter inline/cdecl/stdcall/inline-cdecl/inline-stdcall contracts 92 each;
+// inline/cdecl/stdcall with branch-owned next 89 each. Original getter and iterator restored.
 // @retail 0x204ec0
 void function_204ec0(s_squad_iterator *iterator, short squad_index, short flags, short mode)
 {
@@ -1190,6 +1195,13 @@ struct s_squad_tree_definition
 // by-reference parent getter 31 (diagnostic); test through the global getter with the pointer through the
 // local pool, and the reverse, 57/56 (two loads, memory compare); per-pass loop counters 31; parent getter
 // at each use in pass 3 34; pass-4 squad through the local pool 31.
+// Round 41: pass-3 parent through the local pool 103; pass-3 getter argument through a fresh
+// group getter 56; pass-4 call argument through a fresh squad getter 44 (the getter falls under
+// the depth-zero pragma and goes out of line); the pragma pair around the whole pass-4 test 31;
+// the pass-4 group index read once into a named local 42.
+// Round 436: native external group/squad/both count-and-element descriptors 31/31/31;
+// actual group/squad/paired descriptor receivers 31/31/31/31, readonly pair 31.
+// All native descriptor declarations and executable forms restored; folded parent loads remain.
 // @retail 0x2009d0
 void function_2009d0(void)
 {
@@ -1338,6 +1350,10 @@ void __stdcall function_205320(long group_index)
 // Round 42: named scaled offset signed/unsigned 18/18; const squad, then both pointers 18/18;
 // identifier as a real short field 18; low-word helper 44; typed pointer increment/address-of-element 18/18;
 // low-word equality 21; early high-bits predicate 18. The pool/index registers and three-address lea remain.
+// Round 15: a link pointer to the first vehicle (0x201a50's form) 18; byte pointer squad 18; old squad
+// index in a local 18; header pointer local 19; high-word test by shift 18. Compile-only screens
+// reproduce ours exactly and ~20 squad/header/test forms (helper return, NULL-initialized squad, pool
+// local) all keep add eax,ecx; retail's other two sites of this lea (0x1f3430, 0x20d570) are unmatched.
 // @retail 0x201ad0
 void function_201ad0(long squad_index, long object_index)
 {
@@ -1593,6 +1609,8 @@ PRIVATE __forceinline s_squad_datum *function_200d83(s_squad_record_iterator *ar
 // @retail 0x204b20
 // score 2 (was 2): the record pool's pointer is reloaded after the branch on the index,
 // retail reloads it before, so the jump lands on the shared reload.
+// Pool read before the active test 2; record address size * index + data 2; not-found
+// stores swapped 2; datum index written index | salt 2; early return when inactive 20.
 long function_204b20(long actor_index, short mode)
 {
     byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
@@ -1768,7 +1786,7 @@ extern s_reference g_471004;
 point3f *function_b9dd0(long object_index, point3f *point);
 void __stdcall function_2628f0(long actor_index, s_reference reference);
 
-PRIVATE __forceinline byte *squad_area_get(short palette_index, short area_index)
+PRIVATE __forceinline byte *squad_area_get(long palette_index, short area_index)
 {
     byte *result = NULL;
     byte *scenario = (byte *)g_4e0350;
@@ -1799,7 +1817,7 @@ PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definiti
     }
 }
 
-// score 257 (was 257): Frame 0x3c agrees; count/definition/best/point homes, entry loads and packed reference tests remain.
+// score 224 (was 257): Frame 0x3c agrees; count/definition/best/point homes, entry loads and packed reference tests remain.
 // Packed comparisons 393; shared actor walk 344; split point scopes 344; early target 365;
 // native reference indices 350; entry fields at use 344; inline distance call 678.
 // Native player iterator 305; native entry cursor 316; word validation 305; matching-area
@@ -1849,6 +1867,16 @@ PRIVATE __forceinline void squad_area_consider(byte *squad, byte const *definiti
 // Round 176: Native player record 257; datum iterator 262; both 262; native squad state 257;
 // squad/player 257; squad/datum 262; all three 262; all/shared actor walk 262.
 // Datum storage grows the frame to 0x40; original records and both private helpers restored.
+// Round 201: Size4/alignment2 packed view: best/actor/both 243/248/258; native index 254;
+// best/index 255; actor/index 242 kept; both/index and word init 260/260. Guard-owned index 235,
+// entry index 242; count or best/point homes retain those scores. Long/short/signed-byte/byte
+// validation on the guard graph 235 each. Seven-point guard gain is below threshold. Keep native
+// actor equality and the three-use signed index, plain-confirmed with no other measurement change.
+// Coordinator review: the 242 needs a union/pragma-pack view of the shared s_reference type in globals.h;
+// a shared-header layout change for one compare is not kept. Body restored (257).
+// Round 436: lookup palette long 224 plain (kept); lookup area/both long 261/253;
+// consideration palette/area/both long 259/304/305; both palette inputs/all indices long 258/276.
+// The four-point lookup-both gain is below threshold; all other formal widths restored.
 // @retail 0x204450
 void function_204450(long definition_index, long squad_index)
 {
@@ -1980,10 +2008,22 @@ bool function_1e11b0(long actor_index, bool active);
 // re-fetched after the loop 76.
 // Round 407: uniform live squad lookup with native flag test/store and initializer-owned
 // handle combinations 84/89/78/83/88/93/82/87. Receiver refresh grows the body; all restored.
+// Round 41: the `(void)&squad_index;` statement removed 64 (identical code, so dropped), the
+// index read once through its address at the lookup or at the iterator call 64/64; the actor
+// index kept in the iterator as the header step does 64; the header step itself 97 (the
+// depth-zero pragma keeps it out of line). Retail gives the index EBP for the whole body and
+// splits the squad pointer around the loop (ESI outside, reloaded from the index's home at the
+// loop's back edge); ours keeps the pointer in EBX across the loop and reads the index from its
+// home inside it.
+// Round 86: existing squad_actor_next_inline step with 0x203d70's statement-level inline-depth pair
+// around the 0x203f60 call (function-level pragma dropped) 78 at 184 bytes (retail's unrotated loop and
+// `or byte` flag store), with the return as 0x203d70's `(((dword)*(short *)(squad + 2)) >> 7) & 1` 71
+// (retail's full-width return exactly); on that body squad_get, parameter address taken, parameter read
+// through its address, squad re-fetched after the loop, extra parameter uses 71-95: the parameter never
+// gets a callee-saved register, so the pointer is never split.
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
 {
-    (void)&squad_index;
     s_squad_datum *squad = (s_squad_datum *)g_51e9d8->data + (squad_index & 0xffff);
     if (*(short *)((byte *)squad + 0x7e) == g_4686c4)
     {
@@ -2049,6 +2089,10 @@ bool function_1df5d0(short team_a, short team_b);
 // Round 179: Actual first iterator initialization before disjoint header resets, with
 // receiver/hostility lifetimes and chained zeroes, 228/228/227/227/234/234/237/237.
 // Original begin order and complete body restored; cursor/contribution homes remain.
+// Round 201: Independent marked aggregation/centroid begin boundaries 266/238/281; next boundaries
+// 250/259/249; whole aggregation/centroid boundaries 284/249. Shared byte setter at opening/every
+// bit store 218/179. Original complete body and include set restored; cursor/contribution homes
+// remain.
 // @retail 0x203360
 void function_203360(long squad_index)
 {
@@ -2228,6 +2272,11 @@ PRIVATE __forceinline long squad_tick_round(real ticks)
 // Round 176: Complemented squad/overlap/both/actor/squad-actor/overlap-actor/all carriers
 // 330/307/316/322/345/336/330; all with shared raised-point scaled add 330.
 // Original complete result graph and every eager call restored.
+// Round 201: Native area result/resolved point/both 294/281/291; direct iterator handle 275; handle
+// with area/point/both 294/281/291; complete graph with word flag 293. Private iterator
+// inline/ordinary 432; forced cdecl/stdcall 275/275; inline or ordinary cdecl/stdcall 432 each,
+// losing matched 200d80/201df0/204ca0. Original target and both private helper declarations
+// restored. Public area contracts were blocked by a held declaration file.
 // @retail 0x201ea0
 void function_201ea0(void)
 {
@@ -2656,6 +2705,16 @@ bool function_1fb8a0(long arg_0, short arg_1);
 // if/else 50.
 // Round 257: apply/event ordinary-inline-noinline boundary pairs on the recovered
 // pointer/result and actor-step graph 50 each (eight forms); EBP index reload remains.
+// Round 97: a named copy of the index for the trigger part 50 (identical); one read of the index through
+// its address for the trigger part 50 (identical); short trigger count 50; long entry ordinal 93; entry
+// word read at each use 50.
+// Round 41: the trigger part reading the squad index once through the parameter's address 50
+// (folded); a local copy of the index for the first part 50 (copy propagated); declaration
+// orders of the ticks/index, task/pending, threshold/count and the actor iterator 50 each; the
+// task pointer filled by an if 107 (the NULL test goes); permuter 600 s, no gain (49 = 49).
+// Round 436: native trigger table, raw/native entries and mutable/read-only cached receivers
+// 50/50/50/50; the same complete tables observed at every use 91/91/91/91.
+// All table/entry declarations and executable forms restored; the index reload remains.
 // @retail 0x202be0
 void function_202be0(long arg_0, long arg_1)
 {
@@ -3043,6 +3102,9 @@ void function_2011f0(long arg_0);
 // Round 179: Natural short attempt counter on recovered category/seat-output frame 338;
 // with promoted difficulty/signed placement/both 344/359/357; full-width fallback on
 // those four graphs 354/359/354/359. Frame 0x134 and original body retained.
+// Round 200: native creation/request/final-chain getter subsets 355/338/355/338/355/338/355;
+// all with first cached squad receiver 403. Creation subsets reach 1328 bytes but worsen
+// instruction allocation. Original lookup producers, narrowed values and complete body restored.
 // @retail 0x201520
 void function_201520(short arg_0, long arg_1, long arg_2, long arg_3, long arg_4)
 {

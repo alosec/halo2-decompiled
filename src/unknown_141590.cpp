@@ -191,6 +191,9 @@ static inline void quaternion_transform_vector(
 // Round 258: output/vector/quaternion contract with original/scalar-cross/scale-first/
 // both forms 237/281/302/306; vector/output/quaternion contract with those forms
 // 240/237/298/311. Original helper, three call roles and body restored.
+// Round 228: two-argument in-place helper with pointer/reference quaternion and vector
+// contracts 290/290/290/290; each with independent cross scalars 313/313/313/313.
+// Original helper contracts and complete body restored.
 // @retail 0x1417b0
 void matrix4x3_rotation_between_vectors(
 	transform4x3f *matrix,
@@ -563,6 +566,13 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 // Round 406: direct nonnegative magnitude guard, length return and shared setter
 // 76/76/76/76; original magnitude expression at the caller boundary with the same
 // return/setter choices 89/89/89/89. All restored.
+// Round 22 (one-file harness, base 52 for the build's 51): the scale operand order of
+// each component, all 8 orders, makes no difference (with the third read through out-> 89
+// for every order and for sums i-j-k and j-i-k, 105 for j + (i + k)); component locals in
+// every subset and declaration order 52 when k is declared before j, 57 otherwise, 89 for
+// i alone; magnitude returned (early or else-zero) 52; `>=` guard 80; i/j scaled with *=
+// 52; the normalize written on w directly 91; cross3f_staged/cross3f (up, forward) into
+// out->left 77/82, through a local 105/105 (371 bytes).
 // @retail 0x142390
 void function_142390(
 	plane3f const *plane,
@@ -760,8 +770,8 @@ void function_143250(
 	}
 }
 
-// score 2039 (was 2039): Full frame 0x300 agrees; rotation input and basis/matrix homes remain.
-// Full frame 0x300 agrees; rotation input and basis/matrix homes remain.
+// score 1808 (was 2039): frame 0x304 versus retail 0x300; rotation admission and basis/matrix homes differ.
+// Earlier: full frame 0x300 agrees; rotation input and basis/matrix homes remain.
 // Frame pointer 3182; separate adjacent basis pairs [0,1] 2278, [2,3] 2320,
 // [4,5] 2286, [6,7] 2329.
 // Round 310: second-band product trees 2265; second-band full trees 2265; third-band
@@ -806,6 +816,11 @@ void function_143250(
 // 2279/2279/2294/2294; complete graph with basis identity 2294 (fast control 2040).
 // Original shared workspace, publications and complete polynomial body restored.
 // Round 187: On retained publications, helper inline/noinline/both 2088/2039/2088; with independent basis 2347/2298/2347; first-matrix negative lifetimes with inline 2092, with both plus independent basis 2347. All restored; rotation admission and matrix homes remain.
+// Third-band row publications at the complete scalar producer, rows 0/1/2/3/4/5/6,
+// 2076/1997/1972/2026/1808/2105/2040; all rows in producer order 2272
+// (fast control 2040). Rows [2,4] 1879; rows [1,2,3,4] 1921. Single row 4
+// kept 1808 plain at 10731/10773 bytes; all scalar statements, precision boundaries,
+// matrix element values and application calls preserved. Rotation admission and basis/matrix homes remain.
 // @retail 0x143600
 real *function_143600(real const *rotation, unsigned long order, real const *coefficients, real *result)
 {
@@ -3238,7 +3253,6 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1006 = term_1003 - term_1005;
 	term_1007 = term_664;
 	term_1008 = term_1007 * workspace.term_3;
-	matrix[28] = term_1006;
 	term_1009 = term_378;
 	term_1010 = term_1009 * term_266;
 	term_1011 = term_1010 * term_442;
@@ -3277,11 +3291,9 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1044 = term_1041 - term_1043;
 	term_1045 = term_274;
 	term_1046 = term_393;
-	matrix[29] = term_1032;
 	term_1047 = term_1045 * workspace.term_7;
 	term_1048 = term_1044 + term_1047;
 	term_1049 = 0.0357142873f;
-	matrix[30] = term_1048;
 	term_1050 = term_396;
 	term_1051 = term_1050 * term_1049;
 	term_1052 = term_1046 * term_1049;
@@ -3304,14 +3316,12 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1069 = term_1068 * 0.25f;
 	term_1070 = term_1067 - term_1069;
 	term_1071 = term_267;
-	matrix[31] = term_1061;
 	term_1072 = workspace.term_4;
 	term_1073 = term_1071 * term_1072;
 	term_1074 = term_1073 * 2.0f;
 	term_1075 = term_1070 + term_1074;
 	term_1076 = term_727;
 	term_1077 = term_1076 * workspace.term_3;
-	matrix[32] = term_1075;
 	term_1078 = term_271;
 	term_1079 = term_1078 * term_266;
 	term_1080 = term_1079 * term_1072;
@@ -3354,7 +3364,6 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1117 = term_1116 * 0.00476190494f;
 	term_1118 = term_1114 + term_1117;
 	term_1119 = term_414;
-	matrix[33] = term_1118;
 	term_1120 = term_635;
 	term_1121 = term_1120 * workspace.term_5;
 	term_1122 = term_1121 * 0.0285714287f;
@@ -3385,7 +3394,6 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1147 = term_1146 * 0.0571428575f;
 	term_1148 = term_1143 - term_1147;
 	term_1149 = term_287;
-	matrix[34] = term_1148;
 	term_1150 = term_262;
 	term_1151 = term_1149 * term_1150;
 	term_1152 = term_1137 * term_1150;
@@ -3599,6 +3607,13 @@ real *function_143600(real const *rotation, unsigned long order, real const *coe
 	term_1348 = term_1345 + term_1347;
 	matrix[47] = term_1335;
 	matrix[48] = term_1348;
+	matrix[28] = term_1006;
+	matrix[29] = term_1032;
+	matrix[30] = term_1048;
+	matrix[31] = term_1061;
+	matrix[32] = term_1075;
+	matrix[33] = term_1118;
+	matrix[34] = term_1148;
 	function_143250(result + 9, 7, &matrix[0], coefficients + 9);
 	return result;
 }

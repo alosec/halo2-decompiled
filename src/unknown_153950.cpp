@@ -406,28 +406,54 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 	slot->flags |= 1;
 }
 
-// score 13 (was 59): only the j and k outputs of the inlined rotation differ: retail adds
-// projection * axis + vector * cosine (u.j loaded before the u.i store), ours the other way round.
-// Round 15: the existing rotate_vector_170d70 for the written-out rotation 37 (rotate_direction 59,
-// record_rotate_vector 90, biped_rotate_about 60, rotate_scalars_146320 74); the unit-length tests
-// through length_sq3f with dot `v.i * w.i + w.j * v.j` 33 (other dot/cross text orders 35-49);
-// &slot->forward/&slot->vector in place of the e/u locals 24 (one of the two kept 46/51); forward
-// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76. Final scale through &slot->vector
-// 38, u before e 41, inline sine/cosine 30, renamed sine/cosine 24.
-// Earlier: norm scalar 67; nested norm tests 64; early 2D cross 207; direction copy loop 271;
+// score 13 (was 13): only the j and k rows of the inlined rotation differ: retail adds
+// projection * axis + vector * cosine (u.j loaded before the u.i store), ours the other way round
+// (the i row agrees).
+// Tried: norm scalar 67; nested norm tests 64; early 2D cross 207; direction copy loop 271;
 // rotation/scale/both component loops 166; const bounds input 64; shared scale 64; previous-priority
 // snapshot 280; requested-duration snapshot 271; external bounds reference 67; forward x/y
 // observations 165/163; normalized x observation 81; cosine-complement scalar 64; timer rereads and
 // long update 64; validity result and angle-phase scope 85; forward snapshot 126; normal snapshot
-// 119; entry sine/cosine 64; both draws after normalizing the cross vector 174; rotation statement
-// orders j/i/k 63, cosine first worse; v declared before w 60; cross3f_staged, vector3f_scale,
-// dot3f and cross3f for the written-out helper bodies (kept); dot2/cross2/initial-normal/projection/
-// rotation-cross/update products 78/78/58/60/60/60; early dot+cross+normal 56; normal producer
-// orders ijk/ikj/jik/jki/kij 64/56/64/64/56.
-// the commutative products of the 2D dot/cross, the up cross's k row and the
-// rotation block take their operands in another order, so the rotation's xmm roles and the final
-// component reloads differ.
-// Tried: norm scalar 67; nested norm tests 64; early 2D cross 207; direction copy loop 271;
+// 119; entry sine/cosine 64; both draws after normalizing the cross vector 174; every operand and
+// term order of the 2D dot/cross and of the rotation's dot alike; rotation statement orders j/i/k 63,
+// cosine first worse; v declared before w 60; cross3f_staged, vector3f_scale, dot3f and cross3f for
+// the written-out helper bodies (kept); final scale through &slot->vector 61; complete dot2/cross2/
+// initial-normal/projection/rotation-cross/update products 78/78/58/60/60/60; early dot+cross+normal
+// 56; complete rotation and early/rotation combinations 60/56; normal producer orders
+// ijk/ikj/jik/jki/kij 64/56/64/64/56; shared axial/normal/tangent contribution vectors 63-109;
+// complete shared affine sum 85; rotation through slot fields at each use 80; axis as a local copy
+// 120; rotation as an inline (vector, axis, sine, cosine) helper 59; axis cross before the
+// projection 66; complement first in the projection 59.
+// projection * axis + vector * cosine (vector.j loaded before the vector.i store), ours the other
+// way round. A compile-only copy reproduces ours once the random-range draws are inlined; with the
+// scale draw opaque or constant it gives retail's rows, so the order follows the draws' expression
+// trees, not the rotation's text, local names or the helper's file (a same-file copy builds alike).
+// Round 10: the rotation as a unit draw times 2pi 102, drawn after a plain cross3f 124, cosine
+// before sine 33, forward through vector3f_assign 15, cross3f for cross3f_staged 43; screened
+// (compile-only) rotation text orders, local names, NULL/0 file and line, draw and sine/cosine
+// placements and the other exported rotation helpers: none better.
+// Round 15: the existing rotate_vector_170d70 for the written-out rotation 37 (rotate_direction 59,
+// record_rotate_vector 90, biped_rotate_about 60, rotate_scalars_146320 74); the unit-length tests
+// through length_sq3f with dot `v.i * w.i + w.j * v.j` 33 (other dot/cross text orders 35-49);
+// &slot->forward/&slot->vector in place of the e/u locals 24 (one of the two kept 46/51); forward
+// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76; final scale through &slot->vector
+// 38, u before e 41, inline sine/cosine 30, renamed sine/cosine 24.
+// Round 17 (plain): e/u locals again 34, u only 46, e only 51; forward stored j, i, k 25,
+// j, k, i 57 (1106 bytes), k, j, i 16.
+// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76. Final scale through &slot->vector
+// Round 177: dot2/cross2/initial-normal/projection/rotation-cross/update products
+// 78/78/58/60/60/60; early dot+cross+normal 56; complete rotation and four early/rotation
+// combinations 60 and 56/56/56/56; normal producer orders ijk/ikj/jik/jki/kij 64/56/64/64/56;
+// shared axial/normal/tangent contribution vectors, masks 1-7, 105/97/94/63/109/72/92; complete
+// shared affine sum 85.
+// Round 114: rotation through slot fields at each use 80; axis as a local copy 120; rotation as an
+// inline (vector, axis, sine, cosine) helper 59; axis cross before the projection 66; complement
+// first in the projection 59.
+// Round 112: v declared before w 60; existing cross3f_staged for the up cross product, vector3f_scale
+// for the final scale, dot3f(u, e) / dot3f(e, u) for the projection and cross3f for the axis cross
+// 60/60/60/60/59 (all kept: they replace hand-written helper bodies); the final scale through
+// &slot->vector 61.
+// Earlier: norm scalar 67; nested norm tests 64; early 2D cross 207; direction copy loop 271;
 // rotation/scale/both component loops 166/166/166; const bounds input 64; shared scale 64;
 // previous-priority snapshot 280; requested-duration snapshot 271; external bounds reference 67;
 // forward x/y observations 165/163; normalized x observation 81; cosine-complement scalar 64;
@@ -467,7 +493,9 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // 60/60/60/60/59 (all four kept: they replace hand-written helper bodies); the final scale through
 // Round 114: rotation through slot fields at each use 80; axis as a local copy 120; rotation as an
 // inline (vector, axis, sine, cosine) helper 59; axis cross before the projection 66; complement
-// first in the projection 59.
+// first in the projection 59. Round 45: an inline declaration on the rotation helper 13;
+// scale/rotation/both declared earlier 13/13/13; descriptive scale/rotation names 13/13;
+// rotation declared before scale 13; sine/cosine declared earlier 13.
 // @retail 0x154df0
 void function_154df0(long index, s_speed_bounds *bounds, s_speed_slot *slot, vector3f *direction, real priority)
 {
@@ -589,7 +617,11 @@ struct s_player_axes_153d10
 };
 
 // score 2 (was 2): one product is built with its operands in the other order: retail multiplies up.k by
-// forward.i, ours multiplies forward.i by up.k. Everything else is identical.
+// forward.i, ours multiplies forward.i by up.k. Everything else is identical. Retail keeps every
+// cross product's text order; ours orders all six by the axis pointers' age. Round 14 (plain):
+// cross3f, cross3f_staged or the cross through forward/up 41; no axis pointers 35 and the axis
+// pointers after the cross 10 (all six up first); only forward or only up declared before the
+// cross 8/6 (three products flip).
 // @retail 0x153d10
 void __stdcall function_153d10(long user_index, long tag_index, void *owner, void *direction, long unused, real scale, real priority, bool directional)
 {

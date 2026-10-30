@@ -813,6 +813,19 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 // Round 199: consistent per-use unit, iterator-player and both observations 55/55/55; each with
 // retained ancestry pointer 113/113/113 (414 bytes); unsigned parent with unit/both observations
 // 55/55. Original body restored; datum/unit roles and root-walk entry remain.
+// Round 22 (lane 10): retail walks from the unit itself (root NONE, 0xbaf80's shape) and keeps the
+// walk's entry test, with the walk's object pointer in EAX. That walk shape 106 (our compiler
+// threads the entry test away); from a re-read unit field 171 and with a dword unit 171 (the test
+// returns but the unit takes EAX and the iterator index leaves the frame); with the unit object
+// fetched after the walk 100; the in-body inline_depth pair removed 185 (0xbaf40/0xbadc0 inline,
+// 508 bytes). Screened (one-file LTCG): the walk as an inline or cross-module function, under a
+// nested `if` for the unit test, or with a named object pointer: no entry test, or EAX unit.
+// Round 24 (lane 10): the walk through the existing 0xbaf80 126 (400 bytes; it stays a call here, retail
+// inlines it); the rest of the loop body nested under `if (unit != NONE)` 55; player/unit declared at
+// function scope 55; the walk as a for loop from the parent 55; the unit object fetched after the walk 171.
+// Round 294: Selected-handle/return-result common output, signed/unsigned handle, entry/late
+// storage and positive/failure completion, all eight 86 (404 bytes). Exact-only
+// output copies and complete body restored; player/unit roles and walk entry remain.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {
@@ -1285,6 +1298,16 @@ static inline s_players_globals *players_globals_14f2e0()
 // acquisition, direct global observations and early final success:
 // 170/163/203/232/198/191/206/235. All restored; the pointer lifetime changes the frame and does
 // not fix the protected spawned-unit convention.
+// Round 22 (lane 10): only two real differences are left. The 0x198 field is the player's two
+// short timers (src/unknown_152000.cpp's view); clearing them with memset gives retail's tail
+// order exactly (43; not kept, a 3-point gain). The other is the NONE outputs' constant: ours
+// `mov eax, 0xffffffff`, retail `or eax, -1` (2 bytes, so every later address is flagged). One-file
+// LTCG screens: our build compares the mode byte through AL, and a partial AL write makes the
+// constant a mov (a dword compare or no mode test gives `or`). With the memset: globals read at the
+// top 290, chained outputs 45, outputs swapped 45, result declared first 43, kept-unit result before
+// its call 43. Screened, all `mov`: one-declaration/separate/chained outputs, nested result test,
+// mode-first or negated tests, long/char mode locals, byte-typed mode, a mode predicate, unit
+// initialised NONE, reused flag first, location declared first, long location, swapped bit arms.
 // @retail 0x14f2e0
 bool __stdcall function_14f2e0(long player_index)
 {
@@ -1911,6 +1934,10 @@ bool function_23bb70(long tag_index, point3f const *position);
 // and the four values that are pushed for the call are pushed in another order.
 // Round 7: independent getters and a fresh getter only at the increment 71 each;
 // const player/options pointers and const options data 19 each; player/options/both object references 19 each.
+// Round 15: player declared before the options 90 at 303 bytes (retail's load order, aligned 9 against 8:
+// the add before the counter read and the late +0x14 read remain, and the loop loses its padding);
+// counter read through a getter in the seed with the player defined after it 77; seed built in
+// statements 19, with the options field first 19; seed computed before the result/best locals 22.
 // @retail 0x14ef00
 long function_14ef00(long player_index, long tag_index, bool deterministic, bool preserve_counter)
 {
@@ -1982,26 +2009,37 @@ struct s_player_creation_record
 };
 #pragma pack(pop)
 
-// score 33 (was 33): the value that is handed to the call is read into EDI
-// here and into EDX in retail, so the register that carries the argument
-// differs; the rest of the call is the same. Retail inlines 0x14f270 for the
-// variable controller here (only the inner NONE reset stays a call). Tried: a
-// plain call with an inline declaration of 0x14f270 267; with
-// inline_recursion pragmas or a reworded 0x14f270 the call is still kept.
-// differs; the rest of the call is the same.
-// Frame 0x10 agrees; the controller reset expands on the opposite arm.
-// Caller depth 1/2 33/33; size preference 335; common reset 55;
-// auto-inline off 33; global optimization off 395; depth 0 305;
-// common reset with size preference 343.
-// Retail looks like function_14f270(index, record->value04) inlined one level
-// (its NONE arm inline, its recursive NONE call kept), as 0x152f80 also
-// shows; our build does not inline that call (267, also with
-// inline_recursion(on) around this function). Written in function_14f270's
-// arm order, the NONE call in the other arm inlines instead (49).
+// score 33 (was 33): retail inlines function_14f270(index, record->value04) here one level (its NONE
+// arm inline, its recursive NONE call kept); our link keeps that variable-argument call out of line
+// (it inlines only constant-NONE calls), so the tail is written out and differs from +0x1f6.
+// Tried: a plain call with an inline declaration of 0x14f270 267; with inline_recursion pragmas or a
+// reworded 0x14f270 the call is still kept. Frame 0x10 agrees; the controller reset expands on the
+// opposite arm. Caller depth 1/2 33/33; size preference 335; common reset 55; auto-inline off 33;
+// global optimization off 395; depth 0 305; common reset with size preference 343. Written in
+// function_14f270's arm order, the NONE call in the other arm inlines instead (49).
 // Round 199: direct previous-controller comparison on the current partial-helper graph, with
 // native current-player fields, requested-field observations and assignment-first arms:
-// 33/33/198/198/47/47/195/195. All restored; requested-value/register roles and selective
-// recursive expansion remain.
+// 33/33/198/198/47/47/195/195. All restored.
+// Round 98: plain call 267; with 0x14f270 reading player_get 267; `inline` on 0x14f270's definition
+// 267; an old-controller local in 0x14f270, alone/with `inline` 267/267; 0x14f270 __forceinline
+// (definition, or a later declaration in this file) MATCHES here but also inlines 0x14c880's
+// variable call (278), so it is not kept: retail inlines the call here and not in 0x14c880's loop.
+// frame 0x10 and everything up to the controller block agree. Retail inlines
+// 0x14f270(index, record->value04) one level here (its NONE arm inline, its recursive (index, NONE)
+// call kept), as 0x152f80 also shows; our build keeps every non-loop variable call to 0x14f270 out
+// of line and inlines every constant-NONE call, so the written-out block expands on the opposite
+// arm, and the index pushed for 0x14f190 sits in EDI where retail has EDX.
+// reworded 0x14f270 the call is still kept; written in 0x14f270's arm order 49; common reset 55;
+// caller depth 1/2 33/33; size preference 335; auto-inline off 33; global optimization off 395;
+// depth 0 305; common reset with size preference 343. Round 199: direct previous-controller
+// comparison, native current-player fields, requested-field observations and assignment-first arms
+// 33/33/198/198/47/47/195/195. Round 22 (lane 10): a plain call with `inline` on 0x14f270's
+// definition 267 (still a call); constant NONE in the NONE arm's call 59 (both arms inline); a
+// globals pointer local in the set arm 33; the current controller read in the test 33; the
+// requested controller read from the record at each use 198. Round 24 (lane 10): the controller block
+// through the earlier player pointer 37; the change test as `controller != old_controller` 33; the requested
+// controller read after the current one 38; the set arm's player store after the globals updates 34; the set
+// arm first 47 (as the earlier assignment-first arms).
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
@@ -2178,6 +2216,10 @@ static __forceinline long player_round_ticks(real value)
 // both activity result accumulators alone/with direct inputs 723/709; two real function-scope
 // requests with direct decay/decay-clock recover frame 0x74 at 2813/2812 bytes, scores 778/777.
 // Original body restored.
+// Round 433: Repeated unit/player/both absolute slots at getter inputs, shared/separate requests;
+// both slots with direct decay and either request extent; late unit-slot acquisition and native
+// unsigned word slot domains; fast 764/769/825/827/871/923/792/856/765/745/745/827.
+// Original body and existing helper restored.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {
@@ -2588,6 +2630,12 @@ static inline bool player_datum_iterator_next(s_data_datum_iterator *iterator)
 // Round 415: retained unit 141; existing point setter 117; both 134; unsigned retained handle 103;
 // unit/setter/both with unsigned handle 141/117/134; setter with direct component receivers 130.
 // Original body restored.
+// Round 423: stage status published at the join as short/long/byte 191/191/163;
+// each with early globals scope 191/191/163; short status with retry accumulation 178,
+// also with early scope 178. Complete original body restored.
+// Round 433: Existing first iterator with direct data observations, returned datum ownership and
+// exhaustion-first arms; direct-data forced expansion; fast 103/103/103/102/102/102/102/103.
+// Original body and existing helper restored.
 // @retail 0x14cdd0
 void function_14cdd0(void)
 {
@@ -2801,6 +2849,10 @@ struct s_unit_flags_14d8b0
 // Round 415: first/second/both byte countdown results 9/9/9; paired acquisition 16; long/short
 // results 114/114; byte results with short reset result/native reset flag 9/9. Original body
 // restored.
+// Round 98: mode and reset countdown as one condition 9; reset countdown through a short reference 9;
+// the two byte countdowns through a signed char pointer 9; short slot index local in both slot
+// blocks 9; flag bytes through the player's flags word 9. Retail also splits the global/data
+// registers in the callee 0x1521d0 (ecx/edx where ours reuses one).
 // @retail 0x14d8b0
 void function_14d8b0(void)
 {

@@ -7,6 +7,7 @@
 #include "frame_storage.h"
 #include "unknown_0259d0.h"
 #include "globals.h"
+#include "normalize3d.h"
 
 struct s_33a0b_view
 {
@@ -66,9 +67,15 @@ struct s_4e6950
 };
 extern s_4e6950 g_4e6950;
 
-// score 351 (was 351): Scaled cases hoist coefficients instead of the retail post-store memory operands.
+// score 342 (was 351): Retail length recovered; scaled cases still hoist coefficients rather than reload after stores.
 // Round 291: Native component loops for case subsets 23/35/23+35/24/23+24/35+24/all:
 // 351/351/381/351/381/381/381; all with four global-scale loops 381 (fast control 351).
+// Round 300: Existing clamp upper-first branches, independent lower/upper and upper/lower stores,
+// lower/upper-first returns, lower/upper-first conditionals and upper-first result exit:
+// 390/351/390/351/390/351/390/351 (fast control 351). Original clamp and body restored.
+// Round 435: Existing scaler then clamps in cases 23/35/24/all 342/384/343/413;
+// case 23 kept, plain 342 at 1756 bytes. Multi-use coefficients in 23/35/24/all
+// 351/351/386/386. Original clamp, other cases and all game-call tuples retained.
 // @retail 0x33980
 void function_33980(long selector, vector3f *out)
 {
@@ -139,9 +146,10 @@ void function_33980(long selector, vector3f *out)
 	{
 		vector3f *vector = !g_485a58 ? &g_4686d4->vector : &g_485a58->vector30;
 		*out = *vector;
-		out->i = pin_unit(out->i * g_485a6c);
-		out->j = pin_unit(out->j * g_485a6c);
-		out->k = pin_unit(out->k * g_485a6c);
+		vector3f_scale(out, g_485a6c, out);
+		out->i = pin_unit(out->i);
+		out->j = pin_unit(out->j);
+		out->k = pin_unit(out->k);
 		break;
 	}
 	case 35:

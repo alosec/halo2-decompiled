@@ -323,6 +323,16 @@ bool function_a9820(long *block, long index)
 // short type 22; definitions first 13; definition local 13; function-scope database 11; function-scope type 11.
 // Signed accepted-state range 12; state/all rejection guards 11/11; database reference/const
 // receivers 11/11; complete payload inputs 11; native active byte with nested/rejection guards 11/11.
+// This round: the head (world in EDX, state in ECX) only comes out that way when the world pointer is
+// read from the global again, but then the database load keeps ECX; reading the database from the world
+// pointer itself moves the world to ECX and the state to EDX. Only the early-database form puts the
+// database in EDX, and it then folds the active byte as retail does (`mov cl, [eax + edx + 0x20b2]`),
+// but it loads the database before the state check, which moves the world to EAX and the index to ECX,
+// and the record address becomes `add eax, edx` with the array offset folded into every field.
+// Shapes tried: world read once 18; database local 18; re-read of the global 11; state read from the
+// global 11; array form of the active byte 14/21; const world 18; void world 18; named database 11/18.
+// The permuter could not finish a run here: it builds the whole program for its baseline and the
+// machine is busy with other lanes' builds.
 // @retail 0xa99f0
 void function_a99f0(long index, long *block)
 {
@@ -693,7 +703,7 @@ void function_aa9e0(long index, point3f const *previous_position, vector3f const
 
 
 long function_b5990(long tag_index, bool flag);
-void function_b5920(long identifier);
+void function_b5920(long identifier, long object_index);
 void object_dispatch_detach_simulation_entity(long object_index);
 struct s_effect_object_placement;
 
@@ -718,7 +728,7 @@ void function_a7a60(long index)
  long identifier = header->object->field_d4;
  if (identifier != NONE)
  {
-  function_b5920(identifier);
+  function_b5920(identifier, index);
   s_object_view *object = ((s_object_header *)g_4e0300->data)[index & 0xffff].object;
   object_dispatch_detach_simulation_entity(index);
   object->field_d4 = NONE;
@@ -1125,6 +1135,9 @@ PRIVATE inline void z_orientation_matrix(vector3f const *forward, vector3f const
 // Reused axis/angle output pointers 10; reused angle output pointer 6; saved/current output
 // pointer pairs 10/10; extraction calls swapped 7; axis declarations swapped 4; axis names 4;
 // forced orientation inline 4.
+// Held (coordinator 2026-10-30): matches with 0x11d790's parameters declared (q, angle, axis) at its
+// definition and every caller (lane 12 r44); applied once the callers in src/vehicles.cpp and
+// src/unknown_141590.cpp are free. Don't retry this function before then.
 // @retail 0xa9b40
 void function_a9b40(long index, s_z_copy_state *state)
 {

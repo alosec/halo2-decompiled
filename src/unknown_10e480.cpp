@@ -258,6 +258,13 @@ void c_animation_channel_data_get(c_animation_channel const *channel, s_animatio
 // Round 186: double storage for initial/weighted/both/countdown/initial-countdown/weighted-countdown/all
 // results 285/326/352/290/314/305/330; weighted double with promoted sample frame 335.
 // Original scalar storage and body restored; frame, getter expansion and ordinal spill remain.
+// Round 297: On early weighted-output construction, frame rejection/nested
+// frame-first/both rejections 207 each; magnitude rejection/nested magnitude-first/
+// reverse rejections/reversed shared admission 262 each (frame 0x2c, 927 bytes);
+// combined frame-or-negligible rejection 207. Original loop and full body restored.
+// Round 225: fabsf with mutable/immutable weight, native real/double absolute
+// values, mutable/immutable and with immutable weight: 207 each. Original
+// absolute expression, frame tests and body restored; getter/ordinal/frame remain.
 // @retail 0x10e530
 void function_10e530(long object_index, s_animation_state *state, long unused, dword const *node_mask,
 	long node_count, real_quaternion_transform *transforms, byte *dest)

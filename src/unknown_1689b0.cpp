@@ -1605,6 +1605,12 @@ PRIVATE inline void camera_prism_point_16a8e0(s_prism const *prism, point2f cons
 // Round 415: native plane value and staged side/perpendicular crosses, seven subsets
 // 734/553/734/603/707/603/707; all with complete normalization/ray assignments 707.
 // Original plane observations, product producers and complete geometry restored.
+// Round 424: complementary polygon/normal/contact decisions, seven subsets
+// 553/552/553/554/555/554/555; all with full-width polygon 600. Original
+// decision values, geometry and helper calls restored; sum homes and query zero remain.
+// Round 434: nearest-edge/radii/squared-limit scalar lexical homes, all seven
+// subsets 552 each; complete names with accepted radii before accumulator storage 551
+// (one-point gain rejected). Original scalar homes, word counts and geometry restored.
 // @retail 0x16a8e0
 bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
 	long ignore_object, long ignore_parent, point3f *out, real *out_radius)

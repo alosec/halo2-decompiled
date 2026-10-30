@@ -281,13 +281,13 @@ long havok_entity_component_index_get(hkEntity const *entity)
 }
 
 // @retail 0x1cf2b0
-void havok_entity_component_index_set(hkEntity *entity, s_havok_property_word component_index)
+void havok_entity_component_index_set(hkEntity *entity, long component_index)
 {
 	if (havok_entity_property_exists(entity, HAVOK_PROPERTY_COMPONENT_INDEX))
 	{
 		entity->entity_property_erase(HAVOK_PROPERTY_COMPONENT_INDEX);
 	}
-	entity->entity_property_put(HAVOK_PROPERTY_COMPONENT_INDEX, component_index);
+	entity->entity_property_put(HAVOK_PROPERTY_COMPONENT_INDEX, *(s_havok_property_word const *)&component_index);
 }
 
 // @retail 0x1cf300
@@ -923,6 +923,15 @@ void function_1d1540(s_havok_component *component);
 // pass loads the component once into ebx, yet it stays a stack argument); same with set() 88; flag5
 // first 27 (component edi); body fetched before the transformed block, either test order, 74 (edi).
 // The edi forms take 0x1d5120 from 77 to 15 but lose 0x1d1b60 (59) and move 0x1d0c20 to 49.
+// Round 33: the inverse step as a shared force-inline helper (with 0x1d0ee0) 81; that with the
+// retail body 88 (index now in ECX, ret 4: only the component's stack home and the frame shift it
+// causes differ); a volatile read of the component at either call or the second fetch 89/89/92;
+// the whole body inside a force-inline helper (diagnostic) 88. The same 88 result without 0x1d5120
+// in the image; a /Gd compile loads the component once into EBX. Matched 0x1c59a0, 0x1cbf50 and
+// 0x136860 take EBX arguments with self-aligned frames, so the alignment alone is not the cause.
+// Round 431: Library transform copies with original/fixed-first body receiver: memcpy and memmove, then
+// both with the inverse reserved at entry: 81/85/77/76/81/85/77/76. The 76 forms are five-point gains
+// only; both 77 forms lose matched 0x1d1b60 at 60. Original executable body restored.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
@@ -946,35 +955,20 @@ void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_com
 	}
 }
 
-// score 38 (was 38): BLOCKED-BY 0x1d0cf0: retail passes it the component in ebx (loaded here from
-// the stack after `push ebx`); ours pushes the component and index, so the frame and every store
-// offset differ. Tried here: zero transform/translation/both 64/61/84; rotation workspace/initialized
-// workspace/initialized transform with workspace 78/106/107; position input value 77; rotation input
-// values 143; external matrix/component records 38/38; complete frame set/initialization/library copy
-// 81/71/71; translation memcpy 70; aligned forward/up column values 49/49; defined ahead of 0x1d0cf0
-// 38; native left/all/left-up/forward-left columns 48/69/58/59; SIMD translation/rotation/all/
-// left-plus-translation 38/69/69/48. Through 0x1d0cf0 forms (round 158, not kept): its retail body
-// (assigned copy, body pointer, m_fixed first) 40 (component stays on the stack there); flag5 first
-// 49; body fetched first 49/49. Every form that makes the component a register argument puts it
-// in edi, not ebx, and costs matched 0x1d1b60.
-// only 0x1d0cf0's convention is left (retail passes the component in ebx, so
-// its frame is 0x5c with push ebx). Tried: zero transform/translation/both 64/61/84; rotation
-// workspace/initialized workspace/initialized transform with workspace 78/106/107; position input
-// value 77; rotation input values 143; external matrix/component records 38/38; complete frame
-// set/initialization/library copy 81/71/71; translation memcpy 70; aligned forward/up column values
-// 49/49; defined ahead of 0x1d0cf0 38; 0x1d0cf0's set-copy forms 40/40/49; 0x1d0cf0 with retail's
-// body (component still on the stack) 40; 0x1d0cf0 with the component in edi 49.
-// Frame and component-in-EBX convention still differ; zero transform/translation/both 64/61/84;
-// rotation workspace/initialized workspace/initialized transform with workspace 78/106/107;
-// position input value 77; rotation input values 143. Original body restored.
-// Earlier: frame and component register still differ; external matrix/component records 38/38;
-// complete frame set/initialization/library copy 81/71/71; translation memcpy 70;
-// aligned forward/up column values 49/49. Original body retained.
-// Earlier: only 0x1d0cf0's convention (component in ebx) is left; defined ahead of
-// 0x1d0cf0 38; 0x1d0cf0's set-copy forms 40/40/49.
-// Round 184: Native left/all/left-up/forward-left columns 48/69/58/59; SIMD
-// translation/rotation/all/left-plus-translation 38/69/69/48. Original aligned values and all
-// matrix components restored.
+// score 38 (was 38): BLOCKED-BY 0x1d0cf0: retail passes it the component in EBX (loaded here from the
+// stack after `push ebx`); ours pushes the component, so the frame and every store offset differ. The
+// body is otherwise retail's instruction for instruction. Tried here: zero transform/translation/both
+// 64/61/84; rotation workspace/initialized workspace/initialized transform with workspace 78/106/107;
+// position input value 77; rotation input values 143; external matrix/component records 38/38;
+// complete frame set/initialization/library copy 81/71/71; translation memcpy 70; aligned forward/up
+// column values 49/49; defined ahead of 0x1d0cf0 38; native left/all/left-up/forward-left columns
+// 48/69/58/59; SIMD translation/rotation/all/left-plus-translation 38/69/69/48. Through 0x1d0cf0
+// (not kept): its retail body (vector copy, body pointer, m_fixed first) 40 (component stays on the
+// stack there); flag5 first 49; body fetched first 49/49; every form that makes the component a
+// register argument puts it in EDI, not EBX, and costs matched 0x1d1b60. Round 33: the shared
+// world-to-local transform step as a force-inline helper (also used by 0x1d0ee0, which stays matched)
+// 38, with 0x1d0cf0's retail body 40; that with a volatile read of 0x1d0cf0's component at the
+// 0x1d1540 call/the 0x1d1260 call/the second body fetch 40/40/40.
 // @retail 0x1d0c20
 void havok_component_rigid_body_matrix_set(long rigid_body_index, s_havok_component *component, transform4x3f const *matrix)
 {
@@ -1362,7 +1356,7 @@ void function_1d0080(hkRigidBody *body, s_havok_component *component, byte const
 		function_2d91d0(array, sizeof(s_havok_component_rigid_body));
 	new (&array->data[array->size++]) c_component_body_state((hkEntity *)body, values, count, enabled);
 	havok_component_rigid_body_state_update(body_index, component);
-	havok_entity_component_index_set((hkEntity *)body, *(s_havok_property_word const *)&object->havok_component_index);
+	havok_entity_component_index_set((hkEntity *)body, object->havok_component_index);
 	havok_entity_property_2002_set((hkEntity *)body, *(s_havok_property_word const *)&body_index);
 	if (body->m_motion->kind_code() != 7 && body->m_motion->kind_code() != 6)
 		component->unknown04 |= 0x8000;
@@ -1424,31 +1418,35 @@ PRIVATE __forceinline real const &component_time_step()
 	return g_510c54->rate;
 }
 
-// score 26 (was 43): Acceleration XMM0/memory timestep prefix and stop-test schedule still differ;
+// score 26 (was 26): earlier 43; Acceleration XMM0/memory timestep prefix and stop-test schedule still differ;
 // negative-target guard 50; stopping branch first 106; step predicate first 26 (kept, plain 26);
 // negative guard with step predicate 32; independent/eager stop decisions 129/124;
 // explicit fraction branches 43; velocity input/output lifetime 219.
-// score 26 (was 26): acceleration/timestep registers and stop scheduling remain; direct stopping decision 106;
+// acceleration/timestep registers and stop scheduling remain; direct stopping decision 106;
 // conditional/stopping-first results, stopping ticks, squared speed, limit magnitude, normalized speed
 // and captured step decision 26 each. Original body retained.
-// score 26 (was 26): acceleration/timestep allocation remains; assigned correction and positive clamp 26;
+// acceleration/timestep allocation remains; assigned correction and positive clamp 26;
 // nonpositive/all assigned clamps 45; shared velocity clamp 148; shared bounds 148 (449/450 bytes).
 // acceleration register, memory timestep multiply and stop-test schedule differ.
 // Ordinary acceleration/magnitude/time inline contracts and paired forms 26;
 // completed clamp before ratio 82; accelerated candidate default 114.
-// score 26 (was 26): the time step is still loaded before its product; retail multiplies from memory
+// the time step is still loaded before its product; retail multiplies from memory
 // and keeps the step's address. Step on the left of both products 26; direct field reads 26;
 // one-expression step 26; address-taken target 26; step pointer first 142; direct reads with the
 // stopping test first 43; product inside the scale helper 26; per-arm mass step 135.
 // acceleration/timestep allocation and stopping schedule remain.
 // Combined forced/stopping step-first, distance-first, eager distance, conditional result,
 // named decision and stopping guard 106 each; merged default/return scaling 140/110.
-// score 26 (was 26): isolated mass return 113; threshold-first return 121; returned
+// isolated mass return 113; threshold-first return 121; returned
 // selection/nested return/power selection 113 each; direct/default/assigned magnitude
 // results with mass return 113/127/113. XMM0 prefix improves; memory timestep still differs.
-// score 26 (was 26): acceleration/timestep allocation and stopping order remain.
+// acceleration/timestep allocation and stopping order remain.
 // Mass eligibility early scale/mass-first 164/166, late 26/120; selected divisor early/late 143/114;
 // early eligibility with selected normalization scale/mass-first 164/166. Original helper retained.
+// Round 15: stop distance tested before the step 43 (retail's test order, zero register rotated);
+// the same with the step on the right of both products 43; time-step reference declared first 142,
+// with the stop-first test 142; time step copied into a value local 99 (acceleration in xmm0 as
+// retail, but the step stays in a register instead of the memory multiply).
 // @retail 0x1d2280
 real function_1d2280(bool allow_reverse, bool scale_by_mass, real mass, real target, real acceleration,
 	real velocity, real limit, real position, real exponent, bool force_acceleration, real *ratio)
@@ -2212,6 +2210,15 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 184: Native contact/material/both add boundaries 157/162/210; reversed complete inputs
 // 157/162/210; existing vector assignment at contact/material sums 144/114. Original sums and
 // matched sample boundary restored.
+// Round 426: complete normal/velocity/final scaled-product staging, all seven
+// subsets, 109 each; complete staged outputs through the existing vector setters 127.
+// Original products, j/k/i normal publication and matched sample boundary restored.
+// Round 193: Magnitude pointer inline and vector-reference forced/ordinary inline 109/109/109; vector-value
+// forced/ordinary inline 490/490; scalar-value forced/ordinary inline 193/193; scalar-reference input 109.
+// Original helper contract restored; first normal XMM ownership and velocity preloads remain.
+// Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
+// at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
+// Original normalization and fallback restored.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {
@@ -2690,6 +2697,11 @@ PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
 // inline test helpers and a short index (no strength reduction) never flip it. Real trials: keyframed
 // method/free wrapper at the first test 156/156; separate inline linear/angular getters 128; while
 // loop 7; a body pointer for the test and the velocity read 152.
+// Round 33: keyframed method marked inline at both tests, as member or free wrapper, 7/7 (same
+// code); forceinline at both/the last test 7/7 (0x2273d0 and 0x1c4b00 lose); the matched siblings'
+// index declared before the loop 7. Compile-only screens: the order turns to retail's only when the
+// loop head reads the array's size field before the first rigid body; getter parameter order, a
+// member function with `this`, direct data[] reads and index names never move it.
 // Earlier rounds (the full image then pushed ebx/ebp/esi at entry):
 // Earlier: Frame 0x30 agrees; admission save staging and paired fixed/zero velocity homes remain.
 // staggered register saves and paired velocity homes differ;
@@ -2774,6 +2786,8 @@ PRIVATE __forceinline bool velocity_limit_length(vector3f *v, real maximum)
 // Round 183: target entry inline/noinline 50/50; state-update inline alone/with entry
 // inline/noinline 50/50/50; state-update noinline alone/with entry inline/noinline 50/50/50.
 // Paired getter unchanged; all contracts restored.
+// Round 47: array operator[] at all five/first-only/late-three sites 10/7/10; array reference for the
+// bound/all reads 7/10; size reference 7; shared data pointer 171; final call scope 7. Original body restored.
 // @retail 0x1ced00
 void function_1ced00(s_havok_component *component)
 {

@@ -64,6 +64,9 @@ PRIVATE inline long secondary_weapon_get(long unit_index)
 }
 
 // score 12 (was 12): separate outer sentinel register and exit remain; the actor-base prefix agrees.
+// Retail keeps the unit in EDX and the outer NONE in ECX, and copies the unit to EAX for the query
+// (`mov eax, edx`): the form of a second field read still alive at register allocation. Two-read
+// result forms here fold the first read (`mov ecx, [eax+edx+0x18]`) ahead of a dead `add eax, edx`.
 // Earlier: with the slot query through 0xcbd50 (inlined) the actor-base add,
 // the masked-index copy and the inner sentinel are retail's; retail still keeps a separate
 // Frameless; independent outer sentinel and unit EDX lifetime still differ.
@@ -104,6 +107,8 @@ PRIVATE inline long secondary_weapon_get(long unit_index)
 // field two result arms 12; result goto done 20; field pointer result/early return 20/17;
 // direct else 12; success guard 20; conditional return 12; field reference 17;
 // repeated actor query 22.
+// Round 44: field read at each use with 0xcbd50 called directly 20; unit index local with direct
+// 0xcbd50 20; ternary result 20; unit object pointer local 20; NONE-first if/else result 12.
 // @retail 0x1e1fd0
 long function_1e1fd0(long actor_index)
 {
@@ -799,6 +804,9 @@ void swarm_leader_detach(long actor_index);
 // the tag query, long/short/byte/dword in each lifetime: eight 261 fast, equal to unchanged
 // fast control (full 285). Original ordinal lifetime and entire executable body restored;
 // frame 0x1c/0x20, actor displacement and cleanup countdown homes remain.
+// Y423: Absent-stop continuation with empty-memory continuation, false-count
+// dispatch first and ordinary-unit branch first, all eight subsets 261 fast
+// against unchanged fast 261 (ordinary 285). Original complete body restored.
 // @retail 0x1e1a00
 void __stdcall function_1e1a00(long actor_index, long value)
 {

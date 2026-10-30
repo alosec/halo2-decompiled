@@ -532,7 +532,7 @@ static inline void actor_looking_rotate(vector3f *vector, vector3f const *axis, 
 	actor_looking_rotate_in_place(vector, axis, sine, cosine);
 }
 
-// score 343 (was 320): the frame remains 0x9c versus 0xa8; axis, random/trig and vector schedules differ.
+// score 333 (was 333): the frame remains 0x98 versus 0xa8; axis, random/trig and vector schedules differ.
 // Tried: direct collision Boolean 355; initial best vector before normalization 356; result declared first 354;
 // long sample counter 355; axis/sample/range names 355; shared normalizer 330 (sum order changed, restored);
 // shared random-range helper 360; one result return 377; paired span names 355; names plus one return 377;
@@ -566,6 +566,11 @@ static inline void actor_looking_rotate(vector3f *vector, vector3f const *axis, 
 // Round 95: the shared rotation helper in projection-first scalar form (for 0x297d30) 318; both ranges
 // after the axis normalization as retail computes them 343 (kept: the only caller 0x297660 then passes
 // the yaw bounds on the stack, 52 -> 19), one range only 313/313.
+// Round 97: one exit with `result = true` for the best-direction tail 333 (kept: the collision flag now
+// stays on the stack as in retail, which matched 0x297660); with `clear` set first in each pass as a bool 349.
+// Round 433: Single-exit success stored as byte/char/short/long 370/370/382/383;
+// without the dead entry collision-state value 370/370/382/383. All restored;
+// native success widths do not recover the 0xa8 frame or initial CL zero store.
 // @retail 0x296e60
 PRIVATE bool function_296e60(point3f const *origin, vector3f const *forward, bool test_collision,
 	real yaw_lower, real yaw_upper, real pitch_lower, real pitch_upper, vector3f *direction)
@@ -612,7 +617,7 @@ PRIVATE bool function_296e60(point3f const *origin, vector3f const *forward, boo
 	{
 		actor_looking_normalize3d(&best_direction);
 		*direction = best_direction;
-		return true;
+		result = true;
 	}
 	/* Retail still draws ten samples when collision testing is disabled,
 	   then returns false without writing the output vector. */
@@ -693,6 +698,12 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // All restored; fast control 301, plain baseline 290. Boolean roles and point/case transport remain.
 // DH round 257: Shared case handle/receiver/both 301/301/301; byte result on each 310/310/310; both with
 // short/long result 330/322. All restored; reduced control 301, full baseline 290.
+// Round 424: selected-type-derived point presence in short/word/long/dword at entry
+// 384/384/387/387; consumed directly at successful normalization 392/392/394/394.
+// All restored; native result/point-valid homes and case-specific point transport remain.
+// Round 436 (fast control 301, full 290): point-presence assigned after each successful
+// point producer, bool/byte/word/long 310/310/368/364; assigned at the two
+// geometry consumers 372/372/393/393. All nonexact presence-lifetime forms restored.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)
@@ -957,49 +968,6 @@ real g_55e5bc = 0.17453292f;
 real g_55e5c8 = 0.17453292f;
 real g_55e5cc = 0.08726646f;
 
-// score 12 (was 54): the character-bounds yaw-lower store sinks below the pitch comparison; the
-// collision flag is passed in BL (BLOCKED-BY 0x296e60, whose loop keeps it on the stack in retail).
-// frame 0x38 and entry homes agree; scaled-pitch schedule, later yaw homes and helper transport differ.
-// the 0x38 frame and initial bound homes agree; scaled-pitch scheduling and call registers differ.
-// Tried: shared pitch bound 204; upper if/else 205; both if/else 205; shared bound plus if/else 204;
-// both scaled angles named before the bound stores 55 (kept); upper limit first 205; both limits first 197;
-// limit-first clamps with dot3f 201; shared bound before/between the scaled angles 57/57; lower yaw store first 55;
-// both random spans read once 212; the direct Boolean in the sampler changes this caller from 55 to 96.
-// Round 212: yaw names/result-first/both 96; chained zero initialization and
-// its name/result/declaration combinations 98; lower-first character stores 96.
-// Upper-first yaw initialization 94; plus later scaled pitch/shared pitch limit/both
-// 202/94/202. Two-point form rejected; yaw homes, pitch scheduling and call registers remain.
-// Bounds before lookup, alone/with scale 98/99; direct horizontal/aiming/both
-// projections 173/159/170; shared dot 62; projections plus dot/upper-first 170/168.
-// Shared dot with upper-first/later pitch 60/58; reverse dot alone/upper-first/later
-// pitch 58/56/54 (kept). Addition grouping and all marked call arguments are unchanged.
-// Round 236: scale-first products / scaled-angle names / branch-defined scale / products+branch /
-// products+names / names+branch / native copies / copies+branch 54/54/253/253/54/253/54/253; all
-// restored.
-// Round 162: final-local pitch clamps 207; paired raw angle carriers 56, with clamps 207;
-// existing paired-angle view 54, with clamps 207; byte result 51 (three-point gain, restored);
-// branch-produced result 249, with clamps 253. Scaled pitch and sampler registers still differ.
-// Round 224: Native yaw/pitch bound records and full-width result, seven subsets
-// 56/70/209/70/72/86/219; both records in pitch/yaw order 210. No exact match; original scalar
-// homes and body restored.
-// Round 177: Full vector setters 279, with byte result 282; common output publication
-// 265, with byte result 272; both 322, with byte result 327; fallback setter 63;
-// actor-copy setters 274. Original frame, publication, copies, result and calls restored.
-// Round 244: upper-first aiming/relative/both yaw publications 58/56/60;
-// two-use pitch cap before scaled bounds 54, with those publications 58/56/60;
-// cap at original first observation 54. All restored; pitch-cap schedule and helper transport remain.
-// Round 246: Earlier aiming projection/angle selector/read-only dot producer, seven combinations: 165/85/165/149/168/178/168/168.
-// Eighth form adds read-only actor/property/angle inputs to the complete producer form.
-// All trial forms restored; no candidate qualifies.
-// Round 248: Base workspace shared with fallback, native/setter 54/97;
-// base first 54/97; byte result 51/101; base first and byte result 51/101.
-// The three-point forms are restored; pitch-cap/scaled-bound and sampler transport remain.
-// Round 95: yaw_lower declared first 56; the angle helper's arguments in retail's order (aiming first,
-// as its registers show) 52 (kept); 0x296e60 taking both ranges after its axis normalization 19 (kept),
-// one range only 50/54; with yaw_lower first 17 (kept); lower pitch limit before the yaw bounds 12
-// (kept), named pitch limit 16, scaled pitch before the yaw stores 19, lower limit after the scaled
-// pitch 21, inline limits 99; limit after the yaw product/between the stores 12/12; lower yaw first 12;
-// scaled pitch between the stores 208; yaw_upper as the product 12.
 // @retail 0x297660
 PRIVATE bool function_297660(long actor_index, bool use_aiming_direction, bool use_character_bounds,
 	s_type_952051 *specification)
@@ -1020,10 +988,10 @@ PRIVATE bool function_297660(long actor_index, bool use_aiming_direction, bool u
 			base.k = 0.f;
 			if (function_30bf0(&base) == 0.f)
 				base = *g_4687a8;
-			real minimum = 0.f - g_55e5bc;
 			real yaw = properties->aiming_yaw * scale;
 			yaw_upper = yaw;
 			yaw_lower = 0.f - yaw;
+			real minimum = 0.f - g_55e5bc;
 			real pitch = properties->aiming_pitch * scale;
 			real lower = 0.f - pitch;
 			pitch_lower = minimum > lower ? minimum : lower;
@@ -1104,7 +1072,7 @@ struct s_actor_looking_structure_view
 };
 
 /* Name inferred from the path traces and the idle-direction caller. */
-// score 23 (was 68): only rank-driven operand orders remain: the rotation dot (retail j,i,k with axis j
+// score 23 (was 23): only rank-driven operand orders remain: the rotation dot (retail j,i,k with axis j
 // loaded before the copy), the axis-j-first cross product and the score sum (retail i,k,j).
 // counter homes, candidate cursor and expanded rotation scheduling differ.
 // entry result order now agrees; loop homes, rotation scalar scheduling and return tail remain.
@@ -1141,6 +1109,14 @@ struct s_actor_looking_structure_view
 // alone/with cross/with staged cross 142/149/149; same-order staged projection alone/with cross/with staged
 // cross 139/82/82. Counter/cursor homes and scalar schedule remain; original helper, include set and body
 // restored.
+// Round 97: helper products written axis-j-first in the dot and cross k as retail computes them 23 (identical
+// code); one extra float tuple at entry/at the loop top 48/48 (only the selected-direction sum rotates);
+// the axis read once through a local before the loop 70; fraction default before the copy 23; horizontal
+// forward as an initializer 199; forceinline in-place helper 23.
+// Round 100: score as dot3f(&forward, &directions[i]) 33 (moves the rotation's axis loads ahead of the
+// copy, as retail, but flips other product operands); the existing cross-file rotation helpers with
+// sine/cosine arguments (cross-first scalars / dot3f with a cross vector) 146/140; the candidate array
+// declared before forward 23; forward copied member-wise 199.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {
@@ -1301,6 +1277,13 @@ struct s_actor_looking_turn_request
 // DH round 252: One sequential aiming/looking validity result, native long/short/byte/bool
 // with long idle, then each with short idle
 // 506/549/522/522/540/547/524/524. Original complete executable body restored.
+// Y423: High aiming case block first 536; looking case 2 first 525; both 536;
+// those orders with sequential validity 536/525/536; high aiming with outer
+// validity scope, alone/with looking order 536/536 fast (control 525). Restored.
+// Existing validity defaults produced by marker/combat/aiming decoder success tests,
+// subsets 1-7, 530/528/530/535/551/535/551; all plus looking decoder tests 526
+// (fast control 525, full 506). All reserve 0xcc versus retail 0xc8; exact-match-only
+// forms restored, preserving original result storage, scopes, queries and complete body.
 // @retail 0x298370
 void function_298370(long actor_index)
 {

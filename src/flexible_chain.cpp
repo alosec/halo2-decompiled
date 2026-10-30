@@ -295,6 +295,12 @@ void __stdcall function_1160c0(real dt)
 // statements, copies, segment loop, homes and every call tuple restored.
 // Round 181: outer/per-selection count 298/179; inclusive bound live/selection/outer
 // 302/302/235; ordered terminal selection live/selection/outer 180/180/298. Original body restored.
+// Y423: Existing staged cross with paired differences, scaled target and velocity
+// helper subsets 192/265/186/265/204/273/198/273 fast (control 179);
+// all regress. Original complete body and include list restored.
+// N226: Current position owns the constrained target; direction-workspace/axis-scale/
+// blend-owned-stiffness masks 0..7 give 208/252/208/252/285/334/285/334.
+// All shorten the body and lose the original frame; complete original body restored.
 // @retail 0x1161f0
 void __stdcall function_1161f0(s_chain_record *record, s_chain_definition *definition, real dt)
 {

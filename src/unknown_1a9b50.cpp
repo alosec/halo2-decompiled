@@ -252,7 +252,9 @@ bool __stdcall function_1aa990(long actor_index, s_slot *slot)
 
 // score 11 (was 11): extent now agrees at 352 bytes; the pool pointer still uses ECX
 // instead of EAX, the fraction uses EDX instead of ECX, and the shared range-value
-// load/compare schedule differs.
+// load/compare schedule differs. Reading the range field at each use (no local) gives
+// retail's compares (aligned 7 -> 4) but 17 at 353 bytes: the ECX pool load is a byte
+// longer than retail's EAX one.
 // Tried (r35): prop_ref_get and the real record types 17; the state assigned after declaration 17;
 // prop_node_state 17; the reversed probability comparison 35; const entry, state, or actor/unit 17.
 // Guarded state/value/both observations 59/11/57; probability result conditional 105;
@@ -268,6 +270,8 @@ bool __stdcall function_1aa990(long actor_index, s_slot *slot)
 // Round 33: lower-only scalar, split result predicates, range-field pointer and nested upper
 // scalar 17 each; guarded state value 59; noinline state/actor/fraction/admission helpers 11 each;
 // entry prop index with state wrapper/direct range 63; block prop index with them 17.
+// Round 87, on the per-use range field: result declared first 88; the inner tests merged into
+// one if 17; the state through prop_node_state 17; a node pointer for the state 17.
 // @retail 0x1aa9f0
 short __stdcall function_1aa9f0(long actor_index)
 {
@@ -520,6 +524,9 @@ extern point2f *g_468778;
 // Round 38: Common result set by independent final failure tests, all six field orders 375
 // each fast; nested success assignment 380; failure-result ladder 373, all 1549 bytes.
 // Two-point best rejected; original result expression, defaults and complete body restored.
+// Round 428: native short/word/long/dword completion result 404/404/406/406;
+// those result widths with actor-first acquisition 401/401/403/403. All 1549 bytes;
+// result spill and actor/settings/prop allocation remain; original bool result and lookup order restored.
 // @retail 0x1aa0d0
 bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 {
@@ -763,6 +770,9 @@ static __forceinline long real_to_long(real value);
 // combinations, then coefficient/time names: 384 each. Original restored.
 // Round 206: Combined metadata/prop guard, query rejection else-if, typed request direction and all
 // subsets [384, 384, 384, 384, 384, 384, 384]; all with returned admission predicate 517. Original restored.
+// Round 220: Early distance-limit scope/exhaustive/conditional/complementary producers 398/402/402/402;
+// the same four with the actual native slot formal and no cast alias 398/402/402/402. All retain
+// retail length but regress; complete original body, formal, sole declaration and every query restored.
 // @retail 0x1aab50
 bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 {

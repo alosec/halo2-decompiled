@@ -3,6 +3,7 @@
 #include "slot_handler.h"
 #include "unknown_2605d0.h"
 #include "unknown_2626b0.h"
+#include "normalize3d.h"
 
 /* slot type 0x6d */
 
@@ -87,7 +88,7 @@ s_slot_handler_2 g_47e1c0 =
 	(t_slot_proc)function_1b3380, 0, function_1b3540
 };
 
-// score 109 (was 109): frame 0x44, loops, squares and dot agree; the direction's XMM registers (ours x1/y2/z3, retail x3/y0/z1) make the normalize copy the inverse for j, one extra movaps that shifts the tail.
+// score 107 (was 107): frame 0x44, loops, squares and dot agree; the direction's XMM registers (ours x1/y2/z3, retail x3/y0/z1) make the normalize copy the inverse for j, one extra movaps that shifts the tail (aligned 22, register-masked 3).
 // Direction SIMD homes and the extra reciprocal copy remain in the native 0x44 frame; restore the full opening body.
 // Earlier: frame 0x44 and initial stores agree; direction XMM, square/store and normalization scheduling differ.
 // Earlier split direction plus rolled reset 116; selection initialization 109;
@@ -120,9 +121,23 @@ s_slot_handler_2 g_47e1c0 =
 // (same registers); all three components scaled in place 107 (operands are canonicalized).
 // Round 191: Existing displacement setter 107; fallback-point setter 188; both 188; normalized-vector setter 107; displacement/normalization 107; fallback/normalization and all three 188/188.
 // Round 191: Complete setters with existing projection helper 188. Two-point forms fail the retention margin; every setter and changed-sum form restored.
+// Round 186: Matched point-transform inline declarations, then inline with separate noinline declarations,
+// crossed with native/shared subtraction and magnitude/projection: 109/107/107/124 and 109/107/107/124.
+// Result-first bool/byte/long and later bool: 139/216/207/216. Two-point gains fail the keep margin;
+// changed-sum forms are also match-only. Restore the complete original executable body, loop domains,
+// recursive call, all vector operands, helper bodies and every external declaration. Frame 0x44 and the
+// direction XMM/reciprocal-copy gap remain.
 // Round 194: complete native origin/destination/both/facing inputs 245/218/316/154;
 // origin+facing/destination+facing/all inputs/shared subtraction 291/260/363/363.
 // Input snapshots enlarge the frame; all original per-use inputs and the in-place direction restored.
+// Round 35: the existing normalize3d for the hand-written magnitude/normalize and dot3f for the score
+// 107 (kept; 0x1c4590 stays 6); with vector3d_from_points3d in both branches 108; the components
+// defined in the five other orders 111-114; direction declared before point 107; normalize_inline 160.
+// Retail's operand orders (y*inv, z*inv in place, inv*x through a copy) and registers (y0 z1 inv2 x3)
+// both rank y, z before the reciprocal and x after it; ours ranks the reciprocal first.
+// Round 307: Complete tried-mask/encounter-key/const actor lifetime subsets
+// 194/107/194/107/194/107/194; all with unsigned ordinal 199. Original context reads,
+// actor lifetime, ordinals and shared math restored; direction SIMD homes and reciprocal copy remain.
 // @retail 0x1b3070
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {
@@ -170,18 +185,8 @@ bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 				direction.j = point.y - actor->position.y;
 				direction.k = point.z - actor->position.z;
 			}
-			real distance = (real)sqrt(direction.i * direction.i + (direction.j * direction.j + direction.k * direction.k));
-			if (!(fabs(distance) < 0.0001f))
-			{
-				real inverse = 1.0f / distance;
-				direction.i = inverse * direction.i;
-				direction.j *= inverse;
-				direction.k *= inverse;
-			}
-			else
-				distance = 0.0f;
-			real score = (real)((double)direction.i * actor->unknown290.i +
-				((double)direction.j * actor->unknown290.j + (double)direction.k * actor->unknown290.k) - distance * 0.1);
+			real distance = normalize3d(&direction);
+			real score = (real)(dot3f(&direction, &actor->unknown290) - distance * 0.1);
 			if (score > best_score)
 			{
 				best = current;
@@ -259,6 +264,10 @@ real function_1f8940(long actor_index);
 // Request clear before scratch 71; all constants before scratch 76; full request before scratch 75;
 // kind/numerics/flags before scratch 68/68/77; choice fields before constants 30;
 // constant prefix with range before choice 77. Scratch/request staging restored.
+// Round 14 (exact LTCG harness): a copy of the reference for the follow call, the cancel call or both 27;
+// the follow result in a local 27; the found arm first 54; the sentinel test as a long compare 27, as
+// field compares 72 (130 instructions); the reference declared at function scope 27; the outputs declared
+// at the top, before the scratch or swapped, the scratch after the request 27; the request at the top 50.
 // @retail 0x1b3380
 bool __stdcall function_1b3380(long actor_index, s_slot *slot)
 {

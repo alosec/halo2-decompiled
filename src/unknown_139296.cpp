@@ -468,6 +468,10 @@ bool function_22acb4(long player_index);
 // Round 38: Complete second-mask computation after first-mask updates 8/2/4/16/32/256/512/1024:
 // 272/168/288/165/278/278/280/280 fast, lengths 883/880/874/880/881/881/881/881. Extra
 // second-mask slot remains; original phase order, observation and complete body restored.
+// Round 424: physical item-selection orders 2143/2413/2431/3142/3412/3421/4132/4213
+// all 165 at 884 bytes. Original order restored; extra second-mask spill and constant homes remain.
+// N227: Set-first total updates in first/second/third/fourth/first-second/second-third/
+// second-fourth/all result families 304/287/281/285/303/285/304/347. Original setter restored.
 // @retail 0x13a050
 void function_13a050(byte const *status, long user_index, long type, s_13ad48_item const **item_out,
 	word *first_out, word *second_out, word *third_out, word *fourth_out)
@@ -1154,15 +1158,17 @@ void function_22b8e2(s_22b8e2 const *arg_0, long arg_1, color4f const *arg_2);
 void function_22aff1(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 void __stdcall function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3, real const *arg_4);
 
-// score 1 (was 1): first count still TEST EAX,EAX versus CMP EAX,EBX.
+// score 1 (was 1): first count still TEST EAX,EAX versus CMP EAX,EBX: retail's EBX is the
+// hoisted mask zero, compared by the first guard and then kept as the first offset; ours starts
+// the offset from it before the guard. The sibling form for the first loop (guard, then offset)
+// makes loop 1 exact but keeps the zero live in EBX all function (118) unless a later loop
+// starts its offset before its guard (one later loop in the for form 3, both 6).
 // Offset-compared do/renamed-do 12/12; offset-guard for/nonzero-for/named admission/while 1/1/1/1;
 // offset-plus-one admission 125; split first offset 42; direct-bound first do/for 118/118;
 // direct-bound first with independent later loops 6; later count-first 6; captured later guards 116;
 // independent second 3; captured/split-offset second 118/118; nonzero second admission 76;
 // positive-nonzero/double-positive/combined second admissions 118/118/118.
-// score 1 (was 12): only first count zero-test differs: TEST EAX,EAX versus CMP EAX,EBX; frame 0x28 and retail length agree.
-// only first count zero-test differs: TEST EAX,EAX versus CMP EAX,EBX; frame 0x28 and retail length agree.
-// Earlier: only first count zero-test differs: test EAX,EAX versus CMP EAX,EBX; frame 0x28 and length agree.
+// Earlier at 12: frame 0x28 and retail length agree.
 // Earlier: retail keeps a success byte (set to 1 up front, overwritten with the
 // call's result on failure) and returns that byte directly; ours keeps the failure flag, so the
 // store and the negated return differ and the function is eight bytes longer.
@@ -1192,6 +1198,12 @@ void __stdcall function_22aa16(long arg_1, byte const *arg_2, byte const *arg_3,
 // Repaired-countdown mask chain 5; offset mask producer 5; late result 1; subject,
 // descriptor, input and mask lexical roles 1/1/1/1; mask chain with native roles 5.
 // Partial mask chains 34/35/36/45/46/56/345/456: 5/4/5/3/4/3/5/3; first zero-test remains.
+// First loop indexed over a captured count/the field 118/106; captured count guarded with the
+// offset inside 42 (count takes EBX); guarded for/while 118/118; index counter with the offset
+// as now 1; sibling form plus later loops captured/indexed/count-first/`> 0` do/guarded for
+// 116/118/118/125/118; draw result as a ternary 158 or stored as the failed result 118 (also alone);
+// one shared offset, with or without a shared count 127/127; offset declared before the mask
+// zeros, before the setup call or first, with the sibling first loop 1/1/1.
 // @retail 0x13a3c6
 bool function_13a3c6(long arg_1, long arg_2, byte const *arg_3, long arg_4)
 {

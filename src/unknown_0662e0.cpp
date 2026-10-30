@@ -509,7 +509,10 @@ __forceinline void network_configuration_levels_initialize(s_network_configurati
 	}
 }
 
-// score 363 (was 363): frame 0x20 agrees; constant five, first-table induction and flag
+// score 265 (was 363): retail holds the constant five in edx from the value28 store to the
+// value1b0 store and walks esi over the first table's value84 row with value40 at [esi - 0x44];
+// ours rematerialises the five, indexes the first table with esi and fills the flags differently.
+// Earlier: frame 0x20 agrees; constant five, first-table induction and flag
 // initialization differ. Register allocation differs from the first loop on. Retail keeps i in
 // ebp and walks a pointer in esi over value84 (value40 at [esi - 0x44]), comparing it with
 // &value84[1] and &value84[4]; the inlined levels loops walk pointers the same way. Ours keeps i
@@ -603,6 +606,10 @@ __forceinline void network_configuration_levels_initialize(s_network_configurati
 // Round 205: high first-table interval first / diagonal-first matrix / both 486/628/643;
 // independent unsigned matrix ordinals alone/with high/with diagonal/with both 475/488/657/664;
 // equal-flag partition 694. Original decision graph, tables and counters restored.
+// Round 311: initial five/induction/flag gaps remain; cumulative curve producer
+// kept at 265 plain, 2678/2676 bytes. Chained initial five/capacity/both
+// 438/438/388; curve alone 265, with five/capacity/both 425/425/386;
+// all with native flag clear 481. Original default observations and flags retained.
 // @retail 0x66330
 void network_configuration_set_defaults()
 {
@@ -804,16 +811,29 @@ void network_configuration_set_defaults()
 			value += 500;
 		}
 	}
-	g_network_configuration.value774[40] = g_network_configuration.value774[39] + 600;
-	g_network_configuration.value774[41] = g_network_configuration.value774[40] + 800;
-	g_network_configuration.value774[42] = g_network_configuration.value774[41] + 1100;
-	g_network_configuration.value774[43] = g_network_configuration.value774[42] + 1500;
-	g_network_configuration.value774[44] = g_network_configuration.value774[43] + 2000;
-	g_network_configuration.value774[45] = g_network_configuration.value774[44] + 2600;
-	g_network_configuration.value774[46] = g_network_configuration.value774[45] + 3300;
-	g_network_configuration.value774[47] = g_network_configuration.value774[46] + 4100;
-	g_network_configuration.value774[48] = g_network_configuration.value774[47] + 5000;
-	g_network_configuration.value774[49] = g_network_configuration.value774[48] + 6000;
+	{
+		long curve_value = g_network_configuration.value774[39];
+		curve_value += 600;
+		g_network_configuration.value774[40] = curve_value;
+		curve_value += 800;
+		g_network_configuration.value774[41] = curve_value;
+		curve_value += 1100;
+		g_network_configuration.value774[42] = curve_value;
+		curve_value += 1500;
+		g_network_configuration.value774[43] = curve_value;
+		curve_value += 2000;
+		g_network_configuration.value774[44] = curve_value;
+		curve_value += 2600;
+		g_network_configuration.value774[45] = curve_value;
+		curve_value += 3300;
+		g_network_configuration.value774[46] = curve_value;
+		curve_value += 4100;
+		g_network_configuration.value774[47] = curve_value;
+		curve_value += 5000;
+		g_network_configuration.value774[48] = curve_value;
+		curve_value += 6000;
+		g_network_configuration.value774[49] = curve_value;
+	}
 	for (i = 50; i < 128; i++)
 	{
 		g_network_configuration.value774[i] = 0x3fffffff;

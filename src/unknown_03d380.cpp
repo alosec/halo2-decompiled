@@ -326,6 +326,10 @@ void function_125a90(long value);
 // decisions 115/110/168/177; existing fully inlined iterator with the same four forms
 // 115/110/168/177. Original traversal restored; the early policy load, ESI multiply
 // and special/remove/ordinary/keep ordering remain.
+// Lane 14 r9: the join as `if (remove) {removal} else keep` 51 (kind arm, keep, then the special arm and
+// removal after the loop step); every action written in its own arm (no flag) 110; the flag declared
+// before the element 47 (same code); the kind tests joined with && 47, plus the flipped join 51; the
+// special arm as `remove = type == 0x26 ? !a : false` 47.
 // Round 95 (one-file harness with 0x221810 pinned out of line; aligned 23 = 47 here): ours ends
 // the kind arm with a jump into the special arm's `je` (tail merge), so the kind arm is the
 // fall-through; that order survives the special arm cut down to `remove = false`, the arms
@@ -335,6 +339,21 @@ void function_125a90(long value);
 // first 51. Harness only: the file's ELEMENT macro 37 (worse registers); element as
 // `&((T *)data)[i]`, `data + i * sizeof`, `sizeof * i`, `i + (T *)data`, an elements
 // pointer: the ESI multiply in each; `remove = type == 0x26 && !a` threads the sete away.
+// Round 100 (real builds): the file's ELEMENT macro 62 (same early flag load, EBP/EDI swap);
+// `remove` declared first 47; removal written first 51: both arm bodies then end as retail's
+// (special arm `je keep` into the removal, kind arm `jne remove` into keep), but the kind arm
+// stays the type test's fall-through and the special arm with the removal moves after the
+// next-index code; with the type test negated and the kind arm first 51 (identical); with the
+// kind tests joined by && 51.
+// Round 11: `if (0x20) remove = false; else if (0x26) remove = !a; else if (kind)` with removal
+// first 87 (retail's block order, but no re-test of 0x26 for 0x20); the condition named `bool
+// special = 0x20 || 0x26` with removal first gives retail's whole block order in the compile-only
+// harness, but LTCG then inlines 0x221810 (144 at 467 bytes; with the kind test as one `&&` 144,
+// keep first 157 at 471 bytes); removal first alone 51.
+// Round 13 (lane 13): the element written out at each use (`((T *)array->data)[index].field`)
+// gives retail's `imul eax` + `lea esi` but sinks it below the b test 43; with `if (remove)`
+// first as well 47; `if (remove)` first alone 51; ELEMENT(array, T, datum) 62, with index 94;
+// `&((T *)data)[index]` 47; `(T *)(data + index * sizeof(T))` 47.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {

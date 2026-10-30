@@ -144,10 +144,13 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 }
 
 
-// score 55 (was 55): BLOCKED-BY 0xba300: our object_get_root_location takes the object in eax and the output in esi,
-// retail's the output in eax and the object in ecx, so the object index can't stay in esi as in retail. Retail keeps a
-// bool result in bl (xor bl, bl at entry) and returns through tail copies (mov al, 1 / mov al, bl); the final location
-// copy stores its second dword first. Frame 0x18 and normal-transform block agree.
+// score 23 (was 23): with 0xba300 now returning its location (retail's convention) a bool result set after the
+// audible store gives retail's entry (`xor bl, bl`), EBX/EBP roles and split success/failure returns. Left: the
+// machine object pointer loads into EAX (retail reuses EBP), the cluster lookup's ECX/EDX roles and base-load
+// order, and the final location copy (retail stores its second dword first, interleaved with the call setup).
+// Round 34: bool result set before the audible store 68; with it after: the lookup index named 23, as
+// `18 * index + row` 23, the cluster table typed as rows of 18 23, memcpy for the location copy 23, a named
+// header pointer for the machine read 23. Earlier forms (under the old 0xba300 convention):
 // Byte result first 150; Boolean early-success result 152; long result 135; independent type tests 170;
 // excluded-class exit 165; long result first 134 kept (plain).
 // Root output at entry 134; forward at entry 134; direct successful completion 185; machine arm first 134; CRT location publication 134; existing normal helper input values 55 kept (plain).
@@ -164,10 +167,13 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // row first 55; high location fields first 65; cluster-derived result 197; eligibility-derived result 199.
 // One shared header across type/machine consumers, cached/per-use type, long/bool result,
 // native/CRT location publication 144/144/181/181/178/178/186/186. Header lifetime adds receiver pressure; restored.
+// Round 431: common word/long datum slots 151/23; with machine receiver reacquired 151/23;
+// root-location returned output original/word/long slot 172/108/172; long slot with overlap-safe location copy 53.
+// Frame and normal block agree; machine receiver, cluster-map registers and final publication order remain.
 // @retail 0x18c3b0
 bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker const *marker, s_type_99c531 *location)
 {
-	long result = 0;
+	bool result = false;
 	s_sound_object_view *object = (s_sound_object_view *)function_badc0(object_index, NONE);
 
 	if (object && !object_or_parent_hidden(object_index))
@@ -222,12 +228,12 @@ bool __stdcall function_18c3b0(long object_index, long tag_index, s_sound_marker
 				}
 
 				location->spatial.location = object_location;
-				result = true;
 				location->audible = function_18d4b0(tag_index, location->requested_audible, object_index, NULL);
+				result = true;
 			}
 		}
 	}
-	return result != 0;
+	return result;
 }
 
 struct s_sound_unit_view
@@ -411,7 +417,7 @@ void function_18c720(long tag_index, long object_index, long set_index, long per
 				fld local_1
 				fistp local_2
 			}
-			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, (short)local_2));
+			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, local_2));
 			function_18ca20(object_index, tag_index, &((s_sound_globals_promotion_view *)g_51ebd4)->permutations[set->first_permutation + permutation_index], scale);
 		}
 	}
@@ -565,7 +571,7 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 	location->spatial.compressed_forward = vector3d_compress(g_4687b0);
 }
 
-// score 280 (was 280): frame 0x8c versus 0x80, datum/tag homes and the protected root-location convention differ.
+// score 279 (was 279): frame 0x8c versus 0x80; datum/tag homes and root-output address formation differ.
 // Earlier 280 from 280: Frame 0x8c versus 0x80; datum/tag and protected root-location convention remain. BLOCKED-BY 0xba300.
 // Frame 0x8c versus 0x80; datum/tag and protected root-location convention remain.
 // Round 9 (lane 10): retail's case-3 failure byte is a dead store into the slot the audibility output
@@ -642,6 +648,9 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 // short/word/unsigned-long ordinals 367/367/331; shared long/short ordinal 331/367. Original
 // scalar fields, property tests, receiver pair and full body restored; protected root-location and
 // datum/tag homes remain.
+// Round 217: native root output at query/entry scope via aggregate/library copy 305 each; with
+// native velocity output 337 each. Frame 0x8c and datum/tag homes remain. Root-location callee
+// now matches and uses object ECX/output EAX; original body restored.
 // @retail 0x18cbc0
 void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 {

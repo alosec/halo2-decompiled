@@ -144,6 +144,9 @@ static __forceinline long weapon_get_zoom_out_sound(long weapon_index)
 // native signed-byte slot alone/with player/with weapon/with both 111/123/111/123;
 // both sentinel declarations with consistent direct reset-unit observations 150.
 // Original producers and complete executable body restored; fresh lookup remains.
+// Round 76: late false 122; result arms 121; late false with long user 125; late fresh unit 122;
+// original fresh unit 107; direct reset lookups 175; false after entry 107; false before weapon 120.
+// Original body restored.
 // @retail 0xc86e0
 void function_c86e0(long unit_index, bool keep_weapon_zoom)
 {

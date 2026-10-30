@@ -949,46 +949,11 @@ void sound_voice_restart_stream(short voice_index)
 }
 
 struct s_permutation_group;
-long function_219290(short index, s_permutation_group *group);
+long function_219290(s_permutation_group *group, short index);
 real function_21f650(long channel_index, long mode);
 
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
-// score 2 (was 2): only function_219290's two arguments differ: they load group-first (retail
-// index-first), BLOCKED-BY 0x219290 (a contributor's matched function; its parameters swapped would fix
-// it, and caller 0x21c400 calls the present order). Naming the voice's chunk (released,
-// then the queued one requested) fixed the rest. Tried: a function-wide channel_index local 113; the last
-// block's locals folded into one expression 42; elapsed_time read into a local before the rate call 42; a
-// stream pointer for the last state test 42; the table pointer declared at the outer scope 42; a named
-// rate 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
-// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42.
-// function_219290's two arguments load group-first (retail index-first; its
-// parameters swapped would fix it, but contributor caller 0x21c400 calls the present order), one
-// store sits after the permutation copy, the second release hoists the chunk-table load, and the
-// last block swaps ecx/edx with the post-call SOUND_SYSTEM load in edx (retail eax). Tried: a
-// function-wide channel_index local 113; the last block's locals folded into one expression 42;
-// elapsed_time read into a local before the rate call 42; a stream pointer for the last state
-// test 42; the table pointer declared at the outer scope 42.
-// Round 181: per-use chunk table 42; retained chunk base 85; per-use voice array 180; native
-// loaded-field comparison 66; early queued-pointer clear 42; exact-size transfer memcpy 42;
-// queued/current permutation lifetimes 74/102. EAX global-load allocation remains.
-// Round 192: twice-used current ordinal short/long 93/92;
-// ordinal plus permutation short/long 127/115; native query-result comparison 17;
-// conditional time publication short/long query 83/76;
-// short ordinal plus native comparison 92. All restored; the two argument-load orders remain.
-// index-first). BLOCKED-BY 0x219290 (a contributor's matched function): with its parameters declared
-// (group, index) at the definition and both calls, this function and 0x219290 both match; contributor
-// caller 0x21c400 calls the present order. Naming the voice's chunk (released, then the queued one
-// requested) fixed the rest. Tried: a function-wide channel_index local 113; the last block's locals
-// folded into one expression 42; elapsed_time read into a local before the rate call 42; a stream
-// pointer for the last state test 42; the table pointer declared at the outer scope 42; a named rate
-// 42; the next pointer cleared before the index copy 42; a chunk-array local for the second release
-// 42; the sound read through SOUND_PLAYBACK_GET 42; a block-local channel index 42; per-use chunk
-// table 42; retained chunk base 85; per-use voice array 180; native loaded-field comparison 66; early
-// queued-pointer clear 42; exact-size transfer memcpy 42; queued/current permutation lifetimes 74/102;
-// a named chunk index for the call 2; the call result in a short local 2; a group local 2; the release
-// argument written in place 2; one permutation local for the chunk and the call 104; the test in a
-// bool local 2.
 // @retail 0x12a450
 void sound_voice_update_chunks(short voice_index)
 {
@@ -1005,7 +970,7 @@ void sound_voice_update_chunks(short voice_index)
 			s_sound_cache_request_result result;
 
 			sound_reference_release((s_sound_reference_holder *)chunk);
-			if ((short)function_219290(voice->chunk_index, (s_permutation_group *)voice->permutation) == NONE)
+			if ((short)function_219290((s_permutation_group *)voice->permutation, voice->chunk_index) == NONE)
 				voice->unknown10 = 0.0f;
 			voice->permutation = voice->next_permutation;
 			voice->chunk_index = voice->next_chunk_index;
@@ -1250,6 +1215,8 @@ long function_2197f0(real gain);
 
 /* a sound class's gain in decibels: its fade, ducked by the current and the
    previous ambience */
+// score 149 (was 149): retail keeps the entry gain in a stack home that the gain helpers read in place; the
+// helper's signature is in include/unknown_218ac0.h, so this file can only hand the gain over by copy.
 // score 149 (was 149): Frame 0xc agrees; early table load, gain home, delayed ESI save and fade scheduling differ.
 // Retail keeps gain in a stack home from entry (stored before the flag test, EDI keeps a copy for the
 // plain returns), the helpers read it there with no copy, and each sum is stored in that home.
@@ -1281,9 +1248,17 @@ long function_2197f0(real gain);
 // Round 196: native table-array base 200; readonly table 200; short ordinal 170;
 // gain inside gate 234; readonly class/base-release/common result/unsigned gain 200/200/212/200.
 // All restored; table base changes incoming register transport without recovering the entry gain home.
+// Round 161: real-returning interpolation with in-place sums on the gain's bits 158 (retail's entry home
+// store and EDI reload appear); plus the raw class index for the lookup 165 (678 bytes); plus a guard
+// return/`else return gain` for the flag test 171/174 (retail's late ESI save); returned sums as real
+// results 174. Shifts dominate: aligned counts 91 -> 77/75/70/69/73. All restored.
 // Round 193: branch-local/shared active/entry interpolation outputs 149/174/174;
 // each with distinct final result 157/165/165; distinct result alone 157;
 // shared entry outputs/result with role home names 165. All restored.
+// Round 164: real gain local with in-place sums 233; first branch as divisions
+// (`(elapsed - hold) / fade_in * fade_out`, `1.0f > time / fade_in ? time / fade_in : 1.0f`) with a
+// fade_out local 160 (retail's reciprocal-first order, multiply compare and divss result); plus
+// `t = 1.0f; if (time < 1.0f) t = time;` clamps 160/180 (the two tails cross-jump); if/else-if pin 160.
 // @retail 0x127010
 long function_127010(short class_index)
 {
@@ -1772,7 +1747,7 @@ void function_126360(long sound_index)
 /* fades one playing sound in and another out over a duration in seconds,
    along a curve */
 // @retail 0x126df0
-void function_126df0(long fade_in_index, long fade_out_index, short curve, real duration)
+void function_126df0(short curve, long fade_in_index, long fade_out_index, real duration)
 {
 	if (fade_in_index != NONE)
 	{
@@ -2694,6 +2669,9 @@ static inline short sound_voice_find_available_channel(char type)
 }
 
 /* assigns a free channel and, when needed, a shared driver voice */
+// score 96 (was 96): retail loads the voice index into ecx before the frame setup, keeps the `NONE` constant in
+// cx and the result in al/bl with an 8-byte frame; ours loads the index into eax and holds the result in a stack
+// byte with a 12-byte frame.
 // score 96 (was 96): playback/channel roles recovered; frame 12 versus 8, status test and failure
 // placement remain.
 // Validity result 135; assigned result
@@ -2713,9 +2691,18 @@ static inline short sound_voice_find_available_channel(char type)
 // Round 279: byte result from completed paths with short/long channel and buffer
 // 148/154/144/150; driver result at channel selection with long buffer 130, completed-path too 148;
 // completed byte result with complemented status, short/promoted outputs 151/160. Original byte-result body restored.
+// Round 161: bool result 113 (430 bytes; retail's failure `xor bl, bl ... mov al, bl`, but the success
+// exit reads the entry true from a slot); bool with `return true` on success 139 (result in BL from entry);
+// plus `return result` in the failure block 131 (retail roles, frame 8, false after the calls); failure
+// default after the search with success flag/`return true` 132/134.
 // Round 193: failure-scoped byte with shared/direct true exits 134/131;
 // those exits with low-byte complemented status 133/135; entry byte result 96;
 // published-channel/per-use system/both commit observations 96/96/96. All restored.
+// Round 164: search returning from the loop 96; bool result with `result = true` before the success
+// goto 122 (430 bytes: retail's entry `mov al, 1`, frame 8, EBX sound, `xor bl, bl ... mov al, bl`;
+// only the failure block's placement after the loop differs); result assigned on every path 135; that
+// with both NONE defaults between search and test 128 (retail's block order, not-found unthreaded);
+// driver default before/after the search 147/153; plus return-from-loop search 126.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -2878,16 +2865,6 @@ void function_129380(vector3f const *const *voice_values, vector3f const *const 
 	}
 }
 
-// score 3 (was 3): Fade-call EDI/EAX/EBX setup remains; pool scope 3, metadata scope 3, fixed receiver
-// 3, direct pool 3, listener home names 3, stored location reference 3, distance outcomes 23, index
-// workspace first 3.
-// frame 0xc and length agree; fade-call EDI/EAX/EBX setup order differs.
-// Clear helper/listener declaration/query test 3 each; accepted listener first 34;
-// shared playback flags/direct location flags 3 each; fading field 8; fading helper 3;
-// shared next-index helper 3; shared slot index 176.
-// Separate noinline and inline+noinline declarations 3 each; noinline replacing inline-depth 3;
-// long and unsigned-word curve declarations 3 each; fading-test local 3; byte-wide clear 3;
-// native listener store 3; per-iteration index 3.
 // @retail 0x128020
 void function_128020(void)
 {
@@ -2966,7 +2943,7 @@ void function_128020(void)
 				if (TEST_FIELD_BIT(sound->flag2))
 				{
 #pragma inline_depth(0)
-					function_126df0(sound_index, NONE, 0, 0.5f);
+					function_126df0(0, sound_index, NONE, 0.5f);
 #pragma inline_depth()
 					sound->flag2 = false;
 				}
@@ -3089,6 +3066,9 @@ struct s_animation_ref;
 void function_219310(s_animation_state *state, s_animation_ref *ref, short value);
 long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 
+// score 86 (was 86): retail holds the playback base in ecx, builds the pointer with `lea esi,[eax+ecx]` and folds
+// the sound-system time into the compare; ours hoists the time into edx and holds the base in edi. The mode switch
+// still needs a second non-empty case.
 // score 86 (was 86): Frame 8 agrees; playback base, clock scheduling and promoted mode remain.
 // Retained clock receiver 163; voice record reference 86; combined receivers 163; role names 86;
 // native update/mode/both flag words 86/86/86; receiver plus native flags 163.
@@ -3110,9 +3090,13 @@ long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 // Round 279: flag admission separated from class-mode production, short/long mode,
 // switch/direct guard and repeated/shared class index: eight forms 153 each.
 // Original conditional mode and loop restored; playback/clock schedule still differs.
+// Round 161: reason/playback/voice index at function scope 86/86/86; mode switch with an empty case 1 and
+// `default: __assume(0)` 86 (the empty case is dropped: still `test ax, ax`); empty case 1 alone 86.
 // Round 193: callback procedure alone/with source receiver 86/86;
 // one class-record observation short/with callback 105/105; long/with callback 171/171;
 // readonly class with short/long plus callback 105/171. All restored.
+// Round 164: pool global at each use 86 (identical); for loop with `case 1: continue;` 153/167 (gives
+// retail's `movsx eax, ax; sub eax, 0; jne` but swaps the pool/index EBP/EBX); for loop alone 86.
 // @retail 0x1282d0
 void function_1282d0(void)
 {
@@ -3371,45 +3355,8 @@ void function_125d60(void)
 
 void __stdcall function_1264c0(dword arg_0);
 
-// score 87 (was 87): early EDI save, reconstruction calls and signed-clock wait remain; coordinated
-// reconstruction inline/forced 123/123; search inline 87; reconstruction/search 123;
-// reconstruction/fade 123; search/fade 87; all inline 123; forced reconstruction/fade 123.
-// early EDI save, reconstruction calls and signed-clock wait remain; frame eight agrees.
-// Earlier: shared invalid register, fade-store schedule and signed-tick/wait code differ.
-// Boolean datum iterator 134; existing datum reconstruction 102; inline absolute search 139;
-// pool reads at use 139; retained playback base 137; cleanup exit 139; native flags 139; direct impulse members 139.
-// Shared invalid register and timer conversion remain; availability call 139, chained resets 139, array fill 140, unsigned handle 139, outer deadline 139.
-// Earlier: reconstruction calls, clock conversion and wait layout remain;
-// reconstruction force/plain inline 102/102; with shared fade 87 plain; with flag/gain/deadline/reset
-// 102/102/102/102 fast; ordinary inline plus fade 107 fast; shared fade without declaration 87 plain.
-// Earlier: early EDI save, reconstruction calls and signed-clock wait remain;
-// shared inline reconstruction both/first/next 123/120/108; calling iterator with fade 101;
-// expanded tick names/lexical homes/wait/fill 123/123/123/124.
-// Earlier: reconstruction expansion and signed-clock wait remain; shared fade with
-// native/full-inline/Boolean iterators 113/112/118; native integer tick 113; iterator workspace
-// before clock inline/Boolean 111/118; early real tick native/inline 113/113.
-// Absolute search cursor 91; with initial/next/both inline reconstruction 105/110/127;
-// cursor with early deadline 90; native int tick 91; early real start 96; traversal-only cursor 86.
-// Entry source and every shared operation restored.
-// Early EDI save, reconstruction calls and signed-clock wait remain.
-// Earlier 102 (from 139): shared invalid register, fade-store schedule and signed-tick/wait code differ.
-// Earlier 87 (from 102): reconstruction calls, clock conversion and wait layout remain;
-// Earlier 87 (from 87): early EDI save, reconstruction calls and signed-clock wait remain;
-// Earlier 87 (from 87): reconstruction expansion and signed-clock wait remain; shared fade with
-// initial/next/both valid-search conditionals 98/103/113; initial/next/both result arms 98/103/113;
-// both admissions with native tick/index 113/113.
-// Masked slot copied before the fade call 83 at retail length (a one-use copy, not kept);
-// next slot 86; with both inline lookups 111/117, initial inline lookup 90/96, next inline lookup 101/104.
-// Round 88: a wait loop run by a `waiting` flag cleared in its else arm gives retail's top-tested
-// SSE wait (alone 113); with data_datum_index and the `index == NONE ? 0 : (index & 0xffff) + 1`
-// next search (retail's masked-slot reuse) 9; plus a memset of the impulse ids 6 (its pointer in
-// ECX, retail EAX). Not kept without a match. Next search alone 85; deadline in the loop condition
-// 107; local-pointer, loop, chained and helper id stores 9; struct copy of the ids 114.
-// Range fill saved/direct 119/122; counted fill saved/direct 121/121; with shared invalid value
-// 104/102/102/102. All restored.
-// Native external array reference/pointer, forward stores 9/9; reverse stores 9/9; reverse indexed reset
-// 9/9; native memory clear 6/6, all on inline reconstruction and flag-controlled wait. No exact match;
-// original body restored.
+/* stops every playing sound with a 0.3 s fade, waits up to 300 ms for the fades, then
+   shuts the sound system down and forgets the impulse sounds */
 // @retail 0x1257b0
 void function_1257b0(void)
 {
@@ -3417,21 +3364,23 @@ void function_1257b0(void)
 	{
 		long local_0 = GetTickCount();
 		s_record_pool *local_1 = g_4e637c;
-		long local_2 = index_to_datum_index(local_1, function_16bc00(local_1, 0));
+		long local_2 = data_datum_index(local_1, function_16bc00(local_1, 0));
 		if (local_2 != NONE)
 		{
 			do
 			{
-				function_126df0(NONE, local_2, 0, 0.3f);
-				local_2 = index_to_datum_index(local_1, function_16bc00(local_1, (local_2 & 0xffff) + 1));
+				function_126df0(0, NONE, local_2, 0.3f);
+				local_2 = data_datum_index(local_1, function_16bc00(local_1, local_2 == NONE ? 0 : (local_2 & 0xffff) + 1));
 			} while (local_2 != NONE);
 			real local_4 = (real)local_0;
 			local_4 += 300.0f;
-			for (;;)
+			bool waiting = true;
+			while (waiting)
 			{
-				if (!(GetTickCount() < local_4))
-					break;
-				function_125d60();
+				if (GetTickCount() < local_4)
+					function_125d60();
+				else
+					waiting = false;
 			}
 		}
 	}
@@ -3443,9 +3392,8 @@ void function_1257b0(void)
 		record_pool_release_all((s_record_pool *)g_51ebd8);
 	g_51ebd4 = NULL;
 	function_191270();
-	long *local_5 = SOUND_DRIVER_GLOBALS->impulse_ids;
-	local_5[0] = NONE;
-	local_5[1] = NONE;
+	for (short impulse = 0; impulse < 2; impulse++)
+		SOUND_DRIVER_GLOBALS->impulse_ids[impulse] = NONE;
 }
 
 struct s_looping_channel_properties;
@@ -3533,6 +3481,14 @@ struct s_128ca0
 // reference sums 215/256/306; outer/both with shared scale 257/295; both with scale
 // and native pitch bounds 295; both with early gain/early gain and scale 306/295.
 // Outer sum recovers frame 0x494 but regresses; original body and shared field restored.
+// Round 161: real gain sum (location + (playback gain + argument)) with one scale local 295 (frame 0x494;
+// the argument is added in place where retail copies it, the location folded where retail loads it
+// first); without the scale local 306; scale local with the original sums, pitch only/both 215/286;
+// real outer sum over decibels_add's inner 255. All restored.
+// Round 164: inner decibels_sum with `(dword)arg_1` inside the outer decibels_add 255 (frame 0x494,
+// exact to +0x7e; the location field is still copied, retail loads it into XMM1 first); outer
+// decibels_sum over the by-value inner 214; operands swapped by value 286; first form plus a shared
+// scale local 255 (0x49c); both reference sums inner-first 255.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
@@ -3772,6 +3728,9 @@ PRIVATE inline void function_1275d8(quaternionf const *arg_0, vector3f const *ar
 // Round 194: shared zone result/local/direct/entry 555/554/555; native player-state member 535;
 // shared zone plus native member 555; with complete blend reads 582; with source-state reads 836;
 // both complete observations 799. Original result, source pointer and body restored.
+// Round 164: state pointer sunk into the branch and recomputed in the fallback 598; with 0x16f3a0
+// calls 553; fallback in both arms 633, with 0x16f3a0 calls 706, plus 0x14ddc0/0x14de70 at the loop
+// head 740 (retail's loop head, aligned 426 -> 402).
 // @retail 0x127400
 void function_127400(bool arg_0)
 {
@@ -3910,7 +3869,10 @@ void function_21b0e0(bool arg_0);
 long players_first_active_local_player(void);
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
-// score 108 (was 108): aligned frame 0x174c versus retail 0x1744 remains.
+// score 55 (was 55): statement clears give retail's 0x40-first, copy-free clears but force MSVC's 8-byte frame
+// realignment; the argument form keeps retail's frame but clears the 0x80 array first, with copies of memset's results.
+// score 55 (was 55): plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
+// memset's results (retail buffers-first, no copies), short restart cursor and loop padding remain.
 // Promoted voice limit 108; entry system
 // 108; direct elapsed 108; pending byte 108; frame input 108; short player cursor 122; short
 // next-player result 115; both player values 122; const element arrays 108; `= {}` arrays 121;
@@ -3922,6 +3884,13 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 // Actual first/second/both memset-return receivers, used by collection and submission, 143/129/125;
 // declarations at entry 143/129/125; both with long restart, normal/entry declarations, 108/108. Original
 // body restored.
+// Round 161: any memset of a local of 128 bytes or more realigns the frame unless EBP is wanted as a
+// general register (every other retail function clearing a large local without realigning uses EBP) or
+// memset's result is used. Existing next-player helper 107; player for loop 107; results as two one-use
+// locals 55; with long restart 75; results as the call's arguments with long/short restart 76/55 (kept).
+// Round 164: word restart cursor 114; statement clears realign in every form tried (compile-only:
+// split statement/argument clears, callee-owned arrays, short/char clear loops, pointer-local targets,
+// no system local, arrays at entry, player for loop).
 // @retail 0x125b40
 void function_125b40(void)
 {
@@ -3962,24 +3931,12 @@ void function_125b40(void)
 			vector3f *local_4[0x80];
 			s_voice_position_batch local_5;
 			local_5.count = 0;
-			memset(local_3, 0, sizeof(local_3));
-			memset(local_4, 0, sizeof(local_4));
-			function_129100(&local_5, local_3, local_4);
+			function_129100(&local_5, (vector3f **)memset(local_3, 0, sizeof(local_3)), (vector3f **)memset(local_4, 0, sizeof(local_4)));
 			long local_6 = players_first_active_local_player();
 			while (local_6 != NONE)
 			{
 				function_221a70(local_6, &local_5);
-				long local_8 = NONE;
-				long local_7 = local_6 == NONE ? 0 : local_6 + 1;
-				for (; local_7 < 4; local_7++)
-				{
-					if (g_4e8c20->entries[local_7] != NONE)
-					{
-						local_8 = local_7;
-						break;
-					}
-				}
-				local_6 = local_8;
+				local_6 = local_player_next_inline(local_6);
 			}
 			function_129380((vector3f const *const *)local_3, (vector3f const *const *)local_4);
 			function_1293f0();

@@ -16,6 +16,7 @@ The handlers of the unit request table at 0x467564
 #include "unit_requests.h"
 #include "units.h"
 #include "matrix_transform.h"
+#include "normalize3d.h"
 #include "unknown_1cec30.h"
 #include "bit_vector.h"
 #include "local_players.h"
@@ -79,8 +80,8 @@ struct s_unit_action_unit
 	byte unknown0c1[0xd4 - 0xc1];
 	long unknown0d4;
 	byte unknown0d8[0x10a - 0xd8];
-	byte flags_10a;
-	byte unknown10b[0x12a - 0x10b];
+	word flags_10a;
+	byte unknown10c[0x12a - 0x10c];
 	short animation_state_offset;
 	long unknown12c;
 	byte unknown130[0x134 - 0x130];
@@ -1243,6 +1244,9 @@ void __stdcall function_fff40(long weapon_index, bool silent, bool immediate);
 // ours keeps the default name in ebp. The seat flags as the seat definition's bitfields give
 // retail's shift-and-test reads after the weapon lookup, and the hand helper's short slot index
 // gives retail's movsx; the seat flags read as a dword after the weapon 88, with the hand helper 85.
+// Round 432: chained defaults 73; parent/seat/both snapshots 73/73/77;
+// shared header/tag/both/full producers 73/73/73/74; all restored.
+// Name-home renames/action-first declarations/state-first acquisitions 73/73/73/73/73/73/72/72; restored.
 // @retail 0xe8620
 void __stdcall function_e8620(long unit_index, bool flag)
 {
@@ -2016,6 +2020,11 @@ __forceinline char unit_action_round(real value)
 
 /* starts a melee attack: the animation for the attack's mode (or the next
    in a combo), its damage frames, and the lunge */
+// score 235 (was 235): frame 0x14 agrees; pool/type/name homes, fallback tree and result residence differ.
+// Numeric hand 297; Boolean active bit 251; both 302; first result 235; all 302;
+// shared actions receiver 328; single exit with hand/bit 315; per-use speed with hand/bit 302.
+// Entry name default/or hand/or bit/or both 312/314/299/299; with single exit 362;
+// original-graph single exit 241; per-use speed 235; entry name/single exit/per-use speed 362.
 // @retail 0xe9a20
 bool __stdcall function_e9a20(long unit_index, long mode, long target_index, byte flags)
 {
@@ -2497,7 +2506,7 @@ done:
 }
 
 void function_b9c60(long object_index, bool flag);
-void function_ba690(long object_index, unsigned char **states, long *state_count, long *a, long *b);
+void function_ba690(long object_index, long *state_count, unsigned char **states, long *a, long *b);
 void __stdcall function_d1360(long vehicle_index, long seat_index, bool a, bool b);
 void function_e5300(long unit_index, long a);
 
@@ -2525,7 +2534,7 @@ void __stdcall function_ea6b0(long unit_index, long type)
 			long state_count;
 			bool hidden = false;
 
-			function_ba690(unit->parent_object_index, &states, &state_count, NULL, NULL);
+			function_ba690(unit->parent_object_index, &state_count, &states, NULL, NULL);
 			if (*(long *)(seat + 0xac) < state_count)
 				hidden = states[*(long *)(seat + 0xac) * 8 + 1] < 3;
 			function_b9c60(unit_index, hidden);
@@ -2589,9 +2598,6 @@ bool __stdcall unit_action_vehicle_entry(long unit_index, s_unit_request *reques
 
 long function_10eef0(long object_index, bool alternate, bool no_request);
 void function_d12b0(long vehicle_index, long seat_index, bool a, bool b);
-bool function_b9d20(long object_index);
-void __stdcall function_bef30(long object_index, long a, long b, long c, bool d);
-void function_b8b70(long object_index);
 short __stdcall function_cdeb0(long unit_index, long state_name, short slot, short direction);
 bool __stdcall function_ee460(long unit_index, long state_name, long action_name);
 void function_e0070(long unit_index, long vehicle_index);
@@ -2602,9 +2608,16 @@ void function_a8b10(long unit_index);
 
 /* takes a unit out of its vehicle seat: detached, its weapon back in hand,
    its exit animations */
-// score 68 (was 102): Frame 0x14 agrees; object/header EBP/EDI roles and later call scheduling differ.
+// score 68 (477 bytes, retail 483). With 0xe0070's loop written with a found flag (lane 14 round 12;
+// not kept, a test-set flag is kept only with a match) it scored 9 and only scratch registers differed:
+// retail eax/ecx for the 0xcbd50 slot read, edx for the 0xee460 push and eax/ecx for the two seat pushes;
+// ours one step on (ecx/edx, eax, ecx/edx).
 // Pointer names 116; widened seat 109; Boolean object flag 104; both 93; unsigned mask 115;
 // unsigned with widened seat 108, with Boolean flag 103, with both 92 (fast); last form 68 plain.
+// Round 12 (lane 14), all with the found-flag 0xe0070 (unit in EDI as retail) 9: the existing 0xb9c60
+// for the flag clear 9 (same code; kept, 68 without the flag); the 0xb58c0 owner in a local 9; the
+// action name as if/else 9; the 0xcbd50 result passed as the slot 9; action/state declarations swapped 11; vehicle read first 9 (all plain;
+// --fast adds a pool reload after 0xbef30 the full build lacks).
 // @retail 0xea8e0
 void __stdcall function_ea8e0(long unit_index, bool hurried)
 {
@@ -2631,15 +2644,7 @@ void __stdcall function_ea8e0(long unit_index, bool hurried)
 	function_b9a90(unit_index);
 	function_b9b90(unit_index, false);
 
-	s_unit_action_unit *current = UNIT_ACTION_UNIT_GET(unit_index);
-
-	if (TEST_FIELD_BIT(current->object_flags & 1))
-	{
-		current->object_flags &= ~1;
-		if (function_b9d20(unit_index))
-			function_bef30(unit_index, 0, 1, 0, false);
-		function_b8b70(unit_index);
-	}
+	function_b9c60(unit_index, false);
 	if (UNIT_ACTION_UNIT_GET(unit_index)->unknown0d4 != NONE)
 		function_b58c0(UNIT_ACTION_UNIT_GET(unit_index)->unknown0d4, 0x800);
 	if (!is_vehicle)
@@ -2698,10 +2703,6 @@ done:
 void function_1bba20(long actor_index);
 
 /* exits a vehicle (type 29) */
-// score 62 (was 105): Native active-bit conversions recover the object/header roles; unit/actions
-// EBP/EBX and the initial false-result home still differ. Boolean active tests 62 (plain kept);
-// result first 105; both 62; joined call result 93; Boolean tests/join 74; result first/join 93;
-// all 74; literal guard failure 105.
 // @retail 0xeab80
 bool __stdcall unit_action_vehicle_exit(long unit_index, s_unit_request *request)
 {
@@ -2709,37 +2710,42 @@ bool __stdcall unit_action_vehicle_exit(long unit_index, s_unit_request *request
 	s_unit_actions *actions = UNIT_ACTIONS_GET(unit);
 	bool result = false;
 
-	if (TEST_FIELD_BIT(UNIT_ACTION_ACTIVE(UNIT_ACTIONS_GET(unit), 0x1d)) ||
-		TEST_FIELD_BIT(UNIT_ACTION_ACTIVE(UNIT_ACTIONS_GET(UNIT_ACTION_UNIT_GET(unit_index)), 0x1f)) ||
-		TEST_FIELD_BIT(UNIT_ACTION_ACTIVE(UNIT_ACTIONS_GET(UNIT_ACTION_UNIT_GET(unit_index)), 0x20)))
+	if (!unit_action_active(unit_index, 0x1d) && !unit_action_active(unit_index, 0x1f) &&
+		!unit_action_active(unit_index, 0x20))
 	{
-		return result;
+		function_e69c0(unit_index, 0x1d);
+		function_e69c0(unit_index, 0x1c);
+		function_e69c0(unit_index, 0x1f);
+		function_e69c0(unit_index, 0x20);
+		*((byte *)unit + 0x258) = 0;
+		if (function_eaad0(unit_index))
+		{
+			actions->active[0] |= 0x20000000;
+			if (*((bool *)request + 4))
+				actions->unknown00 |= 1;
+			else
+				actions->unknown00 &= ~1;
+			if (unit->unknown12c != NONE)
+				function_1bba20(unit->unknown12c);
+			result = true;
+		}
 	}
-	function_e69c0(unit_index, 0x1d);
-	function_e69c0(unit_index, 0x1c);
-	function_e69c0(unit_index, 0x1f);
-	function_e69c0(unit_index, 0x20);
-	*((byte *)unit + 0x258) = 0;
-	if (!function_eaad0(unit_index))
-		return false;
-	actions->active[0] |= 0x20000000;
-	if (*((bool *)request + 4))
-		actions->unknown00 |= 1;
-	else
-		actions->unknown00 &= ~1;
-	if (unit->unknown12c != NONE)
-		function_1bba20(unit->unknown12c);
-	return true;
+	return result;
 }
 
 transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 
 /* the end of a vehicle exit: the unit leaves the seat with its exit
    animation's velocity */
-// score 55 (was 103): Frame 0x40 and retail length agree; graph-index EDX/EBX, input XMM1/XMM3
-// roles and final flag-address scheduling differ. Graph at call 103; complete component preload
+// score 35 (was 103): Frame 0x40 and retail length agree; the graph chain is in EDX (retail EBX, the
+// animation id loaded early into EDX) and the velocity loads run k, j, i (retail i, j, k; the sums
+// then start with up * k). Graph at call 103; complete component preload
 // 102; both 102; result reuse 131; graph/result reuse 131; preload/result reuse 135; all 135;
 // matrix declaration first 103; scale once 55 (plain kept), with complete component preload 97.
+// vector3f_scale for the scale 50, with the word flag through word_flags_set 35 (kept);
+// matrix_transform_vector 55/46; scale statements k, j, i 58; `scale * v` 55; sums written
+// forward first 55/40; scale read per use 103; vector3f_assign 35; graph at the call, the
+// model local only, a channel pointer 35; scalar copies 97/102; a byte OR through the helper 48.
 // @retail 0xeac90
 void __stdcall function_eac90(long unit_index, bool hurried, bool push)
 {
@@ -2759,11 +2765,7 @@ void __stdcall function_eac90(long unit_index, bool hurried, bool push)
 
 	real scale = matrix->scale;
 	if (scale != 1.0f)
-	{
-		velocity.i *= scale;
-		velocity.j *= scale;
-		velocity.k *= scale;
-	}
+		vector3f_scale(&velocity, scale, &velocity);
 	world.i = matrix->up.i * velocity.k + matrix->left.i * velocity.j + matrix->forward.i * velocity.i;
 	world.j = matrix->up.j * velocity.k + matrix->left.j * velocity.j + matrix->forward.j * velocity.i;
 	world.k = matrix->up.k * velocity.k + matrix->left.k * velocity.j + matrix->forward.k * velocity.i;
@@ -2773,7 +2775,7 @@ void __stdcall function_eac90(long unit_index, bool hurried, bool push)
 	unit->linear_velocity.k += world.k;
 	if (push && unit_index != NONE)
 	{
-		*((byte *)UNIT_ACTION_UNIT_GET(unit_index) + 0x10a) |= 0x20;
+		word_flags_set(&UNIT_ACTION_UNIT_GET(unit_index)->flags_10a, 5, true);
 		function_b7360(unit_index);
 	}
 }
@@ -3068,6 +3070,12 @@ bool __stdcall unit_action_vehicle_ejection_update(long unit_index, long type)
 	return result;
 }
 
+struct s_unit_request_vehicle_flip
+{
+	long type;
+	long flipper_index;
+};
+
 struct s_damage_owner
 {
 	long player_index;
@@ -3080,67 +3088,62 @@ void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner)
 
 /* flips a vehicle back over (type 33): the way it rolls, from how far over
    it is and where the flipping unit stands */
-// score 72 (was 167): frame 0x78 recovered; pool/header carriers, vector scheduling
-// and failure epilogues remain. Shared point difference/cross/both 143/165/150;
-// persistent success admission alone/with difference/with cross/with both 72/97/74/98;
-// entry owner output with success admission 148. Original vector calculations retained.
 // @retail 0xeb5d0
 bool __stdcall unit_action_vehicle_flip(long unit_index, s_unit_request *request)
 {
 	bool result = false;
 	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
 
-	if (unit->object_type == 1 && function_f5dc0(unit_index))
+	if (unit->object_type == 1)
 	{
-		long flipper_index = *(long *)((byte *)request + 4);
-
-		if (flipper_index != NONE)
+		if (function_f5dc0(unit_index))
 		{
-			byte *flipper = (byte *)UNIT_ACTION_UNIT_GET(flipper_index);
+			s_unit_request_vehicle_flip *flip = (s_unit_request_vehicle_flip *)request;
+			s_damage_owner owner;
+			long flipper_index = flip->flipper_index;
 
-			*(long *)(flipper + 0x250) = unit_index;
-			*(long *)(flipper + 0x254) = g_510c54->game_time;
+			if (flipper_index != NONE)
+			{
+				byte *flipper = (byte *)UNIT_ACTION_UNIT_GET(flipper_index);
+
+				*(long *)(flipper + 0x250) = unit_index;
+				*(long *)(flipper + 0x254) = g_510c54->game_time;
+			}
+			if ((real)fabs(unit->forward.k) > 0.70710677f)
+			{
+				*((byte *)unit + 0x34d) = (byte)((0.0f > unit->forward.k) + 3);
+			}
+			else if (flipper_index != NONE)
+			{
+				transform4x3f unit_matrix_storage;
+				transform4x3f flipper_matrix_storage;
+				vector3f offset;
+				vector3f side;
+
+				vector3d_from_points3d(&function_ba160(flipper_index, &flipper_matrix_storage)->position,
+					&function_ba160(unit_index, &unit_matrix_storage)->position, &offset);
+				side.k = g_4687b0->i * offset.j - g_4687b0->j * offset.i;
+				side.j = g_4687b0->k * offset.i - g_4687b0->i * offset.k;
+				side.i = g_4687b0->j * offset.k - g_4687b0->k * offset.j;
+				*((byte *)unit + 0x34d) = (byte)((dot3f(&side, &unit->forward) > 0.0f) + 1);
+			}
+			else
+			{
+				*((byte *)unit + 0x34d) = 1;
+			}
+			word *flags = (word *)((byte *)unit + 0x348);
+			*flags |= 0x40;
+			*((byte *)unit + 0x34e) = 0;
+
+			object_get_damage_owner(flip->flipper_index, &owner);
+
+			byte *current = (byte *)UNIT_ACTION_UNIT_GET(unit_index);
+
+			*(long *)(current + 0xc8) = owner.object_index;
+			*(long *)(current + 0xc4) = owner.player_index;
+			*(short *)(current + 0xc2) = owner.team;
+			result = true;
 		}
-		if ((real)fabs(unit->forward.k) > 0.70710677f)
-		{
-			*((byte *)unit + 0x34d) = (byte)((0.0f > unit->forward.k) + 3);
-		}
-		else if (flipper_index != NONE)
-		{
-			transform4x3f unit_matrix_storage;
-			transform4x3f flipper_matrix_storage;
-			transform4x3f *unit_matrix = function_ba160(unit_index, &unit_matrix_storage);
-			transform4x3f *flipper_matrix = function_ba160(flipper_index, &flipper_matrix_storage);
-			vector3f offset;
-			vector3f const *up = g_4687b0;
-			vector3f side;
-
-			offset.i = unit_matrix->position.x - flipper_matrix->position.x;
-			offset.j = unit_matrix->position.y - flipper_matrix->position.y;
-			offset.k = unit_matrix->position.z - flipper_matrix->position.z;
-			side.k = up->i * offset.j - up->j * offset.i;
-			side.j = up->k * offset.i - up->i * offset.k;
-			side.i = up->j * offset.k - up->k * offset.j;
-			*((byte *)unit + 0x34d) = (byte)((unit->forward.j * side.j + unit->forward.k * side.k + unit->forward.i * side.i >
-				0.0f) + 1);
-		}
-		else
-		{
-			*((byte *)unit + 0x34d) = 1;
-		}
-		*((byte *)unit + 0x348) |= 0x40;
-		*((byte *)unit + 0x34e) = 0;
-
-		s_damage_owner owner;
-
-		object_get_damage_owner(*(long *)((byte *)request + 4), &owner);
-
-		byte *current = (byte *)UNIT_ACTION_UNIT_GET(unit_index);
-
-		*(long *)(current + 0xc8) = owner.object_index;
-		*(long *)(current + 0xc4) = owner.player_index;
-		*(short *)(current + 0xc2) = owner.team;
-		result = true;
 	}
 	return result;
 }
@@ -3525,6 +3528,10 @@ void function_e5750(long unit_index);
 // all 72; direct post-call unit lookup 52.
 // Lane 16 r31: the unit pointer read before the 0xec0d0 call matches with __declspec(noinline) on
 // function_e5750's declaration (not allowed, docs/DECOMPILING.md); without it 0xe5750 inlines here: 72.
+// Round 10 (lane 14): BLOCKED-BY 0xe5750 (finished contributor code): a compile-only screen inlines it
+// under one `if` from /d2inlT70 up, unconditionally from 62 and under 0xec9a0's two tests from 90, and
+// every source form here stays under the build's threshold. Pointer before the call with `!type` 72,
+// with an early return 72, a bool local before the call 83; after the call an early return 52, `!type` 52.
 // @retail 0xec330
 void __stdcall function_ec330(long unit_index, long type)
 {
@@ -3942,10 +3949,6 @@ void function_1c4b00(long object_index, void *a, void *b, long c);
 
 /* the pose sat down from finished: the unit leaps to the kept point on a
    ballistic arc */
-// score 66 (was 66): frame 0x1c agrees; scalar output homes and x87/SSE speed transport differ.
-// Minimum/selected/both scalar output names 66/66/66; existing scaler 66;
-// scaler with those three name sets 66/66/66; both names, scaler and
-// reversed scalar declarations 66. Original body and includes restored.
 // @retail 0xecdc0
 void __stdcall function_ecdc0(long unit_index, long type)
 {
@@ -3953,22 +3956,21 @@ void __stdcall function_ecdc0(long unit_index, long type)
 
 	s_unit_actions *actions = UNIT_ACTIONS_GET(UNIT_ACTION_UNIT_GET(unit_index));
 	point3f center;
-	real minimum_speed;
+	real launch_speed;
 	real speed;
 	vector3f velocity;
 
 	function_b9dd0(unit_index, &center);
-	function_fa1a0(1.0f, 1.0f, &center, (point3f const *)&actions->unknown20, &minimum_speed, NULL, NULL,
+	function_fa1a0(1.0f, 1.0f, &center, (point3f const *)&actions->unknown20, &launch_speed, NULL, NULL,
 		false, &velocity, &speed, NULL, NULL, NULL, NULL);
-	if (function_fa1a0(minimum_speed + 0.01f, 1.0f, &center, (point3f const *)&actions->unknown20,
+	launch_speed += 0.01f;
+	if (function_fa1a0(launch_speed, 1.0f, &center, (point3f const *)&actions->unknown20,
 		NULL, NULL, NULL, false, &velocity, &speed, NULL, NULL, NULL, NULL))
 	{
-		velocity.i *= speed;
-		velocity.j *= speed;
-		velocity.k *= speed;
+		vector3f_scale(&velocity, speed, &velocity);
 		function_b7740(unit_index, &velocity, NULL, false);
 		function_1c4b00(unit_index, &velocity, NULL, 1);
-		if (velocity.k * velocity.k + velocity.j * velocity.j + velocity.i * velocity.i > 0.0001f)
+		if (length_sq3f(&velocity) > 0.0001f)
 		{
 			function_b9b90(unit_index, false);
 			function_b7360(unit_index);
@@ -4260,6 +4262,13 @@ void *function_1e4f90(long actor_index);
    spare weapon) */
 // score 52 (was 63): frame 0xe4 and 278-byte length agree; unit/pool homes,
 // byte-versus-word slot test and final short-result conversion still differ.
+// Lead: `bool result = true; if (--ticks <= 0) { weapon via the hand-slot getter;
+// if (weapon != NONE && !flag) {...} result = false; } return result;` is retail's
+// code but one reload of the header data before the weapon lookup (ours keeps
+// the data in EDI; 64, aligned 10). With nested ifs, a weapon pointer, the header
+// getter or the slot read by hand 64; char getter 71; result cleared first 83;
+// hand getter alone 52; plain returns 79/83, with an if/else result 79; the lead
+// through function_cbd50 64 (same code), on `unit` 65.
 // Earlier 65 from 82 carried a Boolean result in BL/a stack byte; retail has two
 // exits. Single result exits 65-68; the shared short-slot getter 80; gotos to a
 // final false return for some/all paths 80.
@@ -4348,6 +4357,10 @@ extern vector3f *g_4687a8;
 
 /* plants a unit's deployable weapon: the deployed object at the weapon's
    plant marker (on the ground under it), the weapon dropped and deleted */
+// score 248 (was 248): frame 0x208 agrees; initial pool load and position/axis/query homes differ.
+// Numeric hand 249; shared marker position 264; destination name 248; hand/position 256;
+// hand/name 249; position/name 264; all 256; with early axes 257. Shared probe scale 248;
+// shared point/probe producers 248; recovered hand/position/name with both 256, early axes 257.
 // @retail 0xeda70
 void __stdcall function_eda70(long unit_index)
 {

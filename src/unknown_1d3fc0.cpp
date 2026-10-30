@@ -28,6 +28,9 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
  }
 }
 
+// Round 19: unchanged; the forward normalisation's reciprocal and component carriers (retail
+// preloads j and i, divides 1/m into xmm6 and multiplies k from memory) still differ; the
+// operand-order-only forms of the helper give 149.
 // score 149 (was 149): magnitude order, reciprocal/SSE carriers and projection schedule remain.
 // Retail sums the forward magnitude j,i,k (k loaded late, reloaded on the short-vector path) and the
 // other three k,j,i; in this /Ob1 file every sum compiles i,j,k whatever the source order (dot3f,
@@ -47,6 +50,12 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
 // at function scope instead of the array (same frame and slots, identical code) 149.
 // Round 36: separate remaining-axis k-square helper 152; remaining terms reversed 152; k/j square pair 152;
 // pair declarations swapped 152; k-first sum 152; paired k/j-first sum 152; grouped j/i 149; named j/i subtotal 149.
+// Round 37: named squares come first in component order (j before k whatever their statement order), then the
+// unnamed ones i, j, k; an accumulating statement sum keeps its order. A k, j, i statement sum (`m = k*k;
+// m += j*j; m += i*i;`) for up and left with the j-square form kept for forward gives retail's square order in
+// all four normalizations (152; the rest is forward's registers: retail preloads only j and i, puts 1/m in xmm6
+// and multiplies k from memory, `inv * k`, with the skip path reloading k). Plain i, j, k for up and left 152;
+// plain everywhere 155; the k, j, i statement sum everywhere 155; j, i, k statement sum for forward 152.
 // Round 418 on the j-square graph: complete scalar inputs, magnitude return,
 // both, native reference output, reference/scalars, reference/magnitude, all,
 // and scalar/reference receiver return 149/149/149/149/149/149/149/149. All restored;

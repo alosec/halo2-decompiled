@@ -106,6 +106,11 @@ long function_14de70(long arg_1);
 // player/parent 697; current/parent 785; all three 1094; all three plus child 1094. Every expanded lookup
 // graph regresses and is restored. Mask/player register roles and tag-call scheduling remain; protected
 // interfaces and all original values/calls preserved.
+// No-score-mode arm first, with display-failure/fraction-arm/workspace-lifetime combinations
+// 267/268/267/268/267/268/267/268f (unchanged control 131f). Original branches and workspace restored.
+// Round 225: own/rival/both native-size color copies, immutable player handle alone/
+// with each/both copies, and all plus immutable object receiver: 131f each,
+// unchanged fast control 131 versus full 113. Original copies and body restored.
 // @retail 0x13992a
 void function_13992a(byte *arg_1, long arg_2)
 {

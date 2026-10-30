@@ -863,6 +863,12 @@ real function_18cac0(long arg_0);
 // Round 408: all-use structure reads with native real storage and/or final-array
 // publication 229/155/229/155; with consistent audibility 190/192/190/192.
 // Original cached structure, library clears and complete ownership graph restored.
+// Round 297: Signed-int outer/inner/batch induction identities in all seven
+// nonempty subsets 155 each; all with signed-int side 155. Original long
+// induction, clear-result view and complete body restored.
+// Round 309: Plain two-mask search with long/unsigned-long/short/word scan, absent-side
+// continuation 229/229/230/230; complete admission 233/233/234/234. Both native clears,
+// original side selection and whole executable body restored; camera/gain-view homes remain.
 // @retail 0x221a70
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 {

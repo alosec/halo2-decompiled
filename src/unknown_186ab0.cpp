@@ -153,6 +153,9 @@ void player_action_initialize(s_player_action *arg_0);
 // score 134 (was 134): frame 0x54 and selection inputs agree; comparison order,
 // byte-count extension, cyclic operand order, cold clear and output/angle scheduling differ.
 // Earlier input-convention gaps are absent in this baseline; both selection helpers and the count query match.
+// Positive nested latch with toggle-first/state-first 159/157; state-first with split invalidation 161;
+// field-first selection comparison 133 (one-point gain dropped); zero comparisons 134 each;
+// reversed cyclic subscript 134; request store before record copy 136. Original body restored.
 // Earlier 279 (was 323): frame 0x54 agrees; selection widths/registers at calls differ;
 // named root / first atan2 / second atan2 / first fmod / second fmod results 161 each;
 // both atan2 / both fmod / all results 161 each (frame 0x5c vs 0x54).
@@ -208,6 +211,7 @@ void player_action_initialize(s_player_action *arg_0);
 // Input/view captures disturb the 0x54 frame; original observations and comparison restored.
 // Round 288: coherent count-pointer/native-array and mutable/readonly unit observations across
 // both count consumers, each with original/field-first selection comparison 389, 389, 389, 389, 384, 384, 384, 384. Restored.
+// Round 194: Coherent request byte at use 134; native request bits alone/with bounded short counter 172/165; native saved output bit alone/with per-use byte/native request bits/native bits plus counter/original snapshot plus counter 406/406/407/403/401. All restored; comparison/count and cold output/angle scheduling remain.
 // @retail 0x186ab0
 void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_action *arg_3)
 {

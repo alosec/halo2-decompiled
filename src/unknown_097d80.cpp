@@ -52,7 +52,14 @@ struct c_aggregate : c_child
 };
 
 
-// score 85 (was 85): frame 0x8024 against 0x8020 (retail packs the completion output with two later
+// score 45 (was 45): the release reads the allocator global again (allocator_globals_release, retail's
+// reload into eax then edi) at retail's length; left: frame 0x8024 against 0x8020 (`produced` keeps its own
+// slot where retail packs the loop-2 cursor and loop-3 count into it), request/child cursor in EBP/EBX
+// (retail EBX/EBP) and the starts[i]/starts[i + 1] load order.
+// Earlier (74): the dispatch loop now walks the child cursor and the starts[] boundaries as
+// retail does (index in ebp, child cursor and inner count spilled), so the two children are visited
+// in retail order; the frame is still 0x8024 against retail 0x8020 and the produced home is still
+// four bytes off (ours 0x1c, retail 0x10).
 // Round 73: ordinal/child-cursor dispatch 115; explicit inner length on ordinal/range forms 102/99;
 // guarded count-down block traversal 130; shared output/output as count/result 84/84/84;
 // produced count reused as cleanup total 130. Opening body restored.
@@ -115,6 +122,14 @@ struct c_aggregate : c_child
 // Round 292: Allocator information output initialized to zero or NONE at its producer, with
 // query/block/after-array/before-array declaration lifetimes: eight at 100/377. Original output
 // contract and body restored.
+// Round 86 (on the release form): produced at function scope 55, outside the test 59, renamed 45;
+// starts store first 45; indexed test 55; error/total and blocks/starts declaration swaps 45/45;
+// boundaries read in the inner loop's test 121; boundaries swapped 45; child-cursor walk 45; the
+// query and release through an inline free-block helper 45. /GL- diagnostic: frame 0x8020 and every
+// slot as retail, 20 left (EBX/EBP and the boundary loads).
+// N227: Published absolute child origin at capacity/output-address/completion consumers,
+// seven subsets 45 each; complete graph with final boundary as cleanup limit 45. Original
+// produced output, cumulative publications, dispatch and release graph restored.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {
@@ -139,10 +154,12 @@ long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 	if (error == 0 && request->type != 4)
 	{
 		c_child **child = (c_child **)children;
-		for (long *range = starts; range < starts + 3; range++)
+		for (long i = 0; i < 3; i++)
 		{
 			c_child *object = *child;
-			for (long j = range[0]; j < range[1]; j++)
+			long first_block = starts[i];
+			long end_block = starts[i + 1];
+			for (long j = first_block; j < end_block; j++)
 				object->v6(&blocks[j]);
 			child++;
 		}
@@ -156,13 +173,10 @@ long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 			if (block->items[j].object != 0)
 			{
 				c_child *object = block->items[j].object;
-				s_allocator_globals *globals = g_4d87f8;
 				long result;
-				if (!globals->allocator->get_info(object, &result))
+				if (!g_4d87f8->allocator->get_info(object, &result))
 					result = NONE;
-				globals->allocator->release(object, NONE);
-				if (object != 0)
-					globals->count--;
+				allocator_globals_release(g_4d87f8, object);
 				block->items[j].object = 0;
 			}
 		}

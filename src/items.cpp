@@ -556,7 +556,11 @@ struct s_item_collision_bsp
 	s_item_collision_instance *instances;
 };
 
-// score 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
+// score 211 (was 211): Frame 0xa0 agrees; protected plane-index width, plane joins and pending spin-k homes differ.
+// Earlier 211 (was 249): one shared spin scale for both spin branches, with the third spin
+// component scaled after the branch so the pending value and the scale stay on the x87 stack.
+// Plane-index width, plane-join registers and the transform product rows still differ.
+// Earlier 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
 // plane-index width, plane-join registers and spin stores differ;
 // seed before square root 249; fallback input copy 364; up pointer 253;
 // plane input scalars 254; angular output initializer 253.
@@ -587,6 +591,9 @@ struct s_item_collision_bsp
 // Round 285: existing staged spin cross/shared final linear sum/both/shared final angular sum/
 // cross-angular/both sums/all/all with marker-first storage: 249/249/249/249/249/249/249/249 fast.
 // Original complete body restored; protected plane width, join homes and spin tail remain.
+// Round 434: complete axis/impulse/both snapshots 342/345/351; with the existing staged cross
+// 342/345/351; both with a native material index, without/with staged cross 350/350. Combined
+// captures grow the frame to 0xac; original observations, plane interface, spin workspaces and body restored.
 // @retail 0x10cf80
 void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effect)
 {
@@ -634,7 +641,7 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 					surface_plane.d = matrix->position.z * surface_plane.k + matrix->position.y * surface_plane.j +
 						matrix->position.x * surface_plane.i + matrix->scale * plane.d;
 				}
-				real distance = marker.matrix.position.z * surface_plane.k + marker.matrix.position.y * surface_plane.j +
+				real distance = (marker.matrix.position.z * surface_plane.k + marker.matrix.position.y * surface_plane.j) +
 					surface_plane.i * marker.matrix.position.x - surface_plane.d;
 				real offset = 0.05f - distance;
 				point3f position;
@@ -651,6 +658,7 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 		function_10c850(item_index);
 	}
 
+	real spin_scale;
 	if (item->ignore_object_index == NONE && (item->flags_c1 & 1) &&
 		(TEST_FIELD_BIT(item->flag5) || TEST_FIELD_BIT(item->flag6)))
 	{
@@ -659,15 +667,15 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 			axis = marker.matrix.up;
 		else
 			axis = *g_4687b0;
-		real speed = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -1.5707964f, 1.5707964f);
-		spin.i = axis.i * speed;
-		spin.j = axis.j * speed;
-		spin.k = axis.k * speed;
+		spin_scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -1.5707964f, 1.5707964f);
+		spin.i = axis.i * spin_scale;
+		spin.j = axis.j * spin_scale;
+		spin.k = axis.k;
 	}
 	else
 	{
 		dword *seed = &g_4e7408->unknown0;
-		real speed = (real)sqrt(impulse->j * impulse->j + impulse->k * impulse->k + impulse->i * impulse->i);
+		real speed = (real)sqrt((impulse->j * impulse->j + impulse->k * impulse->k) + impulse->i * impulse->i);
 		if (speed < 0.0001f)
 		{
 			*seed = *seed * 0x19660d + 0x3c6ef35f;
@@ -679,11 +687,11 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 		if (!(function_30bf0(&spin) > 0.0f))
 			random_unit_vector(&spin, seed);
 		*seed = *seed * 0x19660d + 0x3c6ef35f;
-		real random_speed = (real)(*seed >> 16) * (1.0f / 65535.0f) * speed * 1.5707964f;
-		spin.i *= random_speed;
-		spin.j *= random_speed;
-		spin.k *= random_speed;
+		spin_scale = (real)(*seed >> 16) * (1.0f / 65535.0f) * speed * 1.5707964f;
+		spin.i *= spin_scale;
+		spin.j *= spin_scale;
 	}
+	spin.k = spin.k * spin_scale;
 	{
 		vector3f velocity;
 		vector3f angular_velocity;
@@ -988,7 +996,8 @@ struct s_item_flags_view_10b850
     byte flag6 : 1;
     byte flag7 : 1;
 };
-// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
+// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and collision/carrier/rotation homes remain.
+// Earlier: Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
 
 // Earlier: Frame 0x154 versus 0x12c, entry Boolean bytes and collision/carrier/rotation homes still differ.
 // Earlier: Frame 0x154 versus 0x12c and Boolean/vector homes remain.
@@ -1074,6 +1083,8 @@ struct s_item_flags_view_10b850
 // Round 285: existing staged orientation cross at first/second/third/fourth/first-two/last-two/
 // all sites, then all with staged flow cross: 821/821/821/818/813/820/820/935 fast.
 // Original complete body and helpers restored; frame and Boolean/vector homes remain.
+// Round 223: complete persistent decisions in signed-byte/byte/short/word storage 813/813/872/872;
+// complete contact decisions in those domains 813/813/897/897. Original complete body restored.
 // @retail 0x10b850
 void __stdcall function_10b850(long object_index)
 {
@@ -1295,7 +1306,8 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 	function_10cf80(&velocity, object_index, false);
 }
 
-// score 154 (was 154): Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
+// score 185 (was 185): Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Earlier: Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
 // Earlier 154 (was 154): frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
 // Frame 0xac agrees; release-byte RMW/tail and event/location homes remain.
 // frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
@@ -1377,6 +1389,8 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // Round 205: immutable addressed impulse output, with none/rate/gain/both/
 // direction/direction-rate/direction-gain/all input snapshots 154/200/200/200/194/194/194/194.
 // Original mutable output and input graph restored; release-byte RMW/tail and event homes remain.
+// Round 223: unsigned/signed word and dword full-byte bitfields, each with word/byte named-bit units,
+// 185/213/185/213/185/213/185/213. Actual record layout and complete body restored.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {

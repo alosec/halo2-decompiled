@@ -397,7 +397,7 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 	long region_index, s_damage_region_accumulator *accumulator);
 void function_d9d60(long marker_name, long object_index, bool at_marker, long effect_index,
 	s_damage_owner const *owner);
-void function_ba690(long object_index, byte **states, long *state_count, long *a, long *b);
+void function_ba690(long object_index, long *state_count, byte **states, long *a, long *b);
 void function_a8360(long object_index, long region_index, long permutation_index, long a);
 void function_dbfb0(long object_index, s_damage_owner const *owner, bool a, bool b, bool c);
 void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node_index, short unknown0c, short region_entry_index,
@@ -1592,11 +1592,6 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 /* whether a permutation's model state allows it: false when its state index
    (+0x22) is in range and that region's chosen state (ba690's fifth array,
    8 bytes per region, state at +1) is at or above the permutation's (+0x20) */
-// score 2 (was 39): only the order of the lea instructions that load the out-parameter
-// addresses differs (retail edi=states before esi=state_count, ours the reverse); the
-// frame and every other instruction are identical.
-// Tried: declaration order of the locals (no effect), `state_count > state_index` (4),
-// locals declared before the permutation pointer (2).
 // @retail 0xd9f70
 bool function_d9f70(long region_index, long permutation_index, s_damage_info *info, long object_index)
 {
@@ -1607,7 +1602,7 @@ bool function_d9f70(long region_index, long permutation_index, s_damage_info *in
 	long choices;
 	bool result = true;
 
-	function_ba690(object_index, &states, &state_count, &saved_states, &choices);
+	function_ba690(object_index, &state_count, &states, &saved_states, &choices);
 	if (permutation->unknown22 >= 0 && permutation->unknown22 < state_count)
 	{
 		if ((short)(char)((byte *)choices)[permutation->unknown22 * 8 + 1] >= permutation->unknown20)
@@ -4212,19 +4207,22 @@ dword function_db810(long object_index, long node_index)
 }
 
 /* the model node of the object's lowest ranked physics node */
-// score 28 (was 134): retail calls 0x16d890 here (its only caller), so it is declared noinline ahead of its
+// score 4 (was 134): retail calls 0x16d890 here (its only caller), so it is declared noinline ahead of its
 // definition in unknown_16d280.cpp (noinline only on this file's declaration still inlines it: 134). Left: the
-// prologue's instruction order, the outer count load/add order, and where the inner `xor esi, esi`
-// goes (retail does it before the inner guard). Tried: the row and index base pointers as locals
-// before the inner loop (87, 116 with both), a component local dropped (84), `long j = 0` before
-// the `if` (111), the inner `for` under the `if` (69).
+// prologue's order (retail masks the tag index before it pushes EBP) and the register that holds the tag's
+// definition (retail reuses EAX). Fixes made: the rigid body loop guarded by its count before its first
+// pointer is formed, `j` declared before the inner guard, the model index read after the two results are set
+// (28 -> 4). Tried: the model index read first 7, a definition pointer local 4, the row read inside the loop
+// 4, an up-counting loop over an indexed rigid body 4. Before the guard: the row and index base pointers as
+// locals before the inner loop (87, 116 with both), a component local dropped (84), `long j = 0` before the
+// `if` (111), the inner `for` under the `if` (69).
 // @retail 0xdbb40
 long function_dbb40(long object_index)
 {
 	s_damage_object *object = DAMAGE_OBJECT(object_index);
-	long model_index = *(long *)(g_4e3b44[object->tag_index & 0xffff].bytes + 0x38);
 	long result = 0x7fffffff;
 	long lowest_rank = 0x7fffffff;
+	long model_index = *(long *)(g_4e3b44[object->tag_index & 0xffff].bytes + 0x38);
 
 	if (model_index != NONE && object->node_index != NONE)
 	{
@@ -4235,29 +4233,33 @@ long function_dbb40(long object_index)
 			byte *physics = g_4e3b44[physics_index & 0xffff].bytes;
 			byte *component = g_51e9b8->data + (object->node_index & 0xffff) * 0xa0;
 			long rigid_body_count = *(long *)(component + 0x74);
-			byte *rigid_body = *(byte **)(component + 0x70) + 0x48;
 
-			for (long i = rigid_body_count; i > 0; i--, rigid_body += 0x60)
+			if (rigid_body_count > 0)
 			{
-				long node_count = *(long *)(rigid_body + 4);
+				byte *rigid_body = *(byte **)(component + 0x70) + 0x48;
 
-				if (node_count > 0)
+				for (long i = rigid_body_count; i > 0; i--, rigid_body += 0x60)
 				{
-					byte *rows = *(byte **)(physics + 0x3c);
-					char *node_indices = *(char **)rigid_body;
+					long node_count = *(long *)(rigid_body + 4);
 					long j = 0;
 
-					do
+					if (node_count > 0)
 					{
-						byte *row = rows + node_indices[j] * 0x90;
-						long rank = *(short *)row;
+						byte *rows = *(byte **)(physics + 0x3c);
+						char *node_indices = *(char **)rigid_body;
 
-						if (rank < lowest_rank)
+						do
 						{
-							lowest_rank = rank;
-							result = render_model_find_marker_group(model_index, *(short *)(row + 2));
-						}
-					} while (++j < node_count);
+							byte *row = rows + node_indices[j] * 0x90;
+							long rank = *(short *)row;
+
+							if (rank < lowest_rank)
+							{
+								lowest_rank = rank;
+								result = render_model_find_marker_group(model_index, *(short *)(row + 2));
+							}
+						} while (++j < node_count);
+					}
 				}
 			}
 		}

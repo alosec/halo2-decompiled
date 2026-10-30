@@ -1590,7 +1590,8 @@ bool function_1fb360(long unit_index, short recording_index, long flags);
 void function_b7360(long object_index);
 
 #pragma inline_depth(2)
-// score 471 (was 471): the body is 40 bytes short; retail loads the actor and cs-datum
+// score 471 (was 471): No allocated frame; actor/pool/output acquisition, dispatch layout and forty missing bytes remain.
+// the body is 40 bytes short; retail loads the actor and cs-datum
 // table globals before the actor index and keeps the actor base in EBX, ours loads the
 // index first and keeps the actor base in ESI.
 // Actor/output registers, dispatch layout and rounding homes still differ.
@@ -1689,6 +1690,10 @@ void function_b7360(long object_index);
 // Round 280: Isolated duration producer scope 471; delay default 482; independent end ticks 483; both 482;
 // coherent scratch names 471; names with delay/end/both 482/483/482. Original conversion destinations,
 // case graph and actor-object observation restored.
+// Round 188: Coordinated state/location/both inline contracts 471 each; producer-local motion completion alone/with state/with location/with both 527 each; both with literal recording completion 527; isolated recording completion 471. State-inline forms lose 22 matched reduced controls. All declarations, result producers and full body restored.
+// Consistent first/second command references and actor-action observations, subsets 1-7,
+// 544/514/532/520/532/526/530; all before notification 509. All original observations and
+// complete body restored; pool/actor/output ownership and the forty-byte gap remain.
 // @retail 0x258cf0
 short __stdcall function_258cf0(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
@@ -2143,6 +2148,9 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // Round 280: Entry-produced return result short/long with zero/one defaults 491 each; byte/bool with
 // zero/one defaults 642 each (fast control 491, full 478). Original return storage, completion byte and
 // actor/state acquisitions restored.
+// Round 218: Nearest/candidate/distance scalar role names, seven subsets, 491 each; all three
+// uninitialized at entry 491 (reduced control 491, full 478). Actor/state ownership and first point
+// home remain; original scalar lifetimes restored.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {

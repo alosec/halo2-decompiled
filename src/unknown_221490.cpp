@@ -151,7 +151,8 @@ void function_221490(
     function_221491(1, 0, buffer_reference);
 }
 
-// score 83 (was 83): the prologue and the loop's registers differ: retail pushes ebp, esi
+// score 83 (was 83): Frame 0xdc agrees; list EAX/ECX, settings-side induction, seen/output-count registers and descriptor homes differ.
+// Earlier: the prologue and the loop's registers differ: retail pushes ebp, esi
 // and edi first and keeps the pair count in ebp and the pair pointer in ebx, ours loads the
 // pointer into ebx before the pushes and counts in ecx.
 // Round 81: retail strength-reduces &settings->pairs[i].lVolume into the pointer (esi) and
@@ -163,6 +164,18 @@ void function_221490(
 // Round 276: Actual setting/previous/both pair values 104/96/108; native changed byte 83;
 // Round 276: the same pair values with byte state 104/96/108; complete graph with descriptor aggregate 108.
 // Round 276: Original scalars, array observations and descriptor restored; mirrored induction remains.
+// Round 20: the list arrives in ecx (retail eax): the all-stack first pass puts the shared zero
+// in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
+// initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
+// read after the mixbin compare 135.
+// Round 216: SDK descriptor initializer 83; append-local count 87; later mask zeros 98;
+// direct SDK count 87; completed-result descriptor via aggregate/fields/DWORD count 88/88/88
+// (281 bytes, frame 0xd8); early descriptor initializer with DWORD count 83.
+// Original descriptor, scalar mirror, input observations and all output updates restored.
+// Round 20: the list arrives in ecx (retail eax): the all-stack first pass puts the shared zero
+// in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
+// initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
+// read after the mixbin compare 135.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,
@@ -244,6 +257,14 @@ set_all:
 // Native desired-pair reference, alone/both element references and nested/combined
 // duplicate guards 102/102/96/96; complete pair snapshots 104/104/104/104.
 // Settings/list induction and mask/count homes remain; all executable forms restored.
+// Round 189: Complete volume/bin/both field observations 107/106/86; read-only input contracts
+// alone/volume/bin/both 83/107/106/86; both with native output-pair assignment 112. Both
+// observations recover length but shrink the frame and change cleanup to four bytes. Every body
+// and declaration restored.
+// Round 311: validated output/cache/scalar workspace subsets 1..7 83/83/83/91/75/91/75;
+// all with SDK append count 75; output/scalars with late volume 131, SDK count 75.
+// Scoped output/scalars gives 75 plain (291/281, frame 0xd8), but regresses an
+// unmatched caller by 56; original output/state lifetimes restored.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,
@@ -504,7 +525,10 @@ bool sound_driver_voice_create_buffer(
 	return result;
 }
 
-// score 98 (was 98): frame/length agree; early saves and descriptor zero/input scheduling differ.
+// score 183 (was 98): the second buffer's flags are now retail's play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN
+// (0x100010 when play is set; the old body set 0x180010, a behaviour difference, fixed at review in lane 15
+// round 13). Every 98-105 form below carried the wrong flags; with the correct select see the 155-197 list.
+// Old notes: frame/length agree; early saves and descriptor zero/input scheduling differ.
 // Descriptor input first 105; flags before clear 105; spatial byte 105; unsigned result 105;
 // pair clear plus direct loop 185; input mixbin snapshot 105; real voice reference 98 (plain);
 // pair clear plus descriptor input first 183.
@@ -517,7 +541,7 @@ bool sound_driver_voice_create_buffer(
 // early saves and descriptor zero/input scheduling remain;
 // voice before modes/result after count/next count word/spatial signed byte 98 each;
 // spatial word 151; play signed byte 98; spatial word with play byte 151; play long 101.
-// this body sets the second buffer's flags to 0x180010 when play is set;
+// the old body set the second buffer's flags to 0x180010 when play was set;
 // retail computes play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN (0x100010). The 98 allocation needs
 // 0x100000 used twice (first buffer and the select): the correct select 183, or
 // (play ? FXIN : 0) + FXIN 183. With the correct select: index returned directly 155 (pushes
@@ -530,6 +554,14 @@ bool sound_driver_voice_create_buffer(
 // Round 208: disjoint native descriptor phases, shared/per-phase mixbins,
 // pair arrays at success/phase entry and both descriptor name orders: 98 in all eight.
 // Original storage and body restored; conditional saves and zero/input residency remain.
+// Round 13: retail saves only esi before the count test and gives that exit its own epilogue
+// (ours shares the full one, so every save stays at entry); it also stores the new count before
+// the descriptor clear. The count stored before the clear or before the voice reference 98/98;
+// the count test as a guard clause returning result or NONE 164/164 (every save sinks, but flags
+// then arrive in eax and the exit is placed first); the failure path returning NONE 98.
+// Round 219: Native descriptor phases with direct success short/long/no sentinel result 178/178/178;
+// test-assigned result 181; common short/long exit 149/180; direct success and early count,
+// with/without sentinel 179/179. All restored; early saves and zero/input scheduling remain.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,
@@ -587,7 +619,7 @@ short sound_driver_voice_new(
 			memset(&buffer_description, 0, sizeof(buffer_description));
 
 			buffer_description.dwSize = sizeof(buffer_description);
-			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : 0) + DSBCAPS_FXIN | DSBCAPS_CTRL3D;
+			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN) | DSBCAPS_CTRL3D;
 			buffer_description.dwInputMixBin = input_mixbin;
 			if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice.buffer, NULL)))
 			{

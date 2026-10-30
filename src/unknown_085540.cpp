@@ -806,11 +806,23 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 }
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
-// score 49 (was 49): the length and the frame match retail's. Left: the prologue (retail pushes
-// the length and the frame match retail's. Left: the prologue (retail pushes
+// score 14 (was 14): retail's code apart from two single differences: retail stores kind 1
+// between the header's two zero stores (ours after both), and forms the data address with
+// `add eax, ebp` (ours `lea ecx, [eax + ebp]`). The loop runs while the writes succeed: the
+// unrotated head (zero and kind 1 before the count test, ring base rebuilt each pass) only
+// appears when the loop tests a value the failures clear, and the compressed size has to end
+// with its block for the remaining count to share its slot.
+// Round 81: `while (result)` with the terminal record's break 14 (kept); the same with a named
+// `byte *data = destination + offset;` for the data write 2 (the add is retail's; only the kind
+// store order is left, so it waits on a match); harness: `= { 1 }`, union or nested-struct
+// initialisers, kind set in both arms, `|=`/`++` kind, an init helper, two partial memsets (the
+// order is retail's, but the zero then feeds `cmp eax, ecx`), a named count test, the clamp as an
+// if, offset declared at the top (worse), write_wrapped parameter orders, /G5-/G7 and /Ob2: none
+// moves the kind store.
+// Earlier (score 49, the old for-loop body): left were the prologue (retail pushes
 // ebp before ebx and copies the count into the compressed size's slot), the loop head (retail sets
 // the header's zero and kind 1 at the head, before the count test, and rebuilds the ring base each
-// pass; ours peels the test) and the count and data-address registers in the loop body.
+// pass; ours peeled the test) and the count and data-address registers in the loop body.
 // Retail's unrotated head only appears with a flag tested at the head (a bool set by the count
 // test, or `while (!done)` with `done` set by the terminal record), which the compiler keeps;
 // with the compressed size scoped to the compressor call, a `remaining` copy made on success and
@@ -841,39 +853,61 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // the same `lea ecx`; 0x869a0 2 -> 99); harness: byte source, forceinline copy, position local,
 // size local, kind cast, `memset(&header, 0, 8)`, header declared outside the loop, word kind,
 // a pointer-based kind store, `0 < remaining`, a long flag: no change.
+// Round 22 (one-file harness with src/unknown_199560.cpp, exact): `header.size = 0;` or
+// `header.offset = 0;` after the kind 14/14; the header value-initialised from a named type
+// (`= s_header()`, declared or assigned) 24/24; `= { 0, 0, 0 }` then the kind 117.
+// Round 84: the terminal arm written first 14; memset and kind 1 in each arm 74; a value-initialised
+// header (`= s_header()`) 24 (410 bytes); the clamp as `remaining < 1024 ? remaining : 1024` 17; a
+// do/while under `if (result)` 14. Compile-only probes (a constructor, a constant zero header copy,
+// a memset of a copy, bitfield or union kinds, `*(char *)&kind`, a pointer memset) all store both
+// zeros before the kind; no other retail function stores between an 8-byte memset's two halves.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {
  bool result;
- long compressed_size;
- result = function_1995a0(game_state_globals.base_address, source_size, destination, &compressed_size, capacity, 9);
- if (result)
+ long remaining;
+ long offset;
+ {
+  long compressed_size;
+  result = function_1995a0(game_state_globals.base_address, source_size, destination, &compressed_size, capacity, 9);
+  if (result)
+  {
+   offset = 0;
+   remaining = compressed_size;
+  }
+ }
+ while (result)
  {
   struct { short kind; short size; long offset; } header;
-  long offset = 0;
-  for (;;)
+  memset(&header, 0, sizeof(header));
+  header.kind = 1;
+  if (remaining > 0)
   {
-   if (compressed_size <= 0) break;
-   memset(&header, 0, sizeof(header));
-   header.kind = 1;
-   header.size = (short)(compressed_size > 1024 ? 1024 : compressed_size);
+   header.size = (short)(remaining > 1024 ? 1024 : remaining);
    s_ring_buffer *buffer = (s_ring_buffer *)&view->unknown9c;
    header.offset = offset;
    if (view_buffer_write(buffer, sizeof(header), &header) == NONE ||
     view_buffer_write(buffer, header.size, destination + offset) == NONE)
-    { result = false; goto local_0; }
-   compressed_size -= header.size;
-   offset += header.size;
-   view->unknownac++;
+    result = false;
+   else
+   {
+    offset += header.size;
+    remaining -= header.size;
+    view->unknownac++;
+   }
   }
-  header.size = 0;
-  s_ring_buffer *buffer = (s_ring_buffer *)&view->unknown9c;
-  header.offset = offset;
-  if (view_buffer_write(buffer, sizeof(header), &header) == NONE)
-   { result = false; goto local_0; }
-  view->unknownac++;
+  else
+  {
+   header.size = 0;
+   s_ring_buffer *buffer = (s_ring_buffer *)&view->unknown9c;
+   header.offset = offset;
+   if (view_buffer_write(buffer, sizeof(header), &header) != NONE)
+    view->unknownac++;
+   else
+    result = false;
+   break;
+  }
  }
-local_0:
  return result;
 }
 
@@ -947,7 +981,8 @@ bool function_685f0(void *block, long *size, byte *destination, long capacity);
 // score 2 (was 2): the constant 0xffff is loaded before the address of the buffer; retail loads
 // the address first. The registers that carry the destination and the capacity are the
 // callee's choice, and function_685f0 in src/unknown_067e10.cpp is three instructions
-// off retail.
+// off retail. BLOCKED-BY 0x685f0 (round 14: it takes the destination in eax, retail's
+// in edx; its body is contributor code).
 // @retail 0x869a0
 bool function_869a0(c_simulation_view *view, void *block)
 {
@@ -985,6 +1020,12 @@ bool function_68670(byte *source, long size, void *block);
 // pointer 97; inline read method 135; header size per use 135; buffer hoisted out of the loop 204.
 // Round 182: Self-aligned standard entry, case-workspace scopes and complete ring-field forms do not recover receiver and reader visibility
 // Trials 1-8: 179, 172, 179, 172, 164, 159, 164, 159.
+// Distinct native byte-buffer class with ordinary/inline/noinline/both reader knowledge:
+// 97/352/97/97; with the occupied-span subexpression 135/353/135/135. Original class identity,
+// all member declarations, caller body and window form restored; reload/count-update gap remains.
+// Round 222: connection-ready bool/byte/short/long on original entry, each 97; each with named
+// occupied span 135. Original body restored; reader visibility, cursor reloads and count updates
+// remain.
 // @retail 0x865d0
 void __stdcall function_865d0(c_simulation_view *view)
 {

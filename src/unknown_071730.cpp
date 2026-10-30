@@ -151,6 +151,12 @@ void function_71ff0(c_session_state_matchmaking *arg_0, long arg_1,
 // Round 189: plain strict/fallback balance loop, long ordinal with short/bool/long/byte
 // result 580/591/588/591; short ordinal with those four results 580 each. Original
 // attempts restored; the rolled loop shortens away from retail and leaves the frame excess.
+// Round 214: final canonical 0/1 result storage on the complementary waiting graph:
+// signed-byte/byte 465 each; short/word 449 each; int/unsigned-int/long/dword 444 each.
+// Original bool result restored; frame 0x3e8/0x3e4, result/state homes and getter boundary remain.
+// Round 431: Final result from unchanged transition/reset tests, bool/byte/short/long carriers,
+// combined tail then per-phase publication: 449/455/484/480/441/461/476/471. Original conditional true
+// stores, result carrier and complete executable body restored.
 // @retail 0x71730
 bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 {

@@ -51,7 +51,40 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 93 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// score 52 (was 56): the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
+// the blend registers and the color0 store match. Left: the strength add loads the entry's strength,
+// adds and copies back where retail adds it to xmm7 in place (its operands flip only when the strength
+// load comes before the color copy in the i == 0 block, which then changes that block), 0x131c20's
+// `&color` formed in edi and copied to ecx (retail: ecx, then edi), and retail's sete collision test.
+// Round 38 (lane 9): the contribution through vector3f_assign and the sum through vector3f_add 52
+// (kept: the j/k adds load the contribution as retail, since the contribution's fields are written in
+// an inlined helper; replaces the hand-written double sums). On it: `strength = strength + power` 52;
+// vector3f_add(&contribution, &direction, ...) 52; strength declared first 55; float `+=` and plain
+// contribution-first sums 162/162; double sums 56; strength first in the i == 0 block 97 (821 bytes,
+// strength add in place, color copy changes); a power pointer 52; `if (i != 0)` with the i == 0 block
+// in the else 118 (816 bytes). Compile-only screens, strength order unchanged: direction_from_angles
+// with vector3f_add (contribution-first adds, angles loaded once), the three declaration orders, a
+// typed entry struct, a color pointer, memcpy, a named power local, `0.0f <` test, entry read late.
+// Round 100 (lane 5): j/k sums without the cast 56; no-lights arm first 184; start copied field by
+// field 198; `strength = power + strength` 56; strength updated before the blend call 191; strength
+// declared before direction/color 59; named power local 171.
+// Earlier (93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// the frame, the sky/count homes, the trig temporaries and the color0 store match.
+// Left: the j and k direction adds load the direction where retail loads the contribution (the i add
+// matches with the double-typed sum); the entry strength is loaded, added and copied back where retail
+// adds it to the strength in place (`addss xmm7, [ebp + 0x10]`); 0x131c20's `&color` is formed in edi
+// and copied to ecx (retail ecx, then edi); and retail's collision test materialises a sete before its
+// branch. The strength add flips with the i add: every form that gives retail's i add gives the
+// loaded strength, and the earlier 93 form had the strength but not the i add.
+// Round 100 (on the 56 form): j/k sums without the double cast 56 (same code); the no-lights arm
+// first (`count <= 0`) 184 (all three adds as retail, strength still loaded; the arm moves ahead of
+// the loop); the zero-vector start copied field by field 198 (all adds as retail, the copy becomes
+// SSE moves); `strength = power + strength` 56; strength updated before the blend call 191;
+// strength declared first 59; a named power local for the test, divide and add 171.
+// The direction adds follow first-assignment order: retail's form needs direction's fields assigned
+// before the contribution's. Earlier (93 form and before):
+// frame 0x8c and first trig/product sum agree; two x87 add operands, blend address ownership, strength-add destination/copy and collision normalization remain.
+// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
 // color0 store match. Left: the three x87 direction adds load the direction first where retail adds
 // it as the memory operand, 0x131c20's `&color` is formed in edi and copied to ecx where retail
 // forms it in ecx and then edi, and the collision test's sete. The fast check also leaves two of
@@ -59,6 +92,18 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // and the color0 store now match. Left: the three x87 direction adds load the direction first
 // (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
 // (retail ecx, then edi), and the collision test's sete.
+// the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the j and k x87 direction adds load the direction where retail loads the
+// contribution (the adds follow which field is first assigned earlier in source: assigning direction's
+// fields before the loop gives retail's adds), the strength is loaded, added and copied back where
+// retail adds the entry's strength to it in place (it flips with the i add), 0x131c20's `&color` is
+// formed in edi and copied to ecx where retail forms it in ecx and then edi, and the collision test's
+// sete (only a bool set in a test and tested afterwards gives it).
+// Round 99 (lane 6), on the double-cast adds: the cast on the other operand, on the direction, or
+// `+= (double)` 56 each (identical code); contribution as a real[3] 56; existing direction_from_angles
+// for the contribution 167 (the angles are loaded first); `strength = strength + entry` 56;
+// `(double)strength + entry` 210.
+// Earlier (round 93 form):
 // Round 69: `direction.i = contribution.i + direction.i` written out, or contribution declared
 // before direction, 93/93 (identical code: the add operands are reordered); the collision test as
 // an inline/forceinline bool helper (call && no-object) 93/93 (folded); the per-light count test as
@@ -118,10 +163,6 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
 // in double scalar carriers 186. Original contribution and color ownership restored.
 // Round 183: shared vector add, either input owner, and unit add-scaled in place 93/93/93/93; separate native sum output, plain/scaled and either owner, 188/188/188/188. Original accumulation restored.
-// score 56 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
-// color0 store match. Left: the strength is loaded, added and copied back where retail adds the
-// entry's strength to it in place, the two remaining x87 direction adds load the direction where
-// retail loads the contribution, 0x131c20's `&color` is formed in edi and copied to ecx where retail
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {
@@ -146,12 +187,9 @@ long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_
                     {
                         byte *entry = *(byte **)(light + 0x30);
                         vector3f contribution;
-                        contribution.i = (real)(cos(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
-                        contribution.j = (real)(sin(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
-                        contribution.k = (real)sin(*(real *)(light + 0x10));
-                        direction.i = (double)contribution.i + direction.i;
-                        direction.j = (double)contribution.j + direction.j;
-                        direction.k = (double)contribution.k + direction.k;
+                        vector3f_assign(&contribution, (real)(cos(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10))),
+                            (real)(sin(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10))), (real)sin(*(real *)(light + 0x10)));
+                        vector3f_add(&direction, &contribution, &direction);
                         if (i == 0)
                         {
                             color = *(color3f *)(entry + 4);
@@ -1058,8 +1096,8 @@ PRIVATE __forceinline bool surface_status_failed(long status)
     return status == 1 || status == 2 || status == 3;
 }
 
-// score 2 (was 44): the retry call computes `flags & ~1` after pushing the object
-// index; retail computes it before.
+// score 2 (was 2): the retry call computes `flags & ~1` after pushing the object index; retail
+// computes it before (`flags ^ 1` keeps the same order, so the operator is not the cause).
 // Earlier, with volatile tag pointer and flags locals (44): zero then OR 148; const tag 44;
 // byte tag bitfield 135; dword object bitfield 44; named query failure 44;
 // explicit final exits 181; inverse failure result 44; retry flag update 44.
@@ -1072,13 +1110,14 @@ PRIVATE __forceinline bool surface_status_failed(long status)
 // failed set after the retry 104.
 // Current bitfield forms (fast): nonzero retry 85; exact retry flag 131; word flags 117;
 // short flags 117; bool option 115; first failure workspace 120; combined bits 147;
-// initial object option 140. Retry AND/push scheduling remains.
-// score 2 (was 2): retry AND still follows the object-index push. XOR 2; subtract 18; clear
-// extracted bit 2; subtract extracted bit 133; retry status scope 2; one failure store 98; long
-// failure 83; entry status 2.
-// score 2 (was 2): retry AND still follows the object-index push; mask assignment in the call 2;
-// nested retry status predicate 2; direct status initialization 2; two-call index local 2;
-// read-only point 2; byte failure 2; negated return 2; guarded mask assignment 87.
+// initial object option 140. XOR 2; subtract 18; clear extracted bit 2; subtract extracted
+// bit 133; retry status scope 2; one failure store 98; long failure 83; entry status 2;
+// mask assignment in the call 2; nested retry status predicate 2; direct status
+// initialization 2; two-call index local 2; read-only point 2; byte failure 2; negated
+// return 2; guarded mask assignment 87. Round 44: in-place clear with `failed = failed(status)
+// || failed` 93; forceinline query wrapper for both calls 2; failure assigned from the
+// predicate then tested 120; sky decision as a per-type bool 62; dword flags parameter in
+// the query and its callers 2.
 // @retail 0xd1850
 long function_d1850(long object_index, bool value, s_effect_color_query *query)
 {
@@ -1800,7 +1839,7 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
     point->weight[3] = dequantize16(source[4]);
 }
 
-// score 761 (was 782): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
+// score 761 (was 761): Frame 0x98 versus 0x90; status +0x40 versus +0x24, mesh
 // +0x24 versus +0x20, sample homes and material/magnitude expansion remain.
 // Earlier: Frame 0x90 agrees; result +0x3c versus +0x24, mesh +0x2c versus +0x20, and helper expansion
 // remain. Existing scalar clamp output pointer 811; weight loop 819; native sample table 819;
@@ -1880,6 +1919,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Complete captures with late-structure/early-model/both phases 761/803/761; early-structure
 // with original/early model 772/772; readonly late-structure/early-model/both 761/803/761.
 // Consistent reused UV and ordinal inputs at the natural structure phase kept, plain 761.
+// Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
+// 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
+// independent captures, mesh homes and status order restored.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

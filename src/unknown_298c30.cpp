@@ -1,4 +1,5 @@
 #include "unknown_11c920.h"
+#include "normalize3d.h"
 #include "globals.h"
 #include "slot_handler.h"
 #include "unknown_26c380.h"
@@ -152,6 +153,9 @@ __forceinline void function_2992ba(short arg_0, bool arg_1, real arg_2, point2f 
 // domains: 408/408/409/458/417/471/463/495. Original cursor, counts and body restored.
 // Round 251: candidate point/scalar snapshots 401/488; early direction publication 407/459; candidate plus facing snapshots 487/450; early publication with both 487/453. Seven-point best rejected; original helper and body restored.
 // The 401 point-snapshot form gives 0x1c cleanup with frame 0x74 at 1733/1732 bytes; restored.
+// Round 424: candidate snapshot with helper-owned point/returned point/scalar evaluation
+// 445/445/431; each with void normalizer 445/445/431; point/scalar with ordinary inline
+// emitter 713/431. All restored; nullable-input residency, XY homes and cleanup remain.
 // @retail 0x298d90
 void function_298d90(long arg_0, long arg_1, s_298c30 const *arg_2, point2f const *arg_3,
 	point2f const *arg_4, point2f const *arg_5, real arg_6, point2f const *arg_7, point2f const *arg_8)
@@ -281,9 +285,7 @@ __forceinline real function_299a36(point3f const *arg_0, point3f const *arg_1, v
 	if (!(0.0001f > fabs(local_0)))
 	{
 		real local_1 = 1.0f / local_0;
-		arg_2->i *= local_1;
-		arg_2->j *= local_1;
-		arg_2->k *= local_1;
+		vector3f_scale(arg_2, local_1, arg_2);
 	}
 	else
 		local_0 = 0.0f;
@@ -313,7 +315,7 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 	arg_3->y = arg_1 * arg_2->y + arg_0->y;
 }
 
-// score 749 (was 749): frame 0x11c versus 0x114; radius caching and trace/point homes differ.
+// score 733 (was 749): frame 0x120 versus retail 0x114; radius and trace/pivot homes differ.
 // Frame 0x11c versus 0x114, early radius retention and trace/pivot/result homes remain.
 // Earlier: frame 0x11c versus 0x114; radius caching and trace/point homes differ.
 // Shared endpoint setters 767; center CRT copy 767; step CRT copies 767;
@@ -389,6 +391,14 @@ __forceinline void function_2994a1(point2f const *arg_0, real arg_1,
 // frame/radius and trace/pivot/result homes remain.
 // Round 249: Consistent side/whole-angle/both/bool-side+angle observations 781/767/755/813;
 // on the split-output planar frame 756/786/805/806. Original reads, frame and helpers restored.
+// Round 217: existing in-place normalized vector scale alone/with shared difference 749/749;
+// plus reverse scale 742/742 (3374 bytes, seven-point gain rejected); planar pivot with those
+// four forms 755/755/769/769. Frame and eager radius remain; all helpers and body restored.
+// Shared sine/cosine/both across sweep and obstacle phases at sweep scope 743/743/748;
+// at entry 743/743/748; consistent rotation-pair names at both scopes 748/748.
+// Six-point isolated gain rejected. Shared sine/cosine plus existing in-place normalization
+// and reverse-vector scale 734/733 fast; cosine form kept 733 plain at 3383/3372.
+// Original magnitude tree, real trig rounding, trace calls, values and short loops retained.
 // @retail 0x299460
 bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, vector3f const *arg_5,
@@ -420,7 +430,8 @@ bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	{
 		function_2994a1((point2f const *)local_5, -arg_6, (point2f const *)&local_6, (point2f *)&local_7);
 	}
-	vector3f local_8 = { local_6.i * -1.0f, local_6.j * -1.0f, local_6.k * -1.0f };
+	vector3f local_8;
+	vector3f_scale(&local_6, -1.0f, &local_8);
 	bool local_9 = false;
 	bool local_10 = false;
 	long local_11 = *(long *)((byte *)local_1 + 0x28c);
@@ -460,6 +471,7 @@ bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 	point3f local_21 = {local_6.i * local_12.distance + local_5->x, local_6.j * local_12.distance + local_5->y, local_5->z};
 	point3f local_22 = {local_6.i * -local_13.distance + local_5->x, local_6.j * -local_13.distance + local_5->y, local_5->z};
 	short local_23 = (short)ceil(fabs(arg_1->field_4) * 1.2732394933700562f);
+	real angle_cosine;
 	point3f local_24, local_25, local_26;
 	for (short local_27 = 1; local_27 <= local_23; local_27++)
 	{
@@ -469,12 +481,12 @@ bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 		if (!arg_1->field_0)
 			local_28 *= -1.0f;
 		real local_29 = (real)sin(local_28);
-		real local_30 = (real)cos(local_28);
+		angle_cosine = (real)cos(local_28);
 		if (!local_10)
-			function_29991b(&local_17, local_29, local_30, &local_7, arg_3->z, &local_24);
-		function_29991b(&local_19, local_29, local_30, &local_7, arg_3->z, &local_25);
+			function_29991b(&local_17, local_29, angle_cosine, &local_7, arg_3->z, &local_24);
+		function_29991b(&local_19, local_29, angle_cosine, &local_7, arg_3->z, &local_25);
 		if (!local_9)
-			function_29991b(&local_18, local_29, local_30, &local_7, arg_3->z, &local_26);
+			function_29991b(&local_18, local_29, angle_cosine, &local_7, arg_3->z, &local_26);
 		real local_31 = function_299a36(&local_20, &local_25, &local_6);
 		if (!local_10)
 		{
@@ -551,8 +563,8 @@ bool function_299460(long arg_0, s_298c46 *arg_1, s_298c30 const *arg_2,
 			{
 				real local_52 = arg_1->field_0 ? arg_1->field_4 + 3.1415927410125732f : -arg_1->field_4;
 				real local_53 = (real)sin(local_52);
-				real local_54 = (real)cos(local_52);
-				point2f local_55 = { local_54 * arg_5->i - local_53 * arg_5->j, local_54 * arg_5->j + local_53 * arg_5->i };
+				angle_cosine = (real)cos(local_52);
+				point2f local_55 = { angle_cosine * arg_5->i - local_53 * arg_5->j, angle_cosine * arg_5->j + local_53 * arg_5->i };
 				real local_56 = local_55.x * arg_6 + local_2.x - local_38->field_8.x;
 				real local_57 = local_55.y * arg_6 + local_2.y - local_38->field_8.y;
 				local_51 = local_3 + local_38->field_10 - (real)sqrt(local_57 * local_57 + local_56 * local_56);

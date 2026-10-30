@@ -35,6 +35,11 @@ PRIVATE __forceinline byte *function_1fb762(s_record_pool_iterator *arg_0);
 // Round 34: early result return 54, also with one parameter address read 54; assignment-return 54;
 // read-only or unsigned parameter 12 each; read-only record pointer 12; condition-scoped record 12;
 // predicate-assigned result 29.
+// Round 15: walk record {animation, iterator} 12; result declared after the iterator setup 13;
+// body moved after its helpers 12; two continue tests 12; step result initialized first 12.
+// Compile-only screens reproduce ours exactly; declaration/setup orders, nested tests, swapped
+// compare, goto exit, stdcall, a pool local, pool read at each use in the step all keep ESI;
+// only an object index held in EBX from entry (0x1fb760's case) moves the pool to EDI.
 // @retail 0x1fb6f0
 bool recorded_animation_playing(long object_index)
 {
@@ -321,7 +326,7 @@ void function_f0fd0(long vehicle_index, bool set);
    unit's flags and are deleted */
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
-// score 123 (was 123): our frame is eight bytes smaller and the base pointer is kept in EDI where
+// score 122 (was 122): our frame is eight bytes smaller and the base pointer is kept in EDI where
 // retail keeps it in ECX. Retail iterates with the four-field datum iterator (data and index stored,
 // the datum index kept in EDI), snapshots the high water per search and computes the element from a
 // second spilled copy of the pool. Shared step with/without the barrier 162/152; datum iterator 152
@@ -337,6 +342,16 @@ extern "C" void _ReadWriteBarrier(void);
 // (BLOCKED-BY 0xf0fd0 for that call). Barrier removed alone 161; finished arm first 149; if/else
 // finished flag 123 (same code); early continue to the release 162; deletion test in one
 // condition 127; the codec pairs as writable globals (diagnostic) change nothing.
+// DL192: Native word flag views for admission/publication/cleanup subsets 1-7 on ordinary traversal:
+// 152/154/154/156/161/160/160; complete view with native four-field iterator 160. All target changes and the
+// external flag declaration restored; pool homes remain.
+// Round 298: ordinary shared traversal without the target barrier, unit/flag producer
+// inline/plain/forceinline declaration pairs except inline/inline: eight times 152.
+// All bodies and declarations restored. Current flag call uses retail CL; two pool homes,
+// object-pool reloads and frame 0x14 remain unresolved.
+// DL192: Native word flag views for admission/publication/cleanup subsets 1-7 on ordinary traversal:
+// 152/154/154/156/161/160/160; complete view with native four-field iterator 160. All target changes and the
+// external flag declaration restored; pool homes remain.
 // @retail 0x1fb510
 void function_1fb510(void)
 {
