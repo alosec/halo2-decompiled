@@ -12,6 +12,8 @@
 #include "unknown_1cafc0.h"
 #include "unit_requests.h"
 
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+
 /* the weapon definition (the tag data) */
 struct s_weapon_magazine_definition
 {
@@ -1962,6 +1964,11 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 423: consistent first/other/both reserve-field reads 124/127/127; each with
 // a real per-slot weapon receiver 124/127/127; both fields with short slot counter 430,
 // also with the receiver 430. Reduced previews only; complete original body restored.
+// Round 87: retail-shaped body (no definition-index local, taken scoped in the success block, other-weapon
+// pointer) 183 (frame four, 574 bytes; the reduced image gives retail's BL result and pool in EBP, 165); MIN-macro
+// minimums same code; no definition-index local 198; taken in the success block 161; result declared first 124;
+// if-form slot minimum 171; other-weapon local with continue 124. Our full image keeps the unit in EBP and
+// reloads the pool global per slot where retail keeps the pool and spills the unit.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -2221,27 +2228,22 @@ void function_1055b0(vector3f *direction, vector3f const *axis, short index, sho
 #include "slot_handler.h"
 static __forceinline long real_to_long(real value);
 
-// score 89 (was 89): ticks/trigger/product homes and release/age registers still differ.
-// conversion scope 89; press reference 89; hold reference 89; release reference 89;
-// complete byte clamp 162; output chain 89; threshold mask 133; release and conversion scope 89.
-// shared object/header getters 89/89; delta after age store 152; equality-first 106; rising-first 119;
-// shared held clear 118; redundant release test removed 110; immutable receivers 89.
-// timing stack homes, trigger spill and released-output registers differ.
-// Trigger/settings references, rate snapshot and threshold input 89; double duration 134;
-// bounded age increment 167; byte conditional clamp 162.
-// Earlier: slots ticks/trigger/duration and the age/delta/release registers still differ;
-// retail's clamp is a byte moved from edi (no cmov). Local names 89 (slots unchanged); trigger pointer
-// declared later 133-140; long/short clamp 100 (cmov); clamp ternaries 159; char clamp 87; duration
-// passed straight to the conversion 89; waiting declared first 89; threshold operands swapped 89.
-// Round 194: trigger/settings/both array roots 148/116/150; direct trigger/settings/both
-// elements 143/185/192; late trigger with settings root 154; read-only paired roots 150.
-// Original three timing homes and release/age interference remain.
-// Round 271: native trigger bits with byte/char age, nested/direct equality result,
-// and long/short threshold: 89/113/125/131/87/116/125/131. The two-point
-// signed-byte form is restored; timing homes and released/age/delta registers remain.
-// J197: short/int ordinal contract 144/89; short with native bits/char clamp/both
-// 144/143/143; int with native bits/char clamp/both 89/87/87.
-// Timing homes and released/age registers remain.
+/* counts how long a trigger has been held and reports a press or a hold
+   once it has been held for the given ticks */
+PRIVATE __forceinline void weapon_trigger_hold(s_weapon *weapon, long ticks, long threshold, bool *pressed, bool *held)
+{
+	long delta = weapon->value_170 - weapon->value_172;
+	weapon->value_174 = (char)MIN(weapon->value_174 + 1, 255);
+	if (weapon->value_174 >= ticks)
+	{
+		if (delta < threshold && weapon->value_170 < 250)
+			*pressed = true;
+		else
+			*held = true;
+	}
+}
+
+/* updates a trigger's press/hold/release state from its press counters */
 // @retail 0x1027b0
 void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool *held, bool *released)
 {
@@ -2265,47 +2267,27 @@ void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool 
 			weapon->value_174 = 0;
 		}
 	}
-	else
+	else if (weapon->value_170 == weapon->value_171)
 	{
-		bool waiting = false;
-		if (weapon->value_170 == weapon->value_171)
-		{
-			if (weapon->value_173 == 1)
-				waiting = true;
-		}
-		else if (weapon->value_173 == -1)
-		{
-			if (weapon->value_172 - weapon->value_171 > 20)
-				*released = true;
-			weapon->value_172 = weapon->value_171;
-			weapon->value_173 = 1;
-			weapon->value_174 = 0;
-		}
-		else if (!weapon->value_173)
-		{
-			weapon->value_172 = 0;
-			weapon->value_173 = 1;
-			weapon->value_174 = 0;
-		}
-		else
-			waiting = true;
-		if (waiting)
-		{
-			long delta = weapon->value_170 - weapon->value_172;
-			long age = weapon->value_174 + 1;
-			byte clamped = 255;
-			if (age <= 255)
-				clamped = age;
-			weapon->value_174 = (char)clamped;
-			if (weapon->value_174 >= ticks)
-			{
-				if (delta < threshold && weapon->value_170 < 250)
-					*pressed = true;
-				else
-					*held = true;
-			}
-		}
+		if (weapon->value_173 == 1)
+			weapon_trigger_hold(weapon, ticks, threshold, pressed, held);
 	}
+	else if (weapon->value_173 == -1)
+	{
+		if (weapon->value_172 - weapon->value_171 > 20)
+			*released = true;
+		weapon->value_172 = weapon->value_171;
+		weapon->value_173 = 1;
+		weapon->value_174 = 0;
+	}
+	else if (!weapon->value_173)
+	{
+		weapon->value_172 = 0;
+		weapon->value_173 = 1;
+		weapon->value_174 = 0;
+	}
+	else
+		weapon_trigger_hold(weapon, ticks, threshold, pressed, held);
 	if (!weapon->value_170 && !*pressed && !*held)
 		*released = true;
 	else if (!*released)
@@ -2314,9 +2296,8 @@ void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool 
 			*pressed = false;
 		if (!*released && *held)
 		{
-			if ((*(dword *)((byte *)trigger + 4)) & 0x10)
-				*held = false;
-			else if ((*(byte *)definition & 1) && ((*(dword *)((byte *)trigger + 4)) & 8))
+			if (((*(dword *)((byte *)trigger + 4)) & 0x10) ||
+				((*(byte *)definition & 1) && ((*(dword *)((byte *)trigger + 4)) & 8)))
 				*held = false;
 		}
 	}
@@ -2788,29 +2769,16 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 	return result;
 }
 
-// score 398 (was 398): Frame eight versus four and object/tag/activity homes remain.
-// Frame 8 versus 4 and activity/tag homes remain. Early activity plus final
-// Frame 8 versus 4 and activity/tag homes remain. Early activity plus final
-// Frame eight versus four and object/tag/activity homes remain.
-// Frame eight versus four and object/tag/activity/dispatch homes remain.
-// Earlier: Frame 8 versus 4 and activity/tag homes remain. Early activity plus final
-// maximum 398; barrel read 422; scale reads 422; property bits 420; branch maxima 404; all maxima
-// 398; joined scale 423; wide selector 424.
-// Earlier: frame 8 versus 4; activity/dispatch registers and tag spill differ.
-// direct barrel maximum 413; helper maximum branches 409; independent loop indices 407;
-// final accumulated maximum 409; size optimization 672.
-// Earlier: Frame 8 versus 4 and activity/dispatch homes remain. Helper input order 407; bool selector 408; tag-only helper lookup 407; object/tag homes 407; barrel bound sample 407 (fast).
-// Earlier: activity/dispatch registers and pointer homes differ. Trials: published
-// output test 407; scalar clamp 407; unsigned word selector 407; shared progress guard 413; shared
-// barrel read 414; typed flags field 407.
-// Earlier: Frame eight versus four bytes and activity/tag homes remain. Descending
-// Frame eight versus four and initial object/tag/dispatch registers remain.
-// Earlier 407 from 407: frame 8 versus 4; activity/dispatch registers and tag spill differ.
-// Earlier 407 from 407: Frame 8 versus 4 and activity/dispatch homes remain. Helper input order 407; bool selector 408; tag-only helper lookup 407; object/tag homes 407; barrel bound sample 407 (fast).
-// Earlier 407 from 407: activity/dispatch registers and pointer homes differ. Trials: published
-// Earlier 407 from 407: Frame eight versus four bytes and activity/tag homes remain. Descending
-// progress classifier 407; direct short selectors 407; shared threshold 407; normalization range
-// 407; shifted property flags 428.
+// score 398 (was 398): one 27-label switch whose tree retail lays out inverted on the path to 0x1d0007ba
+// (root, 0x1500056e and 0x1700056c fall through to the high side; no other function in the image has that node
+// shape); frame eight versus four and object/tag/activity homes remain.
+// Early activity plus final maximum 398; barrel read 422; scale reads 422; property bits 420; branch maxima 404;
+// all maxima 398; joined scale 423; wide selector 424. Direct barrel maximum 413; helper maximum branches 409;
+// independent loop indices 407; final accumulated maximum 409; size optimization 672. Helper input order 407;
+// bool selector 408; tag-only helper lookup 407; object/tag homes 407; barrel bound sample 407 (fast).
+// Published output test 407; scalar clamp 407; unsigned word selector 407; shared progress guard 413; shared
+// barrel read 414; typed flags field 407. Descending progress classifier 407; direct short selectors 407;
+// shared threshold 407; normalization range 407; shifted property flags 428.
 // Early/default activity classification 404/406; suppressed admission 421;
 // identifier partitions 0xbffffff/0x10000573/0x11ffffff/0x13ffffff/0x16ffffff 459/418/435/418/434.
 // readonly activity inputs 407; normalization parts 407; elapsed tick expression 407; inventory case exit 407;
@@ -2867,6 +2835,12 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // Round 300: Actual barrel maximum field reference, both callback scalar field references,
 // both, interpolation complement, barrel/complement, fields/complement, all and all with readonly
 // receivers 423/398/423/398/423/398/423/423. Original helper and body restored at 398.
+// Round 87: one switch with the activity names inside (if-assignment forms, long selectors) 410; reversed case
+// order 410 (same code); separate activity cases 845; helper-owned weapon and definition lookups 435 (frame four);
+// helper-owned definition lookup 410; merged activity labels with a name test 410/410; default first 410; found
+// flag with `if (!found) return false` 408 (places the default and activity bodies as retail does), with
+// helper-owned lookups 432; plain inline/static helper not inlined 704/694. Compile-only screens: the root stays
+// `jg` for 30 dispatch/result/helper combinations, nested switches on the name, trivialised cases, /O1, /Os, /Ox.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {
@@ -3077,7 +3051,7 @@ struct s_ammo_conversion_entry
 
 // score 190 (was 190): Frame 0x20 agrees; destination/tag homes and conversion staging remain.
 // Earlier: Frame 0x24 versus 0x20; destination/tag homes and conversion staging remain.
-// Earlier 198 (was 203): frame 0x24 versus 0x20; destination/tag saved roles and conversion staging differ.
+// Earlier: frame 0x24 versus 0x20; destination/tag saved roles and conversion staging differ.
 // Frame 0x24 versus 0x20, destination/tag homes and conversion staging remain.
 // Earlier: Frame 0x24 versus 0x20, destination/tag homes and conversion staging remain.
 // Earlier: frame 0x24 versus 0x20; destination/tag saved roles and conversion staging differ.
@@ -3093,9 +3067,9 @@ struct s_ammo_conversion_entry
 // retention/both 207/199; result/both at entry 200/202; word/byte result with type rereads
 // 238/215; word result/both at entry 225/226.
 // Frame 0x20 agrees; destination EDI/EBP, source/tag allocation and conversion entry staging remain.
-// Earlier 203 (was 203): destination/tag saved roles and conversion-entry address staging differ.
-// Earlier 203 (was 203): frame agrees; destination/tag and search carriers remain.
-// Earlier 203 (was 203): Frame 0x20 agrees; destination EDI/EBP and conversion staging remain.
+// Earlier: destination/tag saved roles and conversion-entry address staging differ.
+// Earlier: frame agrees; destination/tag and search carriers remain.
+// Earlier: Frame 0x20 agrees; destination EDI/EBP and conversion staging remain.
 // Round 109: Entry-result/ordinal join 206; ordinal-only scan 219; remaining transfer accumulator 203; both objects before tags 215; retained-rounds truth accumulation 203 (731 bytes).
 // frame 0x20 agrees; destination/tag roles and conversion-entry staging remain.
 // Reusable magazine count 211; read-only tag receivers/result names/outer ordinal/conversion
@@ -3174,6 +3148,10 @@ struct s_ammo_conversion_entry
 // Real notification/updater ordinary, inline and noinline declaration pairs, excluding the
 // original pair: 190 each. Both complete defining files, all declarations and the transfer body restored;
 // destination/tag/search homes remain with the correct 0x20 frame and signed notification count.
+// Round 87: retail keeps the weapon in EBP (spilled around the conversion scan) and the other weapon in EBX
+// throughout; ours puts the weapon in EDI and spills the other. Positive bool/byte acquisition 211/202; type byte
+// read at each of its three tests 212 (pushes all four saved registers up front); source pointer declared inside
+// the available block 210 (715 bytes); positive result with per-use type reads 214.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
@@ -3285,7 +3263,9 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
     return unit ? unit->player_index : NONE;
 }
 
-// score 565 (was 565): Frame 0x1c64 versus 0x1c60; weapon/barrel and scalar homes remain.
+// score 606 plain per round 87 (was 565; fast 637 -> 640): the three behaviour fixes below are applied by the
+// coordinator (round 87 review) and kept although the count rises. Frame 0x1c64 versus 0x1c60; weapon/barrel and
+// scalar homes remain.
 // Plain single-store unit 637; later effect locals 659; long marker count 607;
 // CRT marker copies 565; long fired 582.
 // Owner getter 563; scale names 565; direct barrel uses 641; const barrel tag 565;
@@ -3329,15 +3309,20 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // Round 300: Existing point/vector marker setters, both, workspace lexical names, point/names,
 // vector/names, both/names, and complete graph with entry workspaces:
 // 660/657/674/637/660/657/674/674 (fast control 637; full 565). Original body restored.
+// Round 87: three source errors against retail (now FIXED in the body), each raising the positional count: retail picks the random
+// effect once before the do loop (604), passes the barrel scale (1 when not fired) as the first scale and the
+// heat ratio as the second at both effect calls (571, 2533/2533 bytes, aligned count 277 -> 271), and clamps the
+// heat as `!flag3 && heat > max` else `heat > 1`; all three 606. Single-store volatile unit 629 (630 with the
+// fixes). A plain (non-volatile) unit index set to NONE then overwritten gives retail's 0x1c60 frame and aligned
+// count 229 (219 with the scale order, 227 with all fixes) but 2503-2509 bytes, positional 645-649: the next lead.
+// The two parameter-address references were code-identical no-ops and are removed.
 // @retail 0x102fb0
 void __stdcall function_102fb0(long weapon_index, short barrel_index)
 {
-    long const *index_reference = &weapon_index;
-    short const *barrel_reference = &barrel_index;
-    s_weapon *weapon = WEAPON_GET(*index_reference);
+    s_weapon *weapon = WEAPON_GET(weapon_index);
     s_weapon_definition *definition = WEAPON_DEFINITION(weapon);
-    s_weapon_barrel_definition *barrel_definition = &definition->barrels[*barrel_reference];
-    s_weapon_barrel *barrel = &weapon->barrels[*barrel_reference];
+    s_weapon_barrel_definition *barrel_definition = &definition->barrels[barrel_index];
+    s_weapon_barrel *barrel = &weapon->barrels[barrel_index];
     volatile long unit_index;
     if (TEST_FIELD_BIT(weapon->in_inventory)) unit_index = weapon->unit_index;
     else unit_index = NONE;
@@ -3346,7 +3331,7 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
     bool fired = false, failure = false;
     long burst = 0;
     long rounds = barrel_definition->rounds_minimum;
-    function_b7360(*index_reference);
+    function_b7360(weapon_index);
     if (WEAPON_REAL_AT(barrel, 0x24) >= 1.0f)
     {
         burst = (long)floor(WEAPON_REAL_AT(barrel, 0x24));
@@ -3363,7 +3348,7 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
         }
         if ((magazine->rounds_loaded >= rounds || TEST_FIELD_BIT(barrel_definition->flag2)) &&
             (!(bool)(((dword)WEAPON_LONG_AT(definition, 0x12c) >> 11) & 1) || !(weapon->heat >= 1.0f) ||
-                function_106030(*index_reference)) && magazine->rounds_loaded >= barrel_definition->rounds_per_shot &&
+                function_106030(weapon_index)) && magazine->rounds_loaded >= barrel_definition->rounds_per_shot &&
             (!(bool)(((dword)WEAPON_LONG_AT(definition, 0x12c) >> 19) & 1) || unit_index == NONE ||
                 !(((1 << ((byte *)g_4e0300->data)[(unit_index & 0xffff) * 12 + 3]) & 2)) ||
                 !(function_d1210(unit_index) > 0.0f)) && !barrel->flag2)
@@ -3372,15 +3357,15 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
             if (magazine->rounds_loaded <= 0)
                 magazine->rounds_loaded = 0;
             else if (magazine_definition->flags & 2)
-                function_105a80(5, *index_reference, barrel_definition->magazine_index);
+                function_105a80(5, weapon_index, barrel_definition->magazine_index);
             fired = true;
-            function_a7cd0(*index_reference);
+            function_a7cd0(weapon_index);
         }
     }
     else if (!(bool)(((dword)WEAPON_LONG_AT(definition, 0x12c) >> 11) & 1) || !(weapon->heat >= 1.0f))
     {
         fired = true;
-        function_a7cd0(*index_reference);
+        function_a7cd0(weapon_index);
     }
 
     if (barrel_definition->firing_effect_count > 0)
@@ -3389,10 +3374,10 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
         {
             short original = WEAPON_SHORT_AT(barrel, 0xa);
             short effect_index = original;
+            if (TEST_FIELD_BIT(barrel_definition->flag1))
+                effect_index = (short)((long)_random(&g_4e7408->unknown0, NULL, 0) % barrel_definition->firing_effect_count);
             do
             {
-                if (TEST_FIELD_BIT(barrel_definition->flag1))
-                    effect_index = (short)((long)_random(&g_4e7408->unknown0, NULL, 0) % barrel_definition->firing_effect_count);
                 if (WEAPON_WORD_AT_102FB0(barrel, 8) == ((1 << barrel_definition->firing_effect_count) - 1))
                     WEAPON_WORD_AT_102FB0(barrel, 8) = 0;
                 do
@@ -3444,15 +3429,15 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
         barrel->value06 += (short)(burst + 1);
         ++WEAPON_BYTE_AT(barrel, 0x2e);
         WEAPON_LONG_AT(weapon, 0x248) = g_510c54->game_time;
-        function_105fa0(*index_reference, failure ? (*barrel_reference != 0) + 3 : (*barrel_reference != 0) + 1);
-        s_weapon *updated = WEAPON_GET(*index_reference);
-        s_weapon_barrel_definition *updated_definition = &WEAPON_DEFINITION(updated)->barrels[*barrel_reference];
+        function_105fa0(weapon_index, failure ? (barrel_index != 0) + 3 : (barrel_index != 0) + 1);
+        s_weapon *updated = WEAPON_GET(weapon_index);
+        s_weapon_barrel_definition *updated_definition = &WEAPON_DEFINITION(updated)->barrels[barrel_index];
         if (updated_definition->value_9c > 0.0f && !TEST_FIELD_BIT(updated_definition->flag4))
-            WEAPON_REAL_AT(&updated->barrels[*barrel_reference], 0x14) = 1.0f;
+            WEAPON_REAL_AT(&updated->barrels[barrel_index], 0x14) = 1.0f;
         if (WEAPON_REAL_AT(barrel_definition, 0xa0) > 0.0f) WEAPON_REAL_AT(barrel, 0x18) = 1.0f;
         if (g_4e6948->state == 2)
         {
-            long owner = function_101fb0(*index_reference);
+            long owner = function_101fb0(weapon_index);
             if (owner != NONE)
             {
                 long player = WEAPON_LONG_AT(WEAPON_GET(owner), 0x13c);
@@ -3462,16 +3447,13 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
         if (unit_index != NONE && WEAPON_LONG_AT(WEAPON_GET(unit_index), 0x13c) != NONE)
             function_d0e60(unit_index, WEAPON_REAL_AT(definition, 0x27c), WEAPON_REAL_AT(definition, 0x280));
         WEAPON_REAL_AT(weapon, 0x180) += WEAPON_REAL_AT(barrel_definition, 0xa4);
-        if (!TEST_FIELD_BIT(((s_weapon_item_flags_view *)weapon)->flag3))
-        {
-            if (WEAPON_REAL_AT(weapon, 0x180) > WEAPON_REAL_AT(definition, 0x154))
-                WEAPON_REAL_AT(weapon, 0x180) = WEAPON_REAL_AT(definition, 0x154);
-        }
+        if (!TEST_FIELD_BIT(((s_weapon_item_flags_view *)weapon)->flag3) && WEAPON_REAL_AT(weapon, 0x180) > WEAPON_REAL_AT(definition, 0x154))
+            WEAPON_REAL_AT(weapon, 0x180) = WEAPON_REAL_AT(definition, 0x154);
         else if (WEAPON_REAL_AT(weapon, 0x180) > 1.0f)
             WEAPON_REAL_AT(weapon, 0x180) = 1.0f;
         if (!(bool)(((dword)WEAPON_LONG_AT(definition, 0x12c) >> 26) & 1))
-            function_101db0(*index_reference, barrel_definition->value_a8);
-        function_1058b0(*index_reference, (*barrel_reference != 0) + 1, false);
+            function_101db0(weapon_index, barrel_definition->value_a8);
+        function_1058b0(weapon_index, (barrel_index != 0) + 1, false);
         if (!failure)
         {
             barrel->flag1 = true;
@@ -3485,7 +3467,7 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
             if (redirected != NONE) target_102fb0 = redirected;
             function_d03e0(target_102fb0, unit_tag_index);
         }
-        if (definition->reload_style == 3 && *barrel_reference == 1) WEAPON_BYTE_AT(weapon, 0x16c) |= 8;
+        if (definition->reload_style == 3 && barrel_index == 1) WEAPON_BYTE_AT(weapon, 0x16c) |= 8;
         if (unit_index != NONE)
         {
             if (unit_player_index_102fb0(unit_index) != NONE)
@@ -3504,28 +3486,28 @@ void __stdcall function_102fb0(long weapon_index, short barrel_index)
 
     if (WEAPON_REAL_AT(weapon, 0x180) > WEAPON_REAL_AT(definition, 0x158) &&
         WEAPON_REAL_AT(definition, 0x15c) > function_x82e52f(&g_4e7408->unknown0, NULL, 0))
-        function_104030(*index_reference);
+        function_104030(weapon_index);
     barrel->timer = 0;
     if ((bool)(((dword)WEAPON_LONG_AT(barrel_definition, 0) >> 12) & 1))
     {
         s_object_marker markers[64];
-        long marker_name = function_101b10(*index_reference, *barrel_reference);
-        long owner_index = function_101ec0(*index_reference);
+        long marker_name = function_101b10(weapon_index, barrel_index);
+        long owner_index = function_101ec0(weapon_index);
         short count = function_b8d30(owner_index, marker_name, markers, 64, false);
         if (count >= 1)
         {
             long selected = WEAPON_BYTE_AT(barrel, 0x2e) % count;
-            long model_owner_102fb0 = function_101ec0(*index_reference);
+            long model_owner_102fb0 = function_101ec0(weapon_index);
             s_effect_marker marker;
             marker.name = marker_name;
             marker.position = markers[selected].matrix.position;
             marker.forward = markers[selected].node_matrix.forward;
-            function_176970(NULL, scale_a, tag_index, model_owner_102fb0,
-                markers[selected].node_index, 1, &marker, scale_b, NULL, NULL, false);
+            function_176970(NULL, scale_b, tag_index, model_owner_102fb0,
+                markers[selected].node_index, 1, &marker, scale_a, NULL, NULL, false);
         }
     }
     else
-        WEAPON_LONG_AT(barrel, 0x30) = function_1039a0(*index_reference, tag_index, WEAPON_LONG_AT(barrel, 0x30), scale_a, scale_b);
+        WEAPON_LONG_AT(barrel, 0x30) = function_1039a0(weapon_index, tag_index, WEAPON_LONG_AT(barrel, 0x30), scale_b, scale_a);
 }
 
 
