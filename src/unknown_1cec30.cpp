@@ -929,6 +929,9 @@ void function_1d1540(s_havok_component *component);
 // the whole body inside a force-inline helper (diagnostic) 88. The same 88 result without 0x1d5120
 // in the image; a /Gd compile loads the component once into EBX. Matched 0x1c59a0, 0x1cbf50 and
 // 0x136860 take EBX arguments with self-aligned frames, so the alignment alone is not the cause.
+// Round 431: Library transform copies with original/fixed-first body receiver: memcpy and memmove, then
+// both with the inverse reserved at entry: 81/85/77/76/81/85/77/76. The 76 forms are five-point gains
+// only; both 77 forms lose matched 0x1d1b60 at 60. Original executable body restored.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
@@ -2203,12 +2206,12 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 184: Native contact/material/both add boundaries 157/162/210; reversed complete inputs
 // 157/162/210; existing vector assignment at contact/material sums 144/114. Original sums and
 // matched sample boundary restored.
-// Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
-// at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
-// Original normalization and fallback restored.
 // Round 426: complete normal/velocity/final scaled-product staging, all seven
 // subsets, 109 each; complete staged outputs through the existing vector setters 127.
 // Original products, j/k/i normal publication and matched sample boundary restored.
+// Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
+// at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
+// Original normalization and fallback restored.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {

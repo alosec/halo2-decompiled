@@ -381,6 +381,9 @@ void __stdcall function_115220(long machine_index)
 // Round 271: full-width unsigned/signed flag storage composed with bool/byte/short/long
 // position predicates: 465/465/345/465/465/465/345/465, all 1899 bytes.
 // All restored; early flag carriers and the initial clamp spill remain.
+// Round 426: shared completion exit, direct portal result, entry-first result and all
+// seven subsets 305/298/321/286/305/298/321; all with byte portal result 321.
+// Original result graph, initial clamp, two-use predicate and complete body restored.
 // Round 216: conditional mutable clamp 286; separate minimum and final selection 396;
 // lower-bound-first selection, zero-update minimum, both-outcome minimum and both-outcome result 396 each;
 // pure component lookup after selection 297; complete at-use flag observations with selection 396.
