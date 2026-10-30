@@ -2590,9 +2590,6 @@ bool __stdcall unit_action_vehicle_entry(long unit_index, s_unit_request *reques
 
 long function_10eef0(long object_index, bool alternate, bool no_request);
 void function_d12b0(long vehicle_index, long seat_index, bool a, bool b);
-bool function_b9d20(long object_index);
-void __stdcall function_bef30(long object_index, long a, long b, long c, bool d);
-void function_b8b70(long object_index);
 short __stdcall function_cdeb0(long unit_index, long state_name, short slot, short direction);
 bool __stdcall function_ee460(long unit_index, long state_name, long action_name);
 void function_e0070(long unit_index, long vehicle_index);
@@ -2603,9 +2600,16 @@ void function_a8b10(long unit_index);
 
 /* takes a unit out of its vehicle seat: detached, its weapon back in hand,
    its exit animations */
-// score 68 (was 102): Frame 0x14 agrees; object/header EBP/EDI roles and later call scheduling differ.
+// score 68 (477 bytes, retail 483). With 0xe0070's loop written with a found flag (lane 14 round 12;
+// not kept, a test-set flag is kept only with a match) it scored 9 and only scratch registers differed:
+// retail eax/ecx for the 0xcbd50 slot read, edx for the 0xee460 push and eax/ecx for the two seat pushes;
+// ours one step on (ecx/edx, eax, ecx/edx).
 // Pointer names 116; widened seat 109; Boolean object flag 104; both 93; unsigned mask 115;
 // unsigned with widened seat 108, with Boolean flag 103, with both 92 (fast); last form 68 plain.
+// Round 12 (lane 14), all with the found-flag 0xe0070 (unit in EDI as retail) 9: the existing 0xb9c60
+// for the flag clear 9 (same code; kept, 68 without the flag); the 0xb58c0 owner in a local 9; the
+// action name as if/else 9; the 0xcbd50 result passed as the slot 9; action/state declarations swapped 11; vehicle read first 9 (all plain;
+// --fast adds a pool reload after 0xbef30 the full build lacks).
 // @retail 0xea8e0
 void __stdcall function_ea8e0(long unit_index, bool hurried)
 {
@@ -2632,15 +2636,7 @@ void __stdcall function_ea8e0(long unit_index, bool hurried)
 	function_b9a90(unit_index);
 	function_b9b90(unit_index, false);
 
-	s_unit_action_unit *current = UNIT_ACTION_UNIT_GET(unit_index);
-
-	if (TEST_FIELD_BIT(current->object_flags & 1))
-	{
-		current->object_flags &= ~1;
-		if (function_b9d20(unit_index))
-			function_bef30(unit_index, 0, 1, 0, false);
-		function_b8b70(unit_index);
-	}
+	function_b9c60(unit_index, false);
 	if (UNIT_ACTION_UNIT_GET(unit_index)->unknown0d4 != NONE)
 		function_b58c0(UNIT_ACTION_UNIT_GET(unit_index)->unknown0d4, 0x800);
 	if (!is_vehicle)
@@ -3081,67 +3077,69 @@ void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner)
 
 /* flips a vehicle back over (type 33): the way it rolls, from how far over
    it is and where the flipping unit stands */
-// score 72 (was 167): frame 0x78 recovered; pool/header carriers, vector scheduling
-// and failure epilogues remain. Shared point difference/cross/both 143/165/150;
+// score 2 (was 72): retail does the 0x348 flag `or` before loading the request for the owner call;
+// ours loads the request first. Shared point difference/cross/both 143/165/150;
 // persistent success admission alone/with difference/with cross/with both 72/97/74/98;
 // entry owner output with success admission 148. Original vector calculations retained.
+// Round 12 (lane 14): the matrix calls inside vector3d_from_points3d's arguments with g_4687b0 read
+// at each use, dot3f(&side, &unit->forward), the flags as a word and nested type/0xf5dc0 tests 2
+// (kept); with cross3f_staged 80/85; the request read through its address 2/2; the flag `or` in each
+// arm 2; the 0x348/0x34d/0x34e bytes as struct fields 2; a 600 s permuter run, none below 2.
 // @retail 0xeb5d0
 bool __stdcall unit_action_vehicle_flip(long unit_index, s_unit_request *request)
 {
 	bool result = false;
 	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
 
-	if (unit->object_type == 1 && function_f5dc0(unit_index))
+	if (unit->object_type == 1)
 	{
-		long flipper_index = *(long *)((byte *)request + 4);
-
-		if (flipper_index != NONE)
+		if (function_f5dc0(unit_index))
 		{
-			byte *flipper = (byte *)UNIT_ACTION_UNIT_GET(flipper_index);
+			long flipper_index = *(long *)((byte *)request + 4);
 
-			*(long *)(flipper + 0x250) = unit_index;
-			*(long *)(flipper + 0x254) = g_510c54->game_time;
+			if (flipper_index != NONE)
+			{
+				byte *flipper = (byte *)UNIT_ACTION_UNIT_GET(flipper_index);
+
+				*(long *)(flipper + 0x250) = unit_index;
+				*(long *)(flipper + 0x254) = g_510c54->game_time;
+			}
+			if ((real)fabs(unit->forward.k) > 0.70710677f)
+			{
+				*((byte *)unit + 0x34d) = (byte)((0.0f > unit->forward.k) + 3);
+			}
+			else if (flipper_index != NONE)
+			{
+				transform4x3f unit_matrix_storage;
+				transform4x3f flipper_matrix_storage;
+				vector3f offset;
+				vector3f side;
+
+				vector3d_from_points3d(&function_ba160(flipper_index, &flipper_matrix_storage)->position,
+					&function_ba160(unit_index, &unit_matrix_storage)->position, &offset);
+				side.k = g_4687b0->i * offset.j - g_4687b0->j * offset.i;
+				side.j = g_4687b0->k * offset.i - g_4687b0->i * offset.k;
+				side.i = g_4687b0->j * offset.k - g_4687b0->k * offset.j;
+				*((byte *)unit + 0x34d) = (byte)((dot3f(&side, &unit->forward) > 0.0f) + 1);
+			}
+			else
+			{
+				*((byte *)unit + 0x34d) = 1;
+			}
+			*(word *)((byte *)unit + 0x348) |= 0x40;
+			*((byte *)unit + 0x34e) = 0;
+
+			s_damage_owner owner;
+
+			object_get_damage_owner(*(long *)((byte *)request + 4), &owner);
+
+			byte *current = (byte *)UNIT_ACTION_UNIT_GET(unit_index);
+
+			*(long *)(current + 0xc8) = owner.object_index;
+			*(long *)(current + 0xc4) = owner.player_index;
+			*(short *)(current + 0xc2) = owner.team;
+			result = true;
 		}
-		if ((real)fabs(unit->forward.k) > 0.70710677f)
-		{
-			*((byte *)unit + 0x34d) = (byte)((0.0f > unit->forward.k) + 3);
-		}
-		else if (flipper_index != NONE)
-		{
-			transform4x3f unit_matrix_storage;
-			transform4x3f flipper_matrix_storage;
-			transform4x3f *unit_matrix = function_ba160(unit_index, &unit_matrix_storage);
-			transform4x3f *flipper_matrix = function_ba160(flipper_index, &flipper_matrix_storage);
-			vector3f offset;
-			vector3f const *up = g_4687b0;
-			vector3f side;
-
-			offset.i = unit_matrix->position.x - flipper_matrix->position.x;
-			offset.j = unit_matrix->position.y - flipper_matrix->position.y;
-			offset.k = unit_matrix->position.z - flipper_matrix->position.z;
-			side.k = up->i * offset.j - up->j * offset.i;
-			side.j = up->k * offset.i - up->i * offset.k;
-			side.i = up->j * offset.k - up->k * offset.j;
-			*((byte *)unit + 0x34d) = (byte)((unit->forward.j * side.j + unit->forward.k * side.k + unit->forward.i * side.i >
-				0.0f) + 1);
-		}
-		else
-		{
-			*((byte *)unit + 0x34d) = 1;
-		}
-		*((byte *)unit + 0x348) |= 0x40;
-		*((byte *)unit + 0x34e) = 0;
-
-		s_damage_owner owner;
-
-		object_get_damage_owner(*(long *)((byte *)request + 4), &owner);
-
-		byte *current = (byte *)UNIT_ACTION_UNIT_GET(unit_index);
-
-		*(long *)(current + 0xc8) = owner.object_index;
-		*(long *)(current + 0xc4) = owner.player_index;
-		*(short *)(current + 0xc2) = owner.team;
-		result = true;
 	}
 	return result;
 }

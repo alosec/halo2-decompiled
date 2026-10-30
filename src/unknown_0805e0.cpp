@@ -835,6 +835,9 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // coalesced with the count); on it: those link stores 70, count path lower first 72, named count 71,
 // flag declared first 71, flag set after the decrements 73, flag declared after the removal 71.
 // Round 183: actual endpoint 389; plain endpoint 396; one count 89 (frame 0x10); endpoint/count 380; plain endpoint/count 394; endpoint relation 387; plain relation 394; combined count/relation 384. Original body restored.
+// Round 12 (lane 14), all on round 149's 71 form (its entry and three-way test match; upper stays in EAX,
+// coalesced with the count, where retail copies the count into ECX): rebuilt 71; count path lower first 72;
+// `g_4cf978 > position` 73; upper declared before lower 71; the flag declared first 71. Original body restored.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {
