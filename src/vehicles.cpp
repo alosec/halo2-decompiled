@@ -2178,12 +2178,19 @@ PRIVATE inline real vehicle_wheel_spin(real spin, real const *period)
 /* the physics of type 0 vehicles (the differential-steered ones): the
    engine drives each side's contacts, the turn trading torque between
    the sides */
-// score 115 (was 192): Kept live period receiver, native twice-used gear and result-first torque; zero/scalar residency and spin schedule remain.
+// score 115 (was 115): frame 0x14 against 0x10 (one dead slot below gear_throttle; the four used slots
+// agree but sit 4 higher); zero/scalar residency and spin schedule remain. Kept earlier: live period
+// receiver, native twice-used gear and result-first torque.
 // Live period 136; native gear 190; both 113; scalar roles 192/136/190/113; result-first torque 101 kept plain.
 // Spin exit / period-first / both 101; named absolute steering with each 127; early torque zero 140.
 // Y405: Frame 0x14 versus 0x10 and zero/scalar homes remain;
 // gear-none/two-defaults/active-gear/sign-arm torque results 126/140/138/126; each with shared
 // straight-drive product 132/141/141/132.
+// Round 21: `if (gear == NONE) torque = 0; else torque = ...` gives retail's arm order and threaded
+// zero magnitude but torque in xmm3, 697 bytes, 138 (ternary 138, `!=` with else 145, magnitude set in
+// each arm 126; all 24 declaration orders of torque/magnitude/left/right 138); the turn product inline
+// in both sides 113; removing the gear call or merging the two throttle minimums shrinks the frame by
+// two slots (diagnostic).
 // r97: the turn product written at both uses (retail's xmm6 zero, xmm5 product) 113;
 // torque if/else with NONE first 138, with that 138; spin helper as one fmod of
 // `spin > 0 ? spin : spin + period` 112, with the product at both uses 149; spin

@@ -1519,12 +1519,14 @@ static __forceinline real function_x82e52f(dword *seed, char const *file, long l
 // DL179: Coordinated scalar-spring/angular-difference ordinary, inline and noinline
 // declaration pairs (excluding both ordinary) 218/218/499/499/499/218/218/218 fast;
 // original complete body and every helper declaration restored. Frame/look homes remain.
-// Round 212: const overlay return pair with two role names 220/220; pair reservation at
-// weapon/iteration/user scope, both names, 388 each (fast control 220). Original lookup lifetime and body
-// restored; frame and look homes remain.
 // Round 426 (fast control 220): shared bool/long override with logical publications
 // 404/422; bitwise publications 422/413; those four with direct overlay-result assignment
 // 431/435/434/422. Original override branch, lookup and complete executable body restored.
+// Round 430: Actual weapon-array cursor, body pointer step, long/short/dword/word ordinals: index-
+// bound 415/309/415/309; array-end bound 440/474/440/474. Original index-based body restored.
+// Round 212: const overlay return pair with two role names 220/220; pair reservation at
+// weapon/iteration/user scope, both names, 388 each (fast control 220). Original lookup lifetime and body
+// restored; frame and look homes remain.
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {

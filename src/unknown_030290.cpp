@@ -526,6 +526,12 @@ real function_30bf0(vector3f *v);
 // carriers retained. Round 40: staged second product straight into vector 42; struct copy of the
 // result 74; whole axis copied into a local 103; reference locals bound axis-first 43, with the staged
 // second product 41. The reversed parameter order (35) needs the caller in src/unknown_0350e0.cpp.
+// Round 43: retail's second product is cross3f_staged's k, j, i order. Axis pointer local 35 (x87
+// part matches, 230 bytes); the staged product into vector 42, into a local 42 (35 with the axis
+// pointer), copied as a struct 68; axis or vector pointer with the staged product 36/36; both
+// pointer locals with the staged product 36 (224 bytes, retail's product grouping, xmm homes and
+// three x87 operand pairs differ); a 27-form screen of pointer locals x declaration order x second
+// product form no better than 35.
 // carriers retained.
 // Round 295: shared staged cross first/second/both 42/42/42; second product in
 // the normalized workspace with ordinary/staged first 68/68; direct staged output
