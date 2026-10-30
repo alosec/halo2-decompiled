@@ -923,6 +923,10 @@ bool __stdcall function_2399da(long controller_index)
 // Round 413: selected-identity producer reversed cases 90; if returns/definite result arms
 // 180/180 (frame 0xefc); direct case returns 156. Forceinline forms repeat 90/180/180/156.
 // All six return-form variants lose a matched peer; original shared producer restored.
+// Round 77: late selection getter 166; post-membership selected pointer 90; member/controller/team 16
+// (remove callee 13, matched peers 4); member/team/controller 16 likewise; controller/member/team 17
+// (remove callee 12); team/controller/member and team/member/controller 91 each (remove callee 2,
+// matched peers 3); read-only rank 90. Original body and every removal declaration/call restored.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

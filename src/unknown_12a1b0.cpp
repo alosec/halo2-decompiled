@@ -967,6 +967,10 @@ void sound_playback_set_chunk(long sound_index, long definition_index, char pitc
 long __stdcall function_125e60(s_looping_track_sound *sound);
 
 // score 77 (was 77): Float/result/random spill homes and initialization scheduling differ.
+// Round 76: bounds pointer 74; with mask 132; direct previous 80; initialization swap 77; result name 74;
+// distance name 74; declarations swapped 188; split result 74; the pitch bounds read through a pointer to
+// the modifier's lower field indexed [0]/[1] with an entry NONE result and one return 68 (not kept: the
+// field-indexed pointer reads past the field it names); the entry result alone 71; entry mask 127.
 // Earlier field-bit mask form 77 (from 132).
 // Float/result/random homes and initialization scheduling remain. Entry result 71; available-mask name 77;
 // entry mask workspace 77; table reads at use 77; full-width track slot 231; playback record name 77; direct
