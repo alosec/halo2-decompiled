@@ -837,6 +837,9 @@ void function_25aba0(long actor_index);
 // reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
 // `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
 // takes the `dec [mem]` form in every arrangement.
+// Round 100 (on the kept body): state-one pop as `--level` or `level = level - 1` 69/69; kind-2 failure
+// state store before the stamp 69; state-one / kind-2 / choice as one if-else chain 69 (identical code
+// on this base: only the state-one pop is fused); slot selection after the enabled test 177.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

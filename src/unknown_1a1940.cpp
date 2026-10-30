@@ -121,22 +121,30 @@ long c_page_heap::get_page_size()
 // into three statements 80; checked assigned before the bit test 171; free_run declared outside the
 // outer loop 80. Compile-only screens: do/while with an outer if and a for loop keep the
 // page_count temporary.
+// Round 100: the switch result in its own shift local in place of the reassigned alignment_mask
+// parameter 80 (identical code, kept); the scan as an inline member helper with a checked out
+// parameter 81; first computed in one statement 80; the advance as one max expression 100.
+// Diagnostics: the found flag in the outer loop condition still caches page_count (111); with
+// page_count re-read at each test (a volatile member, reverted at once) the frame goes and `this`
+// stays in EBP (154), and with two counters as well 107, so the re-read alone does not give retail's
+// registers.
 // @retail 0x1a1a90
 void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 {
 	void *result = NULL;
+	long shift;
 
 	switch (alignment_mask)
 	{
-	case 0xfff: alignment_mask = 0; break;
-	case 0x1fff: alignment_mask = 1; break;
-	case 0x3fff: alignment_mask = 2; break;
-	case 0x7fff: alignment_mask = 3; break;
-	case 0xffff: alignment_mask = 4; break;
+	case 0xfff: shift = 0; break;
+	case 0x1fff: shift = 1; break;
+	case 0x3fff: shift = 2; break;
+	case 0x7fff: shift = 3; break;
+	case 0xffff: shift = 4; break;
 	default: goto local_0;
 	}
 	long pages = (size + 0xfff) / 0x1000;
-	long step_mask = (1 << (alignment_mask + 12)) - 1;
+	long step_mask = (1 << (shift + 12)) - 1;
 	long first = (((long)base + step_mask) & ~step_mask) - (long)base;
 	first /= 0x1000;
 	long index = first;
@@ -156,7 +164,7 @@ void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 		++index;
 		if (index <= checked)
 			index = checked;
-		long align_mask = (1 << alignment_mask) - 1;
+		long align_mask = (1 << shift) - 1;
 		index = first + ((index - first + align_mask) & ~align_mask);
 		end = index + pages;
 	}
