@@ -130,6 +130,12 @@ bool c_session_state_none::update()
 
 /* ---- pre-game ---- */
 
+// score 5 (was 5): in the type 2-4 arm retail loads the member index and the
+// member's kind into eax; ours puts the index in edx and the kind in ebp (the
+// session's register, which dies there). Retail's case table runs to type 18
+// (16-18 share the type 15 arm). Tried: the kind through a NONE default before
+// the test 5; the kind tests in the 0x58d70 condition 5; the kind read through
+// the member's parameters 5; a named member index 5.
 // @retail 0x6e1e0
 bool c_session_state_pre_game::update()
 {
@@ -172,6 +178,9 @@ bool c_session_state_pre_game::update()
 			}
 			break;
 		case 15:
+		case 16:
+		case 17:
+		case 18:
 			function_06df60(o, 5, 0, 0);
 			break;
 		case 6:

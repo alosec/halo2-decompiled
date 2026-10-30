@@ -476,6 +476,12 @@ s_1a8a10 g_4453c0[] =
 // order [3], [1], [2], [0] 21; the pragma replaced by a noinline declaration of
 // 0x1f57a0 here 214 (more gets inlined). Retail reads j again after the y store
 // of the rotated point, as if that store could alias the actor.
+// Round 24: the rotation as a forceinline helper (the pragma keeps it out of line)
+// 164; the facing copy before the rotation 54; the facing copied as one 2D struct
+// 118 (the j re-read appears, the copy goes through integer moves); a 2D reference
+// to the facing 91; the copy's fields read through a 2D cast 17; a perpendicular
+// vector local 38; the first sum's terms swapped 17; the rotated point written
+// through a pointer 91.
 // @retail 0x1a8a10
 bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, real arg_4)
 {
