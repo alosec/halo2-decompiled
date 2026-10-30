@@ -77,6 +77,13 @@ static __forceinline void king_settings_verify(s_game_variant_king_settings *set
 // statement moved there 75 (0x19d220 118); `valid = memcmp(...) == 0` 455; `valid = false`
 // before the defaults call 57; the original copy declared first 57; valid declared just
 // before the compare 459.
+// Round 21 (lane 10): the same EAX/ECX exchange shows in 0x212c20's inlined slayer defaults (retail
+// keeps flags48 in EAX and finishes its OR and store after the zero stores; ours finishes flags48
+// first and gives the engine flags EAX), so the helper's form is the likely cause. Calling the real
+// 0x19d220 with its noinline declaration dropped 57 (diagnostic); duplicate clamps earlier in the body
+// never move it (diagnostic). Helper: flags48 as `&=` then `|=` 57; as a ternary 57; the name
+// terminator after the flags 57 (0x19d220 15); unknown4c cleared before the flags 57 (0x19d220 13);
+// the copy through the existing unicode_string_copy 57 (same code). Helper and body restored.
 // @retail 0x19d650
 bool function_19d650(s_game_variant *variant)
 {

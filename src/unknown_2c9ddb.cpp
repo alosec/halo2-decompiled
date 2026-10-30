@@ -99,6 +99,12 @@ extern long g_55c154;
 // (one arm is short); two load arms 174, with that call 179 (EBX takes zero, saved and the
 // 0x54e4a0 constant, `this` spills to [ebp-4], unbiased frame); selected arm first 178;
 // saved declared at the top 179.
+// Round 21 (lane 10): a named count shared by the copy and the 0x238c69 call (`long maximum_count =
+// 0x20;`, as matched 0x148c3e passes it) keeps unicode_string_copy out of line with retail's
+// ecx/edi/esi call and no noinline. Two load arms with the inline copy 174; with the named count 179
+// (EBX holds saved and then &g_54e4a0, `this` moves to ESI and spills, unbiased frame); the count
+// declared at the arm's top 179; selected arm first 178; one load with the named count 88. Original
+// body restored.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {

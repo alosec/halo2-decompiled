@@ -233,6 +233,12 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
 // stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
 // (394 bytes); the rate read from the global at each use 99 (375 bytes).
+// Round 21 (lane 10): the prediction through vector3f_add_scaled + vector3d_from_points3d 43 and the
+// delta scaled in place 43 (both identical code); the correction through vector3f_add_scaled 97
+// (frame); a named squared length before the limit 79 (lockstep shift: the limit, the early j
+// square and the two spill stores then follow retail's schedule; chains still i, j, k and ticks in
+// xmm4); that plus tick_scale defined after the chains 73 (ticks reuse xmm3 as retail, but the tick
+// products become copies and the chains run k, j, i). No-op products (diagnostic) never move the j chain.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

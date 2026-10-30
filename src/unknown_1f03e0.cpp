@@ -1176,6 +1176,12 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // Round 177: Independent matrix-axis pointer/reference boundaries, all eight forms 71;
 // shared in-place final override/support/both additions 83/88/83. Override loads recover
 // but coefficient allocation worsens; original helper, alias copy and body restored.
+// Round 21 (lane 10): override add through the existing vector3f_add 83 (the add then loads the
+// position first, as retail, but the rotation sums rotate: VC reassociates by function context);
+// with vector3f_rotate_into_axes for both rotations 80 (first rotation's term order exact, second's
+// j/k rows still forward-first); its products matrix-first 80 (same code); plus the support add
+// through vector3f_add 70 (1039 bytes, in-place products, F.j/U.j residency swapped); both adds
+// through vector3f_add with the original helper 83. Original body restored.
 // @retail 0x1f0450
 void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrier_contact const *contact)
 {
