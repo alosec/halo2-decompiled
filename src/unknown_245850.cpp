@@ -87,9 +87,12 @@ struct s_245aa0
 	long field_80c[256];
 };
 
-// @retail 0x245aa0
 // score 3 (was 3): the source argument of the function_245540 call is loaded into EDX here and
-// into ECX in retail; the register comes from the callee's argument assignment.
+// into ECX in retail; the register comes from the callee's argument assignment (BLOCKED-BY 0x245540).
+// Round 13, in the callee: second code and plane table ahead of the first code 3; plane table
+// first 3; early return on equal materials 3; point transform before the vector transform 3;
+// edge vector after the side flags 3 (callee 202).
+// @retail 0x245aa0
 void function_245aa0(s_245aa0 const *arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
 	long arg_5, long arg_6, s_collection_245270 *arg_7)

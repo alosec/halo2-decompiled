@@ -453,6 +453,9 @@ void function_245400(s_source_245400 const *source, long index,
 // Round 285: existing staged cross with original/first/second/both direct plane receivers,
 // then the same four with entry cross-output storage: 203/209/209/231/203/209/209/231 fast.
 // Original complete body restored; frame, source receiver and side homes remain.
+// Round 13 (lane 14): second code and plane table ahead of the first code 203; plane table first
+// 203; early return on equal materials 203; point transform before the vector transform 203; edge
+// vector after the side flags 202 (not kept). Source still arrives in EDX.
 // @retail 0x245540
 void function_245540(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
