@@ -602,8 +602,10 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // Round 30: named result with one return 51; velocity/root/point/compression 52;
 // point/velocity/root/compression 49; compression/velocity/point/root 52;
 // point/root/velocity/compression 52. Restored; still BLOCKED-BY 0xba300's convention.
+// The play record comes before the marker name: callers set up register arguments last to first, and retail's
+// 0xc5890 loads the marker (eax) before the play record (edi).
 // @retail 0x189210
-long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
+long function_189210(long object_index, s_sound_label_play const *play, long marker_name)
 {
 	s_object_marker marker;
 	s_sound_position position;
