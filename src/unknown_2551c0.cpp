@@ -543,7 +543,7 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 }
 
 // score 141 (was 141): frame 0x58 versus 0x54, first-length/radius homes and unit-call scratch allocation remain.
-// Earlier score 141 (was 141): frame 0x58 versus 0x54 and first-length/radius homes remain; retail keeps
+// Earlier: frame 0x58 versus 0x54 and first-length/radius homes remain; retail keeps
 // the radius in the argument home and adds the object size only after the projection test.
 // Fallback timing initialized before query 200; later heading vector 219; later object lookup 223;
 // shared reverse scale 223; entry vector homes 205; exhaustive timing branches 205; trace distances
@@ -581,6 +581,10 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // inside projection/reach 136/136; after lateral/adjusted distance 147/152;
 // projection/reach interval with later radius addition 139/141. Subthreshold forms restored.
 // Entry heading result 141; both normalization outputs 141; entry-declared heading 141; entry projection 141; both outputs with projection-boundary interval 136; sequential alignment helper 141; heading with entry displacement 141; heading with entry timing outputs 141. Restored.
+// Both native copies before planar zeros 141; opposite independent copy order 142;
+// existing in-place planar setter 196 (963 bytes), direct planar setter inputs 224;
+// existing side/reverse/both-with-planar setters 157/141/224; late zeros plus side/reverse setters 157.
+// Native producer contracts do not remove the extra fallback home; original vector producers restored.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {
