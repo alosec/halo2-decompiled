@@ -356,6 +356,9 @@ extern real g_47f05c;
 // Round 297: Entry false-result/selection/best-alignment constants and all four
 // combinations 192 each; all three with uniform shape-height reads 204 (frame 0xd4,
 // 869 bytes). Original constant/result lifetimes, height snapshot and body restored.
+// Round 195: Complete base-point/up-vector/step observations and their four combinations
+// 251/266/223/234/231/265/239; all with scan role names 239. Original contact
+// observations, point provider, center/difference producer and full body restored.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)
@@ -520,6 +523,10 @@ PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f
 // Round 297: Existing staged cross at first/selected-zero/selected-other/first+zero/
 // first+other/both selected/all sites 144/182/144/182/144/218/218; all with
 // averaging-only support scope 218. Original helpers and direct-output body restored.
+// Round 195: Selected two-/three-contact normal values and both 213/300/336;
+// existing three-contact value scale/add alone/with either/both values 365/377/384/423;
+// complete three-contact computed result 263. All original observations, helpers and body
+// restored; request/count homes and selected-cross tail sharing remain.
 // @retail 0x1f2a80
 void function_1f2a80(byte const *request, bool moving,
     vector3f const *desired, long const *indices, long count, vector3f *out, vector3f const *velocity)
@@ -909,6 +916,10 @@ struct s_flags_1f0870
 // Round 297: Native flying/ground basis values, shared staged flying crosses and
 // their four combinations 646/642/591/666/646/631/666; all with the remaining
 // crosses staged 666. Original basis observations, helpers and full body restored.
+// Round 195: Native damping/direct consumers 633/612; two-component direct delta
+// 589 (one-point gain rejected); both consumers 628; damping-delta/direct-delta/all
+// 633/612/628; all with complete horizontal assignment 634. Original flags, vector
+// types, copies, helpers and full body restored; frame 0x34 and direct/vector homes remain.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {
@@ -1106,9 +1117,9 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
     out->k = (input->j * matrix->left.k + input->k * matrix->up.k) + input->i * matrix->forward.k;
 }
 
-// score 9 (was 50): frame 0x58 and length 1043 agree; left: the first rotation's k-row product copies the
-// kept matrix element where retail multiplies the loaded input, and the second rotation multiplies up before left
-// (each row still sums (L + U) + F, as retail). Round 24 (lane 10) kept: carrier delta and first rotation through
+// score 9 (was 50): frame 0x58 and length 1043 agree; first +0x38b is the second rotation's
+// i/j up-before-left product schedule. The entire prefix and first rotation now agree.
+// Each row still sums (L + U) + F, as retail. Round 24 (lane 10) kept: carrier delta and first rotation through
 // the existing vector3f_add/vector3f_rotate_into_axes 32; both position adds through vector3f_add, the file rotate
 // helper as one expression per row and the count clamp as a ternary 17; the support add as velocity + position 15;
 // the file helper's rows as (left + up) + forward, parenthesised 9 (coordinator: the lane's accumulated rows
@@ -1203,6 +1214,10 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // per row, (j-left + k-up) + i-forward then forward + left + up, 87. Diagnostics (not kept): without
 // the 0x1f0870 call the override add and second rotation take retail's order; with the call but
 // `current` not passed, the movaps copies go; an opaque or hollowed 0x1f0870 changes neither.
+// N226: Current/matrix/carrier native-size copy subsets 9 each; all plus output
+// orientation copies 37. On the dual-helper graph, symmetric left/up/forward
+// products, transverse sums, all products L-U-F/F-L-U/U-L-F and accumulators
+// 79/73/22/22/73/73/73/79. Entire original helper, body and copies restored.
 // @retail 0x1f0450
 void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrier_contact const *contact)
 {
@@ -1352,6 +1367,9 @@ PRIVATE inline real contact_normalize(vector3f *vector)
 // all/all plus fallback direction clone 585/509/616/615. All restored; original
 // copies, qualified count, candidate cursor, outputs and arithmetic retained.
 // Round 188: Single-exit desired/tangent normalization and existing in-place difference producers in subsets 1-7 score 422/421/422/421/422/421/422; all with test-produced success 523. Original helpers, count qualification, cursor and full body restored.
+// N226: Complete preferred/fallback/one-contact normal snapshots, seven
+// subsets 465/533/571/483/571/533/621; all with native-size default output copy 621.
+// All regress; original complete body, qualified count and candidate cursor restored.
 // @retail 0x1f2250
 bool function_1f2250(vector3f const *velocity, byte const *request, vector3f const *input,
     bool moving, vector3f *out, long *surface, real *speed, long *object_index)
@@ -1546,6 +1564,10 @@ bool havok_component_any_rigid_body_active(s_havok_component *component);
 // native magnitude 286/293/286/287. Complete original magnitude, positive
 // current/saved predicates, observations, selection and calls restored.
 // Round 188: Existing reset/selected-normal/final-vector setters in subsets 1-7 score 292/247/304/241/297/256/309; all with real magnitude 308. Original copies, magnitude, input timing and calls restored.
+// N226: Shared contact-byte observation; native movement, highest-first and
+// eligibility-owned support masks 0..7 give 240/237/278/277/356/356/304/304.
+// Existing complete length directly at the movement test, original/shared-byte
+// graphs 320/320; all original observations, magnitude, body and declarations restored.
 // @retail 0x1f19c0
 void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
 {

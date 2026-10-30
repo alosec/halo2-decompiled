@@ -954,6 +954,8 @@ real function_21f650(long channel_index, long mode);
 
 /* moves a voice on to its queued chunk once its stream has played the
    current one, and advances its play time */
+// score 2 (was 2): the two argument loads of function_219290 differ (ours group-first, retail index-first);
+// retail's callee takes (group, index), so its order has to change in src/unknown_219110.cpp — outside this file.
 // score 2 (was 2): only function_219290's two arguments differ: they load group-first (retail
 // index-first), BLOCKED-BY 0x219290 (a contributor's matched function; its parameters swapped would fix
 // it, and caller 0x21c400 calls the present order). Naming the voice's chunk (released,
@@ -1250,6 +1252,8 @@ long function_2197f0(real gain);
 
 /* a sound class's gain in decibels: its fade, ducked by the current and the
    previous ambience */
+// score 149 (was 149): retail keeps the entry gain in a stack home that the gain helpers read in place; the
+// helper's signature is in include/unknown_218ac0.h, so this file can only hand the gain over by copy.
 // score 149 (was 149): Frame 0xc agrees; early table load, gain home, delayed ESI save and fade scheduling differ.
 // Retail keeps gain in a stack home from entry (stored before the flag test, EDI keeps a copy for the
 // plain returns), the helpers read it there with no copy, and each sum is stored in that home.
@@ -2702,6 +2706,9 @@ static inline short sound_voice_find_available_channel(char type)
 }
 
 /* assigns a free channel and, when needed, a shared driver voice */
+// score 96 (was 96): retail loads the voice index into ecx before the frame setup, keeps the `NONE` constant in
+// cx and the result in al/bl with an 8-byte frame; ours loads the index into eax and holds the result in a stack
+// byte with a 12-byte frame.
 // score 96 (was 96): playback/channel roles recovered; frame 12 versus 8, status test and failure
 // placement remain.
 // Validity result 135; assigned result
@@ -3106,6 +3113,9 @@ struct s_animation_ref;
 void function_219310(s_animation_state *state, s_animation_ref *ref, short value);
 long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 
+// score 86 (was 86): retail holds the playback base in ecx, builds the pointer with `lea esi,[eax+ecx]` and folds
+// the sound-system time into the compare; ours hoists the time into edx and holds the base in edi. The mode switch
+// still needs a second non-empty case.
 // score 86 (was 86): Frame 8 agrees; playback base, clock scheduling and promoted mode remain.
 // Retained clock receiver 163; voice record reference 86; combined receivers 163; role names 86;
 // native update/mode/both flag words 86/86/86; receiver plus native flags 163.
@@ -3906,6 +3916,8 @@ void function_21b0e0(bool arg_0);
 long players_first_active_local_player(void);
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
+// score 55 (was 55): statement clears give retail's 0x40-first, copy-free clears but force MSVC's 8-byte frame
+// realignment; the argument form keeps retail's frame but clears the 0x80 array first, with copies of memset's results.
 // score 55 (was 55): plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
 // memset's results (retail buffers-first, no copies), short restart cursor and loop padding remain.
 // Promoted voice limit 108; entry system

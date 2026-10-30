@@ -600,6 +600,9 @@ real function_267370(long object_index);
 // output pointer 96. Locate-only: the plane test's two compares against another constant give the
 // plane block exactly (54): the -1 shared between them and the resets is the cause; the resets then
 // take -1 in EAX (retail ECX) and the carrier stays in EDI.
+// Round 46: both NONE resets delayed across carrier selection 420 fast; unknown26c alone 415 fast/372 plain;
+// unknown274 alone 416 fast; the whole reset group 421 fast; initial/parent/held header getters and
+// bool held bit 416 fast each (reduced control 416). Original body restored.
 // @retail 0x1e3b60
 void function_1e3b60(long actor_index)
 {
@@ -1656,6 +1659,8 @@ PRIVATE inline long equipment_secondary_weapon_r21(long unit_index)
 // Round 414: current loop weapon captured 263; short/long scalar ammunition count 266/265;
 // weapon plus those counts 266/265; private output clear before draw, alone/with weapon/with
 // weapon and short count 263/263/266. Original producers, clear order and complete body restored.
+// Tried (MiniMax I run 17): 0x1e5240's body (weapon index, record lookup, 0x1e5280) and ai_object_get's pool
+// indexing written out by hand 231; hand copies of existing functions are not kept without a match.
 // @retail 0x1e2a90
 void function_1e2a90(long actor_index)
 {

@@ -1130,7 +1130,10 @@ void c_game_engine_markers::v21(long object_index)
 // type test and the flag is loaded into cl), with the flag mask 119; the unit first alone 120.
 // Round 119: the inlined type test's own body (0x101280, matched; also inlined by the matched v24)
 // spelled with the index first, a header pointer, one expression or a definition local: 40 each
-// (identical code); the second player index read at each use 40.
+// (identical code); the second player index read at each use 40. Round 121, on the team at each call
+// (the players' data load stays folded while the options pointer holds EDX): the player as an indexed
+// typed pointer 119, indexed by the absolute index 120, through a data local 120; the unit's player
+// index read before the slot test 73, with the team at each call 119; permuter, 10 tries, none lower.
 // @retail 0x240ff0
 void c_game_engine_markers::v23(long object_index, long unit_index)
 {
@@ -1507,11 +1510,12 @@ void function_2422d0(long slot)
 	}
 }
 
-// score 7 (was 65): the object index is kept in EDI and the object in EBP, retail keeps them the other
-// way round.
-// score 7 (was 7): native index/eligibility/object reference 7; team-index/team-object/
+// score 7 (was 7): the object index is kept in EDI and the object in EBP, retail keeps them the other
+// way round. Native index/eligibility/object reference 7; team-index/team-object/
 // other-count names 7; second-loop element address/nested accept 7; native slot table/
-// const object pointer/table-entry address 7; slot-field address 60. Original body restored.
+// const object pointer/table-entry address 7; slot-field address 60; the object getter at each
+// use 86 (reloads after the call); index or object local renamed to sort first or last 7 each;
+// the reject arm first 7; the rejected count advanced in its own statement 7.
 // @retail 0x2423f0
 bool function_2423f0()
 {
@@ -1867,6 +1871,15 @@ long function_242ef0(s_242ef1 arg_0, long team)
 // event slots, but the options pointer in ecx and the player index in edi, still ebp for the type).
 // Diagnostic only (reverted): the table read through a volatile pointer at the final store or at the
 // time test keeps ebp, so the table web is not what takes ebx.
+// Round 119: retail makes the subtype before the type; with the header inline every spelling makes the
+// type first and keeps the engine type in ebp. One-file harness: the time test's table read is what takes
+// ebx from the engine type (without it ours reuses ebx); ternaries inverted, cause/team order, final sum
+// order, subtype/type locals: identical code (53 each with --fast); team before cause with the subtype
+// ternary inverted 56. Round 121: 0x19ebb0 as an inline candidate (`inline` on its definition) is
+// inlined here by the linker with identical code, 53 (so not blocked by 0x19ebb0's file), and into its
+// five matched callers, which all break; the header inline storing the subtype first 64 (0x19ebb0 then
+// differs); the parameters as (flag, player index) 53 (0x241620 then differs); the team read by the
+// absolute index through either player getter 57.
 // Round 119: BLOCKED-BY 0x19ebb0. Retail makes the subtype before the type (a call's argument order),
 // so the initializer is the out-of-line 0x19ebb0 inlined by the linker, which its /Ob1 file prevents
 // here; with the header inline every spelling makes the type first and keeps the engine type in ebp.

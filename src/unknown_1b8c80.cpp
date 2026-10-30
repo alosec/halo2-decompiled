@@ -219,14 +219,19 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 	{
 		s_actor_view *actor = actor_get(actor_index);
 
-		if (actor->unknown018 != NONE && function_c8200(object_index, seat_index, actor->unknown018))
+		if (actor->unknown018 != NONE && function_c8200(actor->unknown018, object_index, seat_index))
 			result = true;
 	}
 	return result;
 }
 
-// score 3 (was 3): at the 0xc8200 call retail loads the seat index and the object before the
-// unit index (ecx last), ours loads the unit index first. Round 70: one result with `break` for
+// score 3 (was 3): at the 0xc8200 call (now in retail's (unit, object, seat) order, which loads
+// the unit last as retail) ours reloads the seat pointer into ECX and reads the object at once;
+// retail reloads it into EAX and loads the seat index in between. Before the reorder ours loaded
+// the unit index first. Round 23: the other parameter orders 3/4/4/2 (the last, (object, unit,
+// seat), loses 0x11b0c0's match); flag tested through seats[i] 82; actor lookup at the call 135;
+// seat pointer 100; nested 0xc8200 test 3; actor after result 3; named actor team 3; seat array
+// declared first 3; plain bitfield test 69. Round 70: one result with `break` for
 // the two rejections, bool result and the seat count from 0xc8b80 (retail inlines it) gave the
 // shrink-wrapped ebp/esi saves (109 -> 3); 0xc8b80 alone 109, bool alone 117, without 0xc8b80 7
 // (harness), long result 48 (harness); every 0xc8200 parameter order 4-27 (harness); nested
@@ -278,7 +283,7 @@ bool function_1b8f30(long actor_index, long object_index)
 				}
 			}
 			else if (!function_1b8d80(actor_index, seats[i].object_index, seats[i].seat_index, false) &&
-				function_c8200(seats[i].object_index, seats[i].seat_index, actor->unknown018))
+				function_c8200(actor->unknown018, seats[i].object_index, seats[i].seat_index))
 			{
 				result = true;
 			}
@@ -572,6 +577,9 @@ extern "C" void _ReadWriteBarrier(void);
 // This round: slot data block 29, without barrier 50, actor-first 31;
 // const actor 6; const state without barrier 44; data block/const actor
 // without barrier 50; const data state 29; actor object reference 6.
+// Round 23: the slot read once through its address before or after the
+// actor lookup 6/6, the same without the barrier 44/44; the barrier before
+// the actor lookup 44, at the head of the NONE block 43, first 44.
 // @retail 0x1ba8c0
 void __stdcall function_1ba8c0(long actor_index, s_slot *slot, s_slot_target_list *list)
 {
@@ -688,10 +696,10 @@ s_object *function_badc0(long object_index, dword type_mask);
    enough to it */
 struct s_1b99d0_unit_flags
 {
-	byte bit0 : 1;
-	byte bit1 : 1;
-	byte bit2 : 1;
-	byte remaining : 5;
+	word bit0 : 1;
+	word bit1 : 1;
+	word bit2 : 1;
+	word remaining : 13;
 };
 
 struct s_1b99d0_tag_flags
@@ -709,34 +717,17 @@ long function_1e4a50(long character_index);
 void __stdcall function_26c2d0(long prop_index);
 void function_270590(s_path_source *source, s_type_c3b527 const *point, long node_index);
 
-// score 160 (was 160): frame 0xb4 and common result exit agree; signed-word default load, byte flag extraction, source/output scheduling and later register homes remain.
-// Earlier: frame 0xb4 and a common result exit agree; the signed-word
-// default load, field tests, output scheduling and later register homes still differ.
-// Earlier: the shared default loads as a signed word rather than a dword; frame homes differ.
-// Unsigned-word/dword result 306/225; byte preparation with long/word/dword result 225/306/225;
-// long preparation with long/word/dword result 311/309/311. Default observation and arithmetic restored.
-// Native ownership/type/state producer orders O/S/T, T/O/S, T/S/O, S/O/T, S/T/O
-// 286/287/286/285/284; explicit state fallback at first/middle/last 287/289/289
-// (reduced control 289, full 225). Original producers and arithmetic restored.
-// Round 400: Native 0x4c payload crossed with 0x5d payload, early output addresses and guarded
-// result: 225/225/224/224/210/210/210/210. Original payloads with guarded/positive admission
-// 210/210; plain 210, 1188/1177 bytes. Keep only positive admission and one result exit;
-// temporary payload types restored.
-// Round 183: short/word/dword result 250/250/160; word/scalar-word flags 266/266; selection at entry/after result 248/248; preparation after acquisition 162, with early selection 249; short plus word flags 251; early selection plus word flags 191; middle-phase selection 244, with either word view 220/220; shared candidate state 160; named weighted distance 160. All restored.
-// Round 187: byte flag scalar/native bool bitfields/value-initialized source/point library copy/
-// scalar plus initialization/scalar plus copy/initialization plus copy/all three
-// 160/160/162/160/162/160/162/162. Original byte flags, zeroing, copies and body restored.
 // @retail 0x1b99d0
 short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 {
 	s_actor_view *actor = actor_get(actor_index);
-	long result = g_46fbe4;
+	short result = g_46fbe4;
 	if (!actor->unknown224 && !actor->unknown225 && actor->unknown040 && actor->unknown858 == NONE &&
 		function_26c120(actor_index) && actor->prop_index != NONE)
 	{
-		s_prop_node_view *base = prop_node_get(actor->prop_index);
 		long selected = NONE;
 		real best_score = 10.0f;
+		s_prop_node_view *base = prop_node_get(actor->prop_index);
 		real range_low;
 		real range_high;
 		byte *properties = (byte *)function_1e4a50(actor->unknown054);
@@ -745,8 +736,8 @@ short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 		function_26c180(actor_index);
 		if (properties && actor->unknown27c.unknown10 != NONE && actor->unknown278[0])
 		{
-			bool prepared = false;
 			byte *buffer = ai_scratch_buffer_get();
+			bool prepared = false;
 			s_prop_node_view *node = (s_prop_node_view *)function_26be30(&iterator);
 			while (node)
 			{
@@ -788,9 +779,10 @@ short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 										source.unknown45 = true;
 										source.unknown48 = 15.0f;
 										source.unknown28[0] = 1;
-										*(point3f *)((byte *)&source + 0x2c) = prop_node_state(base)->position;
-										*(long *)((byte *)&source + 0x38) = base->object_index;
+										s_prop_state_view *base_state = prop_node_state(base);
+										*(point3f *)((byte *)&source + 0x2c) = base_state->position;
 										*(real *)((byte *)&source + 0x3c) = 1.0f;
+										*(long *)((byte *)&source + 0x38) = base->object_index;
 										*(real *)((byte *)&source + 0x40) = 0.0f;
 										source.unknown44 = false;
 										function_1f9240(actor_index, &settings);
@@ -829,8 +821,8 @@ short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 				{
 					s_slot_4c *output = (s_slot_4c *)slot;
 					output->unknown28 = range_low;
-					output->unknown2c = range_high;
 					output->seat_index = NONE;
+					output->unknown2c = range_high;
 					output->unknown1c = selected;
 					output->flags |= 0x29;
 					result = 0x4c;
@@ -839,7 +831,7 @@ short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 			ai_scratch_buffer_release(buffer);
 		}
 	}
-	return (short)result;
+	return result;
 }
 
 
@@ -1429,7 +1421,18 @@ s_damage_object *function_d05c0(s_unit_child_iterator *iterator);
 void function_1e3400(long actor_index, short squad_index);
 void function_201ad0(long squad_index, long object_index);
 
-// score 216 (was 216): frame 0x32c and length agree; the driver byte spills
+// score 28 (was 216): 1200 bytes against 1198. The event block and the tail colour their
+// temporaries differently: retail loads the seat's object into EAX (ours EDX), the root vehicle
+// for 0x1fb7e0 into EDX (ours EAX), the time globals into EAX (ours ECX; one byte longer twice)
+// and the rounded ticks into DX (ours AX).
+// Round 103: squad pointer NULL then assigned; both 0x1df560 calls with retail's team order (the
+// other team first, as the file's matched callers); the vehicle's squad field read at each use;
+// the seat count read once into a short bound with a short index (retail's down-counter); the
+// unit's actor index read at each use; `previous` before `count`; the existing real_to_long for
+// the hand-written fld/fistp (216 -> 28). Then: the event test in one if 28; the definition
+// inline 28; the actor getter at each use in the last two statements 39; the product without the
+// real cast 28; a fresh actor pointer for the last two statements 28.
+// frame 0x32c and length agree; the driver byte spills
 // where retail retains BL, the squad pointer uses EBX instead of EDI, and the
 // seat walk and conversion homes differ.
 // Current-vehicle/root-index and seat-count/total-seats home names, each with
@@ -1458,14 +1461,15 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
         if (g_4e0300->data[(root_index & 0xffff) * 12 + 3] == 1)
             root_vehicle = root_index;
         byte *vehicle = (byte *)object_get(root_vehicle);
-        long squad_index = *(long *)(vehicle + 0x3a0);
-        if (actor->unknown030 != squad_index)
+        if (actor->unknown030 != *(long *)(vehicle + 0x3a0))
         {
             if (!driver && *(long *)(vehicle + 0x248) == NONE)
                 goto event;
-            byte *squad = squad_index == NONE ? 0 : g_51e9d8->data + (squad_index & 0xffff) * 0x98;
-            if (squad && !function_1df560(actor->unknown024, *(signed char *)(squad + 0x76)))
-                function_1e3400(actor_index, (word)squad_index);
+            byte *squad = NULL;
+            if (*(long *)(vehicle + 0x3a0) != NONE)
+                squad = g_51e9d8->data + (*(long *)(vehicle + 0x3a0) & 0xffff) * 0x98;
+            if (squad && !function_1df560(*(signed char *)(squad + 0x76), actor->unknown024))
+                function_1e3400(actor_index, *(word *)(vehicle + 0x3a0));
             else if (driver)
             {
                 if (actor->unknown030 == NONE && *(long *)((byte *)actor + 0x28) != NONE)
@@ -1496,10 +1500,11 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
         if (driver)
         {
             s_object_seat seats[0x40];
-            long count = 0;
             long previous = NONE;
+            long count = 0;
             function_c8a40(root_vehicle, seats, (short *)&count, 0x40);
-            for (short i = 0; i < (short)count; ++i)
+            short seat_count = (short)count;
+            for (short i = 0; i < seat_count; ++i)
             {
                 if (seats[i].object_index != previous)
                 {
@@ -1512,14 +1517,13 @@ void __stdcall function_1bb570(long vehicle_index, long actor_index)
                     byte *unit;
                     while ((unit = (byte *)function_d05c0(&iterator)) != NULL)
                     {
-                        long other_index = *(long *)(unit + 0x12c);
-                        if (other_index != NONE && other_index != actor_index && *(short *)(unit + 0x1fc) != NONE)
+                        if (*(long *)(unit + 0x12c) != NONE && *(long *)(unit + 0x12c) != actor_index && *(short *)(unit + 0x1fc) != NONE)
                         {
-                            s_actor_view *other = actor_get(other_index);
-                            if (function_1df560(actor->unknown024, other->unknown024))
+                            s_actor_view *other = actor_get(*(long *)(unit + 0x12c));
+                            if (function_1df560(other->unknown024, actor->unknown024))
                                 function_e68c0(0x1d, iterator.unit_index);
                             else if (other->unknown030 != actor->unknown030)
-                                function_1e3400(other_index, (word)actor->unknown030);
+                                function_1e3400(*(long *)(unit + 0x12c), (word)actor->unknown030);
                         }
                     }
                 }
@@ -1540,14 +1544,7 @@ done:
         actor->unknown2ec = NONE;
         *(short *)actor->unknown2ee = NONE;
         actor->unknown2f0 = false;
-        real ticks = (real)g_510c54->field_2_3 * 10.0f;
-        long rounded_ticks;
-        __asm
-        {
-            fld ticks
-            fistp rounded_ticks
-        }
-        *(short *)((byte *)actor + 0x2f4) = (short)rounded_ticks;
+        *(short *)((byte *)actor + 0x2f4) = (short)real_to_long((real)g_510c54->field_2_3 * 10.0f);
         actor = actor_get(actor_index);
         *((bool *)actor + 0x5d4) = false;
         *(dword *)((byte *)actor + 0x810) &= ~1;

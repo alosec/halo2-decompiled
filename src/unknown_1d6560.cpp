@@ -242,7 +242,8 @@ struct s_flag_word_bits
 	word bit15 : 1;
 };
 
-// score 261 (was 275): flag 1 read through a word bitfield view gives retail's load-and-shift;
+// score 261 (was 261): Frame 0x1c versus 0x18; current/entry/status homes and next-group spill remain.
+// flag 1 read through a word bitfield view gives retail's load-and-shift;
 // frame 0x1c versus 0x18 and the current/entry roles and next-group spill still differ.
 // Round 9 (lane 11, fast): first body set in an if/else 300 (frame 0x18 and retail's out-of-line NONE store
 // with the re-tested next, but current moves to EDX and the entry index to ESI where retail has ESI/EDX);
@@ -314,7 +315,12 @@ struct s_flag_word_bits
 // retail keeps esi and the index/next in esi) 300; with next/first body declared before the entry
 // tests 300; inverted first-body test 300; nested first-body rejection 300; NONE first body declared
 // before the entry tests 313. Original body restored.
-// score 261 (was 275): flag 1 read through a word bitfield view gives retail's load-and-shift; the rest still differs.
+// Earlier: flag 1 read through a word bitfield view gives retail's load-and-shift; the rest still differs.
+// Round 201: Preserving the retained word-view admission: real word flags 261; branch-owned first
+// body 298, also 298 with word flags; model-first 278, also 278 with word flags; branch/model 280,
+// also 280 with word flags; directly declared existing word-bitfield type 261. Original body, flag
+// declaration, type location and includes restored. Masked-context diagnostics 275/297/300/294 in
+// both widths repeat the older allocation and are excluded from the fresh count.
 // @retail 0x1d6630
 void s_physics_component_walk::function_1d6630(s_physics_model_owner *owner, char const *kinds,
     dword const *entry_mask, s_physics_body_groups *groups, void *context, long parent, long current,

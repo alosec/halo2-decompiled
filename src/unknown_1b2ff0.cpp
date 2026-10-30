@@ -88,7 +88,7 @@ s_slot_handler_2 g_47e1c0 =
 	(t_slot_proc)function_1b3380, 0, function_1b3540
 };
 
-// score 107 (was 109): frame 0x44, loops, squares and dot agree; the direction's XMM registers (ours x1/y2/z3, retail x3/y0/z1) make the normalize copy the inverse for j, one extra movaps that shifts the tail (aligned 22, register-masked 3).
+// score 107 (was 107): frame 0x44, loops, squares and dot agree; the direction's XMM registers (ours x1/y2/z3, retail x3/y0/z1) make the normalize copy the inverse for j, one extra movaps that shifts the tail (aligned 22, register-masked 3).
 // Direction SIMD homes and the extra reciprocal copy remain in the native 0x44 frame; restore the full opening body.
 // Earlier: frame 0x44 and initial stores agree; direction XMM, square/store and normalization scheduling differ.
 // Earlier split direction plus rolled reset 116; selection initialization 109;
@@ -135,6 +135,9 @@ s_slot_handler_2 g_47e1c0 =
 // defined in the five other orders 111-114; direction declared before point 107; normalize_inline 160.
 // Retail's operand orders (y*inv, z*inv in place, inv*x through a copy) and registers (y0 z1 inv2 x3)
 // both rank y, z before the reciprocal and x after it; ours ranks the reciprocal first.
+// Round 307: Complete tried-mask/encounter-key/const actor lifetime subsets
+// 194/107/194/107/194/107/194; all with unsigned ordinal 199. Original context reads,
+// actor lifetime, ordinals and shared math restored; direction SIMD homes and reciprocal copy remain.
 // @retail 0x1b3070
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {
@@ -261,6 +264,10 @@ real function_1f8940(long actor_index);
 // Request clear before scratch 71; all constants before scratch 76; full request before scratch 75;
 // kind/numerics/flags before scratch 68/68/77; choice fields before constants 30;
 // constant prefix with range before choice 77. Scratch/request staging restored.
+// Round 14 (exact LTCG harness): a copy of the reference for the follow call, the cancel call or both 27;
+// the follow result in a local 27; the found arm first 54; the sentinel test as a long compare 27, as
+// field compares 72 (130 instructions); the reference declared at function scope 27; the outputs declared
+// at the top, before the scratch or swapped, the scratch after the request 27; the request at the top 50.
 // @retail 0x1b3380
 bool __stdcall function_1b3380(long actor_index, s_slot *slot)
 {

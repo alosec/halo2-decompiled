@@ -79,7 +79,16 @@ void cache_copy_forget(char const *map_name);
 bool map_copy_request(char const *map_name, long priority);
 void __stdcall cache_copy_record_use(char const *map_name);
 
-// score 367 (was 367): Aligned frame 0x110 agrees; request-source reuse, dependency bound and write-option scheduling remain.
+// score 161 (was 367): state 0 copies the request before the path call (retail calls 0x214db0 first and
+// re-forms 0x55bf28 after it, BLOCKED-BY 0x214db0: ours keeps the constant in EDI, 3 bytes short; copying first is
+// the only order whose block has retail's length, which lets round 85's retail forms below count). Left: state 7/9/14
+// file-handle registers (ECX/EDX), state 11's buffer in EDI (retail ESI) and argument order, state 10/16/19 constant
+// scheduling, 1724 bytes against 1720.
+// Round 122 (fast/plain): copy-first alone 335; with round 85's split states 8/15, explicit write-flag temporaries,
+// named size_known and indexed dependency time 161 (kept; the four without copy-first 430). On that: state 10/16
+// statement orders 161/161/161; state 7 without the file local 341; state 9 without it 203; slot published after
+// the memset 520; state 11 file local before/after the clamp 290/274; state 1 after the copy 382; pending pointer 367.
+// Earlier: aligned frame 0x110 agrees; request-source reuse, dependency bound and write-option scheduling remain.
 // Round 74, case-block sizes against retail's jump table: the two 0x1a1050 writes with explicit
 // `s_file_write_flags(0)` temporaries (retail pushes the zero from EAX; the conversion builds it in place)
 // fix states 7 and 14; states 8 and 15 split with case 15 written after case 14 (retail's block order)
@@ -180,8 +189,8 @@ bool function_2141f0(void)
 			!cache_copy_complete(g_55be24[1].map_name) &&
 			map_location_get(g_55be24[1].map_name) != 3)
 		{
-			map_file_path_get(g_55be24[1].map_name, g_55bd21);
 			g_55be24[0] = g_55be24[1];
+			map_file_path_get(g_55be24[0].map_name, g_55bd21);
 			state = 1;
 		}
 		memset(&g_55be24[1], 0, sizeof(g_55be24[1]));
@@ -208,7 +217,6 @@ bool function_2141f0(void)
 			success = g_55bcf0 == 0x800 && cache_header_verify((s_cache_header const *)&g_55b4f0);
 			if (success)
 			{
-				FILETIME const *dependency_time = g_55b4f0.dependency_times;
 				for (long type = 0; type < 3; type++)
 				{
 					if (g_55b4f0.dependencies_required[type])
@@ -216,12 +224,11 @@ bool function_2141f0(void)
 						long slot = cache_file_slot_from_type(type);
 
 						if (!g_557c90[slot].header.path[0] ||
-							CompareFileTime(&g_557c90[slot].header.source_time, dependency_time) != 0)
+							CompareFileTime(&g_557c90[slot].header.source_time, &g_55b4f0.dependency_times[type]) != 0)
 						{
 							success = false;
 						}
 					}
-					++dependency_time;
 				}
 			}
 			state = 5;
@@ -233,7 +240,8 @@ bool function_2141f0(void)
 		break;
 	case 6:
 		{
-			success = g_55bcf8.total != (dword)NONE && g_55bcf8.total > 0x800;
+			bool size_known = g_55bcf8.total != (dword)NONE;
+			success = size_known && g_55bcf8.total > 0x800;
 		}
 		g_55c02c = 0;
 		state = 7;
@@ -247,15 +255,14 @@ bool function_2141f0(void)
 
 				g_55bd10 = slot;
 				memset(&file->header, 0, sizeof(file->header));
-				g_55bd00 = function_1a1050(file->file, &file->header, 0x800, 0, 0, 1, priority, &g_55bcf0, &g_55bd0c);
+				g_55bd00 = function_1a1050(file->file, &file->header, 0x800, 0, s_file_write_flags(0), 1, priority, &g_55bcf0, &g_55bd0c);
 				state = 8;
 			}
 		}
 		break;
 	case 8:
-	case 15:
 		success = g_55bcf0 == 0x800;
-		++state;
+		state = 9;
 		break;
 	case 9:
 		{
@@ -315,9 +322,13 @@ bool function_2141f0(void)
 		{
 			s_cache_file *file = &g_557c90[g_55bd10];
 			file_ref_clock_time(&g_55b4f0.last_used);
-			g_55bd00 = function_1a1050(file->file, &g_55b4f0, 0x800, 0, 0, 1, 0, &g_55bcf0, &g_55bd0c);
+			g_55bd00 = function_1a1050(file->file, &g_55b4f0, 0x800, 0, s_file_write_flags(0), 1, 0, &g_55bcf0, &g_55bd0c);
 			state = 15;
 		}
+		break;
+	case 15:
+		success = g_55bcf0 == 0x800;
+		state = 16;
 		break;
 	case 16:
 		memcpy(&g_557c90[g_55bd10].header, &g_55b4f0, sizeof(g_55b4f0));

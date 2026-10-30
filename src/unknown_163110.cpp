@@ -501,6 +501,8 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // Round 215: identifier after depth/x0/x1/y0/y1 acquisition 368 each; after x0/x1/y1 with the real
 // copied-rectangle receiver 386 each. Original publication and receiver restored; camera/corner
 // register exchange and initial/normal-distance scheduling remain.
+// Round 432: sixteen-use diagnostic Boolean success/failure returns, direct/signed/absolute/predicate
+// storage 416/416/432/381 and 416/416/432/771; original real-return helper restored.
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {

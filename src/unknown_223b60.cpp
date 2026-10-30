@@ -34,13 +34,17 @@ __int64 timing_counter_resume(timing_counter *c)
 }
 
 // score 4 (was 4): identical body and length; our prologue stores the first delta
+// zero before pushing esi, while retail pushes esi first and then stores both
+// zero dwords. The permuter found no better variant. The tick local zeroed by
+// memset 50 (stores dropped); a volatile double 10; a volatile LARGE_INTEGER
+// `= { 0 }` 50; total and stopped declared volatile in the struct 34 (push esi
+// first, then a push edi); stopped alone 4; total alone 34.
 // identical body and length; our prologue stores the first
 // delta zero before pushing esi, while retail pushes esi first and then stores
 // both zero dwords. Every spelling of the reader and of the caller ties at 4,
 // and the permuter found no better variant; only a barrier or a volatile
 // anchor gives retail's order, and both are barred.
 // score 4: identical body and length; our prologue stores the first delta
-// zero before pushing esi, while retail pushes esi first and then stores both
 // zero dwords. The permuter found no better variant.
 // Round 41: reversed total addition 4; branch-duplicated totals 26; branch-duplicated
 // total/stopped stores 24; explicit false guard 4; const pointer formal 4; entry total
@@ -89,10 +93,17 @@ __int64 timing_counter_peek(timing_counter *c)
 	return total;
 }
 
-// score 28: the conversion is correct, but our compiler keeps the union local
+// score 28 (was 28): the conversion is correct, but our compiler keeps the union local
 // in registers (`movzx eax`; `shr ax`) while retail keeps it in memory
 // (`xor ecx, ecx`; `mov cx, [eax]`; `shr word ptr [esp + 4], 5`) and puts the
 // blue channel in dl. No source shape or annealed permuter run reproduced it.
+// A plain word local shifted in place with a separate colour gives retail's load,
+// in-memory shift and shared slot (29), but blue is then computed in the word's own
+// register after the slot store; retail computes it in a copy (dl) first. Blue stored
+// into the colour straight after its OR 26 (blue first, colour gets its own slot);
+// blue from a byte copy in one expression 26 (89 bytes); long blue 28 (90 bytes);
+// channels written into the colour fields 28; colour object through address casts 29;
+// word copy for the shifts 42 (73 bytes); 20 statement orders and channel spellings 29.
 // @retail 0x223e70
 void function_223e70(const word *rgb, S3TC_COLOR *out)
 {

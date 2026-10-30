@@ -372,6 +372,14 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // 128 each (815 bytes). Native iterator aggregate gives the same 111/128/128/128;
 // condition named changed 111. Keep original iterator initialization and the natural Boolean
 // copy/repeat condition; padded-count retention and scalar homes still differ.
+// Round 85: retail branches on the compare itself (`xor ebx, ebx; repe cmpsb; je` to the exit, the copy
+// then `jmp` to the loop head); `for (;;)` with `if (memcmp(...) == 0) break;` and the copy gives that
+// shape and retail's 810 bytes, 125 (aligned 57); on it a padded-count local for all three 228 (791
+// bytes, the word value shared), bytes as words * sizeof(dword) 237, word count re-read after the copies
+// 142 (count reloaded), both 220.
+// Round 43: base before bytes 136; entry convergence result, count name and split byte calculation
+// 111 each; byte expression at uses 240; iterator/cluster-output/both entry lifetimes 111 each.
+// Original body restored.
 // Round 419: consistent full-width source-cluster promotion on the Boolean convergence graph,
 // with live/captured/padded/aligned count ownership, 135/135/135/135; those four with
 // propagation-local byte extent 236/236/236/233 (810 bytes). All regress; original input,
@@ -1488,7 +1496,7 @@ struct s_camera_clip_reference_16ebf0
 	byte field_14[4];
 };
 
-// score 120 (was 140): frame 0x98 and state/forward/up/point homes now agree.
+// score 120 (was 120): frame 0x98 and state/forward/up/point homes now agree.
 // Left: forward/position saved registers, cross-product carriers and the stacked clipping flag.
 // Native byte clipping truth 120; short/long/dword/word 124/123/123/124; entry fraction 140,
 // with word truth 124; byte truth plus role names 120, native state-field receivers 206,
@@ -1608,6 +1616,9 @@ struct s_camera_clip_reference_16ebf0
 // Round 42: position declared after directions 249; forward/up full state receivers 119/119;
 // working matrix inputs both/forward-only 120/120; early matrix declaration 120; const position
 // pointer 120; two-read forward receiver 120. One-point gains rejected; original body restored.
+// N227: Independent computed left-axis output, simple/staged cross, direct/retained matrix
+// inputs and native/CRT transfers: eight at 239/976. Original cross destination, copies
+// and complete body restored; forward/position saved-register exchange remains.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {

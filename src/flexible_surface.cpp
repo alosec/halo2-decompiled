@@ -100,50 +100,21 @@ void function_118140(long);
 void __stdcall function_118430(long);
 void function_117080(long);
 
-// score 50 (was 50): retail adds the pool data to the record offset before the store (`add eax, edx`),
-// reloads the pool after the `lea` of the next index, and gives the inlined next-index search other
-// registers (result edx, count edi, bitmap esi). Pool read directly at each use as in 0x1160c0 54 (reload
-// now after the `lea` as retail); with typed record arithmetic 54; with no slot local 54; with record and
-// definition locals 54; the for-loop next-index helper 50 (identical code).
-// Round 57: no slot with next before the reload 64; no slot alone 50; next with slot 54;
-// slot at function scope 50; typed record-array base 50; outer for-loop 50; alternate next
-// helper with next 54; record pointer on the pool-local body 50.
-// Round 268: explicit search result 50; unsigned slot 50; word slot 51; unsigned
-// datum handle 50; explicit search result with those three carriers 50/51/50;
-// shared out-of-line datum conversion 102. All original helper and field reads restored.
-// Round 270: native iterator called/inline 89, with CRT scalar clear 89; called/called
-// 124, with CRT 121; inline/inline 89, with CRT 89; original traversal with CRT
-// scalar clear 76, unsigned slot 76. All restored; record-address and search homes remain.
-// Coupled pool/datum/absolute-slot identities, seven subsets and entry-slot lifetime
-// on the complete role-name graph: 50/50/50/50/50/50/50/50. Original body restored.
-// Round 71: pool global read at each use 54 (retail's reload after the `lea`; aligned 16 against 18), with a
-// record local/surface_record/no slot/no slot plus surface_record 54/54/54/54; the record address stays
-// folded (`[eax + ecx + 0xc]`, retail `add eax, edx`) in every form whose store precedes the first call.
-// Round 408: existing datum/absolute inline lookups, with retained/per-use pool observations,
-// 106/106/97/100; existing datum/absolute called lookups 71/71/60/60. All validation-bearing forms
-// restored; record-base ADD, pool reload and successor-search result/count/bitmap homes remain.
-// Round 96 (one-file LTCG harness): `long next = index == NONE ? 0 : slot + 1;` before `pool = g_4e0338;`
-// gives retail's pool reload and search registers (result EDX, count EDI, bitmap ESI); only the record add is
-// then missing, which shifts every later instruction (54); same with a record local, surface_record, or the
-// for-loop search helper 54/54/54; global at each use with `next` 7 in the harness (loop pads appear). The add
-// needs a second reference to the record at register allocation: a store read back into a global, or the
-// diagnostic `record->unknown_c = record ? 0.0f : 0.0f;` (harness: everything retail's); twice-stored field,
-// unused definition/time reads and a field pointer still fold.
 // @retail 0x1168a0
 void __stdcall function_1168a0(real elapsed)
 {
-	s_record_pool *pool = g_4e0338;
-	long index = data_datum_index(pool, function_16bc00(pool, 0));
+	long index = data_datum_index(g_4e0338, function_16bc00(g_4e0338, 0));
 	while (index != NONE)
 	{
 		long slot = index & 0xffff;
-		((s_surface_record *)pool->data + slot)->unknown_c = 0.0f;
+		s_surface_record *const &record = surface_record(index);
+		record->unknown_c = 0.0f;
 		function_117790(index);
 		function_118140(index);
 		function_117510(index);
 		function_117080(index);
-		pool = g_4e0338;
-		index = data_datum_index(pool, data_find_index(pool, index == NONE ? 0 : slot + 1));
+		long next = index == NONE ? 0 : slot + 1;
+		index = data_datum_index(g_4e0338, data_find_index(g_4e0338, next));
 	}
 }
 
@@ -269,49 +240,30 @@ bool function_1173e0(long object_index, long index)
 	return result;
 }
 
-// score 4 (was 4): only the a/b normal.i addition schedules differ; frame and length agree.
-// Shared point differences 169; differences and cross product 108 (dropped, full); shared
-// scale normalization 166, with differences/cross 130 (dropped, full); normalize_inline 123; reversed edge
-// production 132 (dropped, full); named edges/readonly definition 130/130; cross only 165; normal-first
-// accumulation 108; out-of-line normalization 305.
-// Shared difference/cross revisit 108; triangle cursor 164; vertex base 99, both 169.
-// Plain component accumulation 109; with triangle cursor 176, vertex base 96, both 173.
-// Selected ordinary check 99/621.
-// Component-loop addition 96/633 discarded: only three points beyond the vertex-base form.
-// Shared add 99/633; with shared normalize 40/637; all normal-first 63; final vertex cursor 4/633;
-// only a normal-first 4; only b 7; only c 4; normal declared first 4; reused accumulation 260;
-// normal-field pointers 86; normalized contribution 223. Selected ordinary check 4/633.
-// Corner-pointer order acb/bac/bca/cab/cba 27/84/80/28/96; vector workspace before
-// corners 4; edge-only scope 4; loop-wide normal workspace 4. Original body restored.
-// Round 163: all triangle-index snapshots short forward/reverse and long forward/reverse
-// 7/7/7/7; corner references 4, with short indices 7; complete edge/normal role names 4;
-// complete position snapshots 274; contribution-first corner pairs ab/ac/bc 7/4/7.
-// All restored. Remaining addition pairs are normal.i, not normal.k: offsets +0x18.
-// Round 90: one `long i` for both loops 39; second-loop cursor declared at the top 4 (same
-// code); record->vertices at each use 42; per-triangle index pointer 163; `!normalize3d` 37.
 // @retail 0x117510
 void function_117510(long index)
 {
 	s_surface_record *record = surface_record(index);
 	s_surface_definition *definition = surface_definition(record);
-	s_surface_vertex *vertices = record->vertices;
 	for (long i = 0; i < definition->triangle_index_count; i += 3)
 	{
-		s_surface_vertex *a = &vertices[definition->triangle_indices[i]];
-		s_surface_vertex *b = &vertices[definition->triangle_indices[i+1]];
-		s_surface_vertex *c = &vertices[definition->triangle_indices[i+2]];
+		short a_index = definition->triangle_indices[i];
+		short b_index = definition->triangle_indices[i+1];
+		short c_index = definition->triangle_indices[i+2];
+		s_surface_vertex *a = &record->vertices[a_index];
+		s_surface_vertex *b = &record->vertices[b_index];
+		s_surface_vertex *c = &record->vertices[c_index];
 		vector3f v, u, normal;
 		vector3d_from_points3d(&a->position, &b->position, &v);
 		vector3d_from_points3d(&a->position, &c->position, &u);
 		cross3f(&v, &u, &normal);
-		normalize3d(&normal);
+		real length = normalize3d(&normal);   // unused in this build; retail's code needs the named result
 		vector3f_add(&a->normal, &normal, &a->normal);
 		vector3f_add(&b->normal, &normal, &b->normal);
 		vector3f_add(&c->normal, &normal, &c->normal);
 	}
-	s_surface_vertex *vertex = vertices;
-	for (long i = 0; i < definition->vertex_count; ++i, ++vertex)
-		if (normalize3d(&vertex->normal) == 0.0f) vertex->normal = *g_4687a8;
+	for (long i = 0; i < definition->vertex_count; ++i)
+		if (normalize3d(&record->vertices[i].normal) == 0.0f) record->vertices[i].normal = *g_4687a8;
 }
 
 // score 139 (was 139): frame 0x1c agrees; link-base/endpoint carriers, pinned-word test and correction staging differ.
@@ -345,6 +297,12 @@ void function_117510(long index)
 // count-link/all 139 each; all with coherent geometric role names 139. Every
 // acquisition stays at its original operation. All restored; entry record/link
 // allocation, pinned-word observations and correction scheduling remain.
+// Round 86 (harness, exact for this function): per-use link fields 154 (742 bytes; retail's link/endpoint
+// setup except the folded link offset, and the first pin test reuses the top link->a read where retail
+// re-reads it), with a `const &` link 155; existing vector3d_from_points3d for the difference 139 (same
+// code), with per-use fields 154, with dot3f for the square 164/178; root through a bits local, a union,
+// a long pointer or in place 154/154/154/158; constant-first clamp 139 (same code), per-use 154;
+// `!(length >= c)` 155; rest square from link->length at its use 175.
 // @retail 0x117790
 void __stdcall function_117790(long index)
 {
