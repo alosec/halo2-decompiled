@@ -701,6 +701,9 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 424: selected-type-derived point presence in short/word/long/dword at entry
 // 384/384/387/387; consumed directly at successful normalization 392/392/394/394.
 // All restored; native result/point-valid homes and case-specific point transport remain.
+// Round 436 (fast control 301, full 290): point-presence assigned after each successful
+// point producer, bool/byte/word/long 310/310/368/364; assigned at the two
+// geometry consumers 372/372/393/393. All nonexact presence-lifetime forms restored.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)

@@ -153,6 +153,9 @@ void function_133720(s_bit_vector_pool *arg_1, bool arg_2)
 // Existing acquisition helper ordinary 206; inline with standalone noinline 206; inline without it 106;
 // early radius with delayed stores 30; delayed direct stores 19; early direct with delayed index 19;
 // radius pointer and two direct field uses 32 each.
+// Record stores point/index/radius, radius/point/index, radius/index/point, index/point/radius,
+// index/radius/point 19/19/20/13/21; radius local before the copy with the index stored first 30
+// (radius stored first 31, local after the record 30, index first 34); point read directly 24.
 // @retail 0x133790
 bool function_133790(s_bit_vector_pool *arg_1, short arg_2, bool arg_3, long *arg_4, long arg_5, bool arg_6)
 {
