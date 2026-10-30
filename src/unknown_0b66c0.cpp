@@ -324,6 +324,12 @@ bool function_7af40(s_type_99af70 const *address);
 // DL180: open inline 32; open noinline 32; valid inline 32; valid noinline 90; both inline 32;
 // open inline/valid noinline 90; open noinline/valid inline 32; both noinline 90. Original
 // executable body restored.
+// Round 35: an early invalid-address exit with the failed open closing and returning first 35 at
+// 245 bytes (the open test inverts; the false exits then go to the close path's return); the copy
+// helper as plain inline 32 (identical); the state stored before the counter 33; the flag and the
+// open call reading the connection's endpoint again 111 (the split counter takes ebx, the address
+// then arrives in eax and 0xb40b0 stops matching). A compile-only copy without link-time code
+// generation splits the counter even with the copy written out, so it cannot screen this.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {
