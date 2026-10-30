@@ -617,6 +617,13 @@ static __forceinline void sound_environment_reset_1253d0(s_sound_environment *en
 	environment->unknown10 = angle;
 }
 
+// score 3 (was 3): retail schedules the inner counter's `inc esi` after the voice's first two
+// stores; ours puts it right after `inc edi`. Earlier rounds: while loop with the increment after
+// those stores 3; voice index as its own statement 3; long voice index 56; word counter 5; both
+// increments in the for 10; typed per-type count member 3; other store orders 3 (harness).
+// Round 39: every store through the array element 3; voice reference 3; the first two stores
+// through the array element ahead of the pointer 3 (they then precede `inc edi` too, which keeps
+// `inc esi` beside it); index advanced after the first two stores 3, or at the end 3/3.
 // @retail 0x1253d0
 void function_1253d0(void)
 {
@@ -1513,6 +1520,10 @@ void looping_sound_controller_release(long index);
 // pool local 5; decrement helper (kept out of line by the pragma) 29, forced inline 29.
 // Final pool-release inline/noinline declarations 5/5; controller/playback/both direct lookups
 // 58/59/81; unsigned cyclic remainder 5; shared cleanup exit 5; controller-first predicate 40.
+// Round 39: controller declared at function scope 5; unknown03 test in a bool before the lookup 5;
+// pool release in both arms 33; controller test outside the unknown03 test 40; byte cast before the
+// mask 5. Without the depth pragma the release inlines (122); with either test removed the pool
+// still takes EBP, so the byte store's register is what moves it.
 // @retail 0x127390
 void sound_playback_delete(long sound_index)
 {
@@ -2124,6 +2135,13 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 // Round 29: target-first helper on the first three/four clamps 33/33; forceinline 33;
 // third clamp only 130; symmetric bounds 106; value-first 122; both fades 96;
 // clamp-first addition 33; named delta 104; target pointer 99. Original restored.
+// Round 39: the third/fourth add forms follow position, not spelling: written third, the helper,
+// `+=`, `x = x + PIN` and `x = PIN + x` all add in place (the two swapped: 19, now in retail's
+// add forms but stores 14/18 reversed). Fourth through the helper adds in place as retail but
+// lengthens the rest (102). Both helper 133; both `+=` 34; `x = PIN + x` forms 34/34/17; named
+// `0 - step` bound 140/119, with a named `0 - maximum` 152; a target-taking helper (delta inside)
+// at the third 126/87, also on the first two 134; all 27 helper/`+=`/target combinations of the
+// third, fourth and fade 34-136.
 // @retail 0x126660
 void sound_environments_update(s_sound_environment const *requests)
 {

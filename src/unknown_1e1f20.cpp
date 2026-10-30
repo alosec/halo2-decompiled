@@ -44,6 +44,11 @@ static inline long unit_get_current_weapon(long unit_index)
 // object input 37; readonly object input 37; object reference input 37; native slot 44;
 // reference and native slot 44; object result arms 47; object result first 37;
 // reference result first 37.
+// Round 39, all with ordinary (non-volatile) reads, fast checks listing 0xcbd50 too (without it the
+// reduced image leaves that query out, which is where round 129's 60-68 came from): ordinary reads 37
+// (plain check: actor in EDI, table in EBX); query with its own NONE guard 48; actor fetched again
+// for the fallback 34; early returns 46; nested fallback 37; one reassigned unit local 50; every read
+// through the getter 38; result first 44; refetch first/at the test only 39/43; ternary unit 37/37.
 // @retail 0x1e1f20
 long function_1e1f20(long actor_index)
 {
@@ -524,6 +529,8 @@ s_node_view *function_26be30(s_iterator *iterator);
 // native prop result 7; actor/iterator 157.
 // actor/native prop 157; iterator/native prop 7.
 // all three receivers 157; all three/nested view validity 157.
+// Round 39: plain while loop 7; post-increment 7; `callback != NULL` 7; type in a short local 7;
+// type through the element with the slot pointer passed 10.
 // @retail 0x1e23c0
 void function_1e23c0(long actor_index)
 {
