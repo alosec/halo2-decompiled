@@ -1954,6 +1954,9 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 // Round 212: native user animated-test/store and adjusted-store bits, seven dword subsets
 // 415/411/415/414/426/414/426; complete byte view 410 (fast control 411). One-point byte gain rejected;
 // original user record and all consumers restored; early blend and receiver homes remain.
+// Round 428: complete eligibility/duration classifier arms, full bool/byte/short/long
+// 422/422/443/443; complementary bool/byte/short/long 446/446/446/447
+// (fast control 411; full 410). Early blend byte and user/weapon/sway homes remain; restored.
 // @retail 0x16760c
 void __stdcall function_16760c(long user_index, long field_x11c898)
 {

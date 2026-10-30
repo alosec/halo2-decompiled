@@ -344,6 +344,10 @@ void function_125a90(long value);
 // special = 0x20 || 0x26` with removal first gives retail's whole block order in the compile-only
 // harness, but LTCG then inlines 0x221810 (144 at 467 bytes; with the kind test as one `&&` 144,
 // keep first 157 at 471 bytes); removal first alone 51.
+// Round 13 (lane 13): the element written out at each use (`((T *)array->data)[index].field`)
+// gives retail's `imul eax` + `lea esi` but sinks it below the b test 43; with `if (remove)`
+// first as well 47; `if (remove)` first alone 51; ELEMENT(array, T, datum) 62, with index 94;
+// `&((T *)data)[index]` 47; `(T *)(data + index * sizeof(T))` 47.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {

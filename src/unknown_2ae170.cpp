@@ -826,6 +826,9 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // Round 269: shared bit-domain sums for buffer pairs 348; front/rear pairs 380; both 442; mode tails 332;
 // buffer/tail 310; front-rear/tail 443; all 507; all with the native alternate-routing field 507.
 // Every lower-scoring form loses the dispatcher; original arithmetic and executable body restored.
+// Round 294: Entry left/right gain and send-level storage, seven nonempty subsets, all 370;
+// all with offset storage 370. All producers, helper boundaries and the complete
+// body restored; frame 0xc agrees, selected-level and integer/SSE staging remain.
 // Round 428: special selected-level names, repeated-sum name and both 370/370/370;
 // separate three actual sum results 370; early special sum storage 370; entry special scalar storage 370;
 // secondary-first acquisition on the copied-bit graph 374; one phase-disjoint sum workspace 370.
@@ -1290,6 +1293,9 @@ void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rea
 // force-inline also 200 each but dispatcher loses its match at 26; early level with either provider 212. All
 // provider metadata, shared header, private append graph, input samples and body restored; frame 0x10 and x87
 // tail remain.
+// Round 220: One native gain-array/routing-table traversal, long table with long/dword/short/word ordinal
+// 433/433/433/433; byte table 431/431/436/436. All regress and shorten away from retail; original
+// input record, four appends, scalar captures, helper and complete body restored.
 // @retail 0x2af920
 void c_sound_effects::add_sends(s_sound_send_parameters *parameters, long unused, long mode, s_mixbin_settings *mixbins)
 {

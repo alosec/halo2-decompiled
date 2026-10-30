@@ -362,6 +362,14 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // Round 302: Actual axis at state/entry scope, forward at state/entry scope,
 // each with original/role vector names: all eight 43. Original declarations,
 // homes and body restored; axis/direction register colors and parallel copy remain.
+// Round 13 (lane 13): retail = projection times axis j/k in place in the axis registers (cos then
+// in a register), times axis i into a copy of the projection; ours copies it for i and j. Forms
+// that do give the in-place products all add a block copy of the axis (harness: a local copy,
+// a by-value inline helper; all three rows in place then); without one: grouped (d cos -
+// cross sin) in the j/k rows 56, 0x11d3b0's form with named const sine/cosine 57, projection as
+// (dot * c) per row 43, the i projection before the cross terms 43, parallel first in j/k 57;
+// harness only: scalar axis locals in any order, all six dot orders as one expression (43) or
+// accumulated (ds_kji 43, the others worse), product operands swapped per row (no change).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

@@ -691,6 +691,18 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // Round 9: early `return false` when the balance fails 63; `return result && clamp <= maximum` 63;
 // fill bound written `player_count + extra_count` 34; open slots computed at the clamp 87; the copy
 // as a `while` loop 34 (the listed copy-before-maximum form reran at 82).
+// declaration 34; parameter orders (extra, parties, player) 35, (player, extra, parties) 34,
+// (parties, player, extra) 34, (parties, extra, player) 35, (extra, player, parties) 35;
+// extra-first sum 35; copy before the maximum update 82; parties read back for the maximum 75.
+// Round 94: copy then max from the copy 75; fill counted by extra count 62 (moves extra count to
+// the stack); clamp as `excess > 0 ? excess : 0` 43, as `excess >= 0 ? excess : 0` 34; open slots
+// from the sum written out 71; `party >= next_party` 81; fill as `while (i < total) parties[i++] =
+// next;` 34; array and index declared first 34. Screened without a role change: all 60
+// spellings. Round 13 (lane 13): retail's clamp tail (`and eax, ecx`: the excess register is the
+// destination) comes from the subtraction written in the clamp, e.g. `MAX(0, imbalance -
+// open_slots)` (compile-only); in the build it loads the maximum into ECX early and keeps EDX for
+// the mask: `MAX(0, ...) <= maximum` 45 (192 bytes), the same through a local 45, as `maximum >=
+// MAX(...)` 45, as an `if` clearing the result 45, the `< 0 ? 0 :` form written out 45.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

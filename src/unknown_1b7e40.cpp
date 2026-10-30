@@ -242,6 +242,25 @@ evaluate:
 // all 102 at 231/264 bytes. Entire body, payload and getter declaration restored.
 // Complete final rejection with native payload/self-dot 87/87; staged final failures 90/90;
 // whole-slot forms 87/90/87/90, all 277 bytes. Original 264-byte body and getter restored.
+// call and matches byte for byte with the call held out of line; in that form the direct
+// call, a noinline declaration in this file, `unknown20 >= 1` and the swapped prop compare
+// all stay inlined (90/90/96/91). Earlier: typed slot payload 73; payload/result first 73;
+// payload/wide result 74; payload/single result 88, with wide result 92; native node/view
+// plus payload/self-dot/final-result graphs 73/73/73/73/78/78/78/78; early returns 74;
+// direct function_25d740 call 73, with early returns 74; named actor 74; prop test nested
+// again 79; with the call kept out of line the tails merge (102 at 231 bytes); a separate
+// view-getter noinline with default status, direct proximity return, native payload,
+// unsigned-word status and double speed consumer, eight forms all 102 at 231 bytes;
+// whole-slot forms 87/90/87/90 at 277 bytes; complete final rejection with native
+// payload/self-dot 87/87; staged final failures 90/90; early returns with `return 0x10` 74
+// (`mov ax`); the slot field on the left of the prop compare 74; a named actor with that
+// compare 91; the existing magnitude3d for the speed 73, with early returns 74; a noinline
+// declaration in this file 73 (ignored across files: still inlined); per-level returns 87
+// (277 bytes), with `return 0x10` 87. A noinline on the definition would change the 21
+// matched functions that inline it in retail.
+// Round 37 (the single-exit form, all 88 at 278 bytes, the call still inlined): as is; with
+// the existing magnitude3d; with the direct function_25d740 call; with the actor and prop
+// node lookups written out (as matched 0x1b7b90 does); written out with magnitude3d.
 // @retail 0x1b81c0
 short __stdcall function_1b81c0(long actor_index, s_slot *slot, bool active)
 {

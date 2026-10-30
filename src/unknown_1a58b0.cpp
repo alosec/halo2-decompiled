@@ -852,6 +852,12 @@ void function_25aba0(long actor_index);
 // Diagnostics: a different state-one decrement leaves kind-2 fused on the chain, and a different
 // kind-2 decrement leaves state-one fused on the continue form, so the two pops aren't merged; the
 // choice looks like the allocator's (a temporary register or a memory operand for the decrement).
+// Round 99 (lane 6), on the kept body: the first enabled test through the handler local, as the
+// next-handler test is written, 69 (identical); kind-2 failure with the state store first 69 (aligned
+// 18: only that arm's store order moves, the state-one pop stays `dec [mem]`); the state-one stamp
+// through the table 69; `current` from `&owner->slots[level]` 69; `current` declared before the
+// handler 159 (966 bytes). The entry registers follow 0x1a7b30's own ESI/EDI colouring (its result
+// pointer arrives in ESI, retail EDI).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

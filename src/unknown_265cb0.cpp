@@ -1238,6 +1238,10 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 // target/aggregate 133; offset/aggregate 101; all producers 135; read-only projected point 135.
 // Clock conversion/copy and direction/ahead/target homes remain; all producers restored.
 // Round 293: Uninitialized difference/decay/blend entry declarations, all seven subsets, and all with rounded-count entry declaration: 99 each. Every value producer stays in place; complete original declarations, existing local qualifier and body restored.
+// Round 427: exact quarter/player-window/hold clock products using double literals, seven
+// subsets 423/256/425/133/424/257/426; all with the rounded-count name 426. Every signed-short
+// product remains exactly representable. Original literals, count name and full body restored;
+// hoisted clock conversion, joined count copy and geometry homes remain.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {
@@ -1762,6 +1766,9 @@ real function_2683f0(long actor_index, long node_index, short type)
 // DH round 252: Independent repeated player handle/datum observations and direct current-contact result,
 // all seven subsets, then all with completed selection scope
 // 528/528/528/528/528/528/528/528. Original complete executable body restored.
+// Existing transform/relative/both complete setters 528/528/528; safe in-place transform
+// 705 (frame 0x74), with relative/point/both 705/712/708; native transform initializer with
+// relative and point producers 528. All vector producers restored; frame and saved homes remain.
 // Round 426: complete transform rows/scoring dots/both accumulated 529/528/529; shared
 // final positive-score producer alone/with rows/with dots/with both 502/503/502/503;
 // all with native byte positive 503. Keep only the shared positive producer, plain

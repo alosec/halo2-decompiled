@@ -1443,6 +1443,9 @@ PRIVATE inline long score_string_list_1608e0()
 // separate team output 687; title foreground/team output 688; title background/team output 687; all
 // appearance outputs 687; immutable title/all outputs 687. Frame/viewer/coordinate/color homes remain;
 // one- and two-point reductions rejected. Original body restored.
+// Round 428: native row-position horizontal/vertical/both 693/691/676; native title buffer 689;
+// title with horizontal/vertical/both 693/691/676; all with promoted narrowed width 676.
+// Coordinate-to-array forms restored without a match; original 0x790 frame and viewer/color homes remain.
 // @retail 0x1608e0
 void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, real alpha)
 {

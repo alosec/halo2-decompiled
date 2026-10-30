@@ -76,27 +76,34 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // but the cached-record compare splits into `mov eax,[ebx+0x50]; cmp ebp,eax` after the sample's
 // x87 store (+2 bytes, adds the child-loop pad) where retail folds `cmp ebp, [ebx+0x50]`. With
 // field_10 last (kept) the compare folds but the 0x173ba0/0x249aa0 argument registers and the
-// child loop rotate. Retail also loads the parent twice for the 0x175070 list addresses where ours
-// reuses one register. This compiler never folds a load into an ALU operand right after an x87
-// fstp (no such site in the linked image; 0x39a80's equivalent site splits too); /G7, /Os or
-// /arch:SSE2 fold it compile-only, the file's flags don't; a plain fild store or an SSE product folds.
+// child loop rotate (its unknown04 temporary takes ECX once the seed pointer is dead; retail's takes
+// EDX while it is live). Retail also loads the parent twice for the 0x175070 list addresses where
+// ours reuses one register. This compiler never folds a load into an ALU operand right after an x87
+// fstp inside one block (compile-only: cmp reg/imm, test byte and add all split, also with an
+// integer store between; /G7, /Os or /arch:SSE2 fold it compile-only, the file's flags don't; /G7 on
+// this file in the real build still splits); retail folds at three sites (here, 0x39a80, 0x186ab0)
+// and the one matched fold (0x2c7410) is at a jump target. A plain fild store or an SSE product folds.
 // Kept: in-loop lookup through the inline particle_object_for_tag with the child getter nested in
 // 0x173fd0's call 133; record-first reset without the split temporary 133; field_38 sample before
 // the field_10 store 70.
 // Tried: nested getter alone 160; inline/forceinline redeclarations of 0x137bd0 142; sample through
 // the existing helper 70; the 0x173c10 method called 70; sample into the shared local before
-// field_10 146; sample local declared first 70; DATUM child 70; size optimization 525; inline depth
-// one/two 142/142; global optimization off 433; frame pointer 314; current-record update argument
-// 142; field_10 first 133, with a compiled-out statement before the compare 133, with the
-// cache-update stores swapped 129, with the sample through the existing reference helper into
-// field_38 or into local_9 133/133; compile-only, all split: compare in an inline/forceinline helper
-// or bool local, reversed or == compare, typed/int compare, cache pointer copy or member,
-// loop/switch/goto wrappers, sample through an inline initialiser, a named-global or divided scale,
-// helper or direct word samples, field_08/local_3/link/flag statement orders, record-typed cache
-// field, 0x175610's cache store order, an inline cache-update helper, the scale through the shared
-// word wrapper or a named temporary; inline type lookup at the loop re-fetch 134, with the
-// child-settings query in its argument list 133; comparison operands swapped 133; child/record
-// datum through DATUM 133/133; 0x175610's cache-update body 133; complete reconciliation before final
+// field_10 146; sample local declared first 70; sample local at function scope 70, with field_10
+// first 133; field_10 first with the sample stored after the compare 137, or drawn into a local and
+// stored after field_10 146; field_10 and the fifth draw in a forced-inline helper 133; fifth sample
+// through a field pointer 133; DATUM child 70; size optimization 525; inline depth one/two 142/142;
+// global optimization off 433; frame pointer 314; current-record update argument 142; field_10
+// first 133, with a compiled-out statement before the compare 133, with the cache-update stores
+// swapped 129, with the sample through the existing reference helper into field_38 or into local_9
+// 133/133, with the compare as a bool local 133, with the compare operands swapped 133; compile-only,
+// all split: compare in an inline/forceinline helper or bool local, reversed or == compare,
+// typed/int compare, cache pointer copy or member, loop/switch/goto wrappers, sample through an
+// inline initialiser, a named-global or divided scale, helper or direct word samples,
+// field_08/local_3/link/flag statement orders, record-typed cache field, 0x175610's cache store
+// order, an inline cache-update helper, the scale through the shared word wrapper or a named
+// temporary; inline type lookup at the loop re-fetch 134, with the child-settings query in its
+// argument list 133 (a copy of 0x137bd0's body); comparison operands swapped 133; child/record datum
+// through DATUM 133/133; 0x175610's cache-update body 133; complete reconciliation before final
 // draw 133; final sample store after reconciliation 140, with early predicate/flags/both
 // 138/149/160; early cache predicate/masked flags/both across final draw 157/153/177; sample output
 // 142; age/time after sample 239/153; sample late age/time/both 239/153/236; sample value 142;
@@ -151,6 +158,11 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // field_10 first: 133 (aligned 21, 876 bytes); with a label before the compare 140; the sample
 // through the reference helper 133; the cache update as an early-return inline helper 133;
 // typed compare 133.
+// 133; named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; compare
+// operands swapped 71; count increment before the timestamp store (or the field_3c store) 71; short
+// child index 76, with field_10 first 137; field_10 after the field_14/16/18 sample 184/168/152;
+// field_50 read into a named pointer for the compare 70; field_10 stored right after the record
+// link/record pointer/field_08/flag bits/seed-type bitfield 227/178/200/217/204.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)

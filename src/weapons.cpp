@@ -1962,6 +1962,9 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 423: consistent first/other/both reserve-field reads 124/127/127; each with
 // a real per-slot weapon receiver 124/127/127; both fields with short slot counter 430,
 // also with the receiver 430. Reduced previews only; complete original body restored.
+// Round 221: complete success/failure result assignments 124; first/other/both magazine
+// array roots on that graph 123/123/122; entry-first result declaration with no/first/other/both
+// roots 124/123/123/122. One/two-point gains rejected; original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -2242,6 +2245,9 @@ static __forceinline long real_to_long(real value);
 // J197: short/int ordinal contract 144/89; short with native bits/char clamp/both
 // 144/143/143; int with native bits/char clamp/both 89/87/87.
 // Timing homes and released/age registers remain.
+// Round 221: current/previous/paired analog snapshots on the byte-clamp graph 125/136/148;
+// transition snapshot 132, with current/previous/both 141/114/158; all three with age-first
+// lifetime 158. Original body restored; timing homes and released/age/delta registers remain.
 // @retail 0x1027b0
 void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool *held, bool *released)
 {
@@ -3179,6 +3185,9 @@ struct s_ammo_conversion_entry
 // Real notification/updater ordinary, inline and noinline declaration pairs, excluding the
 // original pair: 190 each. Both complete defining files, all declarations and the transfer body restored;
 // destination/tag/search homes remain with the correct 0x20 frame and signed notification count.
+// Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
+// both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
+// with conditional minimum 196, plus direct destination 205. Original body and field type restored.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
