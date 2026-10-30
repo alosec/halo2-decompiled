@@ -315,6 +315,8 @@ s_object_gc_entry_ab g_440570[6] =
 // Pressure query inline/noinline/both declarations 110 each; critical output first-written with
 // ordinary/inline/noinline/both declarations 138 each; named collection predicate with inline/noinline
 // query 110.
+// Round 256: Once-observed action/gather/both callbacks 108/110/108; with terminal state at use
+// 134/125/134; both with query-produced critical, original/direct cleanup 132/136. All restored.
 // @retail 0xbf380
 void function_bf380()
 {

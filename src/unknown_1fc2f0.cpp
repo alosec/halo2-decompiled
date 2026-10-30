@@ -237,6 +237,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // component times ticks, or each chain followed by its own `*= ticks`, 70/70. A compile-only screen
 // shows the coupling: a conversion after the chains gives retail's first 14 SSE ops but copies,
 // one before them scales in place but keeps i, j, k.
+// Round 95: the existing local_scale3d for the rate and tick stages 99 (377 bytes), for the tick
+// stage only 43 (code unchanged), for the rate stage only 99; the velocity copied as a struct 132
+// (394 bytes); the rate read from the global at each use 99 (375 bytes).
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

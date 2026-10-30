@@ -4258,16 +4258,24 @@ void *function_1e4f90(long actor_index);
 
 /* a flinch: its time, then the weapon dropped (or swapped for the actor's
    spare weapon) */
-// score 65 (was 82): retail keeps no result local (ours puts it in bl and a stack byte) and still
-// leaves through two exits. A single exit through a result local 65-68; the hand helper's short slot
-// index gives retail's movsx (80); gotos to a final return false for some or all paths 80.
+// score 52 (was 63): frame 0xe4 and 278-byte length agree; unit/pool homes,
+// byte-versus-word slot test and final short-result conversion still differ.
+// Earlier 65 from 82 carried a Boolean result in BL/a stack byte; retail has two
+// exits. Single result exits 65-68; the shared short-slot getter 80; gotos to a
+// final false return for some/all paths 80.
+// Separate replacement return 79; shared byte/short/long results 77/69/67;
+// unit at each use 82, actor at each use 63, retained weapon receiver 86;
+// separate-return short slot 83, byte result 86, short result 52 kept.
+// No result carrier 83, with short slot 79, with actor at use 79; post-work false
+// bool/short-slot/short-result/both 83/79/97/101; countdown-predicate result
+// bool/short/long 98/96/97. Whole-program confirmation preserves every match.
 // @retail 0xed910
 bool __stdcall function_ed910(long unit_index, long type)
 {
 	s_unit_action_unit *unit = UNIT_ACTION_UNIT_GET(unit_index);
 	s_unit_actions *actions = UNIT_ACTIONS_GET(unit);
 
-	bool result = true;
+	short result = true;
 
 	if (--actions->flinch_ticks > 0)
 		goto done;
@@ -4297,7 +4305,7 @@ bool __stdcall function_ed910(long unit_index, long type)
 			if (new_weapon_index != NONE)
 			{
 				function_cd0c0(unit_index, new_weapon_index, 4);
-				goto done;
+				return false;
 			}
 		}
 	}
@@ -4547,6 +4555,14 @@ void function_1420f0(transform4x3f *out, point3f const *position, vector3f const
 
 /* plays a state animation at a point and facing: a biped keeps its seat
    transform relative to the new frame, anything else is moved there */
+// score 130 (was 206): frame 0xac agrees; byte-mask versus extracted flag,
+// offset-copy/SSE homes, quaternion call inputs and final stores differ.
+// Common result exit 193; both/forward shared transforms 614/377 (out of line);
+// complete facing copy 212, Boolean flag 206, common exit plus copy 130 kept.
+// Common exit plus Boolean flag 193, plus copy 130; late offset capture 207,
+// with common exit 193, plus copy 130, plus Boolean flag 130. Native byte-bitfield
+// views 130/130; word views 154/147; existing vector setter 206. Original data
+// declaration, all math groupings and every call argument are retained.
 // @retail 0xee090
 bool __stdcall function_ee090(long unit_index, long state_name, long mode, long action_name, point3f const *point,
 	vector3f const *facing)
@@ -4558,88 +4574,88 @@ bool __stdcall function_ee090(long unit_index, long state_name, long mode, long 
 	if (!result)
 	{
 		result = function_10f430(unit_index, state_name, 0x7000101, 0x7000101, 0x400000c, 0.1f, 0, 0);
-		if (!result)
-			return result;
 	}
-	function_b9a50(unit_index);
-	if (unit->object_type != 0)
+	if (result)
 	{
-		if ((unit->flags_c0 >> 6) & 1)
+		function_b9a50(unit_index);
+		if (unit->object_type != 0)
 		{
-			function_b8840(unit_index);
-			function_b77d0(unit_index, g_4687a4, g_4687a4);
-		}
-		function_b75a0(unit_index, point, facing, g_4687b0, NULL, false);
-	}
-	else
-	{
-		vector3f flat;
-		transform4x3f object_matrix;
-		transform4x3f target;
-		vector3f local;
-		quaternionf object_orientation;
-		quaternionf target_orientation;
-		quaternionf orientation;
-
-		flat.i = facing->i;
-		flat.j = facing->j;
-		flat.k = 0.0f;
-		function_ba160(unit_index, &object_matrix);
-		function_e5690(unit_index, point);
-		if (function_30bf0(&flat) > 0.0f)
-			function_b75a0(unit_index, NULL, &flat, g_4687b0, NULL, false);
-
-		byte *seat_transform = (byte *)unit + *(short *)((byte *)unit + 0x10e);
-		vector3f offset = *(vector3f *)(seat_transform + 0x10);
-		point3f world;
-
-		function_1420f0(&target, point, facing, g_4687b0);
-		if (object_matrix.scale != 1.0f)
-		{
-			offset.i = object_matrix.scale * offset.i;
-			offset.j = object_matrix.scale * offset.j;
-			offset.k = object_matrix.scale * offset.k;
-		}
-		world.x = object_matrix.up.i * offset.k + object_matrix.left.i * offset.j + object_matrix.forward.i * offset.i +
-			object_matrix.position.x;
-		world.y = object_matrix.up.j * offset.k + object_matrix.left.j * offset.j + object_matrix.forward.j * offset.i +
-			object_matrix.position.y;
-		world.z = object_matrix.up.k * offset.k + object_matrix.left.k * offset.j + object_matrix.forward.k * offset.i +
-			object_matrix.position.z;
-		if (target.scale != 0.0f)
-		{
-			vector3f delta;
-
-			delta.i = world.x - target.position.x;
-			delta.j = world.y - target.position.y;
-			delta.k = world.z - target.position.z;
-			if (target.scale != 1.0f)
+			if ((unit->flags_c0 >> 6) & 1)
 			{
-				real inverse = 1.0f / target.scale;
-
-				delta.i = inverse * delta.i;
-				delta.j = inverse * delta.j;
-				delta.k = inverse * delta.k;
+				function_b8840(unit_index);
+				function_b77d0(unit_index, g_4687a4, g_4687a4);
 			}
-			local.i = target.forward.k * delta.k + target.forward.j * delta.j + target.forward.i * delta.i;
-			local.j = target.left.k * delta.k + target.left.j * delta.j + target.left.i * delta.i;
-			local.k = target.up.k * delta.k + target.up.j * delta.j + target.up.i * delta.i;
+			function_b75a0(unit_index, point, facing, g_4687b0, NULL, false);
 		}
 		else
 		{
-			local.i = 0.0f;
-			local.j = 0.0f;
-			local.k = 0.0f;
+			vector3f flat;
+			transform4x3f object_matrix;
+			transform4x3f target;
+			vector3f local;
+			quaternionf object_orientation;
+			quaternionf target_orientation;
+			quaternionf orientation;
+
+			flat = *facing;
+			flat.k = 0.0f;
+			function_ba160(unit_index, &object_matrix);
+			function_e5690(unit_index, point);
+			if (function_30bf0(&flat) > 0.0f)
+				function_b75a0(unit_index, NULL, &flat, g_4687b0, NULL, false);
+
+			byte *seat_transform = (byte *)unit + *(short *)((byte *)unit + 0x10e);
+			vector3f offset = *(vector3f *)(seat_transform + 0x10);
+			point3f world;
+
+			function_1420f0(&target, point, facing, g_4687b0);
+			if (object_matrix.scale != 1.0f)
+			{
+				offset.i = object_matrix.scale * offset.i;
+				offset.j = object_matrix.scale * offset.j;
+				offset.k = object_matrix.scale * offset.k;
+			}
+			world.x = object_matrix.up.i * offset.k + object_matrix.left.i * offset.j + object_matrix.forward.i * offset.i +
+				object_matrix.position.x;
+			world.y = object_matrix.up.j * offset.k + object_matrix.left.j * offset.j + object_matrix.forward.j * offset.i +
+				object_matrix.position.y;
+			world.z = object_matrix.up.k * offset.k + object_matrix.left.k * offset.j + object_matrix.forward.k * offset.i +
+				object_matrix.position.z;
+			if (target.scale != 0.0f)
+			{
+				vector3f delta;
+
+				delta.i = world.x - target.position.x;
+				delta.j = world.y - target.position.y;
+				delta.k = world.z - target.position.z;
+				if (target.scale != 1.0f)
+				{
+					real inverse = 1.0f / target.scale;
+
+					delta.i = inverse * delta.i;
+					delta.j = inverse * delta.j;
+					delta.k = inverse * delta.k;
+				}
+				local.i = target.forward.k * delta.k + target.forward.j * delta.j + target.forward.i * delta.i;
+				local.j = target.left.k * delta.k + target.left.j * delta.j + target.left.i * delta.i;
+				local.k = target.up.k * delta.k + target.up.j * delta.j + target.up.i * delta.i;
+			}
+			else
+			{
+				local.i = 0.0f;
+				local.j = 0.0f;
+				local.k = 0.0f;
+			}
+			function_141f60(&object_matrix.rotation, &object_orientation);
+			function_141f60(&target.rotation, &target_orientation);
+			target_orientation.w *= -1.0f;
+			function_11d820((quaternionf const *)seat_transform, &object_orientation, &orientation);
+			function_11d820(&orientation, &target_orientation, &orientation);
+			*(vector3f *)(seat_transform + 0x10) = local;
+			*(quaternionf *)seat_transform = orientation;
 		}
-		function_141f60(&object_matrix.rotation, &object_orientation);
-		function_141f60(&target.rotation, &target_orientation);
-		target_orientation.w *= -1.0f;
-		function_11d820((quaternionf const *)seat_transform, &object_orientation, &orientation);
-		function_11d820(&orientation, &target_orientation, &orientation);
-		*(vector3f *)(seat_transform + 0x10) = local;
-		*(quaternionf *)seat_transform = orientation;
+		actions->unknown36 = (short)mode;
 	}
-	actions->unknown36 = (short)mode;
 	return result;
 }
 
