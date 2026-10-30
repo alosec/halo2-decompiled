@@ -372,6 +372,38 @@ extern long g_51ec0c;
 // condition 80; in-session arm first with the squad arm as its else 80; `else` around the
 // mode-not-1 call 80 (compile-only, same order: default/case 5 arms, braces, an if-based state
 // dispatch, larger blocks).
+// only the placement differs (aligned, 6 instructions): the state 6-8 and
+// mode-not-1 call blocks follow the mode-one branch, where retail emits them after the mode-3
+// window block; the longer jumps make the body twelve bytes short. Earlier join-mode widths and
+// session-record forms excluded. State ranges 125; cold range first 99; availability gate 126;
+// common switch exits 80; later join-type lifetime 155; timestamp workspace 80; gate/common exits
+// 126; ranges/lifetime 137; cold cases first 80; state nine first 80; entry join result 96;
+// shared player gate 104; leave from join result 123; positive title gate 101; zero-time
+// initializer 80; query declarations first 80; native/numeric mode switches 116/116; mode-one
+// rejection first 81; leave/screen mode first 79/112; screen-first mode switch 116; non-three
+// state outcome first 95; invitation test outcome 103; leave code written in both branches 104;
+// return/break in every combination 80; in-session chain first 80 (same code); case locals at
+// function scope 80; rejection as a final else-if 80 (same code).
+// frame 0x14 agrees; cold dialog blocks precede the main join path, twelve bytes short.
+// Cold state/mode blocks precede the main join block; body remains twelve bytes short.
+// state ranges 125; cold range first 99; availability gate 126; common switch exits 80;
+// later join-type lifetime 155; timestamp workspace 80; gate/common exits 126; ranges/lifetime 137.
+// matching 0x14 frame; cold state/mode block placement still differs,
+// with twelve missing bytes. Earlier join-mode widths and session-record forms excluded;
+// tried cold cases first 80; state nine first 80; entry join result 96; shared player gate 104;
+// leave from join result 123; positive title gate 101; zero-time initializer 80;
+// query declarations first 80.
+// native/numeric mode switches 116/116; mode-one rejection first 81;
+// leave/screen mode first 79/112; screen-first mode switch 116; non-three state outcome first 95;
+// invitation test outcome 103. One-point leave-first gain rejected; body restored.
+// Explicit unsupported-state exit, actual squad predicate and both 80/80/80;
+// leave action from original inputs with neither/either/both boundaries 104 each at 479 bytes;
+// precomputed complete leave expression 147 at 495 bytes.
+// Round 93 (plain checks; --fast builds this one differently): leave code written in both mode arms
+// 104 (479 bytes, merged into the mode-one arm); explicit else around the mode-not-one call 80;
+// squad test merged into the first condition 80; join part after the switch with cases 6-8 and
+// default returning 80 (same layout); the last two mode arms swapped (mode != 3 first) 78 (wrong
+// arm order, aligned worse).
 // @retail 0x2395dc
 void __stdcall function_2395dc(XONLINE_FRIEND *friend_, long controller_index, long mode)
 {

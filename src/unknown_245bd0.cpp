@@ -260,6 +260,7 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // distance (reciprocal inside it) with length_sq3f gets the in-place products (compile-only xmm
 // diff 13) but swaps x/y and folds the last dot term, 129 (and a one-caller helper).
 // the sphere test's normal: retail multiplies the x and z
+// the sphere test's normal: retail multiplies the x and z
 // differences in place (normal x/y/z in xmm1/xmm3/xmm2) and loads 1.0 in each arm;
 // ours multiplies copies of the scale and hoists 1.0 into xmm0 before the fsqrt.
 // The unit-z arm's zero stores chained (y first, then x) 57 (each order with y or z

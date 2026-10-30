@@ -50,6 +50,8 @@ static __forceinline long floor_to_long_inline(real value)
 }
 
 // score 46 (was 46): packed-word load order (ours reads the old word first), the intensity
+// packed-word load order, intensity spill and final word home.
+// packed-word load order (ours reads the old word first), the intensity
 // spill (ours in level's dead slot, retail in outside's: retail's callers push level as a
 // word, BLOCKED-BY 0x133390 and 0x133520, whose file holds the byte declaration) and the new kind word
 // (retail builds it in esi and stores it after the push). The field-bit test of bit 6 is
@@ -62,6 +64,8 @@ static __forceinline long floor_to_long_inline(real value)
 // Flags-first or-chain, two-statement split and &=/|= split 80 (reassociated);
 // named word local in the call, named bools before the store, kind term first,
 // dword kind 80; separate call-value copy for the out-of-line floor 80.
+// Earlier: a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Round 409: All eight ordinary/inline/separate-noinline section/kind declaration pairs 46 (1036/1033); no gain. Original contracts restored. Retained-word load order, intensity slot, final word carrier and shifted flag test remain.
 // Grouped new fields (either order), old word last, kind word split or with a
 // named shifted kind, dword kind result, `!= 0` bit argument: identical code;
 // bitfield view of the word (kind only / all fields) 80/84 on the `& 0x40` form;

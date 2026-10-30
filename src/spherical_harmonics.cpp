@@ -37,6 +37,47 @@
 // real sqrt(7) 82; coefficient 15 recomputing the root product 130; result[0] after result[3] 59;
 // double sqrt(105)/sqrt(7) with real sqrt(2) 66; result[0] in double 64; double sqrt(105) alone 73;
 // renamed spilled locals (slot names) 59.
+// root 59.
+// first +0x50 x87/SSE schedule and retained sqrt(2) still differ.
+// Isotropic result lifetime, band-two normalization, Z-square and cubic-axis/polynomial accumulators 59;
+// repaired-XZ plus cubic-Y chain 137; external direction reference and both double root chains 59.
+// +0x50 scheduling, cubic homes and sqrt(2) retention remain.
+// Repaired-prefix per-use common root 59; per-use mixed/both roots 78/78; completed cubic X,
+// Y and paired results 59/59/59; paired results with per-use root 59; complete mixed result 59.
+// x87/SSE scheduling and retained common root still differ.
+// First Y store before isotropic 59; linear factor after isotropic 143; quadratic root
+// after squares 138; axis-root scope 59; depth/edge/axis/joint scalar homes 59/59/59/59.
+// a double or unrounded common root is retained like retail's but then keeps
+// band3_35 on x87 and moves coefficient 15 to x87: double root 158; root rounded per factor 158;
+// plus early coefficient 15 140; early coefficient 15 alone 147; retail store order 144.
+// Native float roots: common/mixed/both 59/59/59; linear/quadratic 56/57; axis pair 59;
+// cubic factor pair 158; every root 156; linear plus quadratic roots 54; other rounded roots added 54;
+// both early root boundaries with four/six cubic product chains 139/139. The 54 form is below the eight-point gate.
+// +0x50 x87/SSE scheduling, the cubic homes and root retention differ: retail
+// never consumes sqrt(2) or sqrt(105) at their last use (fmul st(1)/st(2), two fstp st(0) before the
+// return), computes coefficient 15 right after band3_35 with -0.125 held in xmm3, and keeps zz*5 in
+// zz's slot, band3_35 in sqrt(15)'s and band3_21 in a new one; ours consumes sqrt(2) (fmulp st(2)).
+// With sqrt(2), sqrt(105) and sqrt(7) all double the x87 root code is retail's, but the spill
+// slots rotate (zz*5 new, band3_35 in zz's, band3_21 in sqrt(15)'s) and -0.125 loads late: 77.
+// Tried, at 123: outer order return; cubic order return; roots before inputs 137; early Z square
+// 128; first-band Z store first 128; repeated inline sqrt(2.0)/sqrt(105.0) 158-162 (retains the
+// roots like retail but moves the band-3 products); /Op 383 (0x146020 then differs). First-band
+// product staging, first Y product, square-difference staging and quadratic mixed-product staging
+// 123; cubic Y staging 129; mixed-root staging 123; final-root product chain 113 kept (651/660);
+// linear plus final chain 113. XZ product chain 59 kept; second cubic root chain, coefficient
+// 8/12/9/5/6 chains and root/edge combination 113; repaired XZ plus early coefficient 15 147/148;
+// cubic X chain 139; first cubic root chain 59. At 59: repaired-prefix linear Y/Z/X/all values 59
+// each; late root-five/depth square 59/59; linear scope 59; later common root 59; isotropic result
+// lifetime, band-two normalization, Z-square and cubic-axis/polynomial accumulators 59;
+// repaired-XZ plus cubic-Y chain 137; external direction reference and both double root chains 59;
+// per-use common root 59; per-use mixed/both roots 78/78; completed cubic X, Y and paired results
+// 59/59/59; paired results with per-use root 59; complete mixed result 59; first Y store before
+// isotropic 59; linear factor after isotropic 143; quadratic root after squares 138; axis-root
+// scope 59; depth/edge/axis/joint scalar homes 59/59/59/59; double root 158; root rounded per
+// factor 158; plus early coefficient 15 140; early coefficient 15 alone 147; retail store order
+// 144. All three roots double 77; sqrt(105) and sqrt(7) double 66; sqrt(105) double 73; zz scaled
+// in place 70; all double with coefficient 15 before coefficient 9 150 (645 bytes); coefficient
+// 15 at each position in the order, root types and local names (screened) no better.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

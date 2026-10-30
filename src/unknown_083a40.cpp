@@ -577,6 +577,12 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // occupied key address keeps its order); on it the last record's reads swapped 47, read before the
 // count increment 40, the occupied key through `collection->players + i` 36, its index stored
 // before its type 38.
+// Round 5: the occupied record's key address is one byte shorter here ((offset + cursor) + collection
+// with add/lea against retail's (collection + offset) + cursor with lea/lea), which shifts every later
+// jump and call by a byte up to the loop pad. The swap's count increment as its own statement 32 and
+// its update named first 32 (both identical code); the occupant key from `&collection->players[i]`
+// 32 (identical); the conflict scan through `collection` 263; `collection` declared before the
+// player-mask test 32.
 // @retail 0x83610
 void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_simulation_player_update *updates)
 {
