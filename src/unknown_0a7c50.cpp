@@ -393,7 +393,10 @@ struct s_slot_event_data
 
 // score 17 (was 17): the constant 0x212 is folded into the load in ours and
 // into the address in retail, so ours reads the byte at [eax+ecx+0x212] and
-// retail computes the address first and reads the byte at [ecx]
+// retail computes the address first and reads the byte at [ecx]. Tried: the
+// unit and header typed as the weapon slot query's own views, the query doing
+// the NONE test 60, with the slot tested first 50; the header pointer without
+// volatile 48, the selection without volatile 53, read at each use 55
 // @retail 0xa8f80
 void function_a8f80(long index, short slot)
 {
@@ -421,9 +424,12 @@ void function_a8f80(long index, short slot)
     }
 }
 
-// score 17 (was 17): the constant 0x212 is folded into the load in ours and
-// into the address in retail, so ours reads the byte at [eax+ecx+0x212] and
-// retail computes the address first and reads the byte at [ecx]
+// score 17 (was 17): ours folds the constant 0x212 into the address (lea of
+// object+slot+0x212, byte read at [ecx]); retail keeps object+slot in ecx and
+// reads the byte at [ecx+0x212] twice. Round 40, without the volatile reads:
+// 0xcbd50 with the selection byte through the object local 63; with the
+// current copy 60; lookup in the argument and again for the second read 59;
+// header read volatile only, definition before/after the second read 56/55.
 // @retail 0xa9030
 void function_a9030(long index, short slot)
 {

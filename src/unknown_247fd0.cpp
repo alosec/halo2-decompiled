@@ -163,6 +163,9 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // child index 76, with field_10 first 137; field_10 after the field_14/16/18 sample 184/168/152;
 // field_50 read into a named pointer for the compare 70; field_10 stored right after the record
 // link/record pointer/field_08/flag bits/seed-type bitfield 227/178/200/217/204.
+// Round 314: Independent sample outputs with direct/named scales and computation/entry declarations:
+// 70/70/70/70; in retail timestamp order 133/133/133/133. Original sample workspace restored; folded
+// compare and downstream register rotation remain.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)

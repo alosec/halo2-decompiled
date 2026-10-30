@@ -478,6 +478,12 @@ s_1a8a10 g_4453c0[] =
 // of the rotated point, as if that store could alias the actor.
 // The actor index comes before the point: retail's 0x1a8c30 loads the point (eax) before the index (ebx), and
 // callers set up register arguments last to first.
+// Round 24: the rotation as a forceinline helper (the pragma keeps it out of line)
+// 164; the facing copy before the rotation 54; the facing copied as one 2D struct
+// 118 (the j re-read appears, the copy goes through integer moves); a 2D reference
+// to the facing 91; the copy's fields read through a 2D cast 17; a perpendicular
+// vector local 38; the first sum's terms swapped 17; the rotated point written
+// through a pointer 91.
 // @retail 0x1a8a10
 bool function_1a8a10(long arg_0, point2f const *arg_1, short arg_2, real arg_3, real arg_4)
 {

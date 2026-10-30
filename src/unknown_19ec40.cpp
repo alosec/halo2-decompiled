@@ -139,6 +139,9 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // height read through its address 100; point_reference after the globals or in the loop, a point copy
 // local 102/65; position or distance declared at function scope or the loop top 65. Diagnostics: with no
 // key tests the globals/point/i rotation stays, so the key enregistration is not the root.
+// One shared result-index store, initialized/deferred index ownership, optional-distance
+// initialization and read-only table/entry receivers 77/77/105/105/77/77/105/105. Key preheader
+// and global/point/index/entry homes remain; original body restored.
 // @retail 0x19ec40
 long function_19ec40(
 	point3f const *point,

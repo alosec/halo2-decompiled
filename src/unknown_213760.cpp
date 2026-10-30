@@ -1155,6 +1155,8 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
     data[0x198] = 0;
     data[0x1bc] = 0;
 }
+// score 104 (was 104): retail hands the file handle to the read call by value, which the declaration
+// in include/async.h and the callers outside this file cannot give; frame 0x1144 and the extent agree.
 // score 104 (was 104): frame 0x1144 and extent agree; file displacement, request-copy, the first read
 // call's handle copy and the write-success join remain.
 // frame 0x1144 and extent agree; file displacement (retail's product in ECX

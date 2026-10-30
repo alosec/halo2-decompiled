@@ -166,6 +166,8 @@ static inline real interpolate_linear(real a, real b, real t)
 	return (b - a) * t + a;
 }
 
+// score 96 (was 96): the advance loop still rotates the direction, frame and flags through
+// EAX, ECX, EDX and EDI where retail keeps its own order; the else branch matches exactly.
 // score 96 (was 96): Frame 0x10 and timing setup agree; the advance loop is retail's with EAX, ECX and
 // EDX rotated (direction EAX for ECX, frame/flags ECX for EDX, the flag-2 test EDX for EAX), and retail
 // divides the fraction before the key differences. Round 87: fraction before the keys/between keys and

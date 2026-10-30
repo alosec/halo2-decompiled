@@ -216,6 +216,9 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 	return *(byte const *const *)(block + 4) + index * size;
 }
 
+// score 117 (was 117): retail keeps the masked index in EDX where ours reuses EAX for the table
+// entry, and the fallback path's call order and the element loads still differ; the file handle
+// comes in through a declaration outside this file.
 // score 117 (was 117): Frame 0x5c and first thirteen instructions agree; fallback EDX masking, stage/pass homes and unfused element loads differ.
 // Earlier: frame 0x5c agrees; saved EDI table ownership, fused lookups and scratch allocation remain.
 // Earlier: ECX table hoist versus saved EDI and lookup-register ownership still differ.
