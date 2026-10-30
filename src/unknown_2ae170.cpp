@@ -1092,7 +1092,8 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 	}
 }
 
-// score 137 (was 137): frame eight agrees; source/bin ownership, runtime zero attenuation and mode dispatch remain.
+// score 137 (was 137): Frame eight agrees; source/bin homes, runtime zero attenuation and dispatch remain.
+// Earlier: frame eight agrees; source/bin ownership, runtime zero attenuation and mode dispatch remain.
 // Earlier score 213 (was 213): frame 4 versus retail's 8; retail computes the
 // attenuation at run time and dispatches the speaker modes through a jump
 // table. Two-pass channel loops that pick the bin with a ternary 145 (not
@@ -1121,6 +1122,9 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // there the switch with explicit calls is 203 at 306 bytes (32-bit bin selections as retail). An
 // empty case 0 switch 151; explicit calls 233; direct capacity tests 163.
 // Long pair/quad/both predicates 153/141/140; both word predicates 143; long routing predicate 137; rear endpoints first 154; capacity before source flag 136; quad predicate first 137. Restored.
+// Round 414: joint front/rear/both endpoint producers 137/151/141; routing-result arms
+// alone/front/rear/both 137/137/152/142; routing default with both pairs 133 at 396/396
+// (gain four, below eight; test-produced routing also exact-only). Original complete body restored.
 // @retail 0x2afb80
 void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rear, long mode, s_mixbin_settings *mixbins)
 {

@@ -1009,7 +1009,8 @@ void __stdcall swarm_delete(long perception_index);
 void function_1e04a0(long primary_tag, long character_index, long unit_index, long secondary_tag, short grenade_type);
 
 
-// score 320 (was 320): Frame 0x118 agrees; sentinel EDI/ESI, squad/substitution homes and success layout remain.
+// score 320 (was 320): Frame 0x118 agrees; persistent sentinel EDI/ESI and squad/substitution homes remain.
+// Earlier: Frame 0x118 agrees; sentinel EDI/ESI, squad/substitution homes and success layout remain.
 // Earlier 345 (was 364): frame 0x11c versus 0x118; sentinel and success blocks differ.
 // frame 0x118 agrees; entry sentinel, squad and substitution/result homes differ.
 // Earlier form: frame 0x11c versus 0x118; sentinel and success blocks differ.
@@ -1080,6 +1081,8 @@ void function_1e04a0(long primary_tag, long character_index, long unit_index, lo
 // DL167: Native unsigned character/squad/returned handle interfaces, seven nonempty
 // subsets, and all with the unsigned actor result: 320 each. Every declaration, original
 // handle domain and complete body restored; frame 0x118 and sentinel EDI/ESI remain.
+// Round 414: direct success-path object/weapon/metadata views, their pairs and all three
+// 320 each; immutable placement view at each use 339. Original observations and full body restored.
 // @retail 0x1e0850
 long __stdcall function_1e0850(long character_index, long squad_index, s_203780 const *placement, bool substitute)
 {
@@ -1625,7 +1628,8 @@ PRIVATE inline long equipment_secondary_weapon_r21(long unit_index)
 	return slot != NONE ? unit->weapons[slot] : NONE;
 }
 
-// score 263 (was 263): Frame 0x14 and actor ESI agree; the probability and delay clamps now match
+// score 263 (was 263): Frame 0x14 and actor ESI agree; input EDI/EBX, pool retention and scalar homes remain.
+// Earlier: Frame 0x14 and actor ESI agree; the probability and delay clamps now match
 // retail's code; the actor index stays in EDI instead of EBX and the object pool is reloaded instead
 // Frame 0x14 and actor ESI agree; input EBX/object-pool EDI allocation and scalar/ammunition homes remain.
 // Earlier: probability/delay clamps agree; the actor index stays in EDI instead of EBX and the object pool is reloaded instead
@@ -1688,6 +1692,9 @@ PRIVATE inline long equipment_secondary_weapon_r21(long unit_index)
 // Round 249: plain native two-slot shared-query traversal, long/short/word/byte
 // ordinal 275/324/324/324; existing unit receiver with those domains 275/324/324/324.
 // Original private queries, native object declaration and complete body restored.
+// Round 414: current loop weapon captured 263; short/long scalar ammunition count 266/265;
+// weapon plus those counts 266/265; private output clear before draw, alone/with weapon/with
+// weapon and short count 263/263/266. Original producers, clear order and complete body restored.
 // @retail 0x1e2a90
 void function_1e2a90(long actor_index)
 {
