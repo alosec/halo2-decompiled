@@ -81,8 +81,9 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 {
     return TEST_FIELD_BIT(arg_1->field_10a2);
 }
+// score 144 (was 144): frame 0xd8 agrees; carried-item receiver reloads, append-count observations and ranking handoff remain.
 
-// score 144 (was 144): receiver/count reloads and ranking dispatch remain; retail reads the
+// Earlier: receiver/count reloads and ranking dispatch remain; retail reads the
 // count once per append (no volatile re-read) yet keeps it in memory, and holds the found
 // candidate apart from the best-ranked one (0x5000720 is a switch case there).
 // Typed fallback entries 171; end cursor 173; signed-word count 168; byte count 195; carried tag
@@ -107,6 +108,7 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // the count's address 286; with the index loop 258.
 // Shared first / next / validity / first-next / first-valid / next-valid / all boundaries
 // 144 each; all shared boundaries with an ordinary count 281.
+// Round 412: candidate/class/both observations at each use 144/144/144; actual selected-candidate pointer alone/with candidate reads/with class reads/with both 183 each; complete pointer graph with unsigned ranks 183. Original body, count and every call restored.
 // @retail 0x13c250
 void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
 {
