@@ -297,6 +297,11 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // and reciprocal-one hoisting remain.
 // Scale helper with the factor as its first parameter 57; unit-z through vector3f_assign 61;
 // arms swapped 170; depth stored before the normalization branch 173; sqrtf 57.
+// Round 7 (lane 14): fast MATCH with a one-caller helper returning the x and z squares (statements,
+// through its pointer) plus `+= d.j * d.j`, with the unit-z zeros stored separately or chained j
+// first (not kept: a new one-caller helper only steering the products); that helper alone 2 (the
+// unit-z zero stores in the other order), with the dot inputs swapped 2; every square through a
+// pointer local plus the dot swap 148; products written by fields after an x,z,y statement sum 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -352,7 +357,10 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 // length_sq3f/dot3f for c 55/57; radius square after the sum, c <= 0, length_sq3f for a, radius
 // local, named distance square, radius square first, result before *t: 40 (same code);
 // dot3f for b 42; reverse dot for b/a 42/42; result declared late 67 (caller 0x2469b0 170);
-// arms swapped 63.
+// arms swapped 63. Round 7 (lane 14): b's retail order i,k,j comes from statements, but the last
+// term then loads first (compile-only); b as i,k statements plus j 46, i plus k,j 46, three
+// statements 42 (434 bytes each), through the existing reverse dot 42; the radius-square
+// declaration at any of five places gives the same code (compile-only).
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
