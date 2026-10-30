@@ -146,6 +146,9 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // early origin with native category 237; complete squared direction, scaled target products and
 // target coordinates 146 each (399 with consistent actor getter observations).
 // Shared index-based view producer 317; initial handle shared by both getters 318; with read-only trace state/native category 318/318; read-only trace state alone 144; word movement result 151; unsigned long category 144; shared getter plus word result 315. Restored.
+// Bounded distance in the actual trace result: native field alone 144; native category 190; entry trace
+// lifetime 144/190; shared squared length 144/190; both lifetime and shared length 144/190. Original body
+// restored.
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {
