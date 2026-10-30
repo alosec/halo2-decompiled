@@ -504,6 +504,11 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // canonical bitwise conjunction with long/bool/byte/short special 152/85/85/201.
 // Boolean bitwise conjunction kept, 85/861 plain; the post-scan tail is shared.
 // Entry NONE EBP/EBX, predicate setup and separation SSE homes still differ.
+// Round 18 (lane 11): `&&` flag, if/else arms, false then if, scan in the else with
+// the flag set there or at its declaration: 189/189/191/189/191 at 872 bytes (NONE in
+// EBX, entry matches, but the flag stays in memory and the tail follows the special
+// path); the tail as a forced-inline helper taking the flag by value 47 (same code),
+// with the `&&` flag 189.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

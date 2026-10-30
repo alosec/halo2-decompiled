@@ -3849,11 +3849,7 @@ void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 // The flag is loaded as a dword where retail loads a byte, and the tail calls
 // 0x13680 with the flag pushed where retail passes it in bl; both follow
 // 0x13680's convention, which retail has as one bool in bl and a plain ret
-// (BLOCKED-BY 0x13680).
-// is loaded where retail loads a whole word, and the calls at the end are in
-// a different order with their arguments set up differently. The tail is
-// 0x13680's convention (retail passes the flag in bl; BLOCKED-BY 0x13680);
-// the flag passed from the frame's copy 34.
+// (BLOCKED-BY 0x13680). The flag passed from the frame's copy 34.
 // Round 93: both store orders (the counter before the kind byte, the flag
 // clear between the two block copies) are retail's once g_4ba038 and
 // g_4ba010 are address-taken (diagnostic only, 26): retail keeps them in an
@@ -3862,6 +3858,10 @@ void function_2fd90(s_2f800_view const *view, box2f const *clip, byte *out);
 // 34; kind stored after the sky index 37; flag clear as the first store 34;
 // camera default as a named source local 153.
 // Round 187: Native mode-word/auxiliary-word/final-byte subsets 1/2/3/4/5/6/7 and all unsigned-mode bits 34 each; auxiliary-word forms lose caller. Original declarations restored; shared-store alias and protected flag convention remain.
+// Round 18 (lane 11): counter increment first or after the sky index 34/34;
+// flag clear after the second block copy or before the kind store 34/34 (the
+// compiler places both stores the same way); the flag passed from the saved
+// frame record 96.
 // @retail 0x2ba10
 void function_2ba10(s_2f970_view const *view, long cluster, long player,
     byte const *camera, bool enabled, long leaf, bool invalid, vector3f const *sky_color,
