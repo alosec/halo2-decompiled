@@ -163,6 +163,9 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // child index 76, with field_10 first 137; field_10 after the field_14/16/18 sample 184/168/152;
 // field_50 read into a named pointer for the compare 70; field_10 stored right after the record
 // link/record pointer/field_08/flag bits/seed-type bitfield 227/178/200/217/204.
+// Round 314: Independent sample outputs with direct/named scales and computation/entry declarations:
+// 70/70/70/70; in retail timestamp order 133/133/133/133. Original sample workspace restored; folded
+// compare and downstream register rotation remain.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)
@@ -455,6 +458,8 @@ void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_
 // Round 293: Uninitialized child-handle/record-owner/reciprocal declarations before the loop, all seven subsets, and all at function entry: 356 each. All original producer phases, signed pretest, link calls, reciprocal expressions and complete body restored.
 // Round 429: One native point for blend then probe start, with entry/consumer direction,
 // placement and sample declarations: all eight 416 (frame 0xa0). Original body restored.
+// Round 232: Rate read once, pending mask, both, named age increment, rate+age, mask+age, all, then all with allocation-failure exit
+// 360, 359, 360, 359, 360, 359, 357, 357. Original executable source restored.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)

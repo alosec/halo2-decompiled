@@ -529,7 +529,10 @@ bool __stdcall geometry_cache_block_busy(long block_index)
 // read in a different order. In the loop retail loads the block into edx and copies it to esi for the
 // release call; after the loop ours loads it into edx and copies it to ecx. Tried: an inline helper taking
 // the group for the pointer clear 51 (cache block moves to ebp); with a shared address helper 51; the
-// count in a local read before the block 68; the index read through its address 51; the block re-read 51.
+// count in a local read before the block 68; the index read through its address 51; the block re-read 51;
+// alone (no other change): the loop's block read at each use 27, the physical block re-derived into
+// its local in the loop 27, the page shift read into a local first 27, the address through an inline
+// helper 27 (all identical code); the pointer record cleared by memset 82.
 // @retail 0x12e290
 void __stdcall function_12e290(long block_index)
 {
