@@ -979,7 +979,13 @@ void function_fcdd0(long definition_index, point3f const *point, vector3f const 
 void function_fcea0(long effects_index, point3f const *point, vector3f const *direction,
  s_effect_owner const *owner, long index, vector3f const *normal);
 
-// score 22 (was 22): the effect call passes the definition index in ecx where retail uses edx, and the effect setup sets its arguments up in another order and zero-extends the word field with a 16-bit move where ours uses movzx; both calls follow the conventions of the callees in src/projectiles.cpp (BLOCKED-BY 0xfcbc0: with its normal and definition parameters swapped it matches and this is 20; BLOCKED-BY 0xfcea0: with that and a short index there this matches, but 0xfcea0 then differs more); position and direction pointer locals for the three calls 50
+// score 20 (was 20): only the 0xfcea0 call differs: retail passes the word field as a 16-bit argument
+// (`xor edx, edx; mov dx, [ebp + 0x2c]`, then its own argument order), ours zero-extends it with movzx for
+// 0xfcea0's long index. 0xfcea0's index as short matches this, but 0xfcea0 then passes it on to 0xfd740's
+// long element index (4 -> 133); with 0xfd740's as short too 0xfcea0 stays 4 and 0xfd0e0 goes 115 -> 148
+// (0xfd740 then extends it for 0x1883e0, whose matching parameter retail also passes unextended):
+// BLOCKED-BY 0xfd740, 0x1883e0. Earlier: 0xfcbc0 with its normal and definition parameters swapped
+// (since kept, 22 -> 20); position and direction pointer locals for the three calls 50
 // @retail 0xa17d0
 bool c_projectile_effect_event::v11(long a, long const *entities, long c, void const *data)
 {

@@ -229,6 +229,9 @@ bool function_270130(s_object_marker const *marker, point3f const *position, rea
 // A direct word cast 20; the existing orientation predicate forced inline 22; count declared before
 // best_distance and assigned in place 20; const count 20; the loop ordinal declared outside 20;
 // const actor 20; success result assigned before the point query 106; const marker 20.
+// Round 16: dot3f alignment 26; a forward-vector pointer 26; a short cast at the call 20; the
+// flags field typed short 20; a long loop ordinal 827. With 0x26fbf0's flags as word (diagnostic,
+// restored) this is 4, and with dot3f for the alignment too 2 (only the j product's operands).
 // @retail 0x26fc80
 bool function_26fc80(long actor_index, long object_index, real distance, void *path, point3f *point)
 {

@@ -1511,6 +1511,10 @@ struct s_territory_tag
 // Tried: the player lookup before the position copy 29; the mask update first
 // 50, or between the copy and the player lookup 32; the tag chain as byte
 // offsets 24; a const player pointer 24; a 600 s permuter run, none below 24.
+// Round 16: the existing position-copy helper 43; game_engine_get() 24; the tag index as
+// a ternary 41; placement declared first 24; tag index at function scope 48; placement at
+// function scope 24; the test without the short cast 51; player declared at the block top
+// 24; the created object in its own local 24; an early NONE return 62.
 // @retail 0x2c0980
 long territory_create_item(long player_index, long territory)
 {
