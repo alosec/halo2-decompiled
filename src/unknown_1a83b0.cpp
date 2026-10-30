@@ -476,33 +476,35 @@ s_1a8a10 g_4453c0[] =
 // order [3], [1], [2], [0] 21; the pragma replaced by a noinline declaration of
 // 0x1f57a0 here 214 (more gets inlined). Retail reads j again after the y store
 // of the rotated point, as if that store could alias the actor.
+// The actor index comes before the point: retail's 0x1a8c30 loads the point (eax) before the index (ebx), and
+// callers set up register arguments last to first.
 // @retail 0x1a8a10
-bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, real arg_4)
+bool function_1a8a10(long arg_0, point2f const *arg_1, short arg_2, real arg_3, real arg_4)
 {
-    s_actor_view *local_1 = (s_actor_view *)(g_4f55f0->data + (arg_1 & 0xffff) * sizeof(s_actor_view));
+    s_actor_view *local_1 = (s_actor_view *)(g_4f55f0->data + (arg_0 & 0xffff) * sizeof(s_actor_view));
     bool local_0 = false;
     bool local_2;
     s_path_trace_result local_3;
-    if (local_1->unknown26c == NONE && function_1f5390(arg_0, arg_1, arg_3, &arg_2, arg_4, &local_2, &local_3))
+    if (local_1->unknown26c == NONE && function_1f5390(arg_1, arg_0, arg_3, &arg_2, arg_4, &local_2, &local_3))
     {
         point2f local_4;
         switch (arg_2)
         {
         case 0:
-            local_4.x = 0.0f - arg_0->y;
-            local_4.y = arg_0->x;
+            local_4.x = 0.0f - arg_1->y;
+            local_4.y = arg_1->x;
             break;
         case 1:
-            local_4.x = arg_0->y;
-            local_4.y = 0.0f - arg_0->x;
+            local_4.x = arg_1->y;
+            local_4.y = 0.0f - arg_1->x;
             break;
         case 2:
-            local_4.x = arg_0->x;
-            local_4.y = arg_0->y;
+            local_4.x = arg_1->x;
+            local_4.y = arg_1->y;
             break;
         case 3:
-            local_4.x = arg_0->x;
-            local_4.y = arg_0->y;
+            local_4.x = arg_1->x;
+            local_4.y = arg_1->y;
             break;
         default:
             __assume(0);
@@ -526,7 +528,7 @@ bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, 
             real const &bias = local_9->field_8;
             short const &axis = local_9->field_4;
             long const &identifier = local_9->field_0;
-            if (local_5[axis] + bias > local_6 && function_1f57a0(arg_1, identifier))
+            if (local_5[axis] + bias > local_6 && function_1f57a0(arg_0, identifier))
             {
                 local_8 = axis;
                 local_7 = identifier;
@@ -556,7 +558,7 @@ bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, 
                 local_5[1] = local_4.y;
                 break;
             }
-            local_0 = function_1f57f0(arg_1, local_7, (long const *)local_5);
+            local_0 = function_1f57f0(arg_0, local_7, (long const *)local_5);
         }
     }
     return local_0;
