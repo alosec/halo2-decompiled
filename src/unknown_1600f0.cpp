@@ -1124,6 +1124,9 @@ struct s_game_engine_globals_connections_view
 // Round 291: Default validity before construction for place/icon, score, both, time, place/time,
 // score/time and all: 256/252/258/252/246/247/268; all with connection default 267. All exact-only forms
 // restored (calibrated fast control 170).
+// Round 219: Query-output default at entry/time/place/name boundaries 253/192/235/191;
+// each with direct per-arm glyph 250/187/232/184. All restored; deferred icon tail and
+// trailing time/connection homes remain.
 // @retail 0x1603f0
 void game_engine_player_row_build(short const *position, real alpha, long player_index, word const *name, long place,
 	long score, long seconds, bool hide_connection, bool show_icon, bool hide_place, color3f const *color, bool dim,

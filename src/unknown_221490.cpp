@@ -535,6 +535,9 @@ bool sound_driver_voice_create_buffer(
 // Round 208: disjoint native descriptor phases, shared/per-phase mixbins,
 // pair arrays at success/phase entry and both descriptor name orders: 98 in all eight.
 // Original storage and body restored; conditional saves and zero/input residency remain.
+// Round 219: Native descriptor phases with direct success short/long/no sentinel result 178/178/178;
+// test-assigned result 181; common short/long exit 149/180; direct success and early count,
+// with/without sentinel 179/179. All restored; early saves and zero/input scheduling remain.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,

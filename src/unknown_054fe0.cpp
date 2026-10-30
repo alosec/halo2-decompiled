@@ -1363,6 +1363,9 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 // copy alone/with collection/update/both 180/180/180/180, bounded short count 226. On that cache
 // graph, promoted team/direct current/direct cache observation subsets 183/237/240/180/183/216/220,
 // all with short count 220. Four-point form rejected; original full body restored at 184.
+// Round 219: Finite membership exhaustion with long/dword/short/word count, right shifts
+// 249/249/240/240 and ordinal-bit removal 262/262/245/245. All restored; owner/count/zero
+// allocation and requested-record induction remain.
 // @retail 0x65cb0
 void network_session_interface_update_player_properties(c_class_58d20 *session)
 {

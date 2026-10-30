@@ -1147,6 +1147,9 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // connection/peer/session and connection/query/peer orders, eight forms,
 // 195/189/194/193/187/192/193/188 fast; control 191, full 193. All restored;
 // selector/payload/sender convention and single dispatch root remain.
+// Round 219: Residual singleton handlers 8/11/18 before the connection family, all six orders,
+// 191 each; split singleton placements 192/191 (reduced control 191, full 193). All restored;
+// incoming selector/message/sender allocation and dispatch root remain.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {
