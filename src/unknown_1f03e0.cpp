@@ -723,6 +723,9 @@ PRIVATE __forceinline byte function_1f1462(dword arg_0)
 // 180/180/180; row schedule 181; coordinate schedule 180; complete initial products 180;
 // cosine complement 183; both 182. Two-point gains rejected; original full body restored.
 // Round 188: Branch-owned original-up/input-setter/output-setter subsets 1-7 score 296/297/306/362/384/352/365; all with named cosine complement 362. Every form loses the matched caller in the reduced image and is rejected; original whole body restored.
+// Round 229: completed normalized/fallback axis handed to native mutable/const rotation input,
+// geometry-join/rotation-owned lifetime and original/staged initial cross: 355/355/279/279/355/355/279/279.
+// Original axis ownership, helpers and full body restored.
 // @retail 0x1f1460
 void function_1f1460(byte const *state, s_shape_state const *ground, vector3f *up_result, vector3f *forward_result)
 {
