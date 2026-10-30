@@ -222,6 +222,15 @@ struct s_seat_animations
 // first ? &first_entries[i] : &second_entries[i] 80; count in the for condition 99; count inside the outer loop 77
 // (0x188130 20); the search as an inline helper 101; a found index then the pointer 105; i < count && !result
 // with that shape 63 (0x188130 20); animation before or after type in the parameter list 71.
+// Count declared before result 65 (with the entry pointer and no guard 79: result in eax).
+// The entry pointer, no guard and `if (result) break;` before `index = parent` gives retail's
+// first 13 instructions (first in the animation's slot, result in the push ecx slot,
+// animation in ebp) but 64 at 178 bytes: element_index then arrives in ecx (0x188130 20)
+// and the loop tail is duplicated; with the parameter as the walking index 76, index
+// declared first 64, element declared first 64; with element_index read once through its
+// address 64 (element_index back on the stack, 0x188130 matches; left: count/element
+// registers swapped, the 16-bit index load, the duplicated tail); that read with the
+// parent step before the test 71 (type in eax).
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, short element_index)
 {
