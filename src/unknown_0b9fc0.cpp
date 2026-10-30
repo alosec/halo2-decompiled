@@ -380,6 +380,9 @@ void __stdcall function_115220(long machine_index)
 // Round 271: full-width unsigned/signed flag storage composed with bool/byte/short/long
 // position predicates: 465/465/345/465/465/465/345/465, all 1899 bytes.
 // All restored; early flag carriers and the initial clamp spill remain.
+// Round 426: shared completion exit, direct portal result, entry-first result and all
+// seven subsets 305/298/321/286/305/298/321; all with byte portal result 321.
+// Original result graph, initial clamp, two-use predicate and complete body restored.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {

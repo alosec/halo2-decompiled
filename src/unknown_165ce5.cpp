@@ -1379,7 +1379,7 @@ point2f *g_4687c4;
    sway springs, the weapons' animations, zoom overlays and idles */
 static __forceinline real function_x82e52f(dword *seed, char const *file, long line);
 
-// score 218 (was 232): frame 0x28 versus 0x2c, unit/mode homes and shared look reciprocal remain.
+// score 218 (was 218): frame 0x28 versus 0x2c, unit/mode homes and shared look reciprocal remain.
 // Earlier 241 from 241: frame 0x30 vs 0x2c; esi/edi saved before the unit test (retail after it,
 // frame 0x28 vs 0x2c; esi/edi saved before the unit test (retail after it,
 // frame 0x28 vs 0x2c; esi/edi saved before the unit test (retail after it,
@@ -1519,6 +1519,9 @@ static __forceinline real function_x82e52f(dword *seed, char const *file, long l
 // DL179: Coordinated scalar-spring/angular-difference ordinary, inline and noinline
 // declaration pairs (excluding both ordinary) 218/218/499/499/499/218/218/218 fast;
 // original complete body and every helper declaration restored. Frame/look homes remain.
+// Round 426 (fast control 220): shared bool/long override with logical publications
+// 404/422; bitwise publications 422/413; those four with direct overlay-result assignment
+// 431/435/434/422. Original override branch, lookup and complete executable body restored.
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {
