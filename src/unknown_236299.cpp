@@ -650,6 +650,10 @@ void __stdcall function_52040(void const *request, void const *vertices);
 /* Draws a textured rectangle through the shared rendering request. */
 // score 8 (was 8): retail loads x0 first and stores the first corner's x
 // before its y, ours stores the y first; every other order scores worse.
+// Tried: both extents first, then the corners in order 86 (retail's instructions,
+// registers rotated: the bottom sum copies y0 instead of adding into height);
+// chained corner stores 86; the bottom as `height += bounds->y0` 23; corners as a
+// real[4][2] array 8; const extents 8.
 // @retail 0x23675a
 void function_23675a(s_bitmap_view *bitmap, s_texture_rect const *texture, dword color, short mode, s_float_rect const *bounds)
 {

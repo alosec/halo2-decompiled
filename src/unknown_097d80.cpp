@@ -55,83 +55,60 @@ struct c_aggregate : c_child
 // score 45 (was 45): the release reads the allocator global again (allocator_globals_release, retail's
 // reload into eax then edi) at retail's length; left: frame 0x8024 against 0x8020 (`produced` keeps its own
 // slot where retail packs the loop-2 cursor and loop-3 count into it), request/child cursor in EBP/EBX
-// (retail EBX/EBP) and the starts[i]/starts[i + 1] load order.
-// Earlier (74): the dispatch loop now walks the child cursor and the starts[] boundaries as
-// retail does (index in ebp, child cursor and inner count spilled), so the two children are visited
-// in retail order; the frame is still 0x8024 against retail 0x8020 and the produced home is still
-// four bytes off (ours 0x1c, retail 0x10).
-// Round 73: ordinal/child-cursor dispatch 115; explicit inner length on ordinal/range forms 102/99;
-// guarded count-down block traversal 130; shared output/output as count/result 84/84/84;
-// produced count reused as cleanup total 130. Opening body restored.
-// our frame is 0x8024 against retail's 0x8020 (retail packs the completion
-// Completion-output home, ordinal dispatch and allocator reload remain. Cumulative boundaries with
-// carried total/direct table/local output/table cursor, original and ordinal dispatch, scored
-// 134/155, 140/157, 132/141, 142/157. Direct boundary outputs recover frame 0x8020 but lengthen
-// dispatch; original collection and cleanup restored.
-// Earlier: our frame is 0x8024 against retail's 0x8020 (retail packs the completion
-// output with two later spills), and the dispatch loop and one allocator reload still differ:
-// retail loads the global again for the release, into eax then edi.
-// Frame 0x8024 versus 0x8020, scalar output homes, dispatch ownership and allocator reload remain.
-// Frame 0x8024 versus 0x8020, completion-output home, dispatch ownership and allocator reload remain.
-// Earlier 85 (was 92): frame 0x8024 against 0x8020 (retail packs the completion output with two later
-// Frame 0x8024 versus 0x8020, completion/dispatch homes and allocator observations remain.
-// Earlier: frame 0x8024 against 0x8020 (retail packs the completion output with two later
-// spills), the dispatch loop (retail: index in ebp, child cursor and inner count spilled) and one
-// allocator reload (retail loads the global again for the release, into eax then edi) still differ.
-// Round 53: compiled without /GL (screen only) this body gets retail's 0x8020 frame and slots
-// (completion output at the bottom, error and release output above it) and a matching first loop;
-// every /GL form screened keeps 0x8024. Release through the file-local release helper of
-// unknown_096ed0.cpp (global read again after the query) 102f, with an indexed dispatch 119f, with
-// a child cursor 119f; completion output at loop scope 113f; helper with an object local 102f;
-// output/error names and scopes (36 screened) don't move the frame.
-// Kept: item test on the field and the allocator global held across the release 85.
-// Global held across the release only 100; indexed dispatch 104, with the hold 115; class operator
-// delete 100, with indexed dispatch 115; release through a local helper taking the globals 103;
-// field test with indexed dispatch 119; completion output at loop scope 113; completion output
-// renamed 92 (frame unchanged); held global with the item test on the local 106. On the kept
-// body: indexed dispatch 115, reading the child at each use 128; completion output at loop or
-// function scope 96/96 (frame stays 0x8024); total declared before error 85.
-// Cleanup block/item/both cursors
-// frame and request/cursor registers agree; output homes,
-// Frame 0x8020 agrees; output homes, dispatch and release allocation remain.
-// Earlier: frame and request/cursor registers agree; output homes,
-// dispatch layout and release global reload differ. Cleanup block/item/both cursors
-// 104/104/104; child-boundary cursor 99; indexed child/range 106; shared child base
-// 133, with range 153; collection rejection 116; read-only range 99; range-array bound
-// 92; child-array bound 139; read-only range bound 92; repaired-entry completion,
-// release and both output names 92/92/92.
-// Completion/information/both output lifetimes 105/99/110; cleanup block/item cursors
-// in the boundary-array context 92/92; actual dispatch block range 103; nested error
-// scope and early error/total results 92/92.
-// count name 104; release-output name 104; both names 104; result-first 104;
-// arrays swapped 104; collection cursor 105; indexed dispatch 104; allocator capture 115.
-// Error identity 92; total before error 92; error-first gate 98;
-// cleanup null exit 92; proven nonempty count 92; cleanup ordinal names 92;
-// unsigned fixed collection 93; exact boundary-end test 92.
-// produced after arrays 105; produced after counters 105; information after arrays 99; both after
-// arrays 110; collection boundary cursor 148; shared boundary cursor 148; paired collection cursors
-// 132; boundary lifetime 92. Scalar output homes, dispatch ownership and release observations
-// remain.
-// Concrete collection/dispatch class and allocation-pointer combinations 92 each; shared typed table 150;
-// common child-interface collection/dispatch/both/both with allocation pointer 92 each.
-// Round 186: Native stream contract alone/allocation pointer 85/85; iteration output/both 96/96; native contract with ordinal dispatch alone/allocation 115/115, with output/both 125/125. All declarations restored.
-// Existing shared release helper with default/force-inline linkage and local/direct-field input 102 each; real starts initialized on those four forms 151 each.
-// Per-child counts with ordinal/direct child, ordinal/child cursor, count-table end and child-table end
-// 159/159/142/181; aggregate-zero equivalents 183/183/148/206. Ordinal forms recover frame 0x8020
-// but lengthen dispatch; original cumulative boundaries and allocator code restored.
+// (retail EBX/EBP) and the starts[i]/starts[i + 1] load order. Compiled without /GL (screen only) the body
+// gets retail's 0x8020 frame and every slot, 20 left (EBX/EBP and the boundary loads); every /GL form
+// screened keeps 0x8024.
+// Earlier (74): the dispatch loop walks the child cursor and the starts[] boundaries as retail does
+// (index in ebp, child cursor and inner count spilled), so the two children are visited in retail order.
+// Tried: ordinal/child-cursor dispatch 115; explicit inner length on ordinal/range forms 102/99;
+// guarded count-down block traversal 130; shared output/output as count/result 84/84/84; produced count
+// reused as cleanup total 130; cumulative boundaries with carried total/direct table/local output/table
+// cursor, original and ordinal dispatch, 134/155, 140/157, 132/141, 142/157 (direct boundary outputs
+// recover frame 0x8020 but lengthen dispatch); release through the file-local release helper of
+// unknown_096ed0.cpp (global read again after the query) 102f, with an indexed dispatch 119f, with a
+// child cursor 119f; completion output at loop scope 113f; helper with an object local 102f; output/error
+// names and scopes (36 screened) don't move the frame. Kept: item test on the field and the allocator
+// global held across the release 85. Global held across the release only 100; indexed dispatch 104, with
+// the hold 115; class operator delete 100, with indexed dispatch 115; release through a local helper
+// taking the globals 103; field test with indexed dispatch 119; completion output renamed 92 (frame
+// unchanged); held global with the item test on the local 106. On that body: indexed dispatch 115,
+// reading the child at each use 128; completion output at loop or function scope 96/96; total declared
+// before error 85. Cleanup block/item/both cursors 104/104/104; child-boundary cursor 99; indexed
+// child/range 106; shared child base 133, with range 153; collection rejection 116; read-only range 99;
+// range-array bound 92; child-array bound 139; read-only range bound 92; repaired-entry completion,
+// release and both output names 92/92/92. Completion/information/both output lifetimes 105/99/110;
+// cleanup block/item cursors in the boundary-array context 92/92; actual dispatch block range 103;
+// nested error scope and early error/total results 92/92. count name 104; release-output name 104; both
+// names 104; result-first 104; arrays swapped 104; collection cursor 105; indexed dispatch 104; allocator
+// capture 115. Error identity 92; total before error 92; error-first gate 98; cleanup null exit 92;
+// proven nonempty count 92; cleanup ordinal names 92; unsigned fixed collection 93; exact boundary-end
+// test 92. produced after arrays 105; produced after counters 105; information after arrays 99; both
+// after arrays 110; collection boundary cursor 148; shared boundary cursor 148; paired collection
+// cursors 132; boundary lifetime 92. Concrete collection/dispatch class and allocation-pointer
+// combinations 92 each; shared typed table 150; common child-interface collection/dispatch/both/both
+// with allocation pointer 92 each.
+// Round 186: Native stream contract alone/allocation pointer 85/85; iteration output/both 96/96; native
+// contract with ordinal dispatch alone/allocation 115/115, with output/both 125/125. Existing shared
+// release helper with default/force-inline linkage and local/direct-field input 102 each; real starts
+// initialized on those four forms 151 each. Per-child counts with ordinal/direct child, ordinal/child
+// cursor, count-table end and child-table end 159/159/142/181; aggregate-zero equivalents
+// 183/183/148/206 (ordinal forms recover frame 0x8020 but lengthen dispatch).
 // Round 292: Allocator information output initialized to zero or NONE at its producer, with
-// query/block/after-array/before-array declaration lifetimes: eight at 100/377. Original output
-// contract and body restored.
+// query/block/after-array/before-array declaration lifetimes: eight at 100/377.
 // Round 86 (on the release form): produced at function scope 55, outside the test 59, renamed 45;
 // starts store first 45; indexed test 55; error/total and blocks/starts declaration swaps 45/45;
 // boundaries read in the inner loop's test 121; boundaries swapped 45; child-cursor walk 45; the
-// query and release through an inline free-block helper 45. /GL- diagnostic: frame 0x8020 and every
-// slot as retail, 20 left (EBX/EBP and the boundary loads).
+// query and release through an inline free-block helper 45.
 // N227: Published absolute child origin at capacity/output-address/completion consumers,
 // seven subsets 45 each; complete graph with final boundary as cleanup limit 45. Original
 // produced output, cumulative publications, dispatch and release graph restored.
 // Round 43: produced renamed count/added/block_count and the dispatch cursor renamed cursor/slot/entry
 // 45 each (frame 0x8024 unchanged); one function-scope child cursor walked in both loops 56.
+// seven subsets 45 each; complete graph with final boundary as cleanup limit 45.
+// Round 27: the child read from the member at each use in the collection loop 62; the dispatch loop
+// started from starts[i] with only the end named 45 (same code); an item pointer in the cleanup loop 45;
+// one child cursor at function scope walked by the collection and dispatch loops 56; the error test
+// before the child test 50.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {

@@ -399,7 +399,7 @@ bool function_1b1970(long actor_index, short mode, vector2f const *forward,
 	return result;
 }
 
-// score 12 (was 19): the index is read zero-extended and tested as a short, as retail's
+// score 12 (was 12): the index is read zero-extended and tested as a short, as retail's
 // xor/mov ax/cmp ax,0xffff does, and it keeps the list reloaded into EBX. Before that:
 // the 0x1b0e40 call sets the origin first (retail last), and in
 // the >= 7 block retail reads the index as a word (xor widening) and the mode late
@@ -416,6 +416,11 @@ bool function_1b1970(long actor_index, short mode, vector2f const *forward,
 // word mode local inside 42; mode assigned inside 42; long index of the word 53; the
 // NONE case first 44 (short index) / 26 (current form); the >= 7 block as a
 // __forceinline helper 19-70.
+// The slot's data block as its own struct read through slot->unknownc, at the
+// state line or the top 12 (no change, alone or with the forms below); long index
+// with the mode local after it 19; short index with a result local set in both
+// arms 48. The 0x1b0e40 setup order is unchanged by an origin local, a const
+// origin cast, a mode or index local at the call.
 // @retail 0x1b1a90
 void __stdcall function_1b1a90(long actor_index, s_slot *slot, s_slot_target_list *list)
 {

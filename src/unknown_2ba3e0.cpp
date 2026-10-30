@@ -697,6 +697,9 @@ real g_55e618;
 // per-component interleaved perpendicular/tangent, keep factor early/late, position after/before the tangent: best 102
 // (this body), interleaved with the position first 124, pointer with the position first 125, the rest 194-237; the dot
 // product's text order never changed the code. Retail homes tangent at +0x38 and perpendicular at +0xa4.
+// Round 83: tangent/perpendicular/both declared before the sweep 102/102/102; scalar perpendicular
+// 147; scalar tangent 113; both scalar 140; call-only velocity pointer 102; that pointer with a
+// staged position 245. Original body restored.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

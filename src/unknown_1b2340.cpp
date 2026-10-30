@@ -179,6 +179,14 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // first 143 each (any 16-bit type folds direction j/k into mulss in the type-0 rows; the compile-only
 // screen shows the same, and only dropping the magnitude test undoes it); short type alone 167;
 // magnitude3d in place of the hand sqrt 50 (identical), with a short type 167.
+// Round 27 (fast): short type 167; the node looked up through its own actor_get(actor_index) 26 (retail's
+// entry: actor offset in EAX and the actor by lea; left only the type tested as 32 bits and the call offsets
+// that shifts; a mixed read, kept only on a match); on that form short type 143, both type tests read from the
+// field 143 (16-bit tests as retail, but the type 0 target rows then copy the distance and fold the origin
+// add, from the dropped conversion), with the clamp as a ternary 143, with the origin field read directly
+// 218, with the origin declared before the clamp 143; node and view looked up before the actor local 28,
+// with the field tests 145; actor_get(actor_index) at every use 400 (1149 bytes); the comma condition as
+// nested ifs with the fallback in both else arms 204/238 (no tail merge).
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {

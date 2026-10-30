@@ -331,6 +331,9 @@ void __stdcall function_44c90(long group, dword selection_mask, long level,
 // Round 302: Nested node-cache guards NONE-first/cache-first with original/filled count
 // and original/radius-first scheduling 190/190/191/191/190/190/191/191. Original guards,
 // count initializer and complete executable body restored; entry/index and point homes remain.
+// Round 437: One intersection result and a single marking block, crossed with read-only
+// geometry/native bound sphere/uniform node reads, 223/223/223/223/234/234/242/242. All
+// conditional-result forms restored; all matched controls survived.
 // @retail 0x45560
 void function_45560(short entry_index, point3f const *center, real radius)
 {
