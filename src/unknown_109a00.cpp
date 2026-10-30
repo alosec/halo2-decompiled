@@ -142,7 +142,7 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 	return result;
 }
 
-// score 10 (was 30): Frame 0x88 agrees; two x-component adds remain: the second point-velocity first
+// score 10 (was 10): Frame 0x88 agrees; two x-component adds remain: the second point-velocity first
 // linear add uses a register copy and memory add (retail loads linear.x and adds the cross term), and the
 // velocity update adds change.x as a load and add (retail copies change.x and adds the velocity from memory).
 // Frame 0x88 and first point block agree; the second point first linear add uses a register
@@ -231,6 +231,11 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // swapped 10 (identical); one/two throwaway tuples at entry 163/172 (diagnostic; the adds never flip);
 // delta before the velocity add 61; `+=` component adds 37; displacement scaled in place 172.
 // Round 296: Point-transform/velocity-transform/publication inline-noinline summaries, all seven nonempty subsets, 30 each; clock after completed displacement on the first-staged graph 74. All declarations and arithmetic restored.
+// Round 202 on the first-staged/x-before-clock graph: second shared math boundaries 170;
+// complete second result 175; both 200; complete updated velocity 193; math/update 207;
+// second/update 221; all 230; direct-cross/update 214. CRT output copies rotating/nonrotating/both:
+// memcpy 10/10/10; memmove 195/194/226; both copies with second shared math 170/237.
+// All complete output locals, CRT calls, includes and math boundaries restored.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {
