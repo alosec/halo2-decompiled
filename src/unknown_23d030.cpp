@@ -166,6 +166,12 @@ struct s_free_state_23d260
 // All executable forms and the temporary include restored; zero and side normalization remain.
 // Round 429: One pitch/roll cosine workspace, with entry/producer cosine, sine and side
 // declarations: all eight 117 at 1326 bytes. Original body restored.
+// Round 42 (lane 16): the existing normalize3d for the side vector gives retail's x87 squared length
+// exactly (side.j kept on the stack and squared before side.i) but 291 at 1309 bytes; with the yaw
+// cosine/sine locals as well the movement block matches too, 276 at 1326 bytes (the side/cross block is
+// then two instructions short: retail moves side.k out of the inverse's register and loads forward.k into
+// xmm6, and stores up k, j, i where ours stores k, i, j). On that form: side.k assigned last 276; fallback
+// j and k assigned apart 276; normalize3d result in a named local 310.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {
