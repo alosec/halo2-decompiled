@@ -240,6 +240,8 @@ static inline real actor_looking_normalize2d(point2f *vector)
 // named dot 68, named factors 47, pointers to the locals 38; none better than the plain single exit.
 // Round 398: paired real squares, uniform scalar inputs, both, squares plus sum; each with original/conditional reference-projection lifetime
 // 8/38/122/128/122/128/8/38; all restored.
+// Round 113: unnamed helper square 6; helper with an else-zero single exit 2 (same code); sqrtf 2;
+// brace-initialised reference copy 23; `>=` epsilon test 34; permuter (48 variants) none below 2.
 // @retail 0x296d60
 PRIVATE bool function_296d60(real cosine, vector3f const *reference, vector3f const *aim, bool three_dimensional)
 {

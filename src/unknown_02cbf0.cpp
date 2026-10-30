@@ -49,14 +49,15 @@ static __forceinline long floor_to_long_inline(real value)
 	}
 }
 
-// score 80 (was 80): packed-word load order, intensity spill and final word home.
+// score 46 (was 46): packed-word load order, intensity spill and final word home.
 // Separate allocation increment, entry reference, position memcpy and early
 // group-pointer scope 80; object-tag result first 97; object-index guard first
 // 175; separate inline floor results 80; missing-geometry guard first 276.
 // Flags-first or-chain, two-statement split and &=/|= split 80 (reassociated);
 // named word local in the call, named bools before the store, kind term first,
 // dword kind 80; separate call-value copy for the out-of-line floor 80.
-// score 46 (was 80): a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Earlier: a mask test read as a field bit (TEST_FIELD_BIT) gives retail's load-and-shift; the rest still differs.
+// Round 409: All eight ordinary/inline/separate-noinline section/kind declaration pairs 46 (1036/1033); no gain. Original contracts restored. Retained-word load order, intensity slot, final word carrier and shifted flag test remain.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,

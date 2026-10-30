@@ -765,7 +765,7 @@ struct s_actor_274140
 	long squad_index;
 };
 
-void function_1e3400(long actor_index, long squad_index);
+void function_1e3400(long actor_index, short squad_index);
 bool function_2052d0(long squad_index, long squad_group_index);
 
 // @retail 0x272c40
