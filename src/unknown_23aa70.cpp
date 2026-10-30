@@ -202,6 +202,9 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // before point (definition, declaration and call) 175; node before point alone 62 (caller +2);
 // formats 2, 3 and 4 all indexed 175; format-4 record as a packed position member plus node,
 // indexed/pointer 175/62.
+// into a local for every case with format 4 indexed 175; with format 4 indexed, the format read into a
+// local 175, one node store after the switch 187, the index read directly 175 (the source still arrives
+// on the stack, the switch index in EDI, the node in EBX); the buffer pointer read at each use 190.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)

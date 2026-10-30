@@ -1142,6 +1142,13 @@ struct s_squad_tree_definition
 };
 
 // score 31 (was 31): One-dword frame and first two passes agree; later parent loads still lose the retained record address.
+// Round 76: retail's passes 3/4 need the field loaded twice at register allocation and the second load
+// turned into `mov eax, ecx` afterwards (a volatile test, diagnostic only, gives the folded load into ECX
+// and the dead `add eax, edx` but keeps the second load); a noinline declaration of 0x205280 in place
+// of the in-body inline_depth pair 31 (not kept: DECOMPILING.md rules out both; a file-scope pair is
+// allowed). Parent through a ternary select 66;
+// `continue` on a missing parent in both passes 31; group and squad pointers at function scope 31;
+// the group pointer reused for the sibling walk 31.
 // parent field into ECX through [eax+edx+offset] and still forms the record pointer (add eax,edx) before
 // the compare, then copies the value to EAX; ours forms the pointer first and loads through it into EAX.
 // Tried: const current group 43; unsigned squad parent 43; unsigned group parent 63; unsigned sibling 43;
@@ -1532,7 +1539,7 @@ bool function_2104b0(short output_index, point3f const *point, point3f *out);
 // Round 407: native entry-point field reference with cached/live squad, byte/native actor
 // and assignment/library fallback copy 58/58/58/58/76/76/76/76. Entry base still splits; all restored.
 // @retail 0x204950
-real function_204950(long actor_index, long squad_index, short mode)
+real function_204950(long squad_index, long actor_index, short mode)
 {
     real result = 3.402823466e+38F;
     byte *actor = g_4f55f0->data + (actor_index & 0xffff) * 0x888;
@@ -1614,7 +1621,7 @@ long function_204b20(long actor_index, short mode)
             continue;
         else
             weight = 1.333f;
-        real distance = function_204950(actor_index, squad_index, mode);
+        real distance = function_204950(squad_index, actor_index, mode);
         if (distance < 3.402823466e+38F)
         {
             if (squad_index == *(long *)(actor + 0x28))
@@ -2350,7 +2357,7 @@ void function_201df0(void)
     }
 }
 
-void function_1e3400(long actor_index, long squad_index);
+void function_1e3400(long actor_index, short squad_index);
 void function_26def0(long actor_index, long owner_index);
 
 // @retail 0x204ca0

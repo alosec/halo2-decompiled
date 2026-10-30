@@ -39,6 +39,9 @@ short __stdcall function_1bcc90(long actor_index)
 // test moves the 0x328 compare above the clear only when the cleared block's
 // address is never taken. Tried: the test in a bool before the clear 102; the
 // 0x69c store first 36; the second result named 35; the reference declared at
+// function scope 35; the clear as `= {}` 35; a copy of the reference for the
+// last call 35; the follow arm's tests nested 35; the scratch buffer taken
+// before the clear 72; the clear sized by the type 35; the flag as a ternary 35.
 // function scope 35; the clear as `= {}` 35.
 // Carrier role names (all seven buffer/index/reference combinations) 35 each;
 // immutable returned reference 35.
@@ -54,6 +57,9 @@ short __stdcall function_1bcc90(long actor_index)
 // one-element array, byte-pointer memset, scratch first, const actor, request first)
 // all keep the compare after rep stos; retail's compare-before-clear occurs in no
 // other retail function.
+// function scope 35; the clear as `= {}` 35.
+// Carrier role names (all seven buffer/index/reference combinations) 35 each;
+// immutable returned reference 35.
 // @retail 0x1bcd00
 bool __stdcall function_1bcd00(long actor_index, s_slot *slot)
 {

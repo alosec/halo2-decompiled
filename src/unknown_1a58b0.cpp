@@ -821,6 +821,32 @@ void function_25aba0(long actor_index);
 // all three with current-slot at enabled use 69; memset 143; 0x1a8080 (type, owner, level) 67; both
 // 143; on both: state-one `level -= 1` 143, pop before the store 146, `else if` after the enabled
 // test 143, enabled and state-one tests in one arm 219.
+// frame 0x4c agrees; actor/result ESI/EDI, state-one decrement and zero-fill remain.
+// Earlier: frame 0x4c agrees; ESI/EDI, state-one decrement and zero-fill differ.
+// Native workspace initializer 69; owner lifetime 266; level lifetime 320;
+// entry pointer walk 261; full-width choice 150; full-width type 338.
+// Two-word initializer 68; full member initializer 287; retained ordinal 244;
+// shared final exit 69; frame pointer on native initializer 334.
+// Round 280: outer workspace 143; short copy counter 69; long level 173; retained handler reads 69; ordinary dispatch first 131.
+// Empty native initializer 143; value/assigned-value initialization 249 each; empty initializer with early state pop 146;
+// owner/handler records 69 each; current-level snapshot 69; level snapshot with empty initializer 143.
+// Actor/result ESI/EDI, state-one decrement, zero-fill and insertion setup still differ.
+// Native initializer with early state pop 140; candidate index snapshot 252;
+// candidate receiver 69; choice before workspace 69; callback/insertion names 69;
+// completion/eligibility/insertion results 69/163/69; existing mask helper inline 69.
+// with 0x1a7b30's sources sharing one copy (NULL-preset source there), both callees'
+// parameters reordered and the workspace memset, only the state-one pop differs (retail keeps level in
+// a register around the handler store): NULL-preset source 62; plus 0x1a7b30 order 60; plus memset
+// 134 (aligned 4); pop before the store 137; plus 0x1a8080 order 134 (aligned 2); without memset 58;
+// the two orders alone 67. Original body kept (the NULL preset is a tested sentinel; 0x1a7b30 rises to 100).
+// Enclosing enabled/state-one/choice dispatch arms in seven combinations 69 each; all three with current-slot at enabled use 69.
+// Round 93, on the NULL-preset + both reorders + memset base (957 bytes, only the state-one pop left):
+// `level -= 1` 134; pop first 137; state-one, kind-2 and choice arms as one if/else chain without
+// `continue` 119 (state-one pop now as retail, but the kind-2 failure pop becomes `dec [mem]`); chain with
+// `continue` in the kind-2 arm only 134, in the state-one arm only 119; kind-2 failure statements
+// reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
+// `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
+// takes the `dec [mem]` form in every arrangement.
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

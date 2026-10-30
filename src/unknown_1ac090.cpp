@@ -701,7 +701,8 @@ bool __stdcall function_1ad590(long actor_index, s_slot *slot)
 	return true;
 }
 
-// score 58 (was 58): default reload and saved-register roles differ. Branch-assigned defaults,
+// score 58 (was 58): independent invalid default reload and slot/continuation register roles remain.
+// default reload and saved-register roles differ. Branch-assigned defaults,
 // valid object first: short result with entry/scoped state 76/76, long result 73/73; invalid
 // object first: short 80/80, long 77/77.
 // Object index once 58; element-first 58; property once 58; element-first 57; both
@@ -714,6 +715,9 @@ bool __stdcall function_1ad590(long actor_index, s_slot *slot)
 // inverted tick test 60.
 // Actor readonly/reference, element readonly/reference, readonly pair, native input
 // pair, state reference and all record references: 58 each; default reload and saved roles remain.
+// Native slot-data view 62; receiver before actor/after element 62/73; native result 65;
+// data view with completion return 88; native result plus completion return 86;
+// independent invalid exits 80; invalid exits plus completion return 70.
 // @retail 0x1ad5b0
 short __stdcall function_1ad5b0(long actor_index, s_slot *slot, bool active)
 {

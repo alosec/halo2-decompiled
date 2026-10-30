@@ -25,8 +25,9 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
     }
     return local_0;
 }
-
-// score 57 (was 57): the definition table is kept in edi and the event in esi
+// score 57 (was 57): retail keeps the definition table in esi and the event pointer in edi,
+// ours the other way round; the final call setup is BLOCKED-BY 0xdb760 (contributor-owned),
+// which takes the permutation index in ebx and the object on the stack in retail.
 // (retail esi/edi); the clamp's equality test is threaded away; the call setup
 // is BLOCKED-BY 0xdb760 (contributor; retail takes the permutation in ebx and
 // the object on the stack, ours the object in ebx). Clamp of a re-read mode 84
