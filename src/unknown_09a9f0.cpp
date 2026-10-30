@@ -367,6 +367,14 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // object getters 77; a named flag-test bool 77; the NONE test repeated in an else-if 75; header
 // and object through the entity's stored index 77; cross-file getters, guard returns and
 // == 0 test (screened) still share the address.
+// Also: bool result with a table local/forceinline getters/named flag/else-if NONE retest 78/77/77/75;
+// deleted index cleared and retested as a ternary 38; repeated index store in the clear arm 42;
+// cross-file getters, guard returns and an == 0 test (screened) still share the header address.
+// Round 99 (lane 6): bool result with the arms in retail's order, a header-table pointer local for
+// the test and the local index elsewhere 77 (the local is propagated, the address still shared);
+// the same through the entity's index 82 (157 bytes); without the table local 77; `if (index !=
+// NONE && flagged) entity->object_index = NONE;` then `if (entity->object_index != NONE)` 61 (the
+// memory retest is not threaded); the same on the local, published before the retest, 68.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {

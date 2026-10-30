@@ -2209,6 +2209,9 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
 // at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
 // Original normalization and fallback restored.
+// Round 426: complete normal/velocity/final scaled-product staging, all seven
+// subsets, 109 each; complete staged outputs through the existing vector setters 127.
+// Original products, j/k/i normal publication and matched sample boundary restored.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {

@@ -124,6 +124,11 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 // then add-scaled forward and up / left scaled first then per-component sums): current velocity with
 // the pointer locals or the staged cross 75 (378/379 bytes); every other velocity form drops retail's
 // two spills (353-362 bytes) and scores 84-98.
+// Round 102 (fast): scale(left) into velocity then add_scaled(forward) and add_scaled(up) 87 (the cross
+// product orders, the 0xc frame and the magnitude tail match, but forward_speed moves to XMM4 and nothing
+// spills); scale(forward) then add_scaled(left) and add_scaled(up) 84; the cross product straight into
+// velocity, scaled in place, then forward and up 83; the j/k/i form straight into velocity 80; velocity
+// declared before left with the left-first chain 87.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {

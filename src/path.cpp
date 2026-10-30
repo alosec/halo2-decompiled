@@ -419,6 +419,9 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 // all entry-scope changes restored. Initial frame and indexed link transport still differ.
 // DH round 257: Short/word link count with first/second point homes and both delta helpers, eight
 // combinations 368 each at 1368 bytes; frame recovers but traversal worsens. Original body restored.
+// Round 429: special predicate at use/completion byte/both/traversal phase scope/
+// predicate-scope/byte-scope/all/all with long completion 358/314/350/315/358/314/350/369.
+// One-point byte gains rejected; original clearing, traversal and geometry restored.
 // @retail 0x270d90
 PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_result_view const *result, short node_index, short maximum_steps,
@@ -1098,6 +1101,9 @@ struct s_flag_word_bits
 // DH round 254: both endpoints before copies in edge-surface/paired-surface/ring subsets
 // 449/452/449/450/447/450/447; all with consistent endpoint storage names 447. All restored: gains
 // are at most five, and the one-use end pointers require an exact match. Original guards and helpers retained.
+// Round 429: direct parameter, early count 452; case orders 0,2,5,1/6 original/early count
+// 456/456; 1/6,0,2,5 original/early 476/476; 2,5,1/6,0 original/early 461/461;
+// 5,2,0,1/6 early 463. Seven forms reach retail length; all bodies restored.
 // @retail 0x272020
 PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 	s_path_node_key_view const *node, s_path_link_view *links, s_type_f17a25 const *state)

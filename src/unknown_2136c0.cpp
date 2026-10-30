@@ -73,6 +73,9 @@ void function_213970(void);
 // Round 193: On complete payloads: seven nonzero ownership combinations 131 each; NONE/zero/both chains 131
 // each; query before all resets 128 (three-point gain dropped), between payloads and state 131. Retain only
 // the complete-payload form at 131.
+// Round 79: enum language result 145; first-element array clears 145; reversed progress fields 145;
+// existing language wrapper 145; query after file/copy clears 144/144; version validation first 141;
+// joint preference guard 158. All gains below the retention threshold; original body restored.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

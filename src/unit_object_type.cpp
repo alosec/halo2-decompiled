@@ -363,8 +363,8 @@ short function_101010(long weapon_index, short field_240);
 bool function_100fd0(long weapon_index);
 bool function_10f630(long object_index, long *first, long *second);
 void function_b7360(long object_index);
-bool function_c9040(long vehicle_index, long unit_index, short seat_index, vector3f const *forward,
-	point3f const *position);
+bool function_c9040(long vehicle_index, long unit_index, short seat_index, point3f const *position,
+	vector3f const *forward);
 long function_1e4a10(long index);
 void function_c5740(long unit_index, bool start);
 void function_1520f0(long player_index);
@@ -492,7 +492,7 @@ void function_15e050(long object_index, short value);
 void __stdcall function_153d10(long team, long definition_index, void *a, void *b, long c, real d, real e, bool f);
 void __stdcall object_get_damage_owner(long object_index, s_damage_owner *owner);
 void function_107370(long device_index, real value);
-void function_184060(long unknown3c, byte unknown59, s_type_1e6529 *data, long unknown50);
+void function_184060(long unknown3c, long unknown59, s_type_1e6529 *data, long unknown50);
 void function_cafc0(long unit_index, point3f *position);
 real function_11cf50(vector3f const *a, vector3f const *b);
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
@@ -1713,15 +1713,6 @@ void function_cffc0(long unit_index)
 }
 
 /* whether 0xc9040 holds for any of the seat's markers on the unit */
-// score 56 (was 82): retail takes unit_index in esi, keeps i in ebp and found in a stack byte,
-// tests i < count at the loop's top and found at its bottom, after the increment. The loop as a
-// guarded do-while 77; !found first in the for 85; a do-while breaking on the count 85; a while
-// breaking at the end 106; a for breaking inside 103.
-// Round 203: Retail frame and ESI input recovered by the native short ordinal 56/196 bytes, plain
-// confirmed; count short 84, both native 85; marker cursor with result-first/long result/short result
-// 82/99/97; cursor for loop with bool/short success 102/97. Count/position-cursor allocation and
-// top-count/bottom-success loop layout still differ. Only the ordinal width is retained; all calls and
-// loop domains stay original.
 // @retail 0xc6fb0
 bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 {
@@ -1730,17 +1721,10 @@ bool __stdcall function_c6fb0(long unit_index, long a, short seat_index)
 	s_object_marker markers[4];
 	long count = function_b8d30(unit_index, marker_name, markers, 4, false);
 
-	short i = 0;
-
-	if (count > 0)
+	for (long i = 0; !found && i < count; i++)
 	{
-		do
-		{
-			if (function_c9040(unit_index, a, seat_index, &markers[i].matrix.forward, &markers[i].matrix.position))
-				found = true;
-			i++;
-		}
-		while (i < count && !found);
+		if (function_c9040(unit_index, a, seat_index, &markers[i].matrix.position, &markers[i].matrix.forward))
+			found = true;
 	}
 	return found;
 }
@@ -3754,14 +3738,20 @@ void function_d03e0(long unit_index, long definition_index)
 
 /* applies the unit's melee damage to what it hit (a device of type 7 with
    bit 5 at +0x1cc is triggered first), then ends its state +0x2bc */
-// score 61 (was 61): Second object lookup is merged and the surface-call argument width differs.
+// score 57 (was 61): the second object lookup (type 7, then bit 5 of +0x1cc) is merged into the first;
+// retail repeats it (the pool pointer shared in EDX, index and element reloaded), so all after it shifts.
+// Retail's NONE material store before 0xd6660 and the 0x184060 arguments as retail passes them (the
+// field at +8 as the index in EAX, the one at +4 as the bit) are kept; the tail is then retail's.
 // Round 175: default before initializer 56; existing masked-index helper at second/first/both
 // lookups 61/61/61, with early default 56/56; owner before flags 58; both orders 53
-// with or without the neutral helper. Not kept: the NONE material default ahead of
-// 0xd6660 is cleared by its memset (behaviour change).
+// with or without the neutral helper.
 // Round 179: omit overwritten material default 125; node direction from completed direction 108;
 // marker scope 61; default/direction 126, default/scope 125, direction/scope 108; all 126;
-// all with owner before flags 126. Original body restored.
+// all with owner before flags 126.
+// Round 12 (lane 15): owner before flags 54 (not kept); masked-index helper made __forceinline at
+// either/both lookups, no object local, nested ifs, a byte pointer to the machine, a named index,
+// dword-cast mask, dword flag word: lookup still merged; a word-cast index at the second lookup
+// gives retail's registers but movzx.
 // @retail 0xcfc90
 void __stdcall function_cfc90(long unit_index, long definition_index, s_unit_melee_hit const *hit)
 {
@@ -3769,8 +3759,8 @@ void __stdcall function_cfc90(long unit_index, long definition_index, s_unit_mel
 	s_type_1e6529 damage;
 	s_object_marker marker;
 
-	function_d6660(&damage, definition_index);
 	damage.material_index = NONE;
+	function_d6660(&damage, definition_index);
 	damage.unknown84 = hit->unknown18;
 	damage.flags |= 1;
 	damage.unknown18 = unit_index;
@@ -3796,7 +3786,7 @@ void __stdcall function_cfc90(long unit_index, long definition_index, s_unit_mel
 	}
 	else if (hit->unknown04 != NONE)
 	{
-		function_184060(hit->unknown04, (byte)hit->unknown08, &damage, hit->unknown0c);
+		function_184060(hit->unknown08, hit->unknown04, &damage, hit->unknown0c);
 	}
 	function_c5740(unit_index, false);
 }
@@ -3830,8 +3820,8 @@ static inline real vector_normalize_in_place(vector3f *v)
    (+0x98), facing it (+0xa0), the marker facing the unit (+0x9c), and
    moving with the vehicle (+0xa4) */
 // @retail 0xc9040
-bool function_c9040(long vehicle_index, long unit_index, short seat_index, vector3f const *forward,
-	point3f const *position)
+bool function_c9040(long vehicle_index, long unit_index, short seat_index, point3f const *position,
+	vector3f const *forward)
 {
 	bool result = false;
 	s_unit *unit = UNIT_GET(unit_index);
@@ -4095,6 +4085,9 @@ bool function_c5eb0(long unit_index)
 // existing scale-aware transform alone/with shared crosses 173/173. Original body retained.
 // Existing plain vector transform helper 33; left terms first 28; k/j/i or i/k/j declarations 32;
 // i/j/k declared then assigned k, j, i 32 (j loads first but takes XMM2) or j, k, i 28.
+// Round 222: complete row/products/outputs/both carrier ownership 39/40/32/40; the same four
+// with input scale names 39/40/32/40. Original body restored; input load order and forward-
+// product carriers remain.
 // @retail 0xcb810
 bool function_cb810(long unit_index, vector3f *vector)
 {
@@ -4407,12 +4400,6 @@ void function_ce6b0(long unit_index, long name, long object_index, real scale)
    flips flag 29 with its sounds and fades +0x264 in (a fifth of a second)
    or out (0.8 s) by it; in state 1 or with the campaign flag it runs the
    state +0x2bc and its timer instead */
-// score 82 (was 82): frame 8 agrees; unit/index ESI/EDI are reversed, then control-bit and
-// flag-word scheduling differ. The sound call chain keeps the object in EDI instead of ESI
-// through 0xc5890 and 0x189210; root-location input at 0xba300 needs its owning body.
-// Native word bit-two view 142; dword bit-29 tests/stores/both 82/82/82;
-// word plus dword tests/stores/both 142/142/142; all plus native control mask 142.
-// Original fields, padding, tests and stores restored.
 // @retail 0xc50a0
 void function_c50a0(long unit_index)
 {
@@ -4458,12 +4445,12 @@ void function_c50a0(long unit_index)
 		if (TEST_FIELD_BIT((unit->flags_134 >> 29) & 1))
 		{
 			function_c5890(unit_index, 4);
-			unit->flags_134 &= ~0x20000000;
+			bit_vector_set(&unit->flags_134, 29, false);
 		}
 		else
 		{
 			function_c5890(unit_index, 5);
-			unit->flags_134 |= 0x20000000;
+			bit_vector_set(&unit->flags_134, 29, true);
 			unit->unknown268 = 4.0f;
 		}
 	}
@@ -4477,10 +4464,10 @@ void function_c50a0(long unit_index)
 				unit->unknown268 = 0.0f;
 			}
 		}
-		if (unit->parent_index != NONE || TEST_FIELD_BIT((unit->flags_10a >> 2) & 1) ||
+		if (unit->parent_index != NONE || TEST_FIELD_BIT(((s_unit_flags_10a_view *)&unit->flags_10a)->bit2) ||
 			(!g_5107e8->flag0 && unit->unknown268 == 0.0f))
 		{
-			unit->flags_134 &= ~0x20000000;
+			bit_vector_set(&unit->flags_134, 29, false);
 		}
 		if (unit->unknown264 != 1.0f)
 		{
