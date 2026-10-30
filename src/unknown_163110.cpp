@@ -751,6 +751,12 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // rows 305/267/280/269; with existing component assignment for every normal negation
 // 306/301/174/285. All restored; original grouping, scale helper and guards retained; coefficient
 // preload and projection homes remain.
+// Round 419: complete near plane 496; complete far plane 460; complete near plane/complete far plane 564;
+// complete near plane/immutable completed planes 496; complete far plane/immutable completed planes 460;
+// complete near plane/complete far plane/immutable completed planes 564; complete near plane/complete far
+// plane/parallel full offset producers 567; complete near plane/complete far plane/immutable completed
+// planes/parallel full offset producers 567. Coefficient/zero XMM roles, classification operands and
+// projection staging remain. Original body restored.
 // Round 184: logical second-plane enable 459; implied pass retest removed 370;
 // classification/clipping-pair/projection-pair source cursors 327/255/117;
 // classification with clipping/projection cursors 193/327; all cursors 195.

@@ -634,6 +634,9 @@ static __forceinline void index_state_group_flags_update_31660(s_index_state_316
 // flags in the second-group pass only 62; TEST_FIELD_BIT mask test 77 (it only realigns the listing
 // by one instruction); positive-count guarded do loops 143/182; group while/continue forms, flag
 // word snapshot 133; De Morgan flag bits 136; real two-byte flag fields 77/225.
+// Round 421 (at 77, before the group helper): first/third packed fields 77; filtered packed fields 225; all helper packed fields 225; final packed
+// fields 77; first/third/final fields 77; filtered/final fields 225; all packed fields 225; all fields/ascending
+// runtime publication 225.
 // @retail 0x31660
 void function_31660(long index, long tag, s_index_state_31660 *state,
     long first_group, long second_group, bool skip, bool *output)

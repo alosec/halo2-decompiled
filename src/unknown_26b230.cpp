@@ -1866,6 +1866,9 @@ void function_269250(long clump_index, long actor_index);
 // selection still split into EDI); with the selection stored first or names best_index/best_score 126
 // (same code); selection from the walk's datum index 128 (selection memory-only, pool hoisted, but the
 // null-current join threads away and the homes reverse); common path with the datum index 146.
+// Round 422: persistent score 128; native selection handle 146; persistent score/native handle
+// 152; actor handle snapshot 89; persistent score/actor handle 128; native/actor handles 146;
+// all scan lifetimes 152; function-scope candidate 128. Opening body restored.
 // @retail 0x2689d0
 void function_2689d0(void)
 {

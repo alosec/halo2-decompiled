@@ -695,6 +695,9 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // All restored; fast control 301, plain baseline 290. Boolean roles and point/case transport remain.
 // DH round 257: Shared case handle/receiver/both 301/301/301; byte result on each 310/310/310; both with
 // short/long result 330/322. All restored; reduced control 301, full baseline 290.
+// Round 424: selected-type-derived point presence in short/word/long/dword at entry
+// 384/384/387/387; consumed directly at successful normalization 392/392/394/394.
+// All restored; native result/point-valid homes and case-specific point transport remain.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)

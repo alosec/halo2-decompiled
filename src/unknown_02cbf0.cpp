@@ -137,6 +137,16 @@ static __forceinline long floor_to_long_inline(real value)
 // pool pointer local (before the section call or before the bit test) and a separate variable
 // for the second section 36 (identical code); category through a byte cast 281 (category goes
 // to the stack).
+// packed-word load order, intensity spill, final kind-word carrier and state setup differ.
+// Earlier at 46: packed-word load order (ours reads the old word first), the intensity
+// packed-word load order, intensity spill and final word home.
+// the bit-6 test is retail's `test al, 0x40` again (the field-bit form only
+// shifted the listing, 46 at 1036 bytes) and the loader's two flags are named before the call, so
+// the load test is set first as in retail. Left: retail ORs the incoming flags and category before
+// the kept top bits; the scaled intensity spills to `outside`'s home (ours `level`'s); retail keeps
+// the new kind word in esi, takes the instance bit from a copy and stores the word just before the
+// 0x449e0 call (ours stores it at once and spills instance_bit to `mode`'s home); retail sets
+// edx to the state before the bit-count test.
 // &=/|= split 80 (reassociated); named word local in the call, named bools before the store, kind
 // term first, dword kind 80; separate call-value copy for the out-of-line floor 80; all eight
 // ordinary/inline/separate-noinline section/kind declaration pairs 46. On the mask test: kind term
@@ -164,6 +174,9 @@ static __forceinline long floor_to_long_inline(real value)
 // bitfield view of the word (kind only / all fields) 80/84 on the `& 0x40` form;
 // word and both bools before the store 46; old word read through the global
 // array in the first/kind word 47/57.
+// Round 421: shared masked input 110; uniform record indexing 374; masked/indexed record 364; short record index
+// 36; masked/short index 110; indexed/short index 375; all record inputs 364; entry-scope masked input/all record
+// inputs 394.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,

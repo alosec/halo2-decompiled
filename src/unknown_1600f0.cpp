@@ -1436,6 +1436,10 @@ PRIVATE inline long score_string_list_1608e0()
 // sum/with bottom/with both 726 at 2826 bytes; complete graph with signed-word body-row sum 728. All
 // actual expression locals are reused, but they do not recover frame 0x79c, viewer EBX, coordinate/color
 // homes or clamp registers. Original complete body and five native rectangles restored.
+// Round 419: separate title foreground 689; separate title background 689; separate title colors 689;
+// separate team output 687; title foreground/team output 688; title background/team output 687; all
+// appearance outputs 687; immutable title/all outputs 687. Frame/viewer/coordinate/color homes remain;
+// one- and two-point reductions rejected. Original body restored.
 // @retail 0x1608e0
 void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, real alpha)
 {

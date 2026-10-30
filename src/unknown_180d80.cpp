@@ -124,6 +124,10 @@ __forceinline void function_180d83(transform4x3f const *arg_0, point3f *arg_1)
 // output record receiver 568/581/554/569. Original publication and receivers restored.
 // Shared vertex ordinal with output base/offset 284/293; shared short/long strip ordinal 528/418;
 // base/strip and offset/strip combinations 531/405/533/415. Restored.
+// Round 418: result before array 631; result after array 631; result after guard 651; result assigned at
+// exits 106; short count/result before array 648; short count/result after array 648; short count/result
+// after guard 668; short count/result at exits 546. early mesh receiver, count/counter homes and
+// creation-call setup remain.
 // Typed tag/output/both 94/94/94; complete direct tag raw/typed 661/661; complete direct output
 // 608; both direct raw/typed 698/698. Original observations and record layouts restored.
 // @retail 0x180d80

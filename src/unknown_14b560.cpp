@@ -2613,6 +2613,9 @@ static inline bool player_datum_iterator_next(s_data_datum_iterator *iterator)
 // Round 415: retained unit 141; existing point setter 117; both 134; unsigned retained handle 103;
 // unit/setter/both with unsigned handle 141/117/134; setter with direct component receivers 130.
 // Original body restored.
+// Round 423: stage status published at the join as short/long/byte 191/191/163;
+// each with early globals scope 191/191/163; short status with retry accumulation 178,
+// also with early scope 178. Complete original body restored.
 // @retail 0x14cdd0
 void function_14cdd0(void)
 {
