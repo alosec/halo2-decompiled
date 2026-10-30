@@ -5441,19 +5441,14 @@ void function_ce0c0(long unit_index)
    marker 0x500000a (type 0, when clear of the world), slightly above its
    center (type 1) or its center; then plays the impact sounds of what it
    hit */
-// score 1 (was 195): the whole function agrees except the operand order of the first unit lookup (retail
-// [ebx+edx+8] offset first, ours [edx+ebx+8]; the second lookup is pointer first in both). Case 1 of the
-// second switch placed before case 0, whose failed-marker path falls through into default (909 bytes, as
-// retail), the seat and weapon flag tests as field bits, the material word stored before 0xd6660 (which
-// then sets its default; behaviour change) and the cone direction copied after the event byte and
-// source index (5 without that) took it from 195. Tried for the lookup: headers in a local
-// (offset first for both lookups, 1), pointer-arithmetic and address-of forms (1), slot in a local (1),
-// second lookup written as byte arithmetic (1), a discarded extra lookup (1). Case orders of the old
-// switch had no effect (195); a `none` local for the sentinel had none (195).
 // @retail 0xcf040
 void function_cf040(long unit_index, short type)
 {
-	if (g_4e6948->mode == 4)
+	/* a volatile read of the mode: retail loads it into a register first, which sets the operand order
+	   of the unit lookup below */
+	char mode = *(char volatile *)&g_4e6948->mode;
+
+	if (mode == 4)
 	{
 		return;
 	}
@@ -6949,7 +6944,7 @@ struct s_unit_turn_state_view
 // schedulings. Tried: early returns instead of the nesting (411, the nested form 384 before the state view),
 // `volatile bool moved` (397: stack slot and frame match, but stores/loads are not retail's), scale*rate
 // operand order (no change), declaring old_flat/new_flat in the other order or at function scope (no change;
-// swapping the 11ce20 arguments moves the two flat vectors' slots to retail's).
+// 0x11ce20 takes the new aim first, as retail passes it in ECX at 0xc63be; the other order also scores 401).
 // @retail 0xc60c0
 bool __stdcall function_c60c0(long unit_index)
 {
@@ -7012,7 +7007,7 @@ bool __stdcall function_c60c0(long unit_index)
 			new_flat.k = 0.0f;
 			function_1201a0(&old_flat, g_4687b0);
 			function_1201a0(&new_flat, g_4687b0);
-			pitch_share = unit_turn_share(function_11ce20(&old_flat, &new_flat), step);
+			pitch_share = unit_turn_share(function_11ce20(&new_flat, &old_flat), step);
 		}
 		unit->unknown243 = (byte)(long)(yaw_share * 255.0f);
 		unit->unknown1f8 = (byte)(long)(pitch_share * 255.0f);
