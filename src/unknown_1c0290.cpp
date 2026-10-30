@@ -235,6 +235,13 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // the collision call still reads the field: a partial copy, not kept); one unit index at all three uses
 // 219. Diagnostics: the stamp's flag store or time store removed 188/193, both stores unconditional 113;
 // the 0x110ab0 argument stays in EDX in all three.
+// after the point 148. Round 19: unchanged.
+// Round 28 (lane 10): the scratch rotation follows the stamp block's temps: the stamp's time in a
+// one-use local (diagnostic, not keepable) 135 gives retail's EAX for the 0x110ab0 argument, but the
+// stamp's load moves above the flag store and the later temps (request actor, collision arguments)
+// sit one register further on; plus a named 0x110ab0 result 135; plus the timing pointer in a local
+// 135 (same code). Stamp through the existing 0x146650 getter 143 (same code); the slot cast at each
+// use instead of the state local 143.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {
