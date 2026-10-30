@@ -19,23 +19,14 @@ bool cache_files_load_structure_bsp(s_structure_bsp_reference *arg_0);
 void cache_files_unload_structure_bsp(s_structure_bsp_reference *arg_0);
 void function_16e2c0(long arg_0);
 
-struct s_11c1b0
-{
-    void (__stdcall *field_0)(short);
-    dword field_4[8];
-};
-
-#define g_440df0 (*( s_11c1b0 const (*)[68])((byte const *)g_440dd8 + 0x18))
-
-// score 50 (was 50): Initial index/zero registers and saved-index publication remain.
-// Earlier allocation: retail keeps local_0 in ebx (xor ebx, ebx; mov bx) up to the
-// Initial index/zero registers and early saved-index store still differ; frame and both result lifetimes agree.
+// score 50 (was 50): initial index DI/zero EBX differ from retail BX/EDI, and the saved-index
+// store follows the range test instead of preceding it; frame and both result lifetimes agree.
+// Round 78: callbacks through the real table field (g_440dd8[i].field_18, made-up view dropped)
+// 50, kept; saved copy re-read from the global 50; range test as a guard with goto to the single
+// exit 50; success folded into result 130; reload condition on the saved copy 50.
 // On the separate-result form: signed ordinal 125; ordinal != 68 51; row cursor 125;
 // counted row cursor 95; callback snapshot 50; signed snapshot 125; row snapshot 125;
 // counted row snapshot 95. Original dispatch, two index values and returns retained.
-// retail keeps local_0 in ebx (xor ebx, ebx; mov bx) up to the
-// initial index DI/zero EBX differ from retail BX/EDI;
-// saved-index publication still follows validation instead of preceding it.
 // Earlier: retail keeps local_0 in ebx (xor ebx, ebx; mov bx) up to the
 // function_137da0 call and stores it at once into arg_0's slot, which then serves as
 // local_7; it holds the early false in al (so the limit goes in esi and every push
@@ -47,8 +38,6 @@ struct s_11c1b0
 // xor/mov, but the early return gets its own epilogue); return local_1 there 114
 // (draft) / 131 (one variable); the body inside if (arg_0 == NONE || in range) 99
 // (draft) / 116 (one variable).
-// Earlier allocation: result false from entry (al) and the success in bl now match
-// result false from entry (al) and the success in bl now match
 // Earlier: result false from entry (al) and the success in bl now match
 // retail, and local_7 shares arg_0's slot, but the zero goes in ebx and local_0 in edi
 // (retail: local_0 ebx, zero edi), and local_7's store comes after the range test
@@ -92,8 +81,8 @@ bool __stdcall function_11c1b0(short arg_0, bool arg_1)
             return true;
         for (dword local_2 = 0; local_2 < 68; local_2++)
         {
-            if (g_440df0[local_2].field_0)
-                g_440df0[local_2].field_0(arg_0);
+            if (g_440dd8[local_2].field_18)
+                g_440dd8[local_2].field_18(arg_0);
         }
         if (local_0 != NONE && local_0 != arg_0)
         {

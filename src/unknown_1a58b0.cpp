@@ -805,6 +805,10 @@ void function_25aba0(long actor_index);
 // store), the `= {0}` workspace (retail clears it as a memset, rep stosd x16) and 0x1a8080's argument
 // set-up order differ. memset plus 0x1a8080 as (type, owner, level) leave only the entry registers and
 // the state-one pop (957/957 bytes, aligned 21 from 24, positional 143).
+// Round 78: the entry loop as `for (short i = 0; i < 3; i++)` in place of the hand-inverted do/while
+// 69 (identical code, kept; a long counter unrolls it: 1292 bytes, 651); next-handler test through
+// ACTION_HANDLER_ENABLED 87; state-one pop before the stamp 140 (957 bytes, the kind-2 pop takes
+// `dec [mem]`); `if (level < 0) break;` for the head flag 215 (rotated).
 // Tried: native workspace initializer 69; owner lifetime 266; level lifetime 320; entry pointer walk
 // 261; full-width choice 150; full-width type 338; two-word initializer 68; full member initializer
 // 287; retained ordinal 244; shared final exit 69; frame pointer on native initializer 334; outer
@@ -815,31 +819,14 @@ void function_25aba0(long actor_index);
 // index snapshot 252; candidate receiver 69; choice before workspace 69; callback/insertion names 69;
 // completion/eligibility/insertion results 69/163/69; existing mask helper inline 69; with
 // 0x1a7b30's sources sharing one copy (NULL-preset source there), both callees' parameters reordered
-// and the memset workspace, only the state-one pop differs: NULL-preset source 62, plus 0x1a7b30
-// order 60, plus memset 134, pop before the store 137, plus 0x1a8080 order 134, without memset 58, the
-// two orders alone 67; enclosing enabled/state-one/choice dispatch arms in seven combinations 69 each,
-// all three with current-slot at enabled use 69; memset 143; 0x1a8080 (type, owner, level) 67; both
-// 143; on both: state-one `level -= 1` 143, pop before the store 146, `else if` after the enabled
-// test 143, enabled and state-one tests in one arm 219.
-// frame 0x4c agrees; actor/result ESI/EDI, state-one decrement and zero-fill remain.
-// Earlier: frame 0x4c agrees; ESI/EDI, state-one decrement and zero-fill differ.
-// Native workspace initializer 69; owner lifetime 266; level lifetime 320;
-// entry pointer walk 261; full-width choice 150; full-width type 338.
-// Two-word initializer 68; full member initializer 287; retained ordinal 244;
-// shared final exit 69; frame pointer on native initializer 334.
-// Round 280: outer workspace 143; short copy counter 69; long level 173; retained handler reads 69; ordinary dispatch first 131.
-// Empty native initializer 143; value/assigned-value initialization 249 each; empty initializer with early state pop 146;
-// owner/handler records 69 each; current-level snapshot 69; level snapshot with empty initializer 143.
-// Actor/result ESI/EDI, state-one decrement, zero-fill and insertion setup still differ.
-// Native initializer with early state pop 140; candidate index snapshot 252;
-// candidate receiver 69; choice before workspace 69; callback/insertion names 69;
-// completion/eligibility/insertion results 69/163/69; existing mask helper inline 69.
-// with 0x1a7b30's sources sharing one copy (NULL-preset source there), both callees'
-// parameters reordered and the workspace memset, only the state-one pop differs (retail keeps level in
-// a register around the handler store): NULL-preset source 62; plus 0x1a7b30 order 60; plus memset
-// 134 (aligned 4); pop before the store 137; plus 0x1a8080 order 134 (aligned 2); without memset 58;
-// the two orders alone 67. Original body kept (the NULL preset is a tested sentinel; 0x1a7b30 rises to 100).
-// Enclosing enabled/state-one/choice dispatch arms in seven combinations 69 each; all three with current-slot at enabled use 69.
+// and the memset workspace, only the state-one pop differs (retail keeps level in a register around
+// the handler store): NULL-preset source 62, plus 0x1a7b30 order 60, plus memset 134 (aligned 4), pop
+// before the store 137, plus 0x1a8080 order 134 (aligned 2), without memset 58, the two orders alone
+// 67; original body kept (the NULL preset is a tested sentinel; 0x1a7b30 rises to 100). Enclosing
+// enabled/state-one/choice dispatch arms in seven combinations 69 each, all three with current-slot at
+// enabled use 69; memset 143; 0x1a8080 (type, owner, level) 67; both 143; on both: state-one
+// `level -= 1` 143, pop before the store 146, `else if` after the enabled test 143, enabled and
+// state-one tests in one arm 219.
 // Round 93, on the NULL-preset + both reorders + memset base (957 bytes, only the state-one pop left):
 // `level -= 1` 134; pop first 137; state-one, kind-2 and choice arms as one if/else chain without
 // `continue` 119 (state-one pop now as retail, but the kind-2 failure pop becomes `dec [mem]`); chain with
@@ -852,14 +839,12 @@ void __stdcall function_1a7cc0(long actor_index)
 {
 	s_actor_view *owner = actor_get(actor_index);
 	short level = 0;
-	long i;
 
 	g_46f348++;
 	function_1a7b30((s_flag_bits *)g_557c40, actor_index);
 	g_4ee4ec = function_1a7ad0(actor_index);
 	memset(g_4f0a4c, 0, sizeof(g_4f0a4c));
-	i = 0;
-	do
+	for (short i = 0; i < 3; i++)
 	{
 		s_slot_entry *entry = &((s_slot_owner_entry *)owner)->entries[i];
 
@@ -880,9 +865,7 @@ void __stdcall function_1a7cc0(long actor_index)
 			candidate->node.next = NULL;
 			g_4f09c8[entry->field4]++;
 		}
-		i++;
 	}
-	while (i < 3);
 	if (owner->unknown222)
 		g_46eeb8[0x38]->unknown8 = g_46f348;
 

@@ -444,7 +444,13 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
-// score 85 (was 166): entry NONE homes, predicate setup and proximity SSE scheduling differ.
+// score 47 (was 85): NONE in EBP (retail EBX) and the special flag in BL (retail CL: the special
+// path does `mov cl, 1; jmp tail`, the scan stores 0 at its start) remain; the tail and the
+// proximity block now match. Round 78: the tail's prop node as a named pointer 85 -> 51 and the
+// deltas x, y, z 51 -> 47 (kept); on that, `&&` flag 200; flag set in if/else arms 200;
+// function-scope false flag with the scan in the else 223; bitwise operands swapped 47 (same
+// code); conditional-expression flag 194; bitwise flag declared first at function scope 47;
+// false flag set to the field on the type-6 path 99 (NONE in EBX, flag memory-only).
 // Earlier: retail keeps the special-vehicle flag in CL at the shared tail (the
 // special path does `mov cl, 1; jmp tail`, the scan's exits reload it from the dead actor
 // argument slot) and lays the tail out after the passenger scan; ours reloads the flag from
@@ -517,10 +523,10 @@ short __stdcall function_1bbf40(long actor_index, s_slot *slot)
                         point3f unit_point;
                         function_b9dd0(actor->unknown26c, &vehicle_point);
                         function_b9dd0(unit_index, &unit_point);
-                        real z = unit_point.z - vehicle_point.z;
-                        real y = unit_point.y - vehicle_point.y;
                         real x = unit_point.x - vehicle_point.x;
-                        if (z * z + y * y + x * x < 6.25f)
+                        real y = unit_point.y - vehicle_point.y;
+                        real z = unit_point.z - vehicle_point.z;
+                        if (x * x + y * y + z * z < 6.25f)
                         {
                             short minimum = (short)real_to_long((real)g_510c54->field_2_3 * 3.0f);
                             if (*(short *)actor->unknown2f4 < minimum)
@@ -543,11 +549,14 @@ short __stdcall function_1bbf40(long actor_index, s_slot *slot)
             else
                 allow_exit = true;
         }
-        if (special && actor->prop_index != NONE && prop_node_get(actor->prop_index)->unknown24 >= 1 &&
-            prop_node_get(actor->prop_index)->unknown24 <= 2 && !function_1b9200(actor->unknown26c, actor->prop_index))
+        if (special && actor->prop_index != NONE)
         {
-            *(short *)actor->unknown2f4 = 0;
-            allow_exit = true;
+            s_prop_node_view *prop = prop_node_get(actor->prop_index);
+            if (prop->unknown24 >= 1 && prop->unknown24 <= 2 && !function_1b9200(actor->unknown26c, actor->prop_index))
+            {
+                *(short *)actor->unknown2f4 = 0;
+                allow_exit = true;
+            }
         }
         if (allow_exit && *(short *)actor->unknown2f4 <= 0)
             function_e68c0(0x1d, actor->unknown018);
