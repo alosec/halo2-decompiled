@@ -1288,6 +1288,10 @@ long function_2197f0(real gain);
 // Round 193: branch-local/shared active/entry interpolation outputs 149/174/174;
 // each with distinct final result 157/165/165; distinct result alone 157;
 // shared entry outputs/result with role home names 165. All restored.
+// Round 164: real gain local with in-place sums 233; first branch as divisions
+// (`(elapsed - hold) / fade_in * fade_out`, `1.0f > time / fade_in ? time / fade_in : 1.0f`) with a
+// fade_out local 160 (retail's reciprocal-first order, multiply compare and divss result); plus
+// `t = 1.0f; if (time < 1.0f) t = time;` clamps 160/180 (the two tails cross-jump); if/else-if pin 160.
 // @retail 0x127010
 long function_127010(short class_index)
 {
@@ -2724,6 +2728,11 @@ static inline short sound_voice_find_available_channel(char type)
 // Round 193: failure-scoped byte with shared/direct true exits 134/131;
 // those exits with low-byte complemented status 133/135; entry byte result 96;
 // published-channel/per-use system/both commit observations 96/96/96. All restored.
+// Round 164: search returning from the loop 96; bool result with `result = true` before the success
+// goto 122 (430 bytes: retail's entry `mov al, 1`, frame 8, EBX sound, `xor bl, bl ... mov al, bl`;
+// only the failure block's placement after the loop differs); result assigned on every path 135; that
+// with both NONE defaults between search and test 128 (retail's block order, not-found unthreaded);
+// driver default before/after the search 147/153; plus return-from-loop search 126.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3123,6 +3132,8 @@ long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 // Round 193: callback procedure alone/with source receiver 86/86;
 // one class-record observation short/with callback 105/105; long/with callback 171/171;
 // readonly class with short/long plus callback 105/171. All restored.
+// Round 164: pool global at each use 86 (identical); for loop with `case 1: continue;` 153/167 (gives
+// retail's `movsx eax, ax; sub eax, 0; jne` but swaps the pool/index EBP/EBX); for loop alone 86.
 // @retail 0x1282d0
 void function_1282d0(void)
 {
@@ -3511,6 +3522,10 @@ struct s_128ca0
 // the argument is added in place where retail copies it, the location folded where retail loads it
 // first); without the scale local 306; scale local with the original sums, pitch only/both 215/286;
 // real outer sum over decibels_add's inner 255. All restored.
+// Round 164: inner decibels_sum with `(dword)arg_1` inside the outer decibels_add 255 (frame 0x494,
+// exact to +0x7e; the location field is still copied, retail loads it into XMM1 first); outer
+// decibels_sum over the by-value inner 214; operands swapped by value 286; first form plus a shared
+// scale local 255 (0x49c); both reference sums inner-first 255.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
@@ -3750,6 +3765,9 @@ PRIVATE inline void function_1275d8(quaternionf const *arg_0, vector3f const *ar
 // Round 194: shared zone result/local/direct/entry 555/554/555; native player-state member 535;
 // shared zone plus native member 555; with complete blend reads 582; with source-state reads 836;
 // both complete observations 799. Original result, source pointer and body restored.
+// Round 164: state pointer sunk into the branch and recomputed in the fallback 598; with 0x16f3a0
+// calls 553; fallback in both arms 633, with 0x16f3a0 calls 706, plus 0x14ddc0/0x14de70 at the loop
+// head 740 (retail's loop head, aligned 426 -> 402).
 // @retail 0x127400
 void function_127400(bool arg_0)
 {
@@ -3888,7 +3906,7 @@ void function_21b0e0(bool arg_0);
 long players_first_active_local_player(void);
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
-// score 55 (was 108): plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
+// score 55 (was 55): plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
 // memset's results (retail buffers-first, no copies), short restart cursor and loop padding remain.
 // Promoted voice limit 108; entry system
 // 108; direct elapsed 108; pending byte 108; frame input 108; short player cursor 122; short
@@ -3905,6 +3923,9 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 // general register (every other retail function clearing a large local without realigning uses EBP) or
 // memset's result is used. Existing next-player helper 107; player for loop 107; results as two one-use
 // locals 55; with long restart 75; results as the call's arguments with long/short restart 76/55 (kept).
+// Round 164: word restart cursor 114; statement clears realign in every form tried (compile-only:
+// split statement/argument clears, callee-owned arrays, short/char clear loops, pointer-local targets,
+// no system local, arrays at entry, player for loop).
 // @retail 0x125b40
 void function_125b40(void)
 {
