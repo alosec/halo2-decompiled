@@ -144,6 +144,9 @@ void c_animation_channel::clear()
 // Round 83: retail order 42 (callers lose); unknown0e stored right after unknown0d 42 (stored at
 // once, ECX free for the id copy); the two NONE id words as one chained assignment, retail
 // order/current 41/36; the two zero words chained 38.
+// Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
+// lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
+// frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
 // the id copy 36; flags stored next to the derived byte 36.
 // Round 42 (all with graph in ESI and the six matched callers off by 1-68): retail order with
 // unknown0e stored first/before unknown0d 40/42, graph stored last 42, id stored last 44; existing

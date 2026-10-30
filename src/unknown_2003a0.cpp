@@ -2003,6 +2003,12 @@ bool function_1e11b0(long actor_index, bool active);
 // splits the squad pointer around the loop (ESI outside, reloaded from the index's home at the
 // loop's back edge); ours keeps the pointer in EBX across the loop and reads the index from its
 // home inside it.
+// Round 86: existing squad_actor_next_inline step with 0x203d70's statement-level inline-depth pair
+// around the 0x203f60 call (function-level pragma dropped) 78 at 184 bytes (retail's unrotated loop and
+// `or byte` flag store), with the return as 0x203d70's `(((dword)*(short *)(squad + 2)) >> 7) & 1` 71
+// (retail's full-width return exactly); on that body squad_get, parameter address taken, parameter read
+// through its address, squad re-fetched after the loop, extra parameter uses 71-95: the parameter never
+// gets a callee-saved register, so the pointer is never split.
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
 {
