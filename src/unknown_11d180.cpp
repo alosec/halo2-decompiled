@@ -197,8 +197,8 @@ void function_11d6a0(
 // @retail 0x11d790
 void function_11d790(
 	quaternionf const *q,
-	vector3f *axis,
-	real *angle)
+	real *angle,
+	vector3f *axis)
 {
 	real w;
 	real m;
