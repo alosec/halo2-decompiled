@@ -806,7 +806,7 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 }
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
-// score 14 (was 49): retail's code apart from two single differences: retail stores kind 1
+// score 14 (was 14): retail's code apart from two single differences: retail stores kind 1
 // between the header's two zero stores (ours after both), and forms the data address with
 // `add eax, ebp` (ours `lea ecx, [eax + ebp]`). The loop runs while the writes succeed: the
 // unrotated head (zero and kind 1 before the count test, ring base rebuilt each pass) only
@@ -853,6 +853,11 @@ bool function_1995a0(const byte *source, dword source_size, byte *destination, l
 // the same `lea ecx`; 0x869a0 2 -> 99); harness: byte source, forceinline copy, position local,
 // size local, kind cast, `memset(&header, 0, 8)`, header declared outside the loop, word kind,
 // a pointer-based kind store, `0 < remaining`, a long flag: no change.
+// Round 84: the terminal arm written first 14; memset and kind 1 in each arm 74; a value-initialised
+// header (`= s_header()`) 24 (410 bytes); the clamp as `remaining < 1024 ? remaining : 1024` 17; a
+// do/while under `if (result)` 14. Compile-only probes (a constructor, a constant zero header copy,
+// a memset of a copy, bitfield or union kinds, `*(char *)&kind`, a pointer memset) all store both
+// zeros before the kind; no other retail function stores between an 8-byte memset's two halves.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {
