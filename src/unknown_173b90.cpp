@@ -945,6 +945,9 @@ public:
 // caller/provider bodies restored; entry completion, flag publication and child/tint homes remain.
 // Round 290: Native long/bool/byte/short emptiness results 295/346/346/292; with existing shared
 // word-flag publication 369/366/366/367. Original executable source restored.
+// Round 427: uninitialized child/successor/selector declarations at entry, all seven
+// subsets, then all with lexical handle names, 292 each. Original declaration scopes,
+// value observations and complete body restored; entry result/flags and child/tint homes remain.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {
@@ -1349,6 +1352,10 @@ bool function_17afd0(long effect_index, long value);
 // Round 290: Complete effect observations, pass-selected draw and shared cluster-bit boundary
 // subsets 106/143/144/102/106/143/144; complete pass result arms 144. Original executable source
 // restored.
+// Round 189: Complete pool-global observations 102; implied back-edge NONE arm removed 150;
+// existing calling iterator with aggregate/field initialization 252/252 (exact-only). Coordinated
+// cluster-provider inline alone/pool/iterator/advance 102/102/252/150. All provider declarations
+// and the original body restored.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {

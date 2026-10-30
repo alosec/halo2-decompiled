@@ -59,7 +59,12 @@ struct s_spawn_scenario_23aea0
 	s_spawn_settings_23aea0 *settings;
 };
 
-// score 105 (was 105): the destination is an absolute pointer induction instead of retail's
+// score 105 (was 105): definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
+// Earlier at 103: the definition now stays in EAX and the source pointer in ECX, but
+// the destination is still an absolute pointer induction instead of retail's integer table
+// offset 0x18..0xa8; the prologue publishes the default table after the first scalar store
+// and the override loop keeps an extra lea esp, [esp].
+// the destination is an absolute pointer induction instead of retail's
 // integer table offset 0x18..0xa8 (16 stores 3 bytes shorter each, so the override loop gains
 // an alignment pad); retail keeps the definition in EAX and forms the source pointer in ECX
 // between the two scalar stores.
@@ -91,6 +96,9 @@ struct s_spawn_scenario_23aea0
 // A twelve-byte destination record indexed by the type ordinal moves the definition into
 // EAX and the source pointer into ECX (105 -> 103); the same record reached through a
 // pointer below the table regresses to 149.
+// Round 421: override cursor 120; scalar override snapshots 119; cursor/scalar snapshots 137; scenario each-use
+// 158; cursor/scenario each-use 163; scalar/scenario each-use 161; all override ownership 169; all
+// ownership/native override assignment 179.
 // Lane 14 r11: one `for (type = 2; type < 14; type++)` loop over struct fields 105 (VC unrolls it
 // by six into retail's two passes; same code as the nested loops); that loop with an entry
 // pointer 103; nested loops with an entry reference 103; an inline element accessor (index

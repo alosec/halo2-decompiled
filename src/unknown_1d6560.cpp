@@ -100,11 +100,10 @@ void __stdcall function_1d6560(s_havok_component *component, s_physics_model_own
 }
 
 /* the collision layer of one of the object's rigid bodies, by object type */
-// score 96 (was 96): retail's parameter order differs from ours and cannot be changed here: retail takes
-// the component in EAX, the rigid body index in ECX, the kind in EDI and the owner and the level on
-// the stack (`ret 8`), while ours is (component, kind, owner, level, rigid_body_index). Besides that,
-// retail reads the type once before the kind test with the component in EAX and the rigid index in ECX.
-// eax and the rigid index in ecx; every one-read type form flips that pair (the caller
+// score 96 (was 96): no local frame; retail reads the type once before the kind test and keeps
+// the body array/body in EBP/ESI. Current component EAX, rigid index ECX, kind EDI and ret 8
+// agree with the matched caller. A single type read must preserve that incoming convention;
+// every prior one-read type form flips the component/index pair (the caller
 // 0x1d5bf0 then differs). Type read after the rigid body 94 at 256 bytes (caller 13), first
 // 117, after headers/body/index 94 (caller 13), body then type 136, kind 7 as a ternary 104;
 // case 0 through the object_index local 91 at 256 bytes (caller 146), with the one-read type
@@ -113,6 +112,8 @@ void __stdcall function_1d6560(s_havok_component *component, s_physics_model_own
 // the whole register allocation differs.
 // Round 183: shared header getter at both dispatches 96; shared byte/long type after body 94/96; early byte 106; direct-component long 105; header/typed object lookup 136/136; shared multi-use handle 105. Single-type forms lose 1d5bf0; all restored.
 // MiniMax R: both flag results computed as ((flags & 8) | 0x30) >> 2 and >> 3 instead of branching: 95 (not kept).
+// Round 200: byte/char/short/word layer result 92/91/119/119; with one direct full-width type
+// 141/141/121/121, all four lose the matched caller. Original layer and dispatch restored.
 // @retail 0x1d69d0
 long function_1d69d0(s_havok_component *component, long kind, s_physics_model_owner *owner, long level, long rigid_body_index)
 {
@@ -241,7 +242,8 @@ struct s_flag_word_bits
 	word bit15 : 1;
 };
 
-// score 275 (was 275): Frame 0x1c versus 0x18; current/entry/status homes and next-group spill remain.
+// score 261 (was 275): flag 1 read through a word bitfield view gives retail's load-and-shift;
+// frame 0x1c versus 0x18 and the current/entry roles and next-group spill still differ.
 // Round 9 (lane 11, fast): first body set in an if/else 300 (frame 0x18 and retail's out-of-line NONE store
 // with the re-tested next, but current moves to EDX and the entry index to ESI where retail has ESI/EDX);
 // with it: nested first-body skip test 300 (identical); `this` used directly for the component alias 300

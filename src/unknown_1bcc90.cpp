@@ -32,50 +32,6 @@ short __stdcall function_1bcc90(long actor_index)
 	return result;
 }
 
-// score 27 (was 35): left is the returned reference: retail keeps it in EAX through
-// its test and copies it to EDI only at the second call (so the second call's
-// arguments load in another order); ours copies it at once. 0x1b3380 shows the same
-// tail. Kept (round 78): the actor pointer declared before the active test, as
-// 0x1b3380 does (the 0x328 compare is then scheduled above the clear as retail).
-// Earlier: the test in a bool before the clear 102; the 0x69c store first 36; the
-// second result named 35; the reference declared at function scope 35; the clear as
-// `= {}` 35; carrier role names (all seven buffer/index/reference combinations) 35
-// each; immutable returned reference 35; inverted reference test with the follow in
-// the first arm 47; request declared at function scope 35; one actor pointer for the
-// active test and the body 78; the 0x328 test through a fresh actor get 81; the test
-// negated 35; compile-only screens of the clear (sizeof type, one-element array,
-// byte-pointer memset, scratch first, const actor, request first) all keep the
-// compare after rep stos. Round 78, after the kept change: the reference test's
-// operands swapped 27; the second call's result named in a nested if 27; the
-// reference declared at the block top 27; result declared after the actor 58; the
-// scratch buffer declared where it is fetched 27; a
-// compile-only screen of all 24 orders of the block's declarations, a reference
-// copy and field-wise compares keeps the early copy.
-// retail tests the value at 0x328 before it clears the
-// block, ours clears the block first and tests it afterwards, so the setle
-// lands in another place; retail also keeps the returned reference in EAX
-// through its test and copies it to EDI only at the second call. A compile-only
-// test moves the 0x328 compare above the clear only when the cleared block's
-// address is never taken. Tried: the test in a bool before the clear 102; the
-// 0x69c store first 36; the second result named 35; the reference declared at
-// function scope 35; the clear as `= {}` 35; a copy of the reference for the
-// last call 35; the follow arm's tests nested 35; the scratch buffer taken
-// before the clear 72; the clear sized by the type 35; the flag as a ternary 35.
-// function scope 35; the clear as `= {}` 35.
-// Carrier role names (all seven buffer/index/reference combinations) 35 each;
-// immutable returned reference 35.
-// Lane 11 r12 (aligned counts, base 16): the 0x328 test in a bool before the
-// clear 78 (the entry allocation changes); the reference in a union with a dword
-// view (0x1b1f70's form) 16, identical code; the arms swapped 46; the call
-// assigned inside the test 16, identical code; the 0x328 field read through a
-// fresh actor lookup 43.
-// function scope 35; the clear as `= {}` 35. Round 75: inverted reference test with
-// the follow in the first arm 47; request declared at function scope 35; one actor
-// pointer for the active test and the body 78; the 0x328 test through a fresh
-// actor get 81; the test negated 35. Compile-only screens of the clear (sizeof type,
-// one-element array, byte-pointer memset, scratch first, const actor, request first)
-// all keep the compare after rep stos; retail's compare-before-clear occurs in no
-// other retail function.
 // @retail 0x1bcd00
 bool __stdcall function_1bcd00(long actor_index, s_slot *slot)
 {
@@ -107,10 +63,15 @@ bool __stdcall function_1bcd00(long actor_index, s_slot *slot)
 			actor_get(actor_index)->unknown040 = false;
 			result = false;
 		}
-		else if (REFERENCE_EQUAL(function_2626b0(actor_index, reference, other_index, scratch, unknown, true), g_470fa0) &&
-			(actor->unknown5b4 > 4 || actor->unknown26c != NONE))
+		else
 		{
-			function_262800(actor_index, reference, false);
+			s_reference found_reference = reference;
+
+			reference = function_2626b0(actor_index, reference, other_index, scratch, unknown, true);
+			if (REFERENCE_EQUAL(reference, g_470fa0) && (actor->unknown5b4 > 4 || actor->unknown26c != NONE))
+			{
+				function_262800(actor_index, found_reference, false);
+			}
 		}
 		ai_scratch_buffer_release(scratch);
 	}

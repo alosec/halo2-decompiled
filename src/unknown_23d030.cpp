@@ -123,8 +123,8 @@ struct s_free_state_23d260
 	real pitch;
 	real roll;
 };
-// score 110 (was 110): Zero/side XMM roles and speculative normalization remain; frame 0x4c agrees. Complete
-// axial/cosine-normal/affine vector contributions, masks 1/2/3/4/5/6/7, scored
+// score 102 (was 102): Zero/side XMM roles and speculative normalization remain; frame 0x4c agrees.
+// Earlier complete axial/cosine-normal/affine vector contributions, masks 1/2/3/4/5/6/7, scored
 // 281/281/335/313/314/329/332; existing add-scaled affine assembly 313. Original normalizer,
 // projection, roll rows and movement restored.
 // Earlier: the rest is register allocation in the side vector
@@ -153,9 +153,19 @@ struct s_free_state_23d260
 // 293/112/287; shared yaw sine/cosine 110; roll update before the pitch clamp 132;
 // a one-use normalization input pointer 107 (1329 bytes, exact-match-only). No pointer kept.
 // Round 409: Existing staged up cross alone/fallback setter/initial setter/both setters 244/243/244/238; all recover zero XMM1 and first +0xa6, last reaches 1326 bytes, but side/up/roll allocation worsens. Initial/fallback/both whole-vector setters 110; uniformly const trig values 110. Original body and normalization retained; no helper or include kept.
+// Round 419: projection/cross/output-row accumulation masks 1/2/3/4/5/6/7
+// 288/251/257/105/102/286/257; all three plus normalization truth test 290.
+// Keep projection and every output row accumulated at 102, 1326 bytes; row-only 105
+// fails the eight-point gate. Zero/side/normalization and up/roll carriers still differ.
 // Round 194: existing shared rotation/staged up cross/direct trig/both 285/221/224/220;
 // those four with alternate normalization 289/307/293/299. Staged forms recover zero
 // and first +0xa6 but regress the complete body. Original rotation, normalizer and all includes restored.
+// Round 426: one reusable rolled-row accumulator 102; plain projection traversal, alone/with
+// accumulator reuse 441/441; native cross and row traversal, without/with projection traversal
+// 446/447; direct traversed row 445; shared cross with accumulated/direct traversed rows 446/445.
+// All executable forms and the temporary include restored; zero and side normalization remain.
+// Round 429: One pitch/roll cosine workspace, with entry/producer cosine, sine and side
+// declarations: all eight 117 at 1326 bytes. Original body restored.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {
@@ -194,13 +204,25 @@ void __stdcall function_23d260(void *state, void *input, void *output)
 	{
 		vector3f *v = &command->up;
 		vector3f const *axis = &command->forward;
-		real projection = (axis->i * v->i + axis->j * v->j + axis->k * v->k) * (1.f - cosine);
+		real projection = axis->i * v->i;
+		projection += axis->j * v->j;
+		projection += axis->k * v->k;
+		projection *= 1.f - cosine;
 		real cross_i = axis->k * v->j - v->k * axis->j;
 		real cross_j = axis->i * v->k - axis->k * v->i;
 		real cross_k = axis->j * v->i - axis->i * v->j;
-		v->i = axis->i * projection + cosine * v->i - cross_i * sine;
-		v->j = axis->j * projection + cosine * v->j - cross_j * sine;
-		v->k = axis->k * projection + cosine * v->k - cross_k * sine;
+		real rotated_i = axis->i * projection;
+		rotated_i += cosine * v->i;
+		rotated_i -= cross_i * sine;
+		v->i = rotated_i;
+		real rotated_j = axis->j * projection;
+		rotated_j += cosine * v->j;
+		rotated_j -= cross_j * sine;
+		v->j = rotated_j;
+		real rotated_k = axis->k * projection;
+		rotated_k += cosine * v->k;
+		rotated_k -= cross_k * sine;
+		v->k = rotated_k;
 	}
 	vector3f movement;
 	movement.i = (real)(cos(camera->yaw) * *(real *)((byte *)input + 0x18) - sin(camera->yaw) * *(real *)((byte *)input + 0x1c));
