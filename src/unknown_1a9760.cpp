@@ -22,6 +22,8 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // Round 196: uniform original-direction reads 163; retained scalar inputs 197; double square 105;
 // live/scalar inputs with double square 164/197; normalized-vector setter on original/live/scalar inputs
 // 217/255/243. All restored; half/offset allocation and x87/SSE schedule remain.
+// Round 288: shared affine/difference producers with in-place/distinct output, ordinary/forced
+// difference declaration and original/earlier magnitude 262, 251, 262, 251, 262, 234, 262, 234. Original restored.
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {

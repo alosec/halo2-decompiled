@@ -103,6 +103,8 @@ void unicode_string_snprintf(word *buffer, long maximum_count, word const *forma
 // initial owner (first eight); bounded-copy returned prefix with entry/scan length, array/returned
 // path and branch/direct SDK result (last eight) 125, 125, 117, 116, 112, 112, 123, 129, 113, 119,
 // 126, 123, 131, 123, 126, 121.
+// Round 288: scalar owner formal with original/scan-local length, direct/shared terminated
+// copies and branch/direct SDK result 90, 92, 90, 92, 121, 113, 121, 113. Original aggregate contract and callers restored.
 // @retail 0xb4120
 bool function_b4120(long kind, struct _XUID owner, wchar_t const *filename, wchar_t *arg_d4faef, dword *path_size)
 {

@@ -167,6 +167,8 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // Overlap-safe matrix/bounds/both/normal/matrix-normal/bounds-normal/all transfers
 // 253/237/273/210/262/234/282; all plus existing final projection 294. Original body and private helper
 // restored.
+// Round 288: complete shared corner-vector producers, forward/left affine and two-scale sums,
+// each with private/shared final projection 265, 250, 265, 250, 265, 241, 265, 241. Original body and helper restored.
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {
