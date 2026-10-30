@@ -1717,7 +1717,6 @@ real function_13bb90(s_tag_data const *curve, real input, real range);
 void function_13be80(s_tag_data const *curve, real input, color3f *color);
 bool function_47fd0(long tag, short stage, short fallback, byte flags);
 void __stdcall function_480a0(point3f const *point, real width, real height, real cosine, real sine, dword color);
-void function_0222d0(D3DRENDERSTATETYPE state, dword value);
 
 PRIVATE inline real clamp_2e9e0(real value)
 {
@@ -1732,7 +1731,7 @@ PRIVATE inline real clamp_2e9e0(real value)
 // image calls it (full build may differ); ebx and ebp swapped (retail definition in ebx, NONE/time in ebp); stack slot order;
 // the time/hash sum is emitted h1 first (retail h0*k + time + h1); 0.0/1.0 are reloaded instead of kept in xmm5/xmm6.
 // Tried: far_distance read in place (552), all clamps as PIN (543), declaration order of the out locals (no change),
-// attenuation/animated hoisted above delta (576 / 548), several spellings of the hash sum (548).
+// attenuation hoisted together with animated (576), several spellings of the hash sum (548).
 // @retail 0x2e9e0
 long __stdcall function_2e9e0(byte const *context, s_2e3f0_record const *record)
 {
@@ -3963,7 +3962,7 @@ void function_020770();
 void __stdcall function_13870(bool finish, bool blur);
 bool function_13630();
 
-// score 327 (was 453; the fast check's score counts every line after a one-instruction shift, so most of it is
+// score 331 (was 453; the fast check's score counts every line after a one-instruction shift, so most of it is
 // shift): the prologue now matches to +0x48 (memset of the parameters, the identifier read first); draw_ui and
 // finish are bool (caller 0x13680 pushes raw bools: 103 -> 16); the calls of 0x2c370 for 2..6 are
 // written out as retail has them (a loop kept 0x1595d0 and 0x14ddc0 inlined); the 0x25dc0 call, the scale test and the
@@ -3973,8 +3972,8 @@ bool function_13630();
 // the shift raises the score to 411-437); (2) the passes that never cull keep a dead load of g_485898 in
 // retail (3 loads, same cause as 0x423c0); (3) function_14b60 takes its first argument in eax in retail
 // (callee not matched); (4) the second 0x25dc0 call: retail builds the first flag with a branch diamond
-// (mov dl,1 / jle / xor cl,cl / jmp / mov cl,1), ours folds it (setle 356; bool/byte/long locals,
-// if-else, ternaries, two calls (447, tail duplicated) 273-357); (5) 0x3ba90 returns long here but retail
+// (mov dl,1 / jle / xor cl,cl / jmp / mov cl,1), ours folds it to setle (kept: `g_4c19ac <= 0`; a flag
+// local set inside a test 327, bool/byte/long locals, if-else, ternaries, two calls (447, tail duplicated) 273-357); (5) 0x3ba90 returns long here but retail
 // stores only its al (bool), which needs the definition in unknown_03bcb0.cpp changed to bool
 // (-1 instruction, 2bcd0 354 only because the shift moves). Tried: a plain {0} parameter block (398, dead
 // zero stores dropped), the helper-returned block (320 before the memset form).
@@ -4056,12 +4055,7 @@ void __stdcall function_2bcd0(long frame_mode, bool draw_ui, bool world_effects,
             if (draw_ui) function_1e370();
             if (frame_mode != 2)
             {
-                if (filter_mode != 2 && !g_4b9f88)
-                {
-                    bool first = true;
-                    if (g_4c19ac > 0) first = false;
-                    function_25dc0(first, true);
-                }
+                if (filter_mode != 2 && !g_4b9f88) function_25dc0(g_4c19ac <= 0, true);
                 g_485a76 = 1;
                 long local_player = g_4b9ed8;
                 if (local_player != NONE && !function_155760(local_player) && function_14ddc0(local_player))
