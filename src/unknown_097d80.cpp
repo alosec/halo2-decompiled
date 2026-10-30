@@ -101,6 +101,9 @@ struct c_aggregate : c_child
 // Per-child counts with ordinal/direct child, ordinal/child cursor, count-table end and child-table end
 // 159/159/142/181; aggregate-zero equivalents 183/183/148/206. Ordinal forms recover frame 0x8020
 // but lengthen dispatch; original cumulative boundaries and allocator code restored.
+// Round 292: Allocator information output initialized to zero or NONE at its producer, with
+// query/block/after-array/before-array declaration lifetimes: eight at 100/377. Original output
+// contract and body restored.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {
