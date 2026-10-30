@@ -51,7 +51,8 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 93 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// score 56 (was 56): frame 0x8c and first trig/product sum agree; two x87 add operands, blend address ownership, strength-add destination/copy and collision normalization remain.
+// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
 // color0 store match. Left: the three x87 direction adds load the direction first where retail adds
 // it as the memory operand, 0x131c20's `&color` is formed in edi and copied to ecx where retail
 // forms it in ecx and then edi, and the collision test's sete. The fast check also leaves two of
@@ -118,10 +119,13 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
 // in double scalar carriers 186. Original contribution and color ownership restored.
 // Round 183: shared vector add, either input owner, and unit add-scaled in place 93/93/93/93; separate native sum output, plain/scaled and either owner, 188/188/188/188. Original accumulation restored.
-// score 56 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// Earlier: the frame, the sky/count homes, the trig temporaries, the blend registers and the
 // color0 store match. Left: the strength is loaded, added and copied back where retail adds the
 // entry's strength to it in place, the two remaining x87 direction adds load the direction where
 // retail loads the contribution, 0x131c20's `&color` is formed in edi and copied to ecx where retail
+// Round 187: widened compound accumulation/immutable contribution/strength-first/direct clamp/
+// clamp plus strength/relative-strength part/light-divisor part/all scalar parts with compound
+// accumulation 56/56/56/56/56/56/140/56. Original executable source restored.
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {
