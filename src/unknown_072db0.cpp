@@ -1603,7 +1603,8 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
     return local_0;
 }
 #pragma optimize("", on)
-// score 709 (was 709): Frame 0xc0 agrees; initial cursor base/home, slot and request/completion homes remain.
+// score 709 (was 709): Frame 0xc0 agrees; initial cursor base/home, slot and later homes remain.
+// Earlier: Frame 0xc0 agrees; initial cursor base/home, slot and request/completion homes remain.
 // frame 0xc0 agrees; native completion-group cursor retained;
 // initial cursor base/home, slot expansion and request/completion homes still differ.
 // Earlier: Frame 0xc0 agrees; first user/identity homes and protected request-builder inputs remain.
@@ -1692,6 +1693,9 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
 // Round 184: Native byte/short/long/dword zero-one returns under inline/forced declarations
 // 709/709/730/730/709/709/709/709. Original bool return, long internal result, complete
 // predicate and helper boundary restored.
+// Round 414: actual request records/properties/admission domains short-long-long, long-short-long,
+// short-short-long, dword-long-long, long-dword-long, dword-dword-long, word-word-long and
+// short-short-dword 764/722/765/709/709/709/765/765. Original totals and complete body restored.
 // @retail 0x74aa0
 void function_074aa0(void)
 {
