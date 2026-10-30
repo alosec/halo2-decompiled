@@ -336,6 +336,10 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // the test 207f, pointer cursors with a direct call 212f.
 // Generic data/unsigned item contracts/both 115/115/115; actual info record/generic data
 // 229/229; native four-word data/native unsigned items 115/115; info plus native data 229.
+// Real validator coordinated inline knowledge 115; with direct matched call 137; size/handle/both
+// producer forwarding 138/134/137; immediate element-validity result 115 (exact-only); ordinary
+// private-producer inline 115; conditional all-valid accumulation 215. Original validator declarations,
+// private helper, both qualified pointer-slot reads and complete body restored.
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {

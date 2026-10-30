@@ -59,7 +59,8 @@ struct s_spawn_scenario_23aea0
 	s_spawn_settings_23aea0 *settings;
 };
 
-// score 103 (was 105): the definition now stays in EAX and the source pointer in ECX, but
+// score 105 (was 105): definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
+// Earlier at 103: the definition now stays in EAX and the source pointer in ECX, but
 // the destination is still an absolute pointer induction instead of retail's integer table
 // offset 0x18..0xa8; the prologue publishes the default table after the first scalar store
 // and the override loop keeps an extra lea esp, [esp].
@@ -91,6 +92,9 @@ struct s_spawn_scenario_23aea0
 // A twelve-byte destination record indexed by the type ordinal moves the definition into
 // EAX and the source pointer into ECX (105 -> 103); the same record reached through a
 // pointer below the table regresses to 149.
+// Round 421: override cursor 120; scalar override snapshots 119; cursor/scalar snapshots 137; scenario each-use
+// 158; cursor/scenario each-use 163; scalar/scenario each-use 161; all override ownership 169; all
+// ownership/native override assignment 179.
 // @retail 0x23aea0
 void function_23aea0()
 {

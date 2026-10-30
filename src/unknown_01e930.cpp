@@ -395,6 +395,9 @@ PRIVATE inline __int64 bink_read_tsc(void)
 // long/dword carriers with entry/post-clock declarations, all eight 285; each carrier
 // with false-default skippability at admitted/entry phase, all eight 281. All are 1098
 // bytes with frame 0x3c; original entry allocation zero and complete body restored.
+// Round 214: native start/elapsed/both clock records at original or entry declaration phases,
+// including independent mixed phases, 244 each in eight forms. Exact-only records restored;
+// frame 0x3c/0x40 and status/clock/output homes and instruction policy remain.
 // @retail 0x156090
 void function_156090(char const *name, dword flags)
 {

@@ -74,6 +74,8 @@ PRIVATE inline long swizzle_log2(dword value)
 // Round 284: Native output storage throughout, with private/shared logarithms by
 // axis, 96/98/95/98; y shift at production with the same boundaries
 // 95/99/94/94. Original result locals and both helper calls restored.
+// Round 211: existing logarithm signed short/long inputs crossed with bounded short/long counts
+// and short/long results, scores 82/82/82/82/82/82/82/82. Original executable form restored.
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

@@ -74,6 +74,21 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // from the successor 52, guarded do-while 49; harness: mask on the dword, inline, as two bit tests or
 // through a char cast, `continue` filters, short index/successor mixes - the mask stays an immediate.
 // The mask is the XDK guest mask (`XOnlineIsUserGuest`, as this function's caller tests it).
+// Round 119: retail's result is not live in the loop (false is made again at the loop exit), so AL is
+// free for the mask. Plain early returns (no successor local) 52 (no EBX at all: next in ECX, flags in
+// EAX, mask an immediate); the caller's XUID view with XOnlineIsUserGuest 43, with early returns 52;
+// the filter as an inline predicate with early returns 40 (`setne cl` for the last test), with the
+// xuid tests split 40, with every test an early return 43, the predicate with early returns in the
+// loop 54.
+// Round 34: the hoisted mask in AL is the one cause: it makes the result constant at each exit (two
+// false exits), the successor take EBX and the early ESI save; with early returns everything else
+// is retail's. A compile-only screen confirms VC7.1 hoists the 3 only with two uses in the loop and
+// retail keeps one, so the second use was removed after hoisting. Tried: the zero-XUID test as a
+// null-identity comparison (`!(xuid == 0 && guest number == 0)`) 67 (hoists, but the extra guest
+// test stays, 140 bytes); guarded do-while with a named successor and early returns 49; successor
+// local with early returns 49; the XDK `XOnlineIsUserGuest` on the flags dword 43, with the
+// do-while 49; harness only: the guest test twice (merged before hoisting), dword and byte forms
+// together (both stay), a use of 3 outside the loop (no hoist).
 // @retail 0x805e0
 bool player_configuration_cache_next_recent_player(s_recent_player *player, long *iterator)
 {
@@ -489,6 +504,14 @@ void function_1537f0(s_profile_record *record);
 // (inlined across files) 67. The
 // harness also folds a dword[3]/byte[12]/union identity, a zeroing loop, a 64-bit identity type and an
 // opaque entry pointer.
+// Round 34: retail's frame is one 0x9c-byte object padded to 0xa0 (identity at +0x10, record right
+// after at +0x1c): with the identity and the record as two members of one local struct the record's
+// block store stops the zeros being forwarded, and the identity is stored and read back as retail
+// does: 101 with the tail clear, 45 at 259 bytes without it and with the record's 64-bit field as two
+// dwords (4-aligned record), 52 with it 8-aligned; links in retail's store order 45, the global NONE
+// stores chained 45. Not kept: no existing type has that layout, and an invented grouping struct is
+// not an accepted form. What then remains is NONE hoisted into EBP across the loop (retail keeps the
+// record's first zero dword there).
 // @retail 0x7f930
 void function_7f930(void)
 {
@@ -835,6 +858,21 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // coalesced with the count); on it: those link stores 70, count path lower first 72, named count 71,
 // flag declared first 71, flag set after the decrements 73, flag declared after the removal 71.
 // Round 183: actual endpoint 389; plain endpoint 396; one count 89 (frame 0x10); endpoint/count 380; plain endpoint/count 394; endpoint relation 387; plain relation 394; combined count/relation 384. Original body restored.
+// Round 119 (lane 4), on round 149's entry (71, aligned 39 against the current 55): retail's entry
+// (load into EDX, copy to ESI, spill, call) comes only from `removed = g_4cf980;
+// function_7fd10(g_4cf980); function_7fd80(removed);` 69 (aligned 37; a mixed read, kept only with a
+// match); the calls through an inline unlink helper 71, the helper returning the index 74 (spill after
+// the calls), the global passed to the helper 73, a separate `last` local 76; on the 69 form: lower
+// first in the count path 70, upper declared first 69, `g_4cf978 > position` 71, upper as `<` 70,
+// upper initialized from lower 69 (upper stays in EAX with the count); link stores next_other,
+// unknown58, previous_other, next 68 (next_other then stored first as retail, but the g_4cf988 load
+// moves ahead of the NONE stores into DX), previous_other first 161, unknown58 third 69, next first 161.
+// Round 80: plain entry (removed = NONE, set in the full test), `removed <= position ? removed : position`,
+// an explicit `>` arm clearing the flag, the flag set before the decrements and the count path upper
+// first with its flag cleared 73 (aligned 41 against 58: the entry and the three-way test match; upper
+// still takes EAX, so the forward copy index takes EBP and a jump over the loop padding shifts the
+// rest); on it: lower first in the count path 74, upper declared first 73, upper before lower 75, the
+// lower ternary on `position < removed` 73, bounds left unset and zeroed in a final else 73.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {

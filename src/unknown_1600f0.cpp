@@ -1124,6 +1124,9 @@ struct s_game_engine_globals_connections_view
 // Round 291: Default validity before construction for place/icon, score, both, time, place/time,
 // score/time and all: 256/252/258/252/246/247/268; all with connection default 267. All exact-only forms
 // restored (calibrated fast control 170).
+// Round 219: Query-output default at entry/time/place/name boundaries 253/192/235/191;
+// each with direct per-arm glyph 250/187/232/184. All restored; deferred icon tail and
+// trailing time/connection homes remain.
 // @retail 0x1603f0
 void game_engine_player_row_build(short const *position, real alpha, long player_index, word const *name, long place,
 	long score, long seconds, bool hide_connection, bool show_icon, bool hide_place, color3f const *color, bool dim,
@@ -1436,6 +1439,10 @@ PRIVATE inline long score_string_list_1608e0()
 // sum/with bottom/with both 726 at 2826 bytes; complete graph with signed-word body-row sum 728. All
 // actual expression locals are reused, but they do not recover frame 0x79c, viewer EBX, coordinate/color
 // homes or clamp registers. Original complete body and five native rectangles restored.
+// Round 419: separate title foreground 689; separate title background 689; separate title colors 689;
+// separate team output 687; title foreground/team output 688; title background/team output 687; all
+// appearance outputs 687; immutable title/all outputs 687. Frame/viewer/coordinate/color homes remain;
+// one- and two-point reductions rejected. Original body restored.
 // @retail 0x1608e0
 void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, real alpha)
 {
@@ -1707,6 +1714,9 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // receiver/bounds scheduling remain.
 // Round 413: actual text receiver/word buffer/color/text bounds as the single member base
 // 150 each; each with indexed team traversal 148. All are 1863/1851; original helper and body restored.
+// Round 189: Actual widget/validity and validity/widget pointer contracts 172/172; sole validity
+// member base in both orders 156/156; indexed team fields with all four contracts 154 each.
+// Bounds/receiver scheduling and team induction remain. Original helper and body restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

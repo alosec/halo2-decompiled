@@ -368,6 +368,9 @@ static inline bool teams_enabled_19e1c0()
 // Round 415: token-first zero-only player/team/other comparisons in seven subsets
 // 391/390/391/391/392/391/392; complete comparison graph with ordinary result 692.
 // Original comparison operands, result storage and copy/format tails restored.
+// Round 218: Result/text/maximum lexical names, seven subsets, 390 each; complete opponent-scan
+// role names 390. Frame 0x208 and copy/result homes remain; all original identities and body
+// restored.
 // @retail 0x19e1c0
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining)
 {

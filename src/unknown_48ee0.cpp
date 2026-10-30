@@ -143,6 +143,9 @@ extern real g_4c9798[36];
 // instruction (cmp esi, edi; cdq; jle; idiv; the & ~63 masks). 230, kept.
 // Round 289: On the retained height-first overflow graph, long-mode/long-height/short-width carrier subsets 1 through 7; positive word counterpart:
 // [231, 250, 250, 274, 280, 268, 265, 274]. All executable source and temporary types restored.
+// Round 299: pixel-size declaration at entry/before mode/before extent 230 each;
+// each with coordinated pixel-size/mode names 230; coordinated names alone and
+// diameter lexical rank 230. Original declarations, names and body restored.
 // @retail 0x48ee0
 void function_48ee0(byte const *matrix, byte const *state, byte const *tag)
 {

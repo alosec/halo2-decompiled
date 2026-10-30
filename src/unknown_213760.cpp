@@ -1246,6 +1246,9 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
 // with pointer/reference receivers and local/iteration output lifetimes: 215;
 // comparison-produced write success in each context: 216 (898 bytes). All restored;
 // file displacement, request-copy and I/O scheduling within frame 0x1144 remain.
+// Round 424: native create-member pointer/reference and task pointer/reference 104 each;
+// cleared-task pointer alone/with create pointer/with create reference 226 each;
+// cleared-member pointer 217. All restored; file displacement and request/completion/I-O scheduling remain.
 // @retail 0x213970
 void function_213970(void)
 {

@@ -188,6 +188,9 @@ PRIVATE __forceinline void function_2922b5(vector3f const *arg_0, vector3f const
 // 728/728. Original indexed arrays, countdown, success and helper snapshots restored.
 // Round 249: Root return / limited-angle output with pointer/reference, output-first/last,
 // and limit-first/original input roles: all eight 637. Original outputs, helpers and calls restored.
+// Round 424: paired hit-response orders 0213/1023/1032/1302/0132
+// 629/629/628/627/628; first three with completed clamp result 726 each.
+// Two-point best rejected; original response order and helper restored.
 // @retail 0x2922b0
 bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, real *arg_4, real *arg_5, bool arg_6)
