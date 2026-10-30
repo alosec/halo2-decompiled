@@ -2143,6 +2143,9 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // Round 280: Entry-produced return result short/long with zero/one defaults 491 each; byte/bool with
 // zero/one defaults 642 each (fast control 491, full 478). Original return storage, completion byte and
 // actor/state acquisitions restored.
+// Round 218: Nearest/candidate/distance scalar role names, seven subsets, 491 each; all three
+// uninitialized at entry 491 (reduced control 491, full 478). Actor/state ownership and first point
+// home remain; original scalar lifetimes restored.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
