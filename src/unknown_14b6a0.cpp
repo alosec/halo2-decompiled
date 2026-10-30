@@ -251,6 +251,12 @@ void function_14bac0()
 // Distinct native 16-byte iterator role names and entry recipient reservation, all seven
 // non-original subsets, 259 each; both named native workspaces at entry 259. Frame 0x48;
 // original iterator identities, reservation lifetimes and complete body restored.
+// Returned relocation output 243; paired initial marker snapshots 230; both 243;
+// selected-unit reuse alone 245; returned output plus unit reuse 222 kept (1036 bytes);
+// marker/unit snapshots 245; complete graph 222; with native recipients 228. Four complete
+// returned-point buffer/pointer role-name families 222 each, all frame 0x50. Original t05
+// identities retained; selected-unit value begins at its original bounds read and serves every
+// subsequent recipient call. Frame grows from 0x44 to 0x50; readiness and native recipient sharing remain.
 // Round 212: complete origin value with pointer/value destination and scalar/shared difference
 // 319/316/319/316; native recipient counterparts 318/361/318/361 (fast control 230). Original input
 // observations, points and both traversals restored; frame/readiness sharing remains.

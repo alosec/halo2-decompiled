@@ -48,6 +48,20 @@ long __stdcall function_2cb5b0(byte *destination, long *destination_size, byte c
 // Pool itself as callback context 74; native numeric/raw storage receivers 3/3;
 // immutable pool pointer 3; callback context after header read 15; scoped context 3;
 // success published after release from Boolean/native error 48/11.
+// only the first timer-zero dword store precedes PUSH EDI and the result-byte
+// store; retail puts it after both. The frame, timestamp pair, retry work and decompressor
+// convention now agree. Earlier with the standard decompressor: real wrapper 64 (323/319 bytes),
+// stdcall/cdecl stubs 64; field store order 66; one-exit result 64. Unsigned start 52;
+// start before the result local 52; separate elapsed subtraction 52; plain-inline pool helper
+// 301; retry counter before the test 52. Native unpack status at entry/after allocation
+// 130/102; raw storage/unsigned bytes/both 52/52/52; entry status with raw storage/unsigned
+// bytes 130/130; later status with both 102. Result after allocation 89; break/continue retry
+// loop 52; allocator local before pool setup 57; elapsed read then -= start 52; timestamp
+// before the result default 52.
+// Round 202 with the recovered callee contract: byte/signed-byte/short success 105/105/106;
+// direct test result 54; success from pool admission 66; inverse failure result 120;
+// result assigned in both allocation outcomes 124; entry allocator-output workspace 22.
+// All result forms and workspace lifetimes restored; shared helper bodies and qualifiers unchanged.
 // @retail 0x199740
 bool __stdcall function_199740(byte *buffer, long size, byte *destination, long *decompressed_size)
 {

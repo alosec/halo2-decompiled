@@ -2209,6 +2209,9 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 426: complete normal/velocity/final scaled-product staging, all seven
 // subsets, 109 each; complete staged outputs through the existing vector setters 127.
 // Original products, j/k/i normal publication and matched sample boundary restored.
+// Round 193: Magnitude pointer inline and vector-reference forced/ordinary inline 109/109/109; vector-value
+// forced/ordinary inline 490/490; scalar-value forced/ordinary inline 193/193; scalar-reference input 109.
+// Original helper contract restored; first normal XMM ownership and velocity preloads remain.
 // Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
 // at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
 // Original normalization and fallback restored.

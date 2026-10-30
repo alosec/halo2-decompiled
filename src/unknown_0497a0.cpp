@@ -731,6 +731,9 @@ void __stdcall function_43720(s_43740_input *input)
 // swaps source and definition registers and 0x42b20 stops matching).
 // Round 197 fast trials: Populated request definition readback, direct/stored source and slot x
 // definition/shader normal x retained/removed slot anchor 62, 62, 67, 67, 62, 62, 67, 67.
+// Round 121: the slot anchor `(void)&slot;` dropped (identical code, 0x42b20 still matches); on that:
+// the tag as a dword 62; a slot index local for both arrays 62; the vertex count stored first 63; the
+// parameters as (definition, source, slot) at the definition and the call 62 (identical code).
 // Round 98: retail tests the tag in eax before `push ebp` and copies it to ebp after (ours keeps it
 // in ebp from the load, so ebp is saved before the test). The test on the field with the tag read
 // inside 62; the normal flag through the stored shader pointer or a shader pointer local 67 (the
@@ -749,7 +752,6 @@ void __stdcall function_43720(s_43740_input *input)
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {
-    (void)&slot;
     byte *bytes = (byte *)definition;
     long tag = *(long *)(bytes + 0x34);
     if (tag != NONE)
