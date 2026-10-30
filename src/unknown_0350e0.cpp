@@ -576,6 +576,10 @@ extern long g_4858b8;
 // score 17 (was 17): the three calls are set up differently: retail passes the globals
 // in ECX and the word in EAX where ours uses EDX, and the last call's argument order
 // differs (the callees' conventions are fixed in their own files).
+// Retail also sets function_14bc0's bool (AL) between its two pushes, which suggests a different
+// declared parameter order (index, use_depth, element); that callee has 89 call sites, not tried.
+// Tried: swapping function_4c690's parameters (no change), locals for the index/tag read before
+// the first call (40), dropping the (short) cast or using word (17), testing function_3ebd0's result (24).
 // @retail 0x3ede0
 void function_3ede0(void)
 {
@@ -726,6 +730,9 @@ void function_1bd50(void *state);
 bool __stdcall function_16610(long tag, long stage, long wanted_pass, long variant,
     long target, bool copy);
 
+// score 26 (was 26): retail reloads g_4858c4 after function_1bd50 (no saved register, no
+// push/pop esi); ours keeps it in ESI across the call. Tried: a local for the first read,
+// a local for the tag (both 26).
 // @retail 0x3a550
 void function_3a550(void)
 {
@@ -1099,6 +1106,14 @@ struct s_vector_perturbation
 extern "C" void _ReadWriteBarrier(void);
 __declspec(noinline)
 #pragma intrinsic(_ReadWriteBarrier)
+// score 6 (was 11): the second and third _ReadWriteBarrier() calls were not needed and are gone.
+// What still differs: after the normalize call retail loads perturbation.i before it forms
+// magnitude * magnitude_fraction (ours forms the product first), and retail adds
+// perturbation.k to velocity.k as `[velocity] + [edi + 8]` where ours loads the perturbation
+// first. Tried: a local for the i load (6), the product written out per component (38, no CSE),
+// perturbation-> or locals for the velocity sums (5 to 16; a local vj with perturbation->j
+// gives 5 but k stays flipped), declaring the perturbation pointer earlier or later (31 to 85),
+// and removing the first barrier (15).
 // @retail 0x4b3d0
 void function_4b3d0(s_vector_perturbation *state)
 {
@@ -1117,7 +1132,6 @@ void function_4b3d0(s_vector_perturbation *state)
 	state->perturbation.j = (real)(state->first_axis.j * first) + state->base_direction.j;
 	vector3f *perturbation = &state->perturbation;
 	perturbation->k = (real)(state->first_axis.k * first) + state->base_direction.k;
-	_ReadWriteBarrier();
 	real second = state->second_fraction * state->direction_scale;
 	perturbation->i = (real)(state->second_axis.i * second) + perturbation->i;
 	perturbation->j = (real)(state->second_axis.j * second) + perturbation->j;
@@ -1127,7 +1141,6 @@ void function_4b3d0(s_vector_perturbation *state)
 	perturbation->i *= magnitude;
 	perturbation->j *= magnitude;
 	perturbation->k *= magnitude;
-	_ReadWriteBarrier();
 	velocity->i += state->perturbation.i;
 	velocity->j += state->perturbation.j;
 	velocity->k += state->perturbation.k;
@@ -1150,7 +1163,9 @@ real g_4c19b0, g_4c19b4;
 // which shifts the code after it. Summing in one expression, via vector or
 // struct fields, through references, with a compiler barrier, if/return or
 // assignment forms of the clamp, an inline clamp and reordered cases score
-// 89 to 271.
+// 89 to 271. Also tried: a struct overlay for the two colours with the sums as
+// one expression, as three reals or as a field-wise copy (146 to 147: the
+// sums come out in the wrong order and the clamp still shares case 16's compare).
 // @retail 0x336f0
 real function_336f0(long selector)
 {
@@ -1222,6 +1237,13 @@ struct s_slot_key
 long function_0209b0(s_slot_key *key, void const *data, long size);
 void function_020b40(long value, long index);
 
+// score 97: retail takes the tag in ecx, the direction in edi and the position
+// on the stack (kept in ebp, with the result stored in the position's slot);
+// ours takes the position in ecx and the tag on the stack, so every use of
+// the tag and the position differs. Tried without effect on that choice:
+// dropping the volatile result, reading the position through a volatile
+// pointer (108), copying the position into a local first (129), hoisting the
+// deltas to the top (112).
 // @retail 0x2dba0
 bool function_2dba0(long tag, vector3f const *direction, bool alternate, long c, long d, long e, point3f const *position, color3f const *color, real alpha, real amount, real scale)
 {
@@ -1276,6 +1298,10 @@ return_exit:
 extern bool g_4ba019;
 long function_baf80(long object_index);
 
+// score 12 (was 12): the parent lookup differs. Retail masks the parent index (`and eax, 0xffff`,
+// `lea`) before it loads g_4e0300, ours loads g_4e0300 first and uses movzx; the first model
+// load also goes through EDX in ours and EAX in retail. Tried: `long parent_slot = parent & 0xffff`
+// (22), the same with byte-offset addressing (22).
 // @retail 0x4baf0
 void function_4baf0(long object_index, real distance, byte *first, byte *second)
 {
@@ -1337,6 +1363,12 @@ void function_146de0(void);
 void function_146b80(void);
 int __fastcall function_142a60(transform4x3f const *a, transform4x3f const *b, transform4x3f *result);
 
+// score 96 (was 116): what still differs is the x87 start (retail loads the heading once and
+// keeps it on the stack; here the reference is re-read) and the loop base register (retail
+// ebp = out + 0x30, here + 0x2c). The three axis vectors are one matrix3x3, as retail copies
+// them with one rep movsd. Indexed loop keeps the stack convention (pointer loop: 145, register
+// convention). Tried: heading as double (148, pushes esi/edi/ebp at entry), as real (147),
+// pitch as a double local (161), the old volatile copy loop (116).
 // @retail 0x3ebd0
 bool __stdcall function_3ebd0(vector3f const *offset, transform4x3f const *matrices, transform4x3f *out, long count)
 {
@@ -1355,30 +1387,25 @@ bool __stdcall function_3ebd0(vector3f const *offset, transform4x3f const *matri
             definition = g_4e3b44[index & 0xffff].bytes;
         real const &heading = *(real *)(definition + 0x80);
         vector3f forward;
-        forward.i = (real)(cos(heading));
-        forward.j = (real)(sin(heading));
+        forward.i = (real)(cos(heading) * cos(0.0));
+        forward.j = (real)(sin(heading) * cos(0.0));
         forward.k = (real)sin(0.0);
-        vector3f left;
-        left.i = forward.k * g_4687b0->j - forward.j * g_4687b0->k;
-        left.j = forward.i * g_4687b0->k - forward.k * g_4687b0->i;
-        left.k = forward.j * g_4687b0->i - forward.i * g_4687b0->j;
+        matrix3x3 axes;
+        axes.forward = forward;
+        axes.left.i = forward.k * g_4687b0->j - forward.j * g_4687b0->k;
+        axes.left.j = forward.i * g_4687b0->k - forward.k * g_4687b0->i;
+        axes.left.k = forward.j * g_4687b0->i - forward.i * g_4687b0->j;
+        axes.up = *g_4687b0;
         transform4x3f transform = *g_4687d0;
-        transform.forward = forward;
-        transform.left = left;
-        transform.up = *g_4687b0;
+        transform.rotation = axes;
         transform.scale = *(real *)(definition + 0x14);
         transform.position.x = *(real *)(definition + 0x18) * g_4b9da0.x;
         transform.position.y = *(real *)(definition + 0x18) * g_4b9da0.y;
         transform.position.z = *(real *)(definition + 0x18) * g_4b9da0.z;
-        /* The existing assembly callee reads its first matrix through ECX.
-           Keep these local stores visible across that assembly boundary. */
-        for (long component = 0; component < 13; ++component)
-            ((volatile real *)&transform)[component] = ((real const *)&transform)[component];
-        transform4x3f const *source = matrices;
-        transform4x3f *destination = out;
-        for (long i = 0; i < count; ++i, ++source, ++destination)
+        for (long i = 0; i < count; ++i)
         {
-            *destination = *source;
+            transform4x3f *destination = &out[i];
+            *destination = matrices[i];
             destination->position.x += offset->i;
             destination->position.y += offset->j;
             destination->position.z += offset->k;
@@ -1419,6 +1446,14 @@ struct s_320b0_box
     vector3f radius;
 };
 
+// score 98 (was 103): the 1.0 held across the loop sits in xmm4 here, in xmm3 in
+// retail, and the scale temporary the other way round; ours also folds the
+// last term's matrix element as a memory operand (`movaps; mulss [mem]`) where
+// retail loads it first. The compiler orders each sum by the order the three
+// coordinates are declared in, not by the source order of the terms; declaring
+// z, y, x gave 99 (x, y, z 103, y, z, x 104, z, x, y 105, y, x, z 106), and
+// writing the scale test as `1.0f != scale` took one more. Copying the point
+// through a point3f local spilled it to the stack (much worse).
 // @retail 0x320b0
 bool function_320b0(s_320b0_box const *box)
 {
@@ -1438,11 +1473,11 @@ bool function_320b0(s_320b0_box const *box)
     {
         {
             long i = edge * 2;
-            real x = ((point3f *)edges)[i].x;
-            real y = ((point3f *)edges)[i].y;
             real z = ((point3f *)edges)[i].z;
+            real y = ((point3f *)edges)[i].y;
+            real x = ((point3f *)edges)[i].x;
             real scale = *box_scale;
-            if (scale != 1.0f)
+            if (1.0f != scale)
             {
                 x = scale * x;
                 y = *box_scale * y;
@@ -1455,11 +1490,11 @@ bool function_320b0(s_320b0_box const *box)
                 }
         {
             long i = edge * 2 + 1;
-            real x = ((point3f *)edges)[i].x;
-            real y = ((point3f *)edges)[i].y;
             real z = ((point3f *)edges)[i].z;
+            real y = ((point3f *)edges)[i].y;
+            real x = ((point3f *)edges)[i].x;
             real scale = *box_scale;
-            if (scale != 1.0f)
+            if (1.0f != scale)
             {
                 x = scale * x;
                 y = *box_scale * y;
@@ -2178,6 +2213,10 @@ void function_4a7c0(s_cached_input_list *state, s_cached_input const *inputs, lo
 long __stdcall function_4ac30(s_cached_input_list *state, s_cached_input *output, long limit, real step);
 s_cached_input_list g_5234e8[4];
 
+// score 139 (r581: 139; 146 -> 139 on a 169-source fast image): retail keeps 0.0f, 0.1f and 2.0f in xmm5-xmm7 across the loop; here they are
+// loaded inside it, and the depth dot product orders its terms differently. Tried: all six
+// term orders and several groupings (140), constants in locals (140). The flag as a branchy
+// && stored through a long (136).
 // @retail 0x31910
 long __stdcall function_31910(s_cached_input *output)
 {
@@ -2201,15 +2240,13 @@ long __stdcall function_31910(s_cached_input *output)
             result->data[1] = index;
             result->data[2] = parent;
             result->data[3] = *(dword *)(entry + 0x100);
-            real depth = position.z * g_4b9e38 + position.x * g_4b9e20 + position.y * g_4b9e2c + g_4b9e44;
+            real depth = g_4b9e38 * position.z + g_4b9e20 * position.x + g_4b9e2c * position.y + g_4b9e44;
             if (depth < 0.0f) depth = 0.0f - depth;
             if (!(depth > 0.1f)) depth = 0.1f;
             real score = (g_4b9ed0 / depth) * radius * 2.0f;
             *(real *)&result->data[4] = score;
-            bool object_flag = false;
-            if (object != NONE)
-                object_flag = g_4e0300->data[(object & 0xffff) * 12 + 3] == 2;
-            ((byte *)result)[2] = object_flag;
+            long object_flag = object != NONE && g_4e0300->data[(object & 0xffff) * 12 + 3] == 2;
+            ((byte *)result)[2] = (byte)object_flag;
             ((byte *)result)[0] = function_3e9c0(parent);
             ((byte *)result)[1] = (byte)((*(dword *)definition >> 5) & 1);
             ((byte *)result)[3] = (byte)((*(dword *)definition >> 20) & 1);
@@ -2669,10 +2706,13 @@ void function_41c80(short type, s_41c80_state const *state)
     }
 }
 
+// score 146 (was 149 on a 169-source fast image): retail has color, marker count and the markers in one frame block with the
+// amount in its own slot, and loops on a count it holds in ebx; the slots still differ. Tried:
+// separate color/count/markers locals (+1), one shared scale local (no change).
 // @retail 0x41980
 void __stdcall function_41980(short type, long object_index)
 {
-    struct s_attachment_scratch_r16 { long count; color3f color; real amount; s_object_marker markers[65]; };
+    struct s_attachment_scratch_r16 { color3f color; long count; s_object_marker markers[65]; };
     s_attachment_scratch_r16 scratch_r16;
     
     if (type == 0)
@@ -2686,7 +2726,7 @@ void __stdcall function_41980(short type, long object_index)
             if ((entry->type == 0x6c656e73 || entry->type == 0x4d475332 || entry->type == 0x7464746c) && entry->tag != NONE)
             {
                 scratch_r16.count = function_b8d30(object_index, entry->marker, scratch_r16.markers, 65, false);
-                scratch_r16.amount = function_be6d0(object_index, i);
+                real amount = function_be6d0(object_index, i);
                 scratch_r16.color = *(color3f const *)g_468710;
                 if (entry->color_index)
                     function_bad50(object_index, entry->color_index, (point3f *)&scratch_r16.color);
@@ -2699,7 +2739,7 @@ void __stdcall function_41980(short type, long object_index)
                         {
                             byte *tag = g_4e3b44[entry->tag & 0xffff].bytes;
                             real scale = (tag[0x28] & 0x40) ? matrix->scale : 1.0f;
-                            function_2dba0(entry->tag, &matrix->forward, function_3e9c0(object_index), 0, object_index & 0xffff, added, &matrix->position, &scratch_r16.color, 1.0f, scratch_r16.amount, scale);
+                            function_2dba0(entry->tag, &matrix->forward, function_3e9c0(object_index), 0, object_index & 0xffff, added, &matrix->position, &scratch_r16.color, 1.0f, amount, scale);
                             ++added;
                         }
                         else if (!g_55e6c7)
@@ -2712,7 +2752,7 @@ void __stdcall function_41980(short type, long object_index)
                         if (*(long *)(tag + 8) > 0 && (**(byte **)(tag + 12) & 0x20))
                             scale = matrix->scale;
                         function_42850(object_index, entry->tag, &matrix->position, (vector3f *)&scratch_r16.color,
-                            &matrix->forward, scale, scratch_r16.amount, &matrix->up);
+                            &matrix->forward, scale, amount, &matrix->up);
                     }
                     else if (entry->type == 0x7464746c)
                         function_429a0(0, object_index, entry->tag, NONE, &matrix->position,
@@ -2805,6 +2845,17 @@ bool __stdcall function_3d7f0(long object_index, real *out_alpha, bool *out_spec
 
 s_cached_input_list g_5246f8[4];
 
+// score 98: retail takes the list pointer in ebx, keeps the write cursor in edi
+// (stepping by 0x14), the object in esi and the selection counter and the
+// element count in memory, and pushes esi/edi only after the count test. The
+// volatile counter and count below put the list pointer on the stack. Without
+// them (list in ebx, as retail) ours steps a cursor too but in esi, with the
+// object in edi, and pushes esi/edi in the prologue; that scores 133 alone, and
+// the same draft scored 115 against 98 for this one in a 11-function check
+// image. Tried: only the counter volatile (98 alone, 115 there), only the count
+// volatile (138), an explicit cursor, a loop index declared before the count
+// (140), an if (count > 0) guard, the view declared first (135), flags read
+// before the object.
 // @retail 0x33400
 long function_33400(byte const *list, s_cached_input *output, long mode)
 {
@@ -3216,16 +3267,19 @@ bool __stdcall function_32350(long index, real alpha);
 extern byte g_485a46;
 byte g_509413;
 
+// score 42 (was 42): the remaining difference is the callees' conventions, not this body.
+// Retail passes function_01ddd0's width and height in ESI/EDI and function_33400's list in
+// EBX (both still unmatched), where ours uses EAX plus a stack word and EDX; retail also
+// zeroes the flags from the loop's zero register. Reading the two gates as `if (!a || !b)`
+// and storing literal true saves 4 bytes (143 to 139) but leaves the score at 42.
 // @retail 0x335e0
 void __stdcall function_335e0(long mode)
 {
-    bool enabled = function_0226d0();
-    if (enabled) enabled = function_335c0() != 0;
-    if (!enabled) return;
+    if (!function_0226d0() || !function_335c0()) return;
     s_cached_input records[32];
-    g_485a46 = enabled;
+    g_485a46 = true;
     function_01ddd0(9, 0x100, 0x100);
-    g_509413 = enabled;
+    g_509413 = true;
     long count = function_33400((byte const *)g_547f88.lists[2], records, mode);
     for (long i = 0; i < count; ++i)
         function_32350(records[i].data[2], *(real *)(records[i].data + 3));
