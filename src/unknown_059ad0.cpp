@@ -3746,6 +3746,9 @@ bool function_07ab10(long key_index, s_type_99af70 *address, long local, word po
 // Round 299: entry address/address-and-remote workspaces 136/136; false result
 // after lookup/close/transport 139/143/153, each with entry address 139/143/153.
 // Original workspaces, result lifetime and body restored; host/session and cleanup remain.
+// Round 44: actual returned outcome from availability/registration/resolution, alone/paired/all,
+// then all with channel outcome 187/187/187/187/187/187/187/187.
+// Original result, cleanup and body restored; host/session staging and clock remain.
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,

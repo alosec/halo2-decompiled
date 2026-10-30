@@ -851,7 +851,7 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
     *direction = sample->direction;
 }
 
-// score 627 (was 627): Frame 0x1c/0x2c, offset/selection homes, override layout and fraction retention differ.
+// score 604 (was 627): Frame 0x18/0x2c, input/selection homes, override layout and fraction retention differ.
 // Native point-difference producer subsets nearest/anchor/both/opposite/nearest+opposite/
 // anchor+opposite/all: 626/627/626/685/668/685/668; all plus shared dot 668 (exact-only).
 // The one-point nearest gains are ineligible; original scalar producers and arithmetic restored.
@@ -859,6 +859,10 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
 // Round 428: complete squared products in both searches, projection products and both 627 each;
 // actual selected-record common copy tail, with either/both products and common distance storage,
 // 748 each at 1944/2122 bytes. All original sums, copy paths and body restored.
+// Round 44: nearest/opposite real cursors with ordinal bounds, alone/both, 646/750/765;
+// actual pointer-end traversal alone/both 696/629/798; nearest ordinal/opposite pointer
+// 604 (kept, plain; 2138/2122 bytes), inverse 618. Frame shrinks to 0x18; the position
+// input arrives in EAX rather than EDX; search/fraction homes remain.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
@@ -880,17 +884,19 @@ void __stdcall function_22cf0(s_light_sample_source const *source, real *red, re
         }
         long nearest = 0;
         real closest_distance = 1048576.0f;
+        s_light_sample const *nearest_sample = source->entries;
         for (long i = 0; i < count; ++i)
         {
-            real x = position->x - source->entries[i].position.x;
-            real y = position->y - source->entries[i].position.y;
-            real z = position->z - source->entries[i].position.z;
+            real x = position->x - nearest_sample->position.x;
+            real y = position->y - nearest_sample->position.y;
+            real z = position->z - nearest_sample->position.z;
             real distance = z * z + x * x + y * y;
             if (distance < closest_distance)
             {
                 closest_distance = distance;
                 nearest = i;
             }
+            ++nearest_sample;
         }
         s_light_sample const *first = source->entries + nearest;
         vector3f delta;
@@ -899,13 +905,14 @@ void __stdcall function_22cf0(s_light_sample_source const *source, real *red, re
         delta.k = position->z - first->position.z;
         long opposite = NONE;
         real other_distance = 1048576.0f;
-        for (long j = 0; j < count; ++j)
+        for (s_light_sample const *opposite_sample = source->entries;
+             opposite_sample < source->entries + count; ++opposite_sample)
         {
-            if (j != nearest)
+            if (opposite_sample != first)
             {
-                real x = position->x - source->entries[j].position.x;
-                real y = position->y - source->entries[j].position.y;
-                real z = position->z - source->entries[j].position.z;
+                real x = position->x - opposite_sample->position.x;
+                real y = position->y - opposite_sample->position.y;
+                real z = position->z - opposite_sample->position.z;
                 real projection = delta.k * z + delta.j * y + delta.i * x;
                 if (projection <= 0.0f)
                 {
@@ -913,7 +920,7 @@ void __stdcall function_22cf0(s_light_sample_source const *source, real *red, re
                     if (distance < other_distance)
                     {
                         other_distance = distance;
-                        opposite = j;
+                        opposite = opposite_sample - source->entries;
                     }
                 }
             }

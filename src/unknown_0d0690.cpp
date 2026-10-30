@@ -1926,6 +1926,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
 // 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
 // independent captures, mesh homes and status order restored.
+// Round 44: complete default normal/base/lightmap initializations after material, individually/
+// paired/all, then all after native input captures 761/761/761/759/759/759/759/759.
+// Original default observations and body restored; frame 0x98/0x90 and homes remain.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

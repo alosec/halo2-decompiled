@@ -171,7 +171,7 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
-// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL: `mov bl, 1;
+// score 61 (was 61): VC threads the exclusion flag on every edge (retail keeps it in BL: `mov bl, 1;
 // jmp` in the scenery arm, `xor bl, bl` before 0xbf9a0 and `test bl, bl` again after it, so
 // &triangle->c takes EDI and the collision lives in its parameter slot: stored after the requery,
 // reloaded after 0xbf9a0); the byte result is converted with setne. Retail 0x14af40 has the
@@ -238,6 +238,9 @@ static __forceinline bool structure_bsp_collision_available()
 // model query with `if (excluded) return result;` 65; the model result stored in `result` and the
 // requery reading the source's collision 64; the flag set in the scenery arm, the model query in an
 // else-if and the requery in `if (!excluded)` 82 (258 bytes).
+// Round 44: existing availability producer result-first/guard returns/nested outcomes/
+// structure once/settings once/both/both guarded/both with BSP receiver 61/98/98/61/78/78/98/61.
+// Original helper/body restored; exclusion BL and source-slot join remain.
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {
