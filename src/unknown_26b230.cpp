@@ -2089,6 +2089,10 @@ void function_269250(long clump_index, long actor_index)
 // Round 299: chained category initialization in both assignment orders, with
 // invariant-first completion and native node-datum subsets: 87/89/87/89/87/89/87/89.
 // Two-count forms restored; category homes and deletion/pool scheduling remain.
+// Round 433: Typed current clump and changed-reference count on frame 0x24, signed/unsigned with
+// original/invariant-first completion and direct/shared head; fast
+// 230/230/229/229/230/230/229/229.
+// Original body and existing helper restored.
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {
