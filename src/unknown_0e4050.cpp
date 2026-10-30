@@ -28,13 +28,17 @@ struct s_e4050_object_header
 	s_e4050_object *object;
 };
 
-// score 8 (was 18): Shared truth and return use DL/AL rather than retail EDX/EAX.
+// score 8 (was 8): Full-word truth/return versus byte truth/return remains; restore the entire opening executable body.
+// Earlier: Shared truth and return use DL/AL rather than retail EDX/EAX.
 // Earlier long result 18; bool result 28; return 1 / 0 30; word/dword/long flag views 30 (18 with the long
 // result).
 // Byte/full truth and return registers remain (DL/AL versus EDX/EAX). Actual-admission bool/long/word/dword
 // 8/36/38/36; native byte fields with those types 8/36/38/36; direct terminal predicate with long/word/bool
 // and native long 11 each. Keep the Boolean admission result with original fields; plain full check preserves
 // every baseline match.
+// Round 191: Native byte/signed-char/short admission 25/25/26; bitwise bool/long/short/byte admission 26/52/56/37.
+// Round 191: Complete failure clear 30; separate Boolean failures 30; nested terminal result 17.
+// Round 191: Long/short/byte failure-clear 11/11/17; separate wide failures 23/23/27. All restored; no qualifying gain.
 // @retail 0xe4050
 bool function_e4050(long object_index)
 {

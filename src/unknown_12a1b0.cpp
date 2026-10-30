@@ -334,7 +334,8 @@ void looping_sound_controllers_synchronize(bool initial_playback)
 
 void function_11bed0(s_location *location, point3f const *point);
 
-// score 93 (was 93): native iterator keeps the initial called scan and subsequent inline scan; location lookup still expands.
+// score 93 (was 93): Called location-query boundary and native datum/element homes remain; restore the complete opening executable body.
+// Earlier: native iterator keeps the initial called scan and subsequent inline scan; location lookup still expands.
 // Published pool per use 161; shared bitmap scan 161; plain for 161; reused absolute slot 161;
 // shared next-datum advance 116; source receiver 160; bool datum iterator 134 (fast). Native iterator 93 fast/plain.
 // Native iterator aggregate 93; datum-index receiver 83 (one-use call-result pointer; unmatched, restored);
@@ -353,6 +354,8 @@ void function_11bed0(s_location *location, point3f const *point);
 // or location workspace 93/99/118. Restored.
 // Complete spatial/source/sound snapshots by assignment or memcpy 165/165/188/188/187/187; Boolean iterator
 // plus spatial/source snapshot 121/139. Restored.
+// Round 191: Point-only assignment/CRT/setter copies at eligibility scope 140/140/142; at loop scope 140/140/142.
+// Round 191: Point-only assignment/CRT copies with a separate complete location output 159/159. No exact match; every single-use point copy restored.
 // @retail 0x21a100
 void looping_sound_update_locations(void)
 {
@@ -1353,7 +1356,8 @@ static inline dword looping_sound_take_permutations(s_type_5ef569 *sound, loopin
 	return function_2194c0((s_packed_value *)&g_51ebd4->sets[playback->pitch_range_base + arg_58ecd0], (s_animation_ref *)playback);
 }
 
-// score 137 (was 166): frame 0x5c versus 0x60; tag/mask/range homes and entry scheduling remain.
+// score 137 (was 137): The 0x5c versus 0x60 frame, tag/mask/range homes and entry scheduling remain; restore the opening separate-return body.
+// Earlier: frame 0x5c versus 0x60; tag/mask/range homes and entry scheduling remain.
 // Native short previous permutation removes extension traffic; separate success return 137 fast/plain.
 // Result first 176; tag per use 236; tag/range/mask names 176; outputs declared first 176;
 // counts at entry 176; reasons before span selection 176; native selected voice group 188. Short previous 166 fast/plain.
@@ -1366,6 +1370,8 @@ static inline dword looping_sound_take_permutations(s_type_5ef569 *sound, loopin
 // On 137, long previous/range/permutation/all 166/152/177/165, restored.
 // Separate success return preserves every call and state store; frame 0x5c versus 0x60, tag/mask/range homes remain.
 // Round 189 cleanup: direct false default 137 fast/plain; no constant result local retained.
+// Round 191: Actual channel/count/stop admission result in bool/byte/short/long 146/147/160/156; the same graph with native tag/mask/range lexical names 146/147/160/156.
+// Round 191: All result carriers and scalar-home names restored.
 // @retail 0x21c190
 bool function_21c190(s_type_5ef569 *sound, s_type_06b94f *track, long sound_index, dword *seed)
 {
