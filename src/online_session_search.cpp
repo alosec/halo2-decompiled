@@ -661,6 +661,9 @@ done:
 	return result;
 }
 
+// score 113 (was 113): a typed details block over the entry's own data leaves the cursor re-based on
+// the score field (entry+0x1f8) instead of retail's entry+0x10c, and the valid load is still not
+// hoisted above the score store; the kind/count homes and the search pointer in EDI still differ.
 // score 113 (was 111): the details cursor is entry+0x1f8 (retail entry+0x10c), so every field
 // offset differs, and the kind/count homes differ. Cursor taken from the results before the
 // end pointer gave retail's results reuse after the compare (128 -> 113). Round 52:
