@@ -117,6 +117,10 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // Round 360: Complete trig factors, existing contribution setter, returning color-result copy,
 // all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
 // in double scalar carriers 186. Original contribution and color ownership restored.
+// score 56 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the strength is loaded, added and copied back where retail adds the
+// entry's strength to it in place, the two remaining x87 direction adds load the direction where
+// retail loads the contribution, 0x131c20's `&color` is formed in edi and copied to ecx where retail
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {
@@ -144,9 +148,9 @@ long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_
                         contribution.i = (real)(cos(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
                         contribution.j = (real)(sin(*(real *)(light + 0xc)) * cos(*(real *)(light + 0x10)));
                         contribution.k = (real)sin(*(real *)(light + 0x10));
-                        direction.i += contribution.i;
-                        direction.j += contribution.j;
-                        direction.k += contribution.k;
+                        direction.i = (double)contribution.i + direction.i;
+                        direction.j = (double)contribution.j + direction.j;
+                        direction.k = (double)contribution.k + direction.k;
                         if (i == 0)
                         {
                             color = *(color3f *)(entry + 4);

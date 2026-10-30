@@ -110,6 +110,7 @@ void __stdcall function_1d6560(s_havok_component *component, s_physics_model_own
 // case 0 through the object_index local 91 at 256 bytes (caller 146), with the one-read type
 // 132-133; parameters reordered (rigid index first, component last) 96 / 94 (caller 13).
 // the whole register allocation differs.
+// MiniMax R: both flag results computed as ((flags & 8) | 0x30) >> 2 and >> 3 instead of branching: 95 (not kept).
 // @retail 0x1d69d0
 long function_1d69d0(s_havok_component *component, long kind, s_physics_model_owner *owner, long level, long rigid_body_index)
 {
