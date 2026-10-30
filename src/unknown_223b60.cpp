@@ -33,9 +33,12 @@ __int64 timing_counter_resume(timing_counter *c)
 	return total;
 }
 
-// score 4: identical body and length; our prologue stores the first delta
+// score 4 (was 4): identical body and length; our prologue stores the first delta
 // zero before pushing esi, while retail pushes esi first and then stores both
 // zero dwords. The permuter found no better variant.
+// Round 41: reversed total addition 4; branch-duplicated totals 26; branch-duplicated
+// total/stopped stores 24; explicit false guard 4; const pointer formal 4; entry total
+// with reversed addition 29; delta-only rename 4; reversed clamp comparison 4.
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {

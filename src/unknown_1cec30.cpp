@@ -2203,6 +2203,9 @@ PRIVATE __forceinline void component_surface_vector_clear(hkVector4 *vector)
 // Round 184: Native contact/material/both add boundaries 157/162/210; reversed complete inputs
 // 157/162/210; existing vector assignment at contact/material sums 144/114. Original sums and
 // matched sample boundary restored.
+// Round 41: shared assignment at normal/velocity/both normalization 127/109/127; shared scale
+// at those boundaries 127/109/127; fallback assignment 355; normal plus fallback assignment 355.
+// Original normalization and fallback restored.
 // @retail 0x1d87b0
 void __stdcall function_1d87b0(s_havok_component_rigid_body *body, long body_index, s_havok_component *component)
 {
