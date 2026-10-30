@@ -123,6 +123,16 @@ struct s_free_state_23d260
 	real pitch;
 	real roll;
 };
+// score 102 (was 102): this round's side-vector assignment orders (k/j/i, j/i/k, i/j/k, j/k/i) and a
+// local-carrier form all compile to the same 102/103, and a named clamp or a named zero carrier give
+// 103, so the zero constant still lands in xmm3 against retail's xmm1.
+// score 102 (was 102): the side vector's i and j roles were swapped and the shared `normalize3d`
+// (dot3f) was tried for the length; both give 102 and 291. The shared `normalize_inline` squares
+// side.i before side.j while retail squares side.j first, and its scale order is side.i, side.j,
+// side.k, so the two orders cannot both come from that helper.
+// score 102 (was 102): this round re-read the side-vector block: retail keeps the zero constant in
+// xmm1 and the pitch clamps in xmm2 (ours xmm3 and xmm1) and squares side.j before side.i, so the
+// normalizer's xmm ranking and the up/roll carriers still differ.
 // score 102 (was 102): Zero/side XMM roles and speculative normalization remain; frame 0x4c agrees.
 // Earlier complete axial/cosine-normal/affine vector contributions, masks 1/2/3/4/5/6/7, scored
 // 281/281/335/313/314/329/332; existing add-scaled affine assembly 313. Original normalizer,
