@@ -1431,7 +1431,12 @@ void player_slots_initialize();
 // the byte flags after the blocks it fills while retail writes them before.
 // Peer value-init 119; first-member peer clear 19; indexed/derived tail clear 19;
 // noinline player-slot call 19; inline depth zero 19; global optimization off 247;
-// manager-byte clear 23.
+// manager-byte clear 23. Round 13: the tail globals 0x54e7cc, 0x54d5a0, 0x54e49c and
+// 0x54e5d0 lie inside g_54d598 (unknown1234[0], value08, mf04, unknown1038); written
+// through those fields (diagnostic only, the other files keep the separate globals)
+// the tail keeps retail's order, 10, with 0x54e7fc (just past the struct) still last.
+// Separate stores sink past the memsets whatever their order: g_4ee4c4 first 20;
+// the four after the memset 19; ahead of the two flags 19; chained flag clear 19.
 // @retail 0x1476c7
 void function_1476c7()
 {
