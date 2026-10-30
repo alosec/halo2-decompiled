@@ -4,6 +4,7 @@
 #include "unknown_0259a0.h"
 #include "unknown_1e3920.h"
 #include "unknown_26b230.h"
+#include "vector_products.h"
 #include <string.h>
 
 /* slot handler 0x81 (g_47eff8): the actor looks for a way around (a prop to
@@ -210,7 +211,6 @@ bool __stdcall function_1c1d50(long actor_index, s_type_f17a25 *path)
 }
 
 void scripted_vector_scale(vector3f const *vector, real scale, vector3f *result);
-void scripted_vector_add_scaled(vector3f const *a, vector3f const *b, real scale, vector3f *result);
 
 // @retail 0x1c1e70
 bool function_1c1e70(long actor_index, s_type_f17a25 *path)
@@ -234,7 +234,7 @@ bool function_1c1e70(long actor_index, s_type_f17a25 *path)
 	perpendicular.k = facing.k;
 	directions[0] = facing;
 	scripted_vector_scale(&facing, 0.70710677f, &directions[1]);
-	scripted_vector_add_scaled(&directions[1], &perpendicular, 0.70710677f, &directions[1]);
+	vector3f_add_scaled(&directions[1], &perpendicular, 0.70710677f, &directions[1]);
 	scripted_vector_scale(&facing, 0.70710677f, &directions[2]);
 	directions[2].i = directions[2].i - perpendicular.i * 0.70710677f;
 	directions[2].j = directions[2].j - perpendicular.j * 0.70710677f;
@@ -244,7 +244,7 @@ bool function_1c1e70(long actor_index, s_type_f17a25 *path)
 	directions[4].j = perpendicular.j * -1.0f;
 	directions[4].k = perpendicular.k * -1.0f;
 	scripted_vector_scale(&facing, -0.70710677f, &directions[5]);
-	scripted_vector_add_scaled(&directions[5], &perpendicular, 0.70710677f, &directions[5]);
+	vector3f_add_scaled(&directions[5], &perpendicular, 0.70710677f, &directions[5]);
 	scripted_vector_scale(&facing, -0.70710677f, &directions[6]);
 	directions[6].i = directions[6].i - perpendicular.i * 0.70710677f;
 	directions[6].j = directions[6].j - perpendicular.j * 0.70710677f;

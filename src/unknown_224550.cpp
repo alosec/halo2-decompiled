@@ -208,6 +208,14 @@ PRIVATE __forceinline dword function_224551(s_draw_sprite_seed const *arg_0,
 // Round 431: Plain input-RGB/seed-RGB/both modulation loops with long then dword ordinals; input/seed
 // body-stepped component cursors: 388/388/385/388/388/385/391/388. Original complete tint producer,
 // clamp traversal, callback and in-place UV captures restored.
+// Round 29 (fast; aligned counts in brackets, control 391 [252]): in-place clamp
+// `if (c < 0) c = 0; else if (c > 1) c = 1;` in the channel loop gives retail's store-on-clamp
+// sequence exactly but 418 [245] (1955 bytes); the ternary clamp in the loop 388; with the clamp, the
+// definition's geometry declared as the 4-real union and copied whole (retail's dword moves) 481
+// [221]; the copy alone 487; the flip as if/else 391/481 (same code); on that, the tint as a caller
+// local filled by the producer gives retail's frame 0x60 but tint/uv_b slots swapped (0x60/0x50) and
+// 1980 bytes, 517 [215]; renaming the tint or declaring it after the UVs moves nothing. Every form
+// still holds the cache in EBP and copies it to EBX for each callee.
 // @retail 0x224550
 void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
 	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)
