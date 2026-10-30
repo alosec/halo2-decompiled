@@ -113,6 +113,11 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 // vector3f_assign 93 (both need the two helpers as plain definitions, which 0x1c1e70 accepts);
 // forward and left summed per component, up through add-scaled 93. Retail stores nothing of
 // velocity until all three sums are done and loads up.j early (xmm7), spilling two left products.
+// Round 102 (fast): scale(left) into velocity then add_scaled(forward) and add_scaled(up) 87 (the cross
+// product orders, the 0xc frame and the magnitude tail match, but forward_speed moves to XMM4 and nothing
+// spills); scale(forward) then add_scaled(left) and add_scaled(up) 84; the cross product straight into
+// velocity, scaled in place, then forward and up 83; the j/k/i form straight into velocity 80; velocity
+// declared before left with the left-first chain 87.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {

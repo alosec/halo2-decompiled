@@ -233,7 +233,7 @@ void function_fd910();
 
 /* the data iterator's step over the object headers (g_4e0300) as retail
    inlines it in this file: the next-used-index scan in its do/while form */
-static __forceinline s_object_visibility_header_ab *object_header_iterator_next(s_record_pool_iterator *iterator)
+static __forceinline s_object_visibility_header_ab *visibility_header_step(s_record_pool_iterator *iterator)
 {
     s_record_pool *data = iterator->data;
     long index = data_find_index(data, iterator->index + 1);
@@ -277,7 +277,7 @@ void function_b7060()
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = object_header_iterator_next(&iterator)) != 0)
+    while ((header = visibility_header_step(&iterator)) != 0)
     {
         if ((header->flags & 4) && !(header->flags & 8) &&
             !TEST_FIELD_BIT(((s_object_tick_flags_ab *)header->object)->in_list))
@@ -315,7 +315,7 @@ void function_b6f10()
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = object_header_iterator_next(&iterator)) != 0)
+    while ((header = visibility_header_step(&iterator)) != 0)
     {
         if ((header->flags & 1) && (header->flags & 2) && !(header->flags & 8))
         {
@@ -336,7 +336,7 @@ void function_b7150()
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = object_header_iterator_next(&iterator)) != 0)
+    while ((header = visibility_header_step(&iterator)) != 0)
     {
         header->flags &= ~0x20;
         if ((header->flags & 8) && (header->flags & 1) && (header->flags & 2) && !(header->flags & 0x10))
@@ -351,7 +351,7 @@ void function_b7150()
     iterator.data = g_4e0300;
     iterator.index = NONE;
     iterator.datum_index = NONE;
-    while ((header = object_header_iterator_next(&iterator)) != 0)
+    while ((header = visibility_header_step(&iterator)) != 0)
     {
         if (header->flags & 0x10)
         {
@@ -378,7 +378,7 @@ void __stdcall function_b6df0(dword const *previous, dword const *current, long 
     iterator.index = NONE;
     iterator.datum_index = NONE;
     s_object_visibility_header_ab *header;
-    while ((header = object_header_iterator_next(&iterator)) != 0)
+    while ((header = visibility_header_step(&iterator)) != 0)
     {
         if (header->flags & 0x40)
         {

@@ -85,49 +85,6 @@ long c_page_heap::get_page_size()
 	return 0x1000;
 }
 
-// score 80 (was 80): retail keeps two scan counters (page and checked, `inc esi; inc ebp`), `this`
-// in ebx, `first` spilled to the frame and page_count re-read from [this + 0xc] at each test; ours
-// shares page + 1 between the two (lea ecx, [esi + 1]), keeps `this` in ebp and `first` in eax and
-// caches page_count in a spilled temporary. VC7.1 keeps two counters only when checked is declared
-// before page (`checked++` in the body or a comma increment); declared after, any spelling merges
-// them, and with two counters checked spills too.
-// Tried: one scan variable 103; checked++ in the body 103; checked = ++page as the increment 79/90;
-// page++; checked = page; in a while loop 79; the scan as an inline helper with a next-page out
-// parameter 80; checked declared first with checked++ 128 (frame 8); no end variable 80; the
-// alignment step split into three statements 80; checked assigned before the bit test 171;
-// free_run declared outside the outer loop 80. Compile-only screens: do/while with an outer if and
-// a for loop keep the page_count temporary.
-// Round 15: the existing bit_vector_test/bit_vector_set for the written-out bit test and set 80
-// (same code; restored, no gain); two counters with checked declared first and `checked++` in a for / while
-// loop 129/129 (413 bytes: checked and page_count both spilled, `first` kept in eax); checked
-// declared before free_run and page 81.
-// the scan is a while loop that advances page and copies it into checked,
-// so the two counters advance independently like retail's inc esi; inc ebp. Retail still keeps
-// this in ebx, first in the frame and page_count re-read, and ours still shares page + 1.
-// One scan variable 103; checked++ in the body 103; checked = ++page as the increment 90;
-// the scan as an inline helper with a next-page out parameter 80
-// takes ebx, first lives in the frame and page_count is re-read; ours shares page + 1 between
-// the two (lea ecx, [esi + 1]). One scan variable 103; checked++ in the body 103;
-// checked = ++page as the increment 79; page++; checked = page; in a while loop 79; the scan
-// as an inline helper with a next-page out parameter 80; dword checked 80; end written as
-// index + pages in the scan 80; free test first in the scan condition 147; free flag cleared in
-// an if 134; dword checked with checked++ 103. Every form with two counters spills checked
-// (or merges it), never first; page_count is always hoisted and spilled.
-// as an inline helper with a next-page out parameter 80. Round 17: VC7.1 keeps two counters only
-// when checked is declared before page (`checked++` in the body or a comma increment); declared after,
-// any spelling merges them. Ours also caches page_count in a spilled temporary where retail reads
-// [this + 0xc] at each test and spills first, so with two counters checked spills too. Tried:
-// checked declared first with checked++ 128 (frame 8); no end variable 80; the alignment step split
-// into three statements 80; checked assigned before the bit test 171; free_run declared outside the
-// outer loop 80. Compile-only screens: do/while with an outer if and a for loop keep the
-// page_count temporary.
-// Round 100: the switch result in its own shift local in place of the reassigned alignment_mask
-// parameter 80 (identical code, kept); the scan as an inline member helper with a checked out
-// parameter 81; first computed in one statement 80; the advance as one max expression 100.
-// Diagnostics: the found flag in the outer loop condition still caches page_count (111); with
-// page_count re-read at each test (a volatile member, reverted at once) the frame goes and `this`
-// stays in EBP (154), and with two counters as well 107, so the re-read alone does not give retail's
-// registers.
 // @retail 0x1a1a90
 void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 {
@@ -145,27 +102,28 @@ void *c_page_heap::allocate_pages(long alignment_mask, long size, long unused)
 	}
 	long pages = (size + 0xfff) / 0x1000;
 	long step_mask = (1 << (shift + 12)) - 1;
-	long first = (((long)base + step_mask) & ~step_mask) - (long)base;
-	first /= 0x1000;
-	long index = first;
+	long index = ((((long)base + step_mask) & ~step_mask) - (long)base) / 0x1000;
+	long first = index;
 	long end = index + pages;
 	while (end <= page_count)
 	{
 		bool free_run = true;
-		long page = index;
 		long checked = index;
-		for (; page < end && free_run; page++)
+		long page = index;
+		while (page < end && free_run)
 		{
 			free_run = !(bits[page >> 5] & (1 << (page & 0x1f)));
-			checked = page + 1;
+			page++;
+			checked++;
 		}
 		if (free_run)
 			break;
-		++index;
-		if (index <= checked)
+		if (index + 1 <= checked)
 			index = checked;
-		long align_mask = (1 << shift) - 1;
-		index = first + ((index - first + align_mask) & ~align_mask);
+		else
+			index++;
+		alignment_mask = (1 << shift) - 1;
+		index = first + ((index - first + alignment_mask) & ~alignment_mask);
 		end = index + pages;
 	}
 	if (index + pages <= page_count)

@@ -265,6 +265,10 @@ static __forceinline void const *block_element_224db0(byte const *block, long in
 // score 117 (was 136): the else path's tag index is zero-extended into a fresh register instead of
 // masked in place, and the loaded tag pointer is defined in ECX instead of EDX; the group test's
 // instance address is materialized and the first 13 instructions now match.
+// Round 102 (fast): the else path's index as `local_tag & 0xffff` 152 (retail's in-place `and edx,
+// 0xffff`, but the tag table moves from EDI to ECX, loaded before the frame); the flags field read just
+// before function_173ba0 149 (arg_0 becomes a stack parameter), both 156; the second and third block
+// elements through named element pointers 117 each (identical code).
 // @retail 0x224db0
 void __stdcall function_224db0(s_interface_definition *arg_0, long arg_1, long arg_2,
 	long arg_3, long arg_4)
