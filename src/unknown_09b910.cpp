@@ -1282,6 +1282,12 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // Complete native unit-header value, late/early ownership with original/device-first guards:
 // current table 62/66/62/66; table re-read 62/66/62/66. All add a 0xc frame.
 // Native handle-array loop/two original stores 194/32 (exact-only grouping; restored).
+// Round 95: retail's `mov eax, esi` looks like a post-allocation copy of a reloaded data base whose
+// global pointer stayed live in EAX through the unit type test (hence the EBX save). Matched
+// sibling 0xa3420's shape (typed headers local for both type tests, device first, the unit
+// object through a re-read table) 33; plus a header pointer from a re-read table before the
+// unit test 33; plus `bool result = false;` first 33; the object through the file's
+// OBJECT_FROM_INDEX 33, also as a third `&&` term 33: the re-read always merges here.
 // @retail 0xa4540
 bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
 {

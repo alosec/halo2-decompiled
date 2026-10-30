@@ -806,27 +806,40 @@ static inline long view_buffer_write(s_ring_buffer *buffer, long count, const vo
 }
 bool function_1995a0(const byte *source, dword source_size, byte *destination, long *compressed_size, dword capacity, long level);
 
-// score 49 (was 90): the length and the frame now match retail's; what is left is the
-// prologue (retail pushes ebp before ebx and copies the count into its stack slot), the
-// loop head (retail keeps the count test at the top of the head, ours peels the first
-// pass), and the registers for the count and the destination address in the loop body.
-// in a stack slot here and in a register in retail, and the two stack slots
-// that hold the count and the flag are at other offsets.
-// Round 109: direct view plus writer forceinline 93; unsigned writer result 93;
-// writer reference 93; native count 93; unsigned offset 93; word kind 93;
-// named packet record 93; moving payload pointer 144.
-// Earlier: with the chunk test through a bool (unrotated loop, base rebuilt each pass), the
-// Round 109: with the chunk test through a bool (unrotated loop, base rebuilt each pass), the
-// score 49 (was 90): with the chunk test through a bool (unrotated loop, base rebuilt each pass), the
-// count in a `remaining` local (compressed size scoped to the compressor call, copied when it
-// succeeds), no gotos and the last write tested for success first, only four single instructions
-// differ (20, aligned 4): flag 130; plus remaining 58; scoped 51; copy on success 38; failures
-// returned 63; single-exit breaks 38; success first 20; then element address 20; offset first 20;
-// header = { 1 } 22; flag before the header 125; count before cursors 24; all of it without the flag 128.
-// Round 182: Terminal-record do loops 89; positive-chunk finalization 85; return and record forms regress; five-point best gain rejected
-// Trials 1-8: 136, 89, 136, 89, 136, 89, 136, 89.
-// Trials 9-16: 86, 124, 86, 124, 85, 124, 85, 124.
-// Trials 17-24: 108, 116, 115, 113, 124, 137, 87, 139.
+// score 49 (was 49): the length and the frame match retail's. Left: the prologue (retail pushes
+// ebp before ebx and copies the count into the compressed size's slot), the loop head (retail sets
+// the header's zero and kind 1 at the head, before the count test, and rebuilds the ring base each
+// pass; ours peels the test) and the count and data-address registers in the loop body.
+// Retail's unrotated head only appears with a flag tested at the head (a bool set by the count
+// test, or `while (!done)` with `done` set by the terminal record), which the compiler keeps;
+// with the compressed size scoped to the compressor call, a `remaining` copy made on success and
+// single-exit breaks that form gives 20 (aligned 10); with the offset zeroed beside the count
+// copy and the offset advanced before the count it gives 14 (aligned 4), but every flag-free
+// spelling rotates the loop (128), so it is not kept. Its two single differences: retail sets
+// kind 1 between the two zero stores and forms `destination + offset` with `add eax, ebp` (ours
+// `lea ecx, [eax + ebp]`).
+// Tried: flag 130; plus remaining 58; scoped 51; copy on success 38; failures returned 63;
+// single-exit breaks 38; success first 20; then element address 20; offset first 20;
+// header = { 1 } 22; flag before the header 125; count before cursors 24; all of it without the
+// flag 128; direct view plus writer forceinline 93; unsigned writer result 93; writer reference 93;
+// native count 93; unsigned offset 93; word kind 93; named packet record 93; moving payload
+// pointer 144; terminal-record do loops 89; positive-chunk finalization 85. On the 20 form: the
+// view read through its address or directly 20/20; offset declared at the top 42; `&destination[offset]`,
+// a const void cast or `offset + destination` 20 each; remaining declared first 20; a named
+// condition or a plain test 128; offset stored before the size 66; ring base first 34;
+// `while (result && !done)` 136; `while (!done)` 20; a named chunk size 111; view count first 24;
+// offset zeroed with the count copy 18; then offset advanced first 14. On the 14 form: header
+// `= { 0 }` 21; `memset(&header, 0, 8)` 14; helper source before count 14; byte data cast 14;
+// destination read once through its address 14; a void destination 14; dword offset 14; offset
+// declared first 14; word size 15; the terminal record at the loop head with a break 128; a
+// break to a terminal record after the loop 159.
+// Round 95 (lane 14's 14 form reproduced; one-file harness exact for it): deleting any other
+// statement moves neither single, so both are local. `add eax, ebp`: `&destination[offset]`,
+// `offset + destination` or a const void cast 14 each; the real s_ring_buffer::write at the data
+// write 162 (stays out of line); that method declared inline in its file 14 (LTCG inlines it with
+// the same `lea ecx`; 0x869a0 2 -> 99); harness: byte source, forceinline copy, position local,
+// size local, kind cast, `memset(&header, 0, 8)`, header declared outside the loop, word kind,
+// a pointer-based kind store, `0 < remaining`, a long flag: no change.
 // @retail 0x86800
 bool function_86800(dword capacity, c_simulation_view *view, dword source_size, byte *destination)
 {

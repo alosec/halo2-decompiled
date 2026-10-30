@@ -222,11 +222,25 @@ struct s_weapon_definition_view
  byte *barrels;
 };
 
-// score 41 (was 149): the unit is looked up again for each slot query, the barrel is kept as a
+// score 41 (was 41): the unit is looked up again for each slot query, the barrel is kept as a
 // long and clamped without the count guard, so the frame is retail's 0x1c, the length is retail's
-// 634 bytes and the two slot queries reload the object table as retail does.
-// Left: the hand index is in ecx (retail edx), the scaled weapon index in ebp (retail edi) and the
-// unit pointer is read as [edx + eax + 8] (retail [eax + edx + 8]).
+// 634 bytes and the two slot queries reload the object table as retail does; with the trigger
+// state's address formed first in the trigger loop retail advances that cursor first (35; not
+// kept, a gain under 8 on a function still above 30).
+// Left: retail tests the trigger count twice before the trigger loop (`test eax, eax; jle`,
+// then `xor ebp, ebp` and the loop's own test); with an `if (definition->trigger_count > 0)`
+// guard every register and the trigger loop are retail's (4 left), but a guard that repeats the
+// loop's test is only kept with a match. The four left in that form: the object lookups read
+// [edx + eax + 8] and [ecx + edi + 8] (retail [eax + edx + 8] and [edi + ecx + 8]).
+// Round 95 lead (one-file harness, then confirmed in the build): that base/index order follows
+// the parity of the number of distinct result fields stored before each lookup. Dropping any
+// one of the eleven opening stores, or adding a store to a new field (padding) before the
+// lookups, gives retail's index-first order in all four; a new field stored after the fallback
+// calls flips only the loop's lookups; their source order (40 orders), duplicate stores to a
+// field, stores to the weapon array, reads and calls change nothing. So retail's opening has an
+// even count of field stores at that stage (or one store the compiler drops later) while it
+// emits the same eleven stores; a local relevance struct copied in flips it but copies through
+// the stack (39). Not found yet: a natural form with that count.
 // slot query (ours shares one lookup), clamps an int barrel with no count guard (in eax/ecx, keeping
 // the result pointer in ebx and the trigger-state cursor in the result parameter's home) and tests
 // the trigger count twice before the trigger loop.
@@ -244,6 +258,20 @@ struct s_weapon_definition_view
 // Native trigger value/read-only value, short barrel 185/185; promoted barrel 176/176;
 // definition value with short/long barrel 164/214; both native values 217/207.
 // Trigger value needs frame 0x60; definition value self-aligns and needs 0x2f4. Restored.
+// Lane 14 r6: guard 10; guard + state address first 4; then the lookup through a headers
+// local, `data + index` or a named masked index 4 each; offset-first address arithmetic 4
+// (flips 0x82c10 when written index-first, so the order follows the context, not the
+// expression); the existing 0xcbd50 for both slot queries 180; a trigger-count local 118.
+// Without the guard: headers local 35; named masked index 35; trigger pointer before the state
+// pointer 41; definition declared before its assignment 35; index declared outside the for 35.
+// Round 95, on the guard form (4): single exit around the lookups 4; the masked index and the
+// headers as locals in the shared getter 4 (siblings still match); a dword getter index 4
+// (flips 0x82c10 to 3); a macro-style lookup 180 (618 bytes); a nested inline getter 4; the
+// existing 0xcbd50 for both slot queries 180 (inlined, one lookup); `weapons[hand]` at each use
+// 4. Harness, all 4: chained NONE/float/bool/consumed stores, `0` floats, a relevance clear
+// helper, a relevance pointer local, typed/byte-pointer stores at the same offsets, guard
+// spellings, `!= 0` tests, in-place mask, `default:` case, trigger pointer arithmetic, and
+// clamp spellings; a one-dimensional clear loop unrolls into a word store (25).
 // @retail 0x82d20
 void function_82d20(long object_index, s_object_relevance_source *source, s_weapon_activity_result *result)
 {

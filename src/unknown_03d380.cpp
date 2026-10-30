@@ -326,6 +326,15 @@ void function_125a90(long value);
 // decisions 115/110/168/177; existing fully inlined iterator with the same four forms
 // 115/110/168/177. Original traversal restored; the early policy load, ESI multiply
 // and special/remove/ordinary/keep ordering remain.
+// Round 95 (one-file harness with 0x221810 pinned out of line; aligned 23 = 47 here): ours ends
+// the kind arm with a jump into the special arm's `je` (tail merge), so the kind arm is the
+// fall-through; that order survives the special arm cut down to `remove = false`, the arms
+// swapped, removal first and every flag form tried. Real: kind arm `remove = f() != 1` with
+// removal first 88 (417 bytes); arms swapped with removal first 51; kind arm as one `||`
+// value with removal first 46; data pointer local 47; special arm as if/else with removal
+// first 51. Harness only: the file's ELEMENT macro 37 (worse registers); element as
+// `&((T *)data)[i]`, `data + i * sizeof`, `sizeof * i`, `i + (T *)data`, an elements
+// pointer: the ESI multiply in each; `remove = type == 0x26 && !a` threads the sete away.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {

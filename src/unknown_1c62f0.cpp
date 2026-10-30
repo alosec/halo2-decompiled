@@ -137,6 +137,11 @@ void c_animation_channel::clear()
 // is NONE 51 (same code); graph store after unknown16/unknown08 43/40 (graph EDX, flags ECX);
 // after unknown0c/flags 51; frame first with graph late 39; retail order with the byte pair 42
 // (ESI argument, NONE in ECX as retail). All restored.
+// Round 95 (one-file harness, LTCG conventions reproduce: retail order passes graph in ESI there
+// too): on retail's order, graph copied to a local first, the parameter set to NONE when the id
+// is NONE, the last flags bits from the stored field, the frame store before graph 51 each in
+// the build (126 bytes, the matched callers lose); the current form with the last flags bits
+// from the stored field 36.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)

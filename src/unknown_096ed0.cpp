@@ -13,7 +13,7 @@ long replication_table_find_in_chains(s_handle_peers *peers, long *handles, long
 void replication_table_release(s_handle_peers *peers, long handle);
 void replication_table_release_chain(s_handle_peers *peers, long count, long const *handles);
 
-// score 55 (was 132): frame 0x48, receiver EBP and pending counter ESI agree; selector,
+// score 55 (was 55): frame 0x48, receiver EBP and pending counter ESI agree; selector,
 // cursor/entry/query homes and load scheduling remain. Earlier 170: the peers table is read through a local; the
 // index is read inside the enabled test, the cursor is declared under the index test, advanced
 // before the stores and the size is one expression, so retail's prologue and output block match.
@@ -158,6 +158,20 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // Trials 1-8: 55, 55, 216, 229, 208, 208, 101, 171.
 // Trials 9-16: 57, 183, 185, 170, 185, 185, 185, 185.
 // Trials 17-18: 153, 153.
+// Lane 14 r6: the walking active cursor makes the compiler count the active chain down in a
+// stack slot it shares with the pending chain's type spill, so that slot sorts first (more
+// references); retail indexes the active chain (i in esi, count in edi), and its type spill is
+// the last 4-byte slot below the handle arrays. Plain `handles[i]` in the active loop 170 (the
+// pending loop then spills i and keeps type in ebx); type renamed kind/a_type/z_type 55 each;
+// cursor renamed 55.
+// Round 95 (one-file harness, predictive here: indexed form 38 aligned = 170 in the build): the
+// two chain counters trade places; whichever is in a register, the other loop loses. A short
+// active index (spilled into the shared slot) gives back the pending loop's type spill, as the
+// cursor does. With the active chain indexed: a pending item-handle local, an int pending
+// index, type declared last, the blocked test first, the pending index declared at the top of
+// its block 170 each; in the harness also int/dword/unsigned indices, swapped zero stores,
+// pre-increment, blocked declared first, `size = size + item_size` and 36 random
+// combinations of those, none with type spilled.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
