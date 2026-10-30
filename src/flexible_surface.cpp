@@ -547,6 +547,10 @@ void function_117dd0(long index, vector3f *wind)
 // Round 263: damping shared by both weights 154; force copy at its consumer 194;
 // both 184; pin-test continue 109, with damping/late force/both 154/194/184;
 // shared damping with native projected-normal scale 159. All original source restored.
+// Round 39: complete inertial displacement/accelerated displacement/accelerated value/next point
+// 159/159/115/124; with native normal projection 166/166/109/118 (frames 0x54/0x60/0x6c).
+// Native projection plus early weights and history vertex cursor, then force first/acceleration
+// first/both, 112/112/111/111 at 744 bytes. Original body restored.
 // @retail 0x118140
 void function_118140(long index)
 {
@@ -656,6 +660,8 @@ static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)
 // trailing context/pass swap 517; context/pass then tag/group/variant 471, pass/context then
 // tag/variant/group 471. Two-point gains rejected; every definition, declaration, caller and
 // original body restored.
+// Round 39: independent search orders T/N/B/U, N/B/T/U, N/T/U/B, B/T/N/U,
+// U/N/T/B, T/B/U/N, B/U/N/T, U/B/T/N all 473. Original search order and APIs restored.
 // @retail 0x116b00
 void __stdcall function_116b00(long tag_index, long unused, long group, long variant, long pass, long index, void *context)
 {
