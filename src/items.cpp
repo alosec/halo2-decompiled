@@ -556,6 +556,9 @@ struct s_item_collision_bsp
 	s_item_collision_instance *instances;
 };
 
+// score 211 (was 249): one shared spin scale for both spin branches, with the third spin
+// component scaled after the branch so the pending value and the scale stay on the x87 stack.
+// Plane-index width, plane-join registers and the transform product rows still differ.
 // score 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
 // plane-index width, plane-join registers and spin stores differ;
 // seed before square root 249; fallback input copy 364; up pointer 253;
@@ -634,7 +637,7 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 					surface_plane.d = matrix->position.z * surface_plane.k + matrix->position.y * surface_plane.j +
 						matrix->position.x * surface_plane.i + matrix->scale * plane.d;
 				}
-				real distance = marker.matrix.position.z * surface_plane.k + marker.matrix.position.y * surface_plane.j +
+				real distance = (marker.matrix.position.z * surface_plane.k + marker.matrix.position.y * surface_plane.j) +
 					surface_plane.i * marker.matrix.position.x - surface_plane.d;
 				real offset = 0.05f - distance;
 				point3f position;
@@ -651,6 +654,7 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 		function_10c850(item_index);
 	}
 
+	real spin_scale;
 	if (item->ignore_object_index == NONE && (item->flags_c1 & 1) &&
 		(TEST_FIELD_BIT(item->flag5) || TEST_FIELD_BIT(item->flag6)))
 	{
@@ -659,15 +663,15 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 			axis = marker.matrix.up;
 		else
 			axis = *g_4687b0;
-		real speed = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -1.5707964f, 1.5707964f);
-		spin.i = axis.i * speed;
-		spin.j = axis.j * speed;
-		spin.k = axis.k * speed;
+		spin_scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -1.5707964f, 1.5707964f);
+		spin.i = axis.i * spin_scale;
+		spin.j = axis.j * spin_scale;
+		spin.k = axis.k;
 	}
 	else
 	{
 		dword *seed = &g_4e7408->unknown0;
-		real speed = (real)sqrt(impulse->j * impulse->j + impulse->k * impulse->k + impulse->i * impulse->i);
+		real speed = (real)sqrt((impulse->j * impulse->j + impulse->k * impulse->k) + impulse->i * impulse->i);
 		if (speed < 0.0001f)
 		{
 			*seed = *seed * 0x19660d + 0x3c6ef35f;
@@ -679,11 +683,11 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 		if (!(function_30bf0(&spin) > 0.0f))
 			random_unit_vector(&spin, seed);
 		*seed = *seed * 0x19660d + 0x3c6ef35f;
-		real random_speed = (real)(*seed >> 16) * (1.0f / 65535.0f) * speed * 1.5707964f;
-		spin.i *= random_speed;
-		spin.j *= random_speed;
-		spin.k *= random_speed;
+		spin_scale = (real)(*seed >> 16) * (1.0f / 65535.0f) * speed * 1.5707964f;
+		spin.i *= spin_scale;
+		spin.j *= spin_scale;
 	}
+	spin.k = spin.k * spin_scale;
 	{
 		vector3f velocity;
 		vector3f angular_velocity;

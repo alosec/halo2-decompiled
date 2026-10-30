@@ -706,22 +706,7 @@ struct s_typed_object_header
 /* 0xe68c0, src/unknown_0e68c0.cpp */
 bool function_e68c0(long type, long unit_index);
 
-// score 19 (was 57): with the result declared first (retail clears bl before the lookups) and
-// the unit index tested first, the length and every block are retail's; what is left is the
-// register pair: retail keeps the unit index in edi and the object pool pointer in ebp (pushed
-// after the guard), ours the other way round, and the unit's header type is read as
-// [esi + edx + 3] (retail [edx + esi + 3]).
-// Earlier (75 -> 57): with the result a long in ebx the 1<<type shifts use eax, so the vehicle
-// index moves to ebp in the prologue; retail's byte result loses bl to the shifts and spills to
-// the frame slot.
-// Tried: byte result 85; masked-index locals 75; pool data read at each use 77; mask operand
-// order 75; byte result with pool before the guard 89; split missing guards 83; dword indices 75;
-// byte result with the seat read once 85; byte mask locals 82. This round: result first with the
-// vehicle tested first 53; unit tested first alone 70; on the 19 form: the unit's type test
-// through `headers` 98 (the object read then shares the element address); one typed headers
-// pointer for all three reads 100; headers from the global 100; the pool read at each use 98;
-// the pool declared at the top 19; the indices declared before their calls 19; typed headers
-// for the vehicle 19; the pool named `objects` 19; the pool read before the lookups 26.
+/* whether a unit has left the given seat of a vehicle */
 // @retail 0x9ee20
 bool c_unit_exit_vehicle_event_definition::v11(long a, long const *entities, long c, void const *data)
 {
@@ -730,11 +715,11 @@ bool c_unit_exit_vehicle_event_definition::v11(long a, long const *entities, lon
 	long vehicle_index = function_a58d0(entities[1]);
 	if (unit_index != NONE && vehicle_index != NONE)
 	{
-		s_record_pool *local_1 = g_4e0300;
-		byte *headers = (byte *)local_1->data;
-		if (((1 << ((s_typed_object_header *)local_1->data)[unit_index & 0xffff].type) & 3) && ((1 << ((s_typed_object_header *)headers)[vehicle_index & 0xffff].type) & 3))
+		s_record_pool *object_headers = g_4e0300;
+		s_typed_object_header *headers = (s_typed_object_header *)object_headers->data;
+		if (((1 << headers[unit_index & 0xffff].type) & 3) && ((1 << ((s_typed_object_header *)object_headers->data)[vehicle_index & 0xffff].type) & 3))
 		{
-			s_vehicle_event_unit_view *unit = (s_vehicle_event_unit_view *)((s_typed_object_header *)local_1->data)[unit_index & 0xffff].object;
+			s_vehicle_event_unit_view *unit = (s_vehicle_event_unit_view *)OBJECT(unit_index);
 			if (unit->parent_index != NONE && unit->parent_index == vehicle_index &&
 				unit->seat_index != NONE && unit->seat_index == *(long const *)data)
 			{

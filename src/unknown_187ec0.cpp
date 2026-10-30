@@ -5,6 +5,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "sound_sources.h"
+#include "impacts.h"
 #include <math.h>
 
 #define k_maximum_local_players 4
@@ -211,7 +212,7 @@ struct s_seat_animations
 	s_seat_animation *animations;
 };
 
-// score 63 (was 63): retail's ebp is not a frame pointer: it holds animation for the whole body, and result lives
+// score 55 (was 55): retail's ebp is not a frame pointer: it holds animation for the whole body, and result lives
 // in the push ecx slot ([esp + 0x10]), stored on a hit and reloaded into edx after the inner loop. Ours keeps result
 // in ebp and reloads animation from its parameter slot at every use; that register-or-spill choice is the whole
 // difference. Retail's inner loop has no result test (a hit stores and breaks, then index = parent and the outer
@@ -231,27 +232,49 @@ struct s_seat_animations
 // address 64 (element_index back on the stack, 0x188130 matches; left: count/element
 // registers swapped, the 16-bit index load, the duplicated tail); that read with the
 // parent step before the test 71 (type in eax).
+// Round 116: the index as the material class (parameter and walking local) gives retail's 16-bit
+// index load, 55 (c_block_index the same). On it: count before result 57; first/index/count/result
+// order 55; no inner guard with count first 65; class + entry pointer + no guard + count first 71
+// (158 bytes); that with `if (result) break;` before the parent step 63 (185 bytes: retail's
+// animation/result homes, but the tail is duplicated and count/element swap EAX/EBX), with a short
+// index local 64. Without the inner guard the first pass loads type into ESI unless count is
+// declared before result.
+// Round 118 (one-file harness, ~900 forms): renames, loop spellings, scopes, getter shapes, parameter
+// orders and inline count/entry helpers change nothing. `entry = first ? &animation->first_entries[i] :
+// &animation->second_entries[i]` with no guard gives retail's inner loop and tail (result spilled to the
+// push ecx slot, reloaded into EDX) but allocates animation to EBX, so LTCG passes it there: 78 (157 bytes,
+// 0x188130 17); with animation read once through its address 52 (retail's code with animation/count/element
+// in EBX/EBP/EAX for retail's EBP/EAX/EBX; no declaration order, counter or flag type, compare order or loop
+// spelling rotates them); with the guard 76 (0x188130 17), with count first 79, its if/else spelling 79.
+// Round 120: ours computes the getter's element address in ECX (`add ecx, esi`) and copies it out; retail
+// forms it in element's register (`lea ebx, [ecx + esi]; test ebx, ebx`), as in 0x1882d0. Getter shapes
+// (byte offset, elements local, inverted early return or ternary, else arm, long index, index + elements)
+// keep the add. `while (s_globals_element *element = ...)` with the per-arm entry and the guard 79
+// (155 bytes: animation in EBP, element spilled, result in EAX); that with the address read and no guard
+// 52; the getter in a for loop's init and step 164 (243 bytes); the while declaration with the entries
+// pointer, no guard and the break before the parent step 63 (185 bytes); animation before type in the
+// parameter list with the address read 52.
 // @retail 0x187fe0
-s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, short element_index)
+s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, c_type_47f957 element_index)
 {
 	bool first = type == 0;
 	s_seat_animation_entry *result = NULL;
 	long count = first ? animation->first_count : animation->second_count;
-	short index = element_index;
+	c_type_47f957 index = element_index;
 	s_globals_element *element;
 
-	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, index)) != NULL)
+	while ((element = globals_element_get((s_globals_element_block_view *)g_4e034c, index.m_index)) != NULL)
 	{
 		for (long i = 0; i < count && !result; i++)
 		{
 			s_seat_animation_entry *entries = first ? animation->first_entries : animation->second_entries;
-			if (entries[i].element_index == index)
+			if (entries[i].element_index == index.m_index)
 			{
 				result = &entries[i];
 				break;
 			}
 		}
-		index = element->parent_index;
+		index = c_type_47f957(element->parent_index);
 		if (result)
 			break;
 	}
@@ -325,7 +348,7 @@ static inline s_seat_animation_entry *seat_animation_entry_find(long tag_index, 
 	if (animation_index != NONE)
 	{
 		s_seat_animations *animations = (s_seat_animations *)g_4e3b44[tag_index & 0xffff].bytes;
-		result = function_187fe0(type, &animations->animations[animation_index], element_index);
+		result = function_187fe0(type, &animations->animations[animation_index], c_type_47f957(element_index));
 	}
 	return result;
 }
@@ -466,6 +489,9 @@ bool function_172750(long mode, point3f const *point, real radius);
 // existing material class for the 4th/5th parameters (and 0x1882d0's) it matches (fast;
 // tag index in EBX, first index on the stack): BLOCKED-BY the declarations in src/impacts.cpp
 // and src/projectiles.cpp, which name the old parameter types.
+// Round 420: first payload defaults 193; second payload defaults 151; both payload defaults 176; variant
+// defaults 184; first payload and variants 175; second payload and variants 175; all defaults 193; all
+// defaults and type outcomes 172. Original body restored.
 // @retail 0x1883e0
 void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long entry_element_index, long index, long variant,
 	long *first_value04, long *second_value04, long *first_value, long *second_value, long *first_value0c, long *second_value0c)
@@ -573,11 +599,8 @@ dword vector3d_compress(vector3f const *vector);
 #include "unknown_1765e0.h"
 long function_189400(s_sound_position const *position, long object_index, long tag_index, real scale);
 
-// score 77 (was 77): frame 0x48 agrees; first counter spill recovered; effect/forward inputs and second scan differ.
-// Earlier forms and observations:
-// frame 0x48 agrees; effect/forward registers and first-counter spill remain.
-// frame 0x48 agrees; effect/forward inputs and first-counter spill remain.
-// Earlier: frame 0x48 agrees; effect/forward registers and first-counter spill remain.
+// score 77 (was 77): frame 0x48 agrees; first counter spill recovered; effect/forward inputs and second scan differ
+// (BLOCKED-BY 0x1883e0, see below). Earlier forms and observations:
 // Point setter 89; component loop 317; origin value 150; description position 105;
 // late description 89; result-array names 89; query-owned defaults 122; facing value 149.
 // frame and array homes agree; input registers and the first scan counter differ;
@@ -606,6 +629,10 @@ long function_189400(s_sound_position const *position, long object_index, long t
 // second scan on a 32-bit index, 77 -> 46.
 // Round 36: query inline 77; query and target inline 77; target inline 77; array-decay outputs 77;
 // function-scope counters 77; aggregate sound position 77; compression last 76 (rejected); vector assign 77.
+// Round 116: named effect index 77; named sound index 77; both 77; dword second scan with the named
+// sound index 89; description filled before the effect scan 98.
+// Round 118: effect point through the existing vector3f_add_scaled 77; first array filled first 77;
+// the fills paired by index 76; velocity copied first 77; effect point after the query 96.
 // @retail 0x188180
 void function_188180(point3f const *point, vector3f const *forward, long tag_index, long object_index, long index, long variant,
 	long entry_element_index, long effect_value, s_location const *location, real scale)

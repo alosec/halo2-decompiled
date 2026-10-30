@@ -442,6 +442,19 @@ void function_1d90e0(long render_model_index, long node_index, transform4x3f *no
 // bit_vector_test 42; with the update as `visited[i >> 5] |= 1 << (i & 31)` 42; the test written as
 // `(word & mask) == 0` 42; the second lookup in a nested if 37 (same code); the shared graph/iterator
 // setup hoisted with a ternary call 167 (retail duplicates the setup in both arms).
+// Round 81: the two markers as one `s_object_marker markers[2]` (they sit 0x70 apart) 37, with
+// bit_vector_test 42; the clear through an inline helper taking the vector, shift/mask test 37/42; the
+// existing graph_tag_get with bit_vector_test 42. With the mask test our update reuses the test's
+// mask-first shape (load/OR/store); 0x2c39f0 (matched) shows retail giving that shape after a mask test
+// too, so the update follows the register state rather than its spelling.
+// Round 83: bit_vector_test with the set moved ahead of 0x1d90e0 44 (the update is then index-first but
+// still load/OR/store); a block-scoped graph pointer per arm, `found` declared before the loop, `return`
+// at the walk's end, and a direct `|=` update with the shift test 37 each.
+// Round 85: with the mask test, an opaque call taking the marker or the visited vector right after
+// 0x1d90e0 gives retail's index-first `or [word], mask` update (diagnostic, 48); one inside 0x1d90e0 or
+// 0xb8d30 on its pointer does not (42). Trials: the set ahead of the 0x1d90e0 call 46, a direct `|=` ahead
+// of it 46, the iterator pair as named locals 53, only the target name 50, the pair names with the mask
+// test 52.
 // @retail 0x113980
 void __stdcall function_113980(long object_index, long target_index, bool alternate, real weight,
 	s_animation_state *state, s_graph_pair_iterator *iterator, long node_count, transform4x3f *nodes)
@@ -1309,6 +1322,18 @@ long function_cbd50(long unit_index, short weapon_index);
 // Round 402: native unsigned first/second/controlling handle domains, seven subsets,
 // all 164; all handles with both unsigned identifier domains 188. Original signed
 // domains and body restored; pool/state allocation, count joins and byte normalization remain.
+// Round 81: an object-headers local (the pool's data) for the unit and both depletion checks with a
+// bool result 334 (1273 bytes; headers EBP, state EDI and name ESI as in retail, aligned 86 -> 58, but
+// retail keeps the pool pointer in EAX for a fresh data load in the second query, which shifts the entry
+// one instruction), with a byte result 339, with the flag set through an inline pointer helper 334, with
+// a ternary depletion and both slot reads through the headers 340, with both slot reads through the unit
+// 329. Retail re-reads the unit in both queries and the data in the second: loads are not reused there.
+// Round 83: one depletion helper for 0x110ab0 and 0x1103a0, static inline (kept out of line) 419, forceinline
+// 334 (frame four); the depletion flag renamed to sort between the other two 164; interruptible declared
+// before depleted 165; result declared after the two flags 165.
+// Round 85: `unit_index = *unit_reference;` at entry (0x1130f0's form) with a plain 0xc70b0 argument
+// 271; an object-headers local with if-form depletion and bool/byte result 336/325, with a byte depletion
+// 336; the headers local with the `&&` depletion, bool result and byte depletion 334.
 // @retail 0x110ab0
 bool __stdcall function_110ab0(long unit_index)
 {
@@ -1488,6 +1513,19 @@ bool __stdcall function_110ab0(long unit_index)
 // permission 663/725/829/792; first/second/both overlay defaults before inner
 // dispatch 497/478/581; both with byte permission 545. Original graph restored;
 // frame eight versus twelve and requested/state/result homes remain.
+// Round 81: an object-headers local for the unit and both depletion checks 446, but the unit index then
+// travels in ECX (ret 8, retail ret 0xc) and both callers lose (0x10ff40 44 -> 157, 0x111650 666 -> 673);
+// with a bool depletion 480; with the slot reads through the unit 487; the headers local for the two
+// checks only, after/before the unit read, 480/480; with the unit index read once through its address
+// 474 (callers unchanged); that address read alone 450.
+// Round 83: depletion/interruptible declared before the unit lookup 450 (same code); that with `result = true`
+// at its declaration and no state-switch default 483; interruptible before depleted 463; the overlay flag
+// declared with the others 493; the 0xc7070 test inverted 473.
+// Round 85: retail's state default reads a true byte kept in the unit index's dead slot (`bool result =
+// true;` with no default arm): that with one read of the unit index through its address 474 (1793 bytes,
+// callers unchanged, frame still 8), plus an object-headers local 478; with a short depletion 506, short
+// depletion and overlay 510, both with the headers local 495; the depletion written through a forceinline
+// `byte *` helper 474 (same code).
 // @retail 0x1103a0
 bool __stdcall function_1103a0(long unit_index, long requested, bool allow)
 {
@@ -1804,6 +1842,17 @@ PRIVATE __forceinline void project_112070(vector3f const *v, vector3f const *for
 // Staged side cross, overlap-safe direction, both, overlap-safe default angles, side/angles,
 // direction/angles, all, then all with independent secondary projection: 820/842/824/891/847/892/869/882.
 // Original body, complete input capture, helper and includes restored.
+// Round 81: retail calls 0x11df30 once (its first use inlined), ours twice; every other callee's count
+// agrees. The whole body in a helper the stdcall entry calls: static inline 4236 (kept out of line),
+// forceinline 790 (same code), inline 4236; only the part after the overlay-flag clear in a helper:
+// static inline 3727, forceinline 913.
+// Round 83: the final slot test inverted with its arms swapped 790 (same code; retail lays the then-arm
+// first); the relative angles declared with the defaults 790; the scratch channel declared first 801; the
+// two aiming channels at the aiming block's top 789; the graph looked up after the definition 795.
+// Round 85: the body in a forceinline helper taking the render model as an unused parameter 790 (same
+// code); the overlay loop as `while` 790 (same code), as `for` with the play call under its own `if` 882,
+// the play call under its own `if` in the do-loop 790 (same code), a `for` that skips empty ids with
+// `continue` 882.
 // @retail 0x112070
 void __stdcall function_112070(long unit_index, dword const *node_mask, long node_count,
 	real_quaternion_transform *transforms)
@@ -2510,6 +2559,17 @@ PRIVATE inline bool function_111651(c_animation_channel const *arg_0)
 // phase, seven subsets, 709/708/714/675/702/704/705; all with Boolean transition
 // 725. Original initializers and body restored; request/control homes and ret 4
 // versus retail ret 8 remain.
+// Round 81: the request kept on the stack by a const reference to the parameter, read at the first use,
+// the last use, the first two, the first and last, or once into a local: 663 each (ret 8 as in retail,
+// first difference +0x23), but the request pointer is then cached in ESI where retail re-reads it, and the
+// callers lose (0xdd360 281 -> 282, 0xefde0 715 -> 721).
+// Round 83: the held-slot calls as a plain counted loop 666 (same code, kept); the 0xc000043 flag as one
+// expression 700; the first request flag copied as a bool 673; the change test as one `||` 673; the
+// validity and the forced flag ahead of the change test (retail's order) 686.
+// Round 85: the validity helper as static inline or plain 666 (same code); the 0x700005c case's three
+// bit sets in a forceinline helper 702 (every validity test then inline, 47 calls as retail); the request
+// read through its address at every use 663 (ret 8; callers 0xdd360 282, 0xefde0 721), with the bit-set
+// helper 691.
 // @retail 0x111650
 bool __stdcall function_111650(long arg_0, long *arg_1)
 {
@@ -2706,14 +2766,12 @@ bool __stdcall function_111650(long arg_0, long *arg_1)
     {
         if (local_2->graph_tag_index != NONE && !(local_2->flags & 1))
             local_2->resources_request(local_2->unknown70, local_2->unknown74, local_2->unknown78, true, true);
-        long *local_31 = (long *)((byte *)local_0 + 0x218);
-        long local_32 = 4;
-        do
+        for (long local_32 = 0; local_32 < 4; local_32++)
         {
-            if (*local_31 != NONE)
-                function_1060a0(*local_31, arg_0);
-            ++local_31;
-        } while (--local_32);
+            long local_31 = ((long *)((byte *)local_0 + 0x218))[local_32];
+            if (local_31 != NONE)
+                function_1060a0(local_31, arg_0);
+        }
     }
     if (!(local_2->flags & 1))
     {
@@ -2805,7 +2863,7 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
     return elapsed;
 }
 
-// score 52 (was 52): frame 0x3c versus 0x38, action/decision and input homes remain. Measured from
+// score 44 (was 44): BLOCKED-BY 0xe70b0 (its return type) for the frame 0x3c versus 0x38. Measured from
 // the frame top every slot agrees except the action short (ours 4-aligned below the 4-byte slots,
 // retail 2-aligned with the two flag bytes under it) and the control/definition pair; VC7.1 gives a
 // lone 2-byte local, word, char[2], one-short struct or inlined short parameter a 4-aligned slot, so
@@ -2884,14 +2942,33 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // 69/61/71/61; consistent mode-at-use combinations 171/194/200/194; single renamed set with
 // Boolean/signed aggregate 127/122. Keep the two-use selected-set carrier and Boolean aggregate,
 // plain confirmed 61; frame 0x3c versus 0x38 and action-short packing remain.
+// Round 81: control declared before definition and state 44 (kept; the entry schedule then
+// matches); force before result 44; the flags (either order) before the animation default 207, after it
+// 207/207; the animation default before the three table reads 44. Retail packs the action short
+// 2-aligned beside the two flag bytes, which VC7.1 does for a compiler temporary: 0xe70b0 written as
+// returning a two-byte class with a constructor by value (hidden return pointer in EAX, returned
+// unchanged, as retail's 0xe70b0 does) gives frame 0x38 and 20 here, 12 with the declaration order
+// kept above (the control/definition slots and the two flag stores before the lookup's branch remain).
+// Round 83: animation chosen by a ternary 189; the action short declared first 218; the no-overlay and
+// overlay-busy exits as `return false` 225/225; the animation default before the table reads with both flags
+// cleared before the lookup's `if` 232 (the clears then sit where retail has them, but NONE goes to EDI).
+// Round 36 (plain checks; --fast builds this function differently, 219 on unchanged source): the
+// action short declared after the overlay pointer 52 (identical); the action query in an inline
+// bool helper owning the short 167 (stays a call; frame 0x38), force-inlined 145 (frame 0x38, flags
+// still at +2/+3, and LTCG then inlines 0xe70b0, which retail calls). Declared first, between or
+// before the flags: identical under --fast.
+// Round 85: flags cleared before a ternary animation lookup 210; force then result between the NONE
+// default and the lookup's test 207; only the result declared first 207; the lookup table read at each use
+// 44 (same code); the overlay pointer declared before the flags 44 (same code). The return-type fix stays
+// blocked: 0xe70b0's caller 0xc98a0 is contributor code.
 // @retail 0x10ff40
 bool function_10ff40(long unit_index, long type, short side, short value,
     bool *flag, short *side_out, short *value_out)
 {
     s_unit_animation_object *unit = UNIT_ANIMATION_OBJECT(unit_index);
+    s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
     byte *definition = (byte *)TAG_BYTES(unit->definition_index);
     s_animation_state *state = UNIT_ANIMATION_STATE(unit);
-    s_unit_animation_control *control = UNIT_ANIMATION_CONTROL(unit);
     *flag = false;
     long set = g_440918[type];
     long mode = g_440938[type];

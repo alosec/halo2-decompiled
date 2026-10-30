@@ -561,13 +561,16 @@ void function_24ce9d(word const *text, long left, long top, short_rectangle2d *b
 /* draws a local player's HUD messages: the scripted message at the top,
    the list of messages, then the timed message and the status text at the
    bottom */
-// score 143 (was 143): frame 0x264 agrees; predicate packing, color/rectangle/scalar homes and the text-buffer call convention still differ.
-// Earlier score 143 (was 142): frame slots differ (the scripted flag packs beside the split-screen
+// score 115 (was 143): frame 0x264 agrees; predicate packing, color/rectangle/scalar homes and the text-buffer call convention still differ.
+// Earlier: frame slots differ (the scripted flag packs beside the split-screen
 // byte, shifting colour, view, left and the loop index); BLOCKED-BY 0x15f120, whose text
 // buffer retail passes in esi (our push is the extra byte). Tutorial colour as three calls 233;
 // nested ternary 142; if-assigned pixel 383; byte timer flag 203 (retail length); byte timer
 // with nested ternary 203; named any-message test 523.
 // Phase foreground/background/both identities 142/142/142; rectangle role names 142; initial rectangle memcpy 390; color/rectangle identities together 142; unsigned word count 342; read-only HUD receiver 142 (fast; unchanged preview 142). Restored.
+// Shared aggregate presence on the retained long-timer graph: bool/long with inherited row decrement
+// 526/529; precomputed reserved-row subtraction 561/544 (exact-only); direct conditional bound
+// 512/547; result-first bound 514/522. Original predicates, conditional decrement and body restored.
 // @retail 0x24cf66
 void function_24cf66(long local_player_index)
 {

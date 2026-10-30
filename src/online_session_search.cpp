@@ -711,6 +711,11 @@ done:
 // Round 208: uniform twice-used validity before score reset, bool/byte/short/long
 // 169/169/166/168; with native score/distance/count fields 209/209/206/208.
 // All restored; details cursor and kind/count/search homes remain.
+// Round 102 (fast): the score updates through a `long *` to the score field 184 (the second cursor
+// goes); every entry field except valid read relative to the details cursor 171 (cursor base entry+1),
+// the same with unknown01 on the entry 164 (base entry+0x120); a screen of the 31 combinations of
+// header/ordinary/details-input/qos/score field groups moved between entry and cursor gives bases 0x1f8
+// (113 at best), 0x1, 0x11c or no cursor, never retail's 0x10c.
 // @retail 0x91000
 void __stdcall session_search_score_and_sort(s_session_search *search)
 {

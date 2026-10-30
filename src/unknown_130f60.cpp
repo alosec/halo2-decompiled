@@ -179,6 +179,9 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 // Round 291: Paired double-square terms, complete direction-square terms, both, ordered accumulator
 // clamp, and clamp combinations 410/414/420/402/410/414/420; all with disjoint clears before common
 // remaining initialization 454 (fast control 402; full 444).
+// Round 300: Existing vector setter for source/opposite/trigonometric constructions in seven
+// nonempty subsets 413/408/414/410/414/416/423; complete setter graph with readonly source/sample
+// records 423 (fast control 402; full 444). Original constructions and arithmetic restored.
 // Round 221: real paired descriptor table with original switch 402 fast; direct index 374;
 // descriptor pointer/reference 382/382; index after axis 501; null-first descriptor 318;
 // word side ordinal 441; readonly direct index 374 (unchanged fast control 402).

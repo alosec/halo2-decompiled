@@ -607,7 +607,25 @@ s_projectile_material_response g_547660;
 // counted response loop 56 (alone: retail's guard/counter shape, but index EDI, material ECX and the
 // response ESI where retail has ESI/EDI/EDX), NULL-default getter with it 56, while-counted 56,
 // tail-recursive call on the parent 72 (made a loop, result dropped), counted without the reference
+// 64, walk local read through the reference 34. Round 101: a word parameter with short-cast range
+// tests 56 (146 bytes, movzx); `return` of the call on the parent when nothing matched 69 (VC makes
+// a rotated loop, still a dword load); the counted loop reading the element through the index at
+// each use 56 (140 bytes); the counted loop testing the definition's count at each pass 70; the
+// parent read only when nothing matched 74. Screened alone (synthetic shapes too): every loop form
+// over a short index, with the index read through the parameter's address or not, loads a dword;
+// the read through the address gives the word load only when the value is not loop-carried
+// (0x1ed70). A scan of the matched functions finds no word-loaded parameter that a loop reassigns.
 // 64, walk local read through the reference 34.
+// Round 10: retail's entry jmp over the loop pad follows from its 5-byte word load. A walk local
+// initialised from the parameter 34 (copies coalesce), with the counted response loop 55, either
+// without the reference 51/65 (the index then arrives in EDX); a pointer to the index walked from
+// the parameter to each parent field 49 (word loads, but at the loop head), with the counted loop
+// 47; the existing global_material_get (inline in damage.cpp) for the lookup 34 (same code).
+// Round 12: a counted scan gives retail's shape but colours index/material/counter/pointer EDI/ECX/
+// EDX/ESI (retail ESI/EDI/ECX/EDX) with the dword entry load: a named response base indexed 54,
+// the element indexed off the definition 56, a walk local read through the reference 56, the
+// material declared before the loop 56; the pointer scan with a walk local read through the
+// reference 34 (same code). A read through the reference loads a word only when no loop carries it.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -693,38 +711,6 @@ PRIVATE inline void projectile_effect_parameters_initialize(s_effect_parameters 
 }
 
 /* pushes a projectile, and spins it at random by the push's strength */
-// score 13 (was 34): only the j product still differs: ours loads axis j ahead of the spin (as k),
-// retail copies the spin and multiplies by memory (as i). Earlier: the existing random unit vector
-// call gives retail's impulse ESI and seed EDI/EDX (69 -> 36), the vector sums give retail's add
-// order (34); our build folded the 1/65535 and pi/2 factors into one constant (fixed in round 8).
-// Round 75: length-first product 95; double sqrt product 36; add-scaled helper 71; in-place scale 34;
-// one-use named fraction 14 (no fold), with a double spin 13 (i folded), both reverted (one-use local).
-// Round 196: direct length 95; fraction 114; complete native scale 98; length/fraction 114;
-// length/scale 98; fraction/scale with either length 83 (one-use fraction, restored); shared magnitude/scale 98.
-// Commuted first product with complete scaled vector 69 (kept); in-place, direct-root in-place,
-// and shared magnitude variants 69 each. Existing calls and multiply grouping preserved.
-// Round 212: native linear/angular/both component loops 71/77/79; earlier separate
-// vector declarations alone/linear/angular/both 69/71/77/79; renamed spin vectors 69.
-// Shared linear/angular/both sums 68/63/76; scaled angular sum with/without
-// the linear helper 121/121; complete linear/both/scaled angular outputs 112/130/117.
-// Object receiver at every use with no/linear/angular/both shared sums
-// 155/140/140/114; entry-scope uninitialized vectors with those sums
-// 155/140/140/114. Original object snapshot restored; impulse/seed carriers remain.
-// Shared seed receiver 69; native short/long axis index with complete setter 118/120;
-// selected-axis receiver/setter 112; memcpy axis 69; shared seed with short index,
-// axis receiver or memcpy 130/125/69. Restored.
-// Round 6: the fold is the fraction helper's: its result as a named local in the header helper
-// 14 (also unfolds 0x10cf80's form, but 0x167e86 matched -> 229 and 0x102fb0/0x17a380/0x28dbd0
-// worsen; restored); existing random-range helper from 0 to the length 65 (length hoisted).
-// With a one-use named fraction: spin local 14, spin passed straight to the scale 13 (only the j
-// product still loads j instead of copying spin), in-place 14, double spin 13, swapped add 13,
-// double product 13, fraction declared first 13. Without it: spin straight to the scale 32;
-// declaration orders 14/14/15; length local before/after the axis 93/105; spin *= quarter turn 14.
-// Round 8 (the fold is reassociation inside one expression): `spin *= 1.5707964f;` as its own
-// statement 15; the quarter turn in the scale argument 13 (C1 still after the length); spin started
-// from the fraction and `spin *= length` 13 (retail's x87 order, kept); with add_scaled 73; in-place
-// scale 34; three-step spin 14; the add fed the scale's result 13; rotation declared first 13; spin
-// declared first 13.
 // @retail 0xfa820
 void function_fa820(long projectile_index, vector3f const *impulse)
 {
@@ -741,7 +727,10 @@ void function_fa820(long projectile_index, vector3f const *impulse)
 
 		vector3f rotation;
 		vector3f_scale(&axis, spin * 1.5707964f, &rotation);
-		vector3f_add(&projectile->angular_velocity, &rotation, &projectile->angular_velocity);
+		vector3f *angular_velocity = &projectile->angular_velocity;
+		angular_velocity->i = projectile->angular_velocity.i + rotation.i;
+		angular_velocity->j = projectile->angular_velocity.j + rotation.j;
+		angular_velocity->k = projectile->angular_velocity.k + rotation.k;
 		function_fbd40(projectile_index);
 		function_b9b90(projectile_index, false);
 	}
@@ -989,6 +978,9 @@ real function_30bf0(vector3f *v);
 // All restored; frame 0x28/0x30, rounded horizontal root and separate divisions remain.
 // Round 269: squared-distance workspace 232; root workspace 232; both 232; default flight time 266;
 // distance/default 266; root/default 266; all 266; all with the twice-used time square 266. Original body restored.
+// Round 294: Entry a/two_a/discriminant-base storage, seven nonempty subsets, all 232;
+// all with b storage 232. Every original producer and complete body restored;
+// frame 0x28/0x30, rounded-root scheduling and separate divisions remain.
 // Round 222: found byte/short/long/dword with result first at entry, all 245; arc-only result,
 // all 257. Original body restored; frame 0x28/0x30, rounded horizontal root and separate
 // divisions remain.
@@ -1512,6 +1504,9 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 402: native projectile timer/ownership/forward field observations, seven subsets,
 // all 332; complete native fields with both twelve-byte library copies 332. Restored;
 // slot/input allocation and expanded speed update remain, frame four agrees.
+// Round 294: Entry ticks/arming-ticks/speed storage, seven nonempty subsets, all 332;
+// all with owner-index storage 332. All producers and the complete callback restored;
+// frame four agrees, slot/input allocation and speed-update expansion remain.
 // Round 222: shared zone predicate 346, with shared scaled sum 332; both library copies tie each
 // form. Shared zone with cached tag, with/without scaled sum or copies, 381 each. Original
 // body/include restored; slot/input allocation and speed-update expansion remain.
@@ -1687,6 +1682,9 @@ real function_17c900(short function_type, real input);
 // DH round 236: lead/turn/drift vector storage promoted without moving their input reads,
 // all seven subsets 348 each; complete promoted graph with role-based point/vector names 348.
 // Original branch storage and complete body restored; input transport and vector homes remain.
+// Round 294: Unsigned word/dword salt 360/371; paired word/dword phase counters 354/371;
+// word-word/dword-word/word-dword/dword-dword 354/354/371/371. Complete body
+// restored; stacked-index/output-EBX transport and vector homes remain.
 // @retail 0xf87f0
 void function_f87f0(long projectile_index, point3f *aim_point)
 {
@@ -2486,7 +2484,7 @@ real function_1201a0(vector3f *v, vector3f const *fallback);
 void random_vector_in_cone(vector3f const *forward, vector3f *result, dword *seed, real min_angle, real max_angle);
 struct s_globals_element;
 s_globals_element *function_188690(short index);
-void function_184060(long unknown3c, byte unknown59, s_type_1e6529 *data, long unknown50);
+void function_184060(long unknown3c, long unknown59, s_type_1e6529 *data, long unknown50);
 void function_a85c0(long projectile_index, s_collision_result_1697c0 const *collision, vector3f const *direction,
 	bool unknown, real scale_a, real scale_b);
 

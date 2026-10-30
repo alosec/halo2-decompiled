@@ -459,7 +459,8 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 	vector->k = axis->k * along + k * cosine - (axis->j * i - axis->i * j) * sine;
 }
 
-// score 90 (was 90): frame 0xd8 agrees; ring conversion (fild where retail converts in SSE) and the
+// score 90 (was 90): frame 0xd8 agrees; the ring counter is converted in x87 where retail converts
+// it in SSE, and the rotation schedule and component registers differ; 1085 bytes against 1089.
 // frame 0xd8 agrees; x87 ring conversion and rotation component spill/register scheduling remain.
 // rotation schedule (one spilled component) differ; 1085 bytes against 1089.
 // Round 53: ring phase named in the outer loop before/after the distance 143/143 (SSE ring
@@ -545,6 +546,9 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // conditional, 163/247/153/246/281/281/147/241. All exact-only; no match. Original query
 // observation, rotation helper, input copies, inherited local qualifier and complete body restored.
 // Round 255: unsigned-word ring with short/word/byte/char spokes 117/117/246/246; signed-byte ring with short/word/byte/char spokes 130/130/247/247. All restored; x87 ring conversion and rotation spill remain.
+// Round 200: output-pointer rotation with four formal priorities 90/90/90/90;
+// with native phase before distance 143/143/143/143 (frame 0xdc). Original void helper,
+// input copies and complete body restored; output-result lifetime does not resolve the spill.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {
