@@ -468,11 +468,11 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
     return result;
 }
 
-// score 278 (was 278): frame 0x40 and length agree; early root EBX retention, actor ownership and paired-edge float/vector scheduling remain.
-// Earlier: Frame 0x40 agrees; early root EBX retention and float/vector scheduling remain.
-// Earlier 278 (was 278): frame 0x40 agrees; early pathfinding EBX ownership and float scheduling differ.
-// entry root retention and floating-point scheduling differ;
-// result first 299; surface first 299; vector names 299; vector helper 299;
+// score 278 (was 278): frame 0x40 and length agree. Retail moves pathfinding to EBX at entry and
+// loads actor_index (first stack argument) into EAX there for case 5's test, which also forces
+// result into the dead out slot; ours keeps pathfinding in EAX and loads the actor at its use.
+// Everything after the entry follows (case 2 differs only in the pops).
+// Tried: result first 299; surface first 299; vector names 299; vector helper 299;
 // case order 300; separate vector declarations 299.
 // Round 24: trace-time state reload, mutable entry, both, coherent pathfinding/surface swap,
 // direct distance arguments and direct projected-origin 299 each; c/b/a/d pointer
@@ -499,6 +499,9 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
 // Round 434: parent value captured in paired/actor/trace cases 395/384/330; paired-actor/
 // paired-trace/actor-trace 421/399/388; all cases 421, all with native radius snapshot 420.
 // Parent records grow the frame to 0x44/0x4c/0x50; original field observations and body restored.
+// Round 46: one vertices base for the case 1/6 corners 280; writable start-out parameter 279;
+// reversed entry declarations 278; case 5 fallback first 278; shared function-scope position 278.
+// Diagnostics: no actor in case 2 326, extra actor tests 360, actor declared first 278 (no entry load).
 // @retail 0x26f3f0
 bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
     s_type_c3b527 const *entry, long actor_index, s_type_f17a25 *state,
