@@ -400,6 +400,9 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 // Round 403: real triangle-reference cursor with readonly metadata/surface table/range
 // bound/vertex cursor combinations 210/210/211/193/213/210/213; complete graph
 // with Boolean result 224. Original traversal and defined-failure body restored.
+// Round 207: native point-value getter with bool/byte/long/dword validity outputs,
+// default-first result 284/284/278/278; eligibility-owned return 284/284/278/278.
+// Frames 0x68/0x6c and shorter code regress; original Boolean fetch and defined failures restored.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
@@ -719,6 +722,9 @@ done:
 // Existing model and collision probe declarations ordinary/inline/noinline, independently and
 // jointly, 125 in all eight forms. Both original declarations restored; their definitions,
 // arguments and the entire body are unchanged.
+// Round 207: actual skipped/failed/found model state, signed byte/word/long/dword
+// in object scope 134/136/133/133; function-scope declarations 134/136/133/133.
+// Byte state reaches retail length; prologue/result/NONE allocation remains. All restored.
 // @retail 0x14af40
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)
