@@ -131,6 +131,12 @@ real normalize2d(point2f *arg_0);
 // copy / 0x34 center layout and vector sources; output still EBX, 1032 bytes); product operand and
 // sum orders in the two dot tests 215-226 (canonicalised); the arg_5 path as an else with one final
 // false return 215 (same code); without the output self-address read 238.
+// Round 46: retail's 0x28 slot is one variable: the point copy is stored there and the
+// point-to-center vector is written over it component by component (copy y stored after the
+// vector's i). A to-center vector copied from the point and differenced in place puts the
+// center at retail's 0x34 and aligns the middle block, but scores 235; with a named
+// actor-to-center vector after/first/between the point vectors 232/226/226 (sum and product
+// operand orders then mirror retail's); separate origin copy for both vectors 229. Restored.
 // @retail 0x1badc0
 bool __stdcall function_1badc0(long arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 *arg_3, long *arg_4, bool arg_5, bool *arg_6)

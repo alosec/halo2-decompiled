@@ -587,6 +587,9 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // 93); output through vector3f_scale 147 (same code); direct stores without named x/y 160 (821 bytes);
 // normalization as if (!(fabs < eps)) { scale } else zero 131 (845 bytes).
 // BLOCKED-BY 0x1eb8a0 (the form of its inline rotation helper, src/unknown_1eb8a0.cpp).
+// Round 231: facing-first positive / both positive predicates / facing-first nonzero /
+// both nonzero predicates 205/231/211/237; with direct component output
+// 175/193/181/199. Original admission and aggregate output restored.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

@@ -40,7 +40,7 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 	arg_3->k = arg_1->k * local_2 + local_1 * arg_0->k - local_3.k * local_0;
 }
 
-// score 2 (was 67): only the inlined 0x11cc90's second cross product differs: retail loads a->j and
+// score 2 (was 2): only the inlined 0x11cc90's second cross product differs: retail loads a->j and
 // folds b->i, ours (like the standalone 0x11cc90) loads b->i. Round 121: the rotation helper with the j
 // and k cross terms in a vector first and the i cross term written in the i row took 67 -> 2 (k before j
 // 29; the two terms as scalars 91; without the axis pointer copy 76). Then: the point parameters swapped
@@ -134,6 +134,10 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // Round 12 (lane 13): the rotation helper's dot and cross through the existing dot3f and
 // cross3f_staged / cross3f (either dot argument order) 84 each; the source vector built with
 // vector3f_assign 88; the source vector declared before the result vector 67.
+// Round 205: existing rotation helper source/axis/output reference subsets 2 each (seven forms);
+// output pointer return 2; helper inline/ordinary availability 2/2; queued inline/forced-inline
+// availability 2/2 (forced inlining loses 0x29cb10). All restored; the second cross-product
+// load/fold pair remains the only difference, with frame and complete rotation exact.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)

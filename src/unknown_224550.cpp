@@ -216,6 +216,9 @@ PRIVATE __forceinline dword function_224551(s_draw_sprite_seed const *arg_0,
 // local filled by the producer gives retail's frame 0x60 but tint/uv_b slots swapped (0x60/0x50) and
 // 1980 bytes, 517 [215]; renaming the tint or declaring it after the UVs moves nothing. Every form
 // still holds the cache in EBP and copies it to EBX for each callee.
+// Round 439: separate genuine RGB evaluation result before RGBA assembly, producer/scoped
+// lifetimes and late/early assembly with scalar/native subrecord copies, 392/540/392/506 twice.
+// No frame recovery; original tint helper and all in-place UV captures restored.
 // @retail 0x224550
 void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
 	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)

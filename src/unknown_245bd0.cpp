@@ -357,6 +357,10 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 // declaration and comparison spellings 4; the difference helper with a pointer return, forced
 // inline, output first 4 (by value 121). Only the three differences written out as plain
 // assignments (diagnostic) give retail's whole b block. Permuter (68 tries): 4.
+// Round 205: the shared difference helper with scale one 4; with direction length/self-dot 4/4;
+// separation-first/direction-first/reverse projection helpers 4/4/4; shared final scaling 4;
+// normal-first plane product 6. The vector addition helper with a negative step 16 (435 bytes),
+// with normal-first plane product 18 (435). All restored; the projection still sums i,j,k.
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
