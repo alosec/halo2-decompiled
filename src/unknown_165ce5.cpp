@@ -1856,17 +1856,17 @@ static __forceinline void first_person_orientations_from_model_16760c(s_16760c_r
 
 
 static __forceinline void first_person_channel_sample_sway_16760c(c_animation_channel *channel, real const *value,
-	real positive_frame, real negative_frame, real weight, long const *node_count, byte *orientations)
+	real positive_frame, real negative_frame, real weight, s_first_person_weapon const *weapon, byte *orientations)
 {
 	if (*value > 0.0f)
 	{
 		channel->set_frame_position(positive_frame);
-		channel->sample(*value * weight, NULL, *node_count, (real_quaternion_transform *)orientations);
+		channel->sample(*value * weight, NULL, weapon->orientation_count, (real_quaternion_transform *)orientations);
 	}
 	else if (0.0f > *value)
 	{
 		channel->set_frame_position(negative_frame);
-		channel->sample(0.0f - *value * weight, NULL, *node_count, (real_quaternion_transform *)orientations);
+		channel->sample(0.0f - *value * weight, NULL, weapon->orientation_count, (real_quaternion_transform *)orientations);
 	}
 }
 
@@ -1875,6 +1875,9 @@ static __forceinline void first_person_channel_sample_sway_16760c(c_animation_ch
 // score 6 (was 15) plain: the rounds test is spelled with the negative case first, the branch
 // polarity retail's code shows, so the frame block is retail's layout; the three float products
 // still load their two operands in the other order.
+// score 160 reduced (was 148), coordinator review: the magazine definition pointer read once before the call is
+// not kept (a one-use field pointer, no match; 164 without it), and the sway helper reads the node count through
+// the weapon after set_frame_position instead of taking the count by pointer (160; 164 with the count pointer).
 // score 15 (was 60) plain, 148 (was 157) reduced: the adjusted flag is set in the adjustment branch
 // and cleared in the other one, so the tail is retail's instruction for instruction; the sway
 // products still load the value first and the rounds test still lays its blocks out the other way.
@@ -2051,15 +2054,15 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 						if (channel.function_1c6440()->frame_count >= 9)
 						{
 							first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x0], 0.0f, 1.0f, weight,
-								&weapon->orientation_count, orientations);
+								weapon, orientations);
 							first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x4], 3.0f, 2.0f, weight,
-								&weapon->orientation_count, orientations);
+								weapon, orientations);
 							if (!aimed)
 							{
 								first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x10], 4.0f, 5.0f, weight,
-									&weapon->orientation_count, orientations);
+									weapon, orientations);
 								first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x14], 7.0f, 6.0f, weight,
-									&weapon->orientation_count, orientations);
+									weapon, orientations);
 							}
 							if (weapon->indices.unknownc > 0.0f)
 							{
@@ -2092,7 +2095,6 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 					{
 						real excess = (real)(loaded - 0x2c);
 						real fraction = excess * 0.2f;
-						s_16760c_magazine_definition *magazine = definition->magazines;
 						short maximum;
 						short total;
 
@@ -2101,7 +2103,7 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 							fraction = 1.0f;
 						}
 						total = (short)function_100b40(0, weapon_index, false);
-						maximum = magazine->rounds_maximum;
+						maximum = definition->magazines->rounds_maximum;
 						if (total > maximum)
 						{
 							total = maximum;
