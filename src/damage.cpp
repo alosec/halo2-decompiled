@@ -4065,9 +4065,24 @@ struct s_impact_tag_block;
 s_impact_tag_block *physics_model_shape_block_get(byte *physics_model, s_physics_model_shape_key const *key, long *element_size);
 long render_model_find_marker_group(long render_model_index, long index);
 
-PRIVATE inline s_section_list *section_list_get(s_section_lists *lists, long list_index)
+PRIVATE inline long damage_section_list_size(s_section_lists *lists, long list_index)
 {
-	return list_index == NONE ? &lists->unlisted : &lists->lists[list_index];
+	return list_index == NONE ? lists->unlisted.count : lists->lists[list_index].count;
+}
+
+PRIVATE inline long damage_section_list_entry(s_section_lists *lists, long list_index, long i)
+{
+	return list_index == NONE ? (char)lists->unlisted.sections[i] : (char)lists->lists[list_index].sections[i];
+}
+
+PRIVATE inline byte *damage_constraint_element(s_physics_constraint_iterator *iterator, long *element_size)
+{
+	s_physics_constraint_block *block = (s_physics_constraint_block *)physics_model_shape_block_get(iterator->physics,
+		(s_physics_model_shape_key const *)&iterator->type, element_size);
+
+	if (iterator->index >= block->count)
+		return NULL;
+	return block->elements + iterator->index * *element_size;
 }
 
 /* the model node a physics node belongs to (a copy of
@@ -4089,6 +4104,15 @@ PRIVATE inline long model_find_physics_node(byte *model, short physics_node)
 
 /* the model nodes still joined to a node through constraints that hold
    (those whose damage sections are intact) */
+// score 166 (was 197): the instruction sequence now lines up with retail (same size frame, 0x447c, same loop
+// shape and tests); what is left is register assignment and stack-slot numbering. Retail keeps list_a in edi,
+// list_b in edx, i in ebp and j in esi (spilled to [esp+0x14]/[esp+0x18]) and has the lowest slots for the
+// loop indices, the node mask at 0x1c and the iterator at 0x20; ours puts list_b in ebp, i in esi, j in edx
+// and the mask and iterator at 0x14/0x18. Fixed by: constraint walk in an inline helper (retail does not rotate
+// the loop), section list count and section reads as ternaries on values, nested list_a / list_b tests with a
+// word list_a and a (short)list_b compare. Tried: i and j declared at function scope (166), iterator at function
+// scope (166), changed/physics/lists declaration orders (166), list_b as long (181), a pointer-returning
+// section_list_get (189).
 // @retail 0xdb810
 dword function_db810(long object_index, long node_index)
 {
@@ -4119,46 +4143,45 @@ dword function_db810(long object_index, long node_index)
 				for (;;)
 				{
 					long element_size;
-					s_physics_constraint_block *block = (s_physics_constraint_block *)physics_model_shape_block_get(iterator.physics,
-						(s_physics_model_shape_key const *)&iterator.type, &element_size);
-
-					if (iterator.index >= block->count)
-						break;
-
-					byte *constraint = block->elements + iterator.index * element_size;
+					byte *constraint = damage_constraint_element(&iterator, &element_size);
 
 					if (!constraint)
 						break;
 					if (!function_db4c0(object_index, iterator.type, iterator.index))
 					{
-						short list_a = *(short *)(constraint + 4);
-						word list_b = *(word *)(constraint + 6);
-
-						if (list_a != NONE && list_b != 0xffff)
+						word list_a = *(word *)(constraint + 4);
+						if (list_a != 0xffff)
 						{
-							for (long i = 0; i < section_list_get(&lists, list_a)->count; i++)
+							word list_b = *(word *)(constraint + 6);
+
+							if ((short)list_b != NONE)
 							{
-								for (long j = 0; j < section_list_get(&lists, (short)list_b)->count; j++)
+								for (long i = 0; i < damage_section_list_size(&lists, (short)list_a); i++)
 								{
-									long section_a = (char)section_list_get(&lists, list_a)->sections[i];
-									long section_b = (char)section_list_get(&lists, (short)list_b)->sections[j];
-
-									if (section_a != NONE && section_b != NONE)
+									for (long j = 0; j < damage_section_list_size(&lists, (short)list_b); j++)
 									{
-										byte *rows = *(byte **)(physics + 0x3c);
-										byte *node_model = g_4e3b44[*(long *)(object_definition + 0x38) & 0xffff].bytes;
-										long node_a = model_find_physics_node(node_model, *(short *)(rows + section_a * 0x90 + 2));
-										long node_b = model_find_physics_node(node_model, *(short *)(rows + section_b * 0x90 + 2));
+										long section_a = damage_section_list_entry(&lists, (short)list_a, i);
+										long section_b = damage_section_list_entry(&lists, (short)list_b, j);
 
-										if (node_a != NONE && node_b != NONE)
+										if (section_a != NONE && section_b != NONE)
 										{
-											dword bit_a = 1 << node_a;
-											dword bit_b = 1 << node_b;
+											byte *rows = *(byte **)(physics + 0x3c);
+											byte *row_a = rows + section_a * 0x90;
+											byte *row_b = rows + section_b * 0x90;
+											byte *node_model = g_4e3b44[*(long *)(object_definition + 0x38) & 0xffff].bytes;
+											long node_a = model_find_physics_node(node_model, *(short *)(row_a + 2));
+											long node_b = model_find_physics_node(node_model, *(short *)(row_b + 2));
 
-											if (((node_mask & bit_a) != 0) != ((node_mask & bit_b) != 0))
+											if (node_a != NONE && node_b != NONE)
 											{
-												node_mask |= bit_a | bit_b;
-												changed = true;
+												dword bit_a = 1 << node_a;
+												dword bit_b = 1 << node_b;
+
+												if (((node_mask & bit_a) != 0) != ((node_mask & bit_b) != 0))
+												{
+													node_mask |= bit_a | bit_b;
+													changed = true;
+												}
 											}
 										}
 									}
