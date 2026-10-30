@@ -110,6 +110,9 @@ short __stdcall function_2551c0(long actor_index)
 // Round 93: axis global through a local pointer 203 (835 bytes); direction declared beside forward
 // 43; helper taking the angle (sine/cosine inside) 43; helper copying the source vector itself 43;
 // score dot grouped i + (j + k) 146 (814 bytes, frame slots and rotation schedule reshuffled).
+// Lane 14 r9: one or two extra no-op products (diagnostic) leave the score dot's k, i, j order; angle
+// as constant times index 43; `1.f + dot` 43; `0.2f * distance` 43; direction copy before the angle 43;
+// found declared before the best score 45.
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {

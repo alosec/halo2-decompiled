@@ -13,7 +13,7 @@ long replication_table_find_in_chains(s_handle_peers *peers, long *handles, long
 void replication_table_release(s_handle_peers *peers, long handle);
 void replication_table_release_chain(s_handle_peers *peers, long count, long const *handles);
 
-// score 55 (was 132): frame 0x48, receiver EBP and pending counter ESI agree; selector,
+// score 55 (was 55): frame 0x48, receiver EBP and pending counter ESI agree; selector,
 // cursor/entry/query homes and load scheduling remain. Earlier 170: the peers table is read through a local; the
 // index is read inside the enabled test, the cursor is declared under the index test, advanced
 // before the stores and the size is one expression, so retail's prologue and output block match.
@@ -164,6 +164,10 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // the last 4-byte slot below the handle arrays. Plain `handles[i]` in the active loop 170 (the
 // pending loop then spills i and keeps type in ebx); type renamed kind/a_type/z_type 55 each;
 // cursor renamed 55.
+// Lane 14 r9: plain `handles[i]` in the active loop 170 (type then holds EBX through both chains, the
+// pending counter spills); with one shared counter for both loops 170; with the pending type assigned
+// after its loop 241; with the pending handle read once into a named local 170; that local on the
+// cursor form 55 (same code).
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
