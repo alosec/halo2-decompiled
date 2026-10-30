@@ -171,6 +171,10 @@ void function_44720(void)
 // pointer hoisted into ebx).
 // Native context at part/entry/function scope with cached/live level 107/135 each;
 // native context with byte/word level 133/138. Original storage restored; frame and geometry reloads remain.
+// Round 420: global each-use 107; global each-use/live level 135; global each-use/indexed receiver 140;
+// global each-use/live level/indexed receiver 136; global each-use/single result 132; global
+// each-use/single result/live level 132; global each-use/single result/indexed receiver 143; global
+// each-use/single result/live level/indexed receiver 128. Original body restored.
 // @retail 0x44c90
 void __stdcall function_44c90(long group, dword selection_mask, long level,
     dword and_mask, dword or_mask, dword fallback_and_mask, dword fallback_or_mask, bool force)
