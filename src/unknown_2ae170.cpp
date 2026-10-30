@@ -1004,6 +1004,9 @@ void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameter
 // Real gain-array loops front/rear/tail/front-rear/front-tail/rear-tail/all-long/all-word
 // 318/346/314/422/388/411/492/466; dispatcher 26 in every trial. Original fields, observations,
 // three local qualifications and body restored.
+// Round 301: Complementary primary-route word/bool/byte/long with conditional destinations
+// 244/249/249/247; independent complete destination producers 240/256/256/253.
+// Original routing, producers, observations and three local qualifications restored.
 // @retail 0x2af450
 void c_sound_effects::add_effect_sends_split(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {

@@ -3937,6 +3937,9 @@ static __forceinline long nonnegative_15ce70(long value)
 // Round 226: paired existing initializer/cause/effect/sender boundaries 602/609/592/588/567/583;
 // initializer/cause/effect 637, complete event lifecycle 659. Original body and all inline
 // boundaries restored; frame 0xe4/0xe0 and attacker/category/NONE/event homes remain.
+// Round 301: Ascending chain notification, descending streak notification and ascending chain
+// result recognition, seven combinations 470/470/470/543/543/543/543; all plus reversed
+// fixed streak results 532. Original predicate order, values and complete body restored.
 // @retail 0x15ce70
 void function_15ce70(long attacker_index, long victim_index, bool betrayal, byte damage)
 {
