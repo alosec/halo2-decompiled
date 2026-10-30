@@ -211,6 +211,11 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 // Round 194: native source-location mutable/const with source/copied priority 181/181/110/110;
 // the same four with library publication 181/181/110/110. Original location-first
 // body restored; input ownership regresses, and single-consumer copies only tie.
+// Round 85: retail-order header with conditional object/platform clears 163 (498 bytes);
+// separate location masks 110; the high-byte flag8 view 128 (486); an ordinary inline query
+// declaration 110; state/tag declarations swapped 110; tag pointer renamed 110; immutable tag
+// pointer 110; early uninitialized flags 110; split tag declaration/assignment 110. All restored;
+// first query expansion, initial tag spill and playback convention remain.
 // @retail 0x189fe0
 long function_189fe0(s_sound_request const *request, long tag_index)
 {
