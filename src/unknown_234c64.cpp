@@ -272,6 +272,9 @@ void c_window_channel::v9()
 // after the same call. One tested link-order change left the score unchanged.
 // Other locals, address forms and control flow scored 3 or worse; the 600 s
 // permutation run found no improvement.
+// Round 419: callback from the completed request, derived/base request storage,
+// native multi-use request pointer and direct callback-result subsets 4/25/4/25
+// and 4/25/4/25. All regress; original callback observation and body restored.
 // @retail 0x23531c
 void c_window_channel::v10()
 {

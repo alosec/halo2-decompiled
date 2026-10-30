@@ -1737,6 +1737,10 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // Round 270 M: ordinary saved activity on the retained node-query graph, alone/with
 // ordinary index/ordinary node/both 289/314/289/317; the same four with the actual
 // header activity member 289/314/289/317. Original qualifiers, header and body restored.
+// Round 419: caller-side node-query force-inline declaration 285; with individual native
+// position/forward/up input pointers, masks 1/2/3/4/5/6/7, 285/283/283/283/283/283/283.
+// The two-point pointer forms are exact-match-only and rejected; original declaration and body
+// restored. Accepted header-table reload, expanded node query and transform carriers remain.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {
