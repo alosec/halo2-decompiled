@@ -269,6 +269,9 @@ void function_16f60(byte *state, word const *range)
 // Round 182: Native prefix-table masks and a complete mode/state table do not recover selective setter expansion
 // Trials 1-8: 176, 134, 101, 124, 198, 192, 216, 226.
 // Trials 9-9: 832.
+// Native common suffixes, two/three/four setters across modes 3/4/6: 121/243/236;
+// with mode 5: 217/244/243; all enabled modes, two/four setters: 269/313.
+// Selected suffix results shorten the body but do not recover selective expansion; original tails restored.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -873,6 +876,10 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
     *direction = sample->direction;
 }
 
+// score 627 (was 627): Frame 0x1c/0x2c, offset/selection homes, override layout and fraction retention differ.
+// Native point-difference producer subsets nearest/anchor/both/opposite/nearest+opposite/
+// anchor+opposite/all: 626/627/626/685/668/685/668; all plus shared dot 668 (exact-only).
+// The one-point nearest gains are ineligible; original scalar producers and arithmetic restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
