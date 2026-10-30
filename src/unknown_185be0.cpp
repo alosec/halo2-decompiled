@@ -142,7 +142,7 @@ union s_185be7
 };
 
 #pragma inline_depth(1)
-// score 767 (was 780): Frame 0xe0 and state/output carriers agree; control-root EBX versus NONE, settings/zero homes and flag joins remain.
+// score 767 (was 767): Frame 0xe0 and state/output carriers agree; control-root EBX versus NONE, settings/zero homes and flag joins remain.
 // Earlier 780 (was 780): Frame 0xe0 and state/output carriers agree; the flag bits are now set with retail's branches. Left: settings/zero homes, clamp-arm placement and unthreaded repeated flag tests.
 // Round 86 (fast, aligned counts in brackets, 383 at the start): turn rates assigned in both arms (retail loads
 // the stored rates on the else path) 788 [367] and the attachment index NONE per path (retail sets it on each
@@ -280,6 +280,9 @@ union s_185be7
 // Round 220: Parent-before-attachment acquisition, nested/direct-parent/direct-slot/direct-both 767 each;
 // the same four with promoted component result 767 each. Keep nested native-short acquisition, plain 767;
 // all other observations, widths and helpers restored. Control-root/NONE, settings/zero and flag joins remain.
+// Round 222: native control bit with arithmetic/real-array entry; live/cached/constant roots 767
+// each, complete per-field roots 1006 each. Original body and shared type restored; control-
+// root/NONE and settings/zero homes remain.
 // @retail 0x185be0
 void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s_186ab4 *arg_4, s_186ab3 *arg_5)
 {

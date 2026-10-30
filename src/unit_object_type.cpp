@@ -4098,6 +4098,9 @@ bool function_c5eb0(long unit_index)
 // existing scale-aware transform alone/with shared crosses 173/173. Original body retained.
 // Existing plain vector transform helper 33; left terms first 28; k/j/i or i/k/j declarations 32;
 // i/j/k declared then assigned k, j, i 32 (j loads first but takes XMM2) or j, k, i 28.
+// Round 222: complete row/products/outputs/both carrier ownership 39/40/32/40; the same four
+// with input scale names 39/40/32/40. Original body restored; input load order and forward-
+// product carriers remain.
 // @retail 0xcb810
 bool function_cb810(long unit_index, vector3f *vector)
 {

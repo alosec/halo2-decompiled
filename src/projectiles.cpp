@@ -989,6 +989,9 @@ real function_30bf0(vector3f *v);
 // All restored; frame 0x28/0x30, rounded horizontal root and separate divisions remain.
 // Round 269: squared-distance workspace 232; root workspace 232; both 232; default flight time 266;
 // distance/default 266; root/default 266; all 266; all with the twice-used time square 266. Original body restored.
+// Round 222: found byte/short/long/dword with result first at entry, all 245; arc-only result,
+// all 257. Original body restored; frame 0x28/0x30, rounded horizontal root and separate
+// divisions remain.
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1509,6 +1512,9 @@ PRIVATE inline long projectile_object_root(long object_index)
 // Round 402: native projectile timer/ownership/forward field observations, seven subsets,
 // all 332; complete native fields with both twelve-byte library copies 332. Restored;
 // slot/input allocation and expanded speed update remain, frame four agrees.
+// Round 222: shared zone predicate 346, with shared scaled sum 332; both library copies tie each
+// form. Shared zone with cached tag, with/without scaled sum or copies, 381 each. Original
+// body/include restored; slot/input allocation and speed-update expansion remain.
 // @retail 0xf8200
 bool __stdcall function_f8200(long projectile_index, byte const *data, long unused)
 {
