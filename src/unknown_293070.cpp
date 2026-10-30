@@ -491,9 +491,11 @@ PRIVATE __forceinline s_flock *flock_datum_walk_next(s_flock_datum_walk *walk, b
 
 	if (active)
 	{
-		if (data_datum_iterator_next_inlined(&walk->iterator))
-			flock = (s_flock *)walk->iterator.datum;
-		walk->flock_index = walk->iterator.datum_index;
+		s_data_datum_iterator *iterator = &walk->iterator;
+
+		if (data_datum_iterator_next_inlined(iterator))
+			flock = (s_flock *)iterator->datum;
+		walk->flock_index = iterator->datum_index;
 	}
 	return flock;
 }
@@ -525,6 +527,10 @@ void function_295320(point3f const *point)
 }
 
 /* the flock whose scenario definition has the name, or NONE */
+// matches: the walk over the flocks is the one 0x295320 uses; the step
+// reaches the iterator through a pointer, so LTCG does not follow the walk's
+// writes into the call, and the three callers (0x2a6200, 0x2a6270,
+// 0x2a6330) keep retail's code around it.
 // score 69 (was 69): the scenario view is read before the loop here and
 // after it in retail, so the loop body and the exit differ; ours is 187
 // bytes against retail's 193. Cause: retail keeps the flock pointer in ebp
@@ -560,14 +566,14 @@ void function_295320(point3f const *point)
 long function_2958a0(long name)
 {
 	long result = NONE;
-	s_active_flock_iterator iterator;
-	bool active = g_4f55d0->active;
-	flock_iterator_begin(&iterator, active);
-	while (flock_iterator_next(&iterator, active))
+	s_flock_datum_walk flocks;
+	flock_datum_walk_new(&flocks);
+	s_flock *flock;
+	while ((flock = flock_datum_walk_next(&flocks, g_4f55d0->active)) != NULL)
 	{
-		if (((s_scenario_flocks_view *)g_4e0350)->flocks[iterator.flock->definition_index].name == name)
+		if (((s_scenario_flocks_view *)g_4e0350)->flocks[flock->definition_index].name == name)
 		{
-			result = iterator.flock_index;
+			result = flocks.flock_index;
 			break;
 		}
 	}

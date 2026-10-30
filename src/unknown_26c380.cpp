@@ -203,6 +203,9 @@ bool function_26c380(point3f const *origin, s_pathfinding_data const *pathfindin
 // Round 205: complete scalar input reads in cross first/second/both 492/472/482;
 // magnitude alone/with first/with second/with both 400/492/469/482;
 // all with planar input reads 482. Four-point magnitude gain rejected; original producers restored.
+// Round 215: first-edge constant at sector/pre-iterator/pre-edge phases in word storage 426/426/427;
+// bool storage 420/420/429; original-phase bool 417; pre-iterator byte 420. Original first word and
+// producer phase restored; frame 0x5c/0x64, full/planar overlap and byte/tail homes remain.
 // @retail 0x26c590
 bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origin, long sector_index,
 	long target_sector_index, vector3f const *direction, real distance, s_path_location const *location,
