@@ -72,6 +72,10 @@ short __stdcall function_2551c0(long actor_index)
 }
 
 // score 43 (was 43): cross-product schedule and score-dot registers still differ.
+// Round 78: score as (1 + dot) 43; best_score < score 43; 0.2f * distance 43; angle as
+// 0.7853982f * i 43; distance * 0.2f * (dot + 1) without the grouping 118. A diagnostic no-op
+// product (not kept) reorders the projection dot and fixes the length (814) without touching the
+// score dot: both orders follow VC's tuple numbering, not statement position.
 // Earlier allocation: retail computes the second products of the j and k cross terms before
 // the call's pushes (ours the first j product: 2 bytes longer, j/k cross registers swapped) and
 // sums the score's dot product j, k, i (ours k, i, j). Kept: the rotation as projection first, then
@@ -109,7 +113,12 @@ short __stdcall function_2551c0(long actor_index)
 // counter 167; the axis components as helper locals 197.
 // Round 93: axis global through a local pointer 203 (835 bytes); direction declared beside forward
 // 43; helper taking the angle (sine/cosine inside) 43; helper copying the source vector itself 43;
-// score dot grouped i + (j + k) 146 (814 bytes, frame slots and rotation schedule reshuffled).
+// score dot grouped i + (j + k) 146 (814 bytes, frame slots and rotation schedule reshuffled). Round
+// 37: the unit's action state read through the existing 0xe70b0 call (tail and frame unchanged, but
+// the rotation's dot then sums j, k, i and the score's k, j, i) 70, with its local declared at the top
+// or before the length test 70/70, with the score's dot operands swapped 70; the early exit as a
+// nested if 43 (70 with the call); forward/direction renamed (three spellings) 43 each; the state
+// point copied as a point 43.
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {

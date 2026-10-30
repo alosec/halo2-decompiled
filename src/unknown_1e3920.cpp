@@ -536,7 +536,7 @@ long __stdcall function_cbd80(long object_index, long *holder_index);
 void *function_1e5280(long actor_index, long key);
 void function_118e80(long object_index, vector3f *forward);
 real normalize2d(point2f *vector);
-real function_267370(long volatile object_index);
+real function_267370(long object_index);
 
 
 // score 98 (was 98): the water-plane test is 0x11c120's body (location_point_in_zone_inline) and the marker

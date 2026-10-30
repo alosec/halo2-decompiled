@@ -115,7 +115,11 @@ void __stdcall function_1b0a0(byte *state)
 struct s_slot_key
 {
 	byte a;
-	long b;
+	union
+	{
+		long b;
+		real amount; /* 0x3c270 keeps its clamped amount here once the lookup is done */
+	};
 	long c;
 	long d;
 	long e;
@@ -1269,6 +1273,8 @@ bool function_0bfe60(dword const *flags, long bit);
 // Round 271: plain completed-pointer/per-store packet advancement crossed with
 // long/short remainder and lower/upper-first saturation: 56/103/137/131/92/117/128/140.
 // All restored; loop/count and test-index colours plus bitset row address remain.
+// Lane 8 r79: non-query draw first 140; bitset row declared between test and status 54; device
+// global at each use 93; bitset row global at each use 122; `(1 << slot->c) & mask` 52.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {
@@ -1329,12 +1335,11 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 
 long __stdcall function_3bf20(s_slot *slot, byte *data);
 
-// score 71 (was 71): the test of the global comes after the test of the call in ours and before
-// it in retail, and ours is twenty-five bytes shorter. Retail puts the failed lookup's exit last,
-// forms the slot pointer after the global test (with the frame counter loaded before it), and
-// spills the clamped amount into the key's second field with a store in each clamp arm; the
-// amount here is that field (memory), so its stores merge before the draw call. `valid` lands in
-// the parameter's home as a plain bool. Tried: a plain amount 108 (frame 0x1c, own slot); the key
+// score 6 (was 71): only the frame counter load differs: retail loads it after the global test
+// and before the slot pointer, ours after the slot's valid test (our build moves a load to its
+// only use). Retail keeps the clamped amount in the dead key's second field with a store in each
+// clamp arm, which a direct field store gives (the union member) and a reference to the field
+// does not (it merges the stores). Tried: a plain amount 108 (frame 0x1c, own slot); the key
 // in its own block 108; that and the rest under `index != NONE` 101; the positive guard alone 92;
 // with a slot pointer 91; the global and valid tests nested, both else arms written out 87; the
 // frame computed before the slot pointer 99; the frame read before it 93; one clamped
@@ -1342,6 +1347,9 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // Round 271: independent amount with cleared/nonzero-only or full aggregate request
 // initialization, early/trailing lookup failure and direct/shared bit test:
 // 119/133/120/129/135/140/131/139. All retain frame 0x1c; original body restored.
+// Lane 8 r79: key and query as inline helpers 96-117; plain amount local 86 (frame 0x1c); with
+// this body: the frame computed before the slot pointer 75, the counter read first 72, read as an
+// __int64 copy, after the slot pointer, reassigned, 64-bit add or `+ 1` first: 6 each; permuter 6.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
@@ -1354,26 +1362,36 @@ bool __stdcall function_3c270(dword value)
     key.d = 0;
     key.e = 0;
     long index = function_0209b0(&key, &value, 4);
-    if (index == NONE) return false;
-    bool valid = false;
-    bool available;
-    real &amount = *(real *)&key.b;
-    if (g_51f408 && g_51f40c.slots[index].valid)
+    if (index != NONE)
     {
-        long frame = ((long)g_485aa0 + 1) % 3;
-        amount = g_51f40c.slots[index].f * g_5234c8;
-        amount = PIN(amount, 0.0f, 1.0f);
-        valid = true;
-        available = (g_51f40c.bitsets[frame][index >> 5] & (1 << (index & 31))) == 0;
+        bool valid = false;
+        bool available;
+        if (g_51f408)
+        {
+            s_slot *slot = &g_51f40c.slots[index];
+            if (slot->valid)
+            {
+                long frame = ((long)g_485aa0 + 1) % 3;
+                key.amount = PIN(slot->f * g_5234c8, 0.0f, 1.0f);
+                valid = true;
+                available = (g_51f40c.bitsets[frame][index >> 5] & (1 << (index & 31))) == 0;
+            }
+            else
+            {
+                key.amount = 0.0f;
+                available = false;
+            }
+        }
+        else
+        {
+            key.amount = 0.0f;
+            available = false;
+        }
+        function_20bb0(player, 0x20, &index, 1, true, function_3bf20);
+        if (valid && !available && !(key.amount > 0.0f)) return false;
+        return true;
     }
-    else
-    {
-        amount = 0.0f;
-        available = false;
-    }
-    function_20bb0(player, 0x20, &index, 1, true, function_3bf20);
-    if (valid && !available && !(amount > 0.0f)) return false;
-    return true;
+    return false;
 }
 
 void function_015b70(void);

@@ -415,6 +415,9 @@ PRIVATE inline long polygon_round_19f(real value)
 // Round 272: ordinary variant and load-stepped cursor with entry declarations for
 // fade limit/spread/outer distance, every subset and complete role names
 // 416/416/416/416/416/416/416/416. Original parameter home, observations and body restored.
+// Round 415: ordinary variant/body cursor step with native current/previous vertices and
+// top-first declarations, seven subsets 429/416/396/432/429/416/396; all with CRT input copies 396.
+// Both matched callers lose two in every trial; complete executable body restored.
 // @retail 0x19f680
 void function_19f680(long tag, long group, long pass, long variant, void *context,
     point2f const *vertices, long count, point3f const *center, real radius,

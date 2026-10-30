@@ -85,7 +85,23 @@ long c_page_heap::get_page_size()
 	return 0x1000;
 }
 
-// score 80 (was 80): the scan is a while loop that advances page and copies it into checked,
+// score 80 (was 80): retail keeps two scan counters (page and checked, `inc esi; inc ebp`), `this`
+// in ebx, `first` spilled to the frame and page_count re-read from [this + 0xc] at each test; ours
+// shares page + 1 between the two (lea ecx, [esi + 1]), keeps `this` in ebp and `first` in eax and
+// caches page_count in a spilled temporary. VC7.1 keeps two counters only when checked is declared
+// before page (`checked++` in the body or a comma increment); declared after, any spelling merges
+// them, and with two counters checked spills too.
+// Tried: one scan variable 103; checked++ in the body 103; checked = ++page as the increment 79/90;
+// page++; checked = page; in a while loop 79; the scan as an inline helper with a next-page out
+// parameter 80; checked declared first with checked++ 128 (frame 8); no end variable 80; the
+// alignment step split into three statements 80; checked assigned before the bit test 171;
+// free_run declared outside the outer loop 80. Compile-only screens: do/while with an outer if and
+// a for loop keep the page_count temporary.
+// Round 15: the existing bit_vector_test/bit_vector_set for the written-out bit test and set 80
+// (same code; restored, no gain); two counters with checked declared first and `checked++` in a for / while
+// loop 129/129 (413 bytes: checked and page_count both spilled, `first` kept in eax); checked
+// declared before free_run and page 81.
+// the scan is a while loop that advances page and copies it into checked,
 // so the two counters advance independently like retail's inc esi; inc ebp. Retail still keeps
 // this in ebx, first in the frame and page_count re-read, and ours still shares page + 1.
 // One scan variable 103; checked++ in the body 103; checked = ++page as the increment 90;
