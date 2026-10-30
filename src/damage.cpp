@@ -395,7 +395,7 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 	s_damage_region_accumulator *accumulator);
 void function_da110(long permutation_index, s_damage_info *info, long object_index, s_damage_owner const *owner,
 	long region_index, s_damage_region_accumulator *accumulator);
-void function_d9d60(long marker_name, long object_index, long effect_index, bool at_marker,
+void function_d9d60(long marker_name, long object_index, bool at_marker, long effect_index,
 	s_damage_owner const *owner);
 void function_ba690(long object_index, byte **states, long *state_count, long *a, long *b);
 void function_a8360(long object_index, long region_index, long permutation_index, long a);
@@ -1576,8 +1576,8 @@ void __stdcall function_dae60(s_damage_info *info, long object_index, s_damage_o
 
 			if (permutation->effect_index != NONE)
 			{
-				function_d9d60(permutation->unknown38, object_index, permutation->effect_index,
-					(permutation->flags >> 20) & 1, owner);
+				function_d9d60(permutation->unknown38, object_index, (permutation->flags >> 20) & 1,
+					permutation->effect_index, owner);
 				function_a8360(object_index, region_index, i, true);
 			}
 		}
@@ -1862,8 +1862,8 @@ void function_daaa0(s_damage_info *info, long object_index, s_damage_owner const
 
 						if (permutation->effect_index != NONE)
 						{
-							function_d9d60(permutation->unknown38, object_index, permutation->effect_index,
-								(permutation->flags >> 20) & 1, owner);
+							function_d9d60(permutation->unknown38, object_index, (permutation->flags >> 20) & 1,
+								permutation->effect_index, owner);
 							function_a8360(object_index, region_index, i, true);
 						}
 					}
@@ -2034,10 +2034,8 @@ void function_176330(point3f const *point, s_effect_marker *markers);
 // it is not understood (it follows their own, still unmatched, code); the bodies are statement for statement retail's.
 // Tried (all 69): the flag as long or byte, the owner cast hoisted to a local, the flag computed into a local bool or
 // as `!= 0` at the call sites, the marker branch first, the function moved before 0xdae60, the flag last or second.
-// The effect index before the flag also scores 69 here, but brings the callers closer (0xda110 533 -> 467, 0xdae60
-// 96 -> 92, 0xdaaa0 229 -> 227, 0xdb760 38 -> 37), so that order is kept.
 // @retail 0xd9d60
-void function_d9d60(long marker_name, long object_index, long effect_index, bool at_marker,
+void function_d9d60(long marker_name, long object_index, bool at_marker, long effect_index,
 	s_damage_owner const *owner)
 {
 	if (!at_marker)
@@ -2241,7 +2239,7 @@ void function_da110(long permutation_index, s_damage_info *info, long object_ind
 	{
 		bool at_marker = (permutation->flags >> 20) & 1;
 
-		function_d9d60(permutation->unknown24, object_index, permutation->unknown10, at_marker, owner);
+		function_d9d60(permutation->unknown24, object_index, at_marker, permutation->unknown10, owner);
 	}
 	if (g_4e6948->mode != 4 && permutation->unknown18 != NONE)
 	{
@@ -3742,7 +3740,7 @@ void function_db760(long region_index, long permutation_index, long object_index
 		{
 			s_damage_info_permutation *permutation = &info->regions[region_index].permutations[permutation_index];
 
-			function_d9d60(permutation->unknown38, object_index, permutation->effect_index, (permutation->flags >> 20) & 1,
+			function_d9d60(permutation->unknown38, object_index, (permutation->flags >> 20) & 1, permutation->effect_index,
 				&owner);
 		}
 		else

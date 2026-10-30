@@ -6,10 +6,10 @@
 
 bool function_1f50e0(long arg_0);
 real function_11e000(point3f const *arg_0, point3f const *arg_1, vector3f const *arg_2);
-real function_11e6f0(point3f const *arg_0, vector3f const *arg_2, point3f const *arg_1, real arg_3);
+real function_11e6f0(point3f const *arg_0, vector3f const *arg_1, point3f const *arg_2, real arg_3);
 void function_1a8fa0(long arg_0, real arg_1, bool *arg_2, bool *arg_3, bool *arg_4);
 bool __stdcall function_1a83e0(long arg_0, short *arg_1, real *arg_2, point2f *arg_3, bool *arg_4);
-bool function_1a8a10(long arg_1, point2f const *arg_0, short arg_2, real arg_3, real arg_4);
+bool function_1a8a10(long arg_0, point2f const *arg_1, short arg_2, real arg_3, real arg_4);
 void *function_1e4c70(long arg_0);
 
 struct s_1a8c30
