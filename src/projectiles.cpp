@@ -626,6 +626,11 @@ s_projectile_material_response g_547660;
 // the element indexed off the definition 56, a walk local read through the reference 56, the
 // material declared before the loop 56; the pointer scan with a walk local read through the
 // reference 34 (same code). A read through the reference loads a word only when no loop carries it.
+// Round 440: Material-pointer ancestry, live/cached table and full/short identity, endpoint/ordinal scans
+// 173/150/168/140/162/131/150/126. Existing native material-value parameter endpoint/count graphs
+// 40/40/40/40/21/21/21/21; the counted form reaches 145 bytes but rotates index/material/scan homes.
+// That aggregate parameter is exact-only and restored. Its ordinal zero before admission/lookup,
+// direct/NULL lookup 50/50/51/54. Original scalar parameter, unused reference, callers and body restored.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -2533,7 +2538,7 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 /* a projectile's collision: damage to what it hit, the response of the
    material hit (detonating, bouncing, reflecting, attaching), the impact
    effects and sounds, then the projectile's action */
-// score 1162 (was 1162): Frame 0x220 versus 0x218, stacked velocity and normalization/effect scheduling remain.
+// score 1197 (was 1197): Frame 0x220 versus 0x218, stacked velocity and normalization/effect scheduling remain.
 // Earlier 1162 (was 1185): frame 0x220 versus 0x218, velocity on the stack versus eax, input normalization and effect scheduling remain.
 // Independent damage scopes 1162 (kept); direct sound/late effects/both/scoped both 1223/1185/1223/1199; role names/chains/external normalization 1185/1185/1323.
 // Full count/potential conjunction/input aggregate/assignment helper/uninitialized direction 1201/1216/1198/1198/1185; array aggregates/plain loop/unsigned index 1166/1348/1185.
@@ -2568,6 +2573,9 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 // Round 213: existing final-velocity friction/noise/rest helper producers, seven subsets,
 // 1162 each; complete graph with reflected receiver setter 1162. Original body restored;
 // frame 0x220/0x218 and velocity/request homes remain.
+// Round 440: Native normal/point/both geometry values 1329/1262/1362, producer and entry storage alike;
+// both library-copy forms 1362. Frames 0x228/0x234 regress; original geometry reads and every body statement restored.
+// Native material-value callee and consistent call construction 1190; restored with the exact-only callee.
 // @retail 0xfaa60
 void function_faa60(vector3f *velocity, long projectile_index, s_collision_result_1697c0 const *collision,
 	point3f *end_point, vector3f *displacement, short collision_count)

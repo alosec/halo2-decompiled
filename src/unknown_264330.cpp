@@ -546,6 +546,9 @@ void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *samp
 // Round 41: Joint reset/eligibility/tracking predicate declarations, all eight ordinary
 // inline/noinline combinations, 420 each. Callees remain matched; frame 0xa4 and stacked
 // actor input remain. Every separate declaration and complete original body restored.
+// Round 442: Completion/release/publication ordinary-inline declarations, seven subsets and all
+// with final publication, 420 each in eight compiled forms. All temporary declarations and
+// original body restored.
 // @retail 0x262ba0
 void function_262ba0(long actor_index)
 {
