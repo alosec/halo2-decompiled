@@ -2126,6 +2126,9 @@ void function_1905bf(long controller, bool flag);
 // Parameter-2 early valid-team exit long/bool 93/106, with directional guards 99/107;
 // availability-owned callback long/bool 93/106, with directional guards 99/107. Original result
 // and callback joins restored.
+// Round 78: signed-scope done label 151; signed-scope label with separate unsigned return 137;
+// unsigned constant return 137; unsigned-to-signed done jump 106; tested base result 109;
+// unsigned own return 138; final done label 151; constant handled returns 106. Original body restored.
 // @retail 0x250b1e
 bool c_session_lobby_screen::v10(s_widget_event *event)
 {

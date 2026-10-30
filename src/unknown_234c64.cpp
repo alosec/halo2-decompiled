@@ -274,6 +274,9 @@ void c_window_channel::v9()
 // permutation run found no improvement.
 // A twice-used callback snapshot, with both request types and both result
 // declaration orders, scored 29 in all eight forms (79/78 bytes).
+// Round 78: type-field callback address 3; shared request pointer/reference 3/3;
+// message-cast callback 3; result before builder/at function scope 3/3; type-field
+// builder and callback 3; shared message pointer 3. Original body restored.
 // @retail 0x23531c
 void c_window_channel::v10()
 {
