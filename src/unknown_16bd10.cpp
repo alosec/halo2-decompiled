@@ -251,6 +251,9 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // by a loop 100 (aligned 31; 271 bytes), the loop after the other fills 100; the three segment
 // products summed in a loop over the arrays 106; PIN + two arrays + separate += 90 again. A
 // compile-only screen of 34 array/fill/sum forms never kept those three in memory.
+// Round 98, on the PIN form: tick counts in an integer array 95 (292 bytes); a three-segment loop
+// (four product spellings) 88 each, VC unrolls it and factors (a * t + r) * t; const 2x3 aggregate 88;
+// const two-array aggregates 90; segment times in a float array with the written-out sum 88.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

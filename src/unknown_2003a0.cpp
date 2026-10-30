@@ -2656,6 +2656,9 @@ bool function_1fb8a0(long arg_0, short arg_1);
 // if/else 50.
 // Round 257: apply/event ordinary-inline-noinline boundary pairs on the recovered
 // pointer/result and actor-step graph 50 each (eight forms); EBP index reload remains.
+// Round 97: a named copy of the index for the trigger part 50 (identical); one read of the index through
+// its address for the trigger part 50 (identical); short trigger count 50; long entry ordinal 93; entry
+// word read at each use 50.
 // @retail 0x202be0
 void function_202be0(long arg_0, long arg_1)
 {

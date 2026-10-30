@@ -510,6 +510,25 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
 // loop as a force-inlined helper writing through mask pointers 139, the engine lookup named
 // first on the word form 77, carrier on the word form 78.
+// retail; after the loop retail reloads it once into ecx before the first test and shares it
+// between the compare (`movzx eax, cx`) and the update (`or ecx, [present]`), where ours reads it
+// from memory at each use; the comparison, the update and the input counter loop then take
+// other registers.
+// Tried: team-bit carrier 29 (the loop then matches; below the keep threshold); carrier with the
+// engine lookup hoisted 29; carrier with the mask compare swapped 29; two-width union view of the
+// mask 90; union with a named wide copy 90; union plus carrier 91; word local with a promoted copy
+// 134; updated mask computed before the branch 133; a plain `word old_team_mask` 77 (retail's entry,
+// `mov cx` and word store, but the compare reads memory); with the carrier 78/83; the word mask with
+// the field stored directly and the OR uncast (either operand order) 77; the word mask read straight
+// from the field 129 (re-read after the loop); the mask read and stored through globals 129;
+// `*team_mask |= present` (word or dword, or the field re-read in the test) 130; compares as
+// old != new 33; word mask with the tests' operands swapped 78; word old playing mask too 59; present
+// not volatile 102 (63 with the word mask: present takes edi for the loop and globals is re-read
+// after it); `(void)&present` on a non-volatile present 102/63 (same); the loop as a force-inlined
+// helper writing through mask pointers 139; the engine lookup named first on the word form 77;
+// `present = present | bit` 32; the bit from `player->team` 46; an early return when nothing
+// changed 32 (77 with the word mask); a char team local 32; signed long masks 32; a 600 s
+// permuter run (50 variants), none below 32.
 // @retail 0x158140
 void function_158140(void)
 {
@@ -2461,6 +2480,9 @@ void function_1e9ce0(long player_index, long counter, s_statborg *statistics, lo
 // in the iterator arm 51. Diagnostic (reverted): with g_4e6948 address-taken anywhere this gives
 // 3 at 359 bytes (only the 0x1e9df0 setup left), but matched 0x15b3a0/0x1582d0 then reload it
 // after a pointer store, and retail 0x241620 keeps it in EBP across 0x1967d0 calls.
+// score 44; mode read before the statistics getter 85; const statistics pointer 44; short old score
+// 121; score-to-win local inside `score > old_score` 44; the change test as old != new 45; the
+// counter switch cases in the order 9/3/1 or 3/9/1 44.
 // @retail 0x15b650
 void __stdcall function_15b650(long team, long delta)
 {

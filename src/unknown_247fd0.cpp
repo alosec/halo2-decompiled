@@ -193,6 +193,12 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // either form. Count incremented before the field_3c store 71; short child index 76; with
 // field_10 first 137; sample drawn into a local before the field_10 store 146; field_10 stored
 // after field_08 200.
+// Round 96: a minimal one-file LTCG test (build/r96/hfold) reproduces the split: `fstp [r+0x38]` directly
+// followed by `if (rec != cache->last)` always gives `mov eax, [m]; cmp r, eax` (operands swapped, a named
+// cache local, double or signed draws, an if-else, callee-saved receivers: all split), and any instruction
+// between them (another field store) gives the folded `cmp r, [m]`. Child test as `continue` 70; owner fields
+// stored in the other order 70; count increment before the field_3c store 71; parent store before the link
+// call 99 (864 bytes); field_10 stored before the four draws 200.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)
