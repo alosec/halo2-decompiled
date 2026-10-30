@@ -36,7 +36,11 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // with the call result in its own local, or `local_0 = call; if (local_0 !=
 // NONE) store` 102/97 (arg_1 moves to dx); the call result in its own local
 // copied to local_0 on success, early returns kept 93 (NONE in ebx, local_0
-// spilled, frame 0xdc).
+// spilled, frame 0xdc). Round 96: local_10 as a ternary 70 (identical); local_5 as
+// a short 70 (identical); `if (arg_1 == NONE) return local_0;` as a guard 109 (the
+// exit is duplicated at the top, NONE immediate); the call result in its own local
+// returned directly 108 (370 bytes); that local copied to local_0 inside an
+// `!= NONE` test 136.
 // @retail 0x203780
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3)
 {
