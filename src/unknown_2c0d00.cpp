@@ -1452,6 +1452,11 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // with paired word corner results 490/472/491; complete bound graph
 // with ordinary radius, without/with word corners 500/491. Original count,
 // ordinal expressions, Boolean corner carriers, radius qualification and body restored.
+// Round 229: attempt-owned tangent orientation with complement passed to the second call and
+// advance after unsuccessful attempts; bool/byte/word/long with indexed centers 446/459/444/448;
+// branch-selected centers 446/451/442/439. Original orientation phases and full body restored.
+// Coupled paired word/short corner results on long orientation 444/444; word orientation
+// 439/439. Best 439 is a five-point gain above 30, rejected; complete original body restored.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)

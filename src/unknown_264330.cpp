@@ -186,6 +186,11 @@ void function_265050(long actor_index, long prop_ref_index)
 	}
 }
 
+// matches: the facing is fetched by calling function_cb7e0, the unit vector getter,
+// which LTCG inlines here. That inlined copy is what loads the object into ecx,
+// adds 0x168 and reads the three components, the way retail does; the else branch
+// reads the object index out of the reference again, so its second pool lookup
+// stays separate from the inlined one.
 // score 67 (was 67): retail loads the array base into esi and copies the three fields in a different order, ours
 // uses ecx. The cause is one choice: retail keeps the object array base live in esi across the two calls and
 // fetches the object again from ebx in the else branch, while ours keeps the first object pointer in esi and
@@ -226,9 +231,8 @@ void function_264940(long actor_index, long prop_ref_index)
 		long object_index = *(long *)(reference + 0x20);
 		point3f position;
 		function_b9dd0(object_index, &position);
-		byte *headers = g_4e0300->data;
-		byte *object = *(byte **)(headers + (object_index & 0xffff) * 12 + 8);
-		vector3f facing = *(vector3f *)(object + 0x168);
+		vector3f facing;
+		function_cb7e0(object_index, &facing);
 		vector3f direction;
 		direction.i = position.x - *(real *)(actor + 0x238);
 		direction.j = position.y - *(real *)(actor + 0x23c);
@@ -247,13 +251,13 @@ void function_264940(long actor_index, long prop_ref_index)
 		}
 		else
 		{
-			object = *(byte **)(headers + (object_index & 0xffff) * 12 + 8);
-			if (*(long *)(object + 0x13c) != NONE)
+			byte *owner = *(byte **)(g_4e0300->data + (*(long *)(reference + 0x20) & 0xffff) * 12 + 8);
+			if (*(long *)(owner + 0x13c) != NONE)
 			{
 				if (category <= 0)
 				{
 					actor[0x30c] = true;
-					*(short *)(actor + 0x310) = ai_player_index_get(*(long *)(object + 0x13c));
+					*(short *)(actor + 0x310) = ai_player_index_get(*(long *)(owner + 0x13c));
 				}
 				else
 				{

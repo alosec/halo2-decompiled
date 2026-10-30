@@ -149,6 +149,10 @@ bool voice_xhv_get_runtime_parameters(XHV_RUNTIME_PARAMS *parameters, c_voice_xh
 	return result;
 }
 
+// Round 19: unchanged; retail loads the engine address after the guard branch and ours loads it
+// before it. Binding the address inside the guarded block lets MSVC sink `push ebp` into that
+// block and re-encode the stack slots: null-initialised, redeclared, the result pointer moved
+// into the block and the address taken at the call all score 8.
 // score 2 (was 2): the engine pointer is loaded into ebp before the branch that
 // skips the creation; retail loads it after the branch. Direct creation with
 // the pointer bound after the call or in its argument 8; initialized error 2;
@@ -1373,6 +1377,8 @@ void voice_queue_compact(s_voice_queue *queue, word mask)
 	queue->count = kept;
 }
 
+// Round 19: unchanged; retail keeps the player bit in EBP and the queue count in ECX, ours
+// caches the count in EBP and moves the bit to EBX; no new form was found.
 // score 141 (was 141): the convention now agrees with retail (queue ESI, player EAX copied to
 // EDI, cursor EDX before the player as the declared order, the rest on the stack, `ret 0xc`): the
 // result is computed before the header stores, so EDI holds it after the loop. Still differs:
@@ -2652,6 +2658,8 @@ long __stdcall function_53b00(long player, byte *output, long capacity)
  return result;
 }
 
+// Round 19: unchanged; the capacity/preserve homes, the preferred-bit scheduling and the 0x53c70
+// call order still differ; no new form was found.
 // score 124 (was 124): capacity/preserve homes, preferred-bit scheduling and the 0x53c70 call order differ;
 // retail tests the availability flags once (no re-read) and recomputes 1 << preferred for the final ors.
 // Frame 0x14 agrees; capacity/preserve homes, preferred index/bit and helper setup differ.
@@ -2752,6 +2760,8 @@ finish:
 
 /* records the session's player mask and identities, and resets the voice
    channels when either has changed since the last call */
+// Round 19: unchanged; the mask/source reloads after the logging call stay in our order (edi then
+// ebp) against retail's (ebp then edi); the reduced image shows 2 even for the full-build match.
 // score 2 (was 2): only mask/source reload order after logging differs; frame and copy graph agree.
 // Round 196: query-carrier names singly/paired, comparison-input names singly/paired,
 // comparison ordinal and copy ordinal names [2, 2, 2, 2, 2, 2, 2, 2]; original source restored.
@@ -3242,6 +3252,8 @@ static inline long voice_packet_clamp_count(byte count, long minimum, long maxim
  return count;
 }
 
+// Round 19: unchanged; retail keeps the channel in ebp from entry and the cursor in edi, ours
+// gives the member index ebp and reloads the channel; no new form was found.
 // score 139 (was 139): channel/cursor/count registers and route homes differ;
 // frame pointer 188; short stride 163; short index 139; recipient-bit reuse 161; route name 139.
 // Round 53: retail keeps the channel in ebp from entry (its home then holds the route) and spills

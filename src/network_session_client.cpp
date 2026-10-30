@@ -650,6 +650,9 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 // gives retail's copy-loop scratch registers but folds the player loop's mask read (108, 477 bytes).
 // A 96-form screen (opening test x summary x copy loop x count local x buffer order x player pointer)
 // found nothing below 49; a 600 s permuter run (reduced image 143 against 49) found nothing.
+// Round 82: existing live query in the outer tail 130 (451 bytes); in the limit helper 55; both 130;
+// source/output player cursors 58; byte function result 95 (497); short limit value 55; byte limit-helper
+// result 146 (430); unsigned machine countdown 55. All restored; the session/loop register rotation remains.
 // @retail 0x6e720
 bool function_06e720(c_class_58d20 *session)
 {

@@ -484,6 +484,9 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // every branchy def gives NONE in EBX but threads the known-true flag by copying the tail's
 // first block onto the special path (flag memory-only, 872 bytes): `&&` 200, false then if
 // 202, `&& != 0` 200, function-scope `&&` 200; const bitwise flag 47. All restored.
+// Round 433: Complementary ordinary-case predicate, bitwise/logical OR, original/complementary
+// permission, entry/eligible permission scope; fast 48/74/53/75/200/222/201/222.
+// Original body and existing helper restored.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

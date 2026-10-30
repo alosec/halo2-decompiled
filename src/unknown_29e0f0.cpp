@@ -138,6 +138,9 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
 // 462/452/473; with shared bitmap operations 488/429/476; real link receiver for group/all 429/475.
 // Original snapshots, bitmap operations and body restored; frame 0x64 agrees, selected defaults, root
 // roles and endpoint homes remain.
+// Round 434: scan-scoped selected group/first/both/terminal/group-terminal/first-terminal/all
+// constant defaults 438/438/440/438/440/440/444; all plus scan-scoped best distance 468. Frame
+// stays 0x64; the last grows to 1609 bytes. Late group default recovers root registers but loses an entry store; restored.
 // @retail 0x29e0f0
 bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg_2,
     s_29de21 *arg_3, s_29e0f9 *arg_4)
