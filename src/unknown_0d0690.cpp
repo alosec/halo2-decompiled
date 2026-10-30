@@ -51,14 +51,18 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 93 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
-// color0 store match. Left: the three x87 direction adds load the direction first where retail adds
-// it as the memory operand, 0x131c20's `&color` is formed in edi and copied to ecx where retail
-// forms it in ecx and then edi, and the collision test's sete. The fast check also leaves two of
-// retail's global references unresolved in the reduced image, so part of this diff may be noise.
-// and the color0 store now match. Left: the three x87 direction adds load the direction first
-// (retail adds it as the memory operand), 0x131c20's `&color` is formed in edi and copied to ecx
-// (retail ecx, then edi), and the collision test's sete.
+// score 56 (was 56): the frame, the sky/count homes, the trig temporaries, the blend registers and the
+// color0 store match. Left: the j and k x87 direction adds load the direction where retail loads the
+// contribution (the adds follow which field is first assigned earlier in source: assigning direction's
+// fields before the loop gives retail's adds), the strength is loaded, added and copied back where
+// retail adds the entry's strength to it in place (it flips with the i add), 0x131c20's `&color` is
+// formed in edi and copied to ecx where retail forms it in ecx and then edi, and the collision test's
+// sete (only a bool set in a test and tested afterwards gives it).
+// Round 99 (lane 6), on the double-cast adds: the cast on the other operand, on the direction, or
+// `+= (double)` 56 each (identical code); contribution as a real[3] 56; existing direction_from_angles
+// for the contribution 167 (the angles are loaded first); `strength = strength + entry` 56;
+// `(double)strength + entry` 210.
+// Earlier (round 93 form):
 // Round 69: `direction.i = contribution.i + direction.i` written out, or contribution declared
 // before direction, 93/93 (identical code: the add operands are reordered); the collision test as
 // an inline/forceinline bool helper (call && no-object) 93/93 (folded); the per-light count test as
@@ -118,10 +122,6 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // all pairs and all three 162/162/179/162/180/180/180; original real-narrowed terms
 // in double scalar carriers 186. Original contribution and color ownership restored.
 // Round 183: shared vector add, either input owner, and unit add-scaled in place 93/93/93/93; separate native sum output, plain/scaled and either owner, 188/188/188/188. Original accumulation restored.
-// score 56 (was 93): the frame, the sky/count homes, the trig temporaries, the blend registers and the
-// color0 store match. Left: the strength is loaded, added and copied back where retail adds the
-// entry's strength to it in place, the two remaining x87 direction adds load the direction where
-// retail loads the contribution, 0x131c20's `&color` is formed in edi and copied to ecx where retail
 // @retail 0xd1a30
 long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_sky_surface_record *record)
 {

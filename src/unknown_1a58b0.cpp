@@ -837,6 +837,12 @@ void function_25aba0(long actor_index);
 // reordered (state first 119; pop before the state store or first 134: the state-one pop goes back to
 // `dec [mem]`); `while (level >= 0)` 215 (rotated). Exactly one of the state-one and kind-2 failure pops
 // takes the `dec [mem]` form in every arrangement.
+// Round 99 (lane 6), on the kept body: the first enabled test through the handler local, as the
+// next-handler test is written, 69 (identical); kind-2 failure with the state store first 69 (aligned
+// 18: only that arm's store order moves, the state-one pop stays `dec [mem]`); the state-one stamp
+// through the table 69; `current` from `&owner->slots[level]` 69; `current` declared before the
+// handler 159 (966 bytes). The entry registers follow 0x1a7b30's own ESI/EDI colouring (its result
+// pointer arrives in ESI, retail EDI).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {
