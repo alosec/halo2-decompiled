@@ -2952,6 +2952,10 @@ static inline real channel_elapsed_seconds(c_animation_channel const *channel)
 // Round 83: animation chosen by a ternary 189; the action short declared first 218; the no-overlay and
 // overlay-busy exits as `return false` 225/225; the animation default before the table reads with both flags
 // cleared before the lookup's `if` 232 (the clears then sit where retail has them, but NONE goes to EDI).
+// Round 85: flags cleared before a ternary animation lookup 210; force then result between the NONE
+// default and the lookup's test 207; only the result declared first 207; the lookup table read at each use
+// 44 (same code); the overlay pointer declared before the flags 44 (same code). The return-type fix stays
+// blocked: 0xe70b0's caller 0xc98a0 is contributor code.
 // Round 36 (plain checks; --fast builds this function differently, 219 on unchanged source): the
 // action short declared after the overlay pointer 52 (identical); the action query in an inline
 // bool helper owning the short 167 (stays a call; frame 0x38), force-inlined 145 (frame 0x38, flags

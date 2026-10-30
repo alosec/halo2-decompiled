@@ -274,6 +274,9 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // the conversion after each of the first nine chain statements 72 each; the chains written stage
 // by stage (all rate products, then all adds, then all subtractions) with the conversion before
 // the rate stage/after it/after the adds/after the subtractions 107/115/106/106.
+// DL192: Common native velocity publication 61; scaled add 96; in-place scale/add 50; reused squared length
+// 77; late tick conversion 45; with native input copy 137, squared length 54, squared length/scaled add 95.
+// Late ticks move first difference to +0x5a but enlarge by four bytes; all restored.
 // Round 21 (lane 10): the prediction through vector3f_add_scaled + vector3d_from_points3d 43 and the
 // delta scaled in place 43 (both identical code); the correction through vector3f_add_scaled 97
 // (frame); a named squared length before the limit 79 (lockstep shift: the limit, the early j

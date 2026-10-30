@@ -164,6 +164,10 @@ void function_221490(
 // Round 276: Actual setting/previous/both pair values 104/96/108; native changed byte 83;
 // Round 276: the same pair values with byte state 104/96/108; complete graph with descriptor aggregate 108.
 // Round 276: Original scalars, array observations and descriptor restored; mirrored induction remains.
+// Round 20: the list arrives in ecx (retail eax): the all-stack first pass puts the shared zero
+// in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
+// initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
+// read after the mixbin compare 135.
 // Round 216: SDK descriptor initializer 83; append-local count 87; later mask zeros 98;
 // direct SDK count 87; completed-result descriptor via aggregate/fields/DWORD count 88/88/88
 // (281 bytes, frame 0xd8); early descriptor initializer with DWORD count 83.
@@ -517,7 +521,10 @@ bool sound_driver_voice_create_buffer(
 	return result;
 }
 
-// score 98 (was 98): frame/length agree; early saves and descriptor zero/input scheduling differ.
+// score 183 (was 98): the second buffer's flags are now retail's play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN
+// (0x100010 when play is set; the old body set 0x180010, a behaviour difference, fixed at review in lane 15
+// round 13). Every 98-105 form below carried the wrong flags; with the correct select see the 155-197 list.
+// Old notes: frame/length agree; early saves and descriptor zero/input scheduling differ.
 // Descriptor input first 105; flags before clear 105; spatial byte 105; unsigned result 105;
 // pair clear plus direct loop 185; input mixbin snapshot 105; real voice reference 98 (plain);
 // pair clear plus descriptor input first 183.
@@ -530,7 +537,7 @@ bool sound_driver_voice_create_buffer(
 // early saves and descriptor zero/input scheduling remain;
 // voice before modes/result after count/next count word/spatial signed byte 98 each;
 // spatial word 151; play signed byte 98; spatial word with play byte 151; play long 101.
-// this body sets the second buffer's flags to 0x180010 when play is set;
+// the old body set the second buffer's flags to 0x180010 when play was set;
 // retail computes play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN (0x100010). The 98 allocation needs
 // 0x100000 used twice (first buffer and the select): the correct select 183, or
 // (play ? FXIN : 0) + FXIN 183. With the correct select: index returned directly 155 (pushes
@@ -543,6 +550,11 @@ bool sound_driver_voice_create_buffer(
 // Round 208: disjoint native descriptor phases, shared/per-phase mixbins,
 // pair arrays at success/phase entry and both descriptor name orders: 98 in all eight.
 // Original storage and body restored; conditional saves and zero/input residency remain.
+// Round 13: retail saves only esi before the count test and gives that exit its own epilogue
+// (ours shares the full one, so every save stays at entry); it also stores the new count before
+// the descriptor clear. The count stored before the clear or before the voice reference 98/98;
+// the count test as a guard clause returning result or NONE 164/164 (every save sinks, but flags
+// then arrive in eax and the exit is placed first); the failure path returning NONE 98.
 // Round 219: Native descriptor phases with direct success short/long/no sentinel result 178/178/178;
 // test-assigned result 181; common short/long exit 149/180; direct success and early count,
 // with/without sentinel 179/179. All restored; early saves and zero/input scheduling remain.
@@ -603,7 +615,7 @@ short sound_driver_voice_new(
 			memset(&buffer_description, 0, sizeof(buffer_description));
 
 			buffer_description.dwSize = sizeof(buffer_description);
-			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : 0) + DSBCAPS_FXIN | DSBCAPS_CTRL3D;
+			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN) | DSBCAPS_CTRL3D;
 			buffer_description.dwInputMixBin = input_mixbin;
 			if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice.buffer, NULL)))
 			{
