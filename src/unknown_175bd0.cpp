@@ -1773,6 +1773,10 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // with the matrix local inside the branch 107; marker forward value copy 166; marker forward
 // fields read directly 139; forward locals named x/y/z or forward_i/j/k 107/107; declarations
 // forward/position/up or up/forward/position 107/107.
+// Round 95: node copy before the matrix load 107 (758 bytes; the marker index sign extension is
+// hoisted above the matrix test, retail extends it in each arm); with a marker pointer in the else
+// arm 198 (762 bytes), the same pointer without node-first 198; node-first with pointer-sum marker
+// address 107; node-first with the else arm copying forward first 121. Original body restored.
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -2299,6 +2303,9 @@ event_done:
 // Round 282: tag acquired before root query, after query and after root copies
 // 85/113/89, each with ordinary/read-only inputs; external tag references before query
 // and after copies 85/89. All restored; cached object across validity query remains.
+// Round 95: root index (0xbaf80's result) as 0x1794a0's first argument 197 (585 bytes; the index
+// stays in ESI); location stores cluster first 63, with the root index 197; chained NONE location
+// stores 63, with the root index 197. Original body restored.
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {
