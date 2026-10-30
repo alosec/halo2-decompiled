@@ -1092,7 +1092,7 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
     result->k = a->i * b->j - a->j * b->i;
 }
 
-// score 135 (was 213): frame and length agree, and so do the entry saves. Left: the tag index lands
+// score 135 (was 135): frame and length agree, and so do the entry saves. Left: the tag index lands
 // in EAX (retail EDX, 0x137bd0's register) and the extra `mov edx, eax` shifts the camera block;
 // retail tests definition bit 5 as `mov dl; shr dl, 5; test dl, 1`; it reloads the location
 // after 0x1e4e0 (BLOCKED-BY 0x1e4e0, todo) and calls 0x1751d0 before pushing 0x40e30's arguments.
@@ -1155,6 +1155,10 @@ static inline void cross_product3d_174420(vector3f const *a, vector3f const *b, 
 // forms are below threshold and restored. Callback inline/noinline/both 125/135/125;
 // the inline-only declaration of the external 0x1e4e0 (125) is not kept: no definition in this
 // file; complete original body and shared lookup linkage restored.
+// Round 411: Availability rejection to the common child tail, with original/reference-first/
+// separate-tag/group-first declarations 135/135/135/135; definition rejection with the
+// same four declaration graphs 135/135/135/135. Original nested body restored; tag/group
+// ownership, definition bit five and callback reloads remain.
 // @retail 0x174420
 void __stdcall function_174420(long system_index, bool view_pass, bool camera_relative, bool force_visible)
 {
