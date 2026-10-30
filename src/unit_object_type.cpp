@@ -3096,7 +3096,7 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 49 (was 78): the team test and the notify loads now agree. Left: the pool and time pointers
+// score 49 (was 49): the team test and the notify loads now agree. Left: the pool and time pointers
 // sit in EBX/EBP (retail EBP/EBX), retail keeps 0.0 in XMM1 and 1.0 in XMM2 (ours the other way:
 // the register follows which constant the source names first), the two notify copies are only
 // partly cross-jumped, and the bit-4 test is `test byte` (retail load and shift).
@@ -3107,6 +3107,9 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
 // notify through a fresh unit local as 0xd0e60 49 (kept); bit 4 as TEST_FIELD_BIT 83 alone, 63
 // with both (pool/time registers right); the 2b0 branches swapped 65 (constants right, branch
 // order wrong); `value < 0.0f` 63; notify index in a long local 69; existing 0x2ac270 flag getter 49.
+// Round 228: computed primary/secondary/both fade values 49/49/49; shared progression
+// steps alone/with primary/with secondary/with both 96/96/96/96; all with Boolean
+// fourth bit 91. Original body restored; pool/time and constant-register roles remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
@@ -3474,6 +3477,9 @@ void function_c6990(long unit_index)
 // match); a 600 s permuter run reached 34 only by swapping the label and table arguments (wrong
 // call). Retail stores the seat bit before reading the marker name; ours keeps it in AL until the
 // call, and every later temporary then takes the next register (EAX/ECX/EDX rotated).
+// Round 228: winning table ordinal long/short 91/101; entry long/short 90/100;
+// missing-result-first comparison with the same four lifetimes 109/117/108/116.
+// Original result value, complete spatial arithmetic and body restored.
 // @retail 0xc7160
 long __stdcall function_c7160(long unit_index, short seat_index, long a, long vehicle_index, long b)
 {
