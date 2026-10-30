@@ -259,6 +259,9 @@ bool function_23a220(const point2f *point, short count, const point2f *points, r
 // Round 191: complete admission result through fraction/clamp/polygon tests, nested/merged
 // range with original/shared count: bool 266/262/258/256; byte 258/258/262/258.
 // All regress; original result flow, count observations and native geometry restored.
+// Round 298: existing staged cross with original/origin-live/start-live/both input
+// observations 192/275/282/292; the same four with entry hit-result lifetime
+// 192/275/282/292. All restored; frame 0x84 and retained-origin/edge spills remain.
 // @retail 0x1edf50
 void c_vertex_shape::ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 {

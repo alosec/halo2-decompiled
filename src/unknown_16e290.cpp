@@ -345,7 +345,7 @@ struct s_word_bit_iterator
 
 bool function_44690(s_word_bit_iterator *iterator, long *out);
 
-// score 111 (was 125): Frame 0xf0 agrees; padded-count/byte-count lifetime, scalar homes and memcmp carriers remain.
+// score 111 (was 111): Frame 0xf0 agrees; padded-count/byte-count lifetime, scalar homes and memcmp carriers remain.
 // Earlier 125 (was 142): retail keeps count + 31 in EBX (word count shifted from it after the copies),
 // frame 0xf0 agrees; padded-count retention and iterator/portal homes differ.
 // Earlier at 125 (was 142): retail keeps count + 31 in EBX (word count shifted from it after the copies),
@@ -375,6 +375,10 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // Round 43: base before bytes 136; entry convergence result, count name and split byte calculation
 // 111 each; byte expression at uses 240; iterator/cluster-output/both entry lifetimes 111 each.
 // Original body restored.
+// Round 419: consistent full-width source-cluster promotion on the Boolean convergence graph,
+// with live/captured/padded/aligned count ownership, 135/135/135/135; those four with
+// propagation-local byte extent 236/236/236/233 (810 bytes). All regress; original input,
+// count/byte lifetimes and complete body restored. Padded-count and scalar homes remain.
 // @retail 0x16de20
 void function_16de20(short index, s_16e150_bits const *table, dword *output)
 {

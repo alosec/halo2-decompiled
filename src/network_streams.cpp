@@ -1198,6 +1198,21 @@ bool network_message_read_header(s_bitstream *stream, long *type, c_type_659ceb 
 // terminal bit 229/229, incomplete-only assignment 252, bool logical/bitwise OR 262/220, byte
 // logical/bitwise OR 227/235. Diagnostics: frame pointer 289; global optimization 297; size
 // preference 571.
+// Earlier rounds on the terminal-loop graph: oldest/both initial endpoints 269/158; oldest with
+// bool/byte/short/signed-byte result 276/268/267/268; oldest before false/newest first 269/158; both
+// endpoints with bool/byte/short/signed-byte result 282/262/218/262; shared lookup index/fragment/
+// both/all walk carriers 141 each, all with bool/short result 234/191; shared index-sequence/
+// fragment-sequence 141/141; pre-lookup nullable scan/copy/both results with long 141/202/202, with
+// bool 234/263/263; both lookups with byte/short result 243/214; actual decoder-result completion,
+// long/bool/byte/short 262/175/190/259; common success exit, long/bool/byte/short 184/235/233/220.
+// Round 9: the bool result (aligned 53 against long's 39 positional misalignment) is structurally
+// retail's except at entry and the exits: retail keeps oldest in EDX and the result in CL across the
+// count exit and the first > newest exit (both `mov al, cl`, own epilogues before `push ebx` and
+// `push edi`), where ours reloads oldest and returns `xor al, al`, sharing the failure block's tail
+// (ours stores the failure flag before the pops, retail after `pop ebx`). Bool 234 (771 bytes); bool
+// with the count test as a scope 242; that with the failure as `return false` 232 (oldest and the
+// zero are then cached, EDX/AL, but every push moves to the entry); bool with early count return and
+// `return false` failure 224 (781 bytes, aligned 53); that with `return false` at the count exit 224.
 // Frame 0x10048 agrees; 806/805 bytes; initial oldest/false carriers and allocator save differ.
 // Frame and copy entry agree; oldest/false carriers, nullable copy result and allocator save differ.
 // Earlier: Frame and length agree; retained oldest/false carriers and copy-loop entry differ.

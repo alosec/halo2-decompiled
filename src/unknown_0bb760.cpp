@@ -464,6 +464,12 @@ void function_3dd10(long object_index, bool force);
 // found-path subtraction (132f), but our not-found exit then rejoins the block's 1.0 load instead
 // of reloading it, so the tail sits 8 bytes short of retail's and every later branch target
 // shifts; a while-loop second scan adds an entry guard (196f, 1045 bytes). Original restored.
+// Round 55: with the inverse inside the found branch (hsv3f a,b,mixed first, then the inverse, then
+// the two conversions) our found path is byte-identical to retail's, the blend and choices stack
+// homes match, and the 1.0/0.0 materialisation order matches; the one difference left there is
+// retail's not-found exit reloading 1.0 into xmm5 (8 bytes) where ours rejoins the block's load, so
+// the tail sits 8 bytes short and every later branch target shifts (132f). Putting the inverse
+// after the two conversions also moves the subtraction (138f). Original restored.
 // Round 53: the inverse at the top of the found block gives retail's blend slot, subtraction and
 // 1.0/0.0 order but loses the 1.0 reload at the not-found exit (one instruction short) 132f; with
 // the variant byte read before the blend value 123f, read at its uses 134f; with a pre-incremented
@@ -529,6 +535,9 @@ void function_3dd10(long object_index, bool force);
 // Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
 // variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
 // const choice count with the signed first bound 637 (unrolled). Original body restored.
+// Round 212: carried eligibility bit with original/cursor first scan and independent second bit
+// 224/225/228/229; signed bounds on those graphs 599/544/639/529 (fast control 84). Signed scans still
+// unroll; original mask arithmetic and scans restored.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
@@ -670,6 +679,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // count before base 174; current from base each pass 98; copy before the entry 133; memcpy copy 91.
 // Shared count/inner-array/both snapshots 177/164/194; outer-array snapshot 206; outer plus
 // count/inner/both 213/210/228; shared inner index with count and array 188.
+// Round 212: complemented bool/byte/short/long return on plain pointer-body traversal 159/159/131/132;
+// with admitted current lifetime 158/158/129/130 (fast control 91). Original return, pointer lifetimes
+// and traversal restored; saved receiver roles remain.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {

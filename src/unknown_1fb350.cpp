@@ -321,7 +321,7 @@ void function_f0fd0(long vehicle_index, bool set);
    unit's flags and are deleted */
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
-// score 123 (was 123): our frame is eight bytes smaller and the base pointer is kept in EDI where
+// score 122 (was 122): our frame is eight bytes smaller and the base pointer is kept in EDI where
 // retail keeps it in ECX. Retail iterates with the four-field datum iterator (data and index stored,
 // the datum index kept in EDI), snapshots the high water per search and computes the element from a
 // second spilled copy of the pool. Shared step with/without the barrier 162/152; datum iterator 152
@@ -337,6 +337,10 @@ extern "C" void _ReadWriteBarrier(void);
 // (BLOCKED-BY 0xf0fd0 for that call). Barrier removed alone 161; finished arm first 149; if/else
 // finished flag 123 (same code); early continue to the release 162; deletion test in one
 // condition 127; the codec pairs as writable globals (diagnostic) change nothing.
+// Round 298: ordinary shared traversal without the target barrier, unit/flag producer
+// inline/plain/forceinline declaration pairs except inline/inline: eight times 152.
+// All bodies and declarations restored. Current flag call uses retail CL; two pool homes,
+// object-pool reloads and frame 0x14 remain unresolved.
 // @retail 0x1fb510
 void function_1fb510(void)
 {

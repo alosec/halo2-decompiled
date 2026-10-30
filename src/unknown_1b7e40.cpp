@@ -177,6 +177,28 @@ evaluate:
 // 73, with early returns 74.
 // retail calls function_25d740 out of line (ECX node) and sinks the ESI/EDI
 // saves past each early exit; our build inlines it through the prop_node_view wrapper, so the
+// blocks, the late ESI/EDI saves and the per-level tails differ. The single-exit body with the slot's
+// prop index read before the actor lookup equals retail everywhere else (90; with inlining switched
+// off around the call it matches), so LTCG's inlining of this one call site is the whole difference.
+// Tried: typed slot payload 73; payload/result first 73; payload/wide result 74; payload/single result
+// 88, with wide result 92; native node/view plus payload/self-dot/final-result graphs
+// 73/73/73/73/78/78/78/78; early returns 74 (retail's late ESI/EDI saves, view still inlined); direct
+// function_25d740 call 73, with early returns 74; named actor 74; prop test nested again 79; with the
+// call kept out of line the tails merge (102 at 231 bytes); a separate view-getter noinline with
+// default status, direct proximity return, native payload, unsigned-word status and double speed
+// consumer: eight forms all 102 at 231 bytes; early returns with `return 0x10` 74 (still `mov ax`,
+// retail `mov eax`); the slot field on the left of the prop compare 74; a named actor with that
+// compare 91; the existing magnitude3d for the speed 73, with early returns 74, with per-level returns
+// 87; a noinline declaration in this file 73 (ignored across files: still inlined; one on the
+// definition would change the matched functions that inline it as retail does); per-level returns
+// 87 (277 bytes), with
+// `return 0x10` 87; complete final rejection with native payload/self-dot 87/87; staged final failures
+// 90/90; whole-slot forms 87/90/87/90 (277 bytes); `unknown20 >= 1` 96; the prop compare operands
+// swapped 91. Round 20 (fast): the first two tests joined with `&&`, slot field read at the top 112,
+// read in the test 109 (290 bytes), with the early returns 76 (264 bytes); the 0.8 test inverted with
+// the call in its then-arm 103; the single-exit body again 88 (278 bytes): inlined every time.
+// 0x25d740 written through the existing prop_ref_view does not change the decision (harness). Matched
+// 0x1b57f0 and 0x1fbff0 keep the same wrapper call out of line without any pragma; both call it twice.
 // blocks are laid out differently. Typed slot payload 73; payload/result first 73; payload/wide
 // result 74; payload/single result 88, with wide result 92; native node/view plus
 // payload/self-dot/final-result graphs 73/73/73/73/78/78/78/78; early returns 74 (retail's late

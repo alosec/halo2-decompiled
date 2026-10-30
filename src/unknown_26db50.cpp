@@ -459,7 +459,8 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 	vector->k = axis->k * along + k * cosine - (axis->j * i - axis->i * j) * sine;
 }
 
-// score 90 (was 90): frame 0xd8 agrees; ring conversion (fild where retail converts in SSE) and the
+// score 90 (was 90): frame 0xd8 agrees; the ring counter is converted in x87 where retail converts
+// it in SSE, and the rotation schedule and component registers differ; 1085 bytes against 1089.
 // frame 0xd8 agrees; x87 ring conversion and rotation component spill/register scheduling remain.
 // rotation schedule (one spilled component) differ; 1085 bytes against 1089.
 // Round 53: ring phase named in the outer loop before/after the distance 143/143 (SSE ring

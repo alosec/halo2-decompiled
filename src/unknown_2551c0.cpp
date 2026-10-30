@@ -113,12 +113,20 @@ short __stdcall function_2551c0(long actor_index)
 // counter 167; the axis components as helper locals 197.
 // Round 93: axis global through a local pointer 203 (835 bytes); direction declared beside forward
 // 43; helper taking the angle (sine/cosine inside) 43; helper copying the source vector itself 43;
+// score dot grouped i + (j + k) 146 (814 bytes, frame slots and rotation schedule reshuffled).
+// Lane 14 r9: one or two extra no-op products (diagnostic) leave the score dot's k, i, j order; angle
+// as constant times index 43; `1.f + dot` 43; `0.2f * distance` 43; direction copy before the angle 43;
+// found declared before the best score 45.
 // score dot grouped i + (j + k) 146 (814 bytes, frame slots and rotation schedule reshuffled). Round
 // 37: the unit's action state read through the existing 0xe70b0 call (tail and frame unchanged, but
 // the rotation's dot then sums j, k, i and the score's k, j, i) 70, with its local declared at the top
 // or before the length test 70/70, with the score's dot operands swapped 70; the early exit as a
 // nested if 43 (70 with the call); forward/direction renamed (three spellings) 43 each; the state
-// point copied as a point 43.
+// point copied as a point 43. Round 101: the rotation as Rodrigues with `cross3f(axis, vector)`
+// added (`+ cross * sine`) 159 (820 bytes); the same with three scalar axis-by-vector cross terms
+// 139 (814 bytes; the early products become retail's pair but the whole rotation reschedules);
+// found declared before best_score 45; found set before the best score and direction 48; the
+// direction loop as a do/while 43 (same code).
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {
@@ -552,7 +560,7 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 }
 
 // score 141 (was 141): frame 0x58 versus 0x54, first-length/radius homes and unit-call scratch allocation remain.
-// Earlier score 141 (was 141): frame 0x58 versus 0x54 and first-length/radius homes remain; retail keeps
+// Earlier: frame 0x58 versus 0x54 and first-length/radius homes remain; retail keeps
 // the radius in the argument home and adds the object size only after the projection test.
 // Fallback timing initialized before query 200; later heading vector 219; later object lookup 223;
 // shared reverse scale 223; entry vector homes 205; exhaustive timing branches 205; trace distances
@@ -594,6 +602,10 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // named post-projection sum in either operand order 211 each; request stores in disassembly order on the
 // repeated form 94; direction-length name 94; forward/remaining distance names 94 each; timing outputs
 // declared before geometry 94; first-length local reused for adjusted distance 95. Opening body restored.
+// Both native copies before planar zeros 141; opposite independent copy order 142;
+// existing in-place planar setter 196 (963 bytes), direct planar setter inputs 224;
+// existing side/reverse/both-with-planar setters 157/141/224; late zeros plus side/reverse setters 157.
+// Native producer contracts do not remove the extra fallback home; original vector producers restored.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {
