@@ -398,6 +398,9 @@ PRIVATE inline __int64 bink_read_tsc(void)
 // Round 214: native start/elapsed/both clock records at original or entry declaration phases,
 // including independent mixed phases, 244 each in eight forms. Exact-only records restored;
 // frame 0x3c/0x40 and status/clock/output homes and instruction policy remain.
+// Round 431: Allocation-clock/memory-decoder/texture-output consumption scopes, seven subsets; all with
+// read-only movie input: 244/244/244/244/244/244/244/244. Original consumption scopes, helpers and
+// complete executable body restored.
 // @retail 0x156090
 void function_156090(char const *name, dword flags)
 {
