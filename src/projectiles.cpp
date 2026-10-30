@@ -1203,6 +1203,11 @@ extern vector3f *g_4687ac;
 // Round 213: existing staged cross with original/shared input differences and original/bounded
 // initial ray 163/163/165/165; consistent radius-field counterparts 181/188/173/180.
 // Original body restored; tag EBP and native frame 0x34 endpoint/query overlap remain.
+// Round 42: normalized side consumed as final negative endpoint 164 (frame 0x3c);
+// complete scalar cross input, direct up fields and both 163 each; endpoint reuse with
+// scalar input/direct up/both 164 each, with bounded first ray 166. Uniform radius
+// fields on endpoint reuse alone/all-input graph 181, with bounded first ray 173 each.
+// All original executable source restored; frame 0x34 and tag/query allocation remain.
 // @retail 0xfc030
 bool function_fc030(long projectile_index, point3f const *point, s_collision_result_1697c0 *collision)
 {
