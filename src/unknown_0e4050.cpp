@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "engine_peer.h"
 #include "effects.h"
+#include "slot_handler.h"
 #include <math.h>
 
 struct s_e4050_object
@@ -28,37 +29,17 @@ struct s_e4050_object_header
 	s_e4050_object *object;
 };
 
-// score 8 (was 8): Full-word truth/return versus byte truth/return remains; restore the entire opening executable body.
-// Earlier: Shared truth and return use DL/AL rather than retail EDX/EAX.
-// Earlier long result 18; bool result 28; return 1 / 0 30; word/dword/long flag views 30 (18 with the long
-// result).
-// Byte/full truth and return registers remain (DL/AL versus EDX/EAX). Actual-admission bool/long/word/dword
-// 8/36/38/36; native byte fields with those types 8/36/38/36; direct terminal predicate with long/word/bool
-// and native long 11 each. Keep the Boolean admission result with original fields; plain full check preserves
-// every baseline match.
-// Round 191: Native byte/signed-char/short admission 25/25/26; bitwise bool/long/short/byte admission 26/52/56/37.
-// Round 191: Complete failure clear 30; separate Boolean failures 30; nested terminal result 17.
-// Round 191: Long/short/byte failure-clear 11/11/17; separate wide failures 23/23/27. All restored; no qualifying gain.
+static __forceinline long real_to_long(real value);
+
 // @retail 0xe4050
 bool function_e4050(long object_index)
 {
 	s_e4050_object *object = ((s_e4050_object_header *)g_4e0300->data)[object_index & 0xffff].object;
-	bool result = !TEST_FIELD_BIT(object->flag_c1_0) && TEST_FIELD_BIT(object->flag_348_0);
-	if (result)
-	{
-		real scaled = g_510c54->field_2_3 * 0.18f;
-		long ticks;
 
-		__asm
-		{
-			fld scaled
-			fistp ticks
-		}
-		result = object->value_399 >= ticks &&
-			(object->state_3dc == 1 || object->state_3dc == 3) &&
-			object->parent_index == NONE;
-	}
-	return result;
+	return !TEST_FIELD_BIT(object->flag_c1_0) && TEST_FIELD_BIT(object->flag_348_0) &&
+		object->value_399 >= real_to_long(g_510c54->field_2_3 * 0.18f) &&
+		(object->state_3dc == 1 || object->state_3dc == 3) &&
+		object->parent_index == NONE;
 }
 
 /* inline keeps it out of the callers' register tracking: retail's callers
@@ -66,6 +47,13 @@ bool function_e4050(long object_index)
    (0x21e230 keeps `this` in esi across the call); noinline keeps the call */
 inline __declspec(noinline) real function_12aff0(real a, real b, real c, bool flag);
 
+// score 8 (was 8): retail compares (a > c) with flag at full width and gives the edge path two
+// separate returns after the clamp's exit; ours compares words and loads 0.0 before the test (select).
+// Tried: (a > c) == flag in a ternary, an if with two returns, a long local, != with swapped
+// constants 10 each; bool local 17; one result for both paths 10; the near-edge test first
+// with a ternary 30, with two returns 27 (retail's exact edge and clamp blocks, laid out in the
+// other order); fabs(a - b) < 0.0001f first 27; the clamp result declared first with the edge
+// returns in the else 10.
 // @retail 0x12aff0
 real function_12aff0(real a, real b, real c, bool flag)
 {
