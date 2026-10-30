@@ -1243,8 +1243,10 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 	return result;
 }
 
-// score 225 (was 255): scratch 0x10 versus retail 4; absolute-span inner traversal
-// remains rolled, 225/347 bytes.
+// score 94 (was 225): the flag stays in bl (retail al), so the loop temporaries take eax/al where retail uses
+// ebx/cl; retail loads the count into ebp before the multiplier and adds 2 before the total (ours folds the load
+// into imul and uses one lea). Frame, prologue, unrolling and cursor agree (347 bytes).
+// Earlier at 225: scratch 0x10 versus retail 4; absolute-span inner traversal remained rolled, 225/347 bytes.
 // Earlier: sixteen-step rolled loop versus four-by-four unrolling;
 // expanded loop changes the entry convention and loses the matched caller.
 // Direct getter comparison 281; split header/payload adds 281; arithmetic width 329;
@@ -1308,25 +1310,25 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 // pointer spans 249 each (four forms); outer/inner counter domains 254/225/244/244;
 // identity width/opposite/direct and unsigned span domains 225/245/244/225/225/225/225/225.
 // Short group start with long absolute channel ordinal retained; every 0x54990 loss rejected.
+// Round 86: the plain counted loop over &channels->channels[i] 112 (unrolled, but 0x54990 off by one: channels in
+// ebp, passed on the stack); taking the cursor from channels->channels before the flag frees ebx for channels:
+// total, cursor, flag 94 (kept); flag, cursor, total 93 (350 bytes); cursor, total, flag 99; flag, total, cursor
+// 111 (0x54990 lost); nested entry tests 94; a short counter 287 (rolled); flag types, entry-size locals,
+// operand orders and a by-value size helper give the same code; a 256-form search of the family 93+.
 // @retail 0x56220
 long voice_channels_get_bandwidth(s_voice_channels *channels, long player)
 {
 	long total = 0;
 	if (channels->initialized && voice_channels_have_player(channels, player))
 	{
-		long local_0 = voice_get_unknown00();
-		bool is_unknown00 = local_0 == player;
 		total = 2;
-		for (short first_channel = 0; first_channel < 16; first_channel += 4)
+		s_voice_channel *channel = channels->channels;
+		bool is_unknown00 = voice_get_unknown00() == player;
+		for (long i = 0; i < 16; i++)
 		{
-			long channel_index = first_channel;
-			do
-			{
-				s_voice_channel *channel = &channels->channels[channel_index];
-				if (voice_channel_has_player(channel, player))
-					total += channel->values[player] * (is_unknown00 ? 13 : 11) + 2;
-				++channel_index;
-			} while (channel_index < first_channel + 4);
+			if (voice_channel_has_player(channel, player))
+				total += channel->values[player] * (is_unknown00 ? 13 : 11) + 2;
+			channel++;
 		}
 	}
 	return total;
@@ -1517,7 +1519,26 @@ dword function_56c60(s_voice_player_settings *settings, long player);
 
 static __forceinline bool function_57d63(long arg_0, long arg_1);
 
-// score 94 (was 94): frame 0x14 vs 0x18, bit spill and flag-query boundary differ;
+/* whether the voice mode is 1 (active) or 2 or 3 (passive) */
+static inline bool voice_mode_is_active(void)
+{
+	bool result = false;
+	if (g_4c9878.initialized && g_476fc8.initialized)
+		result = voice_get_mode() == 1;
+	return result;
+}
+
+static inline bool voice_mode_is_passive(void)
+{
+	bool result = false;
+	if (g_4c9878.initialized && g_476fc8.initialized)
+		result = g_4c9878.mode == 2 || g_4c9878.mode == 3;
+	return result;
+}
+
+// score 85 (was 94): the second availability byte loads lazily (retail loads both before the muted test and keeps
+// remote in esi) and the second port-flag query is called out of line (retail inlines it here only); frame and bit
+// spill agree. Earlier at 94: frame 0x14 vs 0x18, bit spill and flag-query boundary differed;
 // word outer/target induction 118/106; word active 97; mask names 94; skip cleared inactive entries 110.
 // caller depth 0/1/2 241/94/94; wide bit with depth 1/2 118/118;
 // complete mask/policy/both assignments 108/104/110.
@@ -1541,12 +1562,18 @@ static __forceinline bool function_57d63(long arg_0, long arg_1);
 // tests with the mode through voice_get_mode() 89; a once-used availability flag with voice_get_mode() 82 (the flag
 // is materialised, which retail does not do; the tail only realigns; not kept); voice_get_mode() with the plain
 // muted test 96.
+// Round 86: retail's shape with the mode tests through voice_mode_is_active()/voice_mode_is_passive() (shared
+// with 0x56b70) 85 (kept); with plain availability in the first port-flag query 94, an if/else muted word 98
+// (remote in esi, the byte loaded in both arms), a word muted 88, a word bit 92, the muted test through
+// voice_available() 103. One-file LTCG builds: 0x55990 in its own /Ob1 or /O2 file 133; the second query
+// compiled /O2 or redeclared inline/__forceinline is inlined in all three callers; with the session getters
+// 0x59670/0x596a0 opaque the eager pair and esi remote appear (60, 415 bytes), so the lazy byte is
+// BLOCKED-BY 0x59670/0x596a0 being visible to LTCG, the call by 0x53bb0's per-site inlining.
 // @retail 0x55990
 void function_55990(s_voice_player_values *values)
 {
 	if (values->enabled)
 	{
-		long i = 0;
 		dword players = 0;
 		if (voice_available())
 		{
@@ -1560,35 +1587,27 @@ void function_55990(s_voice_player_values *values)
 		if (voice_available())
 			active = g_4c9878.unknownEE;
 		memset(values->values, 0, sizeof(values->values));
-		for (; i < 16; i++)
+		for (long i = 0; i < 16; i++)
 		{
-			dword mask = 0;
-			word bit = 1 << i;
+			dword bit = 1 << i;
 			if ((local & bit) && (active & bit))
 			{
-				word muted = 0;
-				if (voice_available())
+				dword muted = 0;
+				if (g_4c9878.initialized && g_476fc8.initialized)
 					muted = g_4c9878.unknownF0[i];
-				mask = remote & ~muted;
-				if (voice_available())
-				{
-					dword policy = ~0UL;
-					if (g_4c9878.mode == 1)
-						policy = voice_player_settings_get_active_value(&g_527104.settings, i);
-					else if (g_4c9878.mode == 2 || g_4c9878.mode == 3)
-						policy = function_56c60(&g_527104.settings, i);
-					mask &= policy;
-				}
-				dword target = 1;
+				dword mask = remote & ~muted;
+				if (voice_mode_is_active())
+					mask &= voice_player_settings_get_active_value(&g_527104.settings, i);
+				else if (voice_mode_is_passive())
+					mask &= function_56c60(&g_527104.settings, i);
 				for (long j = 0; j < 16; j++)
 				{
-					if ((mask & target) &&
+					if ((mask & (1 << j)) &&
 						(function_57d63(j, i) || voice_port_flag1(j) || voice_port_flag2(j)))
-						mask &= ~target;
-					target <<= 1;
+						mask &= ~(1 << j);
 				}
+				values->values[i] = mask;
 			}
-			values->values[i] = mask;
 		}
 	}
 }
@@ -2660,6 +2679,9 @@ long __stdcall function_53b00(long player, byte *output, long capacity)
 // with both 177; the 0x53c70 result in a named local 124 (the call stays after the pushes); every order of the bit,
 // blocked, selected and deferred declarations, five finish shapes and a 250-form toggle sample 124 or more. The
 // one-use deferred temporary and its casts were dropped (same code).
+// Round 86: mode in an if/else 157, declared first 135; word deferred with selected ored first 138; output
+// stores in each finish arm 160; bit tests through function_56790(dword, long) 165; local renames move no
+// slot; with the plain getter the mode becomes a cmov and selected loses EBP; a 154-form toggle search 124+.
 // @retail 0x565c0
 void __stdcall function_565c0(s_voice_routing *routing, dword remaining, s_voice_route *output)
 {
@@ -3033,6 +3055,9 @@ struct s_voice_route_choice
 // Round 82 (one-file LTCG build, exact): every order of the radio/nearest/headset declarations gives the same code;
 // branch radio 411 (headset kept in EBX, never spilled; talker in EDI; frame 0x50); with a per-choice pointer 410,
 // with a per-choice reference 410; the pointer alone 395; a named talker bit 391.
+// Round 86: a choice cursor declared first and stepped at the end of the body 392 (frame 0x48); a reference to
+// the listener mask 399; the headset test inverted 406; the distance comparison reversed 363 and the nearest
+// test nested 363 (same code).
 // @retail 0x57eb0
 void function_57eb0(s_voice_player_settings *settings, long talker,
 	const s_voice_route_choice *choices, long count)
@@ -3161,23 +3186,15 @@ void function_56b70(s_voice_player_settings *settings)
 {
 	if (settings->initialized)
 	{
-		bool active = false;
-		if (g_4c9878.initialized && g_476fc8.initialized)
-			active = voice_get_mode() == 1;
-		if (active)
+		if (voice_mode_is_active())
 		{
 			function_56f60((c_voice_observer *)settings);
 			function_57080((s_voice_player_values *)settings);
 			function_57360((c_voice_observer *)settings);
 			function_577d0(settings);
 		}
-		else
-		{
-			bool passive = false;
-			if (g_4c9878.initialized && g_476fc8.initialized)
-				passive = g_4c9878.mode == 2 || g_4c9878.mode == 3;
-			if (passive) function_57960(settings);
-		}
+		else if (voice_mode_is_passive())
+			function_57960(settings);
 	}
 }
 
@@ -3236,6 +3253,9 @@ static inline long voice_packet_clamp_count(byte count, long minimum, long maxim
 // Round 82: a separate cursor declared after the count gives retail's EDI cursor and BX mask, but the member index
 // then takes EBP instead of the channel 164; cursor at entry 141; with the member at function scope 164; route at
 // function scope 139 (same code); cursor, route scope and the index declared before the loop 164.
+// Round 86: cursor with a channel-index local in the relay arm 158, with a dword member mask 190, with split
+// NONE/kind tests 164; index local, late stride and early counter 158; index local in the other arm 162;
+// a 245-form toggle search 139+.
 // @retail 0x55e10
 long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, bool relay)
 {
