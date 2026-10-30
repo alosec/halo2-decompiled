@@ -111,7 +111,16 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 /* slot type 0x24's update: moves the actor to its prop (to the point the
    prop names, or along its direction) and flags the slot when it is there
    or cannot get there (always returns true) */
-// score 123 (was 144): entry actor-pool/view carriers (retail forms the actor offset in EAX and
+// score 50 (was 123; fast, 1077 bytes = retail): lane 10 round 25 (cut off by a usage limit; kept state checked
+// by the coordinator): type arms as if (type == 0) / else if (type == 1) / else {0x1f4280; result = true} so the
+// unsupported type falls into the result test (retail's block layout; plain 67 alone); state declared first (65);
+// the 0x1f86f0 success sets state->unknown00 and shares the query path's state test (same calls and result).
+// Round 25 tried (on the trial 5 form): short type / type read from the field / word type 191 or 143 each
+// (the type-0 target rows reschedule); target rows as distance * direction or through vector3f_add_scaled, real
+// distance at the block top: no change; origin pointer kept across the call 196; switch on the field 206;
+// node lookup through its own actor_get(actor_index): 65 -> 45, and 26 with the shared state test (mixed reads; match only).
+// Before round 25:
+// (score 123 then) entry actor-pool/view carriers (retail forms the actor offset in EAX and
 // the actor with `lea`), the actor index kept in ESI around the near-target calls, the 16-bit type
 // tests and the arm layout remain (retail places the type 1 arm and the unsupported-type return
 // after the first part of the result check); 1070 bytes against 1077.
@@ -167,10 +176,10 @@ bool function_1f4460(long actor_index, s_type_c3b527 const *point, long target_i
 // @retail 0x1b2770
 bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 {
+	s_slot_24_data *state = (s_slot_24_data *)slot->unknownc;
 	s_actor_view *actor = actor_get(actor_index);
 	s_prop_node_view *node = prop_node_get(actor->prop_index);
 	s_prop_view_fields *view = prop_node_view(node);
-	s_slot_24_data *state = (s_slot_24_data *)slot->unknownc;
 	s_type_c3b527 target;
 	long type;
 	bool result;
@@ -189,24 +198,25 @@ bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 			{
 				state->unknown00 = false;
 			}
-			else if (function_1f86f0(actor_index))
-			{
-				state->unknown00 = true;
-				function_1f4280(actor_index);
-				return true;
-			}
 			else
 			{
-				point3f point;
-				point3f position;
-				short cluster;
+				if (function_1f86f0(actor_index))
+				{
+					state->unknown00 = true;
+				}
+				else
+				{
+					point3f point;
+					point3f position;
+					short cluster;
 
-				function_210850(&view->unknown78, &point);
-				function_1e3b00(actor->unknown018, 1, &point, NULL, NULL, &position);
-				cluster = view->unknown78.output_index == NONE ?
-					*(short *)((byte *)view + 0x72) : function_272af0(g_4e0348, &point);
-				state->unknown00 = function_1c8df0(cluster, *(short *)((byte *)actor + 0x254), &position, NONE,
-					(byte *)actor + 0x22c, 0, false, actor->unknown26c != NONE, true, NULL) == 0;
+					function_210850(&view->unknown78, &point);
+					function_1e3b00(actor->unknown018, 1, &point, NULL, NULL, &position);
+					cluster = view->unknown78.output_index == NONE ?
+						*(short *)((byte *)view + 0x72) : function_272af0(g_4e0348, &point);
+					state->unknown00 = function_1c8df0(cluster, *(short *)((byte *)actor + 0x254), &position, NONE,
+						(byte *)actor + 0x22c, 0, false, actor->unknown26c != NONE, true, NULL) == 0;
+				}
 				if (state->unknown00)
 				{
 					function_1f4280(actor_index);
@@ -245,16 +255,16 @@ bool __stdcall function_1b2770(long actor_index, s_slot *slot)
 			}
 			actor->unknown4cc = 0.7f;
 		}
-		else
+		else if (type == 1)
 		{
-			if (type != 1)
-			{
-				function_1f4280(actor_index);
-				return true;
-			}
 			function_2628f0(actor_index, g_470fa0);
 			result = function_1f4460(actor_index, &view->unknown78, *(long *)((byte *)view + 0x74), NONE, false);
 			target = view->unknown78;
+		}
+		else
+		{
+			function_1f4280(actor_index);
+			result = true;
 		}
 		if (!result)
 		{

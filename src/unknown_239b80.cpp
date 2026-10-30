@@ -438,6 +438,9 @@ long function_239d50(long count, point2f const *points, point2f *hull)
 // 249/266/277/264, with early heading 268/250/276/263. Cursor frame grows to 0x1c and four memcpy forms lose
 // the caller. All state lifetimes, ordinals, original compaction and body restored; native result/departure
 // homes and count register remain.
+// Round 309: Advancing native lowest/candidate/both point cursors 203/200/200; duplicate
+// index cursor alone/with lowest/candidate/both 231/230/229/228; all with overlap CRT 229.
+// The 200 forms gain only three; original scans and full body restored. Count/departure homes remain.
 // @retail 0x239e50
 short function_239e50(short count, point2f const *points, short *indices)
 {
