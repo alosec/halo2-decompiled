@@ -1359,6 +1359,9 @@ bool function_17afd0(long effect_index, long value);
 // existing calling iterator with aggregate/field initialization 252/252 (exact-only). Coordinated
 // cluster-provider inline alone/pool/iterator/advance 102/102/252/150. All provider declarations
 // and the original body restored.
+// Round 312: same-view classification after attachment on the retained availability gate,
+// bool/byte/short/long attachment with original/direct camera result 100/125/100/125/111/122/110/122.
+// Two-point gain restored; later-result forms can coalesce owner/NONE but regress overall. Original snapshot and body restored.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {
