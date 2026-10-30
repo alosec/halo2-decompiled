@@ -747,6 +747,10 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // exits 97; first/loop failure exits 97; all dispatch failure exits 97; all failures with direct final
 // update 109; native events with direct final update 109. Word-load/state-clear scheduling and second
 // callback reload remain. Original body restored.
+// Round 315: Independent initial/end/loop dispatch outputs with native-word versus long carriers, all
+// eight masks 97. Every one-use result form is restored. Original shared result, callback
+// observations, parameter aliases and state graph retained; word-load schedule and second callback
+// reload remain.
 // @retail 0x1c66a0
 void __stdcall c_animation_channel_advance(c_animation_channel *channel, real frame, s_animation_state *state,
 	animation_event_callback callback, long user)

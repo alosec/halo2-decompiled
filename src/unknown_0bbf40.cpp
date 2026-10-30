@@ -320,6 +320,9 @@ s_object_gc_entry_ab g_440570[6] =
 // Round 300: Named native long/dword level mask at use with compound, rejection-guard and
 // nested-positive eligibility 110/110/110/110/110/110; rejection/nested forms with terminal state
 // fields at use 125/125. Original frame, loop, field observations and body restored.
+// Round 315: Early gather commitment with direct terminal state/query-produced critical/reused action
+// ownership masks 0..7: 115/125/138/125/113/134/132/136. Direct-state forms recover the frame but
+// shorten to 374 and regress. Original state, query, callbacks, buffers and loop restored at 110.
 // @retail 0xbf380
 void function_bf380()
 {

@@ -113,6 +113,9 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // Round 79: nested blocked assignment 93; default-true admission 128; peer receiver 95;
 // flag pointer arithmetic 95; clock-first product 95; final-team assignment 121; positive blocked
 // assignment 132; nested blocked with peer 93. Two-point gains and one-use receiver forms restored.
+// Round 315: Seven joint positive unit/weapon/slot admission graphs 95 each; full graph with
+// independent completion event 116 at 912/912. Original resource, score and event lifetimes restored;
+// pool-data spill and scratch-register ties remain.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {
