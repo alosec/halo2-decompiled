@@ -3035,6 +3035,7 @@ bool function_128c0(s_128c0_settings const *settings)
     return result;
 }
 
+
 // @retail 0x13d80
 void function_13d80()
 {
@@ -4690,6 +4691,9 @@ void __stdcall function_352e0(long target, bool multiple);
 long function_35510(long format);
 void function_1bd50(void *state);
 
+// score 13 (was 15): the fallback index is masked rather than narrowed to a word, so the load
+// is a dword and the mask; retail loads the word directly and keeps the element argument's
+// push before the branch.
 // @retail 0x1c0d0
 void function_1c0d0(long tag, long stage)
 {
@@ -4721,7 +4725,7 @@ void function_1c0d0(long tag, long stage)
             if (changed)
             {
                 long target = g_4858b4;
-                if (target == NONE) target = (word)g_4858b8;
+                if (target == NONE) target = g_4858b8 & 0xffff;
                 function_14bc0((short)target, 0, true);
                 g_4670bc = true;
                 function_16b10((s_render_reset_state *)g_485b48);

@@ -1347,6 +1347,10 @@ void __stdcall function_205320(long group_index)
 // Round 42: named scaled offset signed/unsigned 18/18; const squad, then both pointers 18/18;
 // identifier as a real short field 18; low-word helper 44; typed pointer increment/address-of-element 18/18;
 // low-word equality 21; early high-bits predicate 18. The pool/index registers and three-address lea remain.
+// Round 15: a link pointer to the first vehicle (0x201a50's form) 18; byte pointer squad 18; old squad
+// index in a local 18; header pointer local 19; high-word test by shift 18. Compile-only screens
+// reproduce ours exactly and ~20 squad/header/test forms (helper return, NULL-initialized squad, pool
+// local) all keep add eax,ecx; retail's other two sites of this lea (0x1f3430, 0x20d570) are unmatched.
 // @retail 0x201ad0
 void function_201ad0(long squad_index, long object_index)
 {
@@ -2005,6 +2009,12 @@ bool function_1e11b0(long actor_index, bool active);
 // splits the squad pointer around the loop (ESI outside, reloaded from the index's home at the
 // loop's back edge); ours keeps the pointer in EBX across the loop and reads the index from its
 // home inside it.
+// Round 86: existing squad_actor_next_inline step with 0x203d70's statement-level inline-depth pair
+// around the 0x203f60 call (function-level pragma dropped) 78 at 184 bytes (retail's unrotated loop and
+// `or byte` flag store), with the return as 0x203d70's `(((dword)*(short *)(squad + 2)) >> 7) & 1` 71
+// (retail's full-width return exactly); on that body squad_get, parameter address taken, parameter read
+// through its address, squad re-fetched after the loop, extra parameter uses 71-95: the parameter never
+// gets a callee-saved register, so the pointer is never split.
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
 {

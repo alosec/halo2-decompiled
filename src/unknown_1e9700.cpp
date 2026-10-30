@@ -170,6 +170,9 @@ void function_1ea880(long first_player, long player_index, s_object_values *tabl
 // attribution/selection-assist/attribution-assist 456/440/458; all phases 420, with related-unit player
 // at each use 416. Five-point best excluded; original observations restored; frame/result/rounding
 // homes remain.
+// Round 308: Complete victim-index/killer-index/award-player subsets 452/442/435/442/441/458/453;
+// all with native word indices 461. Earlier victim-index lifetime recovers frame 0x50 but regresses;
+// original handle arithmetic, award observations, frame and rounding calls restored.
 // @retail 0x1e9fa0
 void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
 {

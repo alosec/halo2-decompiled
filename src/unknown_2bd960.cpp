@@ -417,49 +417,7 @@ void function_2bdd70(s_spline_2bd *spline, point3f *points, long n, point3f *out
 	last_output.z *= 0.5f;
 }
 
-// score 6 (was 6): the coefficient loop sums its products in another order (retail: t3, t, then
-// the t2 product folded, row pointer based on m[i][1]); prologue, frame and weighted sums agree.
-// direct output and four reused weights 110 fast;
-// original output and four reused weights 84 fast;
-// direct output with uniform polynomial products 109 fast;
-// original output with polynomial products 86 fast;
-// direct output, weights and products 111 fast;
-// original output, weights and products 85 fast;
-// direct output, weights/products and row cursor 110 fast;
-// original output, weights/products and row cursor 87 fast;
-// frame 0x54/0x50, incoming fraction XMM3/XMM2 and coefficient homes remain.
-// Flat coefficient table 87; flat/direct output 109; flat row for 200; component
-// output alone/flat/direct 170/170/110; coefficient accumulation 89; flat row accumulation 185. All restored.
-// frame 0x54 versus 0x50, float input and coefficient/
-// weighted-sum registers differ. Immutable coefficients/powers 87/87;
-// table/power/all role names 87/87/87; direct output with immutable
-// storage/role names 109/109; complete symmetric channel products 94.
-// Round 318: delayed output home/scoped output phase 97/97 (438 bytes);
-// native initial copy 106, delayed copy 98, delayed point setter 109, delayed immutable table 97,
-// delayed weights 100, scoped weights with copy 81 (449 bytes, frame 0x50; parameter alias, not kept).
-// Direct weights/copy and coefficient phase with copy/assignment 110/110/110 (425 bytes). All restored.
-// Round 74 (kept): no volatile output, t3 = t * t * t computed before t2 = t * t, weighted sums
-// from points[0] up: 10. t2 first (t3 = t2 * t, t * t2 or t * t * t) 109/109/109; powers written in
-// the loop 117-119; table before the powers 99; one or both powers after the table 109/110/100;
-// t2 declared first, t3 computed first 31; any term order in the loop 31; power names 31;
-// weighted sums reversed/r-first/parenthesised 31/31/29. Then (kept) row pointer in the loop 6;
-// sum groupings 9/12/9; const table 10; all product orders x three groupings, with and without the
-// row pointer, 6-13; row cursor 9; flat table 10, with the row pointer 6; parameter reorders 10
-// (before the row pointer).
-// Round 42: quadratic-origin row pointer, reordered chain and sequential accumulation 6/6/6;
-// named cubic-linear with plain/swapped/mutable quadratic 9/9/9; native plane row 6; split accumulation 10.
-// Power triple/product helper with shifted row, direct powers and reversed inputs 5/5/5 (439 bytes;
-// one-point grouped-power forms, not kept); scalar SSE multiply 109; scalar conversion form did not compile.
-// Shared square with const/products/early weights 110; early product-helper
-// input 5, late input 99; row/table/const/accumulation variants 5. All restored.
-// Native coefficient/plane rows with the shared product, either input order
-// and early/late weights 5 (439 bytes); quadratic coefficient still loads
-// separately. Grouped input and one-point reduction discarded.
-// Explicit shared square, immutable square, uniform named products and earlier weight-array
-// declaration: eight forms 110 each (425 bytes). Existing three-component product with powers
-// before the table 5/5 (439 bytes); after the table 99/99. Native row/direct table, immutable
-// powers, coefficient-slot accumulation and component initialization: eight forms 5 each.
-// The helper recovers the row base and first two terms but not the folded multiply; all restored.
+/* the point at fraction t on the cubic Bezier segment through four control points */
 // The parameters are listed as time, control points and output point so that the caller's
 // arguments are written in the order retail evaluates them.
 // @retail 0x2bde90
@@ -467,6 +425,7 @@ void function_2bde90(real t, point3f *points, point3f *out)
 {
 	real t3 = t * t * t;
 	real t2 = t * t;
+	real t1 = t;
 	real m[4][4] =
 	{
 		{ -1.0f, 3.0f, -3.0f, 1.0f },
@@ -479,9 +438,7 @@ void function_2bde90(real t, point3f *points, point3f *out)
 
 	do
 	{
-		real const *row = m[i];
-
-		r[i] = row[0] * t3 + row[1] * t2 + row[2] * t + row[3];
+		r[i] = m[i][0] * t3 + m[i][1] * t2 + m[i][2] * t1 + m[i][3];
 		i++;
 	}
 	while (i < 4);
