@@ -475,7 +475,8 @@ static inline dword surface_random()
 	return g_4e7408->seed >> 16;
 }
 
-// score 160 (was 160): frame 0x28 against 0x20 and random/time/oscillation staging remain; shared cross product reaches retail length.
+// score 160 (was 160): Frame 0x28 versus 0x20; old-direction, cross/projection and random/time staging differ.
+// Earlier: frame 0x28 against 0x20 and random/time/oscillation staging remain; shared cross product reaches retail length.
 // Earlier frame 0x24 against 0x20 and the random-seed/oscillation schedule. Reading the frame
 // count again after the 0x117c80 call (as retail does) gives retail's convention: wind in EBX, definition in EDI.
 // Complete output staging 201; old before axis 199, before trigonometry 199; vector names 195;
@@ -502,6 +503,9 @@ static inline dword surface_random()
 // Round 412: Staged cross 160; native old-direction setter 187; native axis setter 199; staged/old
 // 187; staged/axis 199; both setters 208; all producers 208; all with alternate random contract
 // 208. All restored.
+// Round 216: existing in-place scale of direction/axis/both 180/188/191; cross alone 174;
+// direction-cross/axis-cross/all 188/194/181; direction scale and shared partial-sum producer 179.
+// Original workspaces, snapshots, three row trees and all publications restored.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {

@@ -1946,6 +1946,10 @@ struct s_summary_player_sort_entry
  byte properties[0x90];
 };
 
+// score 339 (was 339): Frame 0xa9c versus 0xaa8; type/membership/member-index homes and saved registers differ.
+// Round 216: complete state-field observations 378; with native membership/player/selected-member
+// references 378/378/377; membership-player/membership-member/player-member 378/377/377;
+// all three 377. Frame remains 0xa9c. Original complete body and external type declarations restored.
 // @retail 0x64d70
 bool __stdcall function_64d70(s_session_browser_summary *output)
 {
