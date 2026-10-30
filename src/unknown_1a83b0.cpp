@@ -476,8 +476,10 @@ s_1a8a10 g_4453c0[] =
 // order [3], [1], [2], [0] 21; the pragma replaced by a noinline declaration of
 // 0x1f57a0 here 214 (more gets inlined). Retail reads j again after the y store
 // of the rotated point, as if that store could alias the actor.
+// The actor index comes before the point: retail's 0x1a8c30 loads the point (eax) before the index (ebx), and
+// callers set up register arguments last to first.
 // @retail 0x1a8a10
-bool function_1a8a10(point2f const *arg_0, long arg_1, short arg_2, real arg_3, real arg_4)
+bool function_1a8a10(long arg_1, point2f const *arg_0, short arg_2, real arg_3, real arg_4)
 {
     s_actor_view *local_1 = (s_actor_view *)(g_4f55f0->data + (arg_1 & 0xffff) * sizeof(s_actor_view));
     bool local_0 = false;
