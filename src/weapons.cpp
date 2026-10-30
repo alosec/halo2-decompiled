@@ -3162,6 +3162,9 @@ struct s_ammo_conversion_entry
 // Round 410: Complete destination/source/both object observations 243/228/300;
 // source tag after transfers 213, with destination/source/both observations 243/221/317;
 // complete graph with consistent type-byte reads 328. Original object/tag graph restored.
+// Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
+// both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
+// with conditional minimum 196, plus direct destination 205. Original body and field type restored.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {

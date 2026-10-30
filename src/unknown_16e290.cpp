@@ -372,6 +372,9 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // 128 each (815 bytes). Native iterator aggregate gives the same 111/128/128/128;
 // condition named changed 111. Keep original iterator initialization and the natural Boolean
 // copy/repeat condition; padded-count retention and scalar homes still differ.
+// Round 43: base before bytes 136; entry convergence result, count name and split byte calculation
+// 111 each; byte expression at uses 240; iterator/cluster-output/both entry lifetimes 111 each.
+// Original body restored.
 // @retail 0x16de20
 void function_16de20(short index, s_16e150_bits const *table, dword *output)
 {

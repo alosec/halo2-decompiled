@@ -526,6 +526,9 @@ void function_3dd10(long object_index, bool force);
 // Round 183: direct field observations in weight/selection/both scans 150/161/161; live count
 // alone/with weight/selection/both 84/150/161/161; all with the signed first bound 619
 // (unrolled). Original rolled scans, receiver graph and arithmetic restored.
+// Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
+// variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
+// const choice count with the signed first bound 637 (unrolled). Original body restored.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
