@@ -500,6 +500,11 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // operands swapped 78, without the store's cast 77; word old playing mask too 59; word
 // mask with present non-volatile 63 (dword 102); `present = present | bit` 32 (identical);
 // the bit from `player->team` 46.
+// Round 116: the mask as a local copy updated in place (`mask |= present_teams;` then stored
+// through the field pointer) 77, dword 102; that with present not volatile 63; the playing test
+// before the present update 41; a bit local for the present update only 29. A non-volatile
+// present gives retail's loop RMW, the mask reload before the first branch and the folded
+// `or reg, [present]`, but 384/378 bytes (the entry and compare forms then differ).
 // computed before the branch 133; union plus carrier 91; word mask with the field stored
 // directly and the OR uncast (either operand order) 77, the word mask read straight from the
 // field 129 (re-read after the loop), present not volatile 102 (63 with the word mask), the
@@ -2451,6 +2456,11 @@ void function_1e9ce0(long player_index, long counter, s_statborg *statistics, lo
 // named score-to-win 44; one change local for all calls 125; early equal-score return 44;
 // short-cast delta at the 0x1e9df0 call 44; change local for that call only 44; delta + old
 // score 44; mode read before the statistics getter 85; const statistics pointer 44.
+// Round 116: mode tested from the field without the local 44; score declared first 60; iterator
+// at function scope 44; the loop's switch on the mode local 120; score set to the minimum only
+// in the iterator arm 51. Diagnostic (reverted): with g_4e6948 address-taken anywhere this gives
+// 3 at 359 bytes (only the 0x1e9df0 setup left), but matched 0x15b3a0/0x1582d0 then reload it
+// after a pointer store, and retail 0x241620 keeps it in EBP across 0x1967d0 calls.
 // @retail 0x15b650
 void __stdcall function_15b650(long team, long delta)
 {

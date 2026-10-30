@@ -341,6 +341,14 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // direction scalars 74, with staged axis 81; complete direction value with staged
 // turn/both 196/219; both vector inputs as complete scalars 74. All restored;
 // final axis/direction carriers and the copied parallel product remain.
+// Round 119: retail multiplies axis j/k by the parallel part in their own registers (axis operand
+// first), so it frees a register, loads direction j/k before the i store and keeps the cosine in a
+// register; every source spelling of the product gives the parallel part first. Parallel term first
+// in the j/k rows 57; the rows as single expressions in 0x11d3b0's order 57; axis j/k scaled in
+// place after the i row 70; the rotation as a three-pass component loop (unrolled) 70; the i row
+// computed before the j/k cross terms 57. Harness only: the axis through a pointer, dot3f, a
+// cross3f vector, an inline rotate helper by pointer or by value, the parallel part scaled into a
+// vector, operand text orders (identical code).
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

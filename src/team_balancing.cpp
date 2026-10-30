@@ -625,6 +625,10 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // parties) 35; extra-first sum 35; copy before the maximum update 82; parties read back for
 // the maximum 75; fill as `while (i < total) parties[i++] = next;` 34; clamp as
 // `excess >= 0 ? excess : 0` 34; array and index declared first 34.
+// Round 116: open slots from the sum before the total 71; `party_indices[i] + 1 >= next_party` 35;
+// open slots written at their use 87 (170 bytes); next_party declared first 34; capacity as
+// `maximum_team_size * team_count` 34. In the all-stack first pass extra count is always loaded
+// into EAX (player count into EBX or EDX), which LTCG keeps; retail's roles need player count there.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

@@ -231,6 +231,11 @@ void function_265bb0(long actor_index);
 // registers, both conversion homes and the slot load as retail; left the mode compared in memory where
 // retail loads it into cx and tests it, plus two load slots); the same with the unit local everywhere
 // 98; on it `!mode` 80, mode test without the local 80.
+// Lane 4 r117: the slot data block `(s_1acda0 *)slot->unknownc` for the state, a unit-index local for
+// the mode and the 0x27 call, the existing timer setter local_1 for the second tick (no write into
+// the slot parameter) and the whole-slot copy through the slot matched, but only with a redundant
+// `mode != 0 &&` in the second arm (it loads the mode into a register as retail does); not kept (a
+// test that is always true there only steers the register allocator). Without it 80.
 // @retail 0x1ac100
 short __stdcall function_1ac100(long actor_index, s_slot *slot, s_slot *next)
 {

@@ -109,6 +109,12 @@ static __forceinline void decode_direction_194d30(long index, vector3f *directio
 // `do {} while (false)` between the decode and the normalization 62 (identical code: no join); zero
 // after y / between x and y / after the face pointer 73/81/62; the decoder returning its output
 // pointer into the normalization 62.
+// Round 119: the 0x195070 decoder (same decode, retail hoists 2.0 there and makes the zero late, as
+// ours does here) shows the block after the 1/63 products is particular to this caller. A two-pass
+// grid loop shifting the index by six, the zero first 130; the same with `index >> (6 * n)` 134; the
+// face transform as a three-component loop 172 (not unrolled); the grid through an inline
+// `(real)value / 63.f` helper 114 (599 bytes); the zero first and the face pointer before the
+// doubling 87.
 // @retail 0x194d30
 void function_194d30(s_bitstream *stream, vector3f const *up, vector3f const *forward)
 {
