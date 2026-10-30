@@ -96,91 +96,43 @@ PRIVATE inline bool append_save_entry_2164c0(s_save_list_2164c0 *list, s_save_en
     return result;
 }
 
-// score 32 (was 32): frame 0x8ac and extent agree; the append's count/result/list registers (ours
-// eax/cl/edx, retail esi/al/ecx with the count copied to eax and the new count stored before the
-// copy) and the scratch pairs before the format call, XFindNextSaveGame and XFindClose differ;
-// without the format call the enumeration registers are retail's. The append's memcpy into
-// `&entries[count++]` gave retail's index copy (51 -> 32). Tried: file path/directory/both
-// receivers 51/51/51; conditional character store 69; capacity first 54 (41 once); capacity
-// nonzero 51; short type index 189; no parameter address 51/32; file-reference/all helpers
-// 233/233; append names/force-inline and buffer names 51; source step at character read 72;
-// const handle/unsigned conversion capacity 51; indexed conversion 63; full path copy 110;
-// aggregate-zero file 53; unsigned append count/entry memcpy/enumeration names 51; append
-// the append's count/result/list registers (ours eax/cl/edx, retail esi/al/ecx,
-// new count stored before the copy) and the scratch pairs before the format call and
-// XFindNextSaveGame differ; without the format call the enumeration registers are retail's.
-// Our length is 659 plus 3 bytes of fill. Deleting the append alone makes the format-call and
+// score 32 (was 32): frame 0x8ac and extent agree (659 bytes plus 3 of fill); the append's
+// count/result/list registers (ours eax/cl/edx, retail esi/al/ecx with the count copied to eax and
+// the new count stored before the copy) and the scratch pairs before the format call,
+// XFindNextSaveGame and XFindClose differ. Deleting the append alone makes the format-call and
 // enumeration registers retail's (deleting the dead flag block, the ASCII conversion, the 0x216e50
-// call or the path block does not), so the append's allocation sets their rotation; the reduced image
-// scores the same. Round 17: break + if (type < 11) append/else diagnostic 64; diagnostic arm first
-// 76; increment before the copy into [count - 1] 53; the list read through its own reference 32;
-// named count with the new count stored first 51; the found block placed first (same code) 32.
-// The append's memcpy into `&entries[count++]` gave retail's index copy (51 -> 32). Tried:
-// file path/directory/both receivers 51/51/51; conditional character store 69; capacity first 54;
-// capacity nonzero 51; short type index 189; no parameter address 51/32; file-reference/all helpers
+// call or the path block does not), so the append's allocation sets their rotation. The append's
+// memcpy into `&entries[count++]` gave retail's index copy (51 -> 32).
+// Tried: file path/directory/both receivers 51/51/51; conditional character store 69; capacity
+// first 54 (41 once); capacity nonzero 51; short type index 189; file-reference/all helpers
 // 233/233; append names/force-inline and buffer names 51; source step at character read 72; const
 // handle/unsigned conversion capacity 51; indexed conversion 63; full path copy 110; aggregate-zero
 // file 53; unsigned append count/entry memcpy/enumeration names 51; append success result 54;
 // capacity return 54; counted conversion 229; conversion end pointer 58; entry lifetime 51; entry
-// zero initializer 199; file lifetime 51; drive-validation return 51; element pointer for the slot
-// 32; post-increment index local 51; index then count store 51; found flag with the found arm first
-// 51/32; helper parameters swapped 32; force-inline helper 32; count local 44; increment first 44;
-// pointer arithmetic slot 32; count reference 32; append as a list method 32; conversion local
-// orders 34-36; type/find/data declared at the top 32; NONE-type test before the found arm
-// 71/73; format and name locals 32; the existing root, path and ASCII helpers in place of their
-// written-out bodies 32 (kept).
-// diagnostic arguments, append count/result and enumeration registers differ.
-// Frame 0x8ac and extent agree; append count/result/list and
-// diagnostic/enumeration scratch rotation remain. Post-copy success/early-capacity exits 54/54;
-// wide result 51; list/entry/both references 32/32/32; count plus array pointer/reference inputs
-// 32/32.
-// diagnostic, append and enumeration scratch-register rotation remains; root library clear
-// 207f; full character value 39f; character read at each use 73f; earlier ASCII buffer declaration 32f;
-// append record value 89f; clear/full character 209f; full character/buffer 39f; clear/direct reads/buffer
-// 211f.
-// File path/directory/both receivers 51/51/51; conditional character store 69;
-// capacity first 54; capacity nonzero 51; short type index 189; no parameter address 51.
-// conversion addresses, append list/count/result and final call registers differ.
-// Existing root/path helpers 51/51; file-reference/all helpers 233/233;
-// append names/force-inline and buffer names 51/51/51; source step at character read 72.
-// Earlier: conversion addresses, append and enumeration registers still differ.
-// conversion addresses, append and enumeration registers still differ.
-// Const handle/unsigned conversion capacity 51; indexed conversion 63; full path copy 110;
-// aggregate-zero file 53; unsigned append count/entry memcpy/enumeration names 51.
-// matching 0x8ac frame; conversion scratch registers, append count/result homes
-// and enumeration argument registers differ. Earlier helper/index/loop forms excluded; tried append
-// success result 54; capacity return 54; counted conversion 229; conversion end pointer 58;
-// entry lifetime 51; entry zero initializer 199; file lifetime 51; drive-validation return 51;
-// shared character conversion 51; element pointer for the slot 32; post-increment index local 51;
-// index then count store 51; found flag with the found arm first 51/32; helper parameters
-// swapped 32; force-inline helper 32; count local 44; increment first 44; pointer arithmetic slot
-// 32; count reference 32; append as a list method 32; conversion local orders 34-36;
-// type/find/data declared at the top 32; NONE-type test before the found arm 71/73; format and
-// name locals 32; explicit count/publication memcpy 51; list increment with old count 51; count
-// success/failure results 54/54; character first 32; native file length 131; root aggregate
-// zero 32; post-copy success/early-capacity exits 54/54; wide result 51; list/entry/both
-// references 32/32/32; count plus array pointer/reference inputs 32/32; root library clear 207;
-// full character value 39; character read at each use 73; earlier ASCII buffer declaration 32;
-// append record value 89; clear/full character 209; full character/buffer 39; clear/direct
-// reads/buffer 211; count local stored before the copy 51 (retail's order, no count copy);
-// that with an element pointer 51; count through a pointer with an index local 51; count local
-// with a byte-offset destination 33; index local stored first 51; loop condition on the append's
-// result 177. The existing root, path and ASCII helpers replace their written-out bodies (kept).
-// shared character conversion 51.
-// Earlier: the append's count/result/list registers (ours eax/cl/edx, retail esi/al/ecx,
-// the append's count/result/list registers (ours eax/cl/edx, retail esi/al/ecx,
-// new count stored before the copy) and the two scratch pairs before 0x13fb70 and
-// XFindNextSaveGame differ. The append's memcpy into `&entries[count++]` gives retail's index copy
-// (51 -> 32); an element pointer for the slot 32; post-increment index local 51; index then
-// count store 51; found flag with the found arm first 51/32; helper parameters swapped 32;
-// force-inline helper 32.
-// Explicit count/publication memcpy 51; list increment with old count 51;
-// count success/failure results 54/54; capacity first 41; character first 32;
-// native file length 131; root aggregate zero 32.
-// Round 70: direct append with two-use result 32; caller append result 32; split helper
-// result declaration 32; enumeration receiver 32; entry and enumeration receivers 32;
-// entry receiver 32; explicit diagnostic addresses 32; mutable append input and
-// sizeof(*entry) 32. Original body restored.
+// zero initializer 199; file lifetime 51; drive-validation return 51; shared character conversion
+// 51; element pointer for the slot 32; post-increment index local 51; index then count store 51;
+// found flag with the found arm first 51/32; helper parameters swapped 32; force-inline helper 32;
+// count local 44; increment first 44; pointer arithmetic slot 32; count reference 32; append as a
+// list method 32; conversion local orders 34-36; type/find/data declared at the top 32; NONE-type
+// test before the found arm 71/73; format and name locals 32; explicit count/publication memcpy 51;
+// list increment with old count 51; count success/failure results 54/54; character first 32; native
+// file length 131; root aggregate zero 32; post-copy success/early-capacity exits 54/54; wide result
+// 51; list/entry/both references 32/32/32; count plus array pointer/reference inputs 32/32; root
+// library clear 207; full character value 39; character read at each use 73; earlier ASCII buffer
+// declaration 32; append record value 89; clear/full character 209; full character/buffer 39;
+// clear/direct reads/buffer 211; count local stored before the copy 51 (retail's order, no count
+// copy); that with an element pointer 51; count through a pointer with an index local 51; count
+// local with a byte-offset destination 33; index local stored first 51; loop condition on the
+// append's result 177; break + if (type < 11) append/else diagnostic 64; diagnostic arm first 76;
+// increment before the copy into [count - 1] 53; the list read through its own reference 32; named
+// count with the new count stored first 51; the found block placed first 32; direct append with
+// two-use result 32; caller append result 32; split helper result declaration 32; enumeration/
+// entry receivers 32; explicit diagnostic addresses 32; mutable append input and sizeof(*entry) 32.
+// The existing root, path and ASCII helpers replace their written-out bodies (kept).
+// Round 15: append with early `return false` 46; `count < 4096` 32; result preset false and set in
+// the arm 46; struct assignment for the memcpy 51; count local with the new count stored first 51;
+// index local read after the test 51; caller's result in a named local 32; the dead `(void)&list`
+// removed 32 (same code, plain; restored, no gain).
 // @retail 0x2164c0
 void function_2164c0(long memory_unit, s_save_list_2164c0 *list)
 {
