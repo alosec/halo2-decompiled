@@ -173,6 +173,10 @@ void function_1ea880(long first_player, long player_index, s_object_values *tabl
 // Round 308: Complete victim-index/killer-index/award-player subsets 452/442/435/442/441/458/453;
 // all with native word indices 461. Earlier victim-index lifetime recovers frame 0x50 but regresses;
 // original handle arithmetic, award observations, frame and rounding calls restored.
+// Round 203: native selected/fallback/both record results 484/505/459;
+// with a twice-used amount 460/483/459; native record cursor
+// without/with amount 473/473. Original result types and body restored;
+// frame, victim/selection/count homes and rounding expansion remain.
 // @retail 0x1e9fa0
 void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
 {

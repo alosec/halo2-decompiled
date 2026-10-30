@@ -1316,6 +1316,10 @@ struct s_1ba091
 // and combinations, eight at 249 (frame 0x18, 874 bytes); actual iterator aggregate construction
 // with member payload, ordinary returned-entry for loop, byte bit fields or all three, five at 260
 // (885 bytes). Indexed member-data form tried first on both new graphs; original body/types restored.
+// Round 203: one/two named root results with native/original payload and
+// normalized/raw selection mask 235/235/235/235/234/234/234/234. The indexed
+// payload form was first on each graph; controls survive. All are exact-match-
+// only call-result/assigned-flag forms; original body and layouts restored.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {
