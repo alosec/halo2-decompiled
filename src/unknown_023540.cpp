@@ -2970,8 +2970,9 @@ struct s_2a2f0_record
 };
 
 #pragma inline_depth(0)
-// score 145 (was 145): one missing register copy of the bitmap count before the bounds compare
-// (retail inlines the bitmap lookup 0x137550); everything else aligns. Swapped bounds compare 145;
+// score 145 (was 145): frame 0x64 and 1496-byte length agree; the bounded bitmap count register copy remains absent.
+// Earlier: one missing register copy of the bitmap count before the bounds compare
+// at bounded bitmap selection; the remaining instructions align. Swapped bounds compare 145;
 // the existing lookup called in a full-depth window 258 (out of line); plain count read 167;
 // separate count copy 145 (propagated); file-local forced lookup 258/297 (in a window, spills).
 // Round 187: Ordinal/remainder byte/short 273, short/short 273, word/short 273, long/long 184, long/dword 188, long/word 186, byte/word 265, short/long 190; unsigned forms omit the implied negative guard. All restored; missing count copy remains.
@@ -2982,6 +2983,9 @@ struct s_2a2f0_record
 // definition local 161; selection as a ternary 143 (realigned only). Not an inline of 0x137550:
 // linked inline (its file without /Ob1, diagnostic) reloads the group and compares the count in
 // memory (297), as do forced inline lookups by tag, by group or with the count passed.
+// Round 224: readonly real strip table, entry/branch constant initialization,
+// record-pointer/direct fields and long/short ordinal combinations with independent
+// dimensions and ordinary count reads: 166/272/175/230/205/268/215/255. All restored.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3241,6 +3245,10 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // gain clamps as FILTER_PIN too 1171 (102); a long alpha selector instead 1154 (204). Left: our link
 // inlines 0x222d0 at mode zero's eight blending states and the final depth state (retail calls all 36
 // out of line), and the offset clamp branches where retail stores 1.0 and conditionally overwrites it.
+// Round 224: existing blending helper inline/ordinary declarations with bool/byte/
+// short/long additive input 1457/1457/1453/1453/1457/1457/1453/1453. Actual-mode helper
+// long/short/byte/dword under force-inline 853 each, under inline 1446/1455/1534/1446.
+// Original helper contract, all call inputs and complete body restored.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)

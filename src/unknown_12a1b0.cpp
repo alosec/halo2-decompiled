@@ -1149,7 +1149,7 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 	}
 }
 
-// score 24 (was 25): retail's code is this loop with 0x126df0 inlined (its fade-in half); the
+// score 24 (was 24): retail's code is this loop with 0x126df0 inlined (its fade-in half); the
 // index and the element pointer have ESI and EDI the other way round. Earlier: the state load was
 // folded before the element pointer was formed and the final looping store was scheduled early;
 // pool at each use 66; count declared first 66; count renamed 66; state guard 66;
@@ -1173,6 +1173,10 @@ void __stdcall looping_sound_fade_out(real duration, long first_sound_index)
 // 0x126df0 call with the state tested through this file's getter 42, through the callee's own
 // SOUND_PLAYBACK_GET 24 (kept); then a one-use sound local, index first, iterator index, pool local,
 // NONE-first loop test, `2 ==`, `index = NONE` and the state read through iterator.index 24 each.
+// Round 15: convention already retail's (EBX, ret 8); `continue` on state != 2, early return,
+// iterator fields index-first, iterator/both at function scope 24 each. Compile-only with a
+// forced-inline 0x126df0 copy gives retail's index EDI/element ESI when the count gets EBX;
+// with the first index in EBX (LTCG) ours swaps them.
 // @retail 0x21be20
 void looping_sound_fade_in(long first_sound_index, short curve, real duration)
 {
@@ -1367,7 +1371,7 @@ short function_128a60(long sound_index, short count, short const *voice_indices)
 /* retail expands the permutation getter in function_21c190 and calls it elsewhere */
 inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_definition *definition, s_looping_playback_definition *playback, long track_index, short arg_58ecd0, bool clear);
 
-// score 93 (was 137): frame 0x60 and the stack result byte now agree; left: our build keeps the
+// score 93 (was 93): frame 0x60 and the stack result byte now agree; left: our build keeps the
 // first track-index read across the pitch-range call (ESI), so the definition lives only on the stack
 // (retail ESI, spilled at +0x1c) and the permutation/pitch-range homes swap (+0x18/+0x1c against
 // +0x14/+0x18); the set path reads the track index inside its arm (`add eax, 7`) where retail reads
@@ -1389,6 +1393,9 @@ inline dword looping_sound_get_permutations(s_type_5ef569 *sound, looping_sound_
 // store through a second record lookup 156 (88 on 97); the set-path index read into a local before
 // the flag test 163 (still read inside the arm); the record before the definition 94; the track
 // definition before the state offset 93.
+// Round 307: Complete stable track/policy/range input subsets 109/174/179/194/195/188/199;
+// all with widened previous result 201. Original field observations and native scalars restored;
+// track-index retention, definition/mask/range homes and flag/index schedule remain.
 // @retail 0x21c190
 bool function_21c190(s_type_5ef569 *sound, s_type_06b94f *track, long sound_index, dword *seed)
 {

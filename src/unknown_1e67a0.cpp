@@ -590,6 +590,12 @@ PRIVATE __forceinline real inverse_sqrt_1e6360(real squared)
 // jitter rename 156; shared offset scale 139; scale with direct updates 155; scale with shared jitter add 149.
 // Native word/short/dword bit samples 168/168/170; on/off-first samples 231/231/233;
 // word/dword native jitter workspaces 161/163 (exact-only). Original sample and body restored.
+// Round 308: Complete control/speed-scale/projection-input value subsets 288/256/294/195/287/259/296;
+// all with immutable native limits 296. All regress; original observations, projection stores,
+// frame and inherited jitter qualifier restored. Constant/limit ownership and jitter spills remain.
+// Round 430: native definition/output fields and real view of the existing dual-use output field,
+// all seven subsets 132; ordinary bit sample on that complete field graph 170. Original declarations
+// and body restored; constant/limit XMM ownership, jitter order and spill homes remain.
 // @retail 0x1e6360
 void function_1e6360(s_biped_physics_output *output, real rate, long object_index, real blend)
 {
@@ -786,6 +792,12 @@ PRIVATE inline real initial_dot(const vector3f *a, const vector3f *b)
 // axis and swaps them); cosine declared first 155; five sine/cosine name pairs 155. Original restored.
 // Round 206: Complete scalar first/second cross inputs and rotation-axis observations, seven subsets
 // [194, 202, 192, 298, 339, 306, 336]; all with immutable original 336. Original restored.
+// Round 308: Complete three-row indexed rotation, original/projection-first additive operands with long,
+// unsigned-long, short and byte coordinates: 176/176/176/176/296/296/296/296. Original rows and
+// body restored; sampled-vector homes and rotation/output scheduling remain.
+// Round 430: staged rotation cross/paired side crosses/both 184/153/184; those with common
+// completion 184/153/184; both with early side-output storage, with/without common completion 184/184.
+// Two-point side-product gains rejected; original helpers, storage, ordered guard and body restored.
 // @retail 0x1e5bb0
 void function_1e5bb0(s_biped_physics_output *output, void *physics, void *animation_state, real speed_scale,
  long component_index, long object_index, void const *definition, long value, bool b, bool turning,
