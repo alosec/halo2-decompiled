@@ -87,6 +87,12 @@ bool g_47f05b;
 // pool address through a byte pointer named after the first construction 38; if/else on the
 // placement result 38; bool flag first 38; NONE flag last 38. Four explicit base-constructor
 // stores in place of the loop still drop the vtable store (30, 0x146b80 lost).
+// Round 103 (fast, with 0x146b80/0x146e30/0x22c3e0): the fixed base storing the count before the
+// size 33 (0x146e30 121); the abstract loop reading a const initial table 34; the fixed base's
+// fields as a member initializer list 34; `__declspec(novtable)` fixed base 34; size-only
+// constructor whose body reads the buffer into the count before clearing it 34 (140 bytes).
+// Harness only: a field read in the fixed base (not forwarded, store still dropped) 23 but
+// 0x146b80 15; a description struct by const reference 36 (146 bytes, 1 as immediates).
 // @retail 0x146a20
 void function_146a20(void)
 {
