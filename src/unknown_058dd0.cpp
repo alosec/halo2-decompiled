@@ -802,6 +802,10 @@ void c_session_client::function_06dbc0()
 // call 43; harness: one && condition with the memcmp, cases 3 and 5 left to the default, an id
 // copy: no change. Calling the existing busy-state test out of line puts this in ebx (as any call
 // before the compare does), but retail has that switch inline.
+// Round 90 (fast): the switch as 0x58d90's own result-variable form (retail's direct table) with an
+// early return or joined into the condition 45/45 (diagnostic: a hand copy of the helper); memcmp size
+// as sizeof(s_session_id), an equal-id return before the call and a return after it 43 each
+// (identical). BLOCKED-BY 0x58d90: retail inlines that existing helper, ours stays out of line (/Ob0).
 // @retail 0x6dbd0
 void c_session_client::function_06dbd0(const s_session_id *id)
 {
