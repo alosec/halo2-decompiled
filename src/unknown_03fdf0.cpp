@@ -27,8 +27,8 @@ void function_44720(void);
 void function_3f2c0(s_planar_camera_source const *source, byte const *view, long object_index, long identifier)
 {
 	long const *identifier_reference = &identifier;
-	long identifier_value = *identifier_reference;
-	(void)identifier_value;
+	long identifier_copy = *identifier_reference;
+	(void)identifier_copy;
 	byte camera[0x1bc]; // a whole s_planar_camera: function_441b0 fills 0x1bc bytes
 	real offset = 0.0f;
 	function_441b0(source, (s_planar_camera *)camera, view);

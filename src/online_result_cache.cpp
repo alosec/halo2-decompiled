@@ -32,7 +32,7 @@ struct s_online_result_text
     char buffer[4096];
 
     __forceinline void clear(void) { buffer[0] = 0; }
-    __forceinline char *get_string(void) { return buffer; }
+    __forceinline char *text_start(void) { return buffer; }
 };
 
 bool g_510580;
@@ -174,12 +174,12 @@ void online_result_query_finish(s_type_9df9da *task)
     if (result >= 0 && g_510588.count > 0)
     {
         text.clear();
-        online_result_format(text.get_string(), "online:stats: XOnlineQuerySearchGetResults succeeded with %d servers: ", g_510588.count);
+        online_result_format(text.text_start(), "online:stats: XOnlineQuerySearchGetResults succeeded with %d servers: ", g_510588.count);
         for (dword i = 0; i < g_510588.count; i++)
         {
-            online_result_append(text.get_string(), "|Server %d)  ", i);
+            online_result_append(text.text_start(), "|Server %d)  ", i);
             online_result_describe(&text, &g_510588.results[i]);
-            online_result_append(text.get_string(), "|  ");
+            online_result_append(text.text_start(), "|  ");
         }
         g_510580 = true;
         online_result_shuffle(g_510588.count, g_510588.results);
@@ -209,7 +209,7 @@ bool online_result_register(s_online_cached_result *record, IN_ADDR *address)
             }
             XNetUnregisterKey(&record->key_id);
             g_510588.key_count--;
-            online_result_format(text.get_string(), "XNetTsAddrToInAddr() failed in register_ip_and_key() with error code %s.  ", 0);
+            online_result_format(text.text_start(), "XNetTsAddrToInAddr() failed in register_ip_and_key() with error code %s.  ", 0);
             online_result_describe(&text, record);
         }
     }
@@ -237,23 +237,23 @@ void online_result_registration_clear(void)
 // @retail 0xb3b70
 void online_result_describe(s_online_result_text *text, const s_online_cached_result *record)
 {
-    online_result_append(text->get_string(), "SessionID: ");
+    online_result_append(text->text_start(), "SessionID: ");
     for (dword i = 0; i < 8; i++)
-        online_result_append(text->get_string(), "%02X", record->key_id.ab[i]);
-    online_result_append(text->get_string(), ".  TsAddr: ina %08X, inaOnline %08X, wPortOnline %08X, abEnet ",
+        online_result_append(text->text_start(), "%02X", record->key_id.ab[i]);
+    online_result_append(text->text_start(), ".  TsAddr: ina %08X, inaOnline %08X, wPortOnline %08X, abEnet ",
         record->address.ina.s_addr, record->address.inaOnline.s_addr, record->address.wPortOnline);
     for (dword j = 0; j < 6; j++)
-        online_result_append(text->get_string(), "%02X", record->address.abEnet[j]);
-    online_result_append(text->get_string(), ", abOnline ");
+        online_result_append(text->text_start(), "%02X", record->address.abEnet[j]);
+    online_result_append(text->text_start(), ", abOnline ");
     for (dword k = 0; k < 20; k++)
-        online_result_append(text->get_string(), "%02X", record->address.abOnline[k]);
-    online_result_append(text->get_string(), ".  KEK: ");
+        online_result_append(text->text_start(), "%02X", record->address.abOnline[k]);
+    online_result_append(text->text_start(), ".  KEK: ");
     for (dword l = 0; l < 16; l++)
-        online_result_append(text->get_string(), "%02X", record->key.ab[l]);
-    online_result_append(text->get_string(), ".  EntitiyID: ");
+        online_result_append(text->text_start(), "%02X", record->key.ab[l]);
+    online_result_append(text->text_start(), ".  EntitiyID: ");
     for (dword m = 0; m < 8; m++)
-        online_result_append(text->get_string(), "%02X", ((const byte *)&record->entity)[m]);
-    online_result_append(text->get_string(), ".");
+        online_result_append(text->text_start(), "%02X", ((const byte *)&record->entity)[m]);
+    online_result_append(text->text_start(), ".");
 }
 
 // @retail 0xb3c80
