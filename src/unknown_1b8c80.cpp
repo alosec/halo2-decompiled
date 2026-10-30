@@ -707,7 +707,7 @@ long function_1e4a50(long character_index);
 void __stdcall function_26c2d0(long prop_index);
 void function_270590(s_path_source *source, s_type_c3b527 const *point, long node_index);
 
-// score 210 (was 225): frame 0xb4 and a common result exit agree; the signed-word
+// score 160 (was 160): frame 0xb4 and a common result exit agree; the signed-word
 // default load, field tests, output scheduling and later register homes still differ.
 // Earlier: the shared default loads as a signed word rather than a dword; frame homes differ.
 // Unsigned-word/dword result 306/225; byte preparation with long/word/dword result 225/306/225;
@@ -719,6 +719,7 @@ void function_270590(s_path_source *source, s_type_c3b527 const *point, long nod
 // result: 225/225/224/224/210/210/210/210. Original payloads with guarded/positive admission
 // 210/210; plain 210, 1188/1177 bytes. Keep only positive admission and one result exit;
 // temporary payload types restored.
+// Round 183: short/word/dword result 250/250/160; word/scalar-word flags 266/266; selection at entry/after result 248/248; preparation after acquisition 162, with early selection 249; short plus word flags 251; early selection plus word flags 191; middle-phase selection 244, with either word view 220/220; shared candidate state 160; named weighted distance 160. All restored.
 // @retail 0x1b99d0
 short __stdcall function_1b99d0(long actor_index, s_slot *slot)
 {
@@ -1144,6 +1145,7 @@ struct s_seat_approach_result
 // Round 252: inline/forceinline 3D helper declarations 147/147; whole actor point 273;
 // shared planar direction helper 147; branch-owned bonus alone/with direction 194/194;
 // external position reference with both 218; whole point with both 274. All restored.
+// Round 183: actual 3D/all-helper forceinline contracts 147/147; early close 146 (one point); external pointer/reference 211/211; both planar results and address/reference pairs 209/209/209; output copies 147, with pointer/results 211/209; early close plus native square/root 142 (changed association, ineligible). All restored.
 // @retail 0x1baae0
 bool function_1baae0(long actor_index, long object_index, short seat_index, bool ignore_bonus,
 	bool ignore_reserved, bool vertical, s_seat_approach_result *out)

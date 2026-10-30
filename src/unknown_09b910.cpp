@@ -1292,6 +1292,10 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 // Complete native unit-header value, late/early ownership with original/device-first guards:
 // current table 62/66/62/66; table re-read 62/66/62/66. All add a 0xc frame.
 // Native handle-array loop/two original stores 194/32 (exact-only grouping; restored).
+// Round 30: object read from a re-read table 32 (same code: ours merges it, where matched
+// 0xa3420 keeps the pool pointer and copies the data base); with the device-first guard 33;
+// matched 0xa3420's typed form (device-first, typed reads, re-read object) 33; object through
+// the file's object macro 32 (same code); unit header pointer from the same table 54.
 // @retail 0xa4540
 bool c_device_touch_event::v11(long a, long const *entities, long c, void const *data)
 {

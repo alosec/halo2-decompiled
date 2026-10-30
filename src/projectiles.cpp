@@ -810,7 +810,7 @@ void function_fcbc0(long definition_index, point3f const *point, vector3f const 
 
 /* the effect values of an effects block's effect (+0x58), NONE without one */
 // @retail 0xfd740
-void function_fd740(point3f const *point, byte const *effects, long unused, long index,
+void function_fd740(point3f const *point, byte const *effects, long index, long element_index,
 	long *first_value04, long *second_value04, long *first_value, long *second_value, long *first_value0c,
 	long *second_value0c)
 {
@@ -818,7 +818,7 @@ void function_fd740(point3f const *point, byte const *effects, long unused, long
 
 	if (effect_index != NONE)
 	{
-		function_1883e0(effect_index, false, point, g_47d8e0, unused, index, 0, first_value04, second_value04,
+		function_1883e0(effect_index, false, point, g_47d8e0, element_index, index, 0, first_value04, second_value04,
 			first_value, second_value, first_value0c, second_value0c);
 		return;
 	}
@@ -840,7 +840,7 @@ void function_fd740(point3f const *point, byte const *effects, long unused, long
    objects the network owns */
 // @retail 0xfd7d0
 void function_fd7d0(long object_index, point3f const *point, byte const *effects,
-	long unused, long index, long *first_value04, long *second_value04, long *first_value, long *second_value,
+	long index, long element_index, long *first_value04, long *second_value04, long *first_value, long *second_value,
 	long *first_value0c, long *second_value0c)
 {
 	long effect_index = *(long const *)(effects + 0x58);
@@ -856,7 +856,7 @@ void function_fd7d0(long object_index, point3f const *point, byte const *effects
 			if (g_4e6948->state == 2 && g_4e6948->mode != 4 && *(long *)((byte *)object + 0xd4) != NONE)
 				ignore_distance = true;
 		}
-		function_1883e0(effect_index, ignore_distance, point, g_47d8e0, unused, index, 0, first_value04, second_value04,
+		function_1883e0(effect_index, ignore_distance, point, g_47d8e0, element_index, index, 0, first_value04, second_value04,
 			first_value, second_value, first_value0c, second_value0c);
 		return;
 	}
@@ -1361,6 +1361,10 @@ void function_fcea0(long effects_index, point3f const *point, vector3f const *di
 // separate direct-counter table initialization loops 249. Original body restored.
 // Round 408: native definition pointer/reference with neither, fallback, alternate
 // or both tag snapshots 115 each. Original record layout and body restored.
+// Round 30: BLOCKED-BY 0xfd740: its unmatched body takes a pointer argument in EBX, so ours
+// cannot keep retail's zero in EBX across that call (the point then takes EBX). Flag-bit
+// member for both `|= 4` 115 (same code); tag before the flag 115 (same code); markers
+// before the scales 115; compression before the point copy 117; velocity copy first 178.
 // @retail 0xfd0e0
 void function_fd0e0(long definition_index, real scale_a, real scale_b, vector3f const *direction,
 	point3f const *point, vector3f const *normal, word index, bool attached, long object_index,

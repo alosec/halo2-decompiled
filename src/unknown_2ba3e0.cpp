@@ -454,6 +454,11 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // 365/362/342/365; with shared change magnitude 359/360/355/359 (frame 0xac).
 // Shared normalization-product setter 37 (1519 bytes). All restored; native 0xb4 frame,
 // back-edge definition/first reloads and lower normalization publication remain.
+// Round 30: matched 0x30bf0/0x1201a0 get retail's paired j/k products from `v->i = v->i * inv;
+// v->j = inv * v->j; v->k = inv * v->k;` with a computed inv; with the asm-written inverse every
+// product order compiles the same. That order in the normalizer 34 (same code); file scale
+// helper in the normalizer 34 (same code); file scale helper for the minimum's final scale 34
+// (same code); squared-first minimum test 34 (same code); next assigned just before the loop 86.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {

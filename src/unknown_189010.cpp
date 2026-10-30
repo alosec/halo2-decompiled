@@ -590,6 +590,9 @@ long function_1891d0(long object_index, long marker_name, s_sound_label_play con
 // point plus velocity setters 75; partial point/point+direction construction with
 // velocity setter 96/90; velocity before compression 63, with both setters 75.
 // All restored; root-location registers, saves and stacked playback input remain.
+// Round 30: named result with one return 51; velocity/root/point/compression 52;
+// point/velocity/root/compression 49; compression/velocity/point/root 52;
+// point/root/velocity/compression 52. Restored; still BLOCKED-BY 0xba300's convention.
 // @retail 0x189210
 long function_189210(long object_index, long marker_name, s_sound_label_play const *play)
 {
