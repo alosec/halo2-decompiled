@@ -915,6 +915,10 @@ void function_1d1540(s_havok_component *component);
 // 81/81/81/81/81/81/81/81/88/88/88/88/27/27/27/27. Original executable source restored. All four 27
 // forms still lose matched 0x1d1b60 at 59 in the reduced image.
 // Both-inline paired form: plain 27 at 220 bytes; matched 0x1d1b60 loses 59; rejected.
+// Round 158: assigned copy + body pointer + m_fixed first 88 at 230 (retail's code; a /Gd first
+// pass loads the component once into ebx, yet it stays a stack argument); same with set() 88; flag5
+// first 27 (component edi); body fetched before the transformed block, either test order, 74 (edi).
+// The edi forms take 0x1d5120 from 77 to 15 but lose 0x1d1b60 (59) and move 0x1d0c20 to 49.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
@@ -938,17 +942,17 @@ void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_com
 	}
 }
 
-// score 38 (was 38): Frame and component-in-EBX convention still differ; zero transform/translation/both 64/61/84;
-// rotation workspace/initialized workspace/initialized transform with workspace 78/106/107;
-// position input value 77; rotation input values 143. Original body restored.
-// Earlier: frame and component register still differ; external matrix/component records 38/38;
-// complete frame set/initialization/library copy 81/71/71; translation memcpy 70;
-// aligned forward/up column values 49/49. Original body retained.
-// Earlier: only 0x1d0cf0's convention (component in ebx) is left; defined ahead of
-// 0x1d0cf0 38; 0x1d0cf0's set-copy forms 40/40/49.
-// Round 184: Native left/all/left-up/forward-left columns 48/69/58/59; SIMD
-// translation/rotation/all/left-plus-translation 38/69/69/48. Original aligned values and all
-// matrix components restored.
+// score 38 (was 38): BLOCKED-BY 0x1d0cf0: retail passes it the component in ebx (loaded here from
+// the stack after `push ebx`); ours pushes the component and index, so the frame and every store
+// offset differ. Tried here: zero transform/translation/both 64/61/84; rotation workspace/initialized
+// workspace/initialized transform with workspace 78/106/107; position input value 77; rotation input
+// values 143; external matrix/component records 38/38; complete frame set/initialization/library copy
+// 81/71/71; translation memcpy 70; aligned forward/up column values 49/49; defined ahead of 0x1d0cf0
+// 38; native left/all/left-up/forward-left columns 48/69/58/59; SIMD translation/rotation/all/
+// left-plus-translation 38/69/69/48. Through 0x1d0cf0 forms (round 158, not kept): its retail body
+// (assigned copy, body pointer, m_fixed first) 40 (component stays on the stack there); flag5 first
+// 49; body fetched first 49/49. Every form that makes the component a register argument puts it
+// in edi, not ebx, and costs matched 0x1d1b60.
 // @retail 0x1d0c20
 void havok_component_rigid_body_matrix_set(long rigid_body_index, s_havok_component *component, transform4x3f const *matrix)
 {

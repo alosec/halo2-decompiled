@@ -116,7 +116,9 @@ PRIVATE __forceinline long function_214f83(char const *arg_0, s_file_handle *arg
 // declaration order 83/42. Long ordinal 111; short endpoint equality 42. Round 74 (all 351 bytes): the
 // plain `success = handle != INVALID; if (success)` 55; success at function scope 55; `if (!success)
 // continue;` 55; long result tested through success 55; success cleared then set inside the open branch 53.
-// Only a volatile success byte (not kept) gives retail's store-and-reload.
+// Only a volatile success byte (not kept) gives retail's store-and-reload. Round 158 (all 55 at 351
+// bytes, register test): inline bool handle helper by pointer/by value; char success with a bool
+// pointer argument; long result stored with a bool cast.
 // @retail 0x214f80
 void game_state_cache_files_open(void)
 {
