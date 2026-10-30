@@ -526,6 +526,8 @@ PRIVATE __forceinline void physics_mass_copy(byte const *body, s_physics_mass_ar
 // array built by an inline constructor 4; on 2: count read before the allocator local 2, a first-entry
 // pointer for the identity 2, aggregate declared before the array 2, zero intrinsic per identity
 // store 2, identity columns set one at a time 2.
+// Round 206: shared allocator interface at first/list/both/all sites 4/4/4/4;
+// shared allocator getter at all sites 4; block allocator interface at first/list/all 4/4/4.
 // @retail 0x1d5ec0
 c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *component,
     s_physics_model_owner *owner, char const *kinds, char *output, long *output_count,
