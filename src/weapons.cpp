@@ -2858,6 +2858,8 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // Round 410: Complete callback object observations with complete dispatch, early zero-result
 // lifetime and full-width selector subsets 398/409/399/410/424/417/425/418. Original object
 // receiver, result lifetime, signed-word selector, dispatch and activity helper restored.
+// Round 429: One candidate shared by all four activity maxima, with candidate priority, scale
+// scope and independent ordinals: all eight 398. Original helper/body restored.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {
@@ -3162,6 +3164,9 @@ struct s_ammo_conversion_entry
 // Round 410: Complete destination/source/both object observations 243/228/300;
 // source tag after transfers 213, with destination/source/both observations 243/221/317;
 // complete graph with consistent type-byte reads 328. Original object/tag graph restored.
+// Round 429: Ordinal-owned first match: post-search entry 194/218, candidate entry 207/207,
+// in-search capacity 199/198, offered quantity 202/216 (once/live count). Original body
+// restored.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
