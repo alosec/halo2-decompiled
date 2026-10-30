@@ -261,6 +261,10 @@ set_all:
 // alone/volume/bin/both 83/107/106/86; both with native output-pair assignment 112. Both
 // observations recover length but shrink the frame and change cleanup to four bytes. Every body
 // and declaration restored.
+// Round 311: validated output/cache/scalar workspace subsets 1..7 83/83/83/91/75/91/75;
+// all with SDK append count 75; output/scalars with late volume 131, SDK count 75.
+// Scoped output/scalars gives 75 plain (291/281, frame 0xd8), but regresses an
+// unmatched caller by 56; original output/state lifetimes restored.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,
