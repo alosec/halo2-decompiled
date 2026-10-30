@@ -480,7 +480,7 @@ void __stdcall function_1acfd0(long actor_index, s_slot *slot)
 	}
 }
 
-// score 20 (was 24): frame 0x28 agrees; the actor-data load is not hoisted into ECX above
+// score 20 (was 20): frame 0x28 agrees; the actor-data load is not hoisted into ECX above
 // the saves (ours loads it into EBP and adds, retail uses LEA), and the mode lookup's table
 // load and registers differ (retail computes the index first, then loads the table into EAX).
 // The slot state read through the past-the-header view fixed the two post-request restores.
@@ -500,6 +500,9 @@ void __stdcall function_1acfd0(long actor_index, s_slot *slot)
 // With the view (20): state declared first 20; natural facing copy 42, unknown1c first 183,
 // per-component copy 59; constant-first alignment compare 20; unit index named at the mode
 // lookup 162 (725 bytes) or at entry 180 (726 bytes); request arms swapped 48 (before the view).
+// Round 314: Second-phase action/direction/both outputs joined in short results: 92/176/208, both at
+// entry 208; long results 90/176/208, both at entry 208. Original stores restored; actor-data and mode
+// lookup carriers remain.
 // @retail 0x1ad130
 void __stdcall function_1ad130(long actor_index, s_slot *slot)
 {
