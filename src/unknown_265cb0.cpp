@@ -1207,7 +1207,7 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 
 long function_146650(void);
 
-// score 14 (was 99): only three vector homes differ: retail stacks movement, offset, ahead,
+// score 14 (was 14): only three vector homes differ: retail stacks movement, offset, ahead,
 // target_direction, direction upward from esp+0x34; ours movement, offset, direction, ahead,
 // target_direction (12-byte slots; names and declaration places do not move them).
 // Tried, round 22 (fast, plain 14): `long ticks` with the decay after the if 99, with `real
@@ -1244,6 +1244,10 @@ long function_146650(void);
 // subsets 423/256/425/133/424/257/426; all with the rounded-count name 426. Every signed-short
 // product remains exactly representable. Original literals, count name and full body restored;
 // hoisted clock conversion, joined count copy and geometry homes remain.
+// Round 43 (per-arm decay form): target/movement/both library copies 14/14/14;
+// target/movement/both vector setters 77/186/224; library target plus movement setter 186;
+// target setter plus library movement 77. The setters disturb the scalar/geometry allocation;
+// original producers restored. The three 12-byte home rotation and query setup remain.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {
