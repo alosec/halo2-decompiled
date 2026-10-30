@@ -99,6 +99,13 @@ void __stdcall swarm_delete(long arg_0);
 // the NONE pair chained either way 92, early `return local_0` for both tests 88 (NONE is then made
 // after the first call), for each test 104; the tag pointer stays in ESI even without the NONE stores,
 // without the tag-field test or without the flag test.
+// Round 12 (lane 13): in a compile-only screen (which reproduces this head) the NONE result has
+// only its definition and the return as references (the NONE compares reuse its register after
+// allocation), so the tag pointer always takes ESI: 32 store-order/limit/nesting/tail/declaration
+// combinations and 13 diagnostics (no loop, no delete path, no stores, the allocation alone, the
+// tag read after the flag test, an index local, compare against the result, early returns) never
+// flip it. Real: the tag field read once before the tests 98 (289 bytes), with the if-form limit 93;
+// the delete path as an else 44, with the if-form limit 89; the flag test in a named bool 44.
 // @retail 0x28dab0
 long __stdcall function_28dab0(long arg_0, s_28dab2 const *arg_1)
 {

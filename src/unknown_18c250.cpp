@@ -411,7 +411,7 @@ void function_18c720(long tag_index, long object_index, long set_index, long per
 				fld local_1
 				fistp local_2
 			}
-			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, (short)local_2));
+			function_18c9b0(object_index, function_218e50(tag_index, (short)set_index, (short)permutation_index, local_2));
 			function_18ca20(object_index, tag_index, &((s_sound_globals_promotion_view *)g_51ebd4)->permutations[set->first_permutation + permutation_index], scale);
 		}
 	}

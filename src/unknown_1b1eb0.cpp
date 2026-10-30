@@ -65,6 +65,10 @@ short __stdcall function_1b1f30(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
+// Tried (lane 13 r12): splitting the view test into `if (unknown00 >= 5) { 41c = 2; 420 = 2; } else if
+// (unknown69 && unknown4c) { the same two stores }` inside `if (view)` matches byte for byte (the six stores of 2 keep
+// 2 in a register, then the two blocks merge), but both arms are the same code written twice to steer registers,
+// which is not kept even with a match.
 // score 32 (was 32): retail keeps 1 in EBX and reuses ESI, after the node-pool base, for the
 // constant 2, so the view pool's base folds into `add eax, [edx+0x44]`; ours uses EDI for both pool
 // bases and immediate 2s (four-byte extent excess, +0x29 default target). A compile-only screen with

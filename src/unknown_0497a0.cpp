@@ -719,6 +719,12 @@ void __stdcall function_43720(s_43740_input *input)
 // swaps source and definition registers and 0x42b20 stops matching).
 // Round 197 fast trials: Populated request definition readback, direct/stored source and slot x
 // definition/shader normal x retained/removed slot anchor 62, 62, 67, 67, 62, 62, 67, 67.
+// Round 12: the tag field read at each use (test, call, group lookup) 62 and with a tag local
+// inside 62 (the reads merge into one value); the normal flag read through the stored
+// input.vertices.shader 67 (213 bytes, the definition moves to the stack, 0x42b20 62); the
+// position computed before the input fill 62 (retail computes it before the pushes; ours
+// still interleaves it); a named vertex count used for the field and the call 64, with the
+// position first 64 (0x42b20 4).
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {
