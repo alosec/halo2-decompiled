@@ -385,8 +385,12 @@ struct s_surface_object_header
 };
 
 // score 8 (was 8): the record address is computed in ECX; retail computes it in EDX and reads
-// the flags from it. Tried: a byte flags local 8; a dword index 8; the object as bytes 8;
-// `case 4: case 3:` 8; the value read as one sum 8; the parameters as (key, owner) 8.
+// the flags from it (then the object in ESI, the masked index in ECX: ours object ECX, index ESI).
+// Tried: a byte flags local 8; a dword index 8; the object as bytes 8;
+// `case 4: case 3:` 8; the value read as one sum 8; the parameters as (key, owner) 8;
+// the byte read as `object[offset + (index & 31)]` 8; the masked index named first 8; no object
+// or values locals 8; the comparison reversed 9; the object read before the flags test 58.
+// The compile-only build reproduces this block and keeps it for every spelling of the case.
 /* the first argument is the caller's shape owner (or its object reference); the body
    never reads it, but every retail caller still computes it before the call */
 // @retail 0x1ef3e0
