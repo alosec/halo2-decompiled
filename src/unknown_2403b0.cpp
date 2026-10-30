@@ -107,6 +107,9 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // 186.
 // Round 289: Terminal query completion/non-special-first/blocked completion subsets; full graph with final team result arms:
 // [95, 111, 111, 131, 131, 131, 131, 130]. All executable source and temporary types restored.
+// Complete object-data, object-pointer and object-index ownership: seven subsets 95 each;
+// complete graph with native short slot 237/922. Original pool observations, identifiers
+// and pointer lifetimes restored.
 // Round 79: nested blocked assignment 93; default-true admission 128; peer receiver 95;
 // flag pointer arithmetic 95; clock-first product 95; final-team assignment 121; positive blocked
 // assignment 132; nested blocked with peer 93. Two-point gains and one-use receiver forms restored.
