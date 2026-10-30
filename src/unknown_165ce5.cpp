@@ -1522,6 +1522,9 @@ static __forceinline real function_x82e52f(dword *seed, char const *file, long l
 // Round 212: const overlay return pair with two role names 220/220; pair reservation at
 // weapon/iteration/user scope, both names, 388 each (fast control 220). Original lookup lifetime and body
 // restored; frame and look homes remain.
+// Round 426 (fast control 220): shared bool/long override with logical publications
+// 404/422; bitwise publications 422/413; those four with direct overlay-result assignment
+// 431/435/434/422. Original override branch, lookup and complete executable body restored.
 // @retail 0x166d75
 void __stdcall function_166d75(long user_index)
 {

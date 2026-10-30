@@ -453,6 +453,8 @@ void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_
 // 429/447/451/449/449/448/449; all with combined header assignment 449.
 // Original parameter producers, motion helper and complete body restored; late EBP remains.
 // Round 293: Uninitialized child-handle/record-owner/reciprocal declarations before the loop, all seven subsets, and all at function entry: 356 each. All original producer phases, signed pretest, link calls, reciprocal expressions and complete body restored.
+// Round 429: One native point for blend then probe start, with entry/consumer direction,
+// placement and sample declarations: all eight 416 (frame 0xa0). Original body restored.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)

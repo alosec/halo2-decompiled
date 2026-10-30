@@ -731,7 +731,8 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 	return effects->m_settings.level2c;
 }
 
-// score 370 (was 370): frame 0xc agrees; retail copies the input level into a dead argument slot through a
+// score 370 (was 370): Frame 0xc agrees; selected-level/right-destination homes and SSE staging remain.
+// Earlier: retail copies the input level into a dead argument slot through a
 // frame 0xc agrees; retail copies the input level into a dead argument slot through a
 // Frame 0xc agrees; selected-primary storage, destination construction and integer-bit/SSE staging differ.
 // Earlier: frame 0xc agrees; retail copies the input level into a dead argument slot through a
@@ -828,6 +829,10 @@ inline real sound_effects_send_level(c_sound_effects *effects, s_sound_send_para
 // Round 294: Entry left/right gain and send-level storage, seven nonempty subsets, all 370;
 // all with offset storage 370. All producers, helper boundaries and the complete
 // body restored; frame 0xc agrees, selected-level and integer/SSE staging remain.
+// Round 428: special selected-level names, repeated-sum name and both 370/370/370;
+// separate three actual sum results 370; early special sum storage 370; entry special scalar storage 370;
+// secondary-first acquisition on the copied-bit graph 374; one phase-disjoint sum workspace 370.
+// All original scalar producers, names, scopes and arithmetic restored.
 // @retail 0x2aefe0
 void c_sound_effects::add_effect_sends_direct(s_sound_send_parameters *parameters, bool rear, long mode, s_mixbin_settings *mixbins)
 {

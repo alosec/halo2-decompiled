@@ -633,7 +633,7 @@ public:
 static inline byte *surface_tag(long index) { return g_4e3b44[index & 0xffff].bytes; }
 static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)(base + offset); }
 
-// score 453 (was 473): frame 0x44 versus 0x2c; attribute scans and D3D call expansion differ.
+// score 453 (was 453): frame 0x44 versus 0x2c; attribute scans and D3D call expansion differ.
 // Integer orientation 529; null-first lighting 522; per-scan results 530; real type
 // cursors 574; existing format/state helpers 473 (kept, full); cursors/orientation
 // 573; helpers/orientation 471 (two-point addition dropped); all three 516.
@@ -667,6 +667,8 @@ static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)
 // 453 (kept); shared vector scales alone/with late sign 468/453; opposite winding 482, late 483,
 // scales 480, both/named cull 481/481. Late sign on the original side loop 485, integer producer 469.
 // Both orientation passes and all call argument roles are preserved; other forms restored.
+// Round 429: Positive admission/entry result declarations/lexical result homes and their four
+// combinations 453 each; all with native record/cull names 453. Original body restored.
 // @retail 0x116b00
 void __stdcall function_116b00(long tag_index, long unused, long group, long variant, long pass, long index, void *context)
 {

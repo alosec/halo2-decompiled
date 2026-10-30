@@ -123,8 +123,8 @@ struct s_free_state_23d260
 	real pitch;
 	real roll;
 };
-// score 102 (was 110): Zero/side XMM roles and speculative normalization remain; frame 0x4c agrees. Complete
-// axial/cosine-normal/affine vector contributions, masks 1/2/3/4/5/6/7, scored
+// score 102 (was 102): Zero/side XMM roles and speculative normalization remain; frame 0x4c agrees.
+// Earlier complete axial/cosine-normal/affine vector contributions, masks 1/2/3/4/5/6/7, scored
 // 281/281/335/313/314/329/332; existing add-scaled affine assembly 313. Original normalizer,
 // projection, roll rows and movement restored.
 // Earlier: the rest is register allocation in the side vector
@@ -160,6 +160,12 @@ struct s_free_state_23d260
 // Round 194: existing shared rotation/staged up cross/direct trig/both 285/221/224/220;
 // those four with alternate normalization 289/307/293/299. Staged forms recover zero
 // and first +0xa6 but regress the complete body. Original rotation, normalizer and all includes restored.
+// Round 426: one reusable rolled-row accumulator 102; plain projection traversal, alone/with
+// accumulator reuse 441/441; native cross and row traversal, without/with projection traversal
+// 446/447; direct traversed row 445; shared cross with accumulated/direct traversed rows 446/445.
+// All executable forms and the temporary include restored; zero and side normalization remain.
+// Round 429: One pitch/roll cosine workspace, with entry/producer cosine, sine and side
+// declarations: all eight 117 at 1326 bytes. Original body restored.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {

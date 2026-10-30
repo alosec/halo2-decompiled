@@ -1672,7 +1672,7 @@ real function_2683f0(long actor_index, long node_index, short type)
 	return result;
 }
 
-// score 528 (was 528): the prop walk now uses the file's prop iterator (retail's unrotated walk with
+// score 502 (was 528): frame 0x84 versus 0x80, selection/iterator and transform/scoring homes differ.
 // the prop walk now uses the file's prop iterator (retail's unrotated walk with
 // the cursor at 0x3c and the current index at 0x38) and reads the actor index from its slot; the
 // frame is 0x84 against 0x80 since the visible flag became a stack byte, and the result/level slots,
@@ -1769,6 +1769,10 @@ real function_2683f0(long actor_index, long node_index, short type)
 // Existing transform/relative/both complete setters 528/528/528; safe in-place transform
 // 705 (frame 0x74), with relative/point/both 705/712/708; native transform initializer with
 // relative and point producers 528. All vector producers restored; frame and saved homes remain.
+// Round 426: complete transform rows/scoring dots/both accumulated 529/528/529; shared
+// final positive-score producer alone/with rows/with dots/with both 502/503/502/503;
+// all with native byte positive 503. Keep only the shared positive producer, plain
+// confirmed at 502, 2856/2880 bytes; original products, grouping, iterators and calls remain.
 // @retail 0x266640
 void function_266640(long actor_index)
 {
@@ -1964,9 +1968,8 @@ void function_266640(long actor_index)
 							score += 1.0f - decrease;
 						}
 						if (approach > 0.5f) score += 1.0f;
-						positive = score > 0.0f;
 					}
-					else if (visible && !(distance > 3.5f && approach < 0.5f)) positive = score > 0.0f;
+					positive = (established || visible && !(distance > 3.5f && approach < 0.5f)) && score > 0.0f;
 				}
 				if (positive)
 				{

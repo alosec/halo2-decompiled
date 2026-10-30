@@ -267,9 +267,14 @@ bool function_26fc80(long actor_index, long object_index, real distance, void *p
     return result;
 }
 
+// score 165 (was 209): Frame and incoming actor/point homes agree; marker flags, cursor and SSE homes remain.
+// Round 428: repeated span snapshot 204; single result 189; both 185; existing point differences
+// in both geometry branches 191; with span 187; with result 167; all three 165 (656/660, kept).
+// Shared actor-position pointer with span 240. Original sum trees and call tuples preserved.
 // @retail 0x26fe90
 bool function_26fe90(long actor_index, long object_index, real distance, s_object_marker *out, point3f *point)
 {
+    bool result = false;
     s_actor_view *actor = actor_get(actor_index);
     s_transition_character *character = (s_transition_character *)function_1e4a50(actor->unknown054);
     if (character)
@@ -285,32 +290,31 @@ bool function_26fe90(long actor_index, long object_index, real distance, s_objec
                 marker->matrix.forward.k * g_4687b0->k + marker->matrix.forward.j * g_4687b0->j;
             if (alignment > 0.95f)
             {
+                real span = marker->unknown6c;
                 vector3f segment;
-                segment.i = marker->matrix.up.i * marker->unknown6c;
-                segment.j = marker->matrix.up.j * marker->unknown6c;
-                segment.k = marker->matrix.up.k * marker->unknown6c;
+                segment.i = marker->matrix.up.i * span;
+                segment.j = marker->matrix.up.j * span;
+                segment.k = marker->matrix.up.k * span;
                 real squared_length = segment.k * segment.k + segment.j * segment.j + segment.i * segment.i;
                 real squared;
                 if (squared_length > 0.0001f)
                 {
-                    real y = actor->position.y - marker->matrix.position.y;
-                    real z = actor->position.z - marker->matrix.position.z;
-                    real x = actor->position.x - marker->matrix.position.x;
-                    real t = (z * segment.k + y * segment.j + x * segment.i) / squared_length;
+                    vector3f delta;
+                    vector3d_from_points3d(&marker->matrix.position, &actor->position, &delta);
+                    real t = (delta.k * segment.k + delta.j * segment.j + delta.i * segment.i) / squared_length;
                     if (t < 0.f) t = 0.f;
                     else if (t > 1.f) t = 1.f;
                     real negative = 0.f - t;
-                    real dy = segment.j * negative + y;
-                    real dz = segment.k * negative + z;
-                    real dx = negative * segment.i + x;
+                    real dy = segment.j * negative + delta.j;
+                    real dz = segment.k * negative + delta.k;
+                    real dx = negative * segment.i + delta.i;
                     squared = dz * dz + dy * dy + dx * dx;
                 }
                 else
                 {
-                    real y = marker->matrix.position.y - actor->position.y;
-                    real x = marker->matrix.position.x - actor->position.x;
-                    real z = marker->matrix.position.z - actor->position.z;
-                    squared = z * z + y * y + x * x;
+                    vector3f delta;
+                    vector3d_from_points3d(&actor->position, &marker->matrix.position, &delta);
+                    squared = delta.k * delta.k + delta.j * delta.j + delta.i * delta.i;
                 }
                 if (best_distance > squared) { best_distance = squared; best = i; }
             }
@@ -320,10 +324,10 @@ bool function_26fe90(long actor_index, long object_index, real distance, s_objec
             *out = markers[best];
             if (point && !function_270130(out, &actor->position, distance, point))
                 *point = out->matrix.position;
-            return true;
+            result = true;
         }
     }
-    return false;
+    return result;
 }
 
 // @retail 0x26f990

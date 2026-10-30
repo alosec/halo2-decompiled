@@ -386,6 +386,9 @@ void __stdcall function_115220(long machine_index)
 // pure component lookup after selection 297; complete at-use flag observations with selection 396.
 // Actual position mask in word/dword storage 463/453, with separate minimum 462/452.
 // Original predicate, clamp, flag observations, every operand and complete body restored.
+// Round 426: shared completion exit, direct portal result, entry-first result and all
+// seven subsets 305/298/321/286/305/298/321; all with byte portal result 321.
+// Original result graph, initial clamp, two-use predicate and complete body restored.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {

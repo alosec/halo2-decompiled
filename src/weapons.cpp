@@ -2867,6 +2867,8 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // Round 300: Actual barrel maximum field reference, both callback scalar field references,
 // both, interpolation complement, barrel/complement, fields/complement, all and all with readonly
 // receivers 423/398/423/398/423/398/423/423. Original helper and body restored at 398.
+// Round 429: One candidate shared by all four activity maxima, with candidate priority, scale
+// scope and independent ordinals: all eight 398. Original helper/body restored.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {
@@ -3177,6 +3179,9 @@ struct s_ammo_conversion_entry
 // Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
 // both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
 // with conditional minimum 196, plus direct destination 205. Original body and field type restored.
+// Round 429: Ordinal-owned first match: post-search entry 194/218, candidate entry 207/207,
+// in-search capacity 199/198, offered quantity 202/216 (once/live count). Original body
+// restored.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {

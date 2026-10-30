@@ -66,6 +66,8 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // 127; early token with read size 155; loop with read size 216; role-named size 147; early token and
 // cursor 172; nested early token 128; reversed read outputs 128; early token with reversed outputs 147.
 // Original body restored.
+// Mapped cache-index search result, long/unsigned-long/word/signed-byte 133/133/140/137;
+// new-result arm first 188/188/185/188. All restored.
 // @retail 0x121fc0
 void function_121fc0(void)
 {
