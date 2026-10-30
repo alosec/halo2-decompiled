@@ -2451,6 +2451,11 @@ void function_1e9ce0(long player_index, long counter, s_statborg *statistics, lo
 // named score-to-win 44; one change local for all calls 125; early equal-score return 44;
 // short-cast delta at the 0x1e9df0 call 44; change local for that call only 44; delta + old
 // score 44; mode read before the statistics getter 85; const statistics pointer 44.
+// Round 81: the final test nested under the score test 44; old score read before the mode 44;
+// the mode read in its test (no local) 44; an options pointer local for the final test 44; the
+// score declared before the old score 44. Our build keeps the variant pointer in EBX across
+// 0x1967d0, where retail reloads it (retail's compiler treats 0x1967d0's counter store as one
+// that may reach the variant global; ours knows it only writes the counter table).
 // @retail 0x15b650
 void __stdcall function_15b650(long team, long delta)
 {
