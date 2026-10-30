@@ -95,6 +95,12 @@ extern long g_55c154;
 // Entry declarations with in-place assignments: source carrier 61; classification 61; both 61;
 // reversed pair 61; pair plus selected carrier 61; pair plus request workspace 61; pair plus
 // both buffers 61; pair with exchanged buffer declaration order 61.
+// Round 32 (lane 16): our link step inlines 0x13fac0 here because all three arguments fold (a
+// global destination, a local source, a constant count); 0x148c3e on main hits the same and reads
+// its count through a pointer. Two load arms (default first, selected first) 174/174, both with an
+// unbiased frame and the constant 1 in EBX; one load per arm into a shared result then the
+// original arms 110; 0x13fac0's terminator through a pointer to the last element 61 (callers kept,
+// copy still inlined); /arch:SSE on this file (diagnostic only) 72, still inlined.
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {

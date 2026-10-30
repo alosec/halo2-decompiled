@@ -204,6 +204,11 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // limit test 41; limit as a conditional in one expression 47; inline helper taking lo/hi and
 // returning the exponent 38; named real count and exponent 52; log types, product orders,
 // statement splits, scopes and file flags (screened) give the same lower-product-first order.
+// Round 32 (lane 16): retail's n goes into the dead hi argument slot, so hi must be loaded (its log
+// taken) before the products; our named n gets its own home first. The logs in a two-element array
+// 43 (both logs first, but neither is popped); no n local, the range expression written out 44;
+// n named before the range test 47; n declared after the logs 43; both logs in one declaration
+// with the conversions in the expression 43; a statement sum 43.
 // @retail 0x194ff0
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 {

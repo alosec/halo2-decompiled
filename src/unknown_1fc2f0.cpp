@@ -200,7 +200,7 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 }
 
 /* the tracked velocity, its change limited to half a unit per second */
-// score 43 (was 44): the limit test is written the other way round, so the comparison matches
+// score 43 (was 43): the limit test is written the other way round, so the comparison matches
 // retail's operand order and its branch, but the scheduler still computes the components in the
 // order i, j, k where retail does j, i, k, so the tick conversion takes xmm4 where retail reuses
 // xmm3, the deltas land in other registers and the limit is computed before the squared length.
@@ -230,6 +230,13 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // products go to new registers where retail scales in place 64 (369 bytes);
 // limit from the rate local 68; real ticks at the top 103; real ticks after the
 // rate 104; the same without the parameter reference 80.
+// Round 32 (lane 16): the state velocity copied as a struct 132 (also with the chains j, i, k);
+// the tick conversion declared after the three chains, or natural per-component sums followed by
+// `*= ticks` 64/64 (retail's j, i, k chain order and ticks in xmm3, but the tick products go into
+// copies of the ticks register, 369 bytes); components loaded first then one expression per
+// component times ticks, or each chain followed by its own `*= ticks`, 70/70. A compile-only screen
+// shows the coupling: a conversion after the chains gives retail's first 14 SSE ops but copies,
+// one before them scales in place but keeps i, j, k.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {

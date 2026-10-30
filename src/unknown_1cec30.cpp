@@ -281,13 +281,13 @@ long havok_entity_component_index_get(hkEntity const *entity)
 }
 
 // @retail 0x1cf2b0
-void havok_entity_component_index_set(hkEntity *entity, s_havok_property_word component_index)
+void havok_entity_component_index_set(hkEntity *entity, long component_index)
 {
 	if (havok_entity_property_exists(entity, HAVOK_PROPERTY_COMPONENT_INDEX))
 	{
 		entity->entity_property_erase(HAVOK_PROPERTY_COMPONENT_INDEX);
 	}
-	entity->entity_property_put(HAVOK_PROPERTY_COMPONENT_INDEX, component_index);
+	entity->entity_property_put(HAVOK_PROPERTY_COMPONENT_INDEX, *(s_havok_property_word const *)&component_index);
 }
 
 // @retail 0x1cf300
@@ -1347,7 +1347,7 @@ void function_1d0080(hkRigidBody *body, s_havok_component *component, byte const
 		function_2d91d0(array, sizeof(s_havok_component_rigid_body));
 	new (&array->data[array->size++]) c_component_body_state((hkEntity *)body, values, count, enabled);
 	havok_component_rigid_body_state_update(body_index, component);
-	havok_entity_component_index_set((hkEntity *)body, *(s_havok_property_word const *)&object->havok_component_index);
+	havok_entity_component_index_set((hkEntity *)body, object->havok_component_index);
 	havok_entity_property_2002_set((hkEntity *)body, *(s_havok_property_word const *)&body_index);
 	if (body->m_motion->kind_code() != 7 && body->m_motion->kind_code() != 6)
 		component->unknown04 |= 0x8000;

@@ -1176,6 +1176,11 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // Round 177: Independent matrix-axis pointer/reference boundaries, all eight forms 71;
 // shared in-place final override/support/both additions 83/88/83. Override loads recover
 // but coefficient allocation worsens; original helper, alias copy and body restored.
+// Round 32 (lane 16): override add as `dst = src + dst` 50; through typed output-struct fields, both
+// operand orders 50/50; row i written forward + left + up 50 (same code); single grouped expressions
+// per row, (j-left + k-up) + i-forward then forward + left + up, 87. Diagnostics (not kept): without
+// the 0x1f0870 call the override add and second rotation take retail's order; with the call but
+// `current` not passed, the movaps copies go; an opaque or hollowed 0x1f0870 changes neither.
 // @retail 0x1f0450
 void __stdcall function_1f0450(s_shape_state *history, byte *out, s_shape_carrier_contact const *contact)
 {
