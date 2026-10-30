@@ -3192,10 +3192,14 @@ void function_c6810(long unit_index)
 
 /* drops a weapon of the unit: from its first hand by request 9, from its
    second hand by request 0x13 (both through 0xe6900), else from its slot
-   (0xce920) */
-// score 150 (was 150): #516's body matched only with an in-body inline_depth pragma around the 0xe6900 call and
-// #515's 0xc7750 rewrite, which moves 0x1e5af0 to a register convention; without the pragma it scores 179, with
-// file-scope inline_depth 259, with a noinline 0xe6900 declaration 179, so this body stays.
+   (0xce920); retail has 0xe6900 expanded in the first branch only, so that
+   branch is written out and inline_depth(0) keeps the second a call */
+#pragma inline_depth(0)
+// score 60 (was 150): the written-out request-9 branch matches retail's bytes except where the player slot's data
+// pointer lives: retail keeps it in esi and adds the +0x28 read separately, ours uses ecx and folds it into the
+// address. Tried: both branches calling 0xe6900 179 (second also inlined); a noinline declaration of 0xe6900 150
+// (not honoured); the call sites reordered 179; a shared request local 179; the player slot as a local byte
+// pointer, a struct view or an array element 60 (same); the requester unit and its player index re-read 60.
 // @retail 0xce520
 void function_ce520(long weapon_index, long unit_index, bool flag)
 {
@@ -3217,15 +3221,18 @@ void function_ce520(long weapon_index, long unit_index, bool flag)
 		memset(&request, 0, sizeof(request));
 		request.type = 9;
 		request.type17.unknown4 = !flag;
+		s_unit_request_definition *definition = g_4677c8[9];
+
 		function_b7360(unit_index);
-		bool result = g_4677c8[9]->perform(unit_index, &request);
+		bool result = definition->perform(unit_index, &request);
 		if (unit_index != NONE)
 		{
-			long player_index = UNIT_GET(unit_index)->unknown13c;
+			s_unit *requester = UNIT_GET(unit_index);
 
-			if (player_index != NONE)
+			if (requester->unknown13c != NONE)
 			{
-				short controller = *(short *)((byte *)g_4e8c24->data + (player_index & 0xffff) * 0x21c + 0x28);
+				short controller =
+					*(short *)((byte *)g_4e8c24->data + (requester->unknown13c & 0xffff) * 0x21c + 0x28);
 
 				if (controller != NONE)
 				{
@@ -3249,6 +3256,8 @@ void function_ce520(long weapon_index, long unit_index, bool flag)
 		function_ce920(unit_index, slot, 0, flag);
 	}
 }
+
+#pragma inline_depth()
 
 /* where the unit's camera sits and its camera data: its seat's marker on
    the parent (when the parent has it), else the unit itself */
@@ -4107,7 +4116,13 @@ bool function_cb810(long unit_index, vector3f *vector)
 
 /* how the unit reacts to damage it took: sets the report's reaction
    (+0x50) from 0xc9770, after the biped's knockdown checks */
-// score 166 (was 185): its mask tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 128 (was 166): memory fields read as field bits (TEST_FIELD_BIT) give retail's load-and-shift, the locals
+// (type bits, flags) are plain mask tests, and the +0x1f0 bit is read through a fresh UNIT_DEFINITION_GET(unit) (retail
+// does after 0xe4050, which keeps unit in ebp). Still differs: retail keeps `hard` in al for the whole function
+// (reloaded after each call, its slot shared with `ignore`) and report in edx, ours spills `hard` and uses eax for
+// temporaries; and the 0xc9770 call, because that callee's source uses its 3rd flag where retail uses `held` (in its
+// result clamp `if (held && result > 1)`): with that one-word change 0xc9770 is 64 -> 58 and this function 121, 574 bytes.
+// Tried: held/force declared before the +0x50 store 128 (kept).
 // @retail 0xc9e70
 void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_damage_report const *report)
 {
@@ -4125,25 +4140,25 @@ void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_d
 	{
 		knocked_down = function_10f340(unit_index, 0x7000101, 0xd000042) && is_biped && function_e4050(unit_index);
 	}
-	if (*(short *)damage == 3 && is_biped && TEST_FIELD_BIT((*(dword *)(local_98b918_2 + 0x1f0) >> 10) & 1))
+	if (*(short *)damage == 3 && is_biped && TEST_FIELD_BIT((*(dword *)(UNIT_DEFINITION_GET(unit) + 0x1f0) >> 10) & 1))
 	{
 		function_e3f00(unit_index);
 	}
-	*(long *)(bytes + 0x50) = 0;
-	bool ignore = false;
 	bool held = false;
 	bool force = false;
+	*(long *)(bytes + 0x50) = 0;
+	bool ignore = false;
 	if ((data->flags & 0x10) || TEST_FIELD_BIT((damage[4] >> 4) & 1) || TEST_FIELD_BIT((unit->flags_134 >> 19) & 1))
 	{
 		ignore = true;
 	}
 	header = (byte *)g_4e0300->data + (unit_index & 0xffff) * 0xc;
 	dword type_bit = 1 << header[3];
-	if (((type_bit & 1) && *((byte *)((s_unit_header *)header)->unit + 0x3dc) == 2) || TEST_FIELD_BIT((type_bit >> 1) & 1))
+	if (((type_bit & 1) && *((byte *)((s_unit_header *)header)->unit + 0x3dc) == 2) || (type_bit & 2))
 	{
 		held = true;
 	}
-	else if (TEST_FIELD_BIT((flags >> 1) & 1) || TEST_FIELD_BIT((flags >> 8) & 1))
+	else if ((flags & 2) || (flags & 0x100))
 	{
 		force = true;
 	}
@@ -4179,6 +4194,12 @@ void function_c9e70(long unit_index, dword flags, s_type_1e6529 const *data, s_d
 
 /* the unit's exported function values by name (0 to 1), and whether each
    is active; two names come from its weapon (0xff5f0) */
+// score 168 (was 168): every case, constant, clamp, store and weapon call matches retail's statements; what differs is
+// layout. Retail keeps the constant 1 in bl for the whole function (saved at entry, used by the `test bl, al` bit tests
+// and returned with `mov al, bl`) and sends every case to one shared store tail; ours returns an immediate and clones
+// the store into the 0.0 case (611 bytes, retail 578). Tried: bit tests as field bits and flags_10a through its byte
+// view 173/180 (retail's shr/test forms, but larger); a function-level `found` bool set true and returned 168 (folded
+// to an immediate).
 // @retail 0xc6b90
 bool __stdcall function_c6b90(long unit_index, long name, real *value, bool *active)
 {
@@ -4458,7 +4479,15 @@ void function_c50a0(long unit_index)
    riders, in two passes (plain seats, then seat groups whose rider is in
    place), recursing into ridden units; tells 0x1bbdf0 when the driver
    changed */
-// score 188 (was 199): its flag tests read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
+// score 166 (was 188): block layout now retail's (the rider that has a seat is the fall-through side, as an
+// `if (seat_index != NONE)` with the no-seat gunner flag in its else: 179), the driver, extra gunner and
+// partner flag tests read as field bits (172, 661 bytes), and so does the grouped-seat assignment bit (166,
+// 665 bytes). What remains is register allocation: retail keeps -1/the child index in ebp, the vehicle in
+// esi and the object pool pointer in edx (reloaded after the recursive call), ours keeps the pool in esi
+// and the vehicle in ebp; bit 13 of the seat stays `test ah, 0x20` (field-bit forms of it grow the code to
+// 688-700 bytes, 196-213). Tried and dropped: a bool local for bit 13 (206); next sibling read from the
+// held child pointer (222); a `none` local (166); short pass (177); driver preset false (166); field bit
+// on the no-seat gunner flag (166).
 // @retail 0xcc810
 void __stdcall function_cc810(long vehicle_index)
 {
@@ -4487,11 +4516,7 @@ void __stdcall function_cc810(long vehicle_index)
 				continue;
 			}
 			short seat_index = child->parent_seat_index;
-			if (seat_index == NONE)
-			{
-				gunner = (*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 25) & 1;
-				goto check_gunner;
-			}
+			if (seat_index != NONE)
 			{
 				s_unit_seat_definition *seats = UNIT_SEATS(definition);
 				dword flags = *(dword *)&seats[seat_index].flags;
@@ -4504,7 +4529,7 @@ void __stdcall function_cc810(long vehicle_index)
 				}
 				driver = (flags >> 2) & 1;
 				gunner = (flags >> 3) & 1;
-				if ((flags >> 18) & 1 && child->unknown13c != NONE)
+				if (TEST_FIELD_BIT((flags >> 18) & 1) && child->unknown13c != NONE)
 				{
 					gunner = true;
 				}
@@ -4518,7 +4543,7 @@ void __stdcall function_cc810(long vehicle_index)
 				}
 				else
 				{
-					assign = grouped && (*(dword *)((byte *)child + child->unknown346 + 4) >> 31) & 1;
+					assign = grouped && TEST_FIELD_BIT((*(dword *)((byte *)child + child->unknown346 + 4) >> 31) & 1);
 				}
 				if (grouped)
 				{
@@ -4528,11 +4553,11 @@ void __stdcall function_cc810(long vehicle_index)
 					{
 						dword other_flags = *(dword *)&seats[other_seat_index].flags;
 
-						if ((other_flags >> 2) & 1)
+						if (TEST_FIELD_BIT((other_flags >> 2) & 1))
 						{
 							driver = true;
 						}
-						if ((other_flags >> 3) & 1)
+						if (TEST_FIELD_BIT((other_flags >> 3) & 1))
 						{
 							gunner = true;
 						}
@@ -4542,18 +4567,21 @@ void __stdcall function_cc810(long vehicle_index)
 				{
 					goto recurse;
 				}
-			}
-		check_driver:
-			if (driver && !((vehicle->flags_134 >> 1) & 1) && vehicle->unknown248 == NONE)
-			{
-				vehicle->unknown248 = child_index;
-				if (gunner && vehicle->unknown24c == NONE)
+			check_driver:
+				if (driver && !TEST_FIELD_BIT((vehicle->flags_134 >> 1) & 1) && vehicle->unknown248 == NONE)
 				{
-					vehicle->unknown24c = child_index;
+					vehicle->unknown248 = child_index;
+					if (gunner && vehicle->unknown24c == NONE)
+					{
+						vehicle->unknown24c = child_index;
+					}
+					goto recurse;
 				}
-				goto recurse;
 			}
-		check_gunner:
+			else
+			{
+				gunner = (*(dword *)(UNIT_DEFINITION_GET(child) + 0xbc) >> 25) & 1;
+			}
 			if (gunner && (vehicle->unknown24c == NONE || vehicle->unknown24c == vehicle->unknown248))
 			{
 				vehicle->unknown24c = child_index;
@@ -4571,13 +4599,20 @@ void __stdcall function_cc810(long vehicle_index)
 /* plans a motion over a distance from a velocity: accelerate, coast and
    decelerate (by the acceleration) without passing the speed limit when
    one is given; negative distances are planned mirrored */
+// score 167 (was 168): retail keeps no local frame (its spills go in dead argument slots, ours reserves
+// 8 bytes), computes the quadratic's discriminant b*b - a*stop_position*4 in SSE and stores only for the
+// fsqrt (ours chains it on the x87 stack through a spill), and keeps stop_time*0.5*velocity*0.5 unfolded
+// (ours folds to *0.25); ours also loads the speed limit early. Position/velocity stored before the done
+// test (retail's order) 167. No effect: stop_position written out at its three uses 167; the
+// discriminant, b*b and a*stop_position*4 in float locals or a (double) cast 167;
+// the first test's product orders (velocity first, distance first) 167. Worse: named half_time/half_velocity temps 207-212.
 // @retail 0xc7300
 void __stdcall function_c7300(real distance, real velocity, real speed_limit, real acceleration, s_unit_motion *motion)
 {
-	bool done = (real)fabs(distance) < 0.001f && (real)fabs(velocity) < 0.001f;
-
 	motion->position = distance;
 	motion->velocity = velocity;
+	bool done = (real)fabs(distance) < 0.001f && (real)fabs(velocity) < 0.001f;
+
 	motion->done = done;
 	if (done)
 	{
@@ -4772,6 +4807,12 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 /* clamps a direction to the unit's yaw and pitch limits for aiming (or,
    when asked, for looking, relative to its aim) in its own frame; whether
    it changed */
+// score 179 (was 181): the logic agrees; what differs is the frame layout and the SSE schedule. Retail
+// puts the local-frame vector over `forward` (+0x20) and yaw/pitch over `up` (+0x14); ours puts it over
+// `up` and spills yaw/pitch into the dead argument slots, so every access to them differs; the two
+// cross products load and multiply their operands in another order. Declaration order of up/forward/
+// local/yaw/pitch (moved to the top of the block too) 181; left.i with its products swapped 179; each
+// other product swapped in left or up 181/179.
 // @retail 0xcba50
 bool __stdcall function_cba50(long unit_index, vector3f *direction, bool looking)
 {
@@ -4802,7 +4843,7 @@ bool __stdcall function_cba50(long unit_index, vector3f *direction, bool looking
 			vector3f left;
 
 			forward = unit->unknown168;
-			left.i = forward.k * up.j - up.k * forward.j;
+			left.i = up.j * forward.k - forward.j * up.k;
 			left.j = up.k * forward.i - forward.k * up.i;
 			left.k = up.i * forward.j - up.j * forward.i;
 			up.i = left.k * forward.j - left.j * forward.k;
@@ -5034,6 +5075,15 @@ void function_d0080(long unit_index, vector3f *direction)
    (0xc7160) its animation graph has, ranked by 0xc92c0's priority and
    then distance (non-driver seats count half again as far once a
    driver's seat is found) */
+// score 182 (was 221): the loop bound read once into a short local and a short index (retail counts the
+// zero-extended bound down with the entry pointer; 830 bytes as retail). Still differs: frame offsets
+// (our count slot sits 4 below retail's), the entry pointer's bias (retail addresses the entry from its
+// seat_index field, ours from the definition) and retail's reading of the definition pointer once into a
+// stack slot with the seat flags re-read through it at each use. Tried and dropped: that definition
+// pointer in a local with the flags re-read (233-242, the unit moves to ebx), flags re-read through the
+// entry (241), if/else for the bit 16/17 test (242), the bit 16 test as a mask or byte (222-227), a
+// pointer-walk loop (223-227), `long` index with a bound local (223), `short` index alone (200),
+// `word` index (191), reading the definition before the seat (182).
 // @retail 0xc8bb0
 void function_c8bb0(long unit_index, long vehicle_index, long *object_index, short *seat_index, short *priority,
 	real *distance, bool *flag)
@@ -5048,7 +5098,8 @@ void function_c8bb0(long unit_index, long vehicle_index, long *object_index, sho
 	{
 		return;
 	}
-	for (long i = 0; i < count; i++)
+	short entry_count = count;
+	for (short i = 0; i < entry_count; i++)
 	{
 		s_object_seat *entry = &seats[i];
 		long candidate_index = entry->object_index;
@@ -5258,10 +5309,16 @@ void __stdcall function_ca700(long unit_index, real amount, short type, bool not
    tick and the last, in the camera's frame scaled by its data; sets flag
    25 (and, seated, flag 26) when it passes the data's limits; then eases
    the smoothed copy at +0x288 toward it */
-// score 187 (was 206): the two flag-word clears (+0x134) and the +0x10a bit
-// test differ from the first store on; the two lookups through the masked-index
-// getter 205 (the first load's operand order now matches).
-// Frame 0x6c agrees; initial flag register/byte test, vector scheduling and smoothing carriers remain. Shared cross 212; scaled differences 205; native byte/word flags 206/206; role names 206; separate thresholds 206; shared writer 188; writer wide extraction 188; initial clears only 192; weight names 188; writer scaled/cross/both 224/203/223.
+// score 165 (was 187): flag 2 of +0x10a read through the word bitfield view gives retail's load, shift
+// and test (168). Left: the vector scheduling and which values spill (retail keeps left.j in the frame,
+// ours left.k; retail loads forward.k and the three up fields into registers and reads forward.i/j from
+// memory), the order of the three velocity loads, the keep/take constants loaded in the other order and
+// the smoothing carriers. left.j before left.i 165 (other orders of the three left statements 165-168);
+// velocity before left 188; velocity/acceleration in k,j,i order 168; keep/take declared take-first 170;
+// a sweep of the smoothing sums' operand orders was cut short with no drop. Earlier: the two lookups through the masked-index
+// getter 205; frame 0x6c agrees. Shared cross 212; scaled differences 205; native byte/word flags
+// 206/206; role names 206; separate thresholds 206; shared writer 188; writer wide extraction 188;
+// initial clears only 192; weight names 188; writer scaled/cross/both 224/203/223.
 // @retail 0xce0c0
 void function_ce0c0(long unit_index)
 {
@@ -5271,7 +5328,7 @@ void function_ce0c0(long unit_index)
 
 	bit_vector_set(&unit->flags_134, 26, false);
 	bit_vector_set(&unit->flags_134, 25, false);
-	bool still = TEST_FIELD_BIT((unit->flags_10a >> 2) & 1) &&
+	bool still = TEST_FIELD_BIT(((s_unit_flags_10a_view *)&unit->flags_10a)->bit2) &&
 		(unit_at_masked_index(unit_index)->type != 0 || !function_e4050(unit_index));
 	if (function_d1080(unit_index, &matrix, &camera) && !still)
 	{
@@ -5280,8 +5337,8 @@ void function_ce0c0(long unit_index)
 		vector3f acceleration;
 		vector3f left;
 
-		left.i = matrix.forward.k * matrix.up.j - matrix.up.k * matrix.forward.j;
 		left.j = matrix.up.k * matrix.forward.i - matrix.forward.k * matrix.up.i;
+		left.i = matrix.forward.k * matrix.up.j - matrix.up.k * matrix.forward.j;
 		left.k = matrix.forward.j * matrix.up.i - matrix.up.j * matrix.forward.i;
 		velocity.i = (matrix.position.x - unit->unknown270.x) * ticks;
 		velocity.j = (matrix.position.y - unit->unknown270.y) * ticks;
@@ -5339,7 +5396,15 @@ void function_ce0c0(long unit_index)
    marker 0x500000a (type 0, when clear of the world), slightly above its
    center (type 1) or its center; then plays the impact sounds of what it
    hit */
-// score 195 (was 196): Frame 0x104 agrees; flag extraction, sentinel residency and location/owner call conventions remain. Bool flag tests 277; native collision 196; reversed cases 196; positive damage scope 196; native event byte 196; workspace names 196; native material word 196; shared flag reader 277; native seat bit 277; seat/weapon bool alone 270/275.
+// score 1 (was 195): the whole function agrees except the operand order of the first unit lookup (retail
+// [ebx+edx+8] offset first, ours [edx+ebx+8]; the second lookup is pointer first in both). Case 1 of the
+// second switch placed before case 0, whose failed-marker path falls through into default (909 bytes, as
+// retail), the seat and weapon flag tests as field bits, the material word stored before 0xd6660 (which
+// then sets its default; behaviour change) and the cone direction copied after the event byte and
+// source index (5 without that) took it from 195. Tried for the lookup: headers in a local
+// (offset first for both lookups, 1), pointer-arithmetic and address-of forms (1), slot in a local (1),
+// second lookup written as byte arithmetic (1), a discarded extra lookup (1). Case orders of the old
+// switch had no effect (195); a `none` local for the sentinel had none (195).
 // @retail 0xcf040
 void function_cf040(long unit_index, short type)
 {
@@ -5375,7 +5440,7 @@ void function_cf040(long unit_index, short type)
 			s_unit_seat_definition *seat =
 				&UNIT_SEATS(UNIT_DEFINITION_GET(UNIT_GET(unit->parent_index)))[unit->parent_seat_index];
 
-			if ((*(dword *)&seat->flags >> 11) & 1)
+			if (TEST_FIELD_BIT((*(dword *)&seat->flags >> 11) & 1))
 			{
 				damage_definition_index = *(long *)(definition + 0x170);
 			}
@@ -5388,7 +5453,7 @@ void function_cf040(long unit_index, short type)
 			{
 				byte *local_67e06b = UNIT_DEFINITION_GET(UNIT_GET(weapon_index));
 
-				if ((*(dword *)(local_67e06b + 0x12c) >> 15) & 1)
+				if (TEST_FIELD_BIT((*(dword *)(local_67e06b + 0x12c) >> 15) & 1))
 				{
 					damage_definition_index = *(long *)(local_67e06b + 0x190);
 				}
@@ -5404,6 +5469,12 @@ void function_cf040(long unit_index, short type)
 	point3f point;
 	switch (type)
 	{
+	case 1:
+		function_b9dd0(unit_index, &point);
+		point.x += g_4687b0->i * 0.1f;
+		point.y += g_4687b0->j * 0.1f;
+		point.z += g_4687b0->k * 0.1f;
+		break;
 	case 0:
 	{
 		s_object_marker marker;
@@ -5420,19 +5491,10 @@ void function_cf040(long unit_index, short type)
 			{
 				point = unit->unknown030;
 			}
+			break;
 		}
-		else
-		{
-			point = unit->unknown030;
-		}
-		break;
 	}
-	case 1:
-		function_b9dd0(unit_index, &point);
-		point.x += g_4687b0->i * 0.1f;
-		point.y += g_4687b0->j * 0.1f;
-		point.z += g_4687b0->k * 0.1f;
-		break;
+	/* fall through */
 	default:
 		point = unit->unknown030;
 		break;
@@ -5440,15 +5502,15 @@ void function_cf040(long unit_index, short type)
 	{
 		s_type_1e6529 damage;
 
-		function_d6660(&damage, damage_definition_index);
 		damage.material_index = NONE;
+		function_d6660(&damage, damage_definition_index);
 		object_get_root_location(unit_index, (s_location *)&damage.unknown1c);
 		object_get_damage_owner(unit_index, &damage.owner);
 		damage.position = point;
 		damage.origin = unit->unknown030;
-		damage.cone_direction = forward;
 		*(byte *)&damage.unknown84 = 3;
 		damage.unknown18 = unit_index;
+		damage.cone_direction = forward;
 		long hit_index = function_d6c80(&damage, unit_index);
 		if (hit_index != NONE)
 		{
