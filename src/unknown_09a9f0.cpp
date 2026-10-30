@@ -321,6 +321,10 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // object getters 77; a named flag-test bool 77; the NONE test repeated in an else-if 75; header
 // and object through the entity's stored index 77; cross-file getters, guard returns and
 // == 0 test (screened) still share the address.
+// Round 38 (lane 9), on the early bool (77, reference rebuild): the attach called with the entity's
+// stored index 82; `result = true` before the attach 72; result declared after the value 77; the
+// NONE test on the entity's field 77; `result = true` after the second call 79. EBP keeps caching
+// the last argument in each.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {

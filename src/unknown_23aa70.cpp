@@ -211,6 +211,10 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // format-4 form decides the convention (removing any other case never flips it); format 4 keeps
 // retail's EDI node and EDX source only when its node read re-derives the buffer base (the full base
 // expression at each access, or the node read through it) instead of keeping base and index live.
+// Round 38 (lane 9), format 4 indexed through a `vertices` local (175: switch temp/base in EDI, node
+// in EBX, source on the stack): the base read through `source->buffer` 97 (node back in EDI, source
+// and buffer then in EBP/ESI); a byte base pointer cast per access 175; the node read through a
+// re-derived `buffer` base 192 (636 bytes) or `source->buffer` base 175.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)

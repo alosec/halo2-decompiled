@@ -342,68 +342,13 @@ short __stdcall function_1ac3f0(long actor_index)
 	return result;
 }
 
-// score 2 (was 29): round 36 (lane 9): the scale is drawn from the random-real helper into a named
-// local and scaled as `1.0f + 2.0f * random`, as 0x1ac090 and the matched slot handlers 0x1b5c00 and
-// 0x1b6120 write their draws (coordinator, 2026-10-30: this idiom is kept; it replaces round 34's
-// byte-match-only ruling). Left: the short-delay path's 0x24/0x39 stores are swapped.
-// Round 34 review: the 4-point form below wrote slot_random_range's body out inline. Lead then: the
-// scale drawn as `1.0 + 2.0 * random` in double through the random-real helper
-// gives retail's single seed store, unfolded 1/65535 product (doubled with fadd st0,st0) and the scale
-// kept on the x87 stack to the first timer. Left: the `+ 1.0` adds a double constant one store later
-// (retail adds a float constant after the 0x25 store) and the short-delay path stores 0x39 before 0x24.
-// Round 36: the random value in a named local, `random = function_x82e52f(...)` then
-// `scale = 1.0f + 2.0f * random`, 2 (seed forwarded, unfolded product, retail's float constant; only the
-// short-delay path's 0x24/0x39 stores swapped: VC duplicates the 0x39 tail into that arm and schedules the
-// zero-register store first); kept by the coordinator. On it: a set-flag guard return 17; the arm
-// returning itself 26; `delay < g_45dbd8` 2; the else arm's false store first 4; a short-delay bool stored
-// once after the timer 22; the tail store through the slot cast 2; a result variable 2; the scale through
-// the file's random_range 74 (seed reloaded). Compile-only screens: the store in all three paths, the
-// file's timer writer for one or both timers, byte/char fields all keep the swap.
-// Round 34: scale through 0x259d0 47 (seed forwarded, unfolded, but the scale is substituted into the
-// timer: fimul); plus a compiled-out do/while after the draw/before the timer 47/47; plus a rate local in
-// the timer block/after the draws 43/37; plus an in-place converted duration 47; plus the cross-file
-// seconds-to-ticks inline 47 (29 with the old scale); delay through slot_random_range with the scale
-// through 0x259d0 80; the file's random_range for the scale 74; both through slot_random_range 35;
-// `1.0f + 2.0f * random` / `random * 2.0f + 1.0f` / `(real)(2.0f * random) + 1.0f` 51/51/53 (folded
-// 2/65535, otherwise exact); double forms `(real)(1.0f + 2.0 * r)`, `(real)(2.0 * r + 1.0f)`,
-// `1.0f + 2.0 * r`, `(real)(1.0 + r * 2.0)` 4 each; float add of a double product
-// `1.0f + (real)(2.0 * r)`, `(real)(2.0 * r) + 1.0f`, `1.0f + (real)(r * 2.0)` 9 each (float constant,
-// add scheduled after the rate load). On the kept form: branch arms swapped 23, flag field tested 49.
-// Earlier (29): both draws precede the state stores and the first timer keeps the scale on the x87
-// stack; left were the seed store between the draws, the folded 2/65535 product and the tail stores.
-// Earlier: frame four agrees; scale is popped at the first timer multiply and stores differ;
-// tried first timer shared conversion direct 114; first timer shared conversion named seconds 103;
-// second timer shared conversion 49; both timers shared conversion 121; integral tick rate 47;
-// shared timer homes at entry 49; scale first timer product 43; chained boolean resets 46;
-// existing timer writer for first timer 47; double tick rate 43. Restored.
-// first duration multiply pops scale early and reset stores cross the scale
-// addition. Duration-seconds name 43; ticks name 43; both names 43; both timer names 43; product
-// update 43; duration scope 43; entry delay 43; early rate 37/333 (one-use field copy, rejected).
-// Scale draw after resets 0d/12/10/25/3a/0c/22/3b: 37/35/36/37/37/39/39/40;
-// after 12 kept at 317 bytes; seed reload and non-popping multiply still differ.
-// Scale-first product update 47; duration-owned product 43; first output/input guard scope
-// 43/43; true-field chain 48; late completion reset 44; byte-first resets 45; update/chain 52.
-// Native character readonly/reference/value 35/35/82; double scale/delay/both 35/74/74;
-// character reference/value plus double scale 35/82. Seed reload and scale pop remain.
-// Round 128: native slot data block 35; data block with early draws 43; first/second/both timer
-// writers 70/35/70; early data receiver 46; initialized early exit 48; later initialized
-// publication 38. Seed retention and first scale pop remain.
-// Round 138: shared seed pointer/record 58/58; shared clock alone/with seed 35/46; common rate
-// alone/with seed 86/91; first conversion input and second output entry homes 35/35.
-// Intermediate seed store and early scale pop remain.
-// Round 53: adjacent draws remove the seed store but the scale multiply pops (43); scale through
-// the file's random range 38, both draws 38; seconds-to-ticks inline 47 (named rate 43); scale-first
-// product 43; direct rate 47, flat scope 47; real_to_long 114, force-inlined 47; arms swapped 44.
-// Round 155, adjacent draws: scale through slot_random_range 29 (kept, with the rate local dropped: same
-// code); both draws through it 35; with 0x259d0 for both: the file's timer writer first/both 47/47, a
-// seconds-to-ticks helper first/both 47/47 (with a (real) rate 47, rate last 47), rate local before/after
-// the draws 76/37, no rate local 47, ticks declared first 43, scale declared first 43. On the kept form:
-// tail arms swapped 46, `delay < g_45dbd8` 29.
+/* starts the slot: draws the delay and the scale, resets the state and its two timers */
 // @retail 0x1ac430
 bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 {
 	s_character_2b *character = (s_character_2b *)function_1e4d10(actor_index);
 	s_slot_2c *state = (s_slot_2c *)slot;
+	bool *flag = &state->unknown39;
 
 	if (!state->unknown0c)
 	{
@@ -448,7 +393,7 @@ bool __stdcall function_1ac430(long actor_index, s_slot *slot)
 			state->unknown24 = false;
 		}
 	}
-	state->unknown39 = false;
+	*flag = false;
 	return true;
 }
 

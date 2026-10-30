@@ -361,6 +361,9 @@ short *function_e70b0(long unit_index, short *value);
 // Round 114: final mode test as a call to the existing 0x1f86f0 138 (kept out of line); through the
 // existing actor pointer 132; nested timer test 49; nested final test 49; named action value 49;
 // a 26-try permuter run found nothing below 49.
+// Round 38 (lane 9): the final mode test as a call to the existing 0x1f86f0 with an `inline` or
+// `__forceinline` declaration here 138/138 (LTCG still keeps it out of line; its file was off limits);
+// `now` read before the node/prop lookups 97; `action` declared at the top 49; `10.0f <` elapsed test 49.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {
