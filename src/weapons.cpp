@@ -1959,6 +1959,9 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 271: consistent header-data snapshot with retained/live handle, entry/gate
 // counter and short/long reserve values: 182/221/191/217/201/234/184/211.
 // All restored; magazine/availability and receiver homes still differ.
+// Round 423: consistent first/other/both reserve-field reads 124/127/127; each with
+// a real per-slot weapon receiver 124/127/127; both fields with short slot counter 430,
+// also with the receiver 430. Reduced previews only; complete original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -2236,6 +2239,9 @@ static __forceinline long real_to_long(real value);
 // Round 271: native trigger bits with byte/char age, nested/direct equality result,
 // and long/short threshold: 89/113/125/131/87/116/125/131. The two-point
 // signed-byte form is restored; timing homes and released/age/delta registers remain.
+// J197: short/int ordinal contract 144/89; short with native bits/char clamp/both
+// 144/143/143; int with native bits/char clamp/both 89/87/87.
+// Timing homes and released/age registers remain.
 // @retail 0x1027b0
 void function_1027b0(long weapon_index, long trigger_index, bool *pressed, bool *held, bool *released)
 {
@@ -2858,6 +2864,9 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // Round 410: Complete callback object observations with complete dispatch, early zero-result
 // lifetime and full-width selector subsets 398/409/399/410/424/417/425/418. Original object
 // receiver, result lifetime, signed-word selector, dispatch and activity helper restored.
+// Round 300: Actual barrel maximum field reference, both callback scalar field references,
+// both, interpolation complement, barrel/complement, fields/complement, all and all with readonly
+// receivers 423/398/423/398/423/398/423/423. Original helper and body restored at 398.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {
@@ -3162,6 +3171,9 @@ struct s_ammo_conversion_entry
 // Round 410: Complete destination/source/both object observations 243/228/300;
 // source tag after transfers 213, with destination/source/both observations 243/221/317;
 // complete graph with consistent type-byte reads 328. Original object/tag graph restored.
+// Real notification/updater ordinary, inline and noinline declaration pairs, excluding the
+// original pair: 190 each. Both complete defining files, all declarations and the transfer body restored;
+// destination/tag/search homes remain with the correct 0x20 frame and signed notification count.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
@@ -3314,6 +3326,9 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // 652/655/570/637; the four direct-parameter forms give the same scores.
 // Barrel/holder before definition, original/direct inputs, ordinary 619/619.
 // Original holder qualification, producer order, parameter aliases and body restored.
+// Round 300: Existing point/vector marker setters, both, workspace lexical names, point/names,
+// vector/names, both/names, and complete graph with entry workspaces:
+// 660/657/674/637/660/657/674/674 (fast control 637; full 565). Original body restored.
 // @retail 0x102fb0
 void __stdcall function_102fb0(long weapon_index, short barrel_index)
 {

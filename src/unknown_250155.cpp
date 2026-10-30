@@ -1957,6 +1957,9 @@ extern dword g_54d5b8;
 // source order).
 // Round 186: dialog result at entry long/int/dword/unsigned-int, native-scope int/dword/unsigned-int
 // 36 each; full unsigned state 36. Original body restored; shared tail placement remains.
+// Round 76: case 4 outside 55; its timestamp copy 48; case 4 after the switch 57; case 4 with case 5
+// or the high cases outside 55/55; early guarded case 4 71; entry dialog with case 4 outside 55;
+// case 4 outside with its timestamp 60. Original body restored.
 // @retail 0x250804
 void c_session_lobby_screen::show_session_state()
 {
@@ -2123,6 +2126,9 @@ void function_1905bf(long controller, bool flag);
 // Parameter-2 early valid-team exit long/bool 93/106, with directional guards 99/107;
 // availability-owned callback long/bool 93/106, with directional guards 99/107. Original result
 // and callback joins restored.
+// Round 78: signed-scope done label 151; signed-scope label with separate unsigned return 137;
+// unsigned constant return 137; unsigned-to-signed done jump 106; tested base result 109;
+// unsigned own return 138; final done label 151; constant handled returns 106. Original body restored.
 // @retail 0x250b1e
 bool c_session_lobby_screen::v10(s_widget_event *event)
 {
@@ -2447,6 +2453,9 @@ static __forceinline long local_player_find(long const *local_list, long player)
 // Promoted first-loop team with numeric/reverse and absent-first/last switch cases 238 at 915 bytes
 // in all four orders; default-result initialization on each 234 at 913. Scalar homes stay
 // displaced; original short team and switch restored.
+// Round 77: second-loop element pointer 180; element pointers in both loops 180; counter before count 111;
+// counter before query 111; final receiver address reads 111; voice parameter address reads 111; player
+// pointer arithmetic 111; interleaved widget-helper parameters 111. Original body and helper restored.
 // @retail 0x25042d
 void function_25042d(c_session_lobby_screen *screen, long valid, s_session_flags_view *session, long *players, long *local_list, long count)
 {

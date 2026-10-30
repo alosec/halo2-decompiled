@@ -73,16 +73,15 @@ extern byte *g_51eca8;
 extern short g_51ecb0;
 c_2d8ab0 *g_47f044;
 
-// score 7 (was 7): four differing instructions are in the loop over the groups
-// (retail loads the seat table into ECX and the index into EDX, ours into EAX and
-// ECX) and three in the release loop (retail keeps the index in EAX, ours in EDX).
-// groups: retail loads the seat table into ECX and the index into EDX, ours
-// loads the table into EAX and the index into ECX.
+// score 7 (was 7): in the loop over the groups the entity list and the index take
+// different registers (retail ECX and EDX, ours EAX and ECX), and the release loop's
+// entry test uses EAX and ECX where ours uses EDX and EAX.
 // Shared/separate/entry control words 7/7/7; early step record 64; aggregate
 // and scoped step records 7/7; early record with shared control 64; control bit updates 7.
 // Iterator pointer 7; groups local 78; setup scope 7; iterator name 7;
 // release for 7; world declaration at entry 7; group-entry scope 7;
 // release-index pointer 10.
+// group-table ternary reversed 11; entity list local 7; index local 7; both locals 7.
 // @retail 0x1c3d30
 void function_1c3d30()
 {

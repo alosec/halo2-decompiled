@@ -1247,6 +1247,8 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 // ebx/cl; retail loads the count into ebp before the multiplier and adds 2 before the total (ours folds the load
 // into imul and uses one lea). Frame, prologue, unrolling and cursor agree (347 bytes).
 // Earlier at 225: scratch 0x10 versus retail 4; absolute-span inner traversal remained rolled, 225/347 bytes.
+// scratch 0x10 versus retail 4; absolute-span inner traversal
+// remains rolled, 225/347 bytes.
 // Earlier: sixteen-step rolled loop versus four-by-four unrolling;
 // expanded loop changes the entry convention and loses the matched caller.
 // Direct getter comparison 281; split header/payload adds 281; arithmetic width 329;
@@ -1315,6 +1317,9 @@ bool voice_channels_have_player(s_voice_channels *channels, long player)
 // total, cursor, flag 94 (kept); flag, cursor, total 93 (350 bytes); cursor, total, flag 99; flag, total, cursor
 // 111 (0x54990 lost); nested entry tests 94; a short counter 287 (rolled); flag types, entry-size locals,
 // operand orders and a by-value size helper give the same code; a 256-form search of the family 93+.
+// Round 217: forward group-end ownership, outer/inner short-long, short-short, long-long,
+// long-short with post/pre-tested inner spans 224/222, 258/237, 236/240, 260/260. Tiny gains
+// rejected; other forms lose 0x54990 or regress. Original grouped traversal restored.
 // @retail 0x56220
 long voice_channels_get_bandwidth(s_voice_channels *channels, long player)
 {
