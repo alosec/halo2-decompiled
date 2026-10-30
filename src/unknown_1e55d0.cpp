@@ -134,6 +134,9 @@ static __forceinline void capsule_update_1e55d0(c_z_shape_view *shape, byte *com
 // component-shape/flags-shape/all/output-first contracts 319/319/319/319/319/319/319/319.
 // All original contracts restored; aligned frame retained, move/input/physics
 // ownership and the velocity null test remain.
+// Round 308: Tail-handle/entry-point-workspace/native-byte-countdown subsets 325/319/325/319/325/319/325;
+// all with word countdown 325. Every form preserves four matched controls; original lifetimes and
+// carrier restored. Aligned frame agrees; pointer ownership and native velocity guard remain.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {
