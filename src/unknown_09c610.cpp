@@ -65,6 +65,18 @@ static __forceinline long function_9c912(long arg_0, long arg_1, long arg_2)
 // locals renamed 31; result declared after the object index 51; object index declared before the
 // result (defined after it) 29; the object index stored into arg_1 and passed from it (diagnostic,
 // copy-propagated away) 29.
+// Tried: clamp of a re-read mode 84 (310 bytes, retail's unthreaded clamp); a plain permutation
+// local instead of the reused parameter 110 (lane 11: 74 at 280 bytes, the object index then
+// stays in ebx as 0xdb760 takes it), with no false assignments 70; no false assignments 107
+// (result only on the stack), inner one removed 58, outer one removed 68; PIN(mode, 0, 1) 66
+// (301 bytes); the member's fields copied in the other order; event pointer declared at the top
+// 82; the clamp helper plain static/extern 57/57; a named tag table local 57; the permutation
+// re-read at each use 57; the original parameter order with the new clamp/reads 86, without false
+// assignments 84; the parameter store at the call 120, inside the range test 29, the range test
+// on the parameter 84; locals renamed 31; result declared after the object index 51 (round 80:
+// 297 bytes and a 4-byte frame, but the result byte takes the parameter home and the event
+// pointer moves to ebx). Round 80: the event parameter or the object index renamed to sort
+// before or after the other 29 each (identical code).
 // @retail 0x9c910
 bool c_damage_section_response_event_definition::v11(long arg_0, long const *arg_1, long arg_2, void const *arg_3)
 {

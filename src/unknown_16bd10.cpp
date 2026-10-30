@@ -254,6 +254,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // Round 98, on the PIN form: tick counts in an integer array 95 (292 bytes); a three-segment loop
 // (four product spellings) 88 each, VC unrolls it and factors (a * t + r) * t; const 2x3 aggregate 88;
 // const two-array aggregates 90; segment times in a float array with the written-out sum 88.
+// Round 80 (plain clamps): the zero acceleration assigned just before the sum 49; the fills in
+// retail's load order (peaks, start, deceleration, acceleration, zero) 53, with the late zero 53;
+// the sum as six += statements in retail's add order 55; the last two terms as separate += 53
+// (272 bytes).
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {
