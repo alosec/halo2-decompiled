@@ -210,7 +210,7 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
     s_path_settings const *settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
     point3f const *position, real radius, vector3f const *direction, long unit_index, long ignore_index);
 
-// score 866 (was 866): frame 0x2cb8 versus 0x2cac; actor/unit retention and priority/query/marker homes remain.
+// score 899 (was 899): frame 0x2cb8 versus 0x2cac; actor/unit retention and priority/query/marker homes remain.
 // point workspace names 866; initial actor value 869; query index value 916;
 // conditional self-unit 911; wide initial predicates 1011; native location copy 911.
 // Frame pointer 1207; size preference 1436; native object fields 866;
@@ -252,6 +252,9 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
 // location and raised point as separate locals 889; both 918; no actor volatile 959; no settings
 // volatile 931. Retail holds actor_index/unit_index/self_unit in ebx/edi/ebp (reloaded on the
 // object loop's back edge) with its zero in ebp.
+// Round 220: Paired exhaustive confidence results bool/byte/word/long 914/914/928/942f; shared real dot
+// then both tests 870/870/909/892f (unchanged reduced control 866, full 899). All regress against
+// the calibrated control; original confidence defaults, query storage, qualifiers and body restored.
 // @retail 0x2c0d60
 void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_index, byte flags,
     s_path_settings const *volatile settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,

@@ -939,6 +939,9 @@ PRIVATE __forceinline void store_shader_mask(byte *state, word packed, long inde
 // bank returns 170/170. Original complete writer and both live-bound walks restored.
 // Round 289: Actual external descriptor bitfield subsets (direct destination, mapped source slot, mapped source kind); complete native entry cursor:
 // [155, 155, 155, 155, 155, 155, 155, 155]. All executable source and temporary types restored.
+// Round 220: Whole four-byte descriptor values in direct/mapped/both paths, native or memcpy,
+// 180/191/186 each; one complete refill workspace, native/memcpy 186/186. All regress; original
+// descriptor observations, live bounds, entry steps, helper, calls and complete body restored.
 // @retail 0x17170
 void function_17170(byte *state, word const *range)
 {
