@@ -27,7 +27,7 @@ transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 void function_11bed0(s_location *location, point3f const *point);
 short __stdcall function_bb050(long mask, dword type_mask, void const *location,
     point3f const *position, real radius, long *objects, short maximum_count);
-short function_26f930(long object_index, s_object_marker *markers, short capacity, long flags);
+short function_26f930(long object_index, s_object_marker *markers, short capacity, word flags);
 short function_26fbf0(long object_index, s_object_marker *markers, short capacity, long flags);
 short function_26fe20(long object_index, s_object_marker *markers, short capacity, long flags);
 bool function_26f8f0(s_object_marker const *marker);
