@@ -16,7 +16,7 @@ real magnitude3d(vector3f const *arg_0);
 bool __stdcall function_a75d0(vector3f *arg_0, real arg_1);
 quaternionf *function_141f60(matrix3x3 const *arg_0, quaternionf *arg_1);
 matrix3x3 *function_142eb0(matrix3x3 const *right, matrix3x3 const *left, matrix3x3 *out);
-void function_11d790(quaternionf const *arg_0, vector3f *arg_1, real *arg_2);
+void function_11d790(quaternionf const *arg_0, real *arg_2, vector3f *arg_1);
 void havok_component_rigid_body_angular_velocity_get(s_havok_component *arg_1, long arg_0, vector3f *arg_2);
 void havok_component_rigid_body_linear_velocity_get(s_havok_component *arg_1, long arg_0, vector3f *arg_2);
 real havok_component_rigid_body_mass_get(long arg_0, s_havok_component *arg_1);
@@ -379,7 +379,7 @@ void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
      function_141f60(function_142eb0(&local_60.rotation, &local_24.matrix.rotation, &local_61), &local_62);
      vector3f local_63;
      real local_64;
-     function_11d790(&local_62, &local_63, &local_64);
+     function_11d790(&local_62, &local_64, &local_63);
      real local_65 = function_1d24a1(&local_63, &local_29);
      real local_67 = function_1d2280(true, local_18, havok_component_rigid_body_mass_get(local_10->field_1, local_14),
       local_64, coefficient_58 * arg_1, local_65, coefficient_5c, 0.0f,

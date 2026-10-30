@@ -799,6 +799,9 @@ __forceinline long vehicle_round(real value)
 // never give the first cross's f.i load, which moves only when the side block is removed.
 // Round 425: native rate clamp 12; strength if/else 140; writable flag bit 15; shared byte clear 12;
 // clamp/strength 140, clamp/bit 15, strength/bit and all 140. All original source restored.
+// Round 48: shared up at both crosses 141; shared forward 204; both 209; forward-default axis 169;
+// angular copy/in-place scale 266/91; full forward snapshot 226; up snapshot with rate 146;
+// branch-scoped up at the first/side cross 150/109. Original body restored.
 // @retail 0xef870
 bool function_ef870(long vehicle_index)
 {
@@ -1021,7 +1024,7 @@ struct s_type_1e6529
 bool function_f1320(long vehicle_index);
 void __stdcall function_1d24a0(s_havok_component *component, float position);
 void function_1d2460(s_havok_component *component);
-bool function_205510(void *buffer, void const *definition_physics, s_havok_component *component);
+bool function_205510(s_havok_component *component, void const *definition_physics, void *buffer);
 transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 void function_1cfb90(s_havok_component *component, transform4x3f const *matrix, void const *buffer);
 bool __stdcall function_f6670(long vehicle_index, bool update);
@@ -1105,7 +1108,7 @@ bool __stdcall function_efde0(long vehicle_index)
 					s_havok_component *component = havok_component_get(vehicle->havok_component_index);
 					byte buffer[0x28];
 
-					if (function_205510(buffer, definition + 0x2ac, component))
+					if (function_205510(component, definition + 0x2ac, buffer))
 					{
 						transform4x3f matrix;
 
@@ -2290,6 +2293,9 @@ PRIVATE inline void vehicle_contact_steer(s_vehicle_physics_state *state, s_vehi
 // Value-input spin result, value/field periods and short/byte gear 182/261/197/262;
 // separate exhaustive/default-zero results with value/field periods 189/261/208/258.
 // Seven-point value-input gain below margin; frame, torque/contact and period homes remain.
+// Round 49: torque/counter declaration swap 189; steering helper with a matrix argument 189;
+// both 189; const spin 189; late torque/late counter/both 189 each; behavioural counter name 189.
+// Original target and steering helper restored.
 // @retail 0xf1f80
 void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -2377,7 +2383,7 @@ void __stdcall function_f1f80(long vehicle_index, s_vehicle_physics_state *state
 
 void function_141590(transform4x3f const *in, transform4x3f *out);
 quaternionf *function_141f60(matrix3x3 const *matrix, quaternionf *out);
-void function_11d790(quaternionf const *q, vector3f *axis, real *angle);
+void function_11d790(quaternionf const *q, real *angle, vector3f *axis);
 
 /* a damping force against a speed, at most what stops it within a tick */
 PRIVATE __forceinline real vehicle_friction(real speed, real friction, real scale)
@@ -2598,7 +2604,7 @@ void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state
 	// Reuse the inverse transform workspace for the relative transform.
 	function_142a60(&desired, &transform, &transform);
 	function_141f60(&transform.rotation, &rotation);
-	function_11d790(&rotation, &rotation_axis, &rotation_angle);
+	function_11d790(&rotation, &rotation_angle, &rotation_axis);
 
 	real rate = PIN(rotation_angle * maximum_turn_rate * 0.95492965f, 0.0f - maximum_turn_rate, maximum_turn_rate);
 	vector3f torque;

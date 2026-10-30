@@ -176,6 +176,8 @@ void function_221490(
 // in eax. The index declared first 83; no count local 83; the entry tests combined 85; `changed`
 // initialised at its declaration 90 (retail's length, seen mask in ebp); that with the volume
 // read after the mixbin compare 135.
+// Round 439: native field/aggregate output-pair publication, each with four real cache/mask/count
+// completion orders, 95 each (286 bytes). Original complete append and input observations restored.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,
@@ -693,7 +695,11 @@ void function_220fd0(
 extern "C" void _ReadWriteBarrier(void);
 #pragma intrinsic(_ReadWriteBarrier)
 // score 21 (was 21): the truncated float is kept in ecx where retail keeps it in edx, and
-// the flag byte follows it.
+// the flag byte follows it. All four places are one scratch rotation that starts at the
+// decibels push (ours ecx, retail eax). Tried: the room clamp as if/else if 90 (it
+// branches); attenuation initialised at its declaration 21; the first barrier after the
+// three float stores 27; lDirectHF after the barrier and first zero 143; the buffer in a
+// local for both calls 42.
 // @retail 0x2211e0
 void sound_driver_voice_environment_set(
 	long voice_index,

@@ -208,6 +208,9 @@ PRIVATE __forceinline dword function_224551(s_draw_sprite_seed const *arg_0,
 // Round 431: Plain input-RGB/seed-RGB/both modulation loops with long then dword ordinals; input/seed
 // body-stepped component cursors: 388/388/385/388/388/385/391/388. Original complete tint producer,
 // clamp traversal, callback and in-place UV captures restored.
+// Round 439: separate genuine RGB evaluation result before RGBA assembly, producer/scoped
+// lifetimes and late/early assembly with scalar/native subrecord copies, 392/540/392/506 twice.
+// No frame recovery; original tint helper and all in-place UV captures restored.
 // @retail 0x224550
 void __stdcall function_224550(s_draw_sprite_seed const *seed,s_draw_value_cache *values,
 	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)
