@@ -387,7 +387,7 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 }
 #pragma function(_ReadWriteBarrier)
 
-// score 116 (was 116): count homes, signed party delta and pure-query ownership remain.
+// score 80 (was 80): count homes, signed party delta and pure-query ownership remain.
 // Earlier: count-address homes, party registers, delta and query order differ.
 // Reduced control 80 (full 116); count fields A/B/both 80/80/80; early roots 173;
 // players A/B/both 78/75/80; reverse count roots 173; B players root before A/first/
@@ -421,6 +421,9 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // team/party/both lexical priority 80/80/80; short outer/inner/both ordinals 142/142/155;
 // scope and comparison names 80/80; candidate/reference/both spread values 135/127/137; spread
 // delta 132; candidate A/B/both team roots 80/150/150; outer party cursor 91.
+// Round 295: separate noinline declarations for count/total/rank query methods,
+// all seven nonempty subsets, 80 each; rank-only inline declaration 80. Every
+// declaration and body restored; count homes, inner party and query ownership remain.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {

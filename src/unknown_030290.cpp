@@ -519,6 +519,10 @@ real function_30bf0(vector3f *v);
 // Round 181: outer input order 35 (230 bytes); output/axis/both reference inputs 42/42/42; reordered
 // references 35/35/35; outer inline 42. Seven-point order gain rejected; original binding and SSE
 // carriers retained.
+// Round 295: shared staged cross first/second/both 42/42/42; second product in
+// the normalized workspace with ordinary/staged first 68/68; direct staged output
+// with ordinary/staged first 42/42; native axis value with direct staged output 103.
+// Original distinct workspaces restored; x87 input order and SSE carriers remain.
 // @retail 0x31b40
 real function_31b40(vector3f *vector, vector3f const *axis)
 {
