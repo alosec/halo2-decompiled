@@ -3109,7 +3109,7 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 /* the orientation the vehicle's physics aims for: its facing held level,
    turned through its flip while it flips (returns whether it flips), else
    the state's own */
-// score 169 (was 204): Staged cross, native up receiver and complete products kept; projection/trig schedules remain.
+// score 169 (was 169): Staged cross, native up receiver and complete products kept; projection/trig schedules remain.
 // Shared cross 204; external cross 326; native forward/up/both 263/269/298;
 // shared cross with forward/both 263/298. Wide angle 177 rejected without exact equality;
 // coordinated external force-inline 326, with wide angle 359; all original contracts restored.
@@ -3118,6 +3118,9 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 // On native receiver, complete projection/dot/both/sine-first 171/171/169/169; staged cross, native up receiver and all symmetric products kept plain.
 // Double angle/cases/trig/both 147/147/147/147; shared dot/scale/both/trig 154/148/149/149.
 // All precision/grouping forms exact-only and restored. Projection-load order, cross operands and trig homes remain.
+// Round 431: full forward value 264; staged rotated forward/up/both rows 169/169/169;
+// forward value with rotated forward/up/both 264/264/262; complete staging with tested flipping result 262;
+// native CRT forward/up/matrix copy subsets 169 each (seven). Original graph restored; projection preloads and trig residence remain.
 // @retail 0xf44a0
 bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_physics_state *state,
 	matrix3x3 *result)
@@ -3767,6 +3770,9 @@ PRIVATE __forceinline real vehicle_larger(real a, real b)
 // lookup-time result 119; native double magnitudes and outcomes with entry result (wider frame/qword
 // spills; rejected) 101; native double magnitudes and outcomes with lookup-time result (wider
 // frame/qword spills; rejected) 101. Original body restored.
+// Round 431: parameter-owned magnitudes, conditional result with original/entry/lookup return 109/123/123;
+// conditional second output 205/117/117; unused self-address removed on complete results 123/117;
+// zero-initialized target result at entry/lookup 123/123. Original helper and returns restored.
 // @retail 0xf78e0
 real __stdcall function_f78e0(long vehicle_index, long limit)
 {
