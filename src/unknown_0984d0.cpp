@@ -350,6 +350,11 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // cursors 207; for loop over the parallel items/b arrays with the direct call 207; helper taking
 // the cursors by const reference 207; the volatile read on the data cursor only 207, on the items
 // cursor only 210; cursors grouped in a local struct (diagnostic) 210.
+// Round 19 (lane 13), all without the volatile reads: the loop written with a label and a backward
+// goto (diagnostic) 207, so the loop weighting is not syntactic; the items and data read by index in
+// a for loop 208; the cursors passed to the helper by address 207, the helper also advancing them
+// 206 (inlining promotes them back to registers); the result declared first in the function 218;
+// the cursors and counter declared at the function top 207.
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {
