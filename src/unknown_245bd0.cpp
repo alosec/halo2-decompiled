@@ -348,6 +348,10 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 // moves XMM5 into XMM1 (retail: radius, zero and a in XMM0, c in XMM1, b in XMM2; ours c XMM0,
 // radius and b XMM1, zero and a XMM2; instructions otherwise identical).
 // Existing offset/scale/plane-product force-inline declarations, all seven combinations 40;
+// native result byte 69.
+// Round 95: b accumulated in i,k,j statements 42 (retail's sum order, but the j product loads
+// direction->j first: 434 bytes); radius square subtracted inline after the sum 51; named after the
+// sum 40; `c <= 0.f` 40; a radius local squared after the sum 49. c stays in XMM0, the zero in XMM2.
 // native result byte 69. c as one expression 53; radius square in the subtraction 51;
 // length_sq3f/dot3f for c 55/57; radius square after the sum, c <= 0, length_sq3f for a, radius
 // local, named distance square, radius square first, result before *t: 40 (same code);
