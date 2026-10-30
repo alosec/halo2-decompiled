@@ -424,6 +424,14 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // complete shared affine sum 85; rotation through slot fields at each use 80; axis as a local copy
 // 120; rotation as an inline (vector, axis, sine, cosine) helper 59; axis cross before the
 // projection 66; complement first in the projection 59.
+// projection * axis + vector * cosine (vector.j loaded before the vector.i store), ours the other
+// way round. A compile-only copy reproduces ours once the random-range draws are inlined; with the
+// scale draw opaque or constant it gives retail's rows, so the order follows the draws' expression
+// trees, not the rotation's text, local names or the helper's file (a same-file copy builds alike).
+// Round 10: the rotation as a unit draw times 2pi 102, drawn after a plain cross3f 124, cosine
+// before sine 33, forward through vector3f_assign 15, cross3f for cross3f_staged 43; screened
+// (compile-only) rotation text orders, local names, NULL/0 file and line, draw and sine/cosine
+// placements and the other exported rotation helpers: none better.
 // Round 15: the existing rotate_vector_170d70 for the written-out rotation 37 (rotate_direction 59,
 // record_rotate_vector 90, biped_rotate_about 60, rotate_scalars_146320 74); the unit-length tests
 // through length_sq3f with dot `v.i * w.i + w.j * v.j` 33 (other dot/cross text orders 35-49);
@@ -432,6 +440,28 @@ void function_154d70(s_speed_request *request, s_speed_slot *slot, real scale)
 // 38, u before e 41, inline sine/cosine 30, renamed sine/cosine 24.
 // Round 17 (plain): e/u locals again 34, u only 46, e only 51; forward stored j, i, k 25,
 // j, k, i 57 (1106 bytes), k, j, i 16.
+// stored i, j, k 13 (i, k, j 45); on 13 the other helpers 40-76. Final scale through &slot->vector
+// Round 177: dot2/cross2/initial-normal/projection/rotation-cross/update products
+// 78/78/58/60/60/60; early dot+cross+normal 56; complete rotation and four early/rotation
+// combinations 60 and 56/56/56/56; normal producer orders ijk/ikj/jik/jki/kij 64/56/64/64/56;
+// shared axial/normal/tangent contribution vectors, masks 1-7, 105/97/94/63/109/72/92; complete
+// shared affine sum 85.
+// Round 114: rotation through slot fields at each use 80; axis as a local copy 120; rotation as an
+// inline (vector, axis, sine, cosine) helper 59; axis cross before the projection 66; complement
+// first in the projection 59.
+// Round 112: v declared before w 60; existing cross3f_staged for the up cross product, vector3f_scale
+// for the final scale, dot3f(u, e) / dot3f(e, u) for the projection and cross3f for the axis cross
+// 60/60/60/60/59 (all kept: they replace hand-written helper bodies); the final scale through
+// &slot->vector 61.
+// Earlier: norm scalar 67; nested norm tests 64; early 2D cross 207; direction copy loop 271;
+// rotation/scale/both component loops 166/166/166; const bounds input 64; shared scale 64;
+// previous-priority snapshot 280; requested-duration snapshot 271; external bounds reference 67;
+// forward x/y observations 165/163; normalized x observation 81; cosine-complement scalar 64;
+// timer rereads and long update 64; validity result and angle-phase scope 85; forward snapshot 126;
+// normal snapshot 119; entry sine/cosine 64; both draws after normalizing the cross vector 174.
+// Every operand and term order of the 2D dot/cross and of the rotation's dot compiles alike; of the
+// rotation's statement orders (axis components, projection, sine and cosine) the written one is
+// best, j/i/k 63; cosine first worse.
 // @retail 0x154df0
 void function_154df0(long index, s_speed_bounds *bounds, s_speed_slot *slot, vector3f *direction, real priority)
 {

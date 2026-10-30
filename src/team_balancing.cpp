@@ -410,6 +410,35 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // count-after-swap totals, a named party delta subtracted from both, `- 2 * delta` 78/78/78;
 // `+ (b-a) * 2` 78; `b - a + (a-b) * 2` 78 (A/B count-address homes then agree; the reassociation
 // stays); an inline absolute-difference helper for both differences 78.
+// frame 0x2694 and entry agree; from +0x3e the A/B count-address homes are
+// swapped, the inner party pointer takes EAX (retail ECX) so the count delta is built as 2*(b-a),
+// and the two count_spread queries run reference first (retail candidate first). The full and the
+// reduced build now agree at 80 (earlier rounds saw 116 in the full build).
+// Tried: count fields A/B/both 80/80/80; early roots 173; players A/B/both 78/75/80; reverse
+// count roots 173; B players root before A/first/between views 82/88/82; immutable B root 75
+// (B players plain 115, an ineligible one-count gain); team/party/both lexical priority 80/80/80;
+// short outer/inner/both ordinals 142/142/155; scope and comparison names 80/80;
+// candidate/reference/both spread values 135/127/137; spread delta 132; candidate A/B/both team
+// roots 80/150/150; outer party cursor 91; first/equal/both spread orders 80/80/80; cost order 78;
+// first/equal spread with cost order 78/78; query orders 78; inner party cursor 132;
+// cursor/spread orders 132; reused signed team delta 161; reused party delta 80; reused team and
+// party deltas 161; A/B/both count references 80/80/80; early count references 173; inline count
+// spread 225; inline total spread 80; inline spread queries 225.
+// Full-build forms (when it scored 116): first party pointer in the outer loop, nested ifs
+// instead of continues, comparison operands swapped (the call order follows the operands, not
+// their position), explicit outer party pointer stepping 116 each; teams read in full at each use
+// 146 (loses 0x91dd0). No-link screens: every delta spelling (named, doubled, parenthesised,
+// count-after-swap, abs forms) folds to the same 2*(b-a) sequence; reference/local/method forms
+// keep reference first.
+// Round 9: party elements at each use, no party pointers 140; cost test written candidate first
+// 78 (the cost order form again); delta grouped a - b - 2 * (pa - pb) 80; named a_count/b_count
+// pointers 80 (the count references again); b declared before a 87; both absolute values as
+// ternaries 80; the reference picked by `= &current; if (improved) = &best;` 80. Compile-only
+// screen: the spread queries' order ignores the operands' order.
+// Round 11: outer party pointer declared in the outer loop 80; the new team counts as two named
+// locals 80; nested tests instead of the continues 80; candidate declared at function scope 184
+// (558 bytes); the candidate's spread named before the comparison 80 (the reference's query still
+// runs first: LTCG treats count_spread as pure and reorders the calls); permuter 58 tries, best 80.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
@@ -613,6 +642,18 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // spellings. Round 82: total as `extra_count` then `+= player_count` 34; next party declared first
 // 34; fill counted down from the top 72 (193 bytes); maximum as a ternary
 // (`next > p + 1 ? next : p + 1`) 34, with the operands reversed 35.
+// declaration 34; with the caller updated, parameter orders (extra, parties, player) 35, (player,
+// extra, parties) 34, (parties, player, extra) 34, (parties, extra, player) 35, (extra, player,
+// parties) 35; extra-first sum 35. Round 94: copy then max from the copy 75; fill counted by extra
+// count 62 (moves extra count to the stack); clamp as `excess > 0 ? excess : 0` 43; open slots from
+// the sum written out 71; `party >= next_party` 81; copy before the maximum update 82; parties read
+// back for the maximum 75; fill as `while (i < total) parties[i++] = next;` 34; clamp as
+// `excess >= 0 ? excess : 0` 34; array and index declared first 34. Screened without a role change:
+// all 60 declaration orders, local and parameter names, another caller, inline fill/copy helpers,
+// clamp spellings.
+// Round 9: early `return false` when the balance fails 63; `return result && clamp <= maximum` 63;
+// fill bound written `player_count + extra_count` 34; open slots computed at the clamp 87; the copy
+// as a `while` loop 34 (the listed copy-before-maximum form reran at 82).
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

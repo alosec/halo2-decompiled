@@ -148,6 +148,12 @@ bool __stdcall function_71d70(c_session_state_matchmaking *arg_0)
 // (session arms as retail, the 71e00 arm last); a plain inline search helper at both sites 20
 // (second site a call); one search copy behind `!state || timeout` 55; a search flag from `!state`
 // set by the timeout test 40.
+// Round 10: the timeout arm a goto into the first search block 37 (block laid out after the timeout
+// test); retail's arm order (state, match, timeout) 37; with a named state bool 55 (session arms
+// exactly retail's, 71e00 arm last); with the 71e00 arm first under a named bool or `!=` chain 37/37;
+// the state test inverted inside the session arm 37; the result set before the timeout or first
+// copy's calls 95/115; an early return for type != 9 72; a new inline search helper at the timeout
+// site only, the first site only or both 20/37/20 (inlined copies merge before layout).
 // @retail 0x712d0
 bool function_712d0(c_session_state_matchmaking *arg_0)
 {

@@ -158,6 +158,10 @@ PRIVATE __forceinline long function_214f83(char const *arg_0, s_file_handle *arg
 // Only a volatile success byte (not kept) gives retail's store-and-reload. Round 158 (all 55 at 351
 // bytes, register test): inline bool handle helper by pointer/by value; char success with a bool
 // pointer argument; long result stored with a bool cast.
+// Round 158 (all 55 at 351 bytes): char success with a bool pointer argument; long result stored
+// with a bool cast. Round 10: success from the array element with the element passed by value
+// 55, through an element pointer 55; success stored before the handle copy 55, the long result
+// stored before it 42; success from a `? true : false` 55.
 // @retail 0x214f80
 void game_state_cache_files_open(void)
 {

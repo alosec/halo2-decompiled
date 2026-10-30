@@ -615,6 +615,12 @@ s_projectile_material_response g_547660;
 // over a short index, with the index read through the parameter's address or not, loads a dword;
 // the read through the address gives the word load only when the value is not loop-carried
 // (0x1ed70). A scan of the matched functions finds no word-loaded parameter that a loop reassigns.
+// 64, walk local read through the reference 34.
+// Round 10: retail's entry jmp over the loop pad follows from its 5-byte word load. A walk local
+// initialised from the parameter 34 (copies coalesce), with the counted response loop 55, either
+// without the reference 51/65 (the index then arrives in EDX); a pointer to the index walked from
+// the parameter to each parent field 49 (word loads, but at the loop head), with the counted loop
+// 47; the existing global_material_get (inline in damage.cpp) for the lookup 34 (same code).
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)

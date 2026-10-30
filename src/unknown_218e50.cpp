@@ -21,6 +21,13 @@ static inline s_sound_permutation_set *sound_permutation_set_get(s_sound_promoti
 // clamp's arms swapped 62; valid index declared after the globals pointer, the ternary reversed, the
 // equality reversed 40 each.
 // Earlier: the argument is read into BP where retail reads it into EBP, so the values are
+// the argument is read into BP where retail reads it into EBP, so the values are
+// kept in the 16 bit registers instead of the 32 bit ones. Retail also keeps the permutation index in
+// si, the set in edx and the clamped index in edi (ours di, esi, edx).
+// Tried: sample_index as long (cast to short at its uses, caller passing the long) 37 at retail
+// length, without the casts 61; on top of that: the globals first 57 (caller 0x18c720 lost), the
+// set from the globals local 47 (caller lost), an else-if clamp 51, the last index in the result
+// first 56, a short clamped index 70 (caller lost).
 // kept in the 16 bit registers instead of the 32 bit ones.
 // Direct signed-count validation with early or positive ownership scored
 // 95/90 (164/169 bytes); short/long sample results and global reads varied.

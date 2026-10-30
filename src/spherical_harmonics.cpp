@@ -185,6 +185,10 @@
 // roots: linear only 56; quadratic only 57; linear and quadratic, or every rounded root 54 (gives retail's two early schedules; not kept, a gain of 5); a
 // double sqrt(2) 156 (639 bytes); double sqrt(2) and sqrt(105) 78; coefficient 15 right after
 // band3_35 146; coefficient 15 as the first cubic output 145; band3_21 before band3_35 128.
+// 15 at each position in the order, root types and local names (screened) no better.
+// Round 10 (statement orders, real builds): natural 9-15 69; 15 first 147; 15 right after band3_21
+// 149; 9 first 67; 10 and 14 before 9 81. All three roots double rebuilt: 77 (sqrt(2) kept on the
+// x87 stack like retail, but the 0.5/0.25 factors of the sqrt(105)/sqrt(7) products turn double).
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {
