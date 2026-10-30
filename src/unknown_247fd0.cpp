@@ -72,97 +72,63 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 }
 
 // score 70 (was 70): frame 0x10 and length agree. Retail stores field_10 before the field_38
-// sample; written in that order (133) everything through the 0x249aa0 call matches except that
-// the cached-record compare loads field_50 into EAX where retail folds `cmp ebp, [ebx+0x50]`,
-// and the child loop's scratch registers rotate. Compile-only: after an x87 fmul + fstp the
-// default (P6) scheduling always splits that load (no other retail site folds there; /G7 folds
-// it but changes much else retail does not show); a plain fild store or an SSE product folds.
-// With field_10 last (kept) the compare folds but the 0x173ba0/0x249aa0 argument registers and
-// the loop rotate. Retail also loads the parent twice for the 0x175070 list addresses where
-// ours reuses one register.
-// Forms tried: in-loop lookup through the inline particle_object_for_tag with the child getter
-// nested in 0x173fd0's call 133 kept (nested getter alone 160; inline/forceinline
-// redeclarations of 0x137bd0 142); record-first reset without the split temporary 133 kept;
-// field_38 sample before the field_10 store 70 kept; sample through the existing helper 70;
-// the 0x173c10 method called 70; sample into the shared local before field_10 146; sample
-// local declared first 70; DATUM child 70; size optimization 525; inline depth one/two 142/142;
-// global optimization off 433; frame pointer 314; current-record update argument 142;
-// frame 0x10 and length agree. Left: field_10 is stored after the field_38
-// sample (retail stores it first) and the register rotation from the 0x173ba0 arguments on.
-// With field_10 first (retail's order) every register from the 0x173ba0 arguments to the end
-// matches, but the cached-record compare splits into `mov eax,[ebx+0x50]; cmp ebp,eax` after the
-// sample's x87 store (+2 bytes, adds the child-loop pad): 133. The split follows the x87 store in
-// every source shape tried; /G7, /Os or /arch:SSE2 fold it (compile-only), the file's flags don't.
-// Round 57: field_10 first 133; with a compiled-out statement before the compare 133; with the
-// cache-update stores swapped 129; with the sample through the existing reference helper into
-// field_38 or into local_9 133/133. Compile-only, all split: compare in an inline/forceinline
-// helper or bool local, reversed or == compare, typed/int compare, cache pointer copy or member,
-// loop/switch/goto wrappers, sample through an inline initialiser, a named-global or divided
-// scale, helper or direct word samples, field_08/local_3/link/flag statement orders.
-// Earlier: field_38 sample before the field_10 store 70 kept; in-loop lookup through the inline
-// particle_object_for_tag with the child getter nested in 0x173fd0's call 133 kept (nested getter
-// alone 160; inline/forceinline redeclarations of 0x137bd0 142); record-first reset without the
-// split temporary 133 kept; sample through the existing helper 70; the 0x173c10 method called 70;
-// sample into the shared local before field_10 146; sample local declared first 70; DATUM child
-// 70; function_137bd0_inline at the loop re-fetch 134, with the child-settings query in the call's
-// argument list 133 (a copy of 0x137bd0's body); comparison operands swapped 133; child/record
-// datum through DATUM 133; 0x175610's cache-update body 133; complete reconciliation before final
+// sample; written in that order (133) everything from the 0x173ba0 arguments to the end matches,
+// but the cached-record compare splits into `mov eax,[ebx+0x50]; cmp ebp,eax` after the sample's
+// x87 store (+2 bytes, adds the child-loop pad) where retail folds `cmp ebp, [ebx+0x50]`. With
+// field_10 last (kept) the compare folds but the 0x173ba0/0x249aa0 argument registers and the
+// child loop rotate. Retail also loads the parent twice for the 0x175070 list addresses where ours
+// reuses one register. This compiler never folds a load into an ALU operand right after an x87
+// fstp (no such site in the linked image; 0x39a80's equivalent site splits too); /G7, /Os or
+// /arch:SSE2 fold it compile-only, the file's flags don't; a plain fild store or an SSE product folds.
+// Kept: in-loop lookup through the inline particle_object_for_tag with the child getter nested in
+// 0x173fd0's call 133; record-first reset without the split temporary 133; field_38 sample before
+// the field_10 store 70.
+// Tried: nested getter alone 160; inline/forceinline redeclarations of 0x137bd0 142; sample through
+// the existing helper 70; the 0x173c10 method called 70; sample into the shared local before
+// field_10 146; sample local declared first 70; DATUM child 70; size optimization 525; inline depth
+// one/two 142/142; global optimization off 433; frame pointer 314; current-record update argument
+// 142; field_10 first 133, with a compiled-out statement before the compare 133, with the
+// cache-update stores swapped 129, with the sample through the existing reference helper into
+// field_38 or into local_9 133/133; compile-only, all split: compare in an inline/forceinline helper
+// or bool local, reversed or == compare, typed/int compare, cache pointer copy or member,
+// loop/switch/goto wrappers, sample through an inline initialiser, a named-global or divided scale,
+// helper or direct word samples, field_08/local_3/link/flag statement orders, record-typed cache
+// field, 0x175610's cache store order, an inline cache-update helper, the scale through the shared
+// word wrapper or a named temporary; inline type lookup at the loop re-fetch 134, with the
+// child-settings query in its argument list 133; comparison operands swapped 133; child/record
+// datum through DATUM 133/133; 0x175610's cache-update body 133; complete reconciliation before final
 // draw 133; final sample store after reconciliation 140, with early predicate/flags/both
-// 138/149/160; early cache predicate/masked flags/both across final draw 157/153/177; sample
-// output 142; age/time after sample 239/153; sample late age/time 239/153; late age time 236;
-// sample late age time 236; sample value 142; size optimization 525; inline depth one/two
-// 142/142; global optimization off 433; frame pointer 314; current-record update argument 142;
-// child-input scope 142; metadata read order 142; direct child getter 160; early result
-// declaration 142; word flag update 244; reciprocal default first 142; cache slot/early
-// flags/both/cache reference 142; reciprocal input 143; read-only settings view 142; spawn type
-// at use 254; shared parent/child/both datum accessors 246/146/298; native child ordinal 142;
-// immutable creation inputs 142; reciprocal before child link 143; native cache pointer 142;
-// changed-record predicate 142; actual head field 142; unsigned child handle 142; shared
-// bounded selector 142; word flags 142, with bounded selector 142; child zero-age before enable
-// 142; cache mask field/compare 142/142; existing cache evaluator/native receiver 142/142;
-// refreshed interface lifetime 142; child-result declaration home 142; live lifetime field 142;
-// mask/lifetime fields 142; common pointer/flags/both stores 159/140/158; conditional mask 282;
-// immutable allocated handle/settings 142; common current-record stores and combined immutable
-// bindings 158; common flags with current receiver 158; external parent/allocated record/
-// settings/child references, singly and in pairs, 142 each; parent/settings/both metadata
-// fields, first/last/both list fields, metadata with list fields, metadata with cache slot
-// 161/160/167/142/142/142/167/167; declared sample array/loop 142/435; immutable
-// record/spawn/both 142; child identity order 142; earlier enable 142; earlier age 143; child
-// effect/tag/settings home names and allocation/spawn names 142 each; early cache
-// predicate/masked flags/both across final draw 157/153/177; final sample store after
-// reconciliation 140, with early predicate/flags/both 138/149/160; complete reconciliation
-// before final draw 133; sample output 142; age/time after sample 239/153; sample late
-// age/time/both 239/153/236; sample value 142; inline type lookup at the loop re-fetch 134;
-// child call taking the child-settings query in its argument list 133 (a copy of 0x137bd0's
-// body); comparison operands swapped 133; child/record datum through DATUM 133/133; 0x175610's
-// cache-update body 133. Round 137: inline link-child helper (parent pointer argument), with
-// the parent store inside 70/70; cache-update inline helper with early return in retail store
-// order 133; sample through the existing helper in retail store order 133; child result /
-// loop index declared before the loop 70/70. Round 139: this compiler never folds a load into
-// an ALU operand right after an x87 fstp (no such site in the whole linked image, and 0x39a80's
-// equivalent site splits too), while retail folds at both of its two sites, so the retail store
-// order cannot reach `cmp ebp, [ebx+0x50]` from source. Tag index local 245; child definition
-// local 76; first lookup through the inline particle_object_for_tag 69; list-address pointer
-// locals 70; retail order through the shared sample local 133.
-// loop index declared before the loop 70/70.
-// changed-record predicate 142; actual head field 142; unsigned child handle 142; shared bounded
-// selector 142; word flags 142, with bounded selector 142; child zero-age before enable 142;
-// cache mask field/compare 142/142; existing cache evaluator/native receiver 142/142; refreshed
-// interface lifetime 142; child-result declaration home 142; live lifetime field 142;
-// bindings 158; common flags with current receiver 158; external parent/allocated
-// record/settings/child references and their pairs 142; parent/settings/both metadata fields,
-// first/last/both list fields, metadata with list fields, metadata with cache slot
-// effect/tag/settings home names, pairs, all three, allocation/spawn names 142 each.
-// Compile-only earlier: record-typed cache field, 0x175610's cache store order, an inline
-// cache-update helper, the scale through the shared word wrapper or a named temporary: no fold.
-// Round 402 on the expanded-lookup graph: declared cache-record type, direct four
-// random returns, both, combined initial flags, flags/type and flags/direct draws
-// 70 each; declared type with retail timestamp order 133, with all three forms 133.
-// All restored; timestamp/sample order and later scratch registers remain.
-// Round 113: named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; field_10
-// first alone 133 (aligned 19 against 39: only the split compare and the child-loop registers differ);
-// field_10 first with the compare as a bool local 133 (still split); compare operands swapped 71;
-// count increment before the timestamp store 71. All restored.
+// 138/149/160; early cache predicate/masked flags/both across final draw 157/153/177; sample output
+// 142; age/time after sample 239/153; sample late age/time/both 239/153/236; sample value 142;
+// child-input scope 142; metadata read order 142; direct child getter 160; early result declaration
+// 142; word flag update 244; reciprocal default first 142; cache slot/early flags/both/cache
+// reference 142; reciprocal input 143; read-only settings view 142; spawn type at use 254; shared
+// parent/child/both datum accessors 246/146/298; native child ordinal 142; immutable creation inputs
+// 142; reciprocal before child link 143; native cache pointer 142; changed-record predicate 142;
+// actual head field 142; unsigned child handle 142; shared bounded selector 142; word flags 142,
+// with bounded selector 142; child zero-age before enable 142; cache mask field/compare 142/142;
+// existing cache evaluator/native receiver 142/142; refreshed interface lifetime 142; child-result
+// declaration home 142; live lifetime field 142; mask/lifetime fields 142; common pointer/flags/both
+// stores 159/140/158; conditional mask 282; immutable allocated handle/settings 142; common
+// current-record stores and combined immutable bindings 158; common flags with current receiver 158;
+// external parent/allocated record/settings/child references, singly and in pairs, 142 each;
+// parent/settings/both metadata fields, first/last/both list fields, metadata with list fields,
+// metadata with cache slot 161/160/167/142/142/142/167/167; declared sample array/loop 142/435;
+// immutable record/spawn/both 142; child identity order 142; earlier enable 142; earlier age 143;
+// child effect/tag/settings home names, pairs, all three, allocation/spawn names 142 each; inline
+// link-child helper (parent pointer argument), with the parent store inside 70/70; cache-update
+// inline helper with early return in retail store order 133; sample through the existing helper in
+// retail store order 133; child result / loop index declared before the loop 70/70; tag index local
+// 245; child definition local 76; first lookup through the inline particle_object_for_tag 69;
+// list-address pointer locals 70; retail order through the shared sample local 133; declared
+// cache-record type, direct four random returns, both, combined initial flags, flags/type and
+// flags/direct draws 70 each; declared type with retail timestamp order 133, with all three forms
+// 133; named seed pointer for the five draws 88 (863 bytes), with field_10 first 166; field_10 first
+// with the compare as a bool local 133; compare operands swapped 71; count increment before the
+// timestamp store 71; field_10 after the field_14/16/18 sample 184/168/152; field_50 read into a
+// named pointer for the compare 70; retail order with the compare operands swapped 133; field_10
+// stored right after the record link/record pointer/field_08/flag bits/seed-type bitfield
+// 227/178/200/217/204.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)

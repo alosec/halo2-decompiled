@@ -227,42 +227,28 @@ void c_turret_entity_definition::v21(s_entity *entity)
 	}
 }
 
-// score 49 (was 49): false BL lifetime, temporary EBP save and independent header/object lookups remain.
-// retail holds a bool result in BL from before the creation call, saves
-// retail holds a bool result in BL from before the creation call, saves
-// EBP only around the header test and loads the header and the object separately; ours keeps
-// a long result in EBP and shares one header address.
-// EBP only around the header test and loads the header and the object separately; ours
-// keeps a long result in EBP and shares one header address. Incoming output flags 87; later
-// result 80; both 89; invalid header first 75; shared header 77; incoming flags and header
-// 87; guard exits 77; result from validity 69; byte/native/short result 76/49/52; published
-// index 70; full acceptance 73; incoming flags with byte/native result 64/69; early
-// long/byte/short/signed-byte success result 67/70/65/70; byte after notification 70; native
-// header acceptance 65; native rejection first 52; combined native acceptance 67; early bool
-// result set after the attach 77 (160 bytes: BL right, but EBP then caches the last
-// argument across both virtual calls and the header address is still shared), with the
-// header or the object read through the entity's stored index 77/77, with the result
-// declared after the in/out value 77; native result with the header read through the
-// entity's index 49.
-// Zero frame agrees; early false BL, EBP lifetime and separate header lookup remain.
-// Earlier: result from validity improves the score; frame 4 versus retail 0, early EBP
-// save and cached header lookup remain. Incoming output flags 87; later result 80; both 89;
-// invalid header first 75; shared header 77; incoming flags and header 87; guard exits 77; result
-// from validity 69.
-// Earlier: native validity result removes the frame gap at retail length;
-// EBP result, early false lifetime and shared header lookup still differ. Incoming flags 72;
-// byte/native/short result 76/49/52; published index 70; full acceptance 73;
-// incoming flags with byte/native result 64/69.
-// Earlier: frame agrees; false-result BL, saved EBP and shared header lookup differ.
-// Early long/byte/short/signed-byte success result 67/70/65/70; byte after notification 70;
-// native header acceptance 65; native rejection first 52; combined native acceptance 67.
-// Signed-byte/unsigned-word/unsigned-native validity 76/52/49; shared success exit bool/long/byte
-// 75/67/70; shared validity exit native/word 52/55.
-// EBP result, early false lifetime and shared header lookup remain.
-// Result declaration first, output role name, both, native-result header record 49 each;
-// shared header/object/both getters 49/49/49; both getters with early Boolean success 77.
-// Success-default bool/native/byte at entry 72/49/72; after creation 70/52/70;
-// created-index validity return 70; actual attached-index result 72.
+// score 49 (was 49): retail holds a bool result in BL from before the creation call, saves EBP
+// only around the header test, and reloads the table data and recomputes the index for the
+// object read (only the global load is shared); ours keeps a long result in EBP and shares one
+// header address. Tried: incoming output flags 87; later result 80; both 89; invalid header
+// first 75; shared header 77; incoming flags and header 87; guard exits 77; result from validity
+// 69; byte/native/short result 76/49/52; published index 70; full acceptance 73; incoming flags
+// with byte/native result 64/69; early long/byte/short/signed-byte success result 67/70/65/70;
+// byte after notification 70; native header acceptance 65; native rejection first 52; combined
+// native acceptance 67; signed-byte/unsigned-word/unsigned-native validity 76/52/49; shared
+// success exit bool/long/byte 75/67/70; shared validity exit native/word 52/55; result
+// declaration first, output role name, both, native-result header record 49 each; shared
+// header/object/both getters 49/49/49, both getters with early bool success 77; success-default
+// bool/native/byte at entry 72/49/72, after creation 70/52/70; created-index validity return 70;
+// attached-index result 72; early bool result set after the attach 77 (BL right, but EBP caches
+// the last argument and the header address stays shared), with the header or the object read
+// through the entity's index 77/77, result declared after the in/out value 77; native result
+// with the header read through the entity's index 49. A store between the test and the object
+// read (or a join holding one) gives retail's reload: deleted index set to NONE, published and
+// retested 38 (join left unthreaded); ternary field store + field retest 43; flagged-arm store +
+// field retest 55. Compiler barrier after the test (with the early bool) 42: then only the index
+// arithmetic is still shared; plus a (word) index at the object read 39; barrier after a join
+// on the local 38; flag value tested twice 66; index re-read from the entity after the clear 67.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {
