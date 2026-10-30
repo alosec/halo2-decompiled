@@ -280,6 +280,9 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // 43 (both logs first, but neither is popped); no n local, the range expression written out 44;
 // n named before the range test 47; n declared after the logs 43; both logs in one declaration
 // with the conversions in the expression 43; a statement sum 43.
+// Round 433: Both weighted bounds in place, lower/upper first, with expression/real sum/double
+// sum/direct return; fast 46/46/46/50/51/51/51/36.
+// Original body and existing helper restored.
 // @retail 0x194ff0
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 {
