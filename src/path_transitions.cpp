@@ -464,7 +464,8 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
     return result;
 }
 
-// score 278 (was 278): Frame 0x40 agrees; early root EBX retention and float/vector scheduling remain.
+// score 278 (was 278): frame 0x40 and length agree; early root EBX retention, actor ownership and paired-edge float/vector scheduling remain.
+// Earlier: Frame 0x40 agrees; early root EBX retention and float/vector scheduling remain.
 // Earlier 278 (was 278): frame 0x40 agrees; early pathfinding EBX ownership and float scheduling differ.
 // entry root retention and floating-point scheduling differ;
 // result first 299; surface first 299; vector names 299; vector helper 299;
@@ -487,6 +488,10 @@ bool function_270400(long actor_index, long mode, long set, point3f const *posit
 // DH round 218: paired-edge vector aggregates/native surface reference/both 278/278/278;
 // ordinary result on these three graphs 340/340/340; all endpoint role names with aggregates,
 // with/without surface reference 278/278. Original body and qualifier restored.
+// Round 187: complete parallel dot-prefix parts/two-use upper fraction/both 278/278/278;
+// each and both with existing vector differences 297/297/297; complete incremental rows with
+// differences 296; complete shared dot/difference producers 351 (sum order differs, match-only).
+// All endpoints, qualifier, original rows and body restored.
 // @retail 0x26f3f0
 bool function_26f3f0(s_pathfinding_data *pathfinding, long surface_index,
     s_type_c3b527 const *entry, long actor_index, s_type_f17a25 *state,

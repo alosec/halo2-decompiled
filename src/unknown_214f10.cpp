@@ -93,6 +93,18 @@ PRIVATE __forceinline long function_214f83(char const *arg_0, s_file_handle *arg
 // value and branch-set full-width open result 42/42; opener void/native result 42/42; ordinary
 // inline 229; task aggregate 84; const/early file 42/42; unsigned/word status 42/42; existing
 // wait helper for both waits 42 (kept); plain bool success 55; success set inside a test 53;
+// ternary/initialized declaration/array element 55/55/55; success at function scope 55; `if
+// (!success) continue;` 55; long result tested through success 55; success cleared then set
+// inside the open branch 53; inline bool handle helper by pointer/by value 55; char success with
+// a bool pointer argument 55; long result stored with a bool cast 55; memset-owned share/flags/
+// create-path zeros 40/38/36 (but retail stores those zeros after its memset: not retail's code);
+// 64-bit outcome 50; done and success as one struct with a volatile done member 47; the success
+// stored through a pointer by an inline handle-test helper 55; a byte success from the widened
+// comparison 55; the handle copy as a const reference 44; the open result read from the array
+// element before the copy 42. Diagnostic only: a volatile success flag 48-50; with the array
+// element passed directly and the handle test in an inline helper returning bool (or a long
+// cast) it matches; without the volatile flag no form re-reads it (a compile-only screen also
+// forwards the stored byte through a struct with a volatile member and through a pointer store).
 // ternary/initialized declaration/array element 55/55/55. Diagnostic only: a volatile success
 // flag 48-50; with the array element passed directly and the handle test in an inline helper
 // returning bool (or a long cast) it matches; without the volatile flag no form re-reads it.
@@ -146,6 +158,10 @@ PRIVATE __forceinline long function_214f83(char const *arg_0, s_file_handle *arg
 // Only a volatile success byte (not kept) gives retail's store-and-reload. Round 158 (all 55 at 351
 // bytes, register test): inline bool handle helper by pointer/by value; char success with a bool
 // pointer argument; long result stored with a bool cast.
+// Round 158 (all 55 at 351 bytes): char success with a bool pointer argument; long result stored
+// with a bool cast. Round 10: success from the array element with the element passed by value
+// 55, through an element pointer 55; success stored before the handle copy 55, the long result
+// stored before it 42; success from a `? true : false` 55.
 // @retail 0x214f80
 void game_state_cache_files_open(void)
 {

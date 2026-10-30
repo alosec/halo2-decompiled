@@ -1263,6 +1263,33 @@ bool c_weapon_reload_event::v11(long a, long const *entities, long c, void const
 }
 
 // score 32 (was 32): the device and unit indices take retail's EDI/EBP roles the other way
+// round, and the second type mask has no saved EBX temporary; retail keeps the pool pointer in EAX
+// through the unit type test (hence EBX) and copies the data base (`mov eax, esi`) for the unit's
+// object read.
+// Tried: named device/unit/both masks 32; byte suppression bitfields 35; byte flags view 35; byte
+// bitfields with masks 35; combined header predicates 39; constant/unsigned indices and index names
+// 32; early unit offset 39; word slots 53; typed word slots 69; byte mask 35; shifted membership
+// masks 38; complete device/unit classification 32; deferred eligibility 49/51; negative
+// classification exits 32; explicit membership 53; contiguous byte domains 66; earlier guard,
+// declaration/result lifetime, header/table and unsigned-mask forms 32-54.
+// Device-first guard with typed table reads and an object local 33; the same with the object read
+// from a re-read table 33, or through the existing object_get 33; device and unit header pointers
+// 52; unit header pointer from a re-read table 54; re-read table for both unit reads 54 (device then
+// in EDI as in retail, the table in EDX).
+// Round 6: device-first guard alone 33; matched 0xa3420's form (typed headers, one combined type
+// test, object from a re-read table) with/without result and object locals 33 each. A pool pointer
+// local read for the headers and again for the object gives retail's device EDI / unit EBP 30 (also
+// nested, or with an object local); the pool still dies after the first read. Pool headers with a
+// global object read, or the reverse, 33/33; object through the headers 54; every unit read from the
+// pool 52; pool unit header pointer 52. Complete native unit-header value, late/early ownership with
+// original/device-first guards 62/66 (add a 0xc frame). Native handle-array loop/two original stores
+// 194/32.
+// Round 30: object read from a re-read table 32 (same code); with the device-first guard 33;
+// matched 0xa3420's typed form 33; object through the file's object macro 32; unit header pointer
+// from the same table 54.
+// Lane 14 r9: device-first guard with the pool-local form 30; plus the unit header address taken
+// before the unit type test 30 (same code); the table read from the global at every use 54; through
+// a pool local at every use 52; typed pool headers with the object re-read through the pool 30.
 // round, and the second type mask has no saved EBX temporary; retail also copies a second
 // table value into EAX for the unit type test.
 // type mask lacks the saved EBX temporary and header-base copy. Earlier guard,

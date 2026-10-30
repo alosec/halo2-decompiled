@@ -218,6 +218,9 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // Native status declarations do not fix the post-stamp register rotation; all types/body restored.
 // Round 289: Computed proximity bool/byte/short/long on the complete collision/native-payload graph; then each with one result exit:
 // [247, 247, 252, 250, 231, 231, 226, 228]. All executable source and temporary types restored.
+// Round 423: returned position with native/original payload 226/226; each with complete
+// collision output 224/224; target declaration at publication gives 226/226/224/224.
+// All reduced previews; complete original body and declarations restored.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {

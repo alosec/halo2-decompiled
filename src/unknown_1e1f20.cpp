@@ -799,6 +799,9 @@ void swarm_leader_detach(long actor_index);
 // the tag query, long/short/byte/dword in each lifetime: eight 261 fast, equal to unchanged
 // fast control (full 285). Original ordinal lifetime and entire executable body restored;
 // frame 0x1c/0x20, actor displacement and cleanup countdown homes remain.
+// Y423: Absent-stop continuation with empty-memory continuation, false-count
+// dispatch first and ordinary-unit branch first, all eight subsets 261 fast
+// against unchanged fast 261 (ordinary 285). Original complete body restored.
 // @retail 0x1e1a00
 void __stdcall function_1e1a00(long actor_index, long value)
 {
