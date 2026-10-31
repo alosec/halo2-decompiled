@@ -324,6 +324,18 @@ See `port/README.md` "Play" for the full commands.
   gondolas and elevator (`operate` presses a device group's control), and
   Regret (board his throne and pin his vitality, round after round), then
   06a Sacred Icon loads.
+- **After the 2026-10-29 merge (938 commits)** the bot finishes every
+  level from Cairo Station to The Great Journey again (2026-10-30). The
+  bot needed three fixes on the way, none in the game: 03b's Scarab
+  pilots (`goto_unit`, attached units first), endless reinforcements
+  (at most 24 kill tries that found someone), and boarding the throne
+  Regret rides (`enter_vehicle 0 boss`). A pre-merge build (worktree at
+  19b4975d3, its own host and image) stalled at the same spots with
+  the old bot. Open: a rare High Charity crash (2 runs in 7):
+  `effect_location_next` follows a garbage location index for an
+  effect a projectile impact creates (`fc330` -> `fcea0` ->
+  `effect_new_from_parameters` -> `0x177310`); not a stack overrun
+  (stack-protected build).
 - **Death reverts** (2026-10-27): `0xcaa60` (a unit dies) passed the dead
   unit to `0x14cad0` where retail passes NONE (ebx), so the player kept
   it, the census (`0x152340`) never asked for a revert, and a dead player
