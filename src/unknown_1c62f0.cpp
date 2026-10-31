@@ -156,6 +156,10 @@ void c_animation_channel::clear()
 // Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
 // lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
 // frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
+// Round 203: identifier memmove early/retail 58/57; native default assignment
+// early/retail 68/68; defaults through copy_from 45/45; complete native
+// replacement assignment/copy_from 75/52. All lose five matched caller controls;
+// original body restored. Saved graph and identifier carriers remain.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)
