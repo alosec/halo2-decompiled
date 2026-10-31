@@ -350,6 +350,10 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // frame 0xf0 agrees; padded-count retention and iterator/portal homes differ.
 // Earlier at 125 (was 142): retail keeps count + 31 in EBX (word count shifted from it after the copies),
 // bytes in EDI and base in ESI; ours keeps bytes in EBX, so the spill homes and memcmp registers differ.
+// score 111 (was 111): frame 0xf0 agrees. Retail keeps count + 31 in EBX across the copies (word count
+// shifted from it afterwards: `sar ebx, 5`), derives bytes from the word count (`lea edi, [edx*4]`, EDI)
+// and base in ESI; ours computes bytes as `sar 3; and ~3` in EBX, so the spill homes (base, word count,
+// iterator, cluster index), the memcmp registers and the convergence branch differ.
 // Bytes as words * sizeof(dword) 237; rounded-count local for all three 209; masked rounded count
 // 252 (822 bytes); bytes >> 2 125; word count declared before the arrays 125; byte-wide or bitfield
 // portal flags 142 each (retail's byte load into BL stays a memory test).
@@ -387,6 +391,10 @@ bool function_44690(s_word_bit_iterator *iterator, long *out);
 // Round 43: base before bytes 136; entry convergence result, count name and split byte calculation
 // 111 each; byte expression at uses 240; iterator/cluster-output/both entry lifetimes 111 each.
 // Original body restored.
+// Round 90 (fast): bytes as ((count + 31) >> 5) << 2 111 (folded back to the same code); as
+// ((count + 31) >> 5) * 4 238 (retail's `lea [words*4]` head, aligned 82 for 86, but later code
+// shifts), with the word count as bytes / 4 238 (821 bytes); every local renamed (three name sets) 111
+// each: identical code, names do not move these slots.
 // @retail 0x16de20
 void function_16de20(short index, s_16e150_bits const *table, dword *output)
 {
@@ -1500,6 +1508,11 @@ struct s_camera_clip_reference_16ebf0
 
 // score 120 (was 120): frame 0x98 and state/forward/up/point homes now agree.
 // Left: forward/position saved registers, cross-product carriers and the stacked clipping flag.
+// score 120 (was 120): frame 0x98 and the state/forward/up/point homes agree. Left: the forward and
+// position pointers take EBP/EBX for retail's EBX/EBP, the cross product's forward.j/up.k xmm0/xmm1
+// colouring, and the clipping call: retail passes the flag in DL and the end point in ESI, ours pushes
+// the flag and passes the point in EDX. That is 0x171d00's own convention (BLOCKED-BY 0x171d00, a held
+// file), and its longer flag code shifts everything after the call.
 // Native byte clipping truth 120; short/long/dword/word 124/123/123/124; entry fraction 140,
 // with word truth 124; byte truth plus role names 120, native state-field receivers 206,
 // delayed original-position receiver 250 (caller lost), inner alias removed 120, staged cross 121.
@@ -1625,6 +1638,12 @@ struct s_camera_clip_reference_16ebf0
 // Flag false by default with one `= true` under retail's nesting 165; plane test through plane_distance_to_point 127;
 // plane terms spelled i, k, j 120 (retail's j, k, i product order, aligned 88 -> 86); with a cluster pointer local
 // 120; with a reference-table base local 120.
+// Round 90 (fast): forward pointer local declared before/after the position pointer 118/118 (plain
+// fast 119); forward and up pointer locals in all six declaration orders 166..248; up pointer only
+// 166; position written as the field expression (forward then takes EBX, but position is spilled)
+// 203, with forward/up pointer locals 203/206; a typed observer view (position/forward/up/flags
+// fields) 120 (identical code) in every pointer form; position through the pointer at each subset
+// of its four uses (copy, call, interpolation, store-back): only the interpolation decides, 119/220.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {

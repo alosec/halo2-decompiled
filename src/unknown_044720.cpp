@@ -163,6 +163,13 @@ void function_44720(void)
 }
 // score 107 (was 107): frame 0x44 versus retail 0x40; entry-offset construction
 // and the geometry flag reloads differ.
+// Round 125 (one-link LTCG harness with the callers' and callees' files, exact for this function):
+// level != 31 at the call gives retail's frame (harness aligned 70 -> 50) but 135; on it the
+// lookup taking the short index and addressing the entry itself gives retail's entry offset, the
+// in-place transform and the flags re-read, but hoists the structure pointer and re-reads the
+// first word 136 (0x45560 228); transform before weight 136; the lookup with one result variable
+// 132; the parts under `if (geometry)` 135; split continue tests, material order and the selected
+// ternary's parentheses compile the same.
 // Earlier: level != 31 at the call (no cached byte) gives retail's 0x40 frame
 // and call setup, 135 (487 bytes, aligned 42 against 59); retail also re-reads the flags
 // word in the inlined geometry lookup where ours keeps it. On that form: short transform

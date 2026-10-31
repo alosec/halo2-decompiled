@@ -374,6 +374,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // (dot * c) per row 43, the i projection before the cross terms 43, parallel first in j/k 57;
 // harness only: scalar axis locals in any order, all six dot orders as one expression (43) or
 // accumulated (ds_kji 43, the others worse), product operands swapped per row (no change).
+// Lane 18 r1: the first cross term written in the i row (retail computes it last) 43 (same code); the
+// cross terms computed 2, 3, 1 as retail schedules them 43 (same code); the rotation reading the forward
+// copy instead of the direction 86; the cross terms named with their 0.5 scale 75; the rows accumulated
+// in place in the direction (i as one expression) 57.
 // Lane 13 round 18: the matched 0x11d3b0 (same turn-limiting algorithm, out of line) compiles its
 // rotation with exactly our colours (axis k/j in xmm3/xmm4, the projection copied for j), so
 // retail's 0x1fddd0 comes from another shape. An inline rotation helper (vector, axis,

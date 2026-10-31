@@ -1256,6 +1256,9 @@ PRIVATE inline void cache_header_initialize_strings(s_cache_header *header)
 // done-pointer lea, the handle copy moving from the close call to the size query, retail's 1 in ESI),
 // with `index == 1` for the range 414, with the file pointer after the path call 168, with a nested
 // close test 166. All restored.
+// Round 31: post-open handle test through the s_file_handle view 104; file pointer after the path call 106;
+// range as `!(index < 1 || index > 1)` 104; the byte count itself as the write success (zeroed before the
+// resize test, close when != 0x800) 122 (retail's cmp/je join, no sete); `bool written = resized;` 104.
 // Round 233: complete post-completion success and failure decisions, each in bool/byte/short/long
 // widths, all 178 at 930 bytes; every form shrinks the frame to 0x1140. Original nested write
 // result/output storage restored; retail frame 0x1144 and file/request register homes remain.
