@@ -694,6 +694,11 @@ real g_55e618;
 // Round 83: tangent/perpendicular/both declared before the sweep 102/102/102; scalar perpendicular
 // 147; scalar tangent 113; both scalar 140; call-only velocity pointer 102; that pointer with a
 // staged position 245. Original body restored.
+// Round 105: position through the existing real_point3d_set 245; with the velocity pointer 188;
+// velocity read at each use 189; pointer with interleaved perpendicular/tangent 185; the set nested
+// as placement_set's position argument 185/188/245 (code identical to the separate statement).
+// Retail loads the collision fields (and the call's last argument) above the particle stores; ours
+// cannot, so the collision local may escape through 0x1697c0 in our build.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

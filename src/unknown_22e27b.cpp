@@ -229,6 +229,9 @@ static inline real interpolate_linear(real a, real b, real t)
 // Round 233: native full-width signed count/current/both/direction/count-direction/current-
 // direction/all three/all plus duration fields: 96/96/96/96/96/96/96/96. Original shared field
 // declarations and body retained; direction/frame and lookahead/fraction homes remain.
+// Round 105: the post-loop block is rotated the same way (retail zero EAX, next ECX, current EDX,
+// direction EDI). Per-pass direction local 96; current-frame local 98; both 98; direction-first
+// lookahead sum 96; direction-first sums in both places 96 (identical code).
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {
