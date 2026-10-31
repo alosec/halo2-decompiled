@@ -584,7 +584,42 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 	return result;
 }
 
-// score 55 (was 55): the aligned frame and every instruction agree apart from the colours: retail
+// score 55 (was 55): aligned frame agrees; the code is retail's apart from the colours. Retail takes the
+// session in EBX (its callers copy it there) and gives the loop temporaries ESI/EDI; ours keeps the session
+// in ESI and the loop temporaries in EBX/EDI. Deleting the whole tail (live test, 0x4994 setter, machine
+// limit) moves it to EBX (diagnostic 244, 321 bytes); deleting either setter alone does not; a /Gd first
+// pass and a harness build give ESI for every body, even with either loop removed. The stored machine/player
+// pointers preset to NULL and set when the session is live and has them (0x6ec80's form) give retail's test
+// schedule and opening scratch registers at 49 (session still ESI, also without the tail; not kept: a gain
+// of 6). The --fast image doesn't represent this function (116 for the unchanged source): use the plain check.
+// Tried: countdown native object copy 55; native address copy 55; machine object reference 55; machine value
+// copy 55; short machine alias 55; immutable member count 55; machine counter names 55; top-tested countdown
+// 114; member count read before the clears 129; summary set after the clears 129; machine pointer before the
+// clears 55; zero initialisers for the two buffers 151; summary as a conditional 131; summary NULL in an
+// else 131; as a session method 55; the address copy as a plain for loop 114 (477 bytes); memcpy for the
+// address copy 55; machine array indexed at both uses 55; members array pointer for the address copy 55;
+// address cursor in the copy loop 59; one index for both loops 55; bit-first mask test 55; nested mask and
+// slot tests 55; existing setter: void result, guard exits, test-derived result and direct success 55 each;
+// native result 146 (out of line); shared live predicate, native receiver and input order 55 each;
+// force-inline native/original result 55/55; limit helper as one `if` 55; live and 0x5dd0 tests nested 55;
+// state macro for the tail's live test 221 (setters stop inlining); limit setter as a cross-file session
+// method beside 0x5c490 55 (inlined, session still ESI); state read once in the limit helper 55; inline live
+// predicate in the limit helper 55; named player pointer 58 (52 with the preset pointers); members array
+// pointer plus a player pointer 58; short player-loop index 128 (492 bytes); output pointer walked beside the
+// player loop 58; source/output player cursors 58; player buffer declared first 55; players cleared first 53
+// (with the preset pointers: declared and cleared first 53/53); summary at function scope 63; early `return
+// false` / `return true` exits 143; result false in an else 153; result set at the top of the state block
+// 98; member count read at each use 55; the live/0x5dd0 tail as an inline helper 55. With the preset
+// pointers: untyped pair 49; player index declared with the buffers 49; a plain `for` copy loop gives
+// retail's copy-loop scratch registers but folds the player loop's mask read (108, 477 bytes). A 96-form
+// screen (opening test x summary x copy loop x count local x buffer order x player pointer) found nothing
+// below 49; a 600 s permuter run (reduced image 143 against 49) found nothing. Round 82: existing live
+// query in the outer tail 130 (451 bytes); in the limit helper 55; both 130; byte function result 95 (497);
+// short limit value 55; byte limit-helper result 146 (430); unsigned machine countdown 55.
+// Lane 17 r1: the 0x4994 setter's body visible in this file (diagnostic) 55, session still ESI; address
+// pointer named before the mask store 55; summary read just before the player loop 76; copy loop as a
+// signed-bound do-while 65; preset pointers reproduced 49; with that do-while 117.
+// the aligned frame and every instruction agree apart from the colours: retail
 // takes the session in EBX (its callers copy it there) and gives the player-loop index ESI and the
 // player pointer EDI; ours rotates them (session ESI, index EDI, player pointer EBX). Deleting the
 // whole tail (live test, 0x4994 setter, machine limit) moves the session to EBX (diagnostic 244,

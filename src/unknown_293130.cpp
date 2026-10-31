@@ -106,6 +106,11 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 	arg_2->k = projected_term_k - cross_term_k;
 }
 
+// score 43 (was 43): this round's sentinel store orders (the +0x18 word before the bytes, after the
+// +0x1a word, the bytes swapped, the bytes written as numbers, the words cast to short) all compile
+// to the same 43, so the store order is the compiler's scheduling, not the source's.
+// score 43 (was 43): this round ran the source permuter over the body; the rotation's xmm ranking
+// (retail's xmm1..xmm5 cycle against ours) and the final sentinel store order still differ.
 // score 43 (was 43): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
 // Earlier: y/z range-add order, rotation registers and final sentinel
 // three causes remain. The y/z point draws add the point component before the range
@@ -195,6 +200,10 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // 0x2936b0 43 (same code). Diagnostics only: extra no-op products cycle the flat dot through four
 // states with period 4 (43/60/53/111), none with i in the first pair; on the grouped dot one extra
 // product before the dot gives retail's i accumulator (59, with the extra code).
+// Round 47: dot written in 0x2922b0's i, k, j term order (vector-first/axis-first) 60/60 (1409
+// bytes; still k, j, i); +0x18 sentinel stored after +0x1a 43; the four flag/zero stores before
+// the NONE stores 43; the angle read after the vector copy 54; PRIVATE helper 43 (same code);
+// permuter 49 tries, best 43.
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {

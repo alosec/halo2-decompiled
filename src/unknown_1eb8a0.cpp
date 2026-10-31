@@ -290,6 +290,11 @@ void function_1eb6f0(s_ease_input *input, s_ease_state *state, s_ease_output *ou
 // predicate/complete step arms/complete count arms masks 0..7: 667/705/671/711/701/722/704/708.
 // Original selection, predicates, count producers, observations and complete body restored;
 // exact caller preserved in all eight trials; direction/sample homes remain.
+// DL202: Shared duration-count producer with joined/terminal/conditional results and remaining-distance
+// initializers 703/708/681/703/681/708; native output arguments 642/708.
+// Complete supplied-direction native/const/setter/CRT observations 731/731/743/731,
+// frame 0x2c and caller loss in each. Original 0x24 frame, inputs, qualifiers and caller restored;
+// direction/sample residence and coefficient schedules remain.
 // @retail 0x1eb8a0
 long function_1eb8a0(
 	s_ease_state *s,

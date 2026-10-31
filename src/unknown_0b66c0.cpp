@@ -169,6 +169,27 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // before the count clamp 38 (aligned 14, start in EDX again, 0xb5f10 6); `result` assigned after its
 // declaration 42 (same code); the clamped size as a ternary or a separate size local 53 (0xb5f10 104).
 // Retail evicts start to EDI so the scan counts in ECX, as 0xb61d0 does with its start in EAX.
+// score 40 (was 40): retail moves the start from ECX into EDI at entry so the inlined length scan
+// counts in ECX and walks in EDX (as matched 0xb61d0 does with its start in EAX), saving EBX only
+// around the scan; ours keeps the start in ECX, counts in EDX and walks in EDI, so EDI is saved with
+// EBX around the scan. Whenever ours moves start out of its incoming register, LTCG passes it in
+// EDX and the matched caller 0xb5f10 differs. Tried: count before start in the parameter list 40;
+// the length in a named local after the sign tests 40; `string + start` (also `&string[start]` or a
+// local copy of the start) with start unmodified 28, retail's loop registers (the compile-only /Gd
+// body is retail's), but start arrives in EDX (0xb5f10 6), with count before start in every
+// declaration and call 28, in all 24 parameter orders with matching calls 28 each (0xb5f10 5-37,
+// never 0), with the length test nested 28; that with a plain string parameter 41; start = string +
+// start 40; `start += string` before the count clamp 36-38 (aligned 14), between the increment and
+// the clamp 32 (0xb5f10 6 each); cursor displacement with fixed/explicit maximum, unequal/ordered
+// end tests and signed/unsigned returns: eight forms 36 each (threshold rejected, shared find
+// changed); plain parameter 41; a volatile read of the plain parameter at the add 40; early returns
+// 48 (harness 21/42); nested length test 40 (harness 16/40); `length >= start + count` 40 (harness
+// 17/40); a const method of the text struct, with or without noinline, 41-48 (0xb5f10 differs, 82);
+// no `volatile` with a noinline declaration 34 (0xb5f10 differs); `result` assigned after its
+// declaration 42 (same code); the clamped size as a ternary or a separate size local 53 (0xb5f10
+// 104). Round 41 (fast): the length through the existing bounded length 0x11c9a0 (inlined by LTCG
+// as retail does in other files) 40, identical code, also with the length test nested 40; result
+// set in an else arm 48 (95 bytes, 0xb5f10 41); `count + start` 40.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {

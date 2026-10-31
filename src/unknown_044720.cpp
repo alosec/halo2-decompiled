@@ -189,6 +189,9 @@ void function_44720(void)
 // material index by the long index, `geometry == NULL` (63 forms) none closer; a `dword` selector
 // local read first (the 0x44720 form) or a `flags` local for the level and transform tests none
 // closer; the lookup as an ordinary or forceinline function in another file stays a call.
+// Round 44: lookup given `&g_4ba138[index]` (long index) 177, with level at the call 169; first test read through
+// `g_4ba138[(short)index]` with the entry pointer after it and level at the call 139 (508 bytes), plus the indexed
+// lookup 150; indexed lookup with the weight read at the call and level at the call 140 (503 bytes). Original kept.
 // @retail 0x44c90
 void __stdcall function_44c90(long group, dword selection_mask, long level,
     dword and_mask, dword or_mask, dword fallback_and_mask, dword fallback_or_mask, bool force)

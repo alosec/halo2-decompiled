@@ -752,6 +752,10 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // the callback in EAX; callers 0x1c68c0 16, 0x1c6920 8, 0x1cb710 19); the volatile read at the first two
 // dispatches 97 (same code); the pointer read at the first and the parameter at the others 133; the
 // channel flags read into a local before the byte clear 121 (538 bytes).
+// Round 315: Independent initial/end/loop dispatch outputs with native-word versus long carriers, all
+// eight masks 97. Every one-use result form is restored. Original shared result, callback
+// observations, parameter aliases and state graph retained; word-load schedule and second callback
+// reload remain.
 // @retail 0x1c66a0
 void __stdcall c_animation_channel_advance(c_animation_channel *channel, real frame, s_animation_state *state,
 	animation_event_callback callback, long user)

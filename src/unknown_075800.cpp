@@ -1120,7 +1120,7 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // free function in type/address/handler/message and handler-first orders 220/220; cases 2/4/8/5 first
 // 220/216/219/216; message-typed local first 190 (444 bytes, one lower, not kept); link pointer first 242
 // (this moves to ecx); explicit default/scoped lookups/returns 220 each. Diagnostic message test first 212.
-// score 193 (was 193): retail takes the selector in eax, the message in ecx (kept in ebx), this in
+// Earlier at 193 (was 193): retail takes the selector in eax, the message in ecx (kept in ebx), this in
 // edx and the address on the stack (edi), with one switch over 0..24; ours the selector in ecx, the
 // address in eax and the message on the stack, and two switches.
 // Case-subset bisect: one-case bodies take the type in eax, any full body keeps ecx. An unused fourth size
@@ -1160,6 +1160,9 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // Round 219: Residual singleton handlers 8/11/18 before the connection family, all six orders,
 // 191 each; split singleton placements 192/191 (reduced control 191, full 193). All restored;
 // incoming selector/message/sender allocation and dispatch root remain.
+// Round 442: Four-family residual interleaves 191/188/195/195/190/199/187/196 fast, versus
+// control 191 and full 193. Best four-point lead rejected; all exact cases, phases, caller and
+// declarations restored.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {
