@@ -17,6 +17,14 @@ bool function_1f4a20(s_1f4a20_entry const *arg_2, long arg_0, s_reference arg_1,
 bool function_1af530(long arg_0, long *arg_1, long *arg_2);
 void function_265c30(long arg_0, long arg_1, bool arg_2);
 
+// score 9 (was 9): the three dword homes still rotate against retail's (ours: flag,
+// temp, actor, result; retail: actor, temp, result, flag); this round's source
+// permuter (19 tries, 670 s) found no lower form of that order
+// score 9 (was 9): the frame homes for the actor, the result and the completion flag
+// still rotate against retail's (ours: flag, temp, actor, result; retail: actor,
+// temp, result, flag) although each of the four locals is read the same number of
+// times; this round's trials in this file and the source permuter found no lower
+// form of that order
 // score 9 (was 9): actor/source/completion homes rotate +0x2c/+0x30/+0x24 versus
 // +0x24/+0x2c/+0x30. The frame and native conversion agree.
 // Earlier layout/conversion observations and trials: the locals sat eight bytes lower, so the
@@ -77,6 +85,10 @@ void function_265c30(long arg_0, long arg_1, bool arg_2);
 // these homes by weighted use count (names and declaration places never move them). Diagnostic,
 // reverted: 0x2605d0 not passing the flag pointer on to the stubbed 0x260670 gives 36 with the
 // flag's home moved, so the homes follow what LTCG knows of that callee chain (BLOCKED-BY 0x260670).
+// Round 86 (all-image fast): call-only and two-use Boolean output pointers 9/9; one-element
+// Boolean output array 9; count/Boolean declarations swapped 9; derived record declared before
+// the node 9; search result declared before the outputs 9; node and derived declarations before
+// the actor 9; const actor pointer 9. Every form has identical differences; original restored.
 // @retail 0x1af160
 bool function_1af160(long arg_0, s_1af160 *arg_1)
 {

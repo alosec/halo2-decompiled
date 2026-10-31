@@ -642,6 +642,10 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // compares, an out-parameter getter, getter store orders: no better. On the 34 form the claim and
 // size helpers as plain, static or inline functions, or in another file (inlined by the link): 34
 // each, 0x2adb10 279 each.
+// DL round 206: shared header/body extent 236; retained total as signature offset 226;
+// integer denominator converted at both divisions 207; per-use size fields 235;
+// guarded conversion initialized/separately assigned 64/64; shared extent with per-use
+// conversion/guarded conversion 233/235. Original body restored.
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {
@@ -831,6 +835,24 @@ struct s_signed_file_write_parameters
 // with it declared first). Diagnostic: the getter reaching the scratch object through its address
 // 132 (aligned 113 -> 109; 0x2ad7c0 68 -> 173 though its aligned count improves 55 -> 49), so both
 // bodies look compiled with the object address-taken; a natural source of that is not found yet.
+// Round 107 (fast; 0x2ad7c0 53 at the start): the record (storage, owner, pointer, size, flag, the
+// init setting the pointer to the storage; defined in this file, since defined after async_globals
+// its storage catches 0x120a90's node-loop end address) 131, 0x2ad7c0 159; with the getter storing
+// size, owner, then flag (0x2ad7c0's retail order) 129, 0x2ad7c0 160; that plus 0x2ad7c0's size
+// computed in each arm (MIN after the getter) 129, 0x2ad7c0 168 at 693 bytes (aligned 21/17); the
+// reordered getter alone 134, 0x2ad7c0 161; the record without the flag 132, 0x2ad7c0 160.
+// Retail schedules the getter differently at each site (site 1 flag, size, owner; site 2 owner,
+// size, flag; 0x2ad7c0 size, owner, flag), with every parameters load after its stores.
+// Lane 15 r17: the record defined in a /GL- file 134 (no change: LTCG still sees it); the getter
+// through a record pointer 132 (header_size now loaded after the owner store, the flag store still
+// sinks); the flag byte folded in as the record's fourth field (0x5020d4 = 0x5020c8 + 0xc) 131
+// (both getter stores now ahead of every parameters load, as retail); with the parameters view cast
+// from a `void *` parameter as this file's other work callbacks 130 (extend sum body first as
+// retail); the view alone 133. With the record 0x2ad7c0 53 -> 159; its view, per-arm size (scratch
+// arm clamps by the remaining count read after the claim) and one function-scope byte count take it
+// to retail's length, sum order and dispatch hoist but 156 (buffer through eax, size/position
+// registers swapped). Left: getter store/load order per site, extend offset spilled where retail
+// spills the buffer.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

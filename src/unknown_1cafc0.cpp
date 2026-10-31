@@ -599,6 +599,11 @@ PRIVATE __forceinline void graph_weapon_types_request(s_graph_tag *graph, long m
 // Round 193: Success false after resolution/name copy/primary query: byte 457/457/460, bool 507/507/510;
 // signed byte after resolution/query 457/460. Late status collapses the frame to four, away from retail
 // twelve; original byte lifetime and hidden query homes restored.
+// DL200: Target member stdcall/fastcall contracts with direct/shared existing query identifiers
+// 399/399/399/399; cdecl 402/402 with six new reduced matched-control losses; native word return
+// 445/445 with two losses. All rejected. Original Boolean method contract, class declaration, byte
+// status, both native hidden query publications and existing request helpers restored. Frame eight
+// versus twelve remains; retail ends ret 0x18.
 // @retail 0x1cc3f0
 bool s_animation_state::animation_lookup(s_animation_names *names, s_animation_names *found, long mode, long weapon_class,
 	long weapon_type, long set, long lookup_flags, c_type_709360 *result)
@@ -980,6 +985,8 @@ PRIVATE inline void channel_loop_clear(c_animation_channel *channel)
 // Round 197: Existing validity provider at prior/phase/publication masks 1..7 gives
 // 251/209/329/245/286/243/313; all with native-byte prior-loop truth 313.
 // The one-point phase gain is rejected; original predicates and body restored.
+// DL204: conditional blend/loop preservation 328/322/309/368; native three-long name-prefix
+// comparison alone/with blend updates 338/349/361/386. All original executable forms restored.
 // @retail 0x1cd070
 bool s_animation_state::animation_set(long mode, long weapon_class, long weapon_type, long set, long state_flags, long channel_flags)
 {

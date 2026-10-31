@@ -595,6 +595,11 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 // second product (identical code: the products are canonicalised); first product from the
 // direction local with the staged second product 223, with both products from direction (cross3f
 // or staged second) 229/229; up staged into a local, then copied 253 (1290 bytes).
+// Lane 17 r1: right declared first 57; const previous_up 57; a forward pointer in both branches with
+// cross3f 325 (1268 bytes); previous_up copied after the direction difference 98; staged second product
+// with the else-branch forward pointer 217 (1270 bytes): retail's staged order (k, j, i, then the stores)
+// but right's colours follow previous_up.k, which ours loads into a free register before the distance
+// store where retail loads it into xmm0 after that store.
 // Lane 13 round 18 (base: staged second product + forward pointer in the else branch, 217 at
 // 1270 bytes, 35 aligned): both products staged 221; previous_up copied after the direction 241;
 // first product from the direction local with a plain second product 217 (1261 bytes, 47
@@ -603,6 +608,15 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 // the distance on x87); there u.k takes retail's xmm0 only when no distance store sits between
 // the call and the products (dropped or moved after them: 19-21 differing SSE lines against 33);
 // none of 48 helper/operand/copy-placement combinations does better than the base.
+// Round 127 (lane 4): cross3f_staged for the second product 217 again (1270 bytes; aligned, only
+// the first product's colours (right.i/k swapped), the second product's operand order (ours loads
+// forward's component and multiplies right's register, retail copies right's register and
+// multiplies forward from memory) and the else branch's stores remain); on it: a force-inline
+// helper reading the angles through the observer and writing through the output pointer (as the
+// matched 0x23d790 builds its forward vector) 221, alone 222; a forward pointer local for the copy
+// and both products 221; the distance in a named local 217 (same code). Diagnostic only: one no-op
+// product on the distance before the staged products 55 at 1262 bytes (the staged code shrinks by
+// 14 bytes), two/three 203/223: the operand orders follow VC's tuple numbering, as in 0x293130.
 // @retail 0x23de50
 void __stdcall function_23de50(void *state, void *input, s_observer_command *output)
 {

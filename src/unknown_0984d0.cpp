@@ -354,6 +354,26 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // cursor and counter in memory as retail, but the items cursor takes EDI and the handle spills);
 // through the helper 208; handle/index renamed three ways 207; handle/index declared in each
 // case block 166 (with the index loop 189).
+// Round 19 (lane 13), all without the volatile reads: the loop written with a label and a backward
+// goto (diagnostic) 207, so the loop weighting is not syntactic; the items and data read by index in
+// a for loop 208; the cursors passed to the helper by address 207, the helper also advancing them
+// 206 (inlining promotes them back to registers); the result declared first in the function 218;
+// the cursors and counter declared at the function top 207.
+// Round 40: index loop with items[i], b[i], &data.v[i * 4] passed straight to 0x991d0 207 (data
+// cursor and counter in memory as retail, but the items cursor takes EDI and the handle spills);
+// through the helper 208; handle/index renamed three ways 207; handle/index declared in each
+// case block 166 (with the index loop 189).
+// Round 42 (lane 16): the case 5 owner call through a peers local 105 (the case 1 local declared
+// for the whole function and assigned in both cases: the case 5 tail then matches, retail reuses
+// EBX for the table; reverted at review: a one-use copy is kept only with a match); count read into one local for the ==1 test, chain and loop 176; memcmp
+// sized by info.count 158; peers local also in case 2/4 for the flag tests and the chain query 126;
+// 0x991d0 called directly from the loop 137; entry state tested first as an early return 105; loop
+// cursors declared before the count test 195.
+// Round 10 (m3 lane 2): the switch now dispatches with grouped case labels and breaks in place of
+// gotos to labels (identical code, 115). The volatile cursor reads swapped 115; both passed straight
+// to the helper 115; the case 2/4 entry through a named element pointer 115, its state read once into
+// a named local 115 (same code). Natural loops still split the handle (harness: pointer cursors 184
+// positional, index loops with the direct call or the helper 184/185).
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {
@@ -362,14 +382,8 @@ void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 	long local_2 = local_1 & 0x3ff;
 	switch (local_0->type)
 	{
-	case 1: goto local_3;
-	case 2: goto local_4;
-	case 3: goto local_3;
-	case 4: goto local_4;
-	case 5: goto local_5;
-	default: __assume(0);
-	}
-local_3:
+	case 1:
+	case 3:
 	{
 		bool local_6 = true;
 		long local_7 = 0;
@@ -405,9 +419,10 @@ local_3:
 			replication_table_add_chain((long const *)local_0->info.b, table, local_0->info.count, (long const *)local_0->info.items, (long const *)local_0->info.c, (s_handle_creation *)&local_0->data);
 		for (long local_7 = 0; local_7 < local_0->info.count; local_7++)
 			function_99690(this, local_0->info.items[local_7], 3);
-		return;
+		break;
 	}
-local_4:
+	case 2:
+	case 4:
 	{
 		if (entries[local_2].state && entries[local_2].handle == local_1 && entries[local_2].state == 3)
 		{
@@ -431,8 +446,12 @@ local_4:
 				}
 			}
 		}
-		return;
+		break;
 	}
-local_5:
-	((c_98fb0 *)table->owner)->v7(local_1, local_0->info.c[0], local_0->count, &local_0->data);
+	case 5:
+		((c_98fb0 *)table->owner)->v7(local_1, local_0->info.c[0], local_0->count, &local_0->data);
+		break;
+	default:
+		__assume(0);
+	}
 }

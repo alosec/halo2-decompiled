@@ -324,6 +324,9 @@ void function_264940(long actor_index, long prop_ref_index)
 // DH round 252: Twice-used normalized distance/buildup/both; each with complete update, all three;
 // both with distinct current state, all four
 // 353/386/386/441/453/453/385/452. Original complete executable body restored.
+// Round 197: Consistent object-index/origin/type subfield pointers, masks 1..7,
+// 408/353/408/353/408/353/408; all with distinct current-state result 408.
+// Object-index receivers reach retail length but regress; original complete body restored.
 // Round 90 (fast): ours keeps reference->object_index in EDI from the top through the 0x28fb50
 // compare (that callee writes no memory), so the view pointer is spilled to [esp+0x14] where retail
 // keeps it in EBP and reloads the index; that is the extra frame slot. View arm first (`if (view)`,
@@ -547,6 +550,9 @@ void __stdcall function_264b50(long actor_index, long node_index, s_2641c0 *samp
 // Round 41: Joint reset/eligibility/tracking predicate declarations, all eight ordinary
 // inline/noinline combinations, 420 each. Callees remain matched; frame 0xa4 and stacked
 // actor input remain. Every separate declaration and complete original body restored.
+// Round 442: Completion/release/publication ordinary-inline declarations, seven subsets and all
+// with final publication, 420 each in eight compiled forms. All temporary declarations and
+// original body restored.
 // @retail 0x262ba0
 void function_262ba0(long actor_index)
 {

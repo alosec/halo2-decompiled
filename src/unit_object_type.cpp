@@ -1427,7 +1427,7 @@ void function_d0d20(long unit_index)
 
 /* sends request 0x13 when the unit holds two weapons and either of them
    fails 0x101640 */
-// score 51 (was 68): retail's length now; the unit argument is in EDI (retail on the stack, kept in
+// score 51 (was 51): retail's length now; the unit argument is in EDI (retail on the stack, kept in
 // EBP), the second weapon's lookup reuses the first's (retail reloads the pool's data) and the
 // weapon reads are if/else (retail default-first). Primary/secondary/both existing getters
 // 72/74/74; masked guard getter 68, with primary/secondary/both 72/74/74; both getters
@@ -1441,6 +1441,12 @@ void function_d0d20(long unit_index)
 // both 0xcbd50 reads 57; both 0xcbd50 arguments through the pool local 48 (stack argument in EBP
 // and ret 4 as retail, but the second read reuses the first's lookup); second argument through
 // UNIT_GET 74.
+// Round 43: early missing-slot rejection 51; with both results default-first 57; with
+// primary/secondary/both existing getters 37/58/48; both getters and a retained-pool guard 50.
+// The 37 one-use getter result is exact-match-only and restored; gains 48/50 are too small.
+// Primary-only/secondary-only default-first results 56/57. Primary getter consumed directly
+// after the ordinary secondary reads 58; with the secondary default-first 61. Original body
+// restored; incoming unit home, second pool reload and weapon-result diamonds remain.
 // @retail 0xd1540
 void __stdcall function_d1540(long unit_index)
 {
@@ -2544,13 +2550,18 @@ void function_cce00(long unit_index, short starting_profile_index, bool reset, b
 /* whether the unit is free to act: not riding, without object flags 26
    and 27 in its animation state, no blocking action, and neither hand's
    weapon busy (0x100880) */
-// score 79 (was 98): Frame agrees; merged animation loads, retained object lookup and weapon-loop carriers still differ.
+// score 79 (was 79): Frame agrees; merged animation loads, retained object lookup and weapon-loop carriers still differ.
 // Direct rejection 79 plain (kept); retained pool 98; masked getter 98; native slot 101;
 // hand cursor 84; pool/direct rejection/cursor 79; shared flag mask 135; failure-first result 119.
 // Round 167: retail re-looks-up the unit after the 0xe6fe0 calls, ours keeps it (our LTCG treats
 // 0xe6fe0 as not writing memory). Pool local for the post-call lookup 79 (identical code); lookup
 // inside the hand loop 79 (identical); 0xcbd50 per hand 115 (kept out of line, but gives retail's
 // slot cursor and counter); action bits through a bitfield view 79; result declared first 79.
+// Round 43: separate parent/animation/action rejection scopes 79; direct busy-weapon
+// return 120; nested slot/weapon predicates 79; split/direct 120; split/nested 79;
+// direct/nested 120; all three 120; all three with a real slot cursor 116. The direct
+// returns shrink to 263/267 bytes and lose the native frame/result lifetime. Original
+// body restored; pool/header retention, animation reloads and hand carriers remain.
 // @retail 0xc85c0
 bool function_c85c0(long unit_index)
 {
@@ -3093,24 +3104,11 @@ void function_c75d0(s_unit_motion *a, s_unit_motion *b, real scale)
    +0x2b8 per second up to 1 while flag 3 is set (set here when its team
    +0x138 is not at peace with the campaign's team 16), else down to 0;
    +0x2b4 by a third per second by flag 4 */
-// score 49 (was 49): the team test and the notify loads now agree. Left: the pool and time pointers
-// sit in EBX/EBP (retail EBP/EBX), retail keeps 0.0 in XMM1 and 1.0 in XMM2 (ours the other way:
-// the register follows which constant the source names first), the two notify copies are only
-// partly cross-jumped, and the bit-4 test is `test byte` (retail load and shift).
-// Round 203: Boolean fourth flag 83; retained time receiver 75 (three-count gain rejected); both 79;
-// masked lookup helper 79; flag/helper 84; time/helper 76; all 80; twice-used notification index 80.
-// Hostility result alone/flag/time/both 119/125/113/119; common notification alone/flag/hostility/both
-// 77/74/94/110, exact-only and restored. Round 167: existing team_is_enemy(1, team) 63; with the
-// notify through a fresh unit local as 0xd0e60 49 (kept); bit 4 as TEST_FIELD_BIT 83 alone, 63
-// with both (pool/time registers right); the 2b0 branches swapped 65 (constants right, branch
-// order wrong); `value < 0.0f` 63; notify index in a long local 69; existing 0x2ac270 flag getter 49.
-// Round 228: computed primary/secondary/both fade values 49/49/49; shared progression
-// steps alone/with primary/with secondary/with both 96/96/96/96; all with Boolean
-// fourth bit 91. Original body restored; pool/time and constant-register roles remain.
 // @retail 0xc6810
 void function_c6810(long unit_index)
 {
 	s_unit *unit = UNIT_GET(unit_index);
+	bool clamped = false;
 
 	if (unit->actor_index != NONE && g_4e6948->state == 1 && g_4f55dc[2] && team_is_enemy(1, unit->unknown138))
 	{
@@ -3122,12 +3120,7 @@ void function_c6810(long unit_index)
 		if (unit->unknown2b0 > 1.0f)
 		{
 			unit->unknown2b0 = 1.0f;
-			s_unit *current = UNIT_GET(unit_index);
-
-			if (current->unknown0d4 != NONE)
-			{
-				function_b58c0(current->unknown0d4, 0x800000);
-			}
+			clamped = true;
 		}
 	}
 	else
@@ -3136,15 +3129,19 @@ void function_c6810(long unit_index)
 		if (0.0f > unit->unknown2b0)
 		{
 			unit->unknown2b0 = 0.0f;
-			s_unit *current = UNIT_GET(unit_index);
-
-			if (current->unknown0d4 != NONE)
-			{
-				function_b58c0(current->unknown0d4, 0x800000);
-			}
+			clamped = true;
 		}
 	}
-	if ((unit->flags_134 >> 4) & 1)
+	if (clamped)
+	{
+		s_unit *current = UNIT_GET(unit_index);
+
+		if (current->unknown0d4 != NONE)
+		{
+			function_b58c0(current->unknown0d4, 0x800000);
+		}
+	}
+	if (TEST_FIELD_BIT((unit->flags_134 >> 4) & 1))
 	{
 		unit->unknown2b4 += g_510c54->rate * 0.33333334f;
 		if (unit->unknown2b4 > 1.0f)
@@ -3277,65 +3274,55 @@ bool function_d1080(long unit_index, transform4x3f *matrix, s_unit_camera_data *
 /* the state of a unit's weapon use: 6 or 5 for the flags when asked, 7
    past the definition's limit at +0x114, else 3; otherwise 0xc96b0's
    range (2 when forced, at most 1 when held), clamped to 1 for players */
-// score 58 (was 58): Frame and lookups agree; first +0x2f is flag stack/BL, cleanup 0x1c/0x18.
-// Round 11 (lane 15): the range is clamped when held, as retail tests its third stack argument
-// (`[esp + 0x14]` after the pops), not b: 64 -> 58 (a behaviour fix; 0xc9e70 128 -> 121).
-// Round 175: held clamp 58 (possible operand fix; exact-only, restored); existing bit view 74;
-// common zero result 87; held/bit 58, held/result 92; actual bit/result 97, all three 88;
-// all test-derived results 89 at 292 bytes. Two duplicate generated forms excluded;
-// original body and every call restored.
-// Round 179: one shared range/result with bit/result-arm/definition-scope combinations
-// 64/70/80/87/74/81/64/76. Blocked return from initialized range, with native bit and
-// terminal result clamp, 64/64/74/74; with held operand 58/58/58/58 (exact-only, restored).
-// Round 230: flat flag/a and flag/b cases, then native frozen-bit view, blocked-range return, both,
-// held-test result and its three combinations: 58/58/58/58/58/58/58/58.
-// Original threshold observations, held operand, argument roles and body restored.
 // @retail 0xc9770
 long __stdcall function_c9770(long unit_index, bool flag, bool a, bool b, bool held, bool force, real c, real d)
 {
 	s_unit *unit = UNIT_GET(unit_index);
 	byte *definition = UNIT_DEFINITION_GET(unit);
+	long result = 0;
 	long range = 0;
 
 	if (flag)
 	{
 		if (a)
 		{
-			return 6;
+			result = 6;
 		}
-		if (b)
+		else if (b)
 		{
-			return 5;
+			result = 5;
 		}
-		if (*(real *)(definition + 0x114) > 0.0f && unit->unknownf8 + d > *(real *)(definition + 0x114))
+		else if (*(real *)(definition + 0x114) > 0.0f && unit->unknownf8 + d > *(real *)(definition + 0x114))
 		{
-			return 7;
+			result = 7;
 		}
-		return 3;
+		else
+		{
+			result = 3;
+		}
 	}
-	if (TEST_FIELD_BIT((unit->flags_10a >> 2) & 1))
+	else if (!TEST_FIELD_BIT(((s_unit_flags_10a_view *)&unit->flags_10a)->bit2))
 	{
-		return 0;
-	}
-	function_c96b0(unit_index, &range, c, d);
-	long result;
-	if (force)
-	{
-		result = 2;
-	}
-	else
-	{
-		result = range;
-		if (held && result > 1)
+		function_c96b0(unit_index, &range, c, d);
+		if (force)
+		{
+			result = 2;
+		}
+		else if (held && range > 1)
 		{
 			result = 1;
 		}
-	}
-	if (TEST_FIELD_BIT((unit->flags_134 >> 5) & 1) || (g_4e6948->state == 1 && g_4f55dc[7]) || unit->unknown13c != NONE)
-	{
-		if (result > 1)
+		else
 		{
-			return 1;
+			result = range;
+		}
+		if (TEST_FIELD_BIT((unit->flags_134 >> 5) & 1) || (g_4e6948->state == 1 && g_4f55dc[7]) ||
+			unit->unknown13c != NONE)
+		{
+			if (result > 1)
+			{
+				result = 1;
+			}
 		}
 	}
 	return result;
@@ -4098,6 +4085,11 @@ bool function_c5eb0(long unit_index)
 // Round 222: complete row/products/outputs/both carrier ownership 39/40/32/40; the same four
 // with input scale names 39/40/32/40. Original body restored; input load order and forward-
 // product carriers remain.
+// Round 43: plain component traversal with scalar/reversed-scalar/native-vector inputs
+// 32/32/65; uniform partial rows with scalar/native inputs 28/65; successive rows 28/65;
+// existing in-place axis transform 169. Actual local axes scaled through the existing helper
+// up-left-forward/forward-left-up 36/51; with two existing vector adds 36/51. All restored;
+// input j/k scheduling and final forward-product carriers remain.
 // @retail 0xcb810
 bool function_cb810(long unit_index, vector3f *vector)
 {

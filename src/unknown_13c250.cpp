@@ -81,9 +81,18 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 {
     return TEST_FIELD_BIT(arg_1->field_10a2);
 }
-// score 144 (was 144): frame 0xd8 agrees; carried-item receiver reloads, append-count observations and ranking handoff remain.
+// score 144 (was 144): frame 0xd8 agrees; carried-item receiver reloads, append-count observations and
+// ranking handoff remain. Retail's count is a plain stack local: it stores count 1 straight at the
+// first append (the count known zero there, even after the 0xcbe60 call) and reloads the pool data at
+// the second carried lookup. Round 8 (lane 2): appends as `local_3[local_2] = x; local_2++;` 164 (840
+// bytes); as `local_3[local_2++] = x` 164; `if (!local_2)` 144; the scenario pointer read at each use
+// 144; plain count with one-expression appends 281.
+// Earlier: carried-payload reloads, memory count and ranking handoff remain;
+// receiver/count reloads and ranking dispatch remain; retail reads the
+// frame 0xd8 agrees; carried-item receiver reloads, append-count observations and ranking handoff remain.
 
 // Earlier: carried-payload reloads, memory count and ranking handoff remain.
+// ranking handoff remain (the carried-payload reloads, the memory count and the ranking handoff).
 // Earlier: receiver/count reloads and ranking dispatch remain; retail reads the
 // count once per append (no volatile re-read) yet keeps it in memory, and holds the found
 // candidate apart from the best-ranked one (0x5000720 is a switch case there).
@@ -116,6 +125,31 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // 183; indexed scan with the preferred case 176; indexed scan with the preferred pre-test 139 (subthreshold);
 // completed-count snapshot 165; known-zero carried append 196; known-zero fallback append 179;
 // one-observation second append 147. Opening body restored.
+// Round 231: complete priority-zero result, long / unsigned / short / enum
+// 176/176/181/176; each with ordinary cardinality 280/280/276/280. Original
+// ranking, inherited count and body restored; receiver reloads and ranking handoff remain.
+// Round 45 (lane 9): the fallback block walk as a plain indexed `for` (byte offsets) 144, same count, kept
+// (count/item now in retail's ECX/EDX). Retail shape: count a non-volatile stack local (immediate 1 on known-empty
+// appends, one read per later append), index ranking loop over a count copy held in EBX, 0x5000720 kept apart.
+// Count not volatile + index ranking over a `candidate_count` copy + preferred apart (switch case, then
+// `if (preferred == NONE) preferred = best`) 205 (823 bytes; aligned 93 -> 78, ranking and tail exactly retail's);
+// with `local_3[local_2++]` appends 249; appends through an inline helper taking &count 205 (same code); count and
+// entries as one {count; entries[4]} local 206 (aligned 20, every append retail's); plus the block walk as a `for`
+// with a pointer local 206 (aligned 21), reading the block address at each use 206 (aligned 11: only the carried
+// weapon lookup and padding left); second pointer local for the 0x213 slot 206; both slots through the existing
+// 0xcbd50 getter 206; a count store between the slot reads (diagnostic) 119 at 839 bytes, merge stays; main's
+// volatile count with the `for` and the count-copy ranking 173. Left on the aligned-11 body: retail reloads the
+// pool data and unit pointer for the 0x213 slot read (only `index * 12` kept, `lea; shl ecx, 2`); ours merges the two
+// lookups in every form (compile-only screen: pointer locals, scopes, if/else, ternary, long/char slots, inline
+// weapon-in-slot helper, unrolled two-slot loop, empty do/while at the join: all merged).
+// Round 28 (lane 10): retail's count is a non-volatile memory local (the first append and the
+// fallback's first append store the constant 1 after `count == 0`, each later append rereads it, and the
+// ranking loop reads it once into EBX), and retail does not merge the second and third unit lookups
+// (it reloads the pool data and reuses only index * 12). The existing unit_get_current_weapon for the
+// first carried item 144 (same code); the count as element 0 of a five-entry array (diagnostic) 209
+// (first appends fold, the count is cached in EBX); preferred tag as a switch case 176 (aligned 93 ->
+// 73: retail's compare tree, 841 bytes; same as the earlier native case); with a separate selected
+// result for it 179 (847 bytes); with a memset-zeroed plain count 276 (784 bytes).
 // Round 231: complete priority-zero result, long / unsigned / short / enum
 // 176/176/181/176; each with ordinary cardinality 280/280/276/280. Original
 // ranking, inherited count and body restored; receiver reloads and ranking handoff remain.
@@ -192,21 +226,14 @@ void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
                 {
                     byte *local_19 = (byte *)g_4e3b44[*(long *)local_18->field_8 & 0xffff].bytes;
                     long local_20 = *(long *)(local_19 + 0x1c0);
-                    if (local_20 > 0)
+                    for (long local_21 = 0; local_21 < local_20; local_21++)
                     {
-                        byte *local_21 = *(byte **)(local_19 + 0x1c4) + 4;
-                        do
+                        long local_22 = *(long *)(*(byte **)(local_19 + 0x1c4) + local_21 * 8 + 4);
+                        if (local_22 != NONE)
                         {
-                            long local_22 = *(long *)local_21;
-                            if (local_22 != NONE)
-                            {
-                                long local_31 = local_2++;
-                                local_3[local_31] = local_22;
-                            }
-                            local_21 += 8;
-                            --local_20;
+                            long local_31 = local_2++;
+                            local_3[local_31] = local_22;
                         }
-                        while (local_20);
                     }
                 }
             }

@@ -67,7 +67,7 @@ struct s_4e6950
 };
 extern s_4e6950 g_4e6950;
 
-// score 342 (was 351): Retail length recovered; scaled cases still hoist coefficients rather than reload after stores.
+// score 342 (was 342): Retail length recovered; scaled cases still hoist coefficients rather than reload after stores.
 // Round 291: Native component loops for case subsets 23/35/23+35/24/23+24/35+24/all:
 // 351/351/381/351/381/381/381; all with four global-scale loops 381 (fast control 351).
 // Round 300: Existing clamp upper-first branches, independent lower/upper and upper/lower stores,
@@ -76,6 +76,13 @@ extern s_4e6950 g_4e6950;
 // Round 435: Existing scaler then clamps in cases 23/35/24/all 342/384/343/413;
 // case 23 kept, plain 342 at 1756 bytes. Multi-use coefficients in 23/35/24/all
 // 351/351/386/386. Original clamp, other cases and all game-call tuples retained.
+// Round 443: Native publication then existing scaler in cases 26/28/30/32, paired 26+28/30+32
+// and all four 418/414/411/385/416/411/445; retained case-23 scaler from selected input 360.
+// All regress; original body restored at retail length, coefficient reload/clamp scheduling
+// remains.
+// Round 445: Clamp-only component walk after retained scaler 367; symmetric first-product
+// lifetimes 342; both 367; symmetric biased-product lifetimes 342; walk/biased 367;
+// first/biased 342; all 357; all with forced existing clamp 357. Original body/helper restored.
 // @retail 0x33980
 void function_33980(long selector, vector3f *out)
 {

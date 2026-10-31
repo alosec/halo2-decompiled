@@ -299,6 +299,9 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 // Round 230: complete object-element observations alone 326; with saved header base 294;
 // with named slot 305; with both 292; those four with per-use tag elements
 // 382/349/422/332. Original body and producer restored.
+// DL round 206: existing matrix/vector, matrix3x3/vector and axes-vector producers
+// 220/296/296; early-arm callee inline 220; producer/inline pairs 220/296/296;
+// early-arm callee forced 1340. All producer, body and external declarations restored.
 // @retail 0x1197b0
 void function_1197b0(long object_index)
 {
@@ -663,11 +666,9 @@ bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 // score 83 (was 83): the object table base and the looked-up object are kept in different
 // registers, one word field is loaded zero-extended here and as a plain word in retail, and the
 // value stored at the 0x134 slot is sign-extended differently. Retail passes the size to 0xbc380
-// as a 16-bit argument, which needs that callee's shared declaration changed.
-// registers, one word field is loaded zero extended here and as a plain word in retail, and the
-// value stored at the 0x134 slot is sign extended differently. Round 81: retail passes the
-// size to 0xbc380 as a 16-bit argument (xor eax, eax; mov ax, ...), which needs that callee's
-// shared declaration changed; success path inside if (!= NONE) with return false after 88
+// as a 16-bit argument (xor eax, eax; mov ax, ...), which needs that callee's shared declaration
+// changed (BLOCKED-BY 0xbc380: a contributor's file declares it with a long size).
+// Round 81: success path inside if (!= NONE) with return false after 88
 // (registers right, false epilogue laid out last); return false at the guard 96 (laid out in
 // line); result from the guard test 108; || on the two bools 95; result set in both arms 88
 // Four-use long ordinal with retained/per-use tag and bitwise/logical predicates
@@ -680,6 +681,10 @@ bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
 // Round 46: inner success return 132; positive guard with direct false exit and inner return 88;
 // separate predicate tests on that graph 95; initial/post-reset/post-allocation/final/all object getters
 // 95 each. Original body restored.
+// Round 104: false result in an else arm of the guard 88 (retail's registers and false epilogue, but that
+// block is laid out after the other out-of-line arms where retail puts it first); with || on the two
+// bools 98; the false arm written first 96 (laid out in line); the bools declared the other way 88; the
+// two state fields read the other way 88 (load order and compare order swap together).
 // @retail 0x118510
 bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
 {
@@ -1200,9 +1205,18 @@ void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped
 // helper inline/noinline declarations 94/94, inline with those observations 156/132/121; existing vector
 // assignment at requested/output-basis/velocity copy masks 1-7 269/149/290/101/280/162/302, all copies with the
 // terminal flag setter 302.
+// Round 104 (long force flag): first movement-flag test inverted 175; physics block address at each use 94;
+// parent countdown arms inverted 94; motion test passed straight to the flag setter 94; word found flag 16
+// (same lines, a length coincidence). Still BLOCKED-BY 0x1c4b00's long force parameter.
 // Round 47: real output workspace with pointer/direct movement field 94/94; real movement workspace 94;
 // two-use velocity copy 109; read-only query result 94; split query declaration 94; late declarations
 // swapped 94; complete movement workspace 103 (frame 0x1ec). Original body restored.
+// Round 43 (lane 16): still BLOCKED-BY 0x1c4b00 (its definition is in a file held by another lane this round;
+// retail spills the found flag to a stack byte and pushes the whole dword) and the MOV/LEA order at the first
+// 0x1e5af0 call follows that callee's register setup (BLOCKED-BY 0x1e5af0, also in a held file). Squared length
+// grouped (k + j) + i / (j + k) + i 94/94 (the inner pair stays j, k); word found flag with the grouped squares
+// 16 (exact-only: left are the MOV/LEA pair, the squares and the flag's stack byte); the squared-length test
+// passed straight to the flag setter 94; the +0x17c block address at each use 94.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {

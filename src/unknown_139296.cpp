@@ -472,6 +472,8 @@ bool function_22acb4(long player_index);
 // all 165 at 884 bytes. Original order restored; extra second-mask spill and constant homes remain.
 // N227: Set-first total updates in first/second/third/fourth/first-second/second-third/
 // second-fourth/all result families 304/287/281/285/303/285/304/347. Original setter restored.
+// Round 237: Complemented word result families first/second/third/fourth/first-second/second-third/second-fourth/all: On recovered complemented-second frame, first enum/independent second/third 123 subsets 1-7 and all with signed second: 178/244/252/250/242/274/245/289/230/234/271/247/228/230/267/262.
+// Original executable body restored.
 // @retail 0x13a050
 void function_13a050(byte const *status, long user_index, long type, s_13ad48_item const **item_out,
 	word *first_out, word *second_out, word *third_out, word *fourth_out)

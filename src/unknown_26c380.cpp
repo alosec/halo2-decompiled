@@ -9,7 +9,7 @@
 #include "unknown_26c380.h"
 #include "path.h"
 
-bool function_270600(s_path_location const *location, long node_index);
+bool function_270600(long node_index, s_path_location const *location);
 
 /* an edge as the traces read it: its flags, and the sectors on either side */
 struct s_sector_edge
@@ -209,6 +209,11 @@ bool function_26c380(point3f const *origin, s_pathfinding_data const *pathfindin
 // Round 434: valid-walk edge seed, post-initialization success/sector seeds and all domain subsets
 // 422/404/421/404/421/403/422/422; last includes the early planar declaration. Frame remains 0x5c at 1605 bytes.
 // Post-initialization success plus sector 403 is a rejected one-point form; original complete body restored.
+// DL202: CRT planar transfer 440, frame 0x60 and seven additional caller losses;
+// existing magnitude/planar/both widened results 404/495/495; unused cross return
+// removed alone/with magnitude/with planar/with both 404/404/495/495.
+// Original helpers, result contracts and body restored; frame 0x5c versus 0x64,
+// independent normal homes, byte state and separate output tails remain.
 // @retail 0x26c590
 bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origin, long sector_index,
 	long target_sector_index, vector3f const *direction, real distance, s_path_location const *location,
@@ -367,7 +372,7 @@ bool function_26c590(s_pathfinding_data const *pathfinding, point3f const *origi
 						goto done;
 					}
 					if (location && (((s_sector_edge const *)edge)->flags & 0x80) &&
-						function_270600(location, iterator.edge_index))
+						function_270600(iterator.edge_index, location))
 					{
 						result->blocked = true;
 						success = (bool)hit;

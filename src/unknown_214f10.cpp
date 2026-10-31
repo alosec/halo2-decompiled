@@ -188,6 +188,11 @@ PRIVATE __forceinline long function_214f83(char const *arg_0, s_file_handle *arg
 // register test). Diagnostic only: a volatile success flag 48-50. Round 120: `success = (bool)opened;
 // if (success)` 55; the array element tested and passed directly 55; done and success as the two
 // fields of a status struct 60 (still forwarded); success declared at its assignment 55.
+// DL200: Policy-before-receivers, receivers-first, receivers-last and output-file-first task field
+// ownership 48/47/49/48; those new graphs with memset-owned share/flags/create-path/share zeros
+// 41/41/41/40. Two-point best rejected; original initializer, long outcome, success store,
+// existing completion qualifier and both waits restored. Handle ECX and memory success-byte test
+// remain.
 // @retail 0x214f80
 void game_state_cache_files_open(void)
 {

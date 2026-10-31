@@ -16,6 +16,7 @@ The handlers of the unit request table at 0x467564
 #include "unit_requests.h"
 #include "units.h"
 #include "matrix_transform.h"
+#include "vector_products.h"
 #include "normalize3d.h"
 #include "unknown_1cec30.h"
 #include "bit_vector.h"
@@ -616,6 +617,9 @@ void __stdcall function_e73c0(long unit_index, long type)
 
 /* plays the animation of a weapon's request (the ready, put away, firing
    and dual wielding animations) */
+// score 281 (was 281): Frame 4 agrees; action/unit argument staging and both switch table extents differ.
+// Round 236: native case order with cached request type, call-result exit and descending action cases, all subsets 281/281/281/281/292/292/292/292.
+// Original executable body restored.
 // @retail 0xe7440
 bool __stdcall function_e7440(long unit_index, s_unit_request *request)
 {
@@ -1026,6 +1030,11 @@ PRIVATE __forceinline byte *unit_action_seat_get(s_unit_action_unit *unit)
 // existing word hand getter, Boolean active field and long player value; only constant setup
 // reordered. Every field read, call tuple and success commit is
 // unchanged.
+// Round 21 (lane 13): the first lookup through UNIT_ACTION_HEADER_GET 19; the grenade test as
+// if/else with the player notice in the else 19; the player notice ending in `return result` 45
+// (958 bytes); immediate and animated throws as one if/else chain 19; animate and player-index
+// tests nested 19. A compile-only model keeps the exit block last for every structured, goto and
+// inline-helper shape; retail's failure jumps reach the success path's exit copy instead.
 // @retail 0xe7fb0
 bool __stdcall function_e7fb0(long unit_index, s_unit_request *request)
 {
@@ -2632,6 +2641,12 @@ void function_a8b10(long unit_index);
 // for the flag clear 9 (same code; kept, 68 without the flag); the 0xb58c0 owner in a local 9; the
 // action name as if/else 9; the 0xcbd50 result passed as the slot 9; action/state declarations swapped 11; vehicle read first 9 (all plain;
 // --fast adds a pool reload after 0xbef30 the full build lacks).
+// Round 21 (lane 13): BLOCKED-BY 0xe0070: ours takes the unit index in ESI with a 0x1c frame,
+// retail in EDI with 0x20 (retail's `mov edi, esi` and reload around that call are the 6 missing
+// bytes, and the EBP/EDI unit/index swap follows). Vehicle index read before the type flag 68
+// (plain; fast 92 from the reload); type flag after the early return 154 (and 0xeaad0 lost its match);
+// the unit through UNIT_ACTION_HEADER_GET 68; vehicle index read after the early return 68;
+// `!unit->object_type` at the 0xe0070 call 68 (all plain).
 // @retail 0xea8e0
 void __stdcall function_ea8e0(long unit_index, bool hurried)
 {
@@ -2760,6 +2775,13 @@ transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 // matrix_transform_vector 55/46; scale statements k, j, i 58; `scale * v` 55; sums written
 // forward first 55/40; scale read per use 103; vector3f_assign 35; graph at the call, the
 // model local only, a channel pointer 35; scalar copies 97/102; a byte OR through the helper 48.
+// Round 21 (lane 13): the existing 0x142640 called for the scale and rotation 254 (296 bytes: LTCG
+// keeps the call, its file is /Ob1 and it is not inline), with a __forceinline declaration 254;
+// state declared before the definition chain 35; the channel's animation id read into a local
+// before the call 10 (fixes the whole EBX/EDX chain; a one-use local, kept only with a match);
+// `real scale` then x/y/z copies of the velocity scaled in place and up*z + left*y + forward*x
+// rows 25; both together MATCH (not kept: the scaled copies write the helper body out by hand).
+// BLOCKED-BY 0x142640: retail inlines it here; once it is inline its call plus the id local should match.
 // @retail 0xeac90
 void __stdcall function_eac90(long unit_index, bool hurried, bool push)
 {
@@ -3670,6 +3692,9 @@ extern vector3f *g_4687bc;
 /* a raised weapon's point (type 41 update): when its time is up, it
    shoves the target in front of the unit, with damage and an impact
    effect */
+// score 277 (was 287): Frame 0xb8 agrees; unit/target registers, vector copies, true exit and material widths remain.
+// Round 236: complete initial vector copy with entry damage lifetime and center/shove/impact names, all subsets 277/277/277/277/277/277/277/277.
+// Keep only the whole forward-vector initialization; all workspace and name changes restored.
 // @retail 0xec4f0
 bool __stdcall function_ec4f0(long unit_index, long type)
 {
@@ -3691,12 +3716,10 @@ bool __stdcall function_ec4f0(long unit_index, long type)
 
 	byte *target_definition = g_4e3b44[*(long *)target & 0xffff].bytes;
 	s_unit_action_unit *root = UNIT_ACTION_UNIT_GET(function_baf80(target_index));
-	vector3f direction;
+	vector3f direction = unit->forward;
 	point3f target_center;
 	point3f unit_center;
 
-	direction.i = unit->forward.i;
-	direction.j = unit->forward.j;
 	direction.k = 0.0f;
 	if (function_30bf0(&direction) == 0.0f)
 		return false;
@@ -4057,6 +4080,9 @@ extern vector3f *g_4687ac;
 /* hoists a unit onto a ledge (type 49): its animation by the hoist marker,
    facing away from the ledge, its seat transform kept relative to the new
    frame */
+// score 309 (was 327): Frame 0x11c agrees; unit/pool registers, basis/quaternion homes and call/float scheduling remain.
+// Round 236: actual animation result with existing basis cross products, all eight subsets 317/316/317/315/309/307/310/326.
+// Keep actual animation result and shared frame-left cross; other basis helpers restored (extra first cross 307, only two points).
 // @retail 0xecff0
 bool __stdcall function_ecff0(long unit_index, s_unit_request *request)
 {
@@ -4087,9 +4113,9 @@ bool __stdcall function_ecff0(long unit_index, s_unit_request *request)
 	default:
 		return false;
 	}
-	if (!function_10f430(unit_index, 0x6000086, 0x7000101, 0x7000101, name, 0.1f, 0, 0))
+	result = function_10f430(unit_index, 0x6000086, 0x7000101, 0x7000101, name, 0.1f, 0, 0);
+	if (!result)
 		return false;
-	result = true;
 
 	vector3f forward;
 	vector3f up = object_matrix.up;
@@ -4127,9 +4153,7 @@ bool __stdcall function_ecff0(long unit_index, s_unit_request *request)
 
 	frame.scale = 1.0f;
 	frame.forward = forward;
-	frame.left.i = up.j * forward.k - up.k * forward.j;
-	frame.left.j = up.k * forward.i - forward.k * up.i;
-	frame.left.k = forward.j * up.i - up.j * forward.i;
+	cross3f(&up, &forward, &frame.left);
 	frame.up = up;
 	frame.position = object_matrix.position;
 	if (object_matrix.scale != 1.0f)

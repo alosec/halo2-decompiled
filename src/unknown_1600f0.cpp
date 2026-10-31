@@ -1005,6 +1005,12 @@ struct s_game_engine_globals_connections_view
 };
 
 /* builds a player's row of the scoreboard at a position */
+// score 170 (was 170): this round's reduced-image listing (1227 bytes, frame 0x6d0 against retail's
+// 1254 bytes and frame 0x6d8) shows every stack home shifted by eight bytes, so the fast score of 272
+// is not the full build's 170 and the reduced image is not a usable target for this function.
+// score 170 (was 170): this round the reduced image scores the function 272 (the full build scores
+// 170); the deferred icon tail and the time/connection register homes still differ, and the fast
+// number is the one the reduced image reports.
 // score 170 (was 170): frame 0x6d8 agrees; deferred icon tail and time/connection registers remain;
 // retail tests the score/time widths as dwords but adds them as words, name width (bx) first.
 // Round 75: short widths (casts dropped) 170 (kept: the column sums add the name width first as
@@ -1127,6 +1133,11 @@ struct s_game_engine_globals_connections_view
 // Round 219: Query-output default at entry/time/place/name boundaries 253/192/235/191;
 // each with direct per-arm glyph 250/187/232/184. All restored; deferred icon tail and
 // trailing time/connection homes remain.
+// Round 42: native formatter output consumed directly by place/score/both widgets
+// 252/216/263; same producers with direct glyph arms 255/219/266; both producers
+// with direct connection input 263, plus direct glyph arms 266. Six matched formatter,
+// query and widget controls survive. Original complete body restored; deferred icon
+// tail and time/connection input homes remain.
 // @retail 0x1603f0
 void game_engine_player_row_build(short const *position, real alpha, long player_index, word const *name, long place,
 	long score, long seconds, bool hide_connection, bool show_icon, bool hide_place, color3f const *color, bool dim,
@@ -1326,7 +1337,12 @@ PRIVATE inline long score_string_list_1608e0()
 	}
 	return result;
 }
-// score 689 (was 689): native rectangle objects recover retail length; frame 0x790 versus 0x79c;
+// score 689 (was 689): baseline frame 0x78c versus retail 0x79c; early player/panel roles and coordinate/color homes remain.
+// this round's reduced listing shows the frame at 0x790 against retail's 0x79c
+// (2858 bytes against 2879), so every stack home is twelve bytes off and the absolute addresses are
+// compared instead of masked; retail also computes the player index in ebx before the pushes, ours in
+// edi after them.
+// 689); the frame, the player and coordinate registers and the fade clamps still differ.
 // the local player sits in EDI (retail EBX) and the
 // x coordinate in EBX (retail EDI); the color locals' slots (retail keeps background below foreground)
 // and the shared 0.0/1.0 registers of the fade clamps differ.
@@ -1446,6 +1462,15 @@ PRIVATE inline long score_string_list_1608e0()
 // Round 428: native row-position horizontal/vertical/both 693/691/676; native title buffer 689;
 // title with horizontal/vertical/both 693/691/676; all with promoted narrowed width 676.
 // Coordinate-to-array forms restored without a match; original 0x790 frame and viewer/color homes remain.
+// Round 42: pooled player fields at use 732; completed collector player index at use
+// 689 (plain kept, 2879 bytes); word outer ordinals 690; pooled fields/index 721;
+// pooled fields/word ordinals 726; index/word ordinals 703 (seven-point gain rejected);
+// all three and native position initialization 753 each. Frame 0x790 versus 0x79c,
+// viewer/coordinate/color homes remain; original pooled receiver and long walks retained.
+// DL round 206: native score/time/both/name/score-name/time-name/all column widths
+// 699/701/696/689/699/691/699; all with the existing player getter 721. The combined
+// width form revisits the earlier pre-rectangle graph on the current 0x78c frame.
+// Original long widths, native rectangles and body restored.
 // @retail 0x1608e0
 void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, real alpha)
 {
@@ -1601,10 +1626,9 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 	if (display.team_count) row_position[1] += 0x15;
 	for (long player_row = 0; player_row < display.player_count; ++player_row)
 	{
-		long index = display.players[player_row];
 		real row_fade = (alpha - (real)row_number / fade_count * 0.5f) * 2.0f;
 		real row_alpha = PIN(row_fade, 0.0f, 1.0f);
-		byte *player = g_4e8c24->data + (index & 0xffff) * 0x21c;
+		byte *player = g_4e8c24->data + (display.players[player_row] & 0xffff) * 0x21c;
 		++row_number;
 		long place = display.player_ranks[player_row] / 2 + 1;
 
@@ -1629,14 +1653,14 @@ void __stdcall function_1608e0(long player_index, s_score_panel_1608e0 *panel, r
 		long show_icon = team != NONE && *(long *)(player + 0x2c) == NONE && !(flags & 2);
 		short seconds;
 		if (g_4e6948->flag1128)
-			seconds = *(short *)(scores + (index & 0xffff) * 0x1c + 6);
+			seconds = *(short *)(scores + (display.players[player_row] & 0xffff) * 0x1c + 6);
 		else
-			seconds = *(short *)(scores + (index & 0xffff) * 0x1c + 4);
+			seconds = *(short *)(scores + (display.players[player_row] & 0xffff) * 0x1c + 4);
 		s_player_row_columns *columns = (s_player_row_columns *)panel;
-		game_engine_player_row_build(row_position, row_alpha, index, (word *)(player + 0x44), place,
-			*(short *)(scores + (index & 0xffff) * 0x1c + 0x12), seconds, (bool)((flags >> 1) & 1), show_icon, team == NONE,
+		game_engine_player_row_build(row_position, row_alpha, display.players[player_row], (word *)(player + 0x44), place,
+			*(short *)(scores + (display.players[player_row] & 0xffff) * 0x1c + 0x12), seconds, (bool)((flags >> 1) & 1), show_icon, team == NONE,
 			&color, dim, &panel->players[player_row].row, columns);
-		panel->players[player_row].selected = index == player_index;
+		panel->players[player_row].selected = display.players[player_row] == player_index;
 	}
 	panel->player_count = display.player_count;
 }
@@ -1720,6 +1744,15 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 189: Actual widget/validity and validity/widget pointer contracts 172/172; sole validity
 // member base in both orders 156/156; indexed team fields with all four contracts 154 each.
 // Bounds/receiver scheduling and team induction remain. Original helper and body restored.
+// Round 107: retail's team loop is indexed (counter incremented before the row pointer, as in the
+// player loop); indexed, ours is 12 bytes longer because each widget's bounds temporary takes ECX
+// where retail keeps EDX and loads the receiver before the push, so the justification rotates into
+// EDX/ECX (`mov [moffs], edx` is a byte longer than eax's form) and the player loop head gets padded.
+// Draw through the existing 0x1fa30 (out of line) 475; one justification variable shared by a
+// row's widgets 122 (copy-propagated); preamble through the existing 0x13edb0 (out of line) 425;
+// receiver named before the draw 122; typed template drawer 1411 (not inlined).
+// Round 440: Pointer-only team/player text/icon traversal masks 1/2/3/4/5/6/7 score 217/154/230/488/511/504/524;
+// complete graph with guarded team range 539. Every native traversal and helper restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

@@ -527,6 +527,9 @@ extern point2f *g_468778;
 // Round 428: native short/word/long/dword completion result 404/404/406/406;
 // those result widths with actor-first acquisition 401/401/403/403. All 1549 bytes;
 // result spill and actor/settings/prop allocation remain; original bool result and lookup order restored.
+// Round 238: complementary rejection result bool/byte/short/long 394/394/403/401;
+// those domains with actor-first acquisition 419/419/406/404. Original positive
+// bool result, lookup order, early distance and complete body restored.
 // @retail 0x1aa0d0
 bool __stdcall function_1aa0d0(long arg_0, s_slot *arg_1)
 {
@@ -773,6 +776,11 @@ static __forceinline long real_to_long(real value);
 // Round 220: Early distance-limit scope/exhaustive/conditional/complementary producers 398/402/402/402;
 // the same four with the actual native slot formal and no cast alias 398/402/402/402. All retain
 // retail length but regress; complete original body, formal, sole declaration and every query restored.
+// Round 42: complete target/object velocity scalar values retained at all uses
+// 513/502; complete prop-facing value 489; target/object, target/facing and
+// object/facing value pairs 555/583/544; all scalar values 603; all native vector
+// values 574. Original pointers, fresh reads, arithmetic, query aliases and body
+// restored; frame 0x58, early rejection and magnitude/query homes remain.
 // @retail 0x1aab50
 bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 {

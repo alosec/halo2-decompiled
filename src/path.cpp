@@ -120,7 +120,7 @@ struct s_path_closest_view
 struct s_path_edge_view
 {
 	word vertices[2];
-	byte flags;
+	signed char flags;
 	byte unknown05[3];
 	word next_edges[2];
 	word nodes[2];
@@ -230,36 +230,23 @@ void function_2705c0(s_path_source *source, point3f const *point,
 	input->unknown44 = unknown;
 }
 
-// score 28 (was 28): BLOCKED-BY 0x26c590. Retail takes the location in edx and the node in ebx and has one exit (`xor al, al` at entry, `mov al, 1`); the one-exit
-// form (`bool result = false;` ... `result = true; break;` ... `return result;`) matches, but unmatched 0x26c590 then takes its origin in
-// ecx and its eight matched callers (0x1ab770, 0x1bd400, 0x1f5110, 0x26c4e0, 0x26cbe0, 0x26ccb0, 0x26d290, 0x2c39f0) stop matching
-// (BLOCKED-BY 0x26c590). Tried in 0x26c590 with that form: `bool success` 553, line_normal as one dword copy 445, point1/distance1 at
-// function scope 420, the edge iterator at function scope 420; hit at function scope 419; long count 424; line_normal as one struct
-// copy 444 (retail's 0x64 frame), the same with the old exits 478, with bool success 507; none keeps origin on the stack.
-// Separate noinline with complete/original exits 0/28; scan-position result 29; direct view with complete result 0; shifted bit 37; entry-pointer
-// walk 27; walk plus result 39; word index plus result 21. Both matching forms and the word-index form lose the protected caller chain. Ordinary
-// noinline/result confirmation matches here but loses all eight listed callers; all body/declaration trials restored. The pointer walk gains only
-// one and is restored.
-// Inline with original exits 28; inline plus single result MATCH fast, but seven matched reduced-image callers lose
-// their match (the eighth already differs in that image); shared byte/short result 40/45; native index with original/
-// shared exits 32/37; nested tests 28; active-bit-first tests 28 (same caller losses). All restored.
-// Round 70: a one-file LTCG harness of 0x26c590 + this file reproduces the move (origin in ecx, ret 0x14). Retail keeps
-// NONE in edx from entry to the loop test, so the axis pointer takes edi and origin stays on the stack. In 0x26c590 with
-// the one-exit form: next index at function scope 430, it set to NONE there 419, bool success cleared at the count exit
-// 544, first at function scope 419, nested location/flag tests 419; origin stays in ecx in all, the callers still lost.
+// whether the location holds an active entry for the node: retail's one caller (0x26c590) sets up
+// the location (edx) before the node (ebx), so the node is declared first
 // @retail 0x270600
-PRIVATE bool function_270600(s_path_location const *location, long node_index)
+PRIVATE bool function_270600(long node_index, s_path_location const *location)
 {
 	s_path_location_view const *view = (s_path_location_view const *)location;
+	bool result = false;
 	for (short i = 0; i < view->count; i++)
 	{
 		if (view->entries[i].unknown00 == NONE &&
 			view->entries[i].node_index == node_index && (view->flags & (1 << i)))
 		{
-			return true;
+			result = true;
+			break;
 		}
 	}
-	return false;
+	return result;
 }
 
 // @retail 0x270640
@@ -422,6 +409,9 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 // Round 429: special predicate at use/completion byte/both/traversal phase scope/
 // predicate-scope/byte-scope/all/all with long completion 358/314/350/315/358/314/350/369.
 // One-point byte gains rejected; original clearing, traversal and geometry restored.
+// Round 320: advancing link-output receiver with long/short/word link counts 368/368/368;
+// long previous-index combinations 366/382/365; long path count with long/short link count 316/316.
+// First forms recover frame 0xe4 but regress; complete original body and memcpy restored.
 // @retail 0x270d90
 PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_result_view const *result, short node_index, short maximum_steps,
@@ -800,6 +790,9 @@ bool function_2715a0(byte *buffer)
 // N227: Native signed root/bounded hash/signed collision lookup carriers, seven subsets
 // 515/509/538/501/540/517/542; all with readonly node 542. Original lookup domains
 // and body restored; state/node/link registers and heap expansion remain.
+// Round 320: actual exclusion-search ordinal as result, short/long with joined/separate query guards
+// 599/584/599/584; all live penalty reads 578/567/578/567. All lengthen the body.
+// Complete original search, penalty snapshot, heap operations and result qualifier restored.
 // @retail 0x271630
 PRIVATE bool function_271630(s_type_f17a25 *state)
 {
@@ -1093,7 +1086,7 @@ struct s_flag_word_bits
    vertex indices are unsigned words: its comparisons with long NONE do not
    reject 0xffff. Only destination sector words have an effective NONE test.
    Link type stores write the low short; the upper short stays untouched. */
-// score 452 (was 452): Frame 0x2c/0x34, data/count registers and vector endpoint homes differ.
+// score 383 (was 383): Frame 0x30 versus retail 0x34; flag-mask, edge-index and endpoint homes differ.
 // Earlier surface word-bit view 452 (from 475).
 // Frame 0x2c/0x34, data/count registers and endpoint homes remain. Signed edge byte 464; direct parameter 452;
 // native surface bits 452; long surface cursor 483; output cursor 541; indexed vector helper 452; native
@@ -1107,22 +1100,51 @@ struct s_flag_word_bits
 // Round 429: direct parameter, early count 452; case orders 0,2,5,1/6 original/early count
 // 456/456; 1/6,0,2,5 original/early 476/476; 2,5,1/6,0 original/early 461/461;
 // 5,2,0,1/6 early 463. Seven forms reach retail length; all bodies restored.
+// Earlier 256 (was 292): the ring walk names its two edge vertices so the point copy and the
+// vector difference share one pair of vertex pointers, and the edge flag byte is stored
+// before the two cleared flag bytes; the state and flag mask registers still differ.
+// Earlier 292 (was 312): the surface list is walked as retail's do-while and the ring walk stores
+// the edge flag byte in retail's order, so the loop tails and the ring entries now agree; the
+// state pointer and the flag mask still use swapped registers, the case 0 edge comparison uses
+// another register and the ring walk's edge pointer comes from a register, not retail's stack home.
+// Earlier 312 (was 427): retail's frame (0x34), argument offsets and length agree with ours, the
+// surface vertices are named locals so the link points and the segment ends land in retail's stack
+// homes, the node distance is three named components summed in z, y, x order and the link fields
+// are stored in retail's order; the state pointer and the flag mask still use swapped registers,
+// the case 0 edge comparison uses another register and the ring walk still differs.
+// Earlier 383 (was 452): retail's pathfinding, node-array, count and node-index registers and the
+// local homes now agree with ours, and the length matches retail's 1760 bytes; the frame is 0x30
+// against retail's 0x34, the flag mask and the edge index still use different registers, and the
+// two edge endpoints are not kept in retail's stack homes.
+// Coordinator review of the score-256 round: kept at 383 fast (main 452): the flat pathfinding fields (no stack copy
+// of the pointer), the do/while with the count test first, the signed char edge flags (retail loads them with movsx,
+// shr 7) and the shared vertex pointers. Case 0 must still write unknown2d = true and unknown2e = false: retail jumps
+// to the shared tail at 0x27258b that stores them, and callers read both. The round's form with those two writes added
+// back scores 256, but it hand-copies vector3d_from_points3d for the flag0d distance (three named components summed
+// z, y, x) and adds one-use segment_start/segment_end (declared end first) and link_end pointers; those are not kept
+// without a match. The swapped facing branch in 0x263810 alone scores 150 (was 152), not kept.
+// Round 320: shared movement mask/long movement ordinal/converted-point lexical homes,
+// nonempty subsets 448/392/448/383/448/392/448; all with entry point workspaces 448.
+// Mask capture recovers frame 0x34 but regresses; original observations, loops, copies and body restored.
 // @retail 0x272020
 PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 	s_path_node_key_view const *node, s_path_link_view *links, s_type_f17a25 const *state)
 {
-	/* retail keeps pathfinding on the stack */
-	s_pathfinding_data const *const *pathfinding_reference = &pathfinding;
-	s_path_links_data_view const *data = (s_path_links_data_view const *)*pathfinding_reference;
+	short count = 0;
+	s_pathfinding_node const *nodes = pathfinding->nodes;
 	long node_index = node->node_index;
 	short output_index = node->entry_point.output_index;
-	short count = 0;
-	short surface_index = data->nodes[node_index].first_surface;
-	if (data->surface_count > 0)
+	short surface_index = nodes[node_index].first_surface;
+	if (pathfinding->surface_count > 0 && surface_index != NONE)
 	{
-		while (surface_index != NONE && count < 64)
+		do
 		{
-			s_path_surface_link_view const *surface = &data->surfaces[surface_index];
+			if (count >= 64)
+			{
+				break;
+			}
+			s_path_surface_link_view const *surface =
+				(s_path_surface_link_view const *)&pathfinding->surfaces[surface_index];
 			if (state->settings.flags & (1 << surface->type))
 			{
 				switch (surface->type)
@@ -1130,7 +1152,7 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 				case 0:
 				{
 					long edge_index = *(long const *)&surface->unknown04;
-					s_path_edge_view const *edge = &data->edges[edge_index];
+					s_path_edge_view const *edge = (s_path_edge_view const *)&pathfinding->edges[edge_index];
 					word next_node = edge->nodes[node_index != edge->nodes[1]];
 					if ((long)next_node != NONE && next_node != (word)NONE)
 					{
@@ -1138,12 +1160,13 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 						link->node_index = next_node;
 						link->index = edge_index;
 						*(short *)&link->type = NONE;
-						link->flags = data->nodes[next_node].flags;
-						link->point.point = data->vertices[edge->vertices[0]];
+						link->flags = nodes[next_node].flags;
+						point3f const *first_vertex = &pathfinding->vertices[edge->vertices[0]];
+						point3f const *second_vertex = &pathfinding->vertices[edge->vertices[1]];
+						link->point.point = *first_vertex;
 						link->point.output_index = output_index;
-						vector3d_from_points3d(&data->vertices[edge->vertices[0]],
-							&data->vertices[edge->vertices[1]], &link->vector);
-						link->unknown2c = (edge->flags >> 7) & 1;
+						vector3d_from_points3d(first_vertex, second_vertex, &link->vector);
+						link->unknown2c = ((dword)edge->flags >> 7) & 1;
 						link->unknown2d = true;
 						link->unknown2e = false;
 						++count;
@@ -1168,11 +1191,11 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					{
 						break;
 					}
-					short flags = data->nodes[next_node].flags;
+					short flags = nodes[next_node].flags;
 					if (node->flag0d)
 					{
 						vector3f delta;
-						vector3d_from_points3d(&data->vertices[surface->unknown04],
+						vector3d_from_points3d(&pathfinding->vertices[surface->unknown04],
 							&node->entry_point.point, &delta);
 						if (delta.k * delta.k + delta.j * delta.j + delta.i * delta.i > 0.09f)
 						{
@@ -1182,8 +1205,8 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					if (!(surface->unknown0c & 1) && surface->unknown10 != surface->unknown12)
 					{
 						point3f start, end;
-						function_2104b0(surface->unknown10, &data->vertices[surface->unknown04], &start);
-						function_2104b0(surface->unknown12, &data->vertices[surface->unknown08], &end);
+						function_2104b0(surface->unknown10, &pathfinding->vertices[surface->unknown04], &start);
+						function_2104b0(surface->unknown12, &pathfinding->vertices[surface->unknown08], &end);
 						bool traversable = false;
 						for (short type = 0; type < 6; ++type)
 						{
@@ -1204,17 +1227,17 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 						}
 					}
 					s_path_link_view *link = &links[count];
+					point3f const *link_point = &pathfinding->vertices[surface->unknown08];
 					*(short *)&link->type = surface->type;
 					link->index = surface_index;
 					link->node_index = surface->unknown0e;
 					link->unknown2c = true;
 					link->unknown2d = true;
 					link->flags = flags | 1;
-					link->point.point = data->vertices[surface->unknown08];
+					link->point.point = *link_point;
 					link->point.output_index = surface->unknown12;
 					link->unknown2e = surface->type == 6;
-					vector3d_from_points3d(&data->vertices[surface->unknown08],
-						&data->vertices[surface->unknown0a], &link->vector);
+					vector3d_from_points3d(link_point, &pathfinding->vertices[surface->unknown0a], &link->vector);
 					++count;
 					break;
 				}
@@ -1229,7 +1252,7 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					{
 						break;
 					}
-					point3f const *point = &data->vertices[surface->unknown06];
+					point3f const *point = &pathfinding->vertices[surface->unknown06];
 					if (surface->unknown0a == 1 || surface->unknown0a == 2)
 					{
 						real dx = node->entry_point.point.x - point->x;
@@ -1243,7 +1266,7 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					link->index = surface_index;
 					*(short *)&link->type = 2;
 					link->node_index = next_node;
-					link->flags = data->nodes[next_node].flags | 1;
+					link->flags = nodes[next_node].flags | 1;
 					link->point.point = *point;
 					link->point.output_index = output_index;
 					link->vector = *g_4687a4;
@@ -1276,8 +1299,8 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					link->index = surface_index;
 					*(short *)&link->type = 5;
 					link->node_index = next_node;
-					link->flags = data->nodes[next_node].flags;
-					link->point.point = data->vertices[surface->unknown08];
+					link->flags = nodes[next_node].flags;
+					link->point.point = pathfinding->vertices[surface->unknown08];
 					link->point.output_index = output_index;
 					link->vector = *g_4687a4;
 					link->unknown2c = true;
@@ -1290,16 +1313,17 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 			}
 			surface_index = surface->next;
 		}
+		while (surface_index != NONE);
 	}
 	/* Retail enters the ring even if the surface pass already filled 64 slots.
 	   Its count check follows insertion; keep that behavior here. */
-	if ((data->nodes[node_index].flags & 1) || (count == 0 && node->parent == NONE))
+	if ((nodes[node_index].flags & 1) || (count == 0 && node->parent == NONE))
 	{
-		long first_edge = *(long const *)data->nodes[node_index].unknown4;
+		long first_edge = *(long const *)nodes[node_index].unknown4;
 		long edge_index = first_edge;
 		do
 		{
-			s_path_edge_view const *edge = &data->edges[edge_index];
+			s_path_edge_view const *edge = (s_path_edge_view const *)&pathfinding->edges[edge_index];
 			bool reverse = node_index == edge->nodes[1];
 			long next_node = edge->nodes[!reverse];
 			if (next_node != NONE && next_node != 0xffff)
@@ -1308,14 +1332,15 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 				link->index = edge_index;
 				link->node_index = next_node;
 				*(short *)&link->type = NONE;
-				link->flags = data->nodes[next_node].flags;
-				link->unknown2c = (edge->flags >> 7) & 1;
+				link->flags = nodes[next_node].flags;
+				link->unknown2c = ((dword)edge->flags >> 7) & 1;
 				link->unknown2d = false;
 				link->unknown2e = false;
-				link->point.point = data->vertices[edge->vertices[0]];
+				point3f const *first_vertex = &pathfinding->vertices[edge->vertices[0]];
+				point3f const *second_vertex = &pathfinding->vertices[edge->vertices[1]];
+				link->point.point = *first_vertex;
 				link->point.output_index = output_index;
-				vector3d_from_points3d(&data->vertices[edge->vertices[0]],
-					&data->vertices[edge->vertices[1]], &link->vector);
+				vector3d_from_points3d(first_vertex, second_vertex, &link->vector);
 				++count;
 			}
 			if (count == 64)

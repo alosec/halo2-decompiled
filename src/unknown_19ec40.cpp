@@ -118,6 +118,13 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // key_a is enregistered in BP (a preheader copy and a reload at the back edge) and the globals, point and
 // i rotate to EDI, EBX and ESI. The fast check needs distance_sq3f (0x24550) in the image (105 without
 // it). `distance_squared = 0.0f; if (*point_reference)` gives retail's block layout (102 positional,
+// score 65 (was 65): retail keeps the globals in EBX, point in EBP (so it stays a stack parameter), i
+// in EDI, entry in ESI (pushed after the count test) and reloads each key into CX; ours puts entry in
+// ECX, so key_a is enregistered in BP (a preheader copy and a reload at the back edge) and the
+// globals, point and i rotate to EDI, EBX and ESI: the same seven registers in another assignment.
+// The fast check needs distance_sq3f (0x24550) in the image (105 without it): list 0x24550 with it
+// (65 then), or use a plain check or a one-file LTCG harness with src/unknown_023540.cpp.
+// `distance_squared = 0.0f; if (*point_reference)` gives retail's block layout (102 positional,
 // aligned 78 -> 48, register-masked 20 -> 18): then only the register roles differ.
 // Tried: unsigned key bits (a word key compared with each field cast to word) plus entry position 61, not
 // kept: the casts only steer the compares; entry position alone 112; separate keys 61; read-only globals
@@ -139,9 +146,52 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // height read through its address 100; point_reference after the globals or in the loop, a point copy
 // local 102/65; position or distance declared at function scope or the loop top 65. Diagnostics: with no
 // key tests the globals/point/i rotation stays, so the key enregistration is not the root.
+// Tried: unsigned key bits (a word key compared with each field cast to word) plus entry position
+// 61, not kept: the casts only steer the compares; entry position alone 112; separate keys 61;
+// read-only globals 61 (an earlier body); function-scope position 61; wrapped index 105; direct
+// count 61; explicit append 61; height input 61; distance inline 65; force-inline 65; count global
+// at use 65; count and inline 65; entry position copy 64; entry copy and force-inline 64; capacity
+// lifetime 65; vertical difference 65; the keys read through volatile casts 99 (the prologue then
+// matches and point_reference is no longer needed, but each key loads as a dword into ESI, entry
+// stays in ECX and the loop top loses its aligning jmp), key_a alone 97, with distance = 0 / if
+// (point) 102, through an inline key-match helper 102; one && chain without the globals and
+// point_reference locals 117; point_reference dropped 71 (point becomes a register argument), or
+// (void)&point in its place 71; globals local dropped 113; inline key-match helper 65; entry at
+// function scope 65; field-first key compares 65; (void)& of the key parameters (no effect, 102
+// with the if (point) shape); keys compared without the key temporary 65; entry declared first 65;
+// point test with the arms swapped worse; position copied from globals or from entry 64 (from
+// entry drops retail's table reload), from globals with reordered declarations 115, through
+// globals 113; one && chain of the key tests 65; `continue` per key test 65 (all three key forms
+// give identical code); every key test through globals->marker_entries[i] without entry 138 (378
+// bytes); i declared at the top 65; count declared first 65; declarations reordered (globals
+// before the reference; globals and count first; entry before key) 65 each; the entry copy with
+// distance = 0 / if (point) 102; formal word keys 65 (two matched callers differ); entry-pointer
+// traversal 106; output pointer 65; memcpy append 97; full-width result index 65; mixed
+// parameter/temporary key tests 65/65; reused entry-field temporary 65; const entry pointer 65;
+// key declared at function scope 65; radius squared at its use 92; entry as `marker_entries + i`
+// 65; count and best declared before radius_squared 65. Round 35: a 40-form screen of key form
+// (temporary / direct / continue) x point test x position source (g_4e0350 / globals / entry) x
+// declaration order x entry before the key: best 64 (position from entry), every distance = 0 /
+// if (point) row 102-115. Round 96 (harness, aligned counts; base 43): 121 random combinations of
+// point_reference/plain point, globals local/global, key temporary/one condition/continue, entry
+// pointer/indexed, if-else/initialised distance, position source and four declaration orders: none
+// below 42 (initialised distance with the entry position 42 at 102 bytes); a named `long index =
+// i` for both result stores 43; const entry 43; split `results[count] = i; count++;` 43; capacity
+// test inverted 45; plain point with the global 52. Round 102 (one-file harness, exact): the if
+// (point) shape with one && key chain and a valid flag 102; the keys read through short const *
+// locals or a pointer helper 102 (folded, identical); height read through its address 100;
+// point_reference after the globals or in the loop, a point copy local 102/65; position or
+// distance declared at function scope or the loop top 65. Diagnostic: with no key tests the
+// globals/point/i rotation stays, so the key enregistration is not the root. Round 41 (fast):
+// const globals pointer 65, with const entry 65, with distance = 0 / if (point) 102 (aligned 53),
+// with the entry position 64, all four 102.
 // One shared result-index store, initialized/deferred index ownership, optional-distance
 // initialization and read-only table/entry receivers 77/77/105/105/77/77/105/105. Key preheader
 // and global/point/index/entry homes remain; original body restored.
+// Round 3 (lane 18, plain listing: distance_sq3f is inlined here, so no callee clobber set is involved):
+// split result store 65; fabsf for the height test 65; the globals local declared in the loop body (bound
+// read from g_4e0350) 113 (334 bytes); capacity test inverted (full arm first) 73; best stored before
+// results[0] 66.
 // @retail 0x19ec40
 long function_19ec40(
 	point3f const *point,

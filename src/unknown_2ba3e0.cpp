@@ -341,6 +341,12 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // score 10 (was 10): frame 0xb4 and length 1516 agree. The back-edge parameter reloads (ours first,
 // next, definition; retail definition, next, first) and the maximum-speed branch's squared length
 // differ (ours the vector normalizer's k,i,j statements; retail (i+j)+k with k in the lower register).
+// Round 125 (lane 4): a cache.values pointer local 10; properties read through the definition at
+// each use 297; the vector normalizer's sum as one expression 34; the velocity normalizer in both
+// branches with k read first and (i+j)+k 34; the first input mask read before the cache setup 38. A
+// one-link LTCG harness (exact for 0x2b98b0/0x2b9750) finds no body of the vector, direction or
+// velocity normalizer that gives this branch's (i+j)+k and keeps 0x2b98b0 and 0x2b9750: the k-first
+// i,j,k statement form needs a normalizer of its own.
 // Round 7 (lane 14): the minimum-speed normalization folds retail's j/k loads only when the maximum
 // branch sums its squared length in statements; maximum branch through the vector normalizer and the
 // minimum branch's normalize split from its scale 10 (kept); maximum branch alone 52; the direction
@@ -691,9 +697,20 @@ real g_55e618;
 // consumer 285/191; alone 289/102. All restored; sweep/collision homes and projection spills
 // remain.
 // Round 293: Destructive normal-copy projection/velocity-copy tangent/both 265/283/332; scaled response 101 (one-count gain rejected); projection/response 264, tangent/response 278, all stages 337, all with direct velocity producer 285. Original vectors and complete body restored.
+// Round 44: velocity read at each use 199; velocity pointer 194 (frame 0x118, sweep at +0x44); renamed
+// perpendicular/tangent locals 102/102 (no code change); normal read as a union member 605, with the velocity pointer
+// 601, interleaved 596. Grid of velocity copy/pointer/initialised copy, three dot-product text orders, sequential or
+// per-component interleaved perpendicular/tangent, keep factor early/late, position after/before the tangent: best 102
+// (this body), interleaved with the position first 124, pointer with the position first 125, the rest 194-237; the dot
+// product's text order never changed the code. Retail homes tangent at +0x38 and perpendicular at +0xa4.
 // Round 83: tangent/perpendicular/both declared before the sweep 102/102/102; scalar perpendicular
 // 147; scalar tangent 113; both scalar 140; call-only velocity pointer 102; that pointer with a
 // staged position 245. Original body restored.
+// Round 105: position through the existing real_point3d_set 245; with the velocity pointer 188;
+// velocity read at each use 189; pointer with interleaved perpendicular/tangent 185; the set nested
+// as placement_set's position argument 185/188/245 (code identical to the separate statement).
+// Retail loads the collision fields (and the call's last argument) above the particle stores; ours
+// cannot, so the collision local may escape through 0x1697c0 in our build.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)

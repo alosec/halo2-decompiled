@@ -626,6 +626,11 @@ s_projectile_material_response g_547660;
 // the element indexed off the definition 56, a walk local read through the reference 56, the
 // material declared before the loop 56; the pointer scan with a walk local read through the
 // reference 34 (same code). A read through the reference loads a word only when no loop carries it.
+// Round 440: Material-pointer ancestry, live/cached table and full/short identity, endpoint/ordinal scans
+// 173/150/168/140/162/131/150/126. Existing native material-value parameter endpoint/count graphs
+// 40/40/40/40/21/21/21/21; the counted form reaches 145 bytes but rotates index/material/scan homes.
+// That aggregate parameter is exact-only and restored. Its ordinal zero before admission/lookup,
+// direct/NULL lookup 50/50/51/54. Original scalar parameter, unused reference, callers and body restored.
 // @retail 0xfd4c0
 s_projectile_material_response *__stdcall projectile_get_material_response(s_projectile_definition const *definition,
 	short material_index)
@@ -988,6 +993,15 @@ real function_30bf0(vector3f *v);
 // divisions 248 (no reciprocal: both become x87 fdiv as in retail, frame 0x2c), that with
 // `root * (-1.0f / two_a)` 248 (retail's fld -1/fdiv/fmul order); the named two_a with that
 // order 232 (the SSE reciprocal returns); sqrtf for the horizontal length 232. Body restored.
+// Round 10 (m3 lane 2, one-file harness identical to the real build): three causes remain, none
+// with a natural form: retail never enregisters the forced-speed and time-scale pointers (it loads
+// each at its use, so EDI is free for the distance output that 0xfa580 takes in EDI), it keeps the
+// horizontal root in the entry block (stored as a float, compared in SSE), and it divides by two_a
+// twice without a reciprocal. Two_a written out with the forced-speed test first 237 (ret 0x28, loses
+// 0xfa6a0, 0x26f150, 0x1f8100 and 0x2900b0); gravity and horizontal tests as nested ifs 232; chosen
+// speed defaulted at its declaration with the forced test first 238; the horizontal variable reused
+// for the velocity's horizontal length 232; the time-scale speed chosen by a ternary with an else 261
+// (971 bytes); six spilled-scalar renames 232 (harness).
 // @retail 0xfa1a0
 bool function_fa1a0(real speed, real gravity_scale, point3f const *origin, point3f const *target,
 	real *minimum_speed, real const *time_scale, real const *forced_speed, bool high_arc, vector3f *direction,
@@ -1207,6 +1221,24 @@ extern vector3f *g_4687ac;
 // Round 213: existing staged cross with original/shared input differences and original/bounded
 // initial ray 163/163/165/165; consistent radius-field counterparts 181/188/173/180.
 // Original body restored; tag EBP and native frame 0x34 endpoint/query overlap remain.
+// Round 42: normalized side consumed as final negative endpoint 164 (frame 0x3c);
+// complete scalar cross input, direct up fields and both 163 each; endpoint reuse with
+// scalar input/direct up/both 164 each, with bounded first ray 166. Uniform radius
+// fields on endpoint reuse alone/all-input graph 181, with bounded first ray 173 each.
+// All original executable source restored; frame 0x34 and tag/query allocation remain.
+// Round 10 (m3 lane 2): retail computes each endpoint product twice (no common side * radius between
+// the start and end points: separate radius copies, as an inlined two-point ray test's parameters
+// give); block scopes give the slot sharing but not the products. Each query vector in its own block
+// 166 (frame 0x30); the two side query vectors only 164; all three with the radius read again inside
+// the radius block 171; endpoints through vector3f_add_scaled with 0 - radius / -radius 180/180 (769
+// bytes). Body restored.
+// Lane 15 round 18: retail inlines the two-point ray test 0x16a040 for all three queries (its
+// vector homes give retail's sharing: first query/start, both offset queries). With 0x16a040
+// made `inline` (noinline declaration dropped): three calls 187 (frame 0x3c); radius field at
+// each use 166 (integer registers and opening as retail; end.z spilled into end's home); block
+// radius local 188/170; origin-side endpoints first 174 (frame 0x30); endpoints through
+// vector3f_add_scaled 158 (F0 spill as retail); with a named negative radius 159; offset queries
+// joined by || 158. Not kept: 0x1c8df0 then inlines three of its 0x16a040 calls (170 -> 457).
 // @retail 0xfc030
 bool function_fc030(long projectile_index, point3f const *point, s_collision_result_1697c0 *collision)
 {
@@ -1708,6 +1740,12 @@ real function_17c900(short function_type, real input);
 // normalize_inline 326 (aligned 168); with a wander direction vector 362 (aligned 150). Remaining:
 // retail's zero register in XMM4 from the to_target block and the normalized components kept in
 // XMM1-3. Body restored.
+// Round 10 (m3 lane 2): output written in each of the three exits with the entry salt 377 (1477
+// bytes); salt named after the center pointer 347; game time named in the wander branch 348; that
+// with the salt named there too 365; the wobble clock as an if/else in place of the ternary 348.
+// The salt written at both uses again gives retail's convention, 329, and with the three exits 328
+// (aligned difference 140, 70 with registers masked: the rotation's products and the normalized
+// components' homes remain). Body restored.
 // @retail 0xf87f0
 void function_f87f0(long projectile_index, point3f *aim_point)
 {
@@ -2533,7 +2571,7 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 /* a projectile's collision: damage to what it hit, the response of the
    material hit (detonating, bouncing, reflecting, attaching), the impact
    effects and sounds, then the projectile's action */
-// score 1162 (was 1162): Frame 0x220 versus 0x218, stacked velocity and normalization/effect scheduling remain.
+// score 1197 (was 1197): Frame 0x220 versus 0x218, stacked velocity and normalization/effect scheduling remain.
 // Earlier 1162 (was 1185): frame 0x220 versus 0x218, velocity on the stack versus eax, input normalization and effect scheduling remain.
 // Independent damage scopes 1162 (kept); direct sound/late effects/both/scoped both 1223/1185/1223/1199; role names/chains/external normalization 1185/1185/1323.
 // Full count/potential conjunction/input aggregate/assignment helper/uninitialized direction 1201/1216/1198/1198/1185; array aggregates/plain loop/unsigned index 1166/1348/1185.
@@ -2568,6 +2606,9 @@ PRIVATE __forceinline void projectile_impact_effect_parameters(s_effect_paramete
 // Round 213: existing final-velocity friction/noise/rest helper producers, seven subsets,
 // 1162 each; complete graph with reflected receiver setter 1162. Original body restored;
 // frame 0x220/0x218 and velocity/request homes remain.
+// Round 440: Native normal/point/both geometry values 1329/1262/1362, producer and entry storage alike;
+// both library-copy forms 1362. Frames 0x228/0x234 regress; original geometry reads and every body statement restored.
+// Native material-value callee and consistent call construction 1190; restored with the exact-only callee.
 // @retail 0xfaa60
 void function_faa60(vector3f *velocity, long projectile_index, s_collision_result_1697c0 const *collision,
 	point3f *end_point, vector3f *displacement, short collision_count)

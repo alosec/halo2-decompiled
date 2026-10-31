@@ -461,10 +461,13 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 
 // score 90 (was 90): frame 0xd8 agrees; the ring conversion (fild where retail converts in SSE) and the
 // rotation schedule (one spilled component, register homes) differ; 1085 bytes against 1089.
-// frame 0xd8 agrees; the ring counter is converted in x87 where retail converts
-// it in SSE, and the rotation schedule and component registers differ; 1085 bytes against 1089.
-// frame 0xd8 agrees; x87 ring conversion and rotation component spill/register scheduling remain.
-// rotation schedule (one spilled component) differ; 1085 bytes against 1089.
+// Lane 15 r17: collision marker store before the entry pointer 90 (it then precedes `lea esi`
+// as retail, but the point stores still come first); named ring phase 143 (ring conversion as
+// retail: cvtsi2ss, store, fld; frame 0xdc, radius copied through integer registers); the
+// same with a plain radius local 236; distance computed in the spoke loop at its use 243 (ring
+// times radius moves to SSE); rotation through the existing cross3f of (vector, axis) 100.
+// The phase's extra slot pairs with our rotation spill: retail keeps all three components in
+// registers, so the ring conversion needs the rotation fixed first.
 // Round 53: ring phase named in the outer loop before/after the distance 143/143 (SSE ring
 // conversion as retail, but frame 0xdc and the radius copied through integer registers);
 // all three cross terms named, j and k first 90 (forwarded back); a vector3f cross filled j, k, i
@@ -476,7 +479,7 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // orders of the cross/along locals 96-105; 0x2982f0/0x170d70/0x11d3b0 rotation forms 126-139;
 // existing cross3f after/before the dot 134/255; distance inside the spoke loop 254; shared real
 // ring 100; plain radius local 112; collision marker before the point 89; entry first 215.
-// Earlier 195 (was 195): frame 0xdc versus 0xd8 and a rotation spill; shared cross
+// At 195: frame 0xdc versus 0xd8 and a rotation spill; shared cross
 // 244; native component loop 244; cross before dot 257;
 // signed-byte spoke 213; size optimization 395.
 // rotation spill keeps frame 0xdc versus 0xd8; radius copy and sector-test registers differ.
@@ -484,31 +487,31 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // One rotation spill still adds four frame bytes; axis component values 285;
 // symmetric dot inputs 195; two/all cross subtrahends, minuends and projected-axis values 210;
 // cosine-direction values 211; private rotation output last 195.
-// Earlier 184 (was 195): frame 0xd8 now agrees; radius setup, rotation schedule and sector-test registers remain.
+// At 184: frame 0xd8 now agrees; radius setup, rotation schedule and sector-test registers remain.
 // Cosine first 197; shared direction/axis/both scales 210/213/261; cosine-first inputs 195;
 // angle product lifetime 196; per-use ring phase 184 kept, 1087/1089 bytes; angle-result names 195.
 // cosine complement 195; cosine first 197; output scalars 195; direct-input outputs 256;
 // components before dot 195; shared rotation 195/1091; output scalars plus plain radius 209;
 // shared rotation plus plain radius 208/1095. Rotation spill and frame 0xdc remain.
-// Earlier 163 (was 184): Frame 0xd8 agrees; entry/ring conversion, rotation and sector registers
+// At 163: Frame 0xd8 agrees; entry/ring conversion, rotation and sector registers
 // remain. Shared real ring 182; ring plus phase 195; record-first 163 kept; with real ring 161
 // rejected for two extra points; double base with ring/phase 182/195; axis value 317;
 // record/ring/spoke values 163.
-// Earlier 125 (was 163): entry-table/ring conversion and rotation allocation remain.
+// At 125: entry-table/ring conversion and rotation allocation remain.
 // Assigned sector word/short 161/161; default sector word 125 kept, short 128;
 // missing-sector continue, sentinel-between-direction and sentinel-first 163 each;
 // assigned short sector with interleaved publication 162.
 // frame 0xd8 agrees; entry/ring conversion, rotation XMM and sector registers remain.
 // Rotation output/axis/both object references 163/163/163; each with output last 163/163/163;
 // cosine-first output/axis reference contracts 163/163. Original helper and body restored.
-// Earlier 125 (was 125): entry-table/ring conversion and rotation allocation remain.
+// At 125: entry-table/ring conversion and rotation allocation remain.
 // Native direction value with output first/last, sine/cosine first 276/276/276/276;
 // both vector values 328/328; rotated-vector return 281/281. Original rotation contract retained.
-// Earlier 120 (was 125): entry-table load, ring conversion and rotation XMM allocation remain.
+// At 120: entry-table load, ring conversion and rotation XMM allocation remain.
 // Native radius member 125; shared ring with/without native radius 123/123; three-use trace distance 120 plain;
 // shared trace displacement 225; elevation vector 245; collision point setter 125; collision-offset vector 189;
 // trace distance with shared ring 120. Keep the smaller trace-distance form; frame 0xd8, 1090/1089 bytes.
-// Earlier 120 (was 120): frame 0xd8 agrees; entry/ring conversion, rotation and sector publication differ.
+// At 120: frame 0xd8 agrees; entry/ring conversion, rotation and sector publication differ.
 // Named collision marker 120; marker before entry 120; entry before point 236;
 // complete point components 144; promoted sector 120; conditional sector store 154;
 // direct radius with trace scalar 239; sector eligibility result 120.
@@ -559,6 +562,10 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // Round 200: output-pointer rotation with four formal priorities 90/90/90/90;
 // with native phase before distance 143/143/143/143 (frame 0xdc). Original void helper,
 // input copies and complete body restored; output-result lifetime does not resolve the spill.
+// Round 2 of lane 18, on the 96 form (j/k cross terms first, ring phase named before the distance;
+// there only the direction components' registers, the radius copy and the sector load differ):
+// plain radius 222 (repeats the listed form on this base); radius as a reference into the object 264;
+// components read before the dot from locals 96; dot3f(vector, axis) 96; components before the dot 96.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {

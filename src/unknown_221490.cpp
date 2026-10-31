@@ -278,6 +278,13 @@ set_all:
 // Scoped output/scalars gives 75 plain (291/281, frame 0xd8), but regresses an
 // unmatched caller by 56; original output/state lifetimes restored.
 // Round 92: the forms screened on 0x2215d0 (same body; see its note) 87..135, none below 83. Restored.
+// Round 47: retail walks the settings pairs (ESI) and indexes the list pairs from a spilled
+// list+4; every form below still walks the list. Index initialised at its declaration 83
+// (same code); list-pairs base pointer before the loop 95, with the volume read late 97, declared
+// before `changed` 95; mixbin test on both fields first 115, both tests on the fields 96; a
+// per-entry list-pair pointer with the volume read late 88 (281/281, frame 0xd8); a per-entry
+// settings-pair pointer read at each use 102. Compile-only screens: load order (24 orders), loop
+// bound from the settings, unsigned index and every parameter order keep the list walk.
 // @retail 0x2216f0
 void function_2216f0(
 	s_mixbin_list *list,
@@ -538,7 +545,8 @@ bool sound_driver_voice_create_buffer(
 	return result;
 }
 
-// score 183 (was 98): the second buffer's flags are now retail's play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN
+// score 157 (was 183): Frame 0x80 and 618-byte length agree; early register saves and descriptor/count/flag scheduling remain.
+// Earlier: the second buffer's flags are now retail's play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN
 // (0x100010 when play is set; the old body set 0x180010, a behaviour difference, fixed at review in lane 15
 // round 13). Every 98-105 form below carried the wrong flags; with the correct select see the 155-197 list.
 // Old notes: frame/length agree; early saves and descriptor zero/input scheduling differ.
@@ -575,6 +583,10 @@ bool sound_driver_voice_create_buffer(
 // Round 219: Native descriptor phases with direct success short/long/no sentinel result 178/178/178;
 // test-assigned result 181; common short/long exit 149/180; direct success and early count,
 // with/without sentinel 179/179. All restored; early saves and zero/input scheduling remain.
+// Native buffer-flag ownership, separate spatial predicate at original/late producer with original/plain first-pair loop: 157/157/142/142.
+// Combined actual spatial/buffer flags at original/late producer with original/plain pair loop: 187/187/181/181.
+// Late-producer 142 and 181 forms lose the matched caller; restored. Keep only original-producer buffer flags used by both the descriptor and playback test, ordinary 157.
+// Original inherited storage, first six-bin statements, corrected SDK values and every call tuple remain.
 // @retail 0x220b90
 short sound_driver_voice_new(
 	dword flags,
@@ -587,7 +599,7 @@ short sound_driver_voice_new(
 	if (voice_index < 0x40)
 	{
 		bool three_d = flags & 1;
-		bool play = (flags >> 1) & 1;
+		dword buffer_flags = (flags & 2) ? DSBCAPS_FXIN2 : DSBCAPS_FXIN;
 		s_sound_driver_voice &voice = globals->voices[voice_index];
 		struct
 		{
@@ -632,7 +644,7 @@ short sound_driver_voice_new(
 			memset(&buffer_description, 0, sizeof(buffer_description));
 
 			buffer_description.dwSize = sizeof(buffer_description);
-			buffer_description.dwFlags = (play ? DSBCAPS_FXIN2 : DSBCAPS_FXIN) | DSBCAPS_CTRL3D;
+			buffer_description.dwFlags = buffer_flags | DSBCAPS_CTRL3D;
 			buffer_description.dwInputMixBin = input_mixbin;
 			if (SUCCEEDED(IDirectSound_CreateSoundBuffer(SOUND_DRIVER_GLOBALS->direct_sound, &buffer_description, &voice.buffer, NULL)))
 			{
@@ -655,7 +667,7 @@ short sound_driver_voice_new(
 				voice.unknown00 = input_mixbin;
 				IDirectSoundBuffer_SetMaxDistance(voice.buffer, FLT_MAX, DS3D_DEFERRED);
 				IDirectSoundBuffer_SetMinDistance(voice.buffer, FLT_MAX, DS3D_DEFERRED);
-				if (play)
+				if (buffer_flags & DSBCAPS_FXIN2)
 					IDirectSoundBuffer_Play(voice.buffer, 0, 0, 0);
 			}
 			else

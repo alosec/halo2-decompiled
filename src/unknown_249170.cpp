@@ -125,10 +125,18 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // stores 2; no sine local 286; sine and cosine locals with their products 504; zero pair first 2;
 // position.y from the sine local 2; zero stores last 17; position.x copied from velocity.i 2;
 // velocity.i zeroed before the sine 2; radius-first products 2; permuter 68 tries, none under 2.
+// Round 207: float trig family 29; native reciprocal-root intrinsic 688 (16-byte aligned frame,
+// nine match losses, restored); native component array with inherited/ordinary reads 6/47;
+// all three tail declarations at entry 6; tail local names 6; reciprocal/squared-speed declaration
+// at entry separately 6/6. Original frame, helper, field accesses and qualified reads restored.
 // Round 16: normalisation operands swapped 6 (same code); without the casts, compound `*=` 47, tail
 // stores through particle->velocity 105, tail reads through particle->velocity 88 (that one keeps
 // retail's load-multiply-store order: the loads and stores sit on two unrelated bases); case 1 with
 // the zero stores last 21, a chained zero 6, a cosine local 504.
+// Round 207: float trig family 29; native reciprocal-root intrinsic 688 (16-byte aligned frame,
+// nine match losses, restored); native component array with inherited/ordinary reads 6/47;
+// all three tail declarations at entry 6; tail local names 6; reciprocal/squared-speed declaration
+// at entry separately 6/6. Original frame, helper, field accesses and qualified reads restored.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {

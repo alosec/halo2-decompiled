@@ -430,6 +430,13 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
+// score 47 (was 47): NONE is still kept in EBP where retail keeps it in EBX and the special
+// flag still travels in BL where retail uses CL (the special path does `mov cl, 1; jmp
+// tail` and the scan stores 0 at its start); this round's trials in this file found no
+// lower form of that carrier choice
+// score 47 (was 47): NONE is still kept in EBP where retail keeps it in EBX and the special
+// flag still travels in BL where retail uses CL; this round's trials in this file found
+// no lower form of that carrier choice
 // score 47 (was 47): NONE in EBP (retail EBX) and the special flag in BL (retail CL: the special
 // path does `mov cl, 1; jmp tail`, the scan stores 0 at its start) remain; the tail and the
 // proximity block now match. Round 78: the tail's prop node as a named pointer 85 -> 51 and the
@@ -487,6 +494,10 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // Round 433: Complementary ordinary-case predicate, bitwise/logical OR, original/complementary
 // permission, entry/eligible permission scope; fast 48/74/53/75/200/222/201/222.
 // Original body and existing helper restored.
+// Round 18 (lane 14): bitwise flag with the bool field unconverted 193; flag built as `== 6` then
+// `&= field != 0` 47 (same code); flag computed without the one-use tag local 47; `&&` flag with a
+// return at the proximity exit only 226 (872 bytes; compile-only screen: the special path still falls
+// into the unknown268 block); bitwise flag held in a long 172.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

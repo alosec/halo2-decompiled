@@ -1116,6 +1116,9 @@ static inline bool session_member_get_qos(s_network_observer *observer, c_class_
 	return result;
 }
 
+// score 67 (was 67): the frame is still four bytes smaller than retail's and the
+// count, the minimum and the maximum are still set up in another order; this
+// round's trials in this file found no lower form of them
 // score 67 (was 67): the frame is four bytes smaller than retail's and the locals
 // (the count, the minimum and the maximum) are set up in another order.
 // Retail gives latency ebp and spills the member cursor; ours the reverse. The
@@ -1252,6 +1255,12 @@ static void network_session_interface_update_local_properties(c_class_58d20 *ses
 
 /* the host gives the players their properties: unique names, and teams when
    the game has teams */
+// score 184 (was 184): the frame 0xe4 still agrees; the owner, the name count, the
+// zero's allocation and the requested cursor are unchanged, and this round's trials
+// in this file found no lower form of them
+// score 184 (was 184): the frame 0xe4 agrees; the owner, the name count and the
+// zero's allocation and the requested cursor remain, and this round's trials in
+// this file found no lower form of them
 // score 184 (was 184): frame 0xe4 agrees; owner/count/zero allocation and requested cursor remain.
 // Round 75: our zero stays in edx from the parameters test (cmp edi, edx) through both loops, so the
 // name count is spilled and the owner leaves edx. Count increment as its own statement 184; long mask
@@ -1643,112 +1652,6 @@ void __stdcall function_65530(long user_index)
  if (!(g_4cd868.users[user_index].xuid.dwUserFlags & 3) && g_4cd868.users[user_index].xuid.dwUserFlags != 0xbad00000)
   function_80490((const s_cached_player_identity *)&g_4cd868.users[user_index].xuid,
    (const s_cached_player_source *)g_4cd868.users[user_index].properties, true, false);
-}
-
-bool game_loop_running(void);
-long map_location_progress_get(char const *map_name);
-real __stdcall function_122dd0(byte *map_name, long mode, long type);
-bool __stdcall function_163890(char const *map_name, long mode);
-
-static __forceinline bool function_65341(c_class_58d20 **out)
-{
- bool result = false;
- long state = g_527330.initialized ? g_527330.state : 0;
- switch (state)
- {
- case 1: case 2: case 3: case 4:
-  if (g_527330.initialized)
-  {
-   c_class_58d20 *current = (c_class_58d20 *)g_527330.session_a;
-   if (current->state) { *out = current; result = true; }
-  }
-  break;
- case 6: case 7: case 8: case 9:
-  if (g_527330.initialized)
-  {
-   c_class_58d20 *current = (c_class_58d20 *)g_527330.session_b;
-   if (current->state) { *out = current; result = true; }
-  }
-  break;
- default: break;
- }
- return result;
-}
-
-// score 118 (was 118): retail picks the observer pointer with a conditional move
-// after the flag test; ours computes the same value with a negation and a test.
-// Earlier retained form counted 114 (was 120).
-// Earlier: retail builds this body with SSE (cmovne, movss, cvttss2si), which this
-// file lacks, and inlines the session-a/b getters there (their static inline bodies live in
-// unknown_058ee0.cpp). In a new /arch:SSE file: as written 136; if-form state with the variant
-// getter 142 at retail's length; existing getters with forceinline declarations 162 (kept out of
-// line); per-case getter copies 155 and switch in the body 155 (the session then goes through a
-// stack slot); existing getters without /Ob1 173; per-case result assignments 149.
-// Round 71: with scalar SSE, early status/variant plus a post-call variant reset 146;
-// the reset alone 136; early variant plus reset 138; nested success guards 146;
-// zero-then-assign state 145; ordinary inline selector 238 (398 bytes); state/result
-// declarations swapped 145; pointer-terminated user loop 145. Original restored.
-// Round 256: Actual selector state-test result in bool/byte/short/long, conditional/guarded state
-// acquisition 135/139/135/139/152/153/153/153. All restored.
-// Round 13: variant_index declared first 128; status and variant_index first 146; session first
-// 146; variant_index set in each else 138; the user loop indexing g_4cd868.users[i] directly 122
-// (aligned 45 -> 38: it gives retail's loop exactly, esi stepping to the array's end address and
-// edi the index, but the positional count rises; keep it in mind once the rest aligns).
-// Round 189: Coherent initialization flag as bool/byte/word/long 145/129/141/134; with guarded
-// state production 143/148/146/141. Scalar-SSE on the new byte graph 129 (one diagnostic, target
-// regression); variant/status/both early defaults on it 124/132/149. All frame/default-output
-// forms rejected; original helper, body and flags restored.
-// @retail 0x65340
-void function_065340(void)
-{
-	real progress = 0.0f;
-	c_class_58d20 *session = 0;
-	bool found = function_65341(&session);
-	long status = 0;
-	long variant_index = NONE;
-	if (found && session && SESSION_STATE_IS_LIVE(session->state))
-	{
-		long first_id;
-		long second_id;
-		byte *name;
-		if (session->get_values_4d08(&first_id, &second_id, &name) &&
-			second_id != NONE && name[0])
-		{
-			if (game_loop_running() && g_4e6948->position_a == first_id &&
-				g_4e6948->position_b == second_id &&
-				!strncmp((char const *)name, g_4e6948->name, 0x104))
-			{
-				status = 4;
-				progress = 1.0f;
-			}
-			else
-			{
-				long location = map_location_progress_get((char const *)name);
-				progress = function_122dd0(name, 0, first_id == NONE);
-				switch (location)
-				{
-				case 1: status = 2; break;
-				case 2: status = 3; break;
-				case 3: status = 1; break;
-				default:
-					function_163890((char const *)name, 1);
-					break;
-				}
-			}
-		}
-		if (SESSION_STATE_IS_LIVE(session->state))
-			variant_index = session->value49c8;
-	}
-	g_4cd868.unknown90 = status;
-	g_4cd868.unknown94 = (long)(progress * 100.0f);
-	g_4cd868.unknown98 = variant_index;
-	s_session_interface_user *user = g_4cd868.users;
-	for (long i = 0; i < 4; i++)
-	{
-		if (user->valid)
-			function_65530(i);
-		user++;
-	}
 }
 
 struct s_message_identities;

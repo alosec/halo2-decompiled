@@ -58,6 +58,14 @@ long g_4798b4;
 bool g_47f05a;
 bool g_47f05b;
 
+// score 34 (was 34): the base vtable store is still dropped and the pool placement
+// still reloads g_479888 at the join where retail reloads it on the constructed arm;
+// unchanged this round
+// score 34 (was 34): the base vtable store is still dropped and the pool placement
+// still reloads g_479888 at the join where retail reloads it on the constructed arm;
+// a one-file LTCG probe keeps the store only for a load through an unknown pointer
+// between the two stores, which belongs to the abstract allocator's constructor in
+// the header and so is out of reach from this file
 // score 34 (was 34): the vtable slot at [eax] is never filled in, so the two stores that follow
 // start one field too late; retail stores the vtable there first.
 // Retail keeps the abstract allocator's vtable store only here (0x146b80, 0x146e30 and 0x22c3e0
@@ -104,6 +112,13 @@ bool g_47f05b;
 // inlines them) 34/34/34, no other function changes; the block typed as its layout (fixed allocator, buffer,
 // pool) 34; the count flag stored first 38. With the vtable store forced (diagnostic only) 12 at 147 bytes:
 // the rest is the pool placement's reload of g_479888 at the join, where retail reloads on the constructed arm.
+// Round 3 (lane 18, header constructors, with 0x146b80/0x146e30/0x22c3e0): the count header's 1 as a member
+// initializer 34; the abstract loop counting down 33 (0x146b80 2, 0x22c3e0 lost); its NONE test as `i < 3`
+// 34; the fixed base storing the count first 32 (0x146e30 120 -> 121); the size before the buffer 33
+// (0x146b80 2). The base vtable store is dropped in every form.
+// Round 235: publish fixed identity before construction, saved/published placement
+// and published buffer 35/35/46; pool identity with saved/published placement 52/52;
+// both identities 53/53/64. All original publications and executable code restored.
 // @retail 0x146a20
 void function_146a20(void)
 {
@@ -297,6 +312,12 @@ void function_146de0(void)
 	}
 }
 
+// score 120 (was 120): the function still misses retail's inline of the texture cache
+// update (0x12c600) at this one call site and stays 22 bytes short; unchanged this
+// round
+// score 120 (was 143): the function still misses retail's inline of the texture
+// cache update (0x12c600) at this one call site, so it stays 22 bytes short;
+// this round's trials in this file found no lower form of it
 // score 120 (was 143): BLOCKED-BY 0x12c600: retail inlines the texture cache update (0x12c600)
 // at this one call site only (its other 13 callers call it), ours calls it; the padding is consumed
 // only when the allocation succeeds and the handle is published inside the retry loop.

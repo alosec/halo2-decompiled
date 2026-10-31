@@ -585,6 +585,8 @@ PRIVATE __forceinline bool batch_shape_pointer(c_batch_contact_shape const *shap
 // masks 0..7, 334 each (1243 bytes, frame 0x3c); native shape entry/surface/kind bitfields
 // with uniform at-use encoded data, masks 0..7, 358 each. Original shape layout, snapshots,
 // normal workspace and full body restored; frame 0x48 versus 0x44 and classifier homes remain.
+// Native unsigned interval/complement, material-case order and discarded coefficient masks
+// 353/351/349/347/355/353/351/349; original classifier, outputs and complete body restored.
 // @retail 0x1822f0
 void c_query_batch_collector::collect(s_batch_contact const *contact)
 {

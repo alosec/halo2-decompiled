@@ -539,6 +539,12 @@ void function_3dd10(long object_index, bool force);
 // Round 43: nested variant/model guards, staged outer inverse, early variant declaration and const
 // variant 84 each; staged/const inverse in the found block 132 each; model-index snapshot 174;
 // const choice count with the signed first bound 637 (unrolled). Original body restored.
+// Lane 17 r1: first scan as a do-while (the choice count is already known positive) 221f; inverse in
+// the found block (round 55's form) 132f, with the variant byte read before the blend value 123f, with
+// the inverse declared at function entry 132f; outer count written at each use 294f (reloaded each
+// pass). A volatile-weight diagnostic (reverted) stops the signed first scan unrolling (retail's
+// jle/jl exits) but swaps the weight/mask homes, 102f. With the inverse in the found block only the
+// not-found exit's own 1.0 reload (retail: movss xmm5 before the count reload) is missing.
 // Round 439: complete supplied/default/converted color result, loop/entry lifetimes and
 // field/indexed clamps with field/result dual publication: 261/261/291/286, repeated at entry.
 // Frame grows to 0x60; original object-output pipeline, scans and all float trees restored.
@@ -709,6 +715,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // the destination taken as &base[count] 91; the two pointer increments swapped 91.
 // Source pointer derived from the destination inside the loop, so that the source induction
 // variable is never used in the preheader 186.
+// Round 86: scalar component copy 139; blend-only count 169; scale-only count 170;
+// blend-only function array 173; scale-only function array 139; shared inner counter 105;
+// shared function pointer 91; advancing outer entry pointer 203. Original body restored.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {

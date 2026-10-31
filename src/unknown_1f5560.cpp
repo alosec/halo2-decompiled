@@ -684,6 +684,9 @@ struct s_1f9762
 // inside the not-last arm's valid branch with a ternary reversed, if/else or nested `if
 // (direction_valid)` 104/104/104, with a default plus `if` 111. Compile-only: only `direction_valid
 // && !last` (listed) moves the approach after the first return, and it keeps the pointer in EDI.
+// Round 444: caller ordinary-inline difference/normalizer/query boundaries, seven
+// subsets 67 each; all with direction-valid-first guard 191. All declarations and
+// the complete body restored; native approach placement remains.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)
@@ -855,6 +858,12 @@ real normalize2d(point2f *v);
 // Round 430: One selected-speed lifetime through retry, with entry result declaration, valid-scope
 // retry outputs and both native axis-pair names: all eight 204 at 917/935 bytes. Original two speed
 // lifetimes and complete body restored.
+// Lane 15 round 18: retail's trajectory result is a spilled register candidate (DL copy, store after the
+// force test, DL reloaded after the retry and returned by a shared `mov al, dl` exit; the request arm
+// returns its call's AL); ours keeps it memory-homed (immediate store, dead store before the request
+// return, folded false exit). Request result returned from its arm 182 (919 B); early false return after
+// the retry 135; retry admission and call joined by && 135; unit index local 135; validity block
+// flattened into an early false return 232. All restored.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
@@ -1090,6 +1099,9 @@ done:
 real function_50650(real cosine);
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 
+// Round 16: retail passes the object index in EAX and the actor index in ECX, ours passes the
+// actor index in ECX and keeps the object index elsewhere; retail computes the masked actor
+// offset before the pool load and holds the actor in EDI.
 // score 137 (was 137): frame 0x1c agrees; actor/object homes, velocity preload and final minimum remain (caller-inclusive fast 137).
 // Earlier: frame 0x1c agrees; two excess bytes, actor/object roles (EDI/ESI), the hoisted velocity j load,
 // the first clamp's x87 order and the epilogue pops' place in the final minimum remain.
@@ -1138,14 +1150,17 @@ real function_50650(real cosine);
 // Ordered turn/approach, facing and following results, seven subsets
 // 334/137/334/137/334/137/334; all with the staged final velocity product 334.
 // All restored; the caller-inclusive unchanged preview is 137.
+// Lane 15 round 18 (caller-inclusive fast, each compared with the baseline code): the actor address as one
+// expression without the two one-use pool locals, identical code (kept); upper clamp `1.0 < dot`, the
+// clamp through a PIN macro, a named return value, and the velocity through the file's own planar
+// normalizer: identical code each (137). Retail preloads the velocity's j before fsqrt and scales i from
+// memory into a reciprocal copy; the epilogue pops sit before the final minimum's branches.
 // @retail 0x1f9e70
 real function_1f9e70(long actor_index, long object_index, point2f const *position,
     vector2f const *path_direction, vector2f const *facing, vector2f const *desired,
     vector2f const *next_direction, real distance, bool ignore_facing)
 {
-    s_record_pool *local_0 = g_4f55f0;
-    byte *local_1 = local_0->data;
-    byte *actor = local_1 + (actor_index & 0xffff) * sizeof(s_actor_view);
+    byte *actor = g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view);
     s_slot_object_view *object = object_get(object_index);
     byte *settings = (byte *)function_1e5450(actor_index, object->tag_index);
     real speed_scale;
@@ -1382,6 +1397,8 @@ PRIVATE inline real movement_normalize2d(point2f *v)
     return 0.0f;
 }
 
+// Round 16: retail's result sits at [esp+0x10] and its radius at [esp+0x14], ours the other way
+// round, and retail materialises both direction components before the x87 length.
 // score 238 (was 238): Frame 0x3c, result/flag homes and exits agree (1182 bytes against 1173). Retail's zero, radius and
 // direction sit in other SSE registers (xmm1/xmm5/xmm2-3; it keeps the result in xmm0 up to the type exit),
 // shares the left type-0 arm's `+ target.y` and flag re-test with the type-1 arm (ours threads that arm),
@@ -1466,6 +1483,9 @@ PRIVATE inline real movement_normalize2d(point2f *v)
 // All ordinary sources move the entry homes and regress; original body/helper restored.
 // Ordinary origin with paired radial/side/desired product stages, seven subsets 255 each;
 // all with the complete scalar fraction producer 255. All restored.
+// Round 444: Ordinary origin with zero result after type/side/projection geometry
+// 292/284/284; assigned-sign counterparts 292/281/281; forward-scoped result with
+// direct/assigned sign 300/300. All restored; zero/radius and vector homes remain.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)

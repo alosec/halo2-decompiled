@@ -192,8 +192,6 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
-// Round 19: unchanged; the frame (0xa0 against 0xb0) and the collision output size still
-// differ; no new form was found.
 // score 143 (was 143): frame 0xa0 versus 0xb0 (the 0x1697c0 collision output is 0x5c bytes; the
 // shared header type is 0x4c), then the scratch registers are rotated by one from the 0x110ab0
 // argument on (eax/ecx/edx), which also moves the request/collision arguments, the target copy and
@@ -231,6 +229,27 @@ short __stdcall function_1c04f0(long actor_index, s_slot *slot, bool active)
 // reverse order 140; `distance2d(...) < 2.0f` 138; target index stored before the point copy 138;
 // point declared before the target 138; sums written collision point first 138; object lookup
 // after the point 148.
+// Round 48: the stamp's time read into a local first 135 (fixes the 0x110ab0 push register but
+// moves the flag store after the time load; a one-use field copy, not kept); with the full 0x5c
+// output 132; action declared before the unit test 143; time local after the flag store 143; named
+// unit-test result 143; position declared first 143; state declared after the lookups 143.
+// Round 19: unchanged; the frame and the collision output size still differ; no new form was found.
+// Round 31: stamp test through the slot parameter 143; state declared after the lookups 143; no state
+// local 143; both tests as `== false` 143; a unit index local for the two unit calls 115 (950 bytes, but
+// the collision call still reads the field: a partial copy, not kept); one unit index at all three uses
+// 219. Diagnostics: the stamp's flag store or time store removed 188/193, both stores unconditional 113;
+// the 0x110ab0 argument stays in EDX in all three.
+// after the point 148. Round 19: unchanged.
+// Round 28 (lane 10): the scratch rotation follows the stamp block's temps: the stamp's time in a
+// one-use local (diagnostic, not keepable) 135 gives retail's EAX for the 0x110ab0 argument, but the
+// stamp's load moves above the flag store and the later temps (request actor, collision arguments)
+// sit one register further on; plus a named 0x110ab0 result 135; plus the timing pointer in a local
+// 135 (same code). Stamp through the existing 0x146650 getter 143 (same code); the slot cast at each
+// use instead of the state local 143.
+// Round 48: the stamp's time read into a local first 135 (fixes the 0x110ab0 push register but
+// moves the flag store after the time load; a one-use field copy, not kept); with the full 0x5c
+// output 132; action declared before the unit test 143; time local after the flag store 143; named
+// unit-test result 143; position declared first 143; state declared after the lookups 143.
 // @retail 0x1c0670
 bool __stdcall function_1c0670(long actor_index, s_slot *slot)
 {

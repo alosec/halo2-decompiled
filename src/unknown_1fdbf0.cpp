@@ -374,6 +374,10 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // (dot * c) per row 43, the i projection before the cross terms 43, parallel first in j/k 57;
 // harness only: scalar axis locals in any order, all six dot orders as one expression (43) or
 // accumulated (ds_kji 43, the others worse), product operands swapped per row (no change).
+// Lane 18 r1: the first cross term written in the i row (retail computes it last) 43 (same code); the
+// cross terms computed 2, 3, 1 as retail schedules them 43 (same code); the rotation reading the forward
+// copy instead of the direction 86; the cross terms named with their 0.5 scale 75; the rows accumulated
+// in place in the direction (i as one expression) 57.
 // Lane 13 round 18: the matched 0x11d3b0 (same turn-limiting algorithm, out of line) compiles its
 // rotation with exactly our colours (axis k/j in xmm3/xmm4, the projection copied for j), so
 // retail's 0x1fddd0 comes from another shape. An inline rotation helper (vector, axis,
@@ -381,6 +385,9 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // projection itself 43; either with single-expression rows 57 (38/11 aligned against 46/17: the
 // cosine is then held in a register as in retail, colours still ours); with the projection term
 // first in every row 57.
+// Round 45 (lane 9): scalar axis copies read after the parallel factor 43 (same code); the parallel factor computed
+// from forward before the direction copy 73; from forward after it 69; cross terms before the parallel factor 53; the
+// parallel part through vector3f_scale into a vector 88.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

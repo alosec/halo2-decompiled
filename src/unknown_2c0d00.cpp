@@ -896,12 +896,18 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
     s_pathfinding_node const *node = &data->nodes[index];
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
-// score 347 (was 347): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
+// Round 29 (lane A): the direction as two scalars (no address-taken struct) leaves it in registers
+// as retail does: 347 -> 324, 1312 bytes. The frame is still 0x30 against retail's 0x28: ours keeps
+// the normal's x at esp+0x18 and its y at esp+0x34 where retail has the y at 0x2c and the x at
+// 0x34, and ours still spends a slot on the spilled direction.x.
+// score 324 (was 347): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
 // direction.x and the first offset's y, where retail clobbers its xmm0 zero with 0 - radius and
 // re-zeroes it for the compares; the edge pointer then sits in ebx (retail esi) and the vertex in
 // memory (retail ebx). Retail's crossing test is one byte set three times (`xor dl, dl` before the
 // normalisation, `mov dl, 1` per test): the flag form `crossing = false; if (..) crossing = true` x3
 // reaches 318 here (kept out: flag rule).
+// Review (coordinator): the two-scalar direction (324) is a hand copy of vector2d_from_points2d's body
+// with no match, so the code stays at main's helper call (347); body copies are kept only with a match.
 // Round 79 kept: the edge's node pair as a real array, the fixed-side tests on the edge's word
 // (edge_node_open_2c: retail's `mov cx, word; movzx eax, cx; cmp cx, 0xffff`), the long test on
 // the indexed ones, start/end vertices by if/else, complete geometry before the tests, the ring
@@ -989,6 +995,9 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
 // ring counts: 415 each; the same four with early ring anchor 361 each (1295 bytes). Original input copy,
 // receiver/count and anchor lifetimes restored; frame remains 0x30 versus 0x28.
 // Round 194: Shared point-setter normal/positive/negative producers and subsets 422/470/447/479/468/508/535; all plus successful output setters 513. All grow away from retail and restore the original helpers, geometry and complete traversal.
+// Round 317: Complete negative crossing result with factored rejection, second-test order
+// and sentinel priority, 369/369/413/413/411/411/411/411. Frames 0x30/0x38/0x28;
+// sentinel-first recovers retail frame but regresses. Original body restored.
 // @retail 0x2c3030
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)
@@ -1224,6 +1233,9 @@ real function_11cc90(vector2f const *a, vector2f const *b);
 // Round 301: Existing shared magnitude inside the retained normalizer, with distance roots,
 // side dots, both, ordinary first side, ordinary/distance, ordinary/dots and all:
 // 172/172/372/372/379/379/363/363. Original magnitude graph, qualifier, projections and body restored.
+// Round 45: squared-length producer/reciprocal declaration/scalar home names,
+// seven subsets and all native declarations before producers, 172 each. Original
+// normalizer and complete body restored; early true host and side Y transport remain.
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
@@ -1457,6 +1469,9 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // branch-selected centers 446/451/442/439. Original orientation phases and full body restored.
 // Coupled paired word/short corner results on long orientation 444/444; word orientation
 // 439/439. Best 439 is a five-point gain above 30, rejected; complete original body restored.
+// Round 45: complete four-field scalar input snapshots, short/long metadata
+// subsets 0/1/2/4/3/5/6/7, 459/461/470/470/461/461/470/461. Frame 0x10c
+// recovered, radius/zero homes still differ; match-only forms and full body restored.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)

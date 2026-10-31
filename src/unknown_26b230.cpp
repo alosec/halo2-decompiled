@@ -1760,6 +1760,8 @@ long function_26a740(long object_index, s_clump_activity_view *clump)
 // Round 304: collected-count consumption/postdecrement 3/3; cursor consumption alone/with count 81/81;
 // word/long collection 4/12; populated-end traversal 85; collector write cursor 32.
 // Original body restored; cursor LEA still precedes the positive-count branch and extension.
+// Round 84: guarded signed/word do loops 40/93; comma and split for-initializers 3/3/3;
+// equality countdown 3; plain while 3; guarded signed inequality do 40. Original body restored.
 // @retail 0x269580
 void function_269580(long destination_index, long source_index)
 {
@@ -1897,9 +1899,19 @@ void function_269250(long clump_index, long actor_index);
 // Round 422: persistent score 128; native selection handle 146; persistent score/native handle
 // 152; actor handle snapshot 89; persistent score/actor handle 128; native/actor handles 146;
 // all scan lifetimes 152; function-scope candidate 128. Opening body restored.
+// Round 31: in-arm compare with datum-index selection 128 (pool hoisted into EDI, selection memory-only,
+// but the exhaustion null test threads away and the homes rotate); with best declared first 128; score
+// local renamed 128 (slots do not follow names here); in-arm compare with clump-index selection 126;
+// each with the walk at function scope 128/126.
 // Round 83 (fast; unchanged control 89): two-arm score assignment 128; zero-initialized two-arm
 // assignment 128; reversed strict comparison 89; separate best publication 89; old-clump local
 // after/before the scan 141/147; flattened selection/creation tests 89; byte activity snapshot 89.
+// Round 107 (fast, with 0x269580/0x269040 in the build; without them 0x269580's arguments swap):
+// the team-arm form gives retail's homes (selection 0x14, score 0x18, best 0x1c) and x87 compare,
+// 126; a memory-only selection (diagnostic, reverted) shows the pool then takes EBX. On the
+// team-arm form: selection locals before the walk 129; activity read in the walk call 126; team
+// compare reversed 126; the datum step reading the pool field at each use (data_iterator.h) 126,
+// identical. Zero-default score with the common compare 90.
 // @retail 0x2689d0
 void function_2689d0(void)
 {
@@ -2096,6 +2108,17 @@ void function_269250(long clump_index, long actor_index)
 // original/invariant-first completion and direct/shared head; fast
 // 230/230/229/229/230/230/229/229.
 // Original body and existing helper restored.
+// Round 107: the pool registers follow how g_502418/g_50241c are declared. With the 3 form and the
+// two pools as plain separate globals (either declaration order, or one of them in a one-field
+// struct) this function matches byte for byte, but 0x25d770 (0 -> 2) and 0x25d810 (0 -> 91) then
+// load the node pool first (the other 717 functions of the 46 pool files unchanged); with
+// s_prop_pool_storage those two match and this one keeps the node pool in edi. Also 3: the struct
+// with the tracking pool (0x502414) or the clump pool (0x502420) added, the struct defined in a
+// /GL- file, the prop step reading the pool twice. The swarm flag renamed (slot order) 89, identical.
+// Round 31: on the 3 form, prop loop as an explicit index loop with the lookup in its body 189 (the pools
+// are no longer hoisted); target-clear arm through prop_get at each use 220; the existing prop walk
+// struct 3; node iterator declared beside the prop iterator 3. On the opening body the deletion arm as
+// `if (unit) continue; break;` 89 (identical code).
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {
@@ -2299,6 +2322,9 @@ void *actor_get_character_situation_entry(long actor_index);
 // shift); one iterator per actor loop 283 (same code); structure global at each use 318; named stamp
 // index in both marking arms 319 (retail's direct marking addresses, later loops misaligned by padding);
 // with `while (selected < 50 && cursor < count)` as well 326.
+// DL round 206: candidate evaluator/collector inline modes 1/0, 0/1, 1/1, 2/0,
+// 0/2, 2/1, 1/2, 2/2 (ordinary, inline, forced) 283/283/283/1749/459/1749/459/3173.
+// Forced evaluator expansion also loses matched neighbours; all declarations and body restored.
 // @retail 0x269870
 void function_269870(long clump_index)
 {
