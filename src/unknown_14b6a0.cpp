@@ -281,6 +281,8 @@ void function_14bac0()
 // with shared query/bounds point 233/237; accepted alternate 222/237, with shared query/bounds 231/237.
 // Accepted-output reuse shrinks frame to 0x44; query/bounds sharing reaches 0x38, native recipients stay 0x44;
 // retail needs 0x3c. Original returned-output/selected-unit graph restored at frame 0x50.
+// Round 440: Complete native request-row value, native/library copy and producer/entry storage, original/native
+// recipient boundary: 255/275 repeated four times. All native row storage and original field observations restored.
 // @retail 0x14b6a0
 void function_14b6a0()
 {

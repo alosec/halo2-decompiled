@@ -1393,6 +1393,8 @@ PRIVATE __forceinline bool function_274a51(long arg_0, s_object_seat const *arg_
 // Round 433: Complementary walk decision bool/byte/short/long at entry
 // 230/230/234/233, at the selected seat 99/99/91/85. All restored;
 // real decision polarity/lifetime does not recover the request registers or seat loads.
+// Round 234: Actual request outcome byte/short/long/dword 41/70/68/68; complementary failure carriers
+// 73/73/72/72. Original outcome and body restored; iterator scaling and request/seat scheduling remain.
 // @retail 0x274a50
 void function_274a50(long ai_index, long vehicle_index, long filter_range, bool load)
 {
@@ -2568,6 +2570,9 @@ struct s_scenario_scripting_view
 // with loop counter/with encoded winner and counter/plus existing self-product 149/149/149;
 // signed long winner with double storage and loop counter 152. All restored; actor/counter
 // homes and the delayed scripting-data observation remain.
+// Round 234: Actual scripting/point-set/scenario record-reference subsets 1..7, then all with typed
+// point member: 96/80/96/80/96/80/96/96. Data references begin after signed admission; original search
+// restored; actor/counter homes and delayed data observation remain.
 // @retail 0x2769d0
 void function_2769d0(long point_reference)
 {
