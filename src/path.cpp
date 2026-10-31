@@ -1191,10 +1191,10 @@ PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 					}
 					if (!(surface->unknown0c & 1) && surface->unknown10 != surface->unknown12)
 					{
-						point3f const *start_vertex = &pathfinding->vertices[surface->unknown04];
+						point3f const *from_vertex = &pathfinding->vertices[surface->unknown04];
 						point3f const *end_vertex = &pathfinding->vertices[surface->unknown08];
 						point3f start, end;
-						function_2104b0(surface->unknown10, start_vertex, &start);
+						function_2104b0(surface->unknown10, from_vertex, &start);
 						function_2104b0(surface->unknown12, end_vertex, &end);
 						bool traversable = false;
 						for (short type = 0; type < 6; ++type)
