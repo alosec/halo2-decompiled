@@ -100,6 +100,10 @@ struct c_aggregate : c_child
 // boundaries read in the inner loop's test 121; boundaries swapped 45; child-cursor walk 45; the
 // query and release through an inline free-block helper 45.
 // N227: Published absolute child origin at capacity/output-address/completion consumers,
+// seven subsets 45 each; complete graph with final boundary as cleanup limit 45. Original
+// produced output, cumulative publications, dispatch and release graph restored.
+// Round 43: produced renamed count/added/block_count and the dispatch cursor renamed cursor/slot/entry
+// 45 each (frame 0x8024 unchanged); one function-scope child cursor walked in both loops 56.
 // seven subsets 45 each; complete graph with final boundary as cleanup limit 45.
 // Round 27: the child read from the member at each use in the collection loop 62; the dispatch loop
 // started from starts[i] with only the end named 45 (same code); an item pointer in the cleanup loop 45;

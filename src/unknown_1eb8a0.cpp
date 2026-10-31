@@ -3,6 +3,7 @@
 #include "unknown_123b30.h"
 #include "kill_volumes.h"
 #include "normalize3d.h"
+#include "vector_products.h"
 #include <math.h>
 #include <string.h>
 
@@ -81,16 +82,22 @@ struct s_direction_rotation_input
 PRIVATE __forceinline void rotate_direction(vector3f *vector, const vector3f *axis, real sine, real cosine)
 {
 	real projected = dot3f(vector, axis) * (1.0f - cosine);
-	vector3f cross;
-	cross.i = vector->j * axis->k - vector->k * axis->j;
-	cross.j = vector->k * axis->i - vector->i * axis->k;
-	cross.k = vector->i * axis->j - vector->j * axis->i;
-	vector->i = vector->i * cosine + projected * axis->i - cross.i * sine;
-	vector->j = vector->j * cosine + projected * axis->j - cross.j * sine;
-	vector->k = vector->k * cosine + projected * axis->k - cross.k * sine;
+	real cross_i = vector->j * axis->k - vector->k * axis->j;
+	real cross_j = vector->k * axis->i - vector->i * axis->k;
+	real cross_k = vector->i * axis->j - vector->j * axis->i;
+	vector->i = vector->i * cosine + projected * axis->i - cross_i * sine;
+	vector->j = vector->j * cosine + projected * axis->j - cross_j * sine;
+	vector->k = vector->k * cosine + projected * axis->k - cross_k * sine;
 }
 
-// score 120 (was 120): Frame 0x18 agrees; rotation axis products and cosine/projection homes still differ.
+// score 2 (was 120): only the first dot product's i term differs (ours loads direction.i, retail
+// up.i). Round 125: the rotation as 0x2551c0's matched helper (written-out projection first, three
+// scalar cross terms), the axis through cross3f and the normalize result tested directly took
+// 120 -> 2 (cross3f with the length local 116). On it (one-link harness, exact here): dot3f or the
+// written-out dot with either argument order or term order 2/4; the clamp as if/else, MIN/MAX or one
+// statement 2/27/132; input pointer locals 8-12; early returns 2/89; copy/normalize orders 19/65;
+// the helper's cross statement orders 2-39. Earlier at 120: frame 0x18 agreed; rotation axis
+// products and cosine/projection homes differed.
 // Round 263: aggregate/sequential/setter/partial-sum publication with projection first
 // 209/209/120/149; with cross first 218/218/138/125. All helper and caller source restored.
 // Round 194: complete normalized-axis input/native-library/original-entry storage 184/184/184/184;
@@ -104,6 +111,11 @@ PRIVATE __forceinline void rotate_direction(vector3f *vector, const vector3f *ax
 // its own home beside the x87 transfer slot, and the sum still runs i,k,j); scalar cross terms alone
 // 148 (same frame); k-j-i sum alone 149 (1005 bytes); axis by value 177; the rotation written out in
 // the body with named sine/cosine 189; named sine/cosine with the scalar cross terms 189.
+// Coordinator review (r125): the dot product written out by hand in rotate_direction gave 2
+// (fast and full; 0x1ff360 130 at retail's 850 bytes) but copies dot3f's body, so it is not kept
+// without a match; with dot3f kept and the named cross terms 93 (fast; 0x1ff360 134 fast at 854
+// bytes); HEAD's helper with only cross3f in 0x1ecf50 170 (fast). The hand-written dot product
+// is kept only if it reaches a byte match.
 // Round 83: angle-taking helper 120; that boundary with scalar cross/k-j-i projection 148;
 // complement before/after projection on the scalar-cross graph 148/148; vector/axis formal swap
 // there 148; axis component snapshots 120; staged shared cross 120; separate input/output helper
@@ -121,11 +133,8 @@ void function_1ecf50(vector3f *forward, vector3f *up, s_direction_rotation_input
 			if (angle != 0.0f)
 			{
 				vector3f axis;
-				axis.i = input->up.j * input->direction.k - input->up.k * input->direction.j;
-				axis.j = input->up.k * input->direction.i - input->up.i * input->direction.k;
-				axis.k = input->up.i * input->direction.j - input->up.j * input->direction.i;
-				real length = function_30bf0(&axis);
-				if (length != 0.0f)
+				cross3f(&input->up, &input->direction, &axis);
+				if (function_30bf0(&axis) != 0.0f)
 				{
 					*up = input->up;
 					*forward = input->forward;
@@ -281,6 +290,11 @@ void function_1eb6f0(s_ease_input *input, s_ease_state *state, s_ease_output *ou
 // predicate/complete step arms/complete count arms masks 0..7: 667/705/671/711/701/722/704/708.
 // Original selection, predicates, count producers, observations and complete body restored;
 // exact caller preserved in all eight trials; direction/sample homes remain.
+// DL202: Shared duration-count producer with joined/terminal/conditional results and remaining-distance
+// initializers 703/708/681/703/681/708; native output arguments 642/708.
+// Complete supplied-direction native/const/setter/CRT observations 731/731/743/731,
+// frame 0x2c and caller loss in each. Original 0x24 frame, inputs, qualifiers and caller restored;
+// direction/sample residence and coefficient schedules remain.
 // @retail 0x1eb8a0
 long function_1eb8a0(
 	s_ease_state *s,

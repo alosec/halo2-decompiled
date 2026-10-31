@@ -81,6 +81,8 @@ long __stdcall function_1e0850(long arg_0, long arg_1, s_203780 const *arg_2, bo
 // (arg_0 in ebx and retail's schedule, but local_0 in eax, arg_1 in dx); the
 // call result in its own local with `return NONE` at the end 134; NONE
 // assigned in each failing arm of an if/else chain to one exit 109/134.
+// Full signed admission/address index, palette width/conditional/default-record masks
+// 129/133/129/123/133/139/133/121; original short admission and body restored.
 // @retail 0x203780
 long function_203780(long arg_0, short arg_1, short arg_2, bool arg_3)
 {

@@ -157,6 +157,7 @@ void function_71ff0(c_session_state_matchmaking *arg_0, long arg_1,
 // Round 431: Final result from unchanged transition/reset tests, bool/byte/short/long carriers,
 // combined tail then per-phase publication: 449/455/484/480/441/461/476/471. Original conditional true
 // stores, result carrier and complete executable body restored.
+// Round 441: Deadline expiry owns guard/reset result; bool expiry with long/bool/short/byte reset 469/450/469/450; long expiry 463/447/463/447. Long expiry plus byte/bool reset recovers frame 0x3e4 but regresses; all original computations and body restored.
 // @retail 0x71730
 bool __stdcall function_71730(c_session_state_matchmaking *arg_0)
 {

@@ -187,6 +187,12 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // with `movzx` at the index, the first corner's axis in ax/positive in cl, and the plane store
 // through the normal's base); with real_point3d_set as the lookup's argument 180; with the side
 // byte read before the point 180 (aligned 56/60).
+// Lane 15 r17, on the existing 0x120810 per corner (189): plane pointer 198, with a point-first dot
+// 196 (store base as retail; the first two dot products then load the point first); edges as a
+// vector2f through vector2d_from_points2d with the inverse as if/else 182 (975 bytes; the tail is
+// then retail's but for the first cross product, which loads e0.i where retail copies e1.j's
+// register); natural cross order 182 and retail's corner-1 product operand orders 182 (both identical
+// code: in this form every product loads the matrix field first whatever the source order).
 // @retail 0x17d9a0
 void function_17d9a0(transform4x3f const *matrix, real const *bounds, s_decal_quad_17d9a0 *quad)
 {

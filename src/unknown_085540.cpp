@@ -1035,6 +1035,26 @@ bool function_68670(byte *source, long size, void *block);
 // Round 222: connection-ready bool/byte/short/long on original entry, each 97; each with named
 // occupied span 135. Original body restored; reader visibility, cursor reloads and count updates
 // remain.
+// score 97 (was 97): retail behaves as if the read call could write any memory: it reloads the
+// buffer start after each read, updates the used count in memory (`add [ebx+0xc], -8`) and loads
+// the header size only after the start/used stores; ours keeps the start in ESI across the first
+// read and hoists the header size. Retail also subtracts the span from 0x200 into EAX (ours adds
+// 0x200 to the reassociated span), and in case 1 keeps two dead zero stores, each just before its
+// field's value store. A one-file compile without whole-program optimization (read call opaque)
+// gives retail's reloads and late header load.
+// Tried: window as shift 97; window pointer 97; inline read method 135; header size per use 135;
+// buffer hoisted out of the loop 204; `used = next - end` local (retail's window test exactly, 135
+// from the listing shift); self-aligned standard entry, case-workspace scopes and complete ring-field
+// forms 159-179; a distinct byte-buffer class with ordinary/inline/noinline/both reader knowledge
+// 97/352/97/97, with the occupied-span subexpression 135/353/135/135; connection-ready
+// bool/byte/short/long 97 each, each with a named occupied span 135; used update first 97; named next
+// start 143; buffer outside the loop 201; payload count as short or read at each use 97; cases in
+// order 2, 1, 0 97; header renamed 97; parameter-address carrier removed 179; copy method inline 352,
+// inline plus out of line 97.
+// Round 17: case 1's offset/size zeroed by a memset of an {offset, size} header member 146 (keeps
+// retail's zero stores, aligned diff 53 -> 45, but stores both zeros first), per-field memsets 145;
+// with the named span for the window 137 (window exact, aligned 38); on that, used update first 137,
+// named short payload size 137, a shared inline read helper mirroring view_buffer_write 137 (same code).
 // Round 232: Native signed header bitfields kind/size/both/value/kind-value/size-value/all, then all with occupied-window local
 // 97, 97, 97, 97, 97, 97, 97, 135. Original executable source restored.
 // Round 107: the message's offset/size cleared with memset (retail's surviving zero stores) 146
