@@ -831,6 +831,16 @@ struct s_signed_file_write_parameters
 // with it declared first). Diagnostic: the getter reaching the scratch object through its address
 // 132 (aligned 113 -> 109; 0x2ad7c0 68 -> 173 though its aligned count improves 55 -> 49), so both
 // bodies look compiled with the object address-taken; a natural source of that is not found yet.
+// Lane 15 r17: the record defined in a /GL- file 134 (no change: LTCG still sees it); the getter
+// through a record pointer 132 (header_size now loaded after the owner store, the flag store still
+// sinks); the flag byte folded in as the record's fourth field (0x5020d4 = 0x5020c8 + 0xc) 131
+// (both getter stores now ahead of every parameters load, as retail); with the parameters view cast
+// from a `void *` parameter as this file's other work callbacks 130 (extend sum body first as
+// retail); the view alone 133. With the record 0x2ad7c0 53 -> 159; its view, per-arm size (scratch
+// arm clamps by the remaining count read after the claim) and one function-scope byte count take it
+// to retail's length, sum order and dispatch hoist but 156 (buffer through eax, size/position
+// registers swapped). Left: getter store/load order per site, extend offset spilled where retail
+// spills the buffer.
 // @retail 0x2adb10
 PRIVATE long __stdcall signed_file_write_work(s_async_task *task, s_signed_file_write_parameters *parameters, long parameters_size)
 {

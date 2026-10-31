@@ -1005,6 +1005,12 @@ struct s_game_engine_globals_connections_view
 };
 
 /* builds a player's row of the scoreboard at a position */
+// score 170 (was 170): this round's reduced-image listing (1227 bytes, frame 0x6d0 against retail's
+// 1254 bytes and frame 0x6d8) shows every stack home shifted by eight bytes, so the fast score of 272
+// is not the full build's 170 and the reduced image is not a usable target for this function.
+// score 170 (was 170): this round the reduced image scores the function 272 (the full build scores
+// 170); the deferred icon tail and the time/connection register homes still differ, and the fast
+// number is the one the reduced image reports.
 // score 170 (was 170): frame 0x6d8 agrees; deferred icon tail and time/connection registers remain;
 // retail tests the score/time widths as dwords but adds them as words, name width (bx) first.
 // Round 75: short widths (casts dropped) 170 (kept: the column sums add the name width first as
@@ -1332,6 +1338,13 @@ PRIVATE inline long score_string_list_1608e0()
 	return result;
 }
 // score 689 (was 710): native rectangle objects recover retail length; frame 0x790 versus 0x79c;
+// this round's reduced listing shows the frame at 0x790 against retail's 0x79c
+// (2858 bytes against 2879), so every stack home is twelve bytes off and the absolute addresses are
+// compared instead of masked; retail also computes the player index in ebx before the pushes, ours in
+// edi after them.
+// score 689 (was 689): this round the reduced image scores the function 710 (the full build scores
+// 689); the frame, the player and coordinate registers and the fade clamps still differ.
+// score 689 (was 689): native rectangle objects recover retail length; frame 0x790 versus 0x79c;
 // the local player sits in EDI (retail EBX) and the
 // x coordinate in EBX (retail EDI); the color locals' slots (retail keeps background below foreground)
 // and the shared 0.0/1.0 registers of the fade clamps differ.
@@ -1729,6 +1742,8 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 189: Actual widget/validity and validity/widget pointer contracts 172/172; sole validity
 // member base in both orders 156/156; indexed team fields with all four contracts 154 each.
 // Bounds/receiver scheduling and team induction remain. Original helper and body restored.
+// Round 440: Pointer-only team/player text/icon traversal masks 1/2/3/4/5/6/7 score 217/154/230/488/511/504/524;
+// complete graph with guarded team range 539. Every native traversal and helper restored.
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {

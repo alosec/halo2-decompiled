@@ -123,6 +123,10 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 // Round 425: Direct input with collision-output flag/flag/vector lexical homes, all seven
 // subsets 803 each; all three with the false flag initialized at first use 805. Original
 // input access, query homes, initialization, helpers and complete body restored.
+// Initial heading/default/input setter subsets and all with output setters
+// 833/847/886/744/832/839/827/871; new-frame normalizer fabsf/input/inline subsets
+// 744/746/746/744/744/936/936; best 744 at frame 0x88 and retail length
+// gains six, below the keep threshold. Original input access, helpers and body restored.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

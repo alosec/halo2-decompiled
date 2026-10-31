@@ -494,6 +494,15 @@ real function_30bf0(vector3f *vector);
 // 152/152/152/152/152/152/152/183. Original complete executable body restored.
 // Round 214: existing dot/basis-dot plane producers, both operand orders: copied normal 150 each; native normal 290 each.
 // Exact-only sum forms restored; no gain meeting the margin, result/range/amount homes and inverse SIMD groups remain.
+// score 150 (was 144): the volatile result anchor and the pointer-to-whole-local side
+// operand are gone, so the result, range and delta stack homes and the delta/motion SIMD
+// register blocks differ from retail again.
+// score 152 (was 152): the facing branch is entered on retail's negated condition and the cross
+// product's multiply operands now follow retail's order; the result, range and delta stack homes
+// and the delta/motion SIMD register blocks still differ.
+// Coordinator review: the facing branch on the negated condition with the volatile result kept scores 150 (was 152);
+// with int result as well 150. Neither meets the 8-point bar, so main's code stays; the 144 above also had the cross
+// product's operand order, which is not in this file.
 // @retail 0x263810
 short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
