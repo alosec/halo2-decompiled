@@ -684,6 +684,9 @@ struct s_1f9762
 // inside the not-last arm's valid branch with a ternary reversed, if/else or nested `if
 // (direction_valid)` 104/104/104, with a default plus `if` 111. Compile-only: only `direction_valid
 // && !last` (listed) moves the approach after the first return, and it keeps the pointer in EDI.
+// Round 444: caller ordinary-inline difference/normalizer/query boundaries, seven
+// subsets 67 each; all with direction-valid-first guard 191. All declarations and
+// the complete body restored; native approach placement remains.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)
@@ -1096,6 +1099,9 @@ done:
 real function_50650(real cosine);
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 
+// Round 16: retail passes the object index in EAX and the actor index in ECX, ours passes the
+// actor index in ECX and keeps the object index elsewhere; retail computes the masked actor
+// offset before the pool load and holds the actor in EDI.
 // score 137 (was 137): frame 0x1c agrees; actor/object homes, velocity preload and final minimum remain (caller-inclusive fast 137).
 // Earlier: frame 0x1c agrees; two excess bytes, actor/object roles (EDI/ESI), the hoisted velocity j load,
 // the first clamp's x87 order and the epilogue pops' place in the final minimum remain.
@@ -1391,6 +1397,8 @@ PRIVATE inline real movement_normalize2d(point2f *v)
     return 0.0f;
 }
 
+// Round 16: retail's result sits at [esp+0x10] and its radius at [esp+0x14], ours the other way
+// round, and retail materialises both direction components before the x87 length.
 // score 238 (was 238): Frame 0x3c, result/flag homes and exits agree (1182 bytes against 1173). Retail's zero, radius and
 // direction sit in other SSE registers (xmm1/xmm5/xmm2-3; it keeps the result in xmm0 up to the type exit),
 // shares the left type-0 arm's `+ target.y` and flag re-test with the type-1 arm (ours threads that arm),
@@ -1475,6 +1483,9 @@ PRIVATE inline real movement_normalize2d(point2f *v)
 // All ordinary sources move the entry homes and regress; original body/helper restored.
 // Ordinary origin with paired radial/side/desired product stages, seven subsets 255 each;
 // all with the complete scalar fraction producer 255. All restored.
+// Round 444: Ordinary origin with zero result after type/side/projection geometry
+// 292/284/284; assigned-sign counterparts 292/281/281; forward-scoped result with
+// direct/assigned sign 300/300. All restored; zero/radius and vector homes remain.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)

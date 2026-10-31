@@ -109,9 +109,9 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // score 43 (was 43): this round's sentinel store orders (the +0x18 word before the bytes, after the
 // +0x1a word, the bytes swapped, the bytes written as numbers, the words cast to short) all compile
 // to the same 43, so the store order is the compiler's scheduling, not the source's.
-// score 43 (was 43): this round ran the source permuter over the body; the rotation's xmm ranking
+// Permuter round 43 (was 43): the source permuter over the body; the rotation's xmm ranking
 // (retail's xmm1..xmm5 cycle against ours) and the final sentinel store order still differ.
-// score 43 (was 43): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
+// Earlier 43 (was 43): frame 0xd4, length and all range adds agree; rotation dot/register ranks and final sentinel scheduling remain.
 // Earlier: y/z range-add order, rotation registers and final sentinel
 // three causes remain. The y/z point draws add the point component before the range
 // start (x is right); the rotation's xmm registers are retail's shifted by one (xmm1..xmm5 cycle) with
@@ -204,6 +204,12 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // bytes; still k, j, i); +0x18 sentinel stored after +0x1a 43; the four flag/zero stores before
 // the NONE stores 43; the angle read after the vector copy 54; PRIVATE helper 43 (same code);
 // permuter 49 tries, best 43.
+// Round 10 (m3 lane 2): register-masked aligned difference 8: the dot's (i + k) + j schedule and
+// the +0x18 sentinel store with the argument reload, which ours schedules right after the last
+// NONE store where retail keeps source order. Member vector copied before the sentinels 91; the
+// true flag stored before the two false ones 42 (the +0x18 store then lands after the two false
+// ones, still ahead of the rest); the two false flags as one chained assignment 43; grouped dot
+// with the vector copied first 90; grouped dot with the true flag first 41 (masked difference 5).
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {

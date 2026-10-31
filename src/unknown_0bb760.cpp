@@ -721,6 +721,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // the destination taken as &base[count] 91; the two pointer increments swapped 91.
 // Source pointer derived from the destination inside the loop, so that the source induction
 // variable is never used in the preheader 186.
+// Round 86: scalar component copy 139; blend-only count 169; scale-only count 170;
+// blend-only function array 173; scale-only function array 139; shared inner counter 105;
+// shared function pointer 91; advancing outer entry pointer 203. Original body restored.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {

@@ -478,6 +478,14 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // without the loop 85; the difference through a helper returning its output 34 (normalize3d 79);
 // `while (length > travelled && !result)` 102. Diagnostic only: a normalize summing
 // `i*i + (j*j + k*k)` with the subtraction through a pointer 8.
+// Lane 18 r1: the magnitude's three terms are reordered by rank whatever the text (all 12 sum spellings
+// give the same code; a parenthesised pair is summed first); the direction written k, j, i by hand 94
+// (then i is kept on x87), through a pointer local 80 (k kept, sum k, i, j). Scale as `(1.0f / m) * i`
+// then `j * inverse`, `k * inverse` (another file's normalize) 94: retail's scale block and loop-entry
+// jump exactly, but the sum j, i, k; the scale statements in all six orders with either operand order
+// 34-37; the BSP index read at its use with the BSP pointer declared first 37 (word load, in BX); the BSP
+// pointer a local with the index and structure read at use 36 (DI); BSP pointer and index locals with the
+// structure at use 36 (index back to a dword load).
 // @retail 0xc0840
 bool function_c0840(point3f const *start, point3f const *end, point3f *out, real *distance)
 {
@@ -1605,6 +1613,10 @@ extern s_object_list *g_4de2f4;
 // the light 49, as an element of the radius block 49 (same code); re-derived from the pool global
 // 282; `&light->fraction` passed to 0xbab40 with the pointer kept for the later read 49, the
 // pointer declared between the two calls 49 (same code).
+// Lane 14 r19 (fast with the callees listed reproduces 49; 0xbab40 gets retail's three pushes and
+// nothing scratch lives across it, so it is not the blocker): the fraction pointer defined between
+// copies 3 and 4 / 2 and 3 / 1 and 2 / the tint and copy 1 62/75/76/75 (still EAX, rematerialised);
+// the light's name read into a local before the 0xbab40 call 49 (same code).
 // Round 91 (lane 7; harness counts, where the unchanged source gives 50): the colour copies after
 // the 0xbab40 call 79; the copied view point typed point3f 50; the first blend's fraction named
 // after 0xbad50 50; `object` declared before `object_index` 52; the object through `object_get`
