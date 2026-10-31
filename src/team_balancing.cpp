@@ -500,6 +500,14 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // still first); the comparison as an in-class solution method called on the candidate 188 (not
 // inlined under /Ob1, 420 bytes); the improvement as an if / else-if pair 150 (0x91dd0 8); the
 // reference pointer declared `const` 67 (same code).
+// Round 46 (lane 9): the cost compare written candidate first (`candidate.cost() < reference->cost()`) 67, with
+// both spread compares reference first 65 (the cost compare is then retail's; only the four count_spread calls
+// differ: ours reference first in every operand order, retail candidate first), with only the first spread
+// compare reference first 66; `candidate - reference spread < 0` for the first test 67; the selection written
+// at each use as `(improved ? &best : &current)->` 112 (not CSE'd; still reference first);
+// `!(candidate.count_spread() >= reference->count_spread())` 67; the selection written `!improved ? &current :
+// &best` 70; the selection moved after the candidate copy (before the swaps) 151; `best = candidate;` before
+// `improved = true;` 71. No other function calls count_spread, total_spread or rank_spread out of line.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {

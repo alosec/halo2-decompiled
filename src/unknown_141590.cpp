@@ -5,6 +5,7 @@
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
 #include "vector_products.h"
+#include "normalize3d.h"
 #include <math.h>
 #include <string.h>
 
@@ -496,20 +497,6 @@ void orientation_from_matrix4x3(
 	out->scale = matrix->scale;
 }
 
-__inline real normalize3d(vector3f *v)
-{
-	real m = (real)sqrt(v->i * v->i + v->j * v->j + v->k * v->k);
-	if (!(fabs(m) < 0.0001f))
-	{
-		real inv = 1.f / m;
-		v->i = inv * v->i;
-		v->j = v->j * inv;
-		v->k = inv * v->k;
-		return m;
-	}
-	return 0.f;
-}
-
 void function_142390(
 	plane3f const *plane,
 	transform4x3f *out);
@@ -518,31 +505,10 @@ static __forceinline void matrix4x3_basis_store(transform4x3f *out, point3f cons
 {
 	out->scale = 1.f;
 	out->forward = *forward;
-	vector3f left;
-	left.k = forward->j * up->i;
-	left.k -= forward->i * up->j;
-	left.j = up->k * forward->i - forward->k * up->i;
-	left.i = forward->k * up->j;
-	left.i -= up->k * forward->j;
-	out->left.k = left.k;
-	out->left.j = left.j;
-	out->left.i = left.i;
+	cross3f_staged(up, forward, &out->left);
 	out->up = *up;
 	real_point3d_set(&out->position, 0.f, 0.f, 0.f);
 	out->position = *position;
-}
-
-static __forceinline void plane_vector_normalize(vector3f *out)
-{
-    real k = out->k;
-    real magnitude = (real)sqrt(out->i * out->i + out->j * out->j + k * k);
-    if (!(fabs(magnitude) < 0.0001f))
-    {
-        real inverse = 1.f / magnitude;
-        out->i = inverse * out->i;
-        out->j = out->j * inverse;
-        out->k = inverse * k;
-    }
 }
 
 static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *out)
@@ -550,7 +516,7 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 	vector3f w;
 	point3f position;
 	function_11d000(&plane->n, &w);
-	plane_vector_normalize(&w);
+	normalize3d(&w);
 	position.x = plane->d * plane->n.i;
 	position.y = plane->n.j * plane->d;
 	position.z = plane->n.k * plane->d;

@@ -2230,6 +2230,9 @@ static __forceinline long player_round_ticks(real value)
 // both slots with direct decay and either request extent; late unit-slot acquisition and native
 // unsigned word slot domains; fast 764/769/825/827/871/923/792/856/765/745/745/827.
 // Original body and existing helper restored.
+// Round 239: complementary readiness/admission/lunge ownership, seven nonempty
+// subsets and the complete byte graph, all eight 701. Original producers, request
+// storage, fields, call tuples and complete body restored; frame remains 0x4c.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {

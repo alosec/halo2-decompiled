@@ -189,6 +189,10 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // Round 84: on the indexed active chain, separate pending-selector publication after the blocked
 // test/always 226/241; peer callback 233; isolated control 170; owner before the loop 238;
 // peer lookup, equality termination and iteration-local owner 170 each. Original body restored.
+// Lane 14 r19 (fast `0x98150 0x89d20` reproduces the plain 55): indexed active loop with the item
+// priority at the arm scope 170 (814 bytes; type keeps EBX through the pending chain, whose index
+// spills); active cursor bounded by a remaining countdown 55 (same code); indexed loop bounded by its
+// own count local 170; `type = 4` after the active chain query 170; blocked declared after `type = 4` 170.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
