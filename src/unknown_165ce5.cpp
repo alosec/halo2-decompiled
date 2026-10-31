@@ -1859,22 +1859,39 @@ static __forceinline void first_person_orientations_from_model_16760c(s_16760c_r
 
 
 static __forceinline void first_person_channel_sample_sway_16760c(c_animation_channel *channel, real const *value,
-	real positive_frame, real negative_frame, real weight, long node_count, byte *orientations)
+	real positive_frame, real negative_frame, real weight, s_first_person_weapon const *weapon, byte *orientations)
 {
 	if (*value > 0.0f)
 	{
 		channel->set_frame_position(positive_frame);
-		channel->sample(weight * *value, NULL, node_count, (real_quaternion_transform *)orientations);
+		channel->sample(*value * weight, NULL, weapon->orientation_count, (real_quaternion_transform *)orientations);
 	}
 	else if (0.0f > *value)
 	{
 		channel->set_frame_position(negative_frame);
-		channel->sample(0.0f - weight * *value, NULL, node_count, (real_quaternion_transform *)orientations);
+		channel->sample(0.0f - *value * weight, NULL, weapon->orientation_count, (real_quaternion_transform *)orientations);
 	}
 }
 
 /* samples a weapon's animation, its overlays and its sway into the user's
    orientations, then builds the weapon's node matrices */
+// score 6 (was 15) plain: the rounds test is spelled with the negative case first, the branch
+// polarity retail's code shows, so the frame block is retail's layout; the three float products
+// still load their two operands in the other order.
+// score 160 reduced (was 148), coordinator review: the magazine definition pointer read once before the call is
+// not kept (a one-use field pointer, no match; 164 without it), and the sway helper reads the node count through
+// the weapon after set_frame_position instead of taking the count by pointer (160; 164 with the count pointer).
+// score 15 (was 60) plain, 148 (was 157) reduced: the adjusted flag is set in the adjustment branch
+// and cleared in the other one, so the tail is retail's instruction for instruction; the sway
+// products still load the value first and the rounds test still lays its blocks out the other way.
+// score 157 (was 169): the magazine definition pointer is read before the call and the excess over the
+// minimum load is kept in its own local, so the rounds update matches retail's shape; the weapon and
+// the definition still swap their stack homes and the sway products still multiply the value first.
+// score 169 (was 358): the sway helper takes the node count by pointer, so the count is re-read from
+// the weapon after each set_frame_position call as retail does; the two stack homes for the weapon
+// and model are still swapped and the ammo block still keeps rounds in a register.
+// score 358 (was 411): the blend flag now lives in a stack slot and is copied into the blend call's
+// flag register, so the early blend byte agrees; the user and weapon pointers still swap ESI and EDI.
 // score 410 (was 410): Frame 0x78 and initial copies agree; early blend byte and user/weapon/sway homes differ.
 // Earlier frame 0x58 versus 0x78; root/channel overlap and later sway homes remained.
 // Earlier root/channel homes overlapped in frame 0x58 vs 0x78; kept the nonnegative ammo arm and common index-derived adjustment bit.
@@ -1998,14 +2015,15 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 
 		if (function_0b6780((s_index_triple *)state))
 		{
-			bool full_blend;
+			bool full_blend = true;
 			s_animation *animation;
 			real blend_time;
 
 			state->sample(0, 1.0f, NULL, (real_quaternion_transform *)orientations, 0, 0, weapon->orientation_count);
 			function_bd970(weapon_index, arg_2f82bc, state, 0, weapon->orientation_count, orientations);
 			animation = state->channels[0].function_1c6440();
-			full_blend = !(animation && (((byte *)animation)[0x18] & 0x10));
+			if (animation && (((byte *)animation)[0x18] & 0x10))
+				full_blend = false;
 			blend_time = full_blend ? 0.4f : 0.2f;
 			function_1d9240((s_1d9240 *)&user->unknown202c, full_blend, blend_time);
 			if (user->unknown202c.unknown1)
@@ -2022,7 +2040,7 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 					}
 					if (function_0b6760((s_index_pair *)&weapon->channelb8))
 					{
-						weapon->channelb8.sample((weapon_object->unknown188 + 0.5f) * weight, NULL, weapon->orientation_count,
+						weapon->channelb8.sample(weight * (weapon_object->unknown188 + 0.5f), NULL, weapon->orientation_count,
 							(real_quaternion_transform *)orientations);
 					}
 					aimed = false;
@@ -2039,15 +2057,15 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 						if (channel.function_1c6440()->frame_count >= 9)
 						{
 							first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x0], 0.0f, 1.0f, weight,
-								weapon->orientation_count, orientations);
+								weapon, orientations);
 							first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x4], 3.0f, 2.0f, weight,
-								weapon->orientation_count, orientations);
+								weapon, orientations);
 							if (!aimed)
 							{
 								first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x10], 4.0f, 5.0f, weight,
-									weapon->orientation_count, orientations);
+									weapon, orientations);
 								first_person_channel_sample_sway_16760c(&channel, (real const *)&user->unknown2030[0x14], 7.0f, 6.0f, weight,
-									weapon->orientation_count, orientations);
+									weapon, orientations);
 							}
 							if (weapon->indices.unknownc > 0.0f)
 							{
@@ -2078,7 +2096,8 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 
 					if (loaded >= 0x2c)
 					{
-						real fraction = (real)(loaded - 0x2c) * 0.2f;
+						real excess = (real)(loaded - 0x2c);
+						real fraction = excess * 0.2f;
 						short maximum;
 						short total;
 
@@ -2100,15 +2119,15 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 				{
 					short rounds = weapon_object->unknown22c;
 
-					if (rounds >= 0)
+					if (rounds < 0)
+					{
+						frame = 0;
+					}
+					else
 					{
 						frame = ammo_animation->frame_count - 1;
 						if (rounds <= frame)
 							frame = rounds;
-					}
-					else
-					{
-						frame = 0;
 					}
 				}
 				channel.set_frame_position((real)frame);
@@ -2141,8 +2160,12 @@ void __stdcall function_16760c(long user_index, long field_x11c898)
 				user->adjustment.position.x -= definition->first_person_offset.x;
 				user->adjustment.position.y -= definition->first_person_offset.y;
 				user->adjustment.position.z -= definition->first_person_offset.z;
+				SET_FLAG(user->flags, _first_person_user_adjusted_bit, true);
 			}
-			SET_FLAG(user->flags, _first_person_user_adjusted_bit, user->unknown2094 != NONE);
+			else
+			{
+				SET_FLAG(user->flags, _first_person_user_adjusted_bit, false);
+			}
 		}
 	}
 }

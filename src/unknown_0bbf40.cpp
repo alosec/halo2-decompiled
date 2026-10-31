@@ -320,6 +320,12 @@ s_object_gc_entry_ab g_440570[6] =
 // Round 300: Named native long/dword level mask at use with compound, rejection-guard and
 // nested-positive eligibility 110/110/110/110/110/110; rejection/nested forms with terminal state
 // fields at use 125/125. Original frame, loop, field observations and body restored.
+// Round 44: index walk (`g_440570[index].`, retail's +8 entry pointer) 177; index walk + `advance = !again` with the
+// in-loop exit through the state local 122 (393 bytes, retail's frame, level register and sete), with an entry pointer
+// 122, gathered declared first 121; while + break + advance + after-loop clear 176 (333 bytes), state re-read at the
+// loop end 176; index + advance with the in-loop exit reading g_4de2f4 at each use 119 (379 bytes, aligned 59: all but
+// the loop rotation). Retail reloads g_4de2f4 after the 0xbf1c0 call on every path (its LTCG treats that call as
+// possibly changing it), which keeps its loop top-tested. Original body kept.
 // Round 315: Early gather commitment with direct terminal state/query-produced critical/reused action
 // ownership masks 0..7: 115/125/138/125/113/134/132/136. Direct-state forms recover the frame but
 // shorten to 374 and regress. Original state, query, callbacks, buffers and loop restored at 110.

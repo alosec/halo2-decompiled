@@ -265,6 +265,10 @@ bool function_23a220(const point2f *point, short count, const point2f *points, r
 // Round 298: existing staged cross with original/origin-live/start-live/both input
 // observations 192/275/282/292; the same four with entry hit-result lifetime
 // 192/275/282/292. All restored; frame 0x84 and retained-origin/edge spills remain.
+// DL202: Staged cross in the first/second edge home, normalized before/after plane publication,
+// with separate/reused offset storage: 299/299/297/297/299/299/297/297.
+// Normalizing before plane publication recovers frame 0x90 but grows to 1039/1001 bytes;
+// origin retention, ray loads and plane homes still differ. All original source restored.
 // @retail 0x1edf50
 void c_vertex_shape::ray_test(bool *hit, const s_shape_ray *ray, s_shape_ray_result *result)
 {

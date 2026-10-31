@@ -896,12 +896,18 @@ PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_p
     s_pathfinding_node const *node = &data->nodes[index];
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
-// score 347 (was 347): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
+// Round 29 (lane A): the direction as two scalars (no address-taken struct) leaves it in registers
+// as retail does: 347 -> 324, 1312 bytes. The frame is still 0x30 against retail's 0x28: ours keeps
+// the normal's x at esp+0x18 and its y at esp+0x34 where retail has the y at 0x2c and the x at
+// 0x34, and ours still spends a slot on the spilled direction.x.
+// score 324 (was 347): frame 0x30 versus 0x28: ours keeps 0.0 in xmm6 for the whole loop and spills
 // direction.x and the first offset's y, where retail clobbers its xmm0 zero with 0 - radius and
 // re-zeroes it for the compares; the edge pointer then sits in ebx (retail esi) and the vertex in
 // memory (retail ebx). Retail's crossing test is one byte set three times (`xor dl, dl` before the
 // normalisation, `mov dl, 1` per test): the flag form `crossing = false; if (..) crossing = true` x3
 // reaches 318 here (kept out: flag rule).
+// Review (coordinator): the two-scalar direction (324) is a hand copy of vector2d_from_points2d's body
+// with no match, so the code stays at main's helper call (347); body copies are kept only with a match.
 // Round 79 kept: the edge's node pair as a real array, the fixed-side tests on the edge's word
 // (edge_node_open_2c: retail's `mov cx, word; movzx eax, cx; cmp cx, 0xffff`), the long test on
 // the indexed ones, start/end vertices by if/else, complete geometry before the tests, the ring

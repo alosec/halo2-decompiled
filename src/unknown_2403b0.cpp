@@ -113,6 +113,12 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // Round 79: nested blocked assignment 93; default-true admission 128; peer receiver 95;
 // flag pointer arithmetic 95; clock-first product 95; final-team assignment 121; positive blocked
 // assignment 132; nested blocked with peer 93. Two-point gains and one-use receiver forms restored.
+// Round 42 (lane 16): weapon checks as one positive block setting the slot 95 (identical code: the
+// pool read is shared whatever the control flow; retail's 0x101690 keeps the same pool pointer in ESI
+// across 0xcbd50, so the callee summary is not the cause); permission as `if (!0x15e410(team)) blocked =
+// true; else blocked = !clear;` 93 (blocked materialized in a stack byte; retail materializes `~flags & 1`
+// with `not al; and al, 1` and branches on it); with the predicate spelled `(~flags & 1) != 0` 93; the
+// arms swapped 131; the blocked flag dropped (call and return inside the test) 131.
 // Round 315: Seven joint positive unit/weapon/slot admission graphs 95 each; full graph with
 // independent completion event 116 at 912/912. Original resource, score and event lifetimes restored;
 // pool-data spill and scratch-register ties remain.
