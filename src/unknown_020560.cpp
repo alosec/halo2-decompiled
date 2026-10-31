@@ -1376,6 +1376,9 @@ long __stdcall function_3bf20(s_slot *slot, byte *data);
 // sinks), read before the storage test 6; written inside the bitset test 72 (the load stays, the
 // divide moves after the clamp); the bit test through function_0bfe60 90; the bit test before
 // the clamp 79.
+// Round 88: availability before validity, direct/shared bit test 77/77; blocked polarity
+// and row pointer 68/68; availability before the slot 90; full counter there 90;
+// inline target 6; const slot 6. Early dependencies move the divide and bit work; restored.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
