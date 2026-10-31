@@ -145,6 +145,9 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // Round 429: complete readiness arms/path-owned completion/both/separate release/
 // readiness-release/completion-release/all/all with one actor acquisition
 // 104/104/94/47/104/104/94/101 fast; all restored.
+// Round 238: named initial-completion/facing/release decisions, seven subsets 47 each;
+// complete decisions with native slot data block 47. Original callback restored;
+// initial one-use completion snapshot rejected without an exact match.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {
