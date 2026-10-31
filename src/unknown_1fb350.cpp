@@ -349,6 +349,28 @@ extern "C" void _ReadWriteBarrier(void);
 // inline/plain/forceinline declaration pairs except inline/inline: eight times 152.
 // All bodies and declarations restored. Current flag call uses retail CL; two pool homes,
 // object-pool reloads and frame 0x14 remain unresolved.
+// DL192: Native word flag views for admission/publication/cleanup subsets 1-7 on ordinary traversal:
+// 152/154/154/156/161/160/160; complete view with native four-field iterator 160. All target changes and the
+// external flag declaration restored; pool homes remain.
+// the datum index kept in EDI), holds the high water in ESI for each search, re-reads the iterator's
+// pool from memory at the loop head and computes the element from a second spilled copy of the pool;
+// ours keeps the pool in EDI and g_4e0300 in EBP across the loop (reloaded after each call) where
+// retail re-reads it at each use; function_f0fd0's flag goes in DL where retail uses CL
+// (BLOCKED-BY 0xf0fd0 for that call).
+// Tried: shared step with/without the barrier 162/152; datum iterator 152 (frame 0x10); plus a pool
+// local for the iterator and release 150 (frame 0x14); iterator from the global, local only for the
+// release 127; that local assigned after the iterator 124 (retail's prologue). Round 406: shared
+// absolute element getter, ordinary three/four-field iterator, early/late saved pool and shared
+// datum-index producer 166/157/166/157/163/156/166/157. Round 14: barrier removed alone 161;
+// finished arm first 149; if/else finished flag 123 (same code); early continue to the release 162;
+// deletion test in one condition 127; codec pairs as writable globals (diagnostic) no change.
+// DL192: native word flag views, subsets 1-7, 152-161; complete view with native four-field iterator
+// 160. Round 298: unit/flag producer inline/plain/forceinline declaration pairs 152 each.
+// Round 17: the shared search's volatile high-water read removed 162 (ESI holds the high water as
+// retail, but 0x1fb760 and 0x1fb4c0 stop matching and 0x1fb6f0 rises 12 -> 41, so the volatile is
+// load-bearing for them); this function alone on the non-volatile data_iterator_next_inlined 162
+// (high water in ESI, pool still in EDI), the same without the barrier 152; the out-of-line
+// record_pool_iterator_step 205 (stays a call, 422 bytes); animation declared before the iterator 122.
 // DL199: Completion byte/word/short/long on ordinary three-field and four-field iterators: 152
 // each. Four-field frame reaches 0x10, still below retail 0x14; the second pool home remains
 // missing. All callback values and original body restored.

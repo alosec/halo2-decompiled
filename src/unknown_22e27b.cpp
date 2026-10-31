@@ -226,6 +226,10 @@ static inline real interpolate_linear(real a, real b, real t)
 // Round 79: fraction-first with outer next time 206; active fraction scope 206; outer elapsed 206;
 // outer frame time 206; outer next with active fraction 206; all outer timing 206;
 // sum-only/full per-iteration direction on that graph 206/206. Original 96 body restored.
+// Round 8 (lane 2): the rotation continues after the loop (retail's zero is EAX there, ours EDI),
+// so it is a whole-function allocation shift. Disposal false from its declaration (no pre-loop
+// store) 96; disposal declared before the restart flag 96; frame time, next time, elapsed
+// declared in reverse 96; disposal reset before elapsed 96; `this != get_screen()` 97.
 // Round 233: native full-width signed count/current/both/direction/count-direction/current-
 // direction/all three/all plus duration fields: 96/96/96/96/96/96/96/96. Original shared field
 // declarations and body retained; direction/frame and lookahead/fraction homes remain.

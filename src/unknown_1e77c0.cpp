@@ -507,6 +507,12 @@ struct s_request_profile
 // a bool local per element 137; state = 0 then `if (query) state = 5` 106; with the volatile read 175;
 // profile index local 164. Diagnostic only: element 1 alone state-first gives retail's IV and
 // registers (36 with this spelling, 79 natural), so the IV follows element 1's first store.
+// Round 44: VC unrolls a constant-trip loop only with one store in its body (two stores never unroll, even from an
+// inlined helper in another file: 339 rolled). Plain loop storing a transition record 166 (565 bytes); both flag
+// words read at each use 205, with natural i..i+3 elements 177; natural four-way body calling 0x1e7a10 150 (583 bytes,
+// aligned 36: retail's flag reloads and select), with this body's i-2..i+1 elements 154; natural query body without
+// the transition pointers, ticks first 195, state first 139 (aligned 28), pointers with state first 142; state first
+// with 0x1e7a10's pair taken from the state record 139. Retail reads the pair through the memcpy destination register.
 // @retail 0x1e73b0
 void function_1e73b0()
 {

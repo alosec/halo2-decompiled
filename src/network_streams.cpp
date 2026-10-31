@@ -1307,6 +1307,9 @@ bool network_message_read_header(s_bitstream *stream, long *type, c_type_659ceb 
 // as `result = false` 123; early count return 121; result declared first 107; scan fragment NULL
 // first 107; count `> 0` 106 (oldest in EDX, one extra test); an address-of-result diagnostic
 // compiled identically (compile-only).
+// Round 44: bool result with an early `if (!result) return result;` after the scan 224 (781 bytes); that with
+// a `return false` failure 224; that with the count test as a scope 212 (789 bytes); long result with the early
+// return and `return false` failure 161; bool result, count scope, `return false` failure 232. Original body kept.
 // @retail 0x95840
 bool __stdcall function_095840(s_network_stream_header *header, long *message_type, long *message_size, void *message_data)
 {
