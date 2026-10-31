@@ -3058,6 +3058,9 @@ struct s_voice_route_choice
 // (diagnostic) moves neither. Word headset 364; branch radio with a word headset 408 (1273 bytes, aligned
 // differences 220 against 281); the nearest arm first (`if (!radio && nearest != NONE)`) 383, with branch radio
 // 416, with a word headset 384.
+// Round 446: Unsigned nearest/player field plus ordinal/both, signed headset alone/with nearest/
+// with player/all three, and player field alone: all eight 363 on the byte-bitwise graph.
+// Unsigned mode field did not compile; original mode, records and full body restored.
 // @retail 0x57eb0
 void function_57eb0(s_voice_player_settings *settings, long talker,
 	const s_voice_route_choice *choices, long count)
@@ -3267,6 +3270,9 @@ static inline long voice_packet_clamp_count(byte count, long minimum, long maxim
 // 167; member fetched before a shared kind test 169; clear through word_flags_set 164; named member bit
 // 179; screened: the existing inline bit test 164, arms swapped 156, member declared at loop top 167,
 // a shared two-call receive helper 184.
+// Round 446: Direct count bounds disjunction/lower-first/upper-first 185/179/180;
+// byte admission with original clamp 139; byte/long direct bounds 185/182;
+// direct/byte bounds with independent cursor 177/177. Original complete body restored.
 // @retail 0x55e10
 long __stdcall function_55e10(s_voice_channel *channel, byte *data, long size, bool relay)
 {
