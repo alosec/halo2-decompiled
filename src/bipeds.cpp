@@ -18,6 +18,7 @@ files; 0xdc370, at the start of the range, is c_a's destructor
 #include "object_markers.h"
 #include "slot_handler.h"
 #include "unknown_11cc90.h"
+#include "bit_vector.h"
 #include "unknown_1efac0.h"
 #include "unknown_1eb550.h"
 #include "unknown_1cafc0.h"
@@ -81,15 +82,7 @@ struct s_biped
 	byte unknown2e8[0x33e - 0x2e8];
 	short unknown33e;
 	byte unknown340[0x348 - 0x340];
-	union
-	{
-		word flags_348;
-		struct
-		{
-			word : 15;
-			word flag_348_15 : 1;
-		};
-	};
+	word flags_348;
 	byte unknown34a;
 	byte unknown34b;
 	short unknown34c;
@@ -489,7 +482,7 @@ void function_e5930(long unit_index);
 
 /* resets the biped's state: its flags, landing and melee timers, its ground
    contact and its physics mode */
-// score 118 (was 118): flag-store scheduling and the final helper's unwanted expansion remain.
+// score 118 (was 118): flag-store scheduling and the final helper's unwanted expansion remain; BLOCKED-BY 0xe5930.
 // Boolean predicate 121; native word flags 114; reset zero/NONE/both chains 118;
 // chains with Boolean predicate 121; counter/index/initial block library clear or fill
 // 129/138/127; second receiver scope 118; native tag dword or bit member 121;
@@ -500,6 +493,11 @@ void function_e5930(long unit_index);
 // Best five-point gain is below threshold; original type and body restored.
 // Round 198: Complete destination flags in a local, stored once: byte 118, word 130,
 // dword/long 122, with either branch or conditional-value form. Original body restored.
+// Round 108: the definition test wrapped in TEST_FIELD_BIT 121 (417 bytes, the test becomes retail's
+// shr/test); with the set/clear as word_flags_set(&biped->flags_348, 3, test) 113 at 415 bytes, and
+// everything before the 0xe5930 call is then retail's; that plus an inline_depth(0) pragma (diagnostic)
+// 20 at 343 bytes. Retail never inlines 0xe5930 (0xe5980 has no other caller); ours inlines it at the
+// straight-line calls here and in 0xe4bd0, while 0xe24f0, 0xea1f0 and 0xec0d0 call it. Restored.
 // @retail 0xde4c0
 void __stdcall function_de4c0(long arg_159e6d)
 {
@@ -634,7 +632,8 @@ struct s_biped_flags_10a_view
 	word bit0 : 1;
 	word bit1 : 1;
 	word bit2 : 1;
-	word unknown3 : 5;
+	word unknown3 : 4;
+	word bit7 : 1;
 };
 
 // score 281 (was 281): frame 0x16c agrees; early EBX save, state/change homes and Boolean tail differ.
@@ -3345,15 +3344,6 @@ void function_e3910(long arg_159e6d);
 /* a walking biped falling faster than the globals' falling speed takes
    falling damage, unless it rides a vehicle that protects it; a falling
    object leaves its cluster */
-// score 98 (was 98): frame 0x9c and length 518 agree; high-byte immunity test, load order and damage-result roles differ.
-// Native byte high/lower/both bitfield tests 130 each; native high word bitfield store 98;
-// with high/lower/both byte tests 98 each; all fields with immunity set from tests 134.
-// The native high word bitfield store is kept; all input/call expressions retain their original roles.
-// Round 190: conditional high-bit value in bool/byte/short/long 125/125/122/121;
-// bitwise canonical flags in those domains 144/144/147/152. Original immunity producer restored.
-// Round 198: Native payload flag bit with canonical bool/byte/word/long immunity
-// 98/98/101/96; with payload flag first 99/99/102/97. The two-count gain is dropped;
-// original payload layout, input expressions and biped flag/notification order restored.
 // @retail 0xe3700
 void function_e3700(long arg_159e6d)
 {
@@ -3361,7 +3351,7 @@ void function_e3700(long arg_159e6d)
 	byte *globals = *(byte **)((byte *)g_4e034c + 0x144);
 	byte *definition = BIPED_DEFINITION_GET(biped);
 	bool immune = (TEST_FIELD_BIT((biped->flags_134 >> 9) & 1)) || (TEST_FIELD_BIT((*(dword *)(definition + 0x1f0) >> 2) & 1)) ||
-		(TEST_FIELD_BIT((biped->flags_10a >> 7) & 1));
+		TEST_FIELD_BIT(((s_biped_flags_10a_view *)&biped->flags_10a)->bit7);
 	vector3f velocity;
 	real falling;
 	real height_change;
@@ -3396,11 +3386,11 @@ void function_e3700(long arg_159e6d)
 	}
 	if (biped->physics_mode == 1 && 0.0f - *(real *)(globals + 0x5c) > falling)
 	{
-		if (!immune && !(TEST_FIELD_BIT((biped->flags_10a >> 2) & 1)))
+		if (!immune && !TEST_FIELD_BIT(((s_biped_flags_10a_view *)&biped->flags_10a)->bit2))
 		{
 			s_type_1e6529 data;
 
-			biped->flag_348_15 = true;
+			word_flags_set(&biped->flags_348, 15, true);
 			if (biped->unknown13c != NONE)
 			{
 				function_155b60(arg_159e6d);
