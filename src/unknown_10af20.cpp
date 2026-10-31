@@ -149,6 +149,10 @@ PRIVATE __forceinline void scripted_vector_scale(vector3f const *vector, real sc
 // placements (forward in cross/forward scale, up in cross/up scale): up scale only 28; forward scale and
 // up cross 34; those plus the up scale 74 (366); forward in cross and both scales 32; forward cross, up
 // cross and up scale 31; forward cross and scale with up cross 31.
+// Round 4 (lane 18, fast): second products of the j and k cross terms with the operands swapped 30
+// (same code); first add as velocity + forward_part 30 (same code); scale as scale * component 30
+// (same code); scale storing j, k, i 46; cross storing k, j, i 40; velocity declared first 30; cross
+// product straight into velocity, scaled in place 32. Restored.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {
