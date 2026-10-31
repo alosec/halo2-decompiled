@@ -902,6 +902,11 @@ bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_un
 // the call-cycle entry moved through declaration order (function_146bf0 declared first in
 // src/unknown_278f00.cpp, function_146da0 before function_1c4040 in src/unknown_146a20.cpp) 2, with
 // function_1c4040 then in a custom convention (attempt EAX, active CL) and 15 matched lost.
+// Round 32 (fast, each reproducing the baseline): function_146bf0 declared before function_278f00 here,
+// with function_146da0 before function_1c4040 in src/unknown_146a20.cpp 1; plus function_1c3770
+// declared first here and function_1c2690 before function_1c27a0 there 1; function_1d1540 declared
+// before function_b8840 in src/bipeds.cpp 1; function_278f00 before function_146bf0 in
+// src/unknown_0b8ca0.cpp 1; function_278f00 before function_1c51c0 in src/unknown_1c39c0.cpp 1.
 // @retail 0x1c51c0
 void function_1c51c0(long component_index)
 {

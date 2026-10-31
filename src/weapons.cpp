@@ -1977,6 +1977,11 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // swapped between the magazine index and available/taken) but 183 in the full image (574 bytes,
 // frame four: the unit takes EBP and the pool is reloaded per slot; no non-LTCG object references the
 // pool global); on that, result declared first 168, other-weapon pointer 165, available renamed 165.
+// Round 2 of lane 18 (plain checks; the count stays in EDX across the slots where retail rereads it
+// from its slot, which leaves no register for the pool): volatile count reads in the loop 416 (loop
+// no longer unrolled, 348 bytes); count's address taken 124; count read through its address in the
+// loop 124 (same code); taken starting at the count with an if clamp 182; long first-magazine
+// rounds 123 (586 bytes). Original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -3180,6 +3185,9 @@ struct s_ammo_conversion_entry
 // Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
 // both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
 // with conditional minimum 196, plus direct destination 205. Original body and field type restored.
+// Round 319: Capacity-failure continue with cached count, conversion-first arm and
+// twice-used offered quantity subsets 210/207/196/207/210/207/196/207. All
+// restored; frame 0x20 agrees but destination/tag and conversion homes remain.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {

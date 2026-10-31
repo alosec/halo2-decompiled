@@ -2,6 +2,7 @@
 #include "unknown_0259d0.h"
 #include <math.h>
 #include "effects.h"
+#include "normalize3d.h"
 
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
@@ -68,8 +69,9 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
-// score 6 (was 6): what is left is the case 1 fsin/xorps order and the first normalisation product
-// pair (retail folds i and loads j; ours loads i and folds j). Round 42: one function-scope seed
+// score 2 (was 6): what is left is the case 1 fsin/xorps order; the first normalisation product
+// pair (retail folds i and loads j; ours loaded i and folded j) matches since round 91.
+// Round 42: one function-scope seed
 // pointer assigned in cases 5, 6, 7 and 9 (it then shares one home, the dead system argument's, as
 // in retail) 57 -> 6; on it function-scope sine/azimuth/radius/polar/radial/all six 314/36/32/313/
 // 395/422, extents 23, direction 356; tail without the volatile casts (plain, scale helper, `*=`)
@@ -117,6 +119,16 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // Original six differences remain: ring trig/zero order and the first normalization product pair.
 // On the original case-home graph, pointer-returning shared normalization/speed/both scales 47/47/47;
 // paired ring sine/cosine values alone or with each scale combination 497 each (exact-only, restored).
+// Round 91: both scales through the existing vector3f_scale on &particle->velocity, without the
+// volatile casts, 6 -> 2 (kept); the same on the velocity pointer local 47; the speed in a named local
+// first 24; the volatile casts dropped from the plain products 47. Case 1: zero stores after both trig
+// stores 2; no sine local 286; sine and cosine locals with their products 504; zero pair first 2;
+// position.y from the sine local 2; zero stores last 17; position.x copied from velocity.i 2;
+// velocity.i zeroed before the sine 2; radius-first products 2; permuter 68 tries, none under 2.
+// Round 207: float trig family 29; native reciprocal-root intrinsic 688 (16-byte aligned frame,
+// nine match losses, restored); native component array with inherited/ordinary reads 6/47;
+// all three tail declarations at entry 6; tail local names 6; reciprocal/squared-speed declaration
+// at entry separately 6/6. Original frame, helper, field accesses and qualified reads restored.
 // Round 16: normalisation operands swapped 6 (same code); without the casts, compound `*=` 47, tail
 // stores through particle->velocity 105, tail reads through particle->velocity 88 (that one keeps
 // retail's load-multiply-store order: the loads and stores sit on two unrelated bases); case 1 with
@@ -314,14 +326,9 @@ void function_249170(real const *values, s_particle_spawn_state *particle, s_par
 	if (speed_squared != 0.f)
 	{
 		real inverse_speed = particle_inverse_sqrt(speed_squared);
-		velocity->i = inverse_speed * velocity->i;
-		velocity->j = velocity->j * inverse_speed;
-		velocity->k = *(real const volatile *)&velocity->k * inverse_speed;
+		vector3f_scale(&particle->velocity, inverse_speed, &particle->velocity);
 	}
-	real speed = function_246cd0(&definition->speed, values);
-	velocity->i = velocity->i * speed;
-	velocity->j = *(real const volatile *)&velocity->j * speed;
-	velocity->k = *(real const volatile *)&velocity->k * speed;
+	vector3f_scale(&particle->velocity, function_246cd0(&definition->speed, values), &particle->velocity);
 }
 
 // @retail 0x249aa0

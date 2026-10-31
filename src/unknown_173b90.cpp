@@ -940,6 +940,9 @@ public:
 // Round 427: uninitialized child/successor/selector declarations at entry, all seven
 // subsets, then all with lexical handle names, 292 each. Original declaration scopes,
 // value observations and complete body restored; entry result/flags and child/tint homes remain.
+// Round 45: shared ordinary/staged cross producers, each with original/word receiver/
+// direct completion/both graphs, 292/290/356/353 each. Two-point gains restored;
+// original private cross, completion, flags and complete body retained.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {
@@ -1348,6 +1351,12 @@ bool function_17afd0(long effect_index, long value);
 // existing calling iterator with aggregate/field initialization 252/252 (exact-only). Coordinated
 // cluster-provider inline alone/pool/iterator/advance 102/102/252/150. All provider declarations
 // and the original body restored.
+// Lane 13 r20 (fast): with view read from the global at each use, bit 9 as ((dword)word >> 9) & 1 and
+// availability as one `view != NONE && !query`: 123; owner declared first 125; availability as false-init
+// plus conditional set 138; owner assigned in an if/else 113 at retail length (effect index in EDI as
+// retail; NONE stays in EBX because availability lands in AL); bit 9 form alone 128; if/else owner with the
+// false-init availability 138 (availability spilled, same-view takes BL), without the bit form 150, with a
+// view local 138.
 // Round 43: bit 9 as (bool)(((dword)word >> 9) & 1) gives retail's movzx/shr/test 128 (491 bytes); with
 // the view global read at each use 124 (retail length, and retail's view reload after 0x17afd0); plus
 // the availability as one `g != NONE && !query` 123 plain (aligned 63 -> 51; NONE/owner in ebx/esi

@@ -503,6 +503,12 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // register exchange and initial/normal-distance scheduling remain.
 // Round 432: sixteen-use diagnostic Boolean success/failure returns, direct/signed/absolute/predicate
 // storage 416/416/432/381 and 416/416/432/771; original real-return helper restored.
+// Round 91: camera alias dropped 368; depth local for the corner z stores 720; fourth distance zero
+// back after its normalizer 399 (aligned 103 against 143, 2814 bytes); plane 0 normal k stored first
+// 574; planes 0-3 normals through the existing vector3f_assign 590 (aligned 123), with the fourth
+// zero back 636 (aligned 83, 2807 bytes: retail's float loads and pointer stores for the normals),
+// plus planes 4/5 through it 615 (2837 bytes, aligned 100), plus a cleared error first 692, error
+// cleared first alone on the aligned-83 form 677, all with the camera-plane branch too 697.
 // @retail 0x163db0
 bool function_163db0(s_camera_163db0 const *camera, box2f const *rectangle, long identifier, s_frustum_1648d0 *result)
 {
@@ -730,6 +736,10 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 	return success;
 }
 
+// Round 16: retail loads the three `view->vector_e4` coefficients into xmm0, xmm3 and xmm4
+// before it copies the point and then reloads the point's components from that copy, ours reloads
+// the copied normal's x into xmm4; retail keeps the near distance in xmm5 and the zero in xmm4,
+// ours keeps the near distance in xmm6 and the zero in xmm1.
 // score 115 (was 115): coefficient XMM roles, classification operands and projection staging still differ.
 // Intersection/projected point setters 119/119; existing in-place vector scale 115; long/byte result 216/119.
 // Forward value copy 474; direct projected element 246; scaled direct element 247; separate scaled vector 115.
@@ -770,6 +780,15 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // Round 80: forward declaration first 196; const view 115; first-plane receiver 285,
 // with j-k-i offset order 285; inner do/while and condition increment 115/115;
 // const x value/reference 141/119. Original body restored.
+// Lane 15 r19: retail loads all three vector_e4 components before the forward copy (ours loads e4.i
+// after it, which swaps XMM3/XMM4 from there on). Both planes through one forceinline plane helper
+// 281 (1867 bytes); plane 0's d as one negated expression 143; near distance after the copy 141;
+// forward pointer removed 264 (1867 bytes); clip denominator / distance / both as single
+// expressions 247/251/117.
+// Round 91: first plane's d in i, j, k order 146, in j, k, i order 133; classification in i, j, k
+// order 115, point-first products 115; the intersection scaled through a value-first scale helper
+// (i = s * i, j = j * s, k = k * s) 115. Retail's first-plane block loads camera.i early and the
+// normal's i late (ours the reverse); its denominator copies delta for i and k and folds the normal.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {

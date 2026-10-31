@@ -68,6 +68,10 @@ static __forceinline void capsule_update_1e55d0(c_z_shape_view *shape, byte *com
 	else *(dword *)out &= ~2;
 }
 
+// Round 16: retail takes its first argument in EAX and copies it to EBX at once, and reads the
+// third argument from [ebp+0xc]; ours takes the same three arguments in the same registers, but
+// keeps the output pointer in EDI and the input pointer in EBX where retail keeps them the other
+// way round.
 // score 319 (was 319): Aligned 0x94 frame agrees; move/input register ownership, physics reloads and velocity null test remain.
 // Earlier: retail's aligned frame (and esp, -16; 0x94) and prologue. Left: the move and
 // input pointers trade EBX and EDI (retail move EBX, input EDI, physics read from its stack slot at
@@ -141,6 +145,11 @@ static __forceinline void capsule_update_1e55d0(c_z_shape_view *shape, byte *com
 // Round 223: existing complete velocity updater on the aligned-helper graph, with fallback-kind/step/both,
 // 374/386/370/382; each with direct state/input parameters 374/386/370/382. Updater stays out of line;
 // original aligned capsule helper, expanded motion update and complete body restored.
+// Round 2 of lane 18: the shape decision as a force-inline bool helper (compound arm returning the
+// two-way test, else the direct compare) with early returns/one result 388/388 (1212 bytes; gives
+// retail's block layout, the non-compound and capsule arms after the return, but the input then reloads
+// from its slot and the velocity pointer takes EBX); with case 6 before 4/5 388; with a velocity
+// pointer 388; both 388. Original body restored.
 // @retail 0x1e55d0
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output)
 {
