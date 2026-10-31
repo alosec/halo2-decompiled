@@ -357,6 +357,12 @@ void function_125a90(long value);
 // Round 442: Live type observations with bool/byte/short/long removal 91/91/85/90; removal-
 // first completion 91/91/85/90. Original type capture, comparison widths and complete body
 // restored.
+// score 36 (was 47): the special arm now assigns the removal flag itself
+// (`remove = (type == 0x26) && !a`) and the kind arm assigns `remove = (byte != 1)`,
+// so both arms branch to their own blocks instead of merging into the special arm's test;
+// the removal arm is written before the keep arm, which puts retail's blocks in retail's order.
+// Still differs: the b flag is loaded before the element address (retail loads it after) and
+// the type lookup uses EAX where retail uses EDX.
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {
@@ -386,25 +392,18 @@ void __stdcall function_1264c0(dword flags)
 				long type = *((char *)g_4e3b44[element->object_index & 0xffff].flags + 2);
 
 				if ((short)type == 0x20 || (short)type == 0x26)
-				{
-					remove = false;
-					if (type == 0x26)
-						remove = !a;
-				}
+					remove = ((short)type == 0x26) && !a;
 				else if ((1 << element->kind) & 0x1e)
-				{
-					if (((byte *)function_221810(type))[0x4c] == 1)
-						remove = false;
-				}
+					remove = ((byte *)function_221810(type))[0x4c] != 1;
 			}
 
-			if (!remove)
-				element->unknown8c = NONE;
-			else
+			if (remove)
 			{
 				function_127320(datum, 10);
 				array = g_4e637c;
 			}
+			else
+				element->unknown8c = NONE;
 
 			datum = data_datum_index(array, function_16bc00(array, datum == NONE ? 0 : index + 1));
 		}

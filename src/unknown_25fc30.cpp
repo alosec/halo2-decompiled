@@ -449,6 +449,10 @@ void __stdcall function_25dd50(
 // after the if/else 275 (893 bytes), side = 0 there keeps zero in EBX (222 before). Also: cover as
 // `covers + index` 38, face as `faces + index` 38, a named face index 38, the cover array read
 // from the context field at each use 38.
+// Round 7 (m3 lane 2): the cover index read before the cover array 38 (the load is sunk); the trace as
+// s_sector_trace_result with its blocked/edge_index fields 38 (same code); `position->reference.unknown0
+// + covers` 38 (canonicalized: the scaled index stays the add's destination); the facing test written
+// constant-first 38; the embedded pathfinding assignment split into its own statements 38 (not kept: no gain).
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,

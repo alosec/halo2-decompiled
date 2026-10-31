@@ -1302,6 +1302,9 @@ bool network_message_read_header(s_bitstream *stream, long *type, c_type_659ceb 
 // Round 80: result-first Boolean 234; separate Boolean/long availability 225/162;
 // two long results 162; force-inline count 141; oldest reference 141;
 // addressed Boolean empty/final exits 234/234. Original long-result body restored.
+// Round 44: bool result with an early `if (!result) return result;` after the scan 224 (781 bytes); that with
+// a `return false` failure 224; that with the count test as a scope 212 (789 bytes); long result with the early
+// return and `return false` failure 161; bool result, count scope, `return false` failure 232. Original body kept.
 // @retail 0x95840
 bool __stdcall function_095840(s_network_stream_header *header, long *message_type, long *message_size, void *message_data)
 {

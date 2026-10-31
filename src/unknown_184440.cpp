@@ -201,6 +201,10 @@ __forceinline bool function_184448(long arg_0)
 // frame excess and initial surface/geometry homes remain.
 // Plane scalar capture alone recovers frame 0x11cc at 1024 (4538 bytes, first +0x1d);
 // staged point publication with that capture 1027. Both remain rejected.
+// Round 315: Existing projection-point setter/sample displacement additions/velocity additions in
+// seven subsets 989/976/983/990/1001/985/1001; full graph with sound-origin setter 996. The one-count
+// gain is rejected. Original helpers, snapshots, arithmetic trees and complete 4590-byte body
+// restored; frame 0x11d4 versus 0x11cc remains.
 // @retail 0x184440
 void __stdcall function_184440(long arg_0, long arg_1, s_18444a const *arg_2, long arg_3)
 {

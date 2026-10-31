@@ -326,6 +326,11 @@ void function_264940(long actor_index, long prop_ref_index)
 // Round 197: Consistent object-index/origin/type subfield pointers, masks 1..7,
 // 408/353/408/353/408/353/408; all with distinct current-state result 408.
 // Object-index receivers reach retail length but regress; original complete body restored.
+// Round 90 (fast): ours keeps reference->object_index in EDI from the top through the 0x28fb50
+// compare (that callee writes no memory), so the view pointer is spilled to [esp+0x14] where retail
+// keeps it in EBP and reloads the index; that is the extra frame slot. View arm first (`if (view)`,
+// retail's fall-through) 407; view declared NULL at the top beside unit (retail's early `xor ebp, ebp`)
+// 383 (prop then takes EBP), first 383, after unit/update/time in four orders 383 each; both 410.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)
@@ -874,6 +879,12 @@ real function_296600(long actor_index, long prop_ref_index);
 // actor[9] test where ours holds it in ESI and spills it at [esp+0x14]; retail keeps
 // the squad pointer at [esp+0x10] where ours uses [esp+0xc]. The body is 1251 bytes
 // against retail's 1268.
+// score 319 (was 331): retail holds the actor in EBX (spilled at [esp+8]) and the prop in ESI where
+// ours swaps them, keeps the squad pointer at [esp+0x10] where ours uses [esp+0xc], acquires the
+// object, suppression, current flag and unit pointer before the actor-type branch, and after the
+// 0x1c8df0 call keeps a zero in EBX and the sight in ESI. The body is 1253 bytes against 1268.
+// The tracking view is cleared before the tracking test, so the pointer is zeroed where retail
+// zeroes it instead of being assigned in an else branch.
 // Equal-zero reference, equal-four sight, view zero, priority zero, paired defaults, all defaults chains
 // 363/363/363/363/363/363; alternate-view short pair memmove 374; copy field order 363 (control 363).
 // Original stores, body and local pointer qualifier retained; full baseline 358.
@@ -940,6 +951,17 @@ real function_296600(long actor_index, long prop_ref_index);
 // Round 250: paired ancestry category outputs in char/byte/short/long, category-first
 // 375/375/381/377, priority-first 375/375/381/377 (fast control 372, full 331).
 // All exact-only field-result forms restored; actor ESI/EBX and saved/squad homes remain.
+// Round 90 (full LTCG relink screens; --fast misbuilds this function): the mode argument written in
+// both 0x1c8df0 calls 319 (plain, kept: retail evaluates the hit pointer, then the mode). On it: the
+// sight parameter of 0x25c9d0 short 350 (sight then in ESI as retail, prop takes EBX); the type-15 arm
+// as an if/else on a found index (other_index NONE unless 0x25d810 finds one; view handled in both
+// arms) 334 at 1268 bytes, that arm then identical to retail; with MAX(priority, MAX(object, extra))
+// 350; with the object/suppression/current/unit acquired before the actor-type branch 347; without the
+// volatile saved actor 332 (actor EBX, prop ESI as retail; aligned 128 against 248); with `unit = object;
+// if (type) unit = NULL;` 330 (plain 338 at 1270); that plus the short sight 342 (zero in EBX, sight in
+// ESI as retail; left: squad kept in EDX not at [esp+0x10], the stack zero for retail's cmovne, root/hit
+// pointer slots at the 0x1c8df0 call). Those restructured forms align far better and are the base to
+// continue from; renaming current/suppressed 0 change; typed prop record 358 (control 322).
 // @retail 0x264b50
 void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *sample, s_2640c0 *motion)
 {
@@ -1017,9 +1039,8 @@ void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *
 		bool current = *(long *)(actor + 0x338) == prop_ref_index;
 		bool is_unit = object[0xaa] == 0;
 		long root = function_baf40(is_unit && *(long *)(object + 0x14) != NONE ? *(long *)(object + 0x14) : reference->object_index);
-		long mode = prop[0x25] && prop[0x23] ? 2 : 0;
 		short sight = function_1c8df0(*(short *)((byte *)motion + 0x28), *(short *)((byte *)sample + 0x28),
-			&motion->field_0, root, sample, mode, false, *(long *)(actor + 0x26c) != NONE, !current,
+			&motion->field_0, root, sample, prop[0x25] && prop[0x23] ? 2 : 0, false, *(long *)(actor + 0x26c) != NONE, !current,
 			current ? (long *)(actor + 0x348) : NULL);
 		actor = saved_actor;
 		if (*(long *)(actor + 0x7c) != NONE && prop[0x25] && 25.0f > reference->unknown28 &&
@@ -1036,10 +1057,9 @@ void __stdcall function_264b50(long actor_index, long prop_ref_index, s_2641c0 *
 				s_type_5cfb45 *state = function_25d690(reference);
 				if (!view->unknown88)
 				{
-					long other_mode = prop[0x25] && prop[0x23] ? 2 : 0;
 					short other_sight = function_1c8df0(*(short *)((byte *)state + 0x2c),
 						*(short *)((byte *)sample + 0x28), (point3f const *)((byte *)state + 0x30),
-						root, sample, other_mode, false, *(long *)(actor + 0x26c) != NONE, !current,
+						root, sample, prop[0x25] && prop[0x23] ? 2 : 0, false, *(long *)(actor + 0x26c) != NONE, !current,
 						current ? (long *)(actor + 0x348) : NULL);
 					view->unknown8c = (short)other_sight;
 					view->unknown8a = function_263810((point3f const *)sample, actor_index, (point3f const *)((byte *)state + 0x30), NULL, 2, (short)other_sight, true, NULL);

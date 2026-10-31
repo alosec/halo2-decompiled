@@ -172,6 +172,11 @@ void __stdcall swarm_delete(long arg_0);
 // tag read after the flag test, an index local, compare against the result, early returns) never
 // flip it. Real: the tag field read once before the tests 98 (289 bytes), with the if-form limit 93;
 // the delete path as an else 44, with the if-form limit 89; the flag test in a named bool 44.
+// Round 19 (lane 13): the tag read through the existing character-definition getter 44 (same code);
+// with retail's store order and the if-form limit 92 (registers masked 11: only the tag/NONE swap and
+// its NONE/zero stores remain); on that, the allocation in its own local with the result set on success
+// and the delete path as an else 89; the limit read first and replaced when nonpositive 94; the result
+// declared after the tag with the tag-field test nested 92.
 // @retail 0x28dab0
 long __stdcall function_28dab0(long arg_0, s_28dab2 const *arg_1)
 {

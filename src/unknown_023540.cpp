@@ -2991,6 +2991,9 @@ struct s_2a2f0_record
 // Round 444: native clamped short/word/long/dword pixel counts, promoted immediately
 // 207/207/242/214 or at bounds construction 240/240/243/206. All with independent
 // dimensions and ordinary counts; original body restored, count copy remains.
+// Round 234: Every count use reads its field, with current-group observation, nested lookup and complete
+// dimension-selection subsets 0..7: 262/262/262/262/262/262/262/262. Every trial removes pooled-memory
+// qualifier and parameter-slot aliases; original body restored; count-copy boundary remains.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3258,6 +3261,9 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // Round 444: small/negative permission pairs byte/bool, signed-char/bool, bool/byte
 // 1083 each; bool/word, byte/word, signed-char/word 1187; dword/bool and dword/byte
 // 1109. Byte small permission alone kept after full plain confirmation (4832/4828 bytes).
+// Round 234: Packed fraction byte/word, RGB byte/word/dword, alpha word/dword and combined native
+// channels on the long/bool capability graph: 903/852/1112/853/853/1101/1107/1111. All restored;
+// capability/save roles and state expansion remain.
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
