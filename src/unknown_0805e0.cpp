@@ -91,6 +91,9 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // together (both stay), a use of 3 outside the loop (no hoist).
 // Round 311: trailing name/exclusion/online/identity tests produce the actual result
 // 42/42/42/54; native full-width result 57/52/54/56. No match; original body restored.
+// Round 443: Two-use admission flags in byte/char/word/short storage 44/44/43/43;
+// direct-success-return counterparts 52/52/51/51. All restored; early ESI, independent
+// successor, mask hoist and failure exit remain.
 // @retail 0x805e0
 bool player_configuration_cache_next_recent_player(s_recent_player *player, long *iterator)
 {

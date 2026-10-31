@@ -2440,13 +2440,17 @@ struct s_actor_options;
 void function_1e4570(long arg_0, s_actor_options const *arg_1);
 void function_26b290(long arg_0);
 
-// score 2 (was 3): the squad flag bit is turned into a 0/1 value by
+// score 2 (was 2): the squad flag bit is turned into a 0/1 value by
 // shifting first and masking after, retail masks first and shifts.
 // Also tried (all canonicalised to shift-then-mask or a byte form): word,
 // byte, bool and dword bitfields 2/166, `!= 0` 2, `? 1 : 0` 2, `!!` 2,
 // `/ 0x40` 2, `(word)`/`(dword)` casts of the mask 2, a `(byte)` cast 166,
 // short/dword/byte reads of the flags 2/166, `== 0x40` 167. In all of retail
 // only 0x203bf0 (bit 7 of the same byte) shows the mask-then-shift shape.
+// Lane 13 r20: word_flags_set setter 2; byte read 166; squad bitfield split out of `word : 7` 2;
+// `!= 0` on both sides 207; compared with the long argument 175. Compile-only, all folded: a bit-parameter
+// inline helper, signed/unsigned division, 0x7f/0xffc0/~0x3f masks, shl/shr pairs, bit 22 of the dword at +0,
+// byte/word/dword/long/bool/two-bit bitfields, __int64, signed char, a named mask local.
 // @retail 0x202e90
 void __stdcall function_202e90(long arg_0, short arg_1, long arg_2)
 {

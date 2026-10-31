@@ -942,6 +942,14 @@ void function_1d1540(s_havok_component *component);
 // EBX); without the 0x1d1540 call also all three (stack); without the 0x1d1260 call only ESI and EDI
 // (component an EDI argument); matched 0x1cbf50's first pass uses ESI and EDI and LTCG passes its parameter
 // in the unused EBX. Lead: a body whose first pass needs at most two callee-saved registers.
+// Lane 15 round 18: 0x1d8e80 moved to its address neighbours' file (src/unknown_1d8dd0.cpp): identical
+// code (81); the 88 body with that move 88 (its /Gd first pass then uses only ESI+EDI, component in
+// EDI, so the two-register rule does not decide it); flag5 first 27 again (component EDI, 0x1d1b60
+// lost at 59, 0x1d3fc0 149 -> 179, 0x1d5120 77 -> 15); that with the move 27; flag5 first with the
+// plain struct copy 85. Diagnostics: the 88 body's /Gd pass loads the component once into EBX (flag5
+// first: EDI) and only the EDI form becomes a register argument; without 0x1d0c20's call LTCG gives the
+// 88 body the component in ECX and the index on the stack, without 0x1d5120's call nothing changes, and
+// 0x1d0c20's aligned transform moved into a forceinline helper changes nothing: 0x1d0c20's call decides it.
 // @retail 0x1d0cf0
 void havok_component_rigid_body_transform_set(long rigid_body_index, s_havok_component *component, hkTransform const *transform)
 {
