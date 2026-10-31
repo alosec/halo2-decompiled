@@ -145,6 +145,12 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // Round 429: complete readiness arms/path-owned completion/both/separate release/
 // readiness-release/completion-release/all/all with one actor acquisition
 // 104/104/94/47/104/104/94/101 fast; all restored.
+// Round 106 (plain): top actor with the unknown0c test folded into the view test 52; the current body as
+// single-exit nesting 132 (304 bytes); the top-actor body nested the same way 102 (302 bytes); readiness as
+// `... ? true : false` 66; state declared first with both locals const 52.
+// Round 238: named initial-completion/facing/release decisions, seven subsets 47 each;
+// complete decisions with native slot data block 47. Original callback restored;
+// initial one-use completion snapshot rejected without an exact match.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {
@@ -265,6 +271,10 @@ bool function_1f4a20(s_1f4a20_entry const *entries, long actor_index, s_referenc
 // score 193 (was 212): frame 0x162c agrees since round 91; the actor offset (retail ESI), slot
 // (retail rematerialized into EBX) and scratch (retail in node's slot) homes remain.
 // Earlier: aligned frame 0x1634 versus 0x162c and actor/slot/scratch homes remain.
+// Round 16: retail takes the actor index from its first stack argument into EBX, keeps the
+// scaled actor offset in ESI and the actor pointer in EDI and stores them at [esp+0x18] and
+// [esp+0x20]; ours keeps the slot index in ESI and spills the actor offset.
+// score 212 (was 212): aligned frame 0x1634 versus 0x162c and actor/slot/scratch homes remain.
 // Earlier: frame 0x1634 versus 0x162c; scaled actor offset and
 // slot/scratch homes remain, with a 14-byte length deficit.
 // Round 198: payload/native input/read-only input/input scope 323 each; clamp 322;

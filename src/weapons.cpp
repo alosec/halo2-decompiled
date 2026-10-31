@@ -3203,6 +3203,9 @@ struct s_ammo_conversion_entry
 // spills the count and keeps `other` in EBX); plus the entry pointer taken before the test 219; that with the
 // count read in the loop condition 211; with the unloaded term read through the other weapon 230; the
 // first form with the acquisition declared first 198.
+// Round 319: Capacity-failure continue with cached count, conversion-first arm and
+// twice-used offered quantity subsets 210/207/196/207/210/207/196/207. All
+// restored; frame 0x20 agrees but destination/tag and conversion homes remain.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
@@ -3317,6 +3320,10 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // score 604 (was 604): round 87 measured 606 plain (was 565; fast 637 -> 640); the three behaviour fixes
 // below are applied by the coordinator (round 87 review) and kept although the count rises. Frame 0x1c64 versus
 // 0x1c60; weapon/barrel and scalar homes remain.
+// frame 0x1c64 versus 0x1c60; weapon/barrel and scalar homes remain.
+// Earlier: the three behaviour fixes below are applied by the
+// coordinator (round 87 review) and kept although the count rises. Frame 0x1c64 versus 0x1c60; weapon/barrel and
+// scalar homes remain.
 // Plain single-store unit 637; later effect locals 659; long marker count 607;
 // CRT marker copies 565; long fired 582.
 // Owner getter 563; scale names 565; direct barrel uses 641; const barrel tag 565;
@@ -3371,6 +3378,9 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // declared after the barrel pointers 651; second barrel-side argument as `barrel_index ? 2 : 1` 605 (retail
 // recomputes the test there); barrel pointer declared before the definition 610 (retail's prologue order; the
 // definition keeps EDI where retail spills it); that with the plain unit index 655.
+// Round 239: complementary shot/failure/both results 570/570/571 fast; ordinary
+// holder counterparts 660 each; both byte results 571, ordinary holder 660. Fast
+// control 640; four promising forms all 604 plain. Original body restored.
 // @retail 0x102fb0
 void __stdcall function_102fb0(long weapon_index, short barrel_index)
 {

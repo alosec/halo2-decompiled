@@ -548,6 +548,12 @@ void function_3dd10(long object_index, bool force);
 // Round 439: complete supplied/default/converted color result, loop/entry lifetimes and
 // field/indexed clamps with field/result dual publication: 261/261/291/286, repeated at entry.
 // Frame grows to 0x60; original object-output pipeline, scans and all float trees restored.
+// Round 128: inverse at the top of the found block again 132 (round 55's form: left are the not-found
+// exit's own 1.0 reload, the variant byte read after the blend's fstp, and the first scan's exits);
+// on it the first scan as a signed for loop 638 (unrolled, 1309 bytes), the same with the weight, the
+// mask or the last index address-taken 638 each (taking an accumulator's address does not stop the
+// unroll); the mixing moved after the second loop on a found choice pointer 145. The weight, mask and
+// last index are memory-resident in both builds, so that is not what stops retail's unroll.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
@@ -715,6 +721,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // the destination taken as &base[count] 91; the two pointer increments swapped 91.
 // Source pointer derived from the destination inside the loop, so that the source induction
 // variable is never used in the preheader 186.
+// Round 86: scalar component copy 139; blend-only count 169; scale-only count 170;
+// blend-only function array 173; scale-only function array 139; shared inner counter 105;
+// shared function pointer 91; advancing outer entry pointer 203. Original body restored.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {
