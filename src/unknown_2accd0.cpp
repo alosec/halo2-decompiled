@@ -642,6 +642,10 @@ __forceinline byte *job_thread_buffer_get(s_async_task *task, dword *size);
 // compares, an out-parameter getter, getter store orders: no better. On the 34 form the claim and
 // size helpers as plain, static or inline functions, or in another file (inlined by the link): 34
 // each, 0x2adb10 279 each.
+// DL round 206: shared header/body extent 236; retained total as signature offset 226;
+// integer denominator converted at both divisions 207; per-use size fields 235;
+// guarded conversion initialized/separately assigned 64/64; shared extent with per-use
+// conversion/guarded conversion 233/235. Original body restored.
 // @retail 0x2ad7c0
 PRIVATE long __stdcall signed_file_read_work(s_async_task *task, s_signed_file_read_parameters *parameters, long parameters_size)
 {

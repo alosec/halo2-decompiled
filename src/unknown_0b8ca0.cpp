@@ -698,6 +698,9 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
 // unsigned full handle alone/pool/unit/all 257/257/247/247; all with Boolean result 274.
 // Direct radius in all; original complete body restored.
 // Round 293: Consumer-stage visibility receiver/word ordinal/bit, all seven subsets, then all with unsigned bit production: 239 each. Both known callers preserved; direct original radius in each trial. Complete original body, inherited radius storage and interfaces restored.
+// Round 205: Existing marker-position provider with long/Boolean/word/byte results, inherited/direct radius:
+// 230/251, 280/295, 238/255, 260/272. One-point 230 rejected; all original forms restored.
+// Caller-dependent self-alignment, full-handle spills and scalar/angle homes remain.
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {
@@ -1729,6 +1732,9 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // The two-point pointer forms are exact-match-only and rejected; original declaration and body
 // restored. Accepted header-table reload, expanded node query and transform carriers remain.
 // Round 194: Node-address/inverse phases after node, link and header writes 290/281/289/291/292/287; before first parent write 281/285. Native activity on inverse phases 278/286/283/280. On 278, hidden/connection/component shift subsets 285/281/278/284/285/281/284. Best 278 gains seven, rejected; original header and body restored.
+// Round 205: Shared rotation/axis providers 332/332; shared point provider alone/rotation/axis 542/431/447;
+// rotation/axis with the native activity member 315/330; rotation with the earlier inverse phase 334.
+// All restored; frame, accepted table transport and node-query expansion remain.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {
