@@ -936,6 +936,9 @@ public:
 // Round 427: uninitialized child/successor/selector declarations at entry, all seven
 // subsets, then all with lexical handle names, 292 each. Original declaration scopes,
 // value observations and complete body restored; entry result/flags and child/tint homes remain.
+// Round 45: shared ordinary/staged cross producers, each with original/word receiver/
+// direct completion/both graphs, 292/290/356/353 each. Two-point gains restored;
+// original private cross, completion, flags and complete body retained.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {

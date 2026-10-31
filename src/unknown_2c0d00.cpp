@@ -1224,6 +1224,9 @@ real function_11cc90(vector2f const *a, vector2f const *b);
 // Round 301: Existing shared magnitude inside the retained normalizer, with distance roots,
 // side dots, both, ordinary first side, ordinary/distance, ordinary/dots and all:
 // 172/172/372/372/379/379/363/363. Original magnitude graph, qualifier, projections and body restored.
+// Round 45: squared-length producer/reciprocal declaration/scalar home names,
+// seven subsets and all native declarations before producers, 172 each. Original
+// normalizer and complete body restored; early true host and side Y transport remain.
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
@@ -1457,6 +1460,9 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // branch-selected centers 446/451/442/439. Original orientation phases and full body restored.
 // Coupled paired word/short corner results on long orientation 444/444; word orientation
 // 439/439. Best 439 is a five-point gain above 30, rejected; complete original body restored.
+// Round 45: complete four-field scalar input snapshots, short/long metadata
+// subsets 0/1/2/4/3/5/6/7, 459/461/470/470/461/461/470/461. Frame 0x10c
+// recovered, radius/zero homes still differ; match-only forms and full body restored.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)
