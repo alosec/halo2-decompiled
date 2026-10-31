@@ -864,6 +864,25 @@ void function_25aba0(long actor_index);
 // workspace clear 330/292/292/292. The common value changes loop and frame allocation; original
 // 0x4c frame, six pops and aggregate workspace restored. State-one split decrement and zero-fill
 // remain.
+// Round 127 (lane 4), on the kept body (every pop but the state-one arm's already as retail: the
+// shared enabled-failure and choice==stamp arms `dec [mem]`, kind-2, level++ and next-handler arms
+// load/dec/store): `level` declared before the owner lookup 60; `level` set to zero just before
+// the slot loop 308 (held in a register); memset workspace alone 134 (957/957, the pop's offset
+// runs to the end); `level = (short)(level - 1)` in the state-one arm 58 (same code); its stamp
+// through g_46eeb8[type] 58 (same code).
+// Round 46 (lane 9): with the memset workspace (957/957, 134) only the state-one arm differs. Ours cross-jumps
+// the three enabled-test failures into that arm's own `dec [mem]` (the arm is `mov [esi+8], edx` then the
+// shared pop), where retail sends them to the fallback-failure pop (0x1a7e63) and keeps a separate state-one
+// arm whose load is scheduled above the stamp store. On memset: state-one pop first 137 (both arms fused, the
+// enabled failures then share kind-2's pop), plus kind-2 pop first 131 (state-one fused, kind-2's level store
+// before its state store); a `usable` flag for the fallback call tested with the enabled test 223 (not
+// threaded: the handler/slot lines sit between), 209 without memset; tested alone right after the join 134
+// (threaded, identical code); tested with the enabled test before the handler/slot lines 169 (the fallback
+// failure then also jumps into the state-one arm, and the slot select moves after the test). With both arms
+// pop first (131) the enabled failures do jump to the fallback-failure pop as in retail; kind-2 fused only
+// when it became the host (the host is chosen first, its `level--` then fuses). State-one / kind-2 / choice as
+// an if/else chain on memset 119 (state-one split as retail, kind-2 hosts and fuses); the enabled arm in the
+// chain too 119 (identical).
 // @retail 0x1a7cc0
 void __stdcall function_1a7cc0(long actor_index)
 {

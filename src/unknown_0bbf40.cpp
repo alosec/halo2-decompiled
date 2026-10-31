@@ -320,6 +320,12 @@ s_object_gc_entry_ab g_440570[6] =
 // Round 300: Named native long/dword level mask at use with compound, rejection-guard and
 // nested-positive eligibility 110/110/110/110/110/110; rejection/nested forms with terminal state
 // fields at use 125/125. Original frame, loop, field observations and body restored.
+// Round 105: retail behaves as if the 0xbf1c0 call may change g_4de2f4 (the loop-top load stays
+// in the header and the failure exit reloads); ours keeps it across the call, spilling the level.
+// 0xbf1c0 defined after this function 110 (no change); level test as a scope around a while loop
+// with the final clear through the entry pointer 179 (330 bytes); state declared before the loop,
+// assigned at its top, cleared after it 110; index walk while loop in a level scope 181; that with
+// the in-loop action exit 186.
 // Round 44: index walk (`g_440570[index].`, retail's +8 entry pointer) 177; index walk + `advance = !again` with the
 // in-loop exit through the state local 122 (393 bytes, retail's frame, level register and sete), with an entry pointer
 // 122, gathered declared first 121; while + break + advance + after-loop clear 176 (333 bytes), state re-read at the

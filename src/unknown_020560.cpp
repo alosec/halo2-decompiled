@@ -1267,6 +1267,10 @@ bool function_0bfe60(dword const *flags, long bit);
 // 52; the clamp as if/else 52; a const set 52. Without LTCG every spelling of the bitset row
 // (row pointer, &row[0], flat index, pointer arithmetic, const, a separate global or struct row)
 // gives ADD; retail's LEA costs the one byte that shifts the exits.
+// Round 49 (lane 12), screened in an LTCG mini-link with the D3D objects (it reproduces ours but for
+// 0xbfe60's bitset argument, so only differences count): loop counter, index or set declared at the
+// top no change; bitset row declared before the test index +17; the index from an if +3; status as
+// long no change; a while loop +5.
 // Round 7 (m3 lane 2): retail's LEA comes back when the row is first computed as 0xbfe60's argument
 // (`function_0bfe60(g_51f40c.bitsets[set], index)`) and the store goes through a row pointer named at
 // the store (CSE'd and spilled as retail): 38, only the colours left (a mixed read, kept only on a
