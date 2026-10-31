@@ -494,6 +494,13 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // Round 433: Complementary ordinary-case predicate, bitwise/logical OR, original/complementary
 // permission, entry/eligible permission scope; fast 48/74/53/75/200/222/201/222.
 // Original body and existing helper restored.
+// Round 44 (lane 16, fast counts; the unchanged control gives 47): `special = type == 6;
+// special &= byte != 0` 47 (same code); `(type == 6) & actor->unknown268` (raw byte) 193;
+// `special = false; if (type == 6) special = actor->unknown268 != 0;` 99 (aligned 11: the entry
+// is retail's, NONE in EBX, the special test branches as retail, but the flag is stored
+// at both defs and read from memory at the tail, so the tail's movsx takes ECX); that with
+// `else special = false` instead of the initializer 187 (877 bytes); that with special
+// declared first in the function 135 (frame 0x30).
 // Round 18 (lane 14): bitwise flag with the bool field unconverted 193; flag built as `== 6` then
 // `&= field != 0` 47 (same code); flag computed without the one-use tag local 47; `&&` flag with a
 // return at the proximity exit only 226 (872 bytes; compile-only screen: the special path still falls

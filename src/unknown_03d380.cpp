@@ -371,6 +371,14 @@ void function_125a90(long value);
 // 467 bytes), with `if (!special)` and the kind arm first 158 (471 bytes, inlined), with the call's
 // argument as `(short)type` 144. BLOCKED-BY 0x221810: the named-condition layout needs 0x221810 kept
 // out of line (its file is outside this round).
+// Round 44 (lane 16, fast counts; control 36): retail lays out the special arm first, falling
+// into the removal with its `!a` materialized (`sete al; test al, al; je keep`), then the kind
+// arm fused (`jne remove`) falling into keep; ours lays out the kind arm first (materialized
+// `setne al; test al, al`) and fuses the special arm. Tried: the inner test on the long type
+// (`type == 0x26 && !a`, retail's `cmp eax, 0x26`) 46, still kind arm first; that as a ternary
+// `type == 0x26 ? !a : false` 88; the type test negated with the kind arm first and the special
+// arm in the else 46 (same code as the long test); the kind arm as `remove = false` under one
+// `kind && byte == 1` test 88; a two-case switch on the short type 86 (compares in ECX).
 // @retail 0x1264c0
 void __stdcall function_1264c0(dword flags)
 {

@@ -353,6 +353,13 @@ PRIVATE inline bool append_save_entry_2164c0(s_save_list_2164c0 *list, s_save_en
 // index = list->count++` 51 (retail's new-count store before the copy, but `sete`/`jne` and count
 // EAX), with `list->count = index + 1` 51; the `full` flag with a struct assignment 57 (656 bytes).
 // The list is the shared s_saved_game_location_table (include/saved_game_storage.h, same layout).
+// Round 44 (lane 16): retail keeps the count in ESI and copies it to EAX for the index (a temp
+// ours coalesces away); the later scratch pairs are ours rotated by one register in eax, ecx,
+// edx order, as one fewer temp would give. Tried: explicit count and index locals with the new
+// count stored first 51 (copy coalesced); the helper as an ordinary function in
+// unknown_216b60.cpp so LTCG inlines it 32 (plain, same code); a count local post-incremented
+// in the copy and stored back after it 33; `entry.type` passed to 0x216e50 32; `entry.type`
+// set inside the type loop before leaving it 32.
 // @retail 0x2164c0
 void function_2164c0(long memory_unit, s_save_list_2164c0 *list)
 {

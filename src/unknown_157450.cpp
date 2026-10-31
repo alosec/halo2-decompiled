@@ -3488,7 +3488,8 @@ void function_19e0f0(word const *string, long size, word *buffer, s_event *event
 
 int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *format, ...);
 
-// score 82 (was 82): frame 0x200 and buffer ESI/ret 8 now agree; failure exits
+// score 82 (was 82): frame 0x200 and buffer ESI/ret 8 agree; failure exits and event clear schedule differ.
+// Earlier: frame 0x200 and buffer ESI/ret 8 now agree; failure exits
 // and the event text-zero store schedule differ. Separate fallback buffers for ending,
 // waiting, both, complete, ending/complete, waiting/complete, all: 186/185/158/167/185/186/214.
 // Common bool result 82; one success goto 82; direct parameter reads 82 (kept, plain).
@@ -3503,6 +3504,9 @@ int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *forma
 // dl), moving the user index to ecx and merging the else-arm tails. With it: byte result 148
 // (setne); if/else fall 148; long state 151; every success returned 189 (ret 0xc); result first
 // 150; short user index 193; text at function scope 148. The flag through engine_options() 82.
+// Round 239: complete complementary bool/byte/short/long return results
+// 232/232/253/218; positive byte/short/long 217/194/196; complementary bool
+// at entry 232. Original single-exit result, buffer convention and body restored.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {

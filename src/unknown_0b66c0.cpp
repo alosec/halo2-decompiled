@@ -196,6 +196,14 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // address, at the scan with `string + start` 40 (104 bytes, 0xb5f10 6), at the add 40 (104), at the
 // scan with `start += (long)string` 40 (104); `string + start` with `if (++count > 0x200)` 28
 // (0xb5f10 6); `string + start` named after the clamp 28 (0xb5f10 6).
+// Round 44 (lane 16, fast with 0xb5f10/0xb61d0): retail's scan takes ECX (count), EDX (walk) and
+// EBX, so the start it receives in ECX moves to EDI (matched 0xb61d0 moves its EAX start to EDI
+// the same way); ours keeps the start in whichever scratch register the scan leaves free and LTCG
+// passes it there. Tried: `string + start` with the length from the existing out-of-file 0x11c9a0
+// 28 (start in EDX, scan counts in ECX and walks in EDI; 0xb5f10 6); the result as the combined
+// condition (`bool result = start >= 0 && ...; if (result)`) 44 (0xb5f10 41); a non-volatile local
+// copy of the string for the scan and the add 60 (83 bytes, 0xb5f10 80); a `byte` result 41
+// (0xb5f10 41); `result = true` before the copy 40 (same code).
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -474,6 +482,13 @@ bool function_7af40(s_type_99af70 const *address);
 // `connection->endpoint` and the type (the existing private endpoint initializer, without its null
 // test) 111. The counter's load/inc/store split (EBX, address then in EAX) survives each; only a
 // written-out strncpy keeps the in-place `inc` (listed, 17).
+// Round 44 (lane 16, fast with 0xb40b0/0xb5f10): with retail's endpoint reads and the copy before
+// the state store (round 84's 15) only the state store differs: VC puts it after the strncpy call
+// and shares `eax = 1` with the return value. Whenever the state store precedes the call in the
+// source, VC sinks it and the counter's store together to the call, splitting the `inc` (EBX,
+// 0xb40b0 61): with the reads, state stored first 111; the increment through a pointer to the
+// field 111; plain member accesses without the `connection` alias 111; the copy's source as a
+// volatile read of the own path parameter 111. Without the reads, counter/copy/state order 36.
 // @retail 0xb5d40
 bool s_http_connection_ab::connect(long address, word port, char const *path, bool flag)
 {
