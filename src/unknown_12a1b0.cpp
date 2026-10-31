@@ -1253,6 +1253,10 @@ struct s_looping_detail_request
 // tests the optimizer later drops): `else if (sound->source.audible != 1)` 25 at 509/508, and with round 77's
 // three forms a byte match, not kept (the test is implied by the `if` above). Plain else with the struct-order
 // stores, vector3f_add and the camera first 133 (under the keep bar); vector3f_add alone 138, kept.
+// Round 108 (plain checks): player count read before the audible test with `else if (player_count > 0)` 153;
+// the skip loop as a for with the query in its init 138; the arms swapped (`!= 1` first) 155; camera fetched
+// before the audible store alone 139 (535 bytes); then-arm stores in struct order alone 136. The query stays
+// inlined in all five. Original body restored.
 // @retail 0x21cc60
 bool looping_sound_prepare_detail(s_type_a82d9f const *detail, long looping_sound_index, s_looping_detail_request *request)
 {

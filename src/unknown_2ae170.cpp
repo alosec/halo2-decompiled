@@ -1125,7 +1125,8 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 	}
 }
 
-// score 137 (was 137): Frame eight agrees; source/bin homes, runtime zero attenuation and dispatch remain.
+// score 137 (was 137): Frame eight agrees; source/bin homes, runtime zero attenuation and dispatch remain
+// (on the decibel-struct interface, retail's four-entry jump table needs a statement in case 0).
 // Earlier: frame eight agrees; source/bin ownership, runtime zero attenuation and mode dispatch remain.
 // Earlier score 213 (was 213): frame 4 versus retail's 8; retail computes the
 // attenuation at run time and dispatches the speaker modes through a jump
@@ -1164,7 +1165,7 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // Round 421: signed-byte routing/pair/quad truth carriers, all seven nonempty subsets
 // 137 each; all three as signed short 144/404. Original Boolean carriers, real-bin
 // loops, gains and body restored. Source/bin homes and runtime zero remain.
-// score 137 (was 137): retail is a four-entry jump-table switch on the speaker mode with explicit call
+// Earlier score 137 (was 137): retail is a four-entry jump-table switch on the speaker mode with explicit call
 // pairs (no loops), the zero gain held in EDI and pushed, and each -6.0206 attenuation computed at run
 // time (`mov [slot], 0; movss; subss; movss [slot]; mov ecx, [slot]; push ecx`). Round 17 found the
 // cause: retail passes decibels to 0x21e230 (and g_44f710) as a 4-byte struct by value; a copy of the
@@ -1193,6 +1194,8 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // returning 0.0f 233 (LTCG inlines and folds it); with the decibel struct: memset zero gain and a
 // statement in case 0 133, aggregate-initialised gain 123 (aligned 71), no case-0 statement 146, the
 // loop body on the struct interface 161, the loop body passing the real gain through casts 176.
+// Round 108: TEST_FIELD_BIT alternate 137; const gain 137; gain declared first 137; endpoints set in an
+// if/else 177 (344 bytes); a switch on the speaker mode with the loops kept 151 (377 bytes). Restored.
 // @retail 0x2afb80
 void c_sound_effects::add_source_mixbins(s_sound_mixbin_source *source, bool rear, long mode, s_mixbin_settings *mixbins)
 {
