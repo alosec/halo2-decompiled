@@ -69,7 +69,7 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 	return g_468760;
 }
 
-// score 2 (was 6): what is left is the case 1 fsin/xorps order; the first normalisation product
+// score 2 (was 2): what is left is the case 1 fsin/xorps order; the first normalisation product
 // pair (retail folds i and loads j; ours loaded i and folded j) matches since round 91.
 // Round 42: one function-scope seed
 // pointer assigned in cases 5, 6, 7 and 9 (it then shares one home, the dead system argument's, as
@@ -137,6 +137,12 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // nine match losses, restored); native component array with inherited/ordinary reads 6/47;
 // all three tail declarations at entry 6; tail local names 6; reciprocal/squared-speed declaration
 // at entry separately 6/6. Original frame, helper, field accesses and qualified reads restored.
+// Round 12 (m3 lane 2; one-link harness with 0x247950's, 0x246cd0's, 0x259d0's and 0x1462e0's files
+// reproduces case 1 exactly): case 1 sinf 6, cosf 4; `position.x = velocity.i = 0.f` 2; velocity through
+// vector3f_assign with sine/cosine arguments 549 (2300 bytes: case 1's tail cross-jumps into case 2's);
+// a double sine 507. Harness only: the two zero stores in all 60 placements among the four trig stores
+// (both statement orders) keep xorps (or the velocity lea) between fld and fsin; the velocity through
+// vector3f_assign and the position through real_point3d_set 493; the position setter alone 305 (positional).
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {
