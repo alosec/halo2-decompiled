@@ -2047,6 +2047,9 @@ struct s_player_creation_record
 // through the earlier player pointer 37; the change test as `controller != old_controller` 33; the requested
 // controller read after the current one 38; the set arm's player store after the globals updates 34; the set
 // arm first 47 (as the earlier assignment-first arms).
+// Round 319: Empty-old-controller reset bypass with live old-field reads, install-first
+// arm and shared globals receiver, all eight subsets 42 each (650/650 bytes,
+// first +0x210). All restored; opposite recursive expansion and requested homes remain.
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
@@ -2227,6 +2230,9 @@ static __forceinline long player_round_ticks(real value)
 // both slots with direct decay and either request extent; late unit-slot acquisition and native
 // unsigned word slot domains; fast 764/769/825/827/871/923/792/856/765/745/745/827.
 // Original body and existing helper restored.
+// Round 239: complementary readiness/admission/lunge ownership, seven nonempty
+// subsets and the complete byte graph, all eight 701. Original producers, request
+// storage, fields, call tuples and complete body restored; frame remains 0x4c.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {
