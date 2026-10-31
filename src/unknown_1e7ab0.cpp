@@ -260,6 +260,11 @@ PRIVATE inline long request_weapon(s_player_request_view *player, long slot, byt
 // Y423: All 32 cases return the completed result, ordinary player/child flags
 // and native long eligibility subsets 830/795/871/815/723/828/736/846 fast;
 // control 620. All shorten away from retail; complete original body restored.
+// DL200: All seven coordinated ordinary inline subsets of the existing test/counter/eligibility
+// helpers 620 each; counter stdcall 620; coordinated status-producer inline contract 620. All nine
+// retain 559 differing rows through the last retail return. Original target, helper
+// definitions/declarations, native cases, pool observations, local qualifiers and all call values
+// restored. Base/state and player/unit homes remain.
 // @retail 0x1e7ab0
 bool function_1e7ab0(long local_index, long type)
 {

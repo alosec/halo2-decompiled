@@ -379,6 +379,15 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // the same through the entity's index 82 (157 bytes); without the table local 77; `if (index !=
 // NONE && flagged) entity->object_index = NONE;` then `if (entity->object_index != NONE)` 61 (the
 // memory retest is not threaded); the same on the local, published before the retest, 68.
+// Lane 18 r1, all on the early bool with the last two arguments of the second virtual call read through
+// `*(long const volatile *)&e` / `&f` (diagnostic: it stops EBP caching f, as retail; allowed only with a
+// match): 53, only the shared header address left (retail reloads the table's data and recomputes the
+// index for the object, borrowing EBP for the test); the header test or the object through the entity's
+// index 53/53; the test indexed through a word cast 50 (index recomputed, data still shared); a repeated
+// `entity->object_index = object_index;` between the test and the object read 47 (gives retail's EBP
+// test and data reload exactly: something retail stores there blocks the reuse); the clear-in-test then
+// memory retest form 35 (header and object computed apart as retail, but the retest is not threaded);
+// the same on a local 53 (threaded, shared again); every index read from the entity 41 (159 bytes).
 // Round 439: complete native 12-byte header value, native/library copies at lookup/entry
 // storage, 104 each; actual post-attachment Boolean success with those four copies, 82 each.
 // Both result graphs grow a frame; original pointer observations and virtual calls restored.

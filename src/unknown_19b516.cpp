@@ -178,7 +178,7 @@ void c_widget::v16()
 	}
 }
 
-// score 12 (was 20): only the entry differs: retail finds the first widget in EAX/EDX, saves ESI after it
+// score 12 (was 12): only the entry differs: retail finds the first widget in EAX/EDX, saves ESI after it
 // and joins the loop's `mov esi, eax; test esi, esi` tail; ours finds it straight into ESI (push first).
 // Forms with the old candidate copied at the loop head (all 20 unless given): entry/repeat/both link
 // cursors; entry/repeat/both last-widget results; link for scans; selected declaration first; transient
@@ -195,6 +195,12 @@ void c_widget::v16()
 // or a named previous 12; a named entry result 35 (92: entry as retail, but the inverted loop tests the
 // name, so no shared tail); ternary into the head-copy candidate 39 (92); last-sibling helper with its own
 // next cursor 21; early-return helper 43; eligibility in the loop condition with focus after 44 (92).
+// Round 126 (real, 12 unless given): the step as if/else into the widget 12; entry and step both if/else
+// 12; entry as if/else 12; the step through a named previous local 12; if-form entry into a head-copy
+// candidate with a ternary step 39 (92). Screened (one-link LTCG): ternary head copy in while/for 33 (40
+// instructions); head copy as the body's first statement or in an if/do-while: base code; the widget
+// passed to a forceinline search helper: base code; an out-of-file previous-or-last function is not
+// inlined at /O1 (called). Retail's entry result stays a scratch value copied in the shared loop head.
 // @retail 0x22ec1b
 void c_widget::v17()
 {

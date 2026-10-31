@@ -41,6 +41,11 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 }
 
 // score 2 (was 2): only the inlined 0x11cc90's second cross product differs: retail loads a->j and
+// folds b->i, ours (like the standalone 0x11cc90) loads b->i. Round 125 (one-link LTCG harness, exact
+// here; real --fast for each): the gain added in the call statement 40, the facing lookup before the
+// actor 177, the output copied before the angle store 13, a named local for the clamped turn instead
+// of reusing arg_4 2 (same code), a separate local for the second limit 62; a later read of arg_2->y
+// or arg_2->x never moves the load (diagnostics). Round 121: the rotation helper with the j
 // folds b->i, ours (like the standalone 0x11cc90) loads b->i. Round 121: the rotation helper with the j
 // and k cross terms in a vector first and the i cross term written in the i row took 67 -> 2 (k before j
 // 29; the two terms as scalars 91; without the axis pointer copy 76). Then: the point parameters swapped
@@ -138,6 +143,9 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // output pointer return 2; helper inline/ordinary availability 2/2; queued inline/forced-inline
 // availability 2/2 (forced inlining loses 0x29cb10). All restored; the second cross-product
 // load/fold pair remains the only difference, with frame and complete rotation exact.
+// Round 208: queued output pointer/reference returns 21/21 (689 bytes); native output memcpy 2;
+// complete float trig pair 40 (692); immutable lookup pointers/helper values 2/2;
+// vector-local names/helper-value names 2/2. All restored; the second cross load/fold remains.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)

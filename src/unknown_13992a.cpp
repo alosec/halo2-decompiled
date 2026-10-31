@@ -126,6 +126,10 @@ long function_14de70(long arg_1);
 // keeps the parent in EAX. Nested tests 48; the parent lookup through the inline object_get 48;
 // the two tests in a named bool 48; `(void)&local_3` 48 (diagnostic); the seat flag stored first
 // in the block 520; the parent index in a named local for the test and the lookup 48.
+// Round 29 (fast, control 70): an inline seat getter returning the seat element or NULL 438; the
+// definition folded into the seat expression 70; the seat index in a short local 97 (the unit reload
+// then goes to eax after the result store as in retail, the parent to ecx); NONE-first tests 70; the
+// parent's header element through a pointer 70. Permuter: 48 tries, nothing better.
 // @retail 0x13992a
 void function_13992a(byte *arg_1, long arg_2)
 {

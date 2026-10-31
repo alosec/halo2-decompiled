@@ -63,6 +63,21 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 // Diagnostic: a store through `record` after the call keeps the load-first add, so it is the add's
 // operand order, not a value reused across the call. Screened (compile-only): only a flag set in a
 // test (`visible = false; if (hit) visible = no object;`) gives retail's sete.
+// the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
+// the blend registers, the color0 store, the in-place strength add and the sete collision test match.
+// Left: the i == 0 block loads the strength before the color copy, so the copy reuses ebp (retail copies
+// through `lea eax, [ebp + 4]` first, a byte shorter), and 0x131c20's `&color` is formed in edi and
+// copied to ecx (retail: ecx, then edi). The in-place add appears only when the strength read comes first.
+// Round 27 (lane 11): the open test as `hit ? no object : false` gives retail's sete (alone 121, 828
+// bytes); `hit && no object` or `call && no object` named bools fold it (52/52); with the strength
+// assigned first in the i == 0 block 30 (kept). On it: typed light-entry struct 30; strength declared
+// before direction 33; color declared before direction 36; blend computed in the call 30; const cast on
+// the blend source 30; earlier, a const source pointer local 52 and `(color3f *)&color.red` 52.
+// Compile-only, the explicit sum, `((real *)entry)[4]`, late or early strength declaration, field-wise or
+// pointer color copy and `+=` in the i == 0 block all keep the load-first add with color first.
+// Earlier (52): the strength add loaded the entry's strength, added and copied back where retail adds it
+// to xmm7 in place (its operands flip only when the strength load comes before the color copy in the
+// i == 0 block, which then changes that block), plus the `&color` registers and the sete.
 // Round 38 (lane 9): the contribution through vector3f_assign and the sum through vector3f_add 52
 // (kept: the j/k adds load the contribution as retail, since the contribution's fields are written in
 // an inlined helper; replaces the hand-written double sums). On it: `strength = strength + power` 52;
@@ -199,8 +214,8 @@ long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_
                         vector3f_add(&direction, &contribution, &direction);
                         if (i == 0)
                         {
-                            color = *(color3f *)(entry + 4);
                             strength = *(real *)(entry + 0x10);
+                            color = *(color3f *)(entry + 4);
                         }
                         else if (*(real *)(entry + 0x10) > 0.0f)
                         {
@@ -218,7 +233,8 @@ long __stdcall function_d1a30(long ignore_object_index, point3f const *point, s_
                 ray.k = direction.k * 100.0f;
                 bool hit = function_1697c0(0x10000001, point, &ray, ignore_object_index, NONE,
                     (s_collision_result_1697c0 *)collision);
-                if (!hit || *(short *)(collision + 0x5a) != NONE)
+                bool open = hit ? *(short *)(collision + 0x5a) == NONE : false;
+                if (!open)
                     color = *(color3f *)(sky + 0x34);
             }
             else
@@ -1933,6 +1949,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
 // 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
 // independent captures, mesh homes and status order restored.
+// Round 44: complete default normal/base/lightmap initializations after material, individually/
+// paired/all, then all after native input captures 761/761/761/759/759/759/759/759.
+// Original default observations and body restored; frame 0x98/0x90 and homes remain.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

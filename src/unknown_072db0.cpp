@@ -536,6 +536,29 @@ struct s_match_player_rating_entry
 	signed char rank;
 	byte unknowna1[3];
 };
+/* per-player and per-team counters reported with a rating: three fifteen-bit counts */
+struct s_rating_counters_player
+{
+	word first : 15;
+	word : 1;
+	byte unknown02[4];
+	word second : 15;
+	word : 1;
+	word third : 15;
+	word : 1;
+	byte unknown0a[0x36a - 0xa];
+};
+struct s_rating_counters_team
+{
+	word first : 15;
+	word : 1;
+	byte unknown02[4];
+	word second : 15;
+	word : 1;
+	word third : 15;
+	word : 1;
+	byte unknown0a[0x5a - 0xa];
+};
 struct s_match_player_rating_collection
 {
 	byte unknown00[4];
@@ -545,6 +568,9 @@ struct s_match_player_rating_collection
 	byte unknown12c[0x384 - 0x12c];
 	s_match_player_rating_entry players[16];
 	s_match_rating_entry teams[16];
+	s_rating_counters_player player_counters[16];
+	byte unknown45e4[0x49e4 - 0x45e4];
+	s_rating_counters_team team_counters[16];
 };
 
 // score 16 (was 22): retail holds the entry skill sign-extended in ESI (movsx at the load, mov ebx,esi for the call); a 32-bit local gives that movsx but MSVC then picks EBX for it and moves the team-mode byte to CL, so the whole frame shifts.
@@ -1337,11 +1363,20 @@ struct s_rating_summary
 };
 
 #pragma inline_depth(0)
-// score 177 (was 177): frame 0xfc agrees; 1192 bytes against 1212. Left: the spill homes of the key,
-// statistics cursor, change and group cursor are rotated (ours 0x18/0x1c/0x2c/0x38, retail
-// 0x1c/0x2c/0x38/0x18); our statistics cursor is biased +6 (retail +0xf44 unbiased); retail keeps
-// the name character as a word and its countdown in ECX; the summary stores and 0x73e00's argument
-// setup are scheduled differently. Round 67: the team count switch with one statement per hopper
+// score 92 (was 177): frame 0xfc and length (1212) agree. Left: level and the group-compare cursor take
+// each other's slots (ours 0x18/0x14, retail 0x14/0x18); retail loads the key before the collection
+// fields and calls the identity formatter before pushing strncpy's count; in the team loop retail keeps
+// the counters cursor in a stack slot and the collection, then level, in EBX (ours: cursor in EBX,
+// level spilled). Round 29: the per-player and per-team counters declared in the collection and the
+// player counts read straight from `collection->player_counters[i]` (retail's +0xf44 cursor), the team
+// fields and identity read from `collection->teams[i]` at each use (retail's +0xdc8 cursor), 177 -> 130;
+// the identity declared just before the strncpy with the group compare reading the player address
+// 108; the name character as `word` 92 (kept). Tried: counters through record pointers (same code),
+// read orders 179-181, identity as a team-loop local 295, identity before the summary 125, word
+// character with a short countdown 139, the formatted identity in a local 105, the team counters
+// pointer formed at the call (same code), a copy-and-terminate helper for the strncpy 225 (strncpy
+// expanded inline), level or all four shared locals per loop 108/108, renaming level (no change).
+// Round 67: the team count switch with one statement per hopper
 // type (0x66050's form; retail's jump table) 202 -> 177 (kept); on it: word character 183; `key`
 // renamed (slot order by name) 177, no slot moved; statistics reads third/second/first 179; the
 // statistics pointer computed at its use without the copy 174 (three points, not kept), with the
@@ -1420,7 +1455,6 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
         for (long i = 0; i < 16; ++i)
         {
             const byte *local_0 = (const byte *)collection + 0x41e + i * sizeof(s_match_player_rating_entry);
-            const byte *local_1 = (const byte *)collection + 0xf44 + i * 0x36a;
             const s_match_player_rating_entry *player = (const s_match_player_rating_entry *)(local_0 - 0x9a);
             if (!player->active || player->team == NONE || (*(const dword *)((const byte *)player + 0xa) & 3)) continue;
             long skill = player->unknown9a;
@@ -1432,15 +1466,13 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 value += change;
                 level = function_74970(value, skill);
                 lower = value >= 0 ? function_74970(value, 0) : 0;
-                const byte *stats = local_1;
-                long third = *(const word *)(stats + 8) & 0x7fff;
-                long first = *(const word *)stats & 0x7fff;
-                long second = *(const word *)(stats + 6) & 0x7fff;
-                const XUID *identity = (const XUID *)((const byte *)player + 2);
+                long third = collection->player_counters[i].third;
+                long first = collection->player_counters[i].first;
+                long second = collection->player_counters[i].second;
                 for (long group = 0; group < 5; group++)
                 {
                     if (g_509454[group].players[key].state == 3 &&
-                        memcmp((const byte *)&g_509454[group] + 4, identity, 12) == 0)
+                        memcmp((const byte *)&g_509454[group] + 4, (const byte *)player + 2, 12) == 0)
                     {
                         function_74a00(group, key, 0, change);
                         function_749b0(group, key, 1, level);
@@ -1460,12 +1492,13 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
                 summary.values[0] = *(long *)((byte *)collection + 0x130);
                 summary.values[1] = *(long *)((byte *)collection + 0x134);
                 summary.values[4] = key;
+                const XUID *identity = (const XUID *)((const byte *)player + 2);
                 strncpy(summary.identity, function_1537a0((const byte *)identity), 64);
                 summary.identity[63] = 0;
                 const word *source = (const word *)((const byte *)player + 0x10);
                 char *destination = summary.name;
                 long remaining = 64;
-                dword character;
+                word character;
                 do
                 {
                     character = *source;
@@ -1495,7 +1528,7 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
     {
         for (long i = 0; ; ++i)
         {
-            const byte *local_3 = (const byte *)collection + 0x49e4 + i * 0x5a;
+            const s_rating_counters_team *local_3 = &collection->team_counters[i];
             long count = NONE;
             switch (variant->type)
             {
@@ -1508,22 +1541,19 @@ void __stdcall function_741f0(s_match_player_rating_collection *collection, s_qu
             }
             if (i >= count)
                 break;
-            const s_match_rating_entry *team = &collection->teams[i];
-            const XUID *identity = (const XUID *)team->unknown0c;
-            if (team->active && memcmp(identity, g_440070, 12) != 0)
+            if (collection->teams[i].active && memcmp(collection->teams[i].unknown0c, g_440070, 12) != 0)
             {
-                short skill = team->skill;
-                value = team->value;
+                short skill = collection->teams[i].skill;
+                value = collection->teams[i].value;
                 if (skill != NONE && value != NONE)
                 {
                     change = function_74720((const s_match_rating_collection *)collection, i);
                     value += change;
                     level = function_74970(value, skill);
                     lower = value >= 0 ? function_74970(value, 0) : 0;
-                    const byte *stats = local_3;
-                    function_73e00(lower, batch, identity, change,
-                        *(const word *)stats & 0x7fff, *(const word *)(stats + 6) & 0x7fff,
-                        *(const word *)(stats + 8) & 0x7fff, level, 3, players);
+                    const s_rating_counters_team *stats = local_3;
+                    function_73e00(lower, batch, (const XUID *)collection->teams[i].unknown0c, change,
+                        stats->first, stats->second, stats->third, level, 3, players);
                 }
             }
         }

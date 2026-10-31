@@ -433,6 +433,8 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // component->bodies[i] directly (no element pointer) 123 (928 bytes, the found flag moves to a
 // parameter slot, same EBX/EBP swap). Without the center change: that loop indexing 235, with the
 // entry after the component index 146.
+// Round 236: signed/unsigned matching-body result, native/late default and existing center converter 231/239/253/246/231/239/253/246.
+// Original executable body restored.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {

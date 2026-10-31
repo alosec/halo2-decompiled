@@ -855,6 +855,12 @@ real normalize2d(point2f *v);
 // Round 430: One selected-speed lifetime through retry, with entry result declaration, valid-scope
 // retry outputs and both native axis-pair names: all eight 204 at 917/935 bytes. Original two speed
 // lifetimes and complete body restored.
+// Lane 15 round 18: retail's trajectory result is a spilled register candidate (DL copy, store after the
+// force test, DL reloaded after the retry and returned by a shared `mov al, dl` exit; the request arm
+// returns its call's AL); ours keeps it memory-homed (immediate store, dead store before the request
+// return, folded false exit). Request result returned from its arm 182 (919 B); early false return after
+// the retry 135; retry admission and call joined by && 135; unit index local 135; validity block
+// flattened into an early false return 232. All restored.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {
@@ -1138,14 +1144,17 @@ real function_50650(real cosine);
 // Ordered turn/approach, facing and following results, seven subsets
 // 334/137/334/137/334/137/334; all with the staged final velocity product 334.
 // All restored; the caller-inclusive unchanged preview is 137.
+// Lane 15 round 18 (caller-inclusive fast, each compared with the baseline code): the actor address as one
+// expression without the two one-use pool locals, identical code (kept); upper clamp `1.0 < dot`, the
+// clamp through a PIN macro, a named return value, and the velocity through the file's own planar
+// normalizer: identical code each (137). Retail preloads the velocity's j before fsqrt and scales i from
+// memory into a reciprocal copy; the epilogue pops sit before the final minimum's branches.
 // @retail 0x1f9e70
 real function_1f9e70(long actor_index, long object_index, point2f const *position,
     vector2f const *path_direction, vector2f const *facing, vector2f const *desired,
     vector2f const *next_direction, real distance, bool ignore_facing)
 {
-    s_record_pool *local_0 = g_4f55f0;
-    byte *local_1 = local_0->data;
-    byte *actor = local_1 + (actor_index & 0xffff) * sizeof(s_actor_view);
+    byte *actor = g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view);
     s_slot_object_view *object = object_get(object_index);
     byte *settings = (byte *)function_1e5450(actor_index, object->tag_index);
     real speed_scale;
