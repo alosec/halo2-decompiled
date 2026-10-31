@@ -367,6 +367,9 @@ short *function_e70b0(long unit_index, short *value);
 // Round 99 (lane 6): the tick store through the existing 0x1aefc0 helper (fistp into a short) 49
 // (identical code); `rate * elapsed` 49; slot cast first with the actor assigned separately 49; a
 // unit-index local for the action-state read 49; the prop stamp before the event call 133.
+// Round 3 (lane 17): the actor looked up at each use in the timer test 152 (465 bytes); a named elapsed
+// tick count in the prop test 49; the elapsed seconds named 49; a named object index for the event
+// call 49; node and prop declared at function scope 49.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {

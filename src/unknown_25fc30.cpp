@@ -449,6 +449,10 @@ void __stdcall function_25dd50(
 // after the if/else 275 (893 bytes), side = 0 there keeps zero in EBX (222 before). Also: cover as
 // `covers + index` 38, face as `faces + index` 38, a named face index 38, the cover array read
 // from the context field at each use 38.
+// Round 3 (lane 17): the face index read as dword at the lookup 38, at the test and the lookup 38;
+// `char side = 0;` 203 (840 bytes); the two loop-top tests as separate continues 38; the cover pointer
+// assigned after the null test 38; reversed subscripts and a forceinline edge getter (diagnostics) 38:
+// the base/index order is not source order.
 // @retail 0x25e430
 void __stdcall function_25e430(
 	long actor_index,
