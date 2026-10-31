@@ -572,6 +572,12 @@ static inline void input_counter_set_inlined(long c, long a, long b, long value)
 // bytes: the copy folds into field reads, frame 0xc); the word mask read through the field
 // pointer, updated with `|=` and stored through it 77; with that, compares as old != new 78, a
 // bit local for the present update 78, a dword cast in the compare 77.
+// Lane 3 r173 (fast): word mask read into a local but the field stored directly with no pointer
+// local 129 (the copy folds into field re-reads; the engine-index load is then hoisted above the
+// mask store as in retail, so retail stores both fields straight through `globals`); a dword
+// `team_bit` for both updates 45 (the bit is shared where retail shifts twice); the mask pointer
+// and copy declared before the old playing mask 34; word mask with present not volatile 63
+// (present takes EDI); both accumulators declared before the old masks 42.
 // @retail 0x158140
 void function_158140(void)
 {
@@ -2528,21 +2534,26 @@ void function_1e9ce0(long player_index, long counter, s_statborg *statistics, lo
 // combined selection 78; aggregate if arms 50 (retail length); shared index initialization 44;
 // improvement value 57; statistics getter at the call 109; old score through the getter 111;
 // named score-to-win 44; one change local for all calls 125; early equal-score return 44;
-// short-cast delta at the 0x1e9df0 call 44; change local for that call only 44; delta + old
-// score 44; mode read before the statistics getter 85; const statistics pointer 44.
+// short-cast delta at the 0x1e9df0 call 44; change local for that call only 44; delta +
+// old score 44; mode read before the statistics getter 85; const statistics pointer 44.
 // Round 116: mode tested from the field without the local 44; score declared first 60; iterator
 // at function scope 44; the loop's switch on the mode local 120; score set to the minimum only
 // in the iterator arm 51. Diagnostic (reverted): with g_4e6948 address-taken anywhere this gives
 // 3 at 359 bytes (only the 0x1e9df0 setup left), but matched 0x15b3a0/0x1582d0 then reload it
 // after a pointer store, and retail 0x241620 keeps it in EBP across 0x1967d0 calls.
-// score 44; mode read before the statistics getter 85; const statistics pointer 44; short old score
+// Earlier (44): mode read before the statistics getter 85; const statistics pointer 44; short old score
 // 121; score-to-win local inside `score > old_score` 44; the change test as old != new 45; the
 // counter switch cases in the order 9/3/1 or 3/9/1 44.
 // Round 81: the final test nested under the score test 44; old score read before the mode 44;
-// the mode read in its test (no local) 44; an options pointer local for the final test 44; the
-// score declared before the old score 44. Our build keeps the variant pointer in EBX across
+// the mode read in its test (no local) 44; an options pointer local for the final test 44;
+// the score declared before the old score 44. Our build keeps the variant pointer in EBX across
 // 0x1967d0, where retail reloads it (retail's compiler treats 0x1967d0's counter store as one
 // that may reach the variant global; ours knows it only writes the counter table).
+// Lane 3 r173 (fast): one 0x1967d0 call with the counter chosen by the switch 73 (340 B); the
+// 0x1e9df0 call given `&function_xaee93d()->statborg` 84 (the convention becomes `ret 4`); the
+// delta named once for the three 0x1967d0 calls 116 (338 B); the score-to-win compare's
+// operands swapped 44; the 0x1967d0 dispatch as an if/else-if chain 53 (352 B). Both blockers
+// (0x1e9df0's file and 0x1967d0's file) were off limits this round.
 // @retail 0x15b650
 void __stdcall function_15b650(long team, long delta)
 {
@@ -4037,6 +4048,13 @@ static __forceinline long nonnegative_15ce70(long value)
 // Round 301: Ascending chain notification, descending streak notification and ascending chain
 // result recognition, seven combinations 470/470/470/543/543/543/543; all plus reversed
 // fixed streak results 532. Original predicate order, values and complete body restored.
+// Lane 3 r173 (fast): retail holds NONE in EBP for the whole function (`or ebp, -1`, `cmp eax,
+// ebp`) and keeps the damage type in [esp+0x24], where ours gives EBP to the damage type and
+// compares with immediates. Award default after the engine test 471 (its store moves to
+// retail's place, still an immediate); with the lives clamp as a ternary and the special
+// subtype as if/else 475; the ternary clamp alone 541 (retail's setle/dec/and, but 2126 B);
+// the if/else subtype alone 543 (retail's branches, 2110 B); `minimum < penalty ? penalty :
+// minimum` for the delay 471 (identical).
 // @retail 0x15ce70
 void function_15ce70(long attacker_index, long victim_index, bool betrayal, byte damage)
 {
@@ -4354,6 +4372,13 @@ void function_15fe20(long team_index, color3f *color);
 // Same-type color construction rival/own/both team 65/405/46; palette subsets
 // 88/65/405/46/46; earlier weapon default/presence/both on that graph 77/46/77.
 // The plain 46 construction form was excluded as cast steering; no gain retained.
+// Lane 3 r173: both colours through locals 46 (fast), with the existing engine_object_get for
+// the unit 46 (identical), with the weapon default before the unit test and an `if` for the slot
+// 77 (2688 B; `or esi, -1` placed as retail but both compares stay immediate); that default on
+// the original graph 119 (2688 B); individual defaults before the player-index store plus the
+// rival text cleared before its player lookup 85. 0x7f720 returning color3f by value (all calls
+// in the image changed, then restored) gives 46 with no local, but matched 0x7f790 then takes a
+// 0x18 frame (retail 0xc), so retail's callee keeps the pointer form.
 // @retail 0x15f3a0
 bool function_15f3a0(long local_index, s_player_score_display *display)
 {
@@ -5442,6 +5467,21 @@ void __stdcall function_d6bc0(long object_index);
 // Round 225: reset-counter pointer/reference, before query/at update,
 // with ordinary/entry countdown declarations: 174/172/174/172/174/172/174/172.
 // Original field reads and body restored; independent timer home remains missing.
+// Lane 3 r173 (fast): the timer folds because `entries` stays re-derivable; a timer pointer formed
+// from a volatile read of `entries` gives frame 0x18, the timer in EDI/[esp+0x20] and every
+// reload as retail: 132 (873 B), plus `scenario` declared before the rate 130, leaving only the
+// index test reloading `entries` (retail reuses the timer's load); the volatile read is kept
+// only with a byte match. On the original timer: bool schedule `= index == NONE` with the two
+// +0x12c bits and the +0x10a bit as TEST_FIELD_BIT 160 (879 B; retail's bit tests); default
+// false with the index test as an arm 154; case 1 written first 154; case 1 and the distance as
+// `if (...) schedule = true` 164 (869 B, retail's threaded decision); char kind + long modifier
+// 177 (856 B); modifier switch in an inline helper 174 (inlined once), forceinline 178 (retail's
+// tail-merged switch, `add eax, eax` for the shift), helper with a result local 178, helper
+// writing the delay through a pointer 178 (`shl eax, 1`; 45 differing instructions once aligned,
+// against 84 at the start); `entries` read once through its address 178, at every use 178; an
+// entry pointer at the loop top 174; volatile reads at the three uses after the schedule 163
+// (the timer is rematerialised from the stack argument); the volatile read into a named base
+// local for the timer and the index test 133 (the base takes EDI and the timer folds again).
 // @retail 0x15ae70
 void __stdcall function_15ae70(s_netgame_entry_state *entries)
 {

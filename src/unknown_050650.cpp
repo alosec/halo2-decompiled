@@ -1301,6 +1301,9 @@ struct s_actor_looking_turn_request
 // subsets 1-7, 530/528/530/535/551/535/551; all plus looking decoder tests 526
 // (fast control 525, full 506). All reserve 0xcc versus retail 0xc8; exact-match-only
 // forms restored, preserving original result storage, scopes, queries and complete body.
+// Round 45: late-query/horizontal/turn scalar home names, seven subsets,
+// and all with uninitialized query outputs at entry, 525 each (fast control 525,
+// full 506). Original names, scopes and complete body restored; frame remains 0xd0.
 // @retail 0x298370
 void function_298370(long actor_index)
 {
