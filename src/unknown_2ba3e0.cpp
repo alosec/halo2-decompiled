@@ -706,6 +706,12 @@ real g_55e618;
 // Round 83: tangent/perpendicular/both declared before the sweep 102/102/102; scalar perpendicular
 // 147; scalar tangent 113; both scalar 140; call-only velocity pointer 102; that pointer with a
 // staged position 245. Original body restored.
+// Round r4 (lane 17): velocity pointer (no copy) 194 (1541 bytes, frame 0x118): every stack home below the
+// collision buffer then agrees with retail, which also homes perpendicular (perp.k spilled at +0xac) under the
+// buffer, and keeps the normal in registers until the position stores, which it sinks after impact.index;
+// tangent through the point-difference helper on that form 194; per-component perpendicular/tangent order 195;
+// position assigned after impact.index on the pointer/copy forms 194/102 (stores already scheduled the same);
+// a local copy of the normal for dot/perpendicular/position 279 (1590 bytes), with the velocity pointer 227 (1559).
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)
