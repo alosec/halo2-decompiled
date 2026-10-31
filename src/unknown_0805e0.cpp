@@ -95,6 +95,9 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // the machine-local test before the guest test 43; either with the exclusion test kept too 67/71 (140 bytes: the
 // mask is then hoisted into AL as retail, but both guest tests stay); the existing iterate helper with that
 // test 79/79 (102 bytes).
+// Round 443: Two-use admission flags in byte/char/word/short storage 44/44/43/43;
+// direct-success-return counterparts 52/52/51/51. All restored; early ESI, independent
+// successor, mask hoist and failure exit remain.
 // @retail 0x805e0
 bool player_configuration_cache_next_recent_player(s_recent_player *player, long *iterator)
 {

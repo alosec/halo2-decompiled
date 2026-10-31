@@ -1649,21 +1649,6 @@ void __stdcall function_def60(point3f *point, long arg_159e6d, short mode, point
 
 /* a biped's collision capsule: its bottom point, the vector to its top and
    its radius, from its two capsule nodes when its definition names them */
-// score 6 (was 6): frame, length, pool/output/node/fallback roles agree; midpoint addition loads differ.
-// Earlier: one-dword frame, stack object index and retail length now agree;
-// pool/definition and output-register roles remain. Existing node queries 105;
-// vector difference and fallback names 134 each, node combinations and entry locals 105.
-// Direct definition producer removes the one-use object alias at 105 (kept, plain);
-// cached object/shared entry 126 each; direct shared entry 105; those four with
-// vector difference 105/126/126/105. Header getter at entry/nodes/both and vector pair 105 each.
-// Round 190: full node transforms 130; direct node fields 98; one radius store 130; both 108;
-// the same four with the existing scaler 130/98/130/108. Fallback-first 98; with shared point
-// difference 8, with scaler 8; shared difference/scaler without reversal 8. Original arm order and
-// shared difference alone 8; commuted means 8; existing object/header getters 6/8. Masked ordinal
-// 118; sequential mean sums 6; both 118; both with header getters 15. Cleanup and full plain 6 kept.
-// Round 435: Existing point setter, either complete operand order 14/14; existing vector addition
-// then in-place scaling, either order 119/119; direct component means, either order 6/6;
-// both position subobjects at midpoint/whole geometry scope 6/104. Original body restored.
 // @retail 0xdf6c0
 void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long arg_159e6d, real *radius)
 {
@@ -1676,9 +1661,12 @@ void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long arg_159e6d, 
 
 		if (TEST_FIELD_BIT((*(dword *)(definition + 0x264) >> 1) & 1))
 		{
-			bottom->x = (first_node->position.x + second_node->position.x) * 0.5f;
-			bottom->y = (first_node->position.y + second_node->position.y) * 0.5f;
-			bottom->z = (first_node->position.z + second_node->position.z) * 0.5f;
+			point3f const *second_point = &second_node->position;
+			point3f const *first_point = &first_node->position;
+
+			bottom->x = (first_point->x + second_point->x) * 0.5f;
+			bottom->y = (first_point->y + second_point->y) * 0.5f;
+			bottom->z = (first_point->z + second_point->z) * 0.5f;
 			*axis = *g_4687a4;
 		}
 		else
@@ -1940,41 +1928,13 @@ bool __stdcall function_c5460(long object_index, long ignore_index, point3f cons
 
 /* drops the biped out of a vehicle: level and upright, at a clear spot
    by the vehicle (or anywhere clear) */
-// score 76 (was 76): frame 0x1c versus 0x20 and input/ignore ESI/EDI homes are exchanged. Round 12 (lane 14):
-// a found flag set from each query and tested in the loop condition instead of the breaks scored 34 (homes as
-// retail; left: retail keeps a dead store of the vehicle radius, the inlined 0x30c60 centre/radius read, in its
-// own slot, then pushes a copy) and took caller 0xea8e0 68 -> 9; not kept (coordinator: a test-set flag is kept
-// only with a match). Finish this function or 0xea8e0 to a match with it and it can stay.
-// Complete bool retry result 134; iteration-local result 76; long result 109; capsule/fallback
-// role names 76; names with bool result 134; fallback-only point scope 76; function-scoped
-// workspaces 76; those workspaces with bool result 134. Original body restored.
-// Fallback radius reuse 74 (350 bytes); retry result started at the loop boundary 73
-// (350 bytes); both 86 (356 bytes). Two/three-point gains and one-use field copies restored.
-// Multi-use forward subobject 77; native ignore assignment branches 76; separate
-// selected vehicle 76; forward/ignore and forward/selected vehicle 77 each; ignore with
-// selected vehicle 76; all three 77; all three with fallback point setter 80. Frame/input homes remain.
-// Round 281: signed-byte/short/word/dword retry ordinals with separate/shared successive
-// point output 81/81, 73/73, 73/73, 76/76 (all 348 bytes). Three-point gains restored.
-// Short/word result-controlled completion 90/90; short with shared point 90 (360 bytes).
-// All original code restored; frame 0x1c/0x20 and input homes remain.
-// Round 237: physical header type/fallback geometry/both 76/76/76; typed first/fallback/both
-// successful-query returns 76/76/76; typed failed-query arm 76; typed root-header receiver 76.
-// All declarations, snapshots and original body restored; frame/input homes remain.
-// Round 12 (lane 14): on the old loop 0x30c60 called 110, inlined (`inline` on its definition) 74; with the
-// found loop, 0x30c60 inlined with a real/long output 41/41.
-// Round 162: the vehicle's position/radius through the existing out-parameter getter 0x30c60 gives retail's 0x20 frame
-// (its radius out-local is retail's dead store) but stays out of line here: 110 (307 bytes). Diagnostic only: an
-// inline real-typed copy of that getter 70, plus a success-controlled attempt loop (`!success && attempt < 2`,
-// first query assigned to success, second under `if (!success)`) MATCH under --fast; the loop fixes the input homes.
-// Needs 0x30c60 inline with a real out (its declarations in other files say long); not applied.
-// Round 312: full forward/up/fallback-point CRT copy families, seven subsets, and all with
-// the computed capsule diameter: 76 each. Frame 0x1c/0x20 and input homes remain; all original copies restored.
 // @retail 0xe0070
 void function_e0070(long arg_159e6d, long vehicle_index)
 {
 	s_biped *biped = BIPED_GET(arg_159e6d);
 	long root_index = function_baf40(vehicle_index);
 	long attempt;
+	bool success = false;
 
 	if (root_index != NONE && ((1 << ((byte *)&((s_biped_header *)g_4e0300->data)[root_index & 0xffff])[3]) & 2))
 	{
@@ -1987,25 +1947,22 @@ void function_e0070(long arg_159e6d, long vehicle_index)
 	}
 	biped->up = *g_4687b0;
 	function_e57e0(arg_159e6d);
-	for (attempt = vehicle_index == NONE; attempt < 2; attempt++)
+	for (attempt = vehicle_index == NONE; !success && attempt < 2; attempt++)
 	{
 		long ignore = attempt == 0 ? vehicle_index : NONE;
 		point3f center;
 		real height;
 		real radius;
-		s_biped *vehicle;
-		point3f point;
 
 		function_df5f0(arg_159e6d, &center, &height, &radius);
-		if (function_c5460(arg_159e6d, ignore, NULL, 0, 0, radius * 2.0f, 1))
+		success = function_c5460(arg_159e6d, ignore, NULL, 0, 0, radius * 2.0f, 1);
+		if (!success)
 		{
-			break;
-		}
-		vehicle = BIPED_GET(vehicle_index);
-		point = *(point3f *)((byte *)vehicle + 0x30);
-		if (function_c5460(arg_159e6d, ignore, &point, 0, 0, *(real *)((byte *)vehicle + 0x3c), 1))
-		{
-			break;
+			s_biped *vehicle = BIPED_GET(vehicle_index);
+			point3f point = *(point3f *)((byte *)vehicle + 0x30);
+			real vehicle_radius = *(real *)((byte *)vehicle + 0x3c);
+
+			success = function_c5460(arg_159e6d, ignore, &point, 0, 0, vehicle_radius, 1);
 		}
 	}
 }
@@ -2036,6 +1993,15 @@ void __stdcall function_1c3770(long object_index, dword flags);
 // one-bit-at-a-time flag clears, settlement declared first, short index: no change or worse (harness). Restored.
 // Round 312: admitted computed duration with explicit/promoted-shared/native-shared/native-explicit body,
 // in-place/named computed offset 66/66/83/98/75/88/66/66. All restored; extra EBP, body transport and flag stores remain.
+// Round 49: the extra EBP is the count held in EAX from the test to the call (retail tests the byte
+// and re-reads it with movsx after pushing &settled). Screened in an LTCG mini-link (scores shifted
+// to the checker's, which read one higher; the second-lookup form checked 68): two-bit word bitfield for bits 13-14 cleared
+// with `= 0` 63 (0x9fff still hoisted into EDI on the success path); that with the count re-read
+// through a second lookup 68; re-read from the same biped 82 (CSE'd into BL, index on the stack);
+// char body with a short selection 73; the existing main-rigid-body getter into short/long 75/72;
+// byte view of +0x349 or a two-bit byte bitfield 104/104 (mask hoisted into BL); re-read with char
+// body/getter/byte view 76/79/108; a settled flag with one shared final clear 63; the rate named
+// before the call (retail computes it first) 72, with the second-lookup re-read 74.
 // @retail 0xe0c70
 void function_e0c70(long arg_159e6d)
 {
@@ -2207,6 +2173,9 @@ bool __stdcall function_e23e0(long arg_159e6d, point3f const *point, real value,
 // Round 435: Actual lookup-return receiver with shared/separate traversal output,
 // long/char/dword root 77/79/88/90/81/83; long root with entry placement declaration
 // 77/79. Original body and calls restored; six stack offsets remain.
+// Round 32 (lane 1): MATCH (fast and plain) with 0xe23e0's fourth parameter retyped from bool * to
+// s_list_rigid_bodies const * and &list passed (retail pushes the list's address; 0xe23e0 only passes it on).
+// 0xe23e0 is a contributor's finished function, so held until its owner OKs the type-only change.
 // @retail 0xe1b60
 bool __stdcall function_e1b60(long arg_159e6d, point3f const *point, real value)
 {
@@ -3206,6 +3175,9 @@ void function_e4300(long arg_159e6d)
 // All temporary declarations restored; the reset dispatch still expands.
 // Round 312: actual post-reset predicate bool/byte/short/long with mutable/read-only object
 // receiver 101/101/101/101/104/104/104/104. All restored; reset expansion, entry saves and input home remain.
+// Round 49: BLOCKED-BY 0xe5930 (src/unknown_0e57e0.cpp, contributor): our link inlines it here and
+// into 0xde4c0 but not into 0xe2d80; retail never does. The known fix (round 89) is a noinline
+// declaration beside its definition, which new rules forbid.
 // @retail 0xe4bd0
 void function_e4bd0(long arg_159e6d)
 {
@@ -3579,6 +3551,11 @@ real magnitude3d(vector3f const *v);
 // Round 435: Word/long event carriers 19/19; complete short/long conditionals 19/19;
 // fallback defaults 60/60; complementary nested selection 20/20. Original body restored;
 // the actor carrier across the magnitude call still differs.
+// Round 32: magnitude3d (0x24590) marked inline in src/unknown_023540.cpp 2 (fast and plain; only the
+// order of the 0x1fb7e0 argument setup left), but six of its unmatched callers rise (0xf8eb0 946->1030,
+// 0xd1e10 761->791, 0x185be0 731->918, 0x1aa0d0 375->402, 0x1d24a0 920->942, 0x2c0d60 899->953), so
+// restored; actor index local 19; magnitude compared as `magnitude3d(...) < 1.5707964f` 19; long type 19;
+// the type as one ternary 19.
 // @retail 0xe3380
 void __stdcall function_e3380(long arg_159e6d)
 {

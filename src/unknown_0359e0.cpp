@@ -84,6 +84,13 @@ PRIVATE inline long swizzle_log2(dword value)
 // Original coordinate captures, helper, table expressions and tail restored.
 // Round 211: existing logarithm signed short/long inputs crossed with bounded short/long counts
 // and short/long results, scores 82/82/82/82/82/82/82/82. Original executable form restored.
+// Round 48: `!=` in both tail tests 84; outputs stored y first 83; `!=` tests with log2_floor's loop
+// 87; `mask < 64` 82 (same code); y looked up before x in both arms 83. Diagnostic only: in a /O2 /Gr
+// object (no /arch:SSE) the minimum becomes retail's branch, yet the coordinate promotion and the
+// tail's register roles still differ; x and y used directly put y on the stack (ret 0xc).
+// Round 444: explicit termination at one with byte/signed-char scan counters and
+// long/short/word/byte returns 92 each. Original helper/body restored; coordinate
+// promotion, height/common homes and minimum selection remain.
 // Lane 15 r17: the existing log2_floor 87 (both loops retail's); retail's minimum is a branch
 // although its neighbour 0x359e0 uses cmov, and the same body moved (diagnostic) into an existing
 // /O2 /Gr file without /arch:SSE compiles it as a branch: 86, with the minimum as
@@ -92,6 +99,10 @@ PRIVATE inline long swizzle_log2(dword value)
 // reverse); there x and y used directly 122 and long copies after the mask 100 (both pass y on the
 // stack, matched caller 0x136140 lost), the x copy first 83 (y in ESI as retail, 0x136140 lost).
 // So 0x358d0 looks like a lone object built without /arch:SSE between 0x35850 and 0x359e0.
+// Round 48: `!=` in both tail tests 84; outputs stored y first 83; `!=` tests with log2_floor's loop
+// 87; `mask < 64` 82 (same code); y looked up before x in both arms 83. Diagnostic only: in a /O2 /Gr
+// object (no /arch:SSE) the minimum becomes retail's branch, yet the coordinate promotion and the
+// tail's register roles still differ; x and y used directly put y on the stack (ret 0xc).
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

@@ -567,6 +567,10 @@ PRIVATE inline void record_rotate_vector(vector3f *vector, vector3f const *axis,
 // names, frame 0xe0); in place with the ring phase named before/after the distance 230/230 (SSE ring conversion,
 // radius copied through integer registers); the ring loop as a plain `for` 266, with the named phase 262, with
 // both 271 (1057-1066 bytes).
+// Round 2 of lane 18, on the 96 form (j/k cross terms first, ring phase named before the distance;
+// there only the direction components' registers, the radius copy and the sector load differ):
+// plain radius 222 (repeats the listed form on this base); radius as a reference into the object 264;
+// components read before the dot from locals 96; dot3f(vector, axis) 96; components before the dot 96.
 // @retail 0x26d570
 long function_26d570(long object_index)
 {

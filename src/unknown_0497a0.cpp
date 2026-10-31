@@ -14,6 +14,10 @@
 
 #include "vector_products.h"
 #include "normalize3d.h"
+// Round 16: the argument registers agree (ECX is the source, EDX the result, the camera and the
+// flags on the stack); retail holds the secondary shape in EDI, the primary shape at [esp+0x14]
+// and the inverse at [esp+0x10], ours holds the secondary shape at [esp+0x10] and the inverse at
+// [esp+0x14], and our frame is eight bytes short of retail's.
 // score 581 (was 581): the frame is 0x58 against retail's 0x60 (ret 0x20 agrees) and the body is
 // thirteen bytes longer; retail keeps the primary shape in the stack slot at [esp+0x14]
 // and the secondary shape in EDI, ours keeps the inverse at [esp+0x14] and the
@@ -461,6 +465,9 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
     return pixel;
 }
 
+// Round 16: the argument registers agree (ECX is the source, EDX the result, the camera and the
+// flags on the stack); retail keeps the vertex cursor in EDI and ours leaves it in its argument
+// slot, and retail reaches the endpoint handling by a forward branch from the loop.
 // score 615 (was 615): the frame 0xac and the body length 2596 agree; retail stages
 // the definition in EBX and the output vertices in EDI, ours stages the definition
 // in EDI, and retail places the endpoint handling after the loop where ours places
@@ -523,6 +530,9 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Round 433: Independent transition endpoints/shared camera displacement/both 615 each;
 // definition observed at every use alone/with either/with both 626 each, all plus source
 // observations 634. All restored; native phase receivers do not recover the early carriers.
+// Round 443: Existing alpha/tint/pixel ordinary-inline producer boundaries, seven subsets and
+// all with definition before source, 615 each. All original declarations, pixel qualifier and
+// body restored; output/definition carriers, endpoint layout and color/vector homes remain.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {
@@ -752,6 +762,9 @@ void __stdcall function_43720(s_43740_input *input)
 // position computed before the input fill 62 (retail computes it before the pushes; ours
 // still interleaves it); a named vertex count used for the field and the call 64, with the
 // position first 64 (0x42b20 4).
+// Round 443: Ordinary-inline declarations at lookup/texture/submission boundaries, seven
+// subsets 62 each; all plus shader-relative normal 67 and matched caller 62. All declarations
+// and original body restored; early tag/EBP and signed-slot homes remain.
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {

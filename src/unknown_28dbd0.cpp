@@ -158,6 +158,11 @@ __forceinline s_object_ai_data *function_28dbd5(s_handler_object_view *arg_0)
 // Round 424: fused moving/fixed offsets, moving-offset/velocity, fixed-offset/velocity,
 // all three component loops 188/188/193/193; with delayed sine 182/182/184/184.
 // Three-point best rejected: frame 0x118, request twelve bytes early; original body/helper restored.
+// Round 29 (fast): the first difference past the slots is the heading's zero k (ours xmm5 for both cross
+// products; retail xmm3 for the first and a memory 0.0 in the rotation). Rotation-helper locals named
+// sine/cosine and with projection/cross too, the request declared first, the heading declared before
+// its angle draw, the axis declared before the field copy, and the zero k stored again before the
+// rotation: identical code (185); the zero k stored in each branch instead of once 241.
 // @retail 0x28dbd0
 long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, bool arg_4)
 {
