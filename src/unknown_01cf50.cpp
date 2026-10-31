@@ -5723,7 +5723,7 @@ PRIVATE __forceinline void draw_filter_quad(real left, real right, real top, rea
     D3DDevice_SetVertexData4f(0, left, bottom, 16777215.0f, 16777215.0f);
 }
 
-// score 695 (was 694): our body is 121 bytes longer than retail's (2628 against 2507); the
+// score 694 (was 694): our body is 121 bytes longer than retail's (2628 against 2507); the
 // triangle-fan primitive constants are retail's, but the instruction sequence still differs.
 // @retail 0x46ea0
 void function_46ea0(long tag, point3f const *position)
