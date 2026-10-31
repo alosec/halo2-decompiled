@@ -59,7 +59,8 @@ struct s_spawn_scenario_23aea0
 	s_spawn_settings_23aea0 *settings;
 };
 
-// score 105 (was 105): a block struct over the merged global, byte offsets taken from the array and
+// score 105 (was 105): definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
+// Earlier (105): a block struct over the merged global, byte offsets taken from the array and
 // a real global struct all leave VC strength-reducing the destination into a pointer induction, so
 // retail's integer offset with its base in the displacement is not reachable from this side.
 // Earlier (105): retail's weights are addressed from a base 16 bytes below the array (its
@@ -132,6 +133,10 @@ struct s_spawn_scenario_23aea0
 // 8/0/4 and 8/4/0 give 117/117/111/111/117. Original two-by-six copies, real field values, scalar
 // overrides, signed guards and includes restored at 105. Integer destination induction and
 // definition receiver remain.
+// Round 46 (lane 9): one loop over type 2..13 with the `type * 3 - 4` index 254 (278 bytes, not unrolled), the
+// same with `(type - 2) * 3 + 2` 254, with an unsigned short type 256; nested loops with a per-batch source
+// pointer 121; one loop storing through `(&globals->value0)[type * 3 - 4]` 105. Diagnostic (not kept): /Os,
+// /Ot and /Oy- keep the pointer induction; /Og- drops the loop optimisation altogether.
 // @retail 0x23aea0
 void function_23aea0()
 {
