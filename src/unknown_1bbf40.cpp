@@ -487,6 +487,10 @@ point3f *function_b9dd0(long object_index, point3f *result);
 // Round 433: Complementary ordinary-case predicate, bitwise/logical OR, original/complementary
 // permission, entry/eligible permission scope; fast 48/74/53/75/200/222/201/222.
 // Original body and existing helper restored.
+// Round 18 (lane 14): bitwise flag with the bool field unconverted 193; flag built as `== 6` then
+// `&= field != 0` 47 (same code); flag computed without the one-use tag local 47; `&&` flag with a
+// return at the proximity exit only 226 (872 bytes; compile-only screen: the special path still falls
+// into the unknown268 block); bitwise flag held in a long 172.
 // @retail 0x1bbf40
 short __stdcall function_1bbf40(long actor_index, s_slot *slot)
 {

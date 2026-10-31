@@ -528,6 +528,10 @@ PRIVATE __forceinline void physics_mass_copy(byte const *body, s_physics_mass_ar
 // store 2, identity columns set one at a time 2.
 // Round 206: shared allocator interface at first/list/both/all sites 4/4/4/4;
 // shared allocator getter at all sites 4; block allocator interface at first/list/all 4/4/4.
+// Round 18 (lane 14, compile-only screens, which reproduce both swaps): size/capacity chained either way 4;
+// aggregate zeroed by an s_physics_mass constructor 4; identity zero via an hkVector4 local 4, 1.0s via
+// m128_f32 lanes 4; aggregate scalar zeros chained/swapped 4/4, one named __m128 zero 4; allocation without
+// the allocator local 4; identity on array.data->transform 4; identity through a reference 4.
 // @retail 0x1d5ec0
 c_havok_reference_counted *__stdcall function_1d5ec0(s_havok_component *component,
     s_physics_model_owner *owner, char const *kinds, char *output, long *output_count,

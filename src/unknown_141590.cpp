@@ -579,6 +579,13 @@ static __forceinline void function_x7a3668(plane3f const *plane, transform4x3f *
 // the test), but the join keeps the first in xmm2 and moves the third to xmm4 (retail xmm4/xmm0) and the
 // cross products run in the other order; that with the position products before the normalize 83; the
 // local normalize without the third-component local 88; with dot3f for the magnitude 88.
+// Round 18 (lane 14): normalize helper plain `inline` 51 (same code); basis store plain `inline` 51;
+// magnitude through the existing length_sq3f 98 (332 bytes); normalize applied to the returned pointer
+// of 0x11d000 94 (354 bytes); position declared before the vector 51. Compile-only screens (which
+// reproduce the early first-component load): every subset of component locals x operand orders x
+// scale-statement orders (384 forms) at best the second-component local; the shared normalize3d.h
+// scale and the cross3f/cross3f_staged forms on it leave the position temporaries in xmm0 (retail
+// xmm2), the third component in xmm4 (retail xmm0) and the first in xmm2 (retail xmm4).
 // @retail 0x142390
 void function_142390(
 	plane3f const *plane,
