@@ -116,6 +116,16 @@ bool function_25d9b0(long prop_index);
 // conditional expression 167, node set in an if/else either way round 167/167, priority 0 at the top 86, plain
 // `return 0` after the loop 119; loop-break forms with the else-if fallback and five tails 92/145/137/140/139;
 // goto forms with direct return/result/conditional/if-else result tails 105/117/125/124.
+// Round 33 (plain): no-invitation branch written first 154 (VC keeps that order); the evaluation
+// written out in both branches 265 (730 bytes, copies not merged); the evaluation inside the loop
+// body with the fallback's goto into it 125 and in the first arm with `return priority` after the
+// if/else 125 (same code each); single exit with a per-arm short result and `goto done` 124 (the
+// zero return becomes retail's `xor eax, eax`, layout unchanged); no gotos: `short priority = 0`,
+// the found path breaking out, the fallback as `else if`, then `if (priority > 0) { evaluation }`
+// 145 (578 bytes) -- the first form with retail's block order (evaluation after the loop, the
+// fallback last jumping in past the priority test), but priority is spilled and the state kept in
+// ESI (retail the other way) and the zero exit sits at the loop bottom; that without the top-level
+// init plus `if (!entry) return entry` after the loop 186 (entry spilled, frame 0x10).
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {

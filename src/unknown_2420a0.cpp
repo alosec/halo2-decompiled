@@ -1134,6 +1134,12 @@ void c_game_engine_markers::v21(long object_index)
 // (the players' data load stays folded while the options pointer holds EDX): the player as an indexed
 // typed pointer 119, indexed by the absolute index 120, through a data local 120; the unit's player
 // index read before the slot test 73, with the team at each call 119; permuter, 10 tries, none lower.
+// Round 33 (fast, agreeing with the full count): only the entry (index/header EAX/ECX) and the middle
+// differ. On the team at each call (119 again): the player pointer declared inside the flag block 98
+// (the options pointer still held in EDX from entry); the unit and slot both read before the type
+// test 129; the player inside the flag block with the unit first 118, with the unit and slot first
+// 126; on the kept form the player pointer inside the flag block 40 (same code). Unit first with the
+// team at each call 119 and the unit before the type test 132 re-measured as listed.
 // Round 90 (fast; the reduced image builds this 437 bytes, so relative only): `1 == ` type test 40
 // (identical); team at each call 119-equivalent (117 reduced); that with the type test flipped 117; that
 // with the player pointer taken inside the flag block 92; the player-index and flag tests joined in
