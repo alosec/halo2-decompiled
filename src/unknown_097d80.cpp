@@ -105,6 +105,12 @@ struct c_aggregate : c_child
 // started from starts[i] with only the end named 45 (same code); an item pointer in the cleanup loop 45;
 // one child cursor at function scope walked by the collection and dispatch loops 56; the error test
 // before the child test 50.
+// Round 3 (lane 18): retail's slots are produced/loop-2 cursor/loop-3 count at 0x10, children base/loop-2
+// count/loop-3 block at 0x14, error 0x18, result 0x1c; ours give the loop temps two slots of their own
+// (0x10/0x14) and keep produced (0x1c) apart. produced assigned in its own statement 45; declared in the
+// loop body ahead of the child 55; `blocks + total` 45; `!error` gate 45; result declared ahead of the
+// item test 45; produced in a block closed around the collection loop 55; produced declared and zeroed at
+// the top of every loop pass 143 (389 bytes). The frame stays 0x8024 in each.
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {

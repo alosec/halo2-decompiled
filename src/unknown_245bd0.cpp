@@ -278,6 +278,10 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // the plane dot's i product, as the dot swap fixes; a single-exit result 57; the test inverted 58;
 // a center pointer used twice 170 (669 bytes); single exit with length_sq3f 150; x and z summed
 // before y 59; the difference written out as plain assignments (diagnostic) 57-61 in every order.
+// Round 3 (lane 18, the unit-z arm and the 1.0 retail loads in each arm): unit z stored before the
+// zeros 57; the arm as a const local {0, 0, 1} copied to the normal 397 (456 bytes); distance declared
+// ahead of the radius test 57; the arm through the normal member (`plane->n.i = plane->n.j = 0.f`) 57,
+// with unit z first 57. 1.0 stays hoisted ahead of the fsqrt in every form.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {

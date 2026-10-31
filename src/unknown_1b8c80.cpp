@@ -1316,6 +1316,15 @@ struct s_1ba091
 // and combinations, eight at 249 (frame 0x18, 874 bytes); actual iterator aggregate construction
 // with member payload, ordinary returned-entry for loop, byte bit fields or all three, five at 260
 // (885 bytes). Indexed member-data form tried first on both new graphs; original body/types restored.
+// Round 3 (lane 18): the two radii stored and read through the selection (retail's [ebp+0xc]/[ebp+0x10];
+// 0x1ba5c0 reads them at selection - 0x1c + 0x28) give retail's tail: joint index in EBX, the slot reread
+// from its argument, `mov eax, ebx` at the exit, 861 bytes, but frame 0x10: 239. With a separate entry and
+// byte mask 238, the mask at function scope 238; positive admission (retail's decline-first block order)
+// 240, with a found-entry pointer after the loop 240, entry or mask declared first 240/240; the 0x20 test
+// written at both uses with no local 241 (frame 0x14 and the masked byte spilled to [esp+0x13] as retail,
+// but the flags byte then stays in BL for the 0x40 test), 0x40 as a shifted bit 241, 0x40 through the slot
+// view 229, both 0x20 tests through the slot view 238. Separate entry and byte mask alone 212. Open: the
+// mask spilled while the entry pointer takes EBX (ours keeps the mask or flags in BL and the entry in memory).
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {
