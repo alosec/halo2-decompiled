@@ -923,6 +923,9 @@ struct s_flags_1f0870
 // 589 (one-point gain rejected); both consumers 628; damping-delta/direct-delta/all
 // 633/612/628; all with complete horizontal assignment 634. Original flags, vector
 // types, copies, helpers and full body restored; frame 0x34 and direct/vector homes remain.
+// Round 319: Complete rate/tick/time-receiver snapshots, seven subsets then early
+// receiver 593/620/625/615/618/622/624/622; frames 0x34-0x3c versus 0x30.
+// All restored; original flag/vector homes and normalization continuations remain.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, byte const *state, byte *out)
 {

@@ -3169,6 +3169,9 @@ struct s_ammo_conversion_entry
 // Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
 // both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
 // with conditional minimum 196, plus direct destination 205. Original body and field type restored.
+// Round 319: Capacity-failure continue with cached count, conversion-first arm and
+// twice-used offered quantity subsets 210/207/196/207/210/207/196/207. All
+// restored; frame 0x20 agrees but destination/tag and conversion homes remain.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {

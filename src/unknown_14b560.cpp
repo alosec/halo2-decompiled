@@ -2042,6 +2042,9 @@ struct s_player_creation_record
 // through the earlier player pointer 37; the change test as `controller != old_controller` 33; the requested
 // controller read after the current one 38; the set arm's player store after the globals updates 34; the set
 // arm first 47 (as the earlier assignment-first arms).
+// Round 319: Empty-old-controller reset bypass with live old-field reads, install-first
+// arm and shared globals receiver, all eight subsets 42 each (650/650 bytes,
+// first +0x210). All restored; opposite recursive expansion and requested homes remain.
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
