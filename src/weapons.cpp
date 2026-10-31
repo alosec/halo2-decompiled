@@ -1972,6 +1972,16 @@ bool __stdcall function_100130(long weapon_index, bool immediate)
 // Round 221: complete success/failure result assignments 124; first/other/both magazine
 // array roots on that graph 123/123/122; entry-first result declaration with no/first/other/both
 // roots 124/123/123/122. One/two-point gains rejected; original body restored.
+// Round 17: no definition-index local 175 (fast, 585 bytes, aligned 72); plus taken scoped in the
+// success block 165 fast (585 bytes, aligned 58: BL result and pool in EBP as retail, only ESI/EDI
+// swapped between the magazine index and available/taken) but 183 in the full image (574 bytes,
+// frame four: the unit takes EBP and the pool is reloaded per slot; no non-LTCG object references the
+// pool global); on that, result declared first 168, other-weapon pointer 165, available renamed 165.
+// Round 2 of lane 18 (plain checks; the count stays in EDX across the slots where retail rereads it
+// from its slot, which leaves no register for the pool): volatile count reads in the loop 416 (loop
+// no longer unrolled, 348 bytes); count's address taken 124; count read through its address in the
+// loop 124 (same code); taken starting at the count with an if clamp 182; long first-magazine
+// rounds 123 (586 bytes). Original body restored.
 // @retail 0x100b80
 bool function_100b80(long magazine_index, long weapon_index, long count)
 {
@@ -2852,6 +2862,12 @@ PRIVATE __forceinline real weapon_activity_value(long weapon_index, s_weapon *we
 // flag with `if (!found) return false` 408 (places the default and activity bodies as retail does), with
 // helper-owned lookups 432; plain inline/static helper not inlined 704/694. Compile-only screens: the root stays
 // `jg` for 30 dispatch/result/helper combinations, nested switches on the name, trivialised cases, /O1, /Os, /Ox.
+// Round 17: retail's 0x0c000569 is an ordinary case jumping into the middle of 0x1d0007ba's body, so
+// the source is `case 0x1d0007ba: if (flag) break;` falling through into `case 0x0c000569:`; that form
+// 409 (aligned diff 406 -> 371, the root still `jg`); on it the 0x16e flags as `(byte >> k) & 1` (the
+// form retail tests) 409, a long selector 417, helper-owned definition lookup 409, both activity
+// cases last 409. Compile-only: fallthrough first or last, or the flag case in an `if` before the
+// switch, all keep the `jg` root.
 // @retail 0xff5f0
 bool __stdcall function_ff5f0(long weapon_index, long name, real *value, bool *active)
 {

@@ -497,6 +497,12 @@ struct s_request_profile
 // Round 421: matched full-value query in one native 32-entry loop, indexed long/short/word/dword
 // counters 348/321/321/348; advancing destination with those counters 349/321/321/349.
 // All remove the inherited qualified global data read; original body restored at 108/540.
+// Round 44: VC unrolls a constant-trip loop only with one store in its body (two stores never unroll, even from an
+// inlined helper in another file: 339 rolled). Plain loop storing a transition record 166 (565 bytes); both flag
+// words read at each use 205, with natural i..i+3 elements 177; natural four-way body calling 0x1e7a10 150 (583 bytes,
+// aligned 36: retail's flag reloads and select), with this body's i-2..i+1 elements 154; natural query body without
+// the transition pointers, ticks first 195, state first 139 (aligned 28), pointers with state first 142; state first
+// with 0x1e7a10's pair taken from the state record 139. Retail reads the pair through the memcpy destination register.
 // @retail 0x1e73b0
 void function_1e73b0()
 {

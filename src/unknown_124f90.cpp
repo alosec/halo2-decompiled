@@ -1343,15 +1343,32 @@ long function_127010(short class_index)
 	return gain;
 }
 
+/* decibels_add on the values in place: retail reads both operands where they are */
+static inline long decibels_sum(long const &a, long const &b)
+{
+	real result = *(real const *)&a + *(real const *)&b;
+
+	return *(long *)&result;
+}
+
 /* a sound's gain in decibels: between its definition's bounds, with its
    class's and the caller's */
 inline long function_1251e0(void const *definition_pointer, long gain, real interpolation);
-// score 15 (was 15): retail stores the converted gain in the frame slot before the class gain
-// call and adds it last from there; ours keeps it in the volatile local and copies it through
-// ecx. Without the volatile the conversions move below the class gain call (they are pure);
-// a pointer write to 0x2195f0's own parameter stops that (12 at retail's length) but changes
-// 0x2195f0. Tried: the outer sum's operands swapped 36; no volatile 27; no volatile with the
-// operands swapped 49; the inner sum named, operands swapped 36.
+// score 15 (was 15): retail's length now; everything up to the class gain call matches. Left: the
+// final add: retail loads the converted gain into xmm1 right after the class gain call and adds
+// the inner sum's register to it; ours folds the converted gain in as the add's memory operand
+// (retail 0x127010 shows the same unfolded `decibels_add(gain, computed)`). Kept: decibels_sum for
+// the outer sum, which keeps the converted gain in its stack home from its call on and replaces
+// the volatile local (the volatile form was 15 at 128 bytes). Without either, the conversions
+// move below the class gain call (they are pure); a pointer write to 0x2195f0's own parameter
+// stops that (12 at retail's length) but changes 0x2195f0 (it gains a frame: screened).
+// Tried: the outer sum's operands swapped 36; no volatile 27; no volatile with the operands
+// swapped 49; the inner sum named, operands swapped 36. Round 30: the conversion call written as
+// the outer sum's argument 27 (the class gain call runs before the upper conversion); the inner
+// sum named 15; the converted gain read as a real local for the add 15; the inner operands
+// swapped 16. Screened (compile-only), all folding the converted gain: by-value outer sum, the
+// add in place on it, real locals read before or after the class gain call, by-value real or
+// reference helper parameters, and (one diagnostic) `/Op`.
 // @retail 0x1251e0
 long function_1251e0(void const *definition_pointer, long gain, real interpolation)
 {
@@ -1360,10 +1377,10 @@ long function_1251e0(void const *definition_pointer, long gain, real interpolati
 	long lower_decibels = sound_definition_gain_lower(definition);
 	real lower = function_2195f0(*(real *)&lower_decibels);
 	real upper = function_2195f0(*(real *)&upper_decibels);
-	long volatile interpolated_decibels = function_2197f0((upper - lower) * interpolation + lower);
+	long interpolated_decibels = function_2197f0((upper - lower) * interpolation + lower);
 	long class_gain = function_127010(definition->promotion_index);
 
-	return decibels_add(interpolated_decibels, decibels_add(gain, class_gain));
+	return decibels_sum(interpolated_decibels, decibels_add(gain, class_gain));
 }
 
 /* requests the chunk a playing sound is at; true once it is loaded. Retail
@@ -1976,6 +1993,12 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 // conversion and clamp registers, elapsed reload differ; shared quotient 30;
 // shared elapsed 79; both time values 79; shared change 74; quotient/change 74; shared lower bound
 // 74; quotient/lower bound 74; all clamp values 74.
+// Round 32 (fast): elapsed_time stored first 28 (conversion copy then retail's); with it: the fade-out
+// through approach_126660 72; `fade = fade + PIN(...)` 28; value-first clamp (value < lower) 68 (retail's
+// copy/zero registers, but the two return tails merge and the add reloads the fade into XMM1); the same
+// with lower-first branch arms 72, written result + fade 68, named clamp result 68; a fade local read
+// once 65 (tails kept, fade held in XMM3); fade local for the clamp only 71. The whole function alone
+// in a /GL- file 111 (retail keeps EDX across 0x12be90, so its register use is known there).
 // @retail 0x1269f0
 void sound_system_update_time(void)
 {
@@ -2301,6 +2324,16 @@ real g_547f14;
 /* whether a sound would be heard: its definition can play, the random skip
    fraction lets it, a listener is in range and it is loud enough; the
    listener goes to *listener_index and why it would not play to *reason */
+// score 7 (was 7): only the last add differs: retail adds the class gain base (loaded into xmm1)
+// and the inner sum before the two forced-flag tests; ours adds them after the tests, in the
+// comparison's block. Every form that computes the sum before the tests folds the base load
+// into it (`addss xmm0, [base]`) or reassociates it; VC sinks the unfolded sum otherwise (the
+// same unfolded `a + computed` add is in retail 0x1251e0 and 0x127010). Round 30 (plain): a
+// loudness local before the forced test 35; a loudness bool 44; loudness started from the base
+// with the inner sum added in place 39; the inner sum added in place on the gain local 8; one
+// combined `||` condition with a loudness local 42. Screened (compile-only, which reproduces our
+// tail exactly): the gain or the base summed in place, decibels_add into the gain, a flags word
+// local.
 // @retail 0x126c30
 bool function_126c30(s_sound_play_state *state, long tag_index, long *listener_index, long *reason)
 {
@@ -2362,7 +2395,12 @@ bool function_126c30(s_sound_play_state *state, long tag_index, long *listener_i
 // 0x1286b0 (its two index parameters are short in retail: 0x128ca0 widens
 // char fields to 16 bits for them) and 0x219070 (short set index). With both,
 // a flags pointer for flag0 and the 0x219070 result in a named short, it
-// matches. Tried here: that named short alone 21; the flags pointer alone 19.
+// matches. Tried here: that named short alone 21; the flags pointer alone 19. Round 30 (plain):
+// flag0 set through the s_sound_playback_flags cast with no pointer local 23 (only a separate
+// pointer keeps the bit store after the start-time store; screened: `flags |= 1`, the store
+// order, `delay + time`, `+=` all hoist it); the pitch range local short 59; the named short
+// with the flags pointer 17 (left: the byte variant loads and the 0x219070 movsx); one time
+// local for both start-time stores 83 (825 bytes, the tails merge).
 // @retail 0x126000
 long function_126000(long tag_index, long listener_index, s_sound_play_state *state, long rate_limit_stage)
 {
@@ -2690,7 +2728,7 @@ static inline short sound_voice_find_available_channel(char type)
 // score 96 (was 96): retail loads the voice index into ecx before the frame setup, keeps the `NONE` constant in
 // cx and the result in al/bl with an 8-byte frame; ours loads the index into eax and holds the result in a stack
 // byte with a 12-byte frame.
-// score 96 (was 96): playback/channel roles recovered; frame 12 versus 8, status test and failure
+// Earlier: playback/channel roles recovered; frame 12 versus 8, status test and failure
 // placement remain.
 // Validity result 135; assigned result
 // 135; playback handle 113; const playback 113; long buffer index 117; entry status 113;
@@ -2721,6 +2759,9 @@ static inline short sound_voice_find_available_channel(char type)
 // only the failure block's placement after the loop differs); result assigned on every path 135; that
 // with both NONE defaults between search and test 128 (retail's block order, not-found unthreaded);
 // driver default before/after the search 147/153; plus return-from-loop search 126.
+// Round 235: chained driver/buffer defaults inside/before test/before search 91/147/171;
+// with canonical success assignment 129/130/144; complemented status before test/inside
+// 122/127. The 91 form is below the minimum gain; original byte-result body restored.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3198,14 +3239,6 @@ struct s_type_12a1b0_spatial
 
 vector3f *vector3d_decompress(dword arg_0, vector3f *arg_1);
 
-/* decibels_add on the values in place: retail reads both operands where they are */
-static inline long decibels_sum(long const &a, long const &b)
-{
-	real result = *(real const *)&a + *(real const *)&b;
-
-	return *(long *)&result;
-}
-
 vector3f *function_1427f0(transform4x3f const *arg_0, vector3f const *arg_1, vector3f *arg_2);
 
 // score 101 (was 310): LTCG inlines the class lookup function_221810 that retail calls out of line, which
@@ -3507,6 +3540,9 @@ struct s_128ca0
 // exact to +0x7e; the location field is still copied, retail loads it into XMM1 first); outer
 // decibels_sum over the by-value inner 214; operands swapped by value 286; first form plus a shared
 // scale local 255 (0x49c); both reference sums inner-first 255.
+// Round 235: native real incoming gain with direct/inner-part/location-value/both forms
+// 306/306/306/306; each with shared scale 295. Frame 0x494 recovered, gain and clamp
+// loads still differ; original signature, caller argument and executable body restored.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {
@@ -3889,7 +3925,7 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 
 // score 55 (was 55): statement clears give retail's 0x40-first, copy-free clears but force MSVC's 8-byte frame
 // realignment; the argument form keeps retail's frame but clears the 0x80 array first, with copies of memset's results.
-// score 55 (was 55): plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
+// Earlier: plain 0x1744 frame now; the clears run channels-first with `mov edx, edi` copies of
 // memset's results (retail buffers-first, no copies), short restart cursor and loop padding remain.
 // Promoted voice limit 108; entry system
 // 108; direct elapsed 108; pending byte 108; frame input 108; short player cursor 122; short
@@ -3909,6 +3945,8 @@ void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1);
 // Round 164: word restart cursor 114; statement clears realign in every form tried (compile-only:
 // split statement/argument clears, callee-owned arrays, short/char clear loops, pointer-local targets,
 // no system local, arrays at entry, player for loop).
+// Round 235: persistent buffer/channel clear return with the other clear still a call argument
+// 104/72; with long restart 60/86; entry declarations repeat 104/72/60/86. Original body restored.
 // @retail 0x125b40
 void function_125b40(void)
 {

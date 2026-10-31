@@ -275,6 +275,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // valid 100; a, b, c declared at their conversions 49; the sum in a named value, clamped, then
 // assigned 49; a named hold offset and hold length 117 (254 bytes); a named deceleration start 106
 // (262 bytes).
+// DL201: native contiguous start/peak pair copied by memcpy/memmove, second peak from
+// its original field/copied home 96/110/97/103; with complete conditional first count
+// 95/105/50/100. Original arrays, observations and six-term expression
+// restored; extra coefficient promotion and frame 0x10/0x1c remain.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

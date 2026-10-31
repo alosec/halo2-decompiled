@@ -370,6 +370,9 @@ short *function_e70b0(long unit_index, short *value);
 // Round 3 (lane 17): the actor looked up at each use in the timer test 152 (465 bytes); a named elapsed
 // tick count in the prop test 49; the elapsed seconds named 49; a named object index for the event
 // call 49; node and prop declared at function scope 49.
+// Round 7 (m3 lane 2): matched 0x1aeb60/0x1af0a0 here give the index ECX and the data EDX as ours does;
+// the index copied into a local 49; the prop index named for its test and lookup 49; the index read once
+// through its address 49; `2 == ...` for the final mode test 49; `state->timer == 0` 49.
 // @retail 0x1afb30
 void __stdcall function_1afb30(long actor_index, s_slot *slot)
 {

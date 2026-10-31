@@ -940,6 +940,18 @@ bool function_108530(long device_index, long name)
 // pointer-taking inline clamps 122/125; MIN-macro upper clamps 121/134; the initial velocity read back
 // from its motion field 121/134; the inner stores first 144/134 (the ramp-down in xmm7, ret 0x14);
 // the initial-velocity store first 131/140.
+// Round 106: retail keeps the ramp-down time only in its stack slot and gives XMM6 to the initial
+// velocity (XMM register count is the trade); the ramp-down minimum with the time on the left 121;
+// the cruise velocity through the motion field (no velocity local) 134 (aligned 53 against 72: retail's
+// acceleration/deceleration blocks); the deceleration through the velocity local 121 (same code);
+// constant-first half times 121 (same code); cruise time as duration - ramp-up - ramp-down 123.
+// Round 2 of lane 18, on the per-branch cruise-velocity store (134, exact tail blocks): no remaining
+// local 134; remaining clamp as an if 134; up-time clamps before the down-time zero clamp 134; no delta
+// local 163; fresh pinned-target local 134; fresh down-time local 144 (callers 26/28); initial before
+// final velocity 134 (caller 33); fresh locals for all four clamped values 110, but it passes the
+// duration and ramp times in xmm1-3 (ret 0xc) and 0x108670 13 -> 42. That last form shows LTCG passes
+// an unmodified float in a register only when the callee holds it from entry: retail spends no
+// register on the ramp-down time in the clamp phase, which frees xmm6 for the initial velocity.
 // @retail 0x107ab0
 void device_motion_start(s_device_motion *motion, real target, real duration, real ramp_up_time,
 	real ramp_down_time, real final_velocity, real initial_velocity)
