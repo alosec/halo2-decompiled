@@ -151,6 +151,12 @@ struct s_24e9c7_bounds
 // Round 303: early outer/texture/selected-bitmap admissions 128/127/149;
 // outer+texture/outer+bitmap/texture+bitmap/all 130/149/149/183;
 // all with returned height declared after admission 183. Original scopes and body restored.
+// Round 41 (fast): retail computes size * (0 - forward_j) and size * forward_i before the height
+// block, spills the second at -8 and reuses forward_i for the upper vector; ours folds the
+// single-use across terms into the side products (computed late, forward_i read twice). Side
+// vector scaled in place by the half width 144, with the half width first 144, negated forward
+// copied then scaled in place 139 (gives retail's 0 - forward_j); named perpendicular components
+// both/one 138/138. Original body restored.
 // Round 46: retail computes the across pair right after size as size * (0 - forward_j) and spills
 // its j part at -8, the same home later used for the scaled side j (ours sinks both products to the
 // side and negates after multiplying). Side vector built then scaled in place 144; perpendicular

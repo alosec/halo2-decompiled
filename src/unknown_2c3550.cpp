@@ -186,6 +186,10 @@ static __forceinline real avoidance_normalize2d(point2f *direction)
 // Round 191: shared subtraction with original/shared/captured/native-real-root normalizer
 // 91/92/155/155; complete native point with the same boundaries 92/92/156/156. One-point
 // gain rejected; original point, private normalizer and body restored. Early Y preload remains.
+// Lane 17 r1: normalizer through the file's scale helper with a zero-length else (0x294050's form,
+// which gets the preload there) 93; direction from vector2d_from_points2d 91 (x scaled and stored
+// first, as retail, but the squares start with x); both 93; with the sum written y first 91 (same
+// code); with the file's length helper too 155.
 // Round 232: Once-read node/goal/node-goal/heap/node-heap/goal-heap/all search scalars, then all with full-width captured counts
 // 170, 175, 175, 92, 170, 175, 175, 167. Original executable source restored.
 // Round 48: normalizer with one exit (distance zeroed in the tiny case) 92; with a result variable

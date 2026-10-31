@@ -544,6 +544,11 @@ real function_267370(long object_index);
 // then share (retail compares with immediates, gives EDI to the cluster table and forms -1 in ECX
 // at the resets for them and the carrier compare), the carrier ternary lands in EDI instead of EAX,
 // and both crosses' multiply operand orders.
+// Round 106: the plane test through the out-of-line 0x11c120 with its noinline declaration dropped
+// (locate-only) keeps the same -1 sharing, so LTCG inlining is not the cause; without the
+// `(void)&actor_index` line 98 (same code); the second parent fetch in its own local 104; the
+// point declared before the sample call 98 (same code); plain cross3f for both crosses 123; the
+// entry parent ternary with the found arm first 102.
 // frame 0x8c versus 0x90; early NONE and held-bit byte home differ.
 // Reduced trials: point memcpy 371; early plane result 334; immutable inputs 371;
 // direct actor receiver 371; forward scalar names 371; sampled radius 371;
