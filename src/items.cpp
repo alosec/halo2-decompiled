@@ -1321,7 +1321,9 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 	function_10cf80(&velocity, object_index, false);
 }
 
-// score 185 (was 185): the frame 0xac agrees; the release byte's read-modify-write,
+// score 158 (was 185): Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// the frame 0xac agrees; the release byte's read-modify-write,
+// the frame 0xac agrees; the release byte's read-modify-write,
 // Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
 // the frame 0xac agrees; the release byte's read-modify-write,
 // the tail, the event-point homes and the location-call setup are unchanged, and
