@@ -235,6 +235,8 @@ struct s_block_candidate
 // Round 228: earlier head retirement/tail commitment/both 369/370/369; too-small
 // candidate continue alone/with head/with tail/with both 370/381/370/386; all plus timestamp
 // maximum 367 at retail length (three-point lead rejected). Original body restored.
+// Round 237: Computed page-size long/dword, each with named-mask expression, original/entry constant result lifetime: 370/370/370/370/413/413/413/413.
+// Original executable body restored.
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {

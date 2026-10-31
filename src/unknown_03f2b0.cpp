@@ -1330,6 +1330,15 @@ struct s_batch_cache_4b5d0
 struct s_133f70;
 
 // score 175 (was 175): frame 0x33f8 agrees; distance staging, nullable-entry/cache adds and result homes remain.
+// Round 22 (lane G, machine 3; no code change kept): retail's byte home and its split record base
+// (add eax, ecx; lea ebx, [eax + 0xbc]/[eax + 0x44]) are reachable in the source but our compiler folds the
+// field offset into the load or into one lea, so the instruction count and the encoded sizes change and the
+// tail is compared out of step (byte home 319, split record 318); the 0x23690 call keeps its order in a
+// register (another file's callee), so the tail stays one instruction out of step as well. The parameter
+// frame matches retail slot for slot (object_index entry+4, distance entry+8, record entry+0x10, read
+// from retail's own call site at 0x1339f1), so the prologue differs only in the register and the position
+// of the distance load (retail EAX before the force push, ours ECX after it) and in the dead lea retail
+// keeps in the 0x4ed284 test.
 // Round 15: split entry-count declaration 213; cache levels base with 0xbc at the index 197; native entry
 // arithmetic 197; full second-cache record 325; two-step second cache 197; Boolean builder with wide previous 177;
 // signed-byte previous 319; direct cache publication 348. Levels offset and Boolean builder with wide previous kept.
