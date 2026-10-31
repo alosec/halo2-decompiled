@@ -271,6 +271,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // conversions written in the sum 83; PIN + 2x3 with the segment times in a float array 88, with
 // per-segment {rate, acceleration} pairs 88; compile-only, all 720 orders of the six 2x3 fills, a
 // time array, a time loop and factored per-segment terms keep the same single spilled peak.
+// Round 3 (lane 17): the final clamp as one nested ternary 49 (same code); an early return when not
+// valid 100; a, b, c declared at their conversions 49; the sum in a named value, clamped, then
+// assigned 49; a named hold offset and hold length 117 (254 bytes); a named deceleration start 106
+// (262 bytes).
 // DL201: native contiguous start/peak pair copied by memcpy/memmove, second peak from
 // its original field/copied home 96/110/97/103; with complete conditional first count
 // 95/105/50/100. Original arrays, observations and six-term expression

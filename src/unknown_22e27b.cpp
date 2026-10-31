@@ -242,6 +242,9 @@ static inline real interpolate_linear(real a, real b, real t)
 // time in EBX. Real: fraction first with the clamp before the next-frame switch 213 (659 bytes); with a
 // long next frame 206 (660 bytes); on the plain body, long next frame 211 (660 bytes), the clamp before
 // the next-frame switch 167 (656 bytes), `elapsed <= 0` 151 (658 bytes).
+// Round 105: the post-loop block is rotated the same way (retail zero EAX, next ECX, current EDX,
+// direction EDI). Per-pass direction local 96; current-frame local 98; both 98; direction-first
+// lookahead sum 96; direction-first sums in both places 96 (identical code).
 // @retail 0x22e3cd
 void c_class_1a2c81::update(dword time)
 {
