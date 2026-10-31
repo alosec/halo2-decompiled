@@ -3785,6 +3785,11 @@ PRIVATE __forceinline real vehicle_larger(real a, real b)
 // Round 431: parameter-owned magnitudes, conditional result with original/entry/lookup return 109/123/123;
 // conditional second output 205/117/117; unused self-address removed on complete results 123/117;
 // zero-initialized target result at entry/lookup 123/123. Original helper and returns restored.
+// Round 43: common final magnitude with real lookup/entry result 106/106 (404 bytes);
+// with double lookup/entry result 105/105 (368 bytes); double result without deferred
+// magnitude 109/109. Every definition field resolved at use with real/double result
+// 445/475. Gains of three/four fail the thresholds; original body restored. Lookup
+// scheduling, return carrier and native case-tail sharing remain.
 // @retail 0xf78e0
 real __stdcall function_f78e0(long vehicle_index, long limit)
 {

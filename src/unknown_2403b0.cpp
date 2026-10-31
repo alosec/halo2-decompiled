@@ -119,6 +119,9 @@ static inline bool slot_flag_clear_2403b0(s_slot_table *table, long team)
 // true; else blocked = !clear;` 93 (blocked materialized in a stack byte; retail materializes `~flags & 1`
 // with `not al; and al, 1` and branches on it); with the predicate spelled `(~flags & 1) != 0` 93; the
 // arms swapped 131; the blocked flag dropped (call and return inside the test) 131.
+// Round 315: Seven joint positive unit/weapon/slot admission graphs 95 each; full graph with
+// independent completion event 116 at 912/912. Original resource, score and event lifetimes restored;
+// pool-data spill and scratch-register ties remain.
 // @retail 0x2403b0
 void __stdcall function_2403b0(long player_index)
 {

@@ -283,6 +283,9 @@ void function_194fa0(s_bitstream *stream, word *buffer, long count)
 // Round 433: Both weighted bounds in place, lower/upper first, with expression/real sum/double
 // sum/direct return; fast 46/46/46/50/51/51/51/36.
 // Original body and existing helper restored.
+// Round 50: lower/upper named products and lower/upper scalar logs 17 each; upper bound scaled
+// in place 44; weights declared before the logs 17; aggregate weights 29; integer weights 17;
+// aggregate products 46; inline weights 17. Opening body restored.
 // @retail 0x194ff0
 real function_194ff0(s_bitstream *stream, real lo, real hi, long bits)
 {
