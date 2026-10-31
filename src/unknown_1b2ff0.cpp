@@ -88,63 +88,6 @@ s_slot_handler_2 g_47e1c0 =
 	(t_slot_proc)function_1b3380, 0, function_1b3540
 };
 
-// score 107 (was 107): frame 0x44, loops, squares and dot agree; the direction's XMM registers (ours x1/y2/z3, retail x3/y0/z1) make the normalize copy the inverse for j, one extra movaps that shifts the tail (aligned 22, register-masked 3).
-// Direction SIMD homes and the extra reciprocal copy remain in the native 0x44 frame; restore the full opening body.
-// Earlier: frame 0x44 and initial stores agree; direction XMM, square/store and normalization scheduling differ.
-// Earlier split direction plus rolled reset 116; selection initialization 109;
-// wider ordinals/saved pairs 192/164/128/132/199; source references and projection 109;
-// declaration/component order 114-118; shared point selection 152; scalar directions 150.
-// Shared subtraction 107; existing direction call 312; squared-length part,
-// separation/reciprocal homes and compound reciprocal 109 each; shared scale 107;
-// positive short-vector arm 110; subtraction plus scale 107. Two-point gains rejected.
-// frame 0x44 agrees; direction SIMD homes and square/store schedule differ.
-// Shared normalizers 160/107; existing magnitude 182; squared-length helper 107;
-// projection products 109; side projection part 109; distance penalty 109; winning score first 109.
-// All changed-sum helpers restored; the two-point gains are ineligible.
-// Round 50: explicit dot with swapped product operands 109 (retail's x87 dot order); existing subtraction
-// helper in both point paths 107 (retail's square/store interleave); with existing normalize3d and dot3f 108
-// (dot and squares as retail; left: retail scales j and k in place, ours copies j); subtraction helper and
-// dot3f with the written-out normalize 107; the helper forms, and the normalize3d.h include alone,
-// move unmatched 0x1c4590 from 6 to 11 under LTCG (a comment edit does not), so none was kept.
-// j/k scale component-first, all eight operand orders 124; normalize_inline 132; forceinline local
-// normalizer 108; direction/point at loop or function scope 108; point inside the transform branch 108;
-// forceinline declaration of the existing direction helper 310 (stays out of line); reversed or
-// explicit dot sums 111/107.
-// Round 196: separate displacement/output with precopy: native/shared difference/component loop/double
-// squared distance 235 each; branch-assigned normalized output with those four producers 172 each.
-// Extra input/output homes regress the frame; original in-place direction and all producers restored.
-// Round 77: the natural `while (squad != NONE && current < 32)` loop (identical code), dot3f for
-// the score (retail's x87 dot order) and length_sq3f for the magnitude (retail's store/fmul interleave) 107
-// (under the keep bar, restored);
-// 0x210c90 called with `inline` on its definition 246 (0x210850 stays a call, 0x1e3370/0x28f290 inline
-// it too); the reset loop as a plain for 141 (unrolled); forceinline copies of 0x210c90/0x210850 107
-// (same registers); all three components scaled in place 107 (operands are canonicalized).
-// Round 191: Existing displacement setter 107; fallback-point setter 188; both 188; normalized-vector setter 107; displacement/normalization 107; fallback/normalization and all three 188/188.
-// Round 191: Complete setters with existing projection helper 188. Two-point forms fail the retention margin; every setter and changed-sum form restored.
-// Round 186: Matched point-transform inline declarations, then inline with separate noinline declarations,
-// crossed with native/shared subtraction and magnitude/projection: 109/107/107/124 and 109/107/107/124.
-// Result-first bool/byte/long and later bool: 139/216/207/216. Two-point gains fail the keep margin;
-// changed-sum forms are also match-only. Restore the complete original executable body, loop domains,
-// recursive call, all vector operands, helper bodies and every external declaration. Frame 0x44 and the
-// direction XMM/reciprocal-copy gap remain.
-// Round 194: complete native origin/destination/both/facing inputs 245/218/316/154;
-// origin+facing/destination+facing/all inputs/shared subtraction 291/260/363/363.
-// Input snapshots enlarge the frame; all original per-use inputs and the in-place direction restored.
-// Round 35: the existing normalize3d for the hand-written magnitude/normalize and dot3f for the score
-// 107 (kept; 0x1c4590 stays 6); with vector3d_from_points3d in both branches 108; the components
-// defined in the five other orders 111-114; direction declared before point 107; normalize_inline 160.
-// Retail's operand orders (y*inv, z*inv in place, inv*x through a copy) and registers (y0 z1 inv2 x3)
-// both rank y, z before the reciprocal and x after it; ours ranks the reciprocal first.
-// Round 307: Complete tried-mask/encounter-key/const actor lifetime subsets
-// 194/107/194/107/194/107/194; all with unsigned ordinal 199. Original context reads,
-// actor lifetime, ordinals and shared math restored; direction SIMD homes and reciprocal copy remain.
-// Round 7 (m3 lane 2): the scale written out as s*x, y*s, z*s (diagnostic) 107, the same code, so operand
-// order is canonicalized and only the colouring of x/y/z/reciprocal decides the copy; point arms swapped
-// (`!= NONE` first) 139 (same colours); distance declared before point/direction 107; `best_score < score`
-// 107; const target 107; a named reference to the target's point 107.
-// Round 42 (a compile-only build reproduces the colouring; 176 forms, the reciprocal always takes xmm0):
-// transform branch first 139; transform success folded into the test 170; point declared in the transform
-// branch 107; one fallback assignment with a shared subtraction 196; three arms 169.
 // @retail 0x1b3070
 bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 {
@@ -179,21 +122,15 @@ bool __stdcall function_1b3070(long actor_index, s_squad_choice *choice)
 			point3f point;
 			vector3f direction;
 			if (target->output_index == NONE)
-			{
-				direction.i = target->point.x - actor->position.x;
-				direction.j = target->point.y - actor->position.y;
-				direction.k = target->point.z - actor->position.z;
-			}
+				vector3d_from_points3d(&actor->position, &target->point, &direction);
 			else
 			{
 				if (!function_2104b0(target->output_index, &target->point, &point))
 					point = target->point;
-				direction.i = point.x - actor->position.x;
-				direction.j = point.y - actor->position.y;
-				direction.k = point.z - actor->position.z;
+				vector3d_from_points3d(&actor->position, &point, &direction);
 			}
-			real distance = normalize3d(&direction);
-			real score = (real)(dot3f(&direction, &actor->unknown290) - distance * 0.1);
+			/* the normalization is evaluated first, so the dot product is of the unit direction */
+			real score = (real)(dot3f(&direction, &actor->unknown290) - normalize3d(&direction) * 0.1);
 			if (score > best_score)
 			{
 				best = current;

@@ -124,12 +124,23 @@ real normalize2d(point2f *arg_0);
 // Round 302: Clearance after successful normalization, with shared expanded radius,
 // distinct squared/root length and existing scaled-add subsets: all eight 270.
 // Original clearance lifetime, output access and body restored; output/vector homes remain.
+// Round 29 (fast): a second copy of the input point, after the center, with the to-center vector
+// computed in place over it (as retail's stores show) 235, as local_6 only 229, taken first 239; with
+// an actor-to-center vector computed before the first test and used in both later tests 226; on that,
+// the squared length written i-then-j 222, the 3D squared length i, j, k 219, both 215 (retail's 0x28
+// copy / 0x34 center layout and vector sources; output still EBX, 1032 bytes); product operand and
+// sum orders in the two dot tests 215-226 (canonicalised); the arg_5 path as an else with one final
+// false return 215 (same code); without the output self-address read 238.
 // Round 46: retail's 0x28 slot is one variable: the point copy is stored there and the
 // point-to-center vector is written over it component by component (copy y stored after the
 // vector's i). A to-center vector copied from the point and differenced in place puts the
 // center at retail's 0x34 and aligns the middle block, but scores 235; with a named
 // actor-to-center vector after/first/between the point vectors 232/226/226 (sum and product
 // operand orders then mirror retail's); separate origin copy for both vectors 229. Restored.
+// Round 4 (lane 18, fast): the center local renamed to sort after the to-center vector 211 (slots
+// unchanged: center stays at 0x28); both vectors declared ahead of the point copy 211; the arg_5 path
+// as an else with one final false return 211; the point copy renamed to sort last 211; the point copied
+// after the center and radius 224 (1006 bytes). Restored.
 // @retail 0x1badc0
 bool __stdcall function_1badc0(long arg_0, long arg_1, point3f const *arg_2,
     s_type_c3b527 *arg_3, long *arg_4, bool arg_5, bool *arg_6)

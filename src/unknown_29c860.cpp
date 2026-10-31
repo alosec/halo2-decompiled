@@ -143,6 +143,9 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // output pointer return 2; helper inline/ordinary availability 2/2; queued inline/forced-inline
 // availability 2/2 (forced inlining loses 0x29cb10). All restored; the second cross-product
 // load/fold pair remains the only difference, with frame and complete rotation exact.
+// Round 208: queued output pointer/reference returns 21/21 (689 bytes); native output memcpy 2;
+// complete float trig pair 40 (692); immutable lookup pointers/helper values 2/2;
+// vector-local names/helper-value names 2/2. All restored; the second cross load/fold remains.
 // Round 49 (lane 12): every 0x11cc90 spelling (named cross before/after the acos, `0 >` test,
 // `-angle`, ternary, early return, if/else clamp, clamp inside the acos call, result local) leaves the
 // inlined loads as they are; only removing the 0x1e5450 call before them, or taking the angle before

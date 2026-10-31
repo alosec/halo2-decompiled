@@ -1993,6 +1993,12 @@ static inline void approach_126660(real *value, real delta, real lower, real upp
 // conversion and clamp registers, elapsed reload differ; shared quotient 30;
 // shared elapsed 79; both time values 79; shared change 74; quotient/change 74; shared lower bound
 // 74; quotient/lower bound 74; all clamp values 74.
+// Round 32 (fast): elapsed_time stored first 28 (conversion copy then retail's); with it: the fade-out
+// through approach_126660 72; `fade = fade + PIN(...)` 28; value-first clamp (value < lower) 68 (retail's
+// copy/zero registers, but the two return tails merge and the add reloads the fade into XMM1); the same
+// with lower-first branch arms 72, written result + fade 68, named clamp result 68; a fade local read
+// once 65 (tails kept, fade held in XMM3); fade local for the clamp only 71. The whole function alone
+// in a /GL- file 111 (retail keeps EDX across 0x12be90, so its register use is known there).
 // @retail 0x1269f0
 void sound_system_update_time(void)
 {
@@ -3122,7 +3128,7 @@ long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 // score 86 (was 86): retail holds the playback base in ecx, builds the pointer with `lea esi,[eax+ecx]` and folds
 // the sound-system time into the compare; ours hoists the time into edx and holds the base in edi. The mode switch
 // still needs a second non-empty case.
-// score 86 (was 86): Frame 8 agrees; playback base, clock scheduling and promoted mode remain.
+// Frame 8 agrees; playback base, clock scheduling and promoted mode remain.
 // Retained clock receiver 163; voice record reference 86; combined receivers 163; role names 86;
 // native update/mode/both flag words 86/86/86; receiver plus native flags 163.
 // playback base/clock scheduling and promoted mode remain; acquisition/free/load
@@ -3150,6 +3156,10 @@ long function_2193d0(s_animation_state *state, s_animation_ref *ref);
 // readonly class with short/long plus callback 105/171. All restored.
 // Round 164: pool global at each use 86 (identical); for loop with `case 1: continue;` 153/167 (gives
 // retail's `movsx eax, ax; sub eax, 0; jne` but swaps the pool/index EBP/EBX); for loop alone 86.
+// Round 209: Initial/successor pool epochs, immutable playback/voice pointers and readonly sound
+// tag 86/86/86; conditional native sound-tag value 204; pool/value and receiver/value 204/204;
+// pool/readonly 86; all 204. Native tag capture expands frame eight to 24 and length 558 to 588;
+// original clock, iterator, mode and call inputs restored.
 // @retail 0x1282d0
 void function_1282d0(void)
 {

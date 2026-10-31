@@ -1363,6 +1363,11 @@ PRIVATE __forceinline real lighting_normalize_ordered(vector3f *v, real square)
 // complete admission mask and final-pointer result subsets 0-7:
 // 568/562/525/563/576/582/576/592. Combined-mask 525 is only four lower, dropped;
 // original forward scan, positive result and complete body/helper contracts restored.
+// Round 209: Captured-normal squared-length helper with entry-base/flag/both/live-count/base-
+// count/flag-count/all/all-readonly forms 554/508/550/544/555/508/554/554. Entry-base combinations
+// recover frame 0x28 and first +8, but argument homes remain. All leave the caller 441/442 versus
+// 364; plain confirms 508/442, a target gain of 21 against caller regression 78. Original scan,
+// input observations, math, helpers, interfaces and complete body restored.
 // @retail 0xd37f0
 bool function_d37f0(s_lighting_parameter_block *block, long type, s_effect_color_query const *query,
 	s_lighting_record *record, color3f const *base, color3f const *lightmap)
@@ -1949,6 +1954,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
 // 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
 // independent captures, mesh homes and status order restored.
+// Round 44: complete default normal/base/lightmap initializations after material, individually/
+// paired/all, then all after native input captures 761/761/761/759/759/759/759/759.
+// Original default observations and body restored; frame 0x98/0x90 and homes remain.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

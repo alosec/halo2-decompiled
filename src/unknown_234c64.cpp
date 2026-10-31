@@ -290,6 +290,12 @@ void c_window_channel::v9()
 // Round 206: pending-record pointer/reference bound at entry/in branch 3/3/3/3;
 // complete pending-record snapshot with live callback 47, with retained callback 47,
 // at entry 47, after type clear 43. Snapshots add a 0x40 frame; original restored.
+// Round 208: builder mask unsigned 3 (caller loss); native message timeout; native message pointer
+// 3; value construction 3; one-element request array 3; one-element message array 3; local names 3;
+// native result declared early 3; immutable result 3. All bodies and declarations restored; the
+// request-address reload remains.
+// Round 321: Native message storage with admission scope/early screen/zero-store boundary subsets: 3/3/3/3/5/5/5/5.
+// Round 321: The address reload still differs; original derived request, callback and virtual dispatch restored.
 // @retail 0x23531c
 void c_window_channel::v10()
 {

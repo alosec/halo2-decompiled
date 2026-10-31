@@ -70,7 +70,9 @@ PRIVATE __forceinline real function_22aff5(real arg_0)
 }
 
 #pragma intrinsic(memcpy)
-// score 7 (was 121): repeated-draw spacing XMM roles and vertex-translation
+// score 3 (was 3): Spacing-scalar-before-vertex loading remains; frame 0x88 and every home agree.
+// Earlier: Repeated-translation scalar/vertex input-load order remains; frame homes, rounded offsets and spacing XMM roles agree.
+// Earlier: repeated-draw spacing XMM roles and vertex-translation
 // input-load scheduling remain; frame homes and rounded-offset memory operands agree.
 // Earlier at 121: frame homes differ: retail keeps vertical_scale at +0x08
 // (vertices at +0x0c), horizontal_scale in height's slot, the vertical offset in
@@ -113,6 +115,11 @@ PRIVATE __forceinline real function_22aff5(real arg_0)
 // before palette initialization 7; original arithmetic restored 7. Keep both existing axis setters,
 // independent twice-used offsets, the constant ordinal lifetime and completion publication. Existing
 // helper body and every marked call input unchanged.
+// Existing centering/repeat/construction setters, subsets 1-7: 369/342/384/7/369/342/384; all with half-spacing 384.
+// Producer-local real/integer repeat-count parts 3/7, isolated producer scopes 3/7; real part retained after width conversion.
+// Half-spacing and repeated-add input commutations 7; early real-span variants 3, restored. Coordinate pointer/completed sum/fixed do loop 3 each; array cursor 74.
+// Keep only the real repeat-count part at its original product; every arithmetic group, helper and marked call input remains original.
+// Round 46: Two-stage spacing/vertex accumulation 3/3; repeated-translation unsigned-long/short/word/byte ordinals 4/74/74/74; immutable spacing/spacing role name 3/3. Original body restored.
 // @retail 0x22aff1
 void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real const *arg_3)
 {
@@ -264,7 +271,8 @@ void function_22aff1(long arg_0, byte const *arg_1, byte const *arg_2, real cons
 				if (local_29 > 0)
 				{
 					real local_30 = (real)(local_44 + 1);
-					real local_31 = (real)(local_29 - 1) * (local_30 * 0.5f);
+					real repeat_span = (real)(local_29 - 1);
+					real local_31 = repeat_span * (local_30 * 0.5f);
 					for (long local_32 = 0; local_32 < 4; ++local_32)
 						vertices[local_32].x -= local_31;
 					g_4e6950.field_4c = *(color3f const *)g_468718;

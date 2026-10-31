@@ -6,6 +6,7 @@
 #include "unknown_11c920.h"
 #include "globals.h"
 #include "unknown_0259d0.h"
+#include "vector_products.h"
 
 /* the object (a view of the object data) */
 struct s_scripted_object
@@ -87,20 +88,19 @@ PRIVATE __forceinline void scripted_vector_scale(vector3f const *vector, real sc
 	result->k = vector->k * scale;
 }
 
-PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3f const *b,
-	real scale, vector3f *result)
-{
-	result->i = a->i + b->i * scale;
-	result->j = a->j + b->j * scale;
-	result->k = a->k + b->k * scale;
-}
-
 /* sets an object's linear velocity from speeds along its forward, left and up
    axes */
-// score 76 (was 76): retail keeps the three components of the velocity in
-// registers and stores them only just before the two calls, so its frame is
-// twelve bytes smaller than ours, and it emits the scaled products in a
-// different order. Round 81 (score 76): `forward`/`up` pointer locals for the cross product
+// score 30 (was 76): frame 0xc and retail's spills of the left products into velocity agree; 378
+// bytes against 377. Left: two cross-product terms take the other operand order, the k spill is
+// scheduled after `push ebx`, and the up term is loaded rather than copied from up_speed (one byte),
+// so the three final sums land in the up registers where retail keeps them in the forward ones.
+// Round 29: forward and up scaled into their own vectors with left scaled straight into velocity,
+// then two vector3f_add, 76 -> 30 (kept). On it (fast): shared cross3f/cross3f_staged 30/30; forward
+// and up pointer locals 135; forward scaled before the cross product 28 (forward_speed leaves xmm6,
+// all three callers stop matching); left scaled first 82; up scaled before left 79; vector3f_scale
+// for each part 30/30/30; operands of the last add swapped 30; first sum before the up scaling 85,
+// with forward first 91; sums accumulated in forward_part 30. Earlier forms, on the old body:
+// Round 81 (score 76): `forward`/`up` pointer locals for the cross product
 // alone 74 (retail's product operand order); velocity written directly without the
 // scaled copy 80 (retail's 0xc frame); left_part/up_part vectors 79-83; left scaled in
 // place 83; velocity = left * left_speed first 85-87 (forward_speed leaves xmm6)
@@ -131,6 +131,10 @@ PRIVATE __forceinline void scripted_vector_add_scaled(vector3f const *a, vector3
 // declared before left with the left-first chain 87.
 // Round 232: Completed-vector memcpy / native component loop crossed with original / staged cross and native / helper left addition
 // 83, 76, 82, 75, 83, 78, 83, 78. Original executable source restored.
+// Round 4 (lane 18, fast): second products of the j and k cross terms with the operands swapped 30
+// (same code); first add as velocity + forward_part 30 (same code); scale as scale * component 30
+// (same code); scale storing j, k, i 46; cross storing k, j, i 40; velocity declared first 30; cross
+// product straight into velocity, scaled in place 32. Restored.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {
@@ -138,18 +142,16 @@ void function_10b010(long object_index, real forward_speed, real left_speed, rea
 	{
 		s_scripted_object *object = SCRIPTED_OBJECT_GET(object_index);
 		vector3f left;
-		vector3f scaled;
+		vector3f forward_part;
+		vector3f up_part;
 		vector3f velocity;
 
 		scripted_cross_product(&object->up, &object->forward, &left);
-		scripted_vector_scale(&object->forward, forward_speed, &scaled);
-		scaled.j = scaled.j + left.j * left_speed;
-		scaled.k = scaled.k + left.k * left_speed;
-		scaled.i = scaled.i + left.i * left_speed;
-		scripted_vector_add_scaled(&scaled, &object->up, up_speed, &scaled);
-		velocity.i = scaled.i;
-		velocity.j = scaled.j;
-		velocity.k = scaled.k;
+		scripted_vector_scale(&object->forward, forward_speed, &forward_part);
+		scripted_vector_scale(&left, left_speed, &velocity);
+		scripted_vector_scale(&object->up, up_speed, &up_part);
+		vector3f_add(&forward_part, &velocity, &velocity);
+		vector3f_add(&velocity, &up_part, &velocity);
 		function_b7740(object_index, &velocity, NULL, false);
 		function_1c4b00(object_index, &velocity, NULL, true);
 		if (velocity.i * velocity.i + velocity.j * velocity.j + velocity.k * velocity.k > 0.0001f)

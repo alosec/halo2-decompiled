@@ -808,8 +808,10 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 	return datum != 0;
 }
 
-// score 55 (was 55): the record pointer is kept in EBX here and in EDI in
-// retail, and the two are used the other way round after the index is masked.
+// score 43 (was 55): the record pointer is kept in EBX here and in EDI in
+// retail, and the two are used the other way round after the index is masked;
+// the walk differs (retail's starts from the unit with the root preset to NONE and keeps its entry test,
+// the shape of 0xbaf80 inlined; ours is pinned out of line there: BLOCKED-BY 0xbaf80).
 // Round 199: consistent per-use unit, iterator-player and both observations 55/55/55; each with
 // retained ancestry pointer 113/113/113 (414 bytes); unsigned parent with unit/both observations
 // 55/55. Original body restored; datum/unit roles and root-walk entry remain.
@@ -826,6 +828,11 @@ static inline bool player_datum_iterator_next_inlined(s_data_datum_iterator *ite
 // Round 294: Selected-handle/return-result common output, signed/unsigned handle, entry/late
 // storage and positive/failure completion, all eight 86 (404 bytes). Exact-only
 // output copies and complete body restored; player/unit roles and walk entry remain.
+// Lane 17 round 2 (kept, 55 -> 43): the e4050 and flag-bit exits as one `||` test (the exits' registers are then
+// retail's). Not kept: retail's walk from the unit with a NONE root 106 (player in EDI as in retail, but no entry
+// test), with the merged exits 109; a forced-inline copy of the walk (diagnostic) 106; nested 0x34c test 56; named
+// root object 56; the parent walk as a for loop 44; root declared before the unit object 46; the walk with its
+// load in the loop test 171; one class-dispatch test for both exits 49; else-if after the root exit 44.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {
@@ -863,12 +870,7 @@ bool __stdcall function_14df40(long *unit_index)
 		{
 			if (unit_object->unknownaa == 0)
 			{
-				if (function_e4050(unit))
-				{
-					*unit_index = player->unit_index;
-					return true;
-				}
-				else if ((unit_object->unknown348 & 1))
+				if (function_e4050(unit) || (unit_object->unknown348 & 1))
 				{
 					*unit_index = player->unit_index;
 					return true;
@@ -2045,6 +2047,9 @@ struct s_player_creation_record
 // through the earlier player pointer 37; the change test as `controller != old_controller` 33; the requested
 // controller read after the current one 38; the set arm's player store after the globals updates 34; the set
 // arm first 47 (as the earlier assignment-first arms).
+// Round 319: Empty-old-controller reset bypass with live old-field reads, install-first
+// arm and shared globals receiver, all eight subsets 42 each (650/650 bytes,
+// first +0x210). All restored; opposite recursive expansion and requested homes remain.
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
@@ -2225,6 +2230,9 @@ static __forceinline long player_round_ticks(real value)
 // both slots with direct decay and either request extent; late unit-slot acquisition and native
 // unsigned word slot domains; fast 764/769/825/827/871/923/792/856/765/745/745/827.
 // Original body and existing helper restored.
+// Round 239: complementary readiness/admission/lunge ownership, seven nonempty
+// subsets and the complete byte graph, all eight 701. Original producers, request
+// storage, fields, call tuples and complete body restored; frame remains 0x4c.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {

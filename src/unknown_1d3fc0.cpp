@@ -1,6 +1,7 @@
 #include "unknown_11c920.h"
 #include "unknown_1cec30.h"
 #include <math.h>
+#include "vector_products.h"
 // @flags /O2 /Ob1 /arch:SSE /Gr
 
 void function_1d1260(s_havok_component *arg_0);
@@ -28,9 +29,6 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
  }
 }
 
-// Round 19: unchanged; the forward normalisation's reciprocal and component carriers (retail
-// preloads j and i, divides 1/m into xmm6 and multiplies k from memory) still differ; the
-// operand-order-only forms of the helper give 149.
 // score 149 (was 149): magnitude order, reciprocal/SSE carriers and projection schedule remain.
 // Retail sums the forward magnitude j,i,k (k loaded late, reloaded on the short-vector path) and the
 // other three k,j,i; in this /Ob1 file every sum compiles i,j,k whatever the source order (dot3f,
@@ -60,6 +58,15 @@ PRIVATE __forceinline void function_1d3fc1(vector3f *arg_0)
 // both, native reference output, reference/scalars, reference/magnitude, all,
 // and scalar/reference receiver return 149/149/149/149/149/149/149/149. All restored;
 // first reciprocal/component carriers and later magnitude schedules remain.
+// Round 19: unchanged; the forward normalisation's reciprocal and component carriers (retail
+// preloads j and i, divides 1/m into xmm6 and multiplies k from memory) still differ; the
+// operand-order-only forms of the helper give 149.
+// Lane 15 round 18: the left axis through the existing cross3f(up, forward, left): identical code (149,
+// kept). Retail's forward never preloads k (its scale is `inv * [k]` into the reciprocal's register and
+// the short path reloads k); every helper form preloads all three. All four through normalize_inline 155
+// (sums i,k,j); file helper for forward with header normalize3d for the rest 354 (normalize3d stays out
+// of line, 718 B); normalize_inline for the third normalization 149 (projection schedule moves only);
+// for the third and the left 152.
 // @retail 0x1d3fc0
 void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
 {
@@ -107,9 +114,7 @@ void __stdcall function_1d3fc0(long arg_0, s_havok_component *arg_1)
     up->j -= forward->j * local_10;
     up->k -= forward->k * local_10;
     function_1d3fc1(up);
-    left->i = up->j * forward->k - up->k * forward->j;
-    left->j = up->k * forward->i - up->i * forward->k;
-    left->k = forward->j * up->i - up->j * forward->i;
+    cross3f(up, forward, left);
     function_1d3fc1(left);
    }
    havok_component_rigid_body_matrix_set(local_9, arg_1, &local_1[0]);
