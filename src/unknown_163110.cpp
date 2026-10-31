@@ -730,6 +730,10 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 	return success;
 }
 
+// Round 16: retail loads the three `view->vector_e4` coefficients into xmm0, xmm3 and xmm4
+// before it copies the point and then reloads the point's components from that copy, ours reloads
+// the copied normal's x into xmm4; retail keeps the near distance in xmm5 and the zero in xmm4,
+// ours keeps the near distance in xmm6 and the zero in xmm1.
 // score 115 (was 115): coefficient XMM roles, classification operands and projection staging still differ.
 // Intersection/projected point setters 119/119; existing in-place vector scale 115; long/byte result 216/119.
 // Forward value copy 474; direct projected element 246; scaled direct element 247; separate scaled vector 115.

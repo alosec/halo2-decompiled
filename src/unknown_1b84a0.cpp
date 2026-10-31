@@ -262,6 +262,9 @@ bool function_1f4a20(s_1f4a20_entry const *entries, long actor_index, s_referenc
     bool alternate, s_type_c3b527 *point, vector3f *facing,
     signed char *type, bool *available);
 
+// Round 16: retail takes the actor index from its first stack argument into EBX, keeps the
+// scaled actor offset in ESI and the actor pointer in EDI and stores them at [esp+0x18] and
+// [esp+0x20]; ours keeps the slot index in ESI and spills the actor offset.
 // score 212 (was 212): aligned frame 0x1634 versus 0x162c and actor/slot/scratch homes remain.
 // Earlier: frame 0x1634 versus 0x162c; scaled actor offset and
 // slot/scratch homes remain, with a 14-byte length deficit.
