@@ -95,6 +95,10 @@ PRIVATE inline long swizzle_log2(dword value)
 // reverse); there x and y used directly 122 and long copies after the mask 100 (both pass y on the
 // stack, matched caller 0x136140 lost), the x copy first 83 (y in ESI as retail, 0x136140 lost).
 // So 0x358d0 looks like a lone object built without /arch:SSE between 0x35850 and 0x359e0.
+// Round 48: `!=` in both tail tests 84; outputs stored y first 83; `!=` tests with log2_floor's loop
+// 87; `mask < 64` 82 (same code); y looked up before x in both arms 83. Diagnostic only: in a /O2 /Gr
+// object (no /arch:SSE) the minimum becomes retail's branch, yet the coordinate promotion and the
+// tail's register roles still differ; x and y used directly put y on the stack (ret 0xc).
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

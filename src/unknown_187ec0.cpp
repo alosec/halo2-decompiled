@@ -250,6 +250,9 @@ struct s_seat_animations
 // no inner guard, offset and compared entry 71 (158 bytes, caller matched); result declared first but initialized
 // after count 71; per-arm entry 85 (187); single-exit label 71; element declared before result 71; pre-tested inner
 // while 71. All restored; the offset's two-point gain was below the retention threshold.
+// Round 44: native entry-index equality, reversed receiver, compared-entry result, count-first
+// unguarded result, per-arm entry, true entry cursor and promoted traversal with/without inner
+// result guard 55/55/61/71/78/64/80/66. Native type restored; result/animation allocation remains.
 // @retail 0x187fe0
 s_seat_animation_entry *function_187fe0(long type, s_seat_animation const *animation, c_type_47f957 element_index)
 {
