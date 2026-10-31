@@ -73,6 +73,11 @@ extern byte *g_51eca8;
 extern short g_51ecb0;
 c_2d8ab0 *g_47f044;
 
+// score 7 (was 7): the group loop still loads the entity list into EAX and the index
+// into ECX where retail uses ECX and EDX, and the release loop's entry test still uses
+// EDX and EAX where retail uses EAX and ECX; selecting the table and indexing it after
+// gives retail's tail and entry test but breaks the select block (63), so the element
+// select is kept.
 // score 7 (was 7): in the loop over the groups the entity list and the index take
 // different registers (retail ECX and EDX, ours EAX and ECX), and the release loop's
 // entry test uses EAX and ECX where ours uses EDX and EAX.

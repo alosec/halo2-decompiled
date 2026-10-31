@@ -242,6 +242,11 @@ static inline real actor_looking_normalize2d(point2f *vector)
 // 8/38/122/128/122/128/8/38; all restored.
 // Round 113: unnamed helper square 6; helper with an else-zero single exit 2 (same code); sqrtf 2;
 // brace-initialised reference copy 23; `>=` epsilon test 34; permuter (48 variants) none below 2.
+// Lane 13 r20: the leaf order follows the first source mention of each field (only the final dot names them);
+// a split x term gives x first but faddp first, a single tree gives the store first but the dot's order; retail
+// needs reference x then aim y first, which one dot cannot spell. Both through normalize2d 122 (inline declaration
+// 122; kept out of line even from a non-/Ob1 file 122); single tree with aim member copies y,x 10 / x,y 12; helper
+// defined after the caller single/named 6/2; single tree with the dot's y term first 6, reference-first 4.
 // @retail 0x296d60
 PRIVATE bool function_296d60(real cosine, vector3f const *reference, vector3f const *aim, bool three_dimensional)
 {
