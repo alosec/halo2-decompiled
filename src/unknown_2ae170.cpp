@@ -1196,6 +1196,10 @@ __forceinline void c_sound_effects::add_send(long mixbin, long mode, real gain, 
 // original if-chain 155; switch + long gain on the original loops with union/pun attenuation 150/151
 // (all fast). Retail's four-entry table needs a statement in a mode-0 case, and its store-reload
 // attenuation push is /Op code generation.
+// Round 48 (lane 12): MATCH (full check) as its own /O2 /Op /arch:SSE /Gr file with the zero gain as
+// `long gain = 0` passed as *(real *)&gain and a speaker-mode switch whose mode-0 case holds a dead
+// `remaining = 0;` (needed for retail's four-entry jump table; an empty case 0 drops the table, `gain = 0` 91).
+// Held: the dead store is not kept even with a match, and a new /Op file is a build-flag decision.
 // score 137 (was 137): retail is a four-entry jump-table switch on the speaker mode with explicit call
 // pairs (no loops), the zero gain held in EDI and pushed, and each -6.0206 attenuation computed at run
 // time (`mov [slot], 0; movss; subss; movss [slot]; mov ecx, [slot]; push ecx`). Round 17 found the
