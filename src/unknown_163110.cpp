@@ -776,6 +776,11 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // Round 80: forward declaration first 196; const view 115; first-plane receiver 285,
 // with j-k-i offset order 285; inner do/while and condition increment 115/115;
 // const x value/reference 141/119. Original body restored.
+// Lane 15 r19: retail loads all three vector_e4 components before the forward copy (ours loads e4.i
+// after it, which swaps XMM3/XMM4 from there on). Both planes through one forceinline plane helper
+// 281 (1867 bytes); plane 0's d as one negated expression 143; near distance after the copy 141;
+// forward pointer removed 264 (1867 bytes); clip denominator / distance / both as single
+// expressions 247/251/117.
 // Round 91: first plane's d in i, j, k order 146, in j, k, i order 133; classification in i, j, k
 // order 115, point-first products 115; the intersection scaled through a value-first scale helper
 // (i = s * i, j = j * s, k = k * s) 115. Retail's first-plane block loads camera.i early and the

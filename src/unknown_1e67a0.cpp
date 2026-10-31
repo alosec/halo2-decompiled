@@ -596,6 +596,11 @@ PRIVATE __forceinline real inverse_sqrt_1e6360(real squared)
 // Round 430: native definition/output fields and real view of the existing dual-use output field,
 // all seven subsets 132; ordinary bit sample on that complete field graph 170. Original declarations
 // and body restored; constant/limit XMM ownership, jitter order and spill homes remain.
+// Lane 15 r19 (fast checks need 0x24590 listed): jitter in retail's order (on/off, signs, scales,
+// `*=`) with a plain long 233 (1020 bytes; the jitter block then has retail's shape, bits in EAX and
+// retail's test order), with the volatile long 202 (1053 bytes); the blend factor as one
+// if/else-if/else chain 215 (1081 bytes); factor declared before input_fraction 165;
+// `1 + (def - 1) * blend` and `blend * (def - 1) + 1` 132/132 (identical code).
 // Round 91: velocity updates through the existing vector3f_add/vector3f_add_scaled (in/out on
 // &state->velocity; retail reloads velocity.j/k after the velocity.i store, as those give): all three
 // 182, movement add 181, projection and movement 177, jitter add 130 (1077 bytes, retail's length;
