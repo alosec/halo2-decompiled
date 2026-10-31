@@ -18,6 +18,8 @@
 // thirteen bytes longer; retail keeps the primary shape in the stack slot at [esp+0x14]
 // and the secondary shape in EDI, ours keeps the inverse at [esp+0x14] and the
 // secondary shape at [esp+0x10].
+// Behaviour difference kept for score: `long tmp2 = scale * d.k` truncates the sixth input
+// product through an integer; retail (0x49f19) is a plain mulss. Coordinator decision.
 // Round 134: retail reads the wave's sine arguments from the global point: that form 701 (frame 0x60,
 // s1 sinks to its use), s1 before the first cross 701, s0's only 602; both shape pointers
 // NULL-initialized then set by an if/else (retail's entry, retail length 2622) 599, with s0's
@@ -136,6 +138,15 @@
 // Round 317: Existing shared scalar clamp for six parallel rows in mode-family masks 1-7,
 // then all with force-inline declaration, 702/702/702/581/702/702/702/702. Scaled
 // families grow frame to 0x64; original declarations, inputs and body restored.
+// Round 93: truncation removed 648; plus both shape pointers set at entry 620; plus the sine
+// arguments from the camera point 600; plus the first wave through vector3f_add_scaled 575
+// (2622 bytes, frame 0x60; not kept: the sines read the global while the waves use its local
+// copy). On that 575 form: first sine before the cross product 575; second wave through the
+// helper 642; second cross product right after the first 679; first sine first with the
+// helper 642; `w` declared before v3 or at the top 575/575; renamed locals 575 (identical:
+// names and declaration order do not move these slots). Left: slot order (shape0 0x18, v2
+// 0x28, v4 0x4c, a wave-shift home at 0x64 against retail's 0x14/0x40/0x64 and no home), the
+// x87 sine order (retail rounds both sines to float before the SSE scaling).
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -461,7 +472,7 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
     return pixel;
 }
 
-// score 615 (was 615): the frame 0xac and the body length 2596 agree; retail stages
+// score 579 (was 615): earlier: the frame 0xac and the body length 2596 agree; retail stages
 // the definition in EBX and the output vertices in EDI, ours stages the definition
 // in EDI, and retail places the endpoint handling after the loop where ours places
 // it before.
@@ -523,11 +534,29 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Round 433: Independent transition endpoints/shared camera displacement/both 615 each;
 // definition observed at every use alone/with either/with both 626 each, all plus source
 // observations 634. All restored; native phase receivers do not recover the early carriers.
+// Round 93 (kept, 579): the callback's buffer cast to a local vertex cursor, a pointer to the
+// second vertex, per-component position stores, the next state's colour staged in its own
+// array with the transition read once, the edge points built in each case from the point and
+// case 0's normal set in its arms give retail's layout (endpoint block after the loop, second
+// cursor at +0x28, definition in EBX). Left: frame 0x9c against 0xac (retail keeps a home for
+// the first edge point and a width temporary), EDI holds the point pool where retail keeps the
+// second cursor there and reloads the pool, the state-index clamp registers and the zero colour.
+// Tried: buffer cursor alone 664; second-vertex pointer alone 666, with component stores 617;
+// buffer + pointer + component stores 606, with u/v in vertex order 606, with flipped colour
+// chains 610, with per-case points 634, with case-0 normal fields 606/632, definition first
+// 606, cursor declared late 609, scale `1.0f` then if 605, transition local 629, staged colour
+// 640; then per-case points 595 (frame 0xa4); with the case-0 normal arms 579 (kept); on that,
+// scale if 593, object index local 596, flag bitfields 594, both 582, clamp if/else 579 (same
+// code) and zero-default 592, zero stores in order 579, renamed locals 579 (no slot change).
+// The buffer is untyped at the interface: 0x43740 queues this callback through 0x1e5e0 as
+// the fill function 0x35b00 passes to 0x4b220, typed `void (__stdcall *)(void *, long, void *)`
+// in unknown_01cf50.cpp.
 // @retail 0x42cf0
-bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
+bool __stdcall function_42cf0(void *buffer, long unknown, s_ribbon_input *input)
 {
     // Retail keeps all three callback arguments on the stack.
     (void)&unknown;
+    s_ribbon_vertex *vertices = (s_ribbon_vertex *)buffer;
     s_ribbon_source *source = input->source;
     s_ribbon_definition *definition = input->definition;
     real u = source->u;
@@ -568,14 +597,18 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
             if (point->flags & 2)
             {
                 s_ribbon_state *next = &definition->states[point->state + 1];
+                real transition = point->transition;
                 real next_width = next->width;
                 if (next->flags & 0x10)
                     next_width *= point->scale;
-                width += (next_width - width) * point->transition;
+                real next_color[4];
                 lower = (real *)&next->lower;
                 upper = (real *)&next->upper;
                 for (long j = 0; j < 4; ++j)
-                    out[j] += ((upper[j] - lower[j]) * scale + lower[j] - out[j]) * point->transition;
+                    next_color[j] = (upper[j] - lower[j]) * scale + lower[j];
+                width += (next_width - width) * transition;
+                for (long k = 0; k < 4; ++k)
+                    out[k] += (next_color[k] - out[k]) * transition;
             }
         }
         if (source->object_index != NONE && !(definition->flags00 & 0x80))
@@ -590,34 +623,32 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
             color.blue *= tint.z;
         }
         real half_width = width * 0.5f;
-        vertices[0].u = vertices[1].u = u;
+        s_ribbon_vertex *outer = &vertices[1];
+        vertices[0].u = outer->u = u;
         vertices[0].v = v;
-        vertices[1].v = v_width;
+        outer->v = v_width;
         point3f first, second;
-        first.x = point->position.x; first.y = point->position.y; first.z = point->position.z;
-        second.x = point->position.x; second.y = point->position.y; second.z = point->position.z;
         vector3f normal;
         switch (definition->mode)
         {
         case 0:
-            first.z += half_width;
-            second.z -= half_width;
+            first.x = point->position.x; first.y = point->position.y; first.z = point->position.z + half_width;
+            second.x = point->position.x; second.y = point->position.y; second.z = point->position.z - half_width;
             if (input->normal)
             {
                 s_ribbon_point *neighbor = previous ? previous : (s_ribbon_point *)(g_4ea940->data + (point->next & 0xffff) * 0x38);
-                real dx, dy;
                 if (previous)
                 {
-                    dx = point->position.x - neighbor->position.x;
-                    dy = neighbor->position.y - point->position.y;
+                    normal.j = point->position.x - neighbor->position.x;
+                    normal.i = neighbor->position.y - point->position.y;
                 }
                 else
                 {
-                    dx = neighbor->position.x - point->position.x;
-                    dy = point->position.y - neighbor->position.y;
+                    normal.j = neighbor->position.x - point->position.x;
+                    normal.i = point->position.y - neighbor->position.y;
                 }
-                normal.i = dy; normal.j = dx; normal.k = 0.0f;
-                real length = (real)sqrt(dx * dx + dy * dy);
+                normal.k = 0.0f;
+                real length = (real)sqrt(normal.j * normal.j + normal.i * normal.i);
                 if (!(fabs(length) < 0.0001f))
                 {
                     real inverse = 1.0f / length;
@@ -646,8 +677,8 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
                     real inverse = 1.0f / length;
                     dx *= inverse; dy *= inverse;
                 }
-                first.x += dy * half_width; second.x -= dy * half_width;
-                first.y += dx * half_width; second.y -= dx * half_width;
+                first.x = point->position.x + dy * half_width; first.y = point->position.y + dx * half_width; first.z = point->position.z;
+                second.x = point->position.x - dy * half_width; second.y = point->position.y - dx * half_width; second.z = point->position.z;
                 if (input->normal) normal = *g_4687b0;
             }
             break;
@@ -667,9 +698,8 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
                     real inverse = 1.0f / length;
                     side.i *= inverse; side.j *= inverse; side.k *= inverse;
                 }
-                first.x += side.i * half_width; second.x -= side.i * half_width;
-                first.y += side.j * half_width; second.y -= side.j * half_width;
-                first.z += side.k * half_width; second.z -= side.k * half_width;
+                first.x = point->position.x + side.i * half_width; first.y = point->position.y + side.j * half_width; first.z = point->position.z + side.k * half_width;
+                second.x = point->position.x - side.i * half_width; second.y = point->position.y - side.j * half_width; second.z = point->position.z - side.k * half_width;
                 if (input->normal)
                 {
                     cross3f(&direction, &side, &normal);
@@ -685,11 +715,15 @@ bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_
         default:
             return false;
         }
-        vertices[0].position = first;
-        vertices[1].position = second;
+        vertices[0].position.x = first.x;
+        vertices[0].position.y = first.y;
+        vertices[0].position.z = first.z;
+        outer->position.x = second.x;
+        outer->position.y = second.y;
+        outer->position.z = second.z;
         color.alpha *= function_42c50(&point->position, &normal, *(short *)(input->shader + 0x2c), (byte *)definition);
         color.alpha = PIN(color.alpha, 0.0f, 1.0f);
-        vertices[0].color = vertices[1].color = ribbon_pixel(&color);
+        vertices[0].color = outer->color = ribbon_pixel(&color);
         vertices += 2;
         u += u_step;
         previous = point;
