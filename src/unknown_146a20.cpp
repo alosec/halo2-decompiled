@@ -112,6 +112,10 @@ bool g_47f05b;
 // inlines them) 34/34/34, no other function changes; the block typed as its layout (fixed allocator, buffer,
 // pool) 34; the count flag stored first 38. With the vtable store forced (diagnostic only) 12 at 147 bytes:
 // the rest is the pool placement's reload of g_479888 at the join, where retail reloads on the constructed arm.
+// Round 3 (lane 18, header constructors, with 0x146b80/0x146e30/0x22c3e0): the count header's 1 as a member
+// initializer 34; the abstract loop counting down 33 (0x146b80 2, 0x22c3e0 lost); its NONE test as `i < 3`
+// 34; the fixed base storing the count first 32 (0x146e30 120 -> 121); the size before the buffer 33
+// (0x146b80 2). The base vtable store is dropped in every form.
 // Round 235: publish fixed identity before construction, saved/published placement
 // and published buffer 35/35/46; pool identity with saved/published placement 52/52;
 // both identities 53/53/64. All original publications and executable code restored.

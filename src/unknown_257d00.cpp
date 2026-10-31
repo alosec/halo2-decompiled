@@ -2156,6 +2156,9 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // Round 312: first/second/both request receivers at uses 489/491/489; physical selector alone/first/second/both
 // 491/489/491/489; both receivers and selector with the two-stage native flag value 491 (reduced control 491,
 // full 478). Two-point reduced gains rejected; every receiver, physical declaration and original body restored.
+// Round 238: complementary dispatch-ready/same-unit/facing-incomplete decisions, seven
+// subsets 491/491/491/493/493/493/493; all as long 583 (fast control 491; full 478).
+// Original internal decisions, byte completion, iterator and every vector/call restored.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {
