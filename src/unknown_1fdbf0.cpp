@@ -381,6 +381,9 @@ vector3f *function_11d000(vector3f const *v, vector3f *out);
 // projection itself 43; either with single-expression rows 57 (38/11 aligned against 46/17: the
 // cosine is then held in a register as in retail, colours still ours); with the projection term
 // first in every row 57.
+// Round 45 (lane 9): scalar axis copies read after the parallel factor 43 (same code); the parallel factor computed
+// from forward before the direction copy 73; from forward after it 69; cross terms before the parallel factor 53; the
+// parallel part through vector3f_scale into a vector 88.
 // @retail 0x1fddd0
 bool function_1fddd0(long actor_index, point3f const *origin, vector3f *direction,
     long *out_index, real *arg_c9241c, long *out_object)

@@ -179,6 +179,10 @@ void replication_table_release_chain(s_handle_peers *peers, long count, long con
 // Round 24 (lane 10): the pending loop's callback through the peers local 222 (822 bytes); the active
 // loop's 253 (834 bytes); priority/size declared before handles_count/type 55 (same code); the active item
 // priority at block scope 55; the active blocked flag declared before its handles 55.
+// Round 45 (lane 9): with the active chain indexed (170) our allocator keeps type in EBX through the pending loop
+// (vtable in ESI) and spills the pending counter; retail spills type around that loop only. On that form: the owner
+// read into a loop-local 170; pending `type = 3` after the chain query 172; active `type = 4` after it 170; blocked
+// declared before the handle arrays 170.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {

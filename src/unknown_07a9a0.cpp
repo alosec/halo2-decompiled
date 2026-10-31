@@ -261,6 +261,9 @@ void function_07b3e0(void)
 // stores restored.
 // Round 198: Native unsigned absolute cursor, with immutable receiver and/or chained terminal
 // zero stores, 54 each; signed long/int cursor with chained zero stores 39. Original body restored.
+// Round 45 (lane 9): iterator form re-measured 58 (aligned 9); iterator set up through an inline (iterator, pool)
+// helper 58; datum index through data_datum_index on a pool local 57; iterator at function scope 58; a `for` over the
+// step's returned datum 53 (135 bytes); scan on the global with the datum from a pool local 64 (the local spills).
 // @retail 0x7b430
 void function_07b430(void)
 {

@@ -220,6 +220,10 @@
 // N226: Complete linear/quadratic/cubic product-stage band subsets
 // 59/59/59/139/139/139/139; all with constant root-five/root-seven initialization
 // at declaration 139. Original complete body, precision and expression trees restored.
+// Round 45 (lane 9): compile-only screen of sqrt(2)/sqrt(105) real or double x natural / retail store order /
+// current order: retail's store order (15, 11, 13, 9, 10, 12, 14) only with both roots double in that statement
+// order. Real builds: that form 150 (645 bytes, 0.5/0.25 become double constants); with both roots real 135; with
+// sqrt(105) real 132; with sqrt(2) real 138; current order with coefficient 14 as one chain and sqrt(7) at its use 141.
 // @retail 0x143360
 void spherical_harmonics_evaluate_direction(vector3f const *direction, dword order, real *result)
 {

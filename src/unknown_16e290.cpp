@@ -1621,6 +1621,10 @@ struct s_camera_clip_reference_16ebf0
 // N227: Independent computed left-axis output, simple/staged cross, direct/retained matrix
 // inputs and native/CRT transfers: eight at 239/976. Original cross destination, copies
 // and complete body restored; forward/position saved-register exchange remains.
+// Round 45 (lane 9): BLOCKED-BY 0x171d00 (held file): retail passes the clip flag in DL and the end point in ESI.
+// Flag false by default with one `= true` under retail's nesting 165; plane test through plane_distance_to_point 127;
+// plane terms spelled i, k, j 120 (retail's j, k, i product order, aligned 88 -> 86); with a cluster pointer local
+// 120; with a reference-table base local 120.
 // @retail 0x16ebf0
 void function_16ebf0(long user_index)
 {
