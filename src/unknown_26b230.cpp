@@ -1900,6 +1900,12 @@ void function_269250(long clump_index, long actor_index);
 // Round 83 (fast; unchanged control 89): two-arm score assignment 128; zero-initialized two-arm
 // assignment 128; reversed strict comparison 89; separate best publication 89; old-clump local
 // after/before the scan 141/147; flattened selection/creation tests 89; byte activity snapshot 89.
+// Round 107 (fast, with 0x269580/0x269040 in the build; without them 0x269580's arguments swap):
+// the team-arm form gives retail's homes (selection 0x14, score 0x18, best 0x1c) and x87 compare,
+// 126; a memory-only selection (diagnostic, reverted) shows the pool then takes EBX. On the
+// team-arm form: selection locals before the walk 129; activity read in the walk call 126; team
+// compare reversed 126; the datum step reading the pool field at each use (data_iterator.h) 126,
+// identical. Zero-default score with the common compare 90.
 // @retail 0x2689d0
 void function_2689d0(void)
 {
@@ -2096,6 +2102,13 @@ void function_269250(long clump_index, long actor_index)
 // original/invariant-first completion and direct/shared head; fast
 // 230/230/229/229/230/230/229/229.
 // Original body and existing helper restored.
+// Round 107: the pool registers follow how g_502418/g_50241c are declared. With the 3 form and the
+// two pools as plain separate globals (either declaration order, or one of them in a one-field
+// struct) this function matches byte for byte, but 0x25d770 (0 -> 2) and 0x25d810 (0 -> 91) then
+// load the node pool first (the other 717 functions of the 46 pool files unchanged); with
+// s_prop_pool_storage those two match and this one keeps the node pool in edi. Also 3: the struct
+// with the tracking pool (0x502414) or the clump pool (0x502420) added, the struct defined in a
+// /GL- file, the prop step reading the pool twice. The swarm flag renamed (slot order) 89, identical.
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {

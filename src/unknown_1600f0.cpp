@@ -1720,6 +1720,13 @@ PRIVATE __forceinline void score_text_161420(byte const *widget, long valid)
 // Round 189: Actual widget/validity and validity/widget pointer contracts 172/172; sole validity
 // member base in both orders 156/156; indexed team fields with all four contracts 154 each.
 // Bounds/receiver scheduling and team induction remain. Original helper and body restored.
+// Round 107: retail's team loop is indexed (counter incremented before the row pointer, as in the
+// player loop); indexed, ours is 12 bytes longer because each widget's bounds temporary takes ECX
+// where retail keeps EDX and loads the receiver before the push, so the justification rotates into
+// EDX/ECX (`mov [moffs], edx` is a byte longer than eax's form) and the player loop head gets padded.
+// Draw through the existing 0x1fa30 (out of line) 475; one justification variable shared by a
+// row's widgets 122 (copy-propagated); preamble through the existing 0x13edb0 (out of line) 425;
+// receiver named before the draw 122; typed template drawer 1411 (not inlined).
 // @retail 0x161420
 void function_161420(long player_index, real alpha)
 {
