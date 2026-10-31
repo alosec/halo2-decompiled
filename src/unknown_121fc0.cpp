@@ -80,6 +80,9 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // size, cursor, count; ours cursor, count, size). Token declared at the block top 128; tokenizer as a
 // for loop 128; token = NULL at the block top 128; size/cursor renamed (size, token_end) 128 (same
 // code); clamp in MIN order 128. EBP's save stays at the loop in every form.
+// Round 231: existing tokenizer null guard / empty guard / nested result / result-first
+// 217/206/213/221; each with current table-entry token observations 217/206/213/221.
+// Original tokenizer and body restored; outer EBP preservation and read-size homes remain.
 // @retail 0x121fc0
 void function_121fc0(void)
 {

@@ -359,6 +359,10 @@ extern real g_47f05c;
 // Round 195: Complete base-point/up-vector/step observations and their four combinations
 // 251/266/223/234/231/265/239; all with scan role names 239. Original contact
 // observations, point provider, center/difference producer and full body restored.
+// Lane 17 round 2: retail sets result, best and the loop index (kept in memory) at entry, holds best_dot in
+// XMM7 for the whole function, spills the hoisted first height threshold and re-reads the shape height in the
+// loop. Height read at every use 205 (frame 0xd4, 869 bytes); with the index declared at entry 204; also best_dot
+// declared first 203; index declared at entry and set in the for 205; height-first threshold sums 204.
 // @retail 0x1f1ee0
 bool function_1f1ee0(s_shape_carrier_contact const *contact, s_shape_state *state,
     vector3f *velocity, matrix3x3 *rotation)

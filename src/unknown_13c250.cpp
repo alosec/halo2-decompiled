@@ -136,6 +136,9 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // (first appends fold, the count is cached in EBX); preferred tag as a switch case 176 (aligned 93 ->
 // 73: retail's compare tree, 841 bytes; same as the earlier native case); with a separate selected
 // result for it 179 (847 bytes); with a memset-zeroed plain count 276 (784 bytes).
+// Round 231: complete priority-zero result, long / unsigned / short / enum
+// 176/176/181/176; each with ordinary cardinality 280/280/276/280. Original
+// ranking, inherited count and body restored; receiver reloads and ranking handoff remain.
 // @retail 0x13c250
 void __stdcall function_13c250(long arg_1, long arg_2, long arg_3)
 {
