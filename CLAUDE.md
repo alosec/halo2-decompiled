@@ -227,6 +227,13 @@ See `port/README.md` "Play" for the full commands.
   passes its direction (`0x41b8c`): plasma bolts were green smears drawn
   along their colour. Compare the registers and pushes at the call with
   the callee's prologue.
+  Likewise `0xfd740`/`0xfd7d0` (projectile material effects) handed
+  `0x1883e0` their output pointers in the callers' order, so stuck and
+  detonating projectiles created effects from sound tags: a rare
+  High Charity crash in `effect_location_next`. Probes in the effect
+  code hid it (0 crashes in 6 probe runs, 3 in 3 without);
+  `H2_FAULT_REGDUMP=x21:0x190` dumps memory at the fault without
+  touching the guest image.
 - **Host shims that differ from Win32 in edge cases.** The fatal
   "problem with the disc" screen at boot, about one boot in fifteen:
   file times jittered (a two-clock conversion), so the font table's
@@ -331,11 +338,9 @@ See `port/README.md` "Play" for the full commands.
   (at most 24 kill tries that found someone), and boarding the throne
   Regret rides (`enter_vehicle 0 boss`). A pre-merge build (worktree at
   19b4975d3, its own host and image) stalled at the same spots with
-  the old bot. Open: a rare High Charity crash (2 runs in 7):
-  `effect_location_next` follows a garbage location index for an
-  effect a projectile impact creates (`fc330` -> `fcea0` ->
-  `effect_new_from_parameters` -> `0x177310`); not a stack overrun
-  (stack-protected build).
+  the old bot. The rare High Charity crash in `effect_location_next` was the
+  material-effect sound/effect swap (fixed 2026-10-30, see the bug
+  classes).
 - **Death reverts** (2026-10-27): `0xcaa60` (a unit dies) passed the dead
   unit to `0x14cad0` where retail passes NONE (ebx), so the player kept
   it, the census (`0x152340`) never asked for a revert, and a dead player
