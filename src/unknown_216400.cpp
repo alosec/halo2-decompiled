@@ -348,6 +348,13 @@ PRIVATE inline bool append_save_entry_2164c0(s_save_list_2164c0 *list, s_save_en
 // reference workspace 32; overlap-safe append copy 52; coordinated matched-name-helper inline
 // contract 32; byte helper return 32. Original append, workspace, copy and all game-call values
 // restored; matching 0x8ac frame and scratch/append register gap remain.
+// Round 44 (lane 16): retail keeps the count in ESI and copies it to EAX for the index (a temp
+// ours coalesces away); the later scratch pairs are ours rotated by one register in eax, ecx,
+// edx order, as one fewer temp would give. Tried: explicit count and index locals with the new
+// count stored first 51 (copy coalesced); the helper as an ordinary function in
+// unknown_216b60.cpp so LTCG inlines it 32 (plain, same code); a count local post-incremented
+// in the copy and stored back after it 33; `entry.type` passed to 0x216e50 32; `entry.type`
+// set inside the type loop before leaving it 32.
 // @retail 0x2164c0
 void function_2164c0(long memory_unit, s_save_list_2164c0 *list)
 {
