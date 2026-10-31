@@ -182,6 +182,14 @@ void function_44720(void)
 // material index by the long index, `geometry == NULL` (63 forms) none closer; a `dword` selector
 // local read first (the 0x44720 form) or a `flags` local for the level and transform tests none
 // closer; the lookup as an ordinary or forceinline function in another file stays a call.
+// Round 33 (fast, agreeing with the full count on the unchanged source): with the level at the call
+// and the lookup given `&g_4ba138[(short)index]` (136, 503 bytes) the entry address and the transform
+// (`and eax, 0xf`, flags re-read in each lookup path) are retail's, but g_4e0348 is hoisted into EBX,
+// the index and entry swap EDI/EBP, the level (not the weight) takes EBX in the inner loop and the
+// non-tag path re-reads the first word. On that: the 0x44720 selector local (`dword entry_flags`) 136;
+// the selector local alone with the level at the call 146; the expression argument on the cached-byte
+// form 140; the lookup taking the entry index (both callers) 136 / 140 on the cached form, and
+// 0x45560 190 -> 228.
 // @retail 0x44c90
 void __stdcall function_44c90(long group, dword selection_mask, long level,
     dword and_mask, dword or_mask, dword fallback_and_mask, dword fallback_or_mask, bool force)
