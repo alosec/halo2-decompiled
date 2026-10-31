@@ -24,6 +24,21 @@ bool function_11c470(long trigger_volume_index, point3f const *point);
 bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);
 long function_c8f60(long unit_index, short seat_index);
+void function_b9a90(long object_index);
+
+/* whether a unit of another team sits in one of the vehicle's seats */
+static bool vehicle_has_other_team(long vehicle_index, short team)
+{
+	byte const *vehicle = ((s_player_object_header *)g_4e0300->data)[vehicle_index & 0xffff].object;
+	byte const *definition = g_4e3b44[*(long const *)vehicle & 0xffff].bytes;
+	for (long seat = 0; seat < *(long const *)(definition + 0x1c8); ++seat)
+	{
+		long rider = function_c8f60(vehicle_index, (short)seat);
+		if (rider != NONE && *(short const *)(((s_player_object_header *)g_4e0300->data)[rider & 0xffff].object + 0x138) != team)
+			return true;
+	}
+	return false;
+}
 long function_bb760(short name_index);
 long function_1070d0(short group_index);
 /* game_safe_to_save (0x226190) and the checks it makes */
@@ -375,6 +390,13 @@ static void run_test_commands(void)
 				++rest;
 			for (; *rest >= '0' && *rest <= '9'; ++rest)
 				label = label * 10 + (*rest - '0');
+			/* "boss": only a vehicle another team already rides (05b's Regret on
+			   his throne), leaving any other vehicle the player sits in first */
+			bool boss = strstr(rest, "boss") != NULL;
+			short team = *(short const *)(unit + 0x138);
+			if (boss && *(long const *)(unit + 0x14) != NONE &&
+				!vehicle_has_other_team(*(long const *)(unit + 0x14), team))
+				function_b9a90(player->unit_index);
 			real const *at = (real const *)(unit + 0x64);
 			long best_index = NONE, best_seat = NONE;
 			real best = 1e30f;
@@ -391,6 +413,8 @@ static void run_test_commands(void)
 					continue;
 				long vehicle_index = (long)(((dword)*(short const *)header << 16) | (dword)index);
 				byte const *definition = g_4e3b44[*(long const *)object & 0xffff].bytes;
+				if (boss && !vehicle_has_other_team(vehicle_index, team))
+					continue;
 				long seat_count = *(long const *)(definition + 0x1c8);
 				s_unit_seat_definition const *seats = *(s_unit_seat_definition * const *)(definition + 0x1cc);
 				for (long seat = 0; seat < seat_count; ++seat)

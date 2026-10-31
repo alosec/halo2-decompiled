@@ -325,7 +325,7 @@ def main():
                         # round, as the player does
                         replies = len(g.test_replies)
                         if "regret" in text:   # Regret is fought aboard his throne
-                            g.guest("enter_vehicle 0")
+                            g.guest("enter_vehicle 0 boss")
                             g.wait(60)
                         g.guest("kill_enemies %d" % (10 if "regret" in text else 0))
                         g.wait(30)
