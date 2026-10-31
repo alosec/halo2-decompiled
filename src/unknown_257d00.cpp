@@ -2158,6 +2158,9 @@ short __stdcall function_259d90(long actor_index, long object_index, s_cs_state 
 // 491/489/491/489; both receivers and selector with the two-stage native flag value 491 (reduced control 491,
 // full 478). Two-point reduced gains rejected; every receiver, physical declaration and original body restored.
 // Round 322: Shared vector assignment at turning/state/current publication subsets 1-7: 566/586/624/618/632/639/639; all plus facing initialization 618 (fast control 491). All original vector copies, helper boundaries, case order and body restored; actor/state ownership remains.
+// Round 238: complementary dispatch-ready/same-unit/facing-incomplete decisions, seven
+// subsets 491/491/491/493/493/493/493; all as long 583 (fast control 491; full 478).
+// Original internal decisions, byte completion, iterator and every vector/call restored.
 // @retail 0x259430
 short __stdcall function_259430(long arg_0, long arg_1, s_cs_state *arg_2, long arg_3)
 {

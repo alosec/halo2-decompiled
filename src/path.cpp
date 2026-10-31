@@ -230,36 +230,23 @@ void function_2705c0(s_path_source *source, point3f const *point,
 	input->unknown44 = unknown;
 }
 
-// score 28 (was 28): BLOCKED-BY 0x26c590. Retail takes the location in edx and the node in ebx and has one exit (`xor al, al` at entry, `mov al, 1`); the one-exit
-// form (`bool result = false;` ... `result = true; break;` ... `return result;`) matches, but unmatched 0x26c590 then takes its origin in
-// ecx and its eight matched callers (0x1ab770, 0x1bd400, 0x1f5110, 0x26c4e0, 0x26cbe0, 0x26ccb0, 0x26d290, 0x2c39f0) stop matching
-// (BLOCKED-BY 0x26c590). Tried in 0x26c590 with that form: `bool success` 553, line_normal as one dword copy 445, point1/distance1 at
-// function scope 420, the edge iterator at function scope 420; hit at function scope 419; long count 424; line_normal as one struct
-// copy 444 (retail's 0x64 frame), the same with the old exits 478, with bool success 507; none keeps origin on the stack.
-// Separate noinline with complete/original exits 0/28; scan-position result 29; direct view with complete result 0; shifted bit 37; entry-pointer
-// walk 27; walk plus result 39; word index plus result 21. Both matching forms and the word-index form lose the protected caller chain. Ordinary
-// noinline/result confirmation matches here but loses all eight listed callers; all body/declaration trials restored. The pointer walk gains only
-// one and is restored.
-// Inline with original exits 28; inline plus single result MATCH fast, but seven matched reduced-image callers lose
-// their match (the eighth already differs in that image); shared byte/short result 40/45; native index with original/
-// shared exits 32/37; nested tests 28; active-bit-first tests 28 (same caller losses). All restored.
-// Round 70: a one-file LTCG harness of 0x26c590 + this file reproduces the move (origin in ecx, ret 0x14). Retail keeps
-// NONE in edx from entry to the loop test, so the axis pointer takes edi and origin stays on the stack. In 0x26c590 with
-// the one-exit form: next index at function scope 430, it set to NONE there 419, bool success cleared at the count exit
-// 544, first at function scope 419, nested location/flag tests 419; origin stays in ecx in all, the callers still lost.
+// whether the location holds an active entry for the node: retail's one caller (0x26c590) sets up
+// the location (edx) before the node (ebx), so the node is declared first
 // @retail 0x270600
-PRIVATE bool function_270600(s_path_location const *location, long node_index)
+PRIVATE bool function_270600(long node_index, s_path_location const *location)
 {
 	s_path_location_view const *view = (s_path_location_view const *)location;
+	bool result = false;
 	for (short i = 0; i < view->count; i++)
 	{
 		if (view->entries[i].unknown00 == NONE &&
 			view->entries[i].node_index == node_index && (view->flags & (1 << i)))
 		{
-			return true;
+			result = true;
+			break;
 		}
 	}
-	return false;
+	return result;
 }
 
 // @retail 0x270640
