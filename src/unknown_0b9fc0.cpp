@@ -373,6 +373,8 @@ void __stdcall function_115220(long machine_index)
 
 // score 52 (was 273): frame 0xc8 and retail length agree; first difference +0x461 (was +0x5f): the
 // marker dot (retail i, k, j with xmm0 reused) and the parent walk's flag load remain.
+// frame 0xc8 and early flag acquisition agree through +0x5f; the initial
+// clamp spill and later float/portal/movement scheduling remain.
 // Earlier: its flag tests and the type-mask test read as field bits (TEST_FIELD_BIT) give retail's load-and-shift; the rest still differs.
 // Frame 0xc8 agrees; early flag carriers, the extra clamp spill, floating schedule and portal/movement homes remain.
 // Round 269: motion workspace 368; position snapshot 455; both 455; shared ordinal 368;
@@ -410,6 +412,8 @@ void __stdcall function_115220(long machine_index)
 // first) plus `real dot = fwd.i * dir.i; dot += fwd.k * dir.k; dot += fwd.j * dir.j;` (a `+=`
 // split). A compile-only screen of 216 one-expression dot forms (term order, grouping, operand
 // order, assignment order) and a named `dot` local found no exact form.
+// Round 236: guarded word/short/dword/long masks, then each with later animation-state constants 450/450/440/440/345/345/347/347.
+// Original executable body restored.
 // @retail 0x1152e0
 bool __stdcall function_1152e0(long machine_index)
 {

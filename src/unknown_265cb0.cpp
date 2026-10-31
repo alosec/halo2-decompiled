@@ -494,6 +494,15 @@ real function_30bf0(vector3f *vector);
 // 152/152/152/152/152/152/152/183. Original complete executable body restored.
 // Round 214: existing dot/basis-dot plane producers, both operand orders: copied normal 150 each; native normal 290 each.
 // Exact-only sum forms restored; no gain meeting the margin, result/range/amount homes and inverse SIMD groups remain.
+// score 150 (was 144): the volatile result anchor and the pointer-to-whole-local side
+// operand are gone, so the result, range and delta stack homes and the delta/motion SIMD
+// register blocks differ from retail again.
+// score 152 (was 152): the facing branch is entered on retail's negated condition and the cross
+// product's multiply operands now follow retail's order; the result, range and delta stack homes
+// and the delta/motion SIMD register blocks still differ.
+// Coordinator review: the facing branch on the negated condition with the volatile result kept scores 150 (was 152);
+// with int result as well 150. Neither meets the 8-point bar, so main's code stays; the 144 above also had the cross
+// product's operand order, which is not in this file.
 // @retail 0x263810
 short function_263810(point3f const *origin, long actor_index, point3f const *point, point3f const *endpoint, char posture, short mode, bool use_facing, bool *out_of_range)
 {
@@ -1207,7 +1216,7 @@ PRIVATE __forceinline long round_tick_count(real ticks)
 
 long function_146650(void);
 
-// score 14 (was 99): only three vector homes differ: retail stacks movement, offset, ahead,
+// score 14 (was 14): only three vector homes differ: retail stacks movement, offset, ahead,
 // target_direction, direction upward from esp+0x34; ours movement, offset, direction, ahead,
 // target_direction (12-byte slots; names and declaration places do not move them).
 // Tried, round 22 (fast, plain 14): `long ticks` with the decay after the if 99, with `real
@@ -1249,6 +1258,10 @@ long function_146650(void);
 // offset zeroed by a chained assignment 18. A compile-only model of this file gives our exact
 // homes: names, declaration order/scope and symbol count never move them; the slot order follows
 // how many references each vector has (two fewer `&direction` uses give retail's order).
+// Round 43 (per-arm decay form): target/movement/both library copies 14/14/14;
+// target/movement/both vector setters 77/186/224; library target plus movement setter 186;
+// target setter plus library movement 77. The setters disturb the scalar/geometry allocation;
+// original producers restored. The three 12-byte home rotation and query setup remain.
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {

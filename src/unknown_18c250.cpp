@@ -173,6 +173,11 @@ bool __stdcall function_18c250(long object_index, long tag_index, s_sound_marker
 // Round 431: common word/long datum slots 151/23; with machine receiver reacquired 151/23;
 // root-location returned output original/word/long slot 172/108/172; long slot with overlap-safe location copy 53.
 // Frame and normal block agree; machine receiver, cluster-map registers and final publication order remain.
+// Round 7 (m3 lane 2): `object` reassigned from the header for the machine read 23; local names sorted
+// first/last 23/23; `indices[...] * 18 + row` 23; the requested-audible nibble read into a char before the
+// location copy 17 (after-call DL as retail; one-use read ahead of a store, kept only on a match), the same
+// read after the copy 22; with the early read, a 64-bit copy 17; the copy's high dword written first
+// (cast form, diagnostic) 21, retail's first loads and stores, so the copy order follows source order.
 // Round 42: named machine object 23; header local in the machine arm 23; indices local 23; object local
 // reassigned from the header 23; one header local for the type and machine reads 137. Only dropping the (word)
 // cast gives retail's cluster lea/base order, but retail zero-extends the index.
@@ -657,6 +662,10 @@ PRIVATE __forceinline void loop_location_clear(s_type_99c531 *location)
 // Round 217: native root output at query/entry scope via aggregate/library copy 305 each; with
 // native velocity output 337 each. Frame 0x8c and datum/tag homes remain. Root-location callee
 // now matches and uses object ECX/output EAX; original body restored.
+// DL201: effect/audibility ordinary, inline and force-inline contracts, all eight pairs
+// 279/556/279/492/279/492/556/756. Ordinary inline forms tie; forced audibility expansion
+// loses seven matched callers. All original declarations, definitions and body restored.
+// Root-location query now matches; datum/tag homes and the constant-one spill remain.
 // @retail 0x18cbc0
 void function_18cbc0(long looping_sound_index, s_type_99c531 *location)
 {
