@@ -83,6 +83,10 @@ void function_1ea770(byte code, long player_index, s_statborg *statistics, long 
 // Round 414: No frame; enable reloads and maximum-register allocation remain. Shared previous maximum
 // in long/short storage at phase/entry, with read-once or per-use consecutive field, 107 in all eight
 // forms. Independent original maxima and counter snapshot restored.
+// Round 85: caller-local inline declarations with the existing player/team getters 164/118
+// (401/413 bytes), and with the player setter 202 (362); index admission nested after the limit
+// reads 110 (420); early consecutive and row declarations 107/107; team-mode byte and nested
+// team guards 107/107. Original scalar limits, counter operations and guards restored.
 // @retail 0x1ea5b0
 void function_1ea5b0(long player_index, s_statborg *statistics, long threshold, byte code)
 {
@@ -173,6 +177,10 @@ void function_1ea880(long first_player, long player_index, s_object_values *tabl
 // Round 308: Complete victim-index/killer-index/award-player subsets 452/442/435/442/441/458/453;
 // all with native word indices 461. Earlier victim-index lifetime recovers frame 0x50 but regresses;
 // original handle arithmetic, award observations, frame and rounding calls restored.
+// Round 203: native selected/fallback/both record results 484/505/459;
+// with a twice-used amount 460/483/459; native record cursor
+// without/with amount 473/473. Original result types and body restored;
+// frame, victim/selection/count homes and rounding expansion remain.
 // @retail 0x1e9fa0
 void __stdcall function_1e9fa0(void *engine_globals, long object_index, long reported_player, word reported_team, byte code)
 {

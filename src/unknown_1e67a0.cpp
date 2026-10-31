@@ -601,6 +601,14 @@ PRIVATE __forceinline real inverse_sqrt_1e6360(real squared)
 // retail's test order), with the volatile long 202 (1053 bytes); the blend factor as one
 // if/else-if/else chain 215 (1081 bytes); factor declared before input_fraction 165;
 // `1 + (def - 1) * blend` and `blend * (def - 1) + 1` 132/132 (identical code).
+// Round 91: velocity updates through the existing vector3f_add/vector3f_add_scaled (in/out on
+// &state->velocity; retail reloads velocity.j/k after the velocity.i store, as those give): all three
+// 182, movement add 181, projection and movement 177, jitter add 130 (1077 bytes, retail's length;
+// not kept, -2); on the jitter add, plain bits with the on/off bits first 231 (1021 bytes; structural
+// 34 against 47), the same with volatile bits 201, on/off factor on the left 231; plus the movement
+// add 174 (1064 bytes, 251 instructions as retail, structural 28, aligned 96 against 105: closest
+// shape; limits.j/k then share one register where retail keeps two copies, and on_z/y spill
+// differently); plus a chained limits.j/k 258, both 208.
 // @retail 0x1e6360
 void function_1e6360(s_biped_physics_output *output, real rate, long object_index, real blend)
 {

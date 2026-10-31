@@ -1427,7 +1427,7 @@ void function_d0d20(long unit_index)
 
 /* sends request 0x13 when the unit holds two weapons and either of them
    fails 0x101640 */
-// score 51 (was 68): retail's length now; the unit argument is in EDI (retail on the stack, kept in
+// score 51 (was 51): retail's length now; the unit argument is in EDI (retail on the stack, kept in
 // EBP), the second weapon's lookup reuses the first's (retail reloads the pool's data) and the
 // weapon reads are if/else (retail default-first). Primary/secondary/both existing getters
 // 72/74/74; masked guard getter 68, with primary/secondary/both 72/74/74; both getters
@@ -1441,6 +1441,12 @@ void function_d0d20(long unit_index)
 // both 0xcbd50 reads 57; both 0xcbd50 arguments through the pool local 48 (stack argument in EBP
 // and ret 4 as retail, but the second read reuses the first's lookup); second argument through
 // UNIT_GET 74.
+// Round 43: early missing-slot rejection 51; with both results default-first 57; with
+// primary/secondary/both existing getters 37/58/48; both getters and a retained-pool guard 50.
+// The 37 one-use getter result is exact-match-only and restored; gains 48/50 are too small.
+// Primary-only/secondary-only default-first results 56/57. Primary getter consumed directly
+// after the ordinary secondary reads 58; with the secondary default-first 61. Original body
+// restored; incoming unit home, second pool reload and weapon-result diamonds remain.
 // @retail 0xd1540
 void __stdcall function_d1540(long unit_index)
 {
@@ -2544,13 +2550,18 @@ void function_cce00(long unit_index, short starting_profile_index, bool reset, b
 /* whether the unit is free to act: not riding, without object flags 26
    and 27 in its animation state, no blocking action, and neither hand's
    weapon busy (0x100880) */
-// score 79 (was 98): Frame agrees; merged animation loads, retained object lookup and weapon-loop carriers still differ.
+// score 79 (was 79): Frame agrees; merged animation loads, retained object lookup and weapon-loop carriers still differ.
 // Direct rejection 79 plain (kept); retained pool 98; masked getter 98; native slot 101;
 // hand cursor 84; pool/direct rejection/cursor 79; shared flag mask 135; failure-first result 119.
 // Round 167: retail re-looks-up the unit after the 0xe6fe0 calls, ours keeps it (our LTCG treats
 // 0xe6fe0 as not writing memory). Pool local for the post-call lookup 79 (identical code); lookup
 // inside the hand loop 79 (identical); 0xcbd50 per hand 115 (kept out of line, but gives retail's
 // slot cursor and counter); action bits through a bitfield view 79; result declared first 79.
+// Round 43: separate parent/animation/action rejection scopes 79; direct busy-weapon
+// return 120; nested slot/weapon predicates 79; split/direct 120; split/nested 79;
+// direct/nested 120; all three 120; all three with a real slot cursor 116. The direct
+// returns shrink to 263/267 bytes and lose the native frame/result lifetime. Original
+// body restored; pool/header retention, animation reloads and hand carriers remain.
 // @retail 0xc85c0
 bool function_c85c0(long unit_index)
 {
@@ -4098,6 +4109,11 @@ bool function_c5eb0(long unit_index)
 // Round 222: complete row/products/outputs/both carrier ownership 39/40/32/40; the same four
 // with input scale names 39/40/32/40. Original body restored; input load order and forward-
 // product carriers remain.
+// Round 43: plain component traversal with scalar/reversed-scalar/native-vector inputs
+// 32/32/65; uniform partial rows with scalar/native inputs 28/65; successive rows 28/65;
+// existing in-place axis transform 169. Actual local axes scaled through the existing helper
+// up-left-forward/forward-left-up 36/51; with two existing vector adds 36/51. All restored;
+// input j/k scheduling and final forward-product carriers remain.
 // @retail 0xcb810
 bool function_cb810(long unit_index, vector3f *vector)
 {
