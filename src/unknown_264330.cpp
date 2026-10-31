@@ -331,6 +331,9 @@ void function_264940(long actor_index, long prop_ref_index)
 // keeps it in EBP and reloads the index; that is the extra frame slot. View arm first (`if (view)`,
 // retail's fall-through) 407; view declared NULL at the top beside unit (retail's early `xor ebp, ebp`)
 // 383 (prop then takes EBP), first 383, after unit/update/time in four orders 383 each; both 410.
+// Round 197: Consistent object-index/origin/type subfield pointers, masks 1..7,
+// 408/353/408/353/408/353/408; all with distinct current-state result 408.
+// Object-index receivers reach retail length but regress; original complete body restored.
 // @retail 0x264330
 void __stdcall function_264330(long actor_index, long prop_ref_index, s_2641c0 *context,
 	s_2640c0 *motion, bool force)

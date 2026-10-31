@@ -14,6 +14,7 @@
 // @flags /O2 /arch:SSE /Gr
 #include "projection_storage.h"
 #include "normalize3d.h"
+#include "vector_products.h"
 
 /* Light pool queries and the shapes copied from definitions and placements. */
 s_record_pool *g_4e030c;
@@ -467,6 +468,16 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // 34-37; the BSP index read at its use with the BSP pointer declared first 37 (word load, in BX); the BSP
 // pointer a local with the index and structure read at use 36 (DI); BSP pointer and index locals with the
 // structure at use 36 (index back to a dword load).
+// Round 91 (lane 7, one-file LTCG harness, exact here): the cause is how the difference is stored;
+// with the subtraction written as a component loop `direction.n[c] = end->n[c] - start->n[c]` (matched
+// 0xfa580's form) ours keeps k and squares it first like retail: the loop alone 80, with normalize3d
+// 74; the BSP index read at its use alone 36; loop plus the index at its use 12 (sum k, i, j against
+// k, j, i; the j scale folded instead of i; BSP index/pointer in BX/EBP), not kept (it writes the
+// helper's body out); on that, the BSP pointer first 13, the structure at its use 12, all three
+// globals at their use 13, counter `i` 12, direction declared first 12, three indexed statements
+// without the loop 85; the difference through a helper returning its output 34 (normalize3d 79);
+// `while (length > travelled && !result)` 102. Diagnostic only: a normalize summing
+// `i*i + (j*j + k*k)` with the subtraction through a pointer 8.
 // @retail 0xc0840
 bool function_c0840(point3f const *start, point3f const *end, point3f *out, real *distance)
 {
@@ -978,15 +989,16 @@ PRIVATE inline void light_projection_point_ab(transform4x3f const *matrix, vecto
         vj *= scale;
         vk *= scale;
     }
-    real x = matrix->forward.k * vk + matrix->forward.j * vj + matrix->forward.i * vi;
-    real y = matrix->left.k * vk + matrix->left.i * vi + matrix->left.j * vj;
-    real z = matrix->up.k * vk + matrix->up.i * vi + matrix->up.j * vj;
-    real scale = -1.0f / z;
-    result->x = scale * x;
-    result->y = scale * y;
+    vector3f transformed;
+    transformed.i = matrix->forward.k * vk + matrix->forward.j * vj + matrix->forward.i * vi;
+    transformed.j = matrix->left.k * vk + matrix->left.i * vi + matrix->left.j * vj;
+    transformed.k = matrix->up.k * vk + matrix->up.i * vi + matrix->up.j * vj;
+    real scale = -1.0f / transformed.k;
+    result->x = scale * transformed.i;
+    result->y = scale * transformed.j;
 }
 
-// score 513 (was 513): the entry pointer's base (+0x4c), the direction cursor and the table stores
+// score 482 (was 513): the entry pointer's base (+0x4c), the direction cursor and the table stores
 // now agree; retail stores the +radius vertex group first (so 1.0 lands in XMM2, not XMM1) and
 // computes each projection's forward row first. Kept: the file's cross helper for both crosses
 // (it sets the +0x4c base; the shared cross3f for the forward one gives +0x50), normalize3d for
@@ -1015,6 +1027,15 @@ PRIVATE inline void light_projection_point_ab(transform4x3f const *matrix, vecto
 // again 511: then the tables agree and the first cross product's loads (retail loads up.i, up.j and the
 // reference into registers) and normalize3d's product order are next. Vertex forms with 0 - radius, a
 // negative-radius local before or after radius, const radius: our -radius group stays first (harness).
+// Round 91 (lane 7): kept the projection rows in a `vector3f transformed` plus the shared
+// cross3f_staged for both crosses (the file's twin with swapped operands) 482: the top matches
+// retail to the first cross product. Before that: the vertex copied into a local vector 622, with
+// the rows too 619; rows alone 511; rows with normalize_inline 587; with cross3f for the left cross
+// 537, also normalize_inline 419 (retail's length, 298 aligned). On 482: rows in retail's or natural
+// term order 482/482 (canonicalised); y stored first 480; normalize_inline 575; rows through dot3f
+// 605; the forward cross's i row with its operands swapped (diagnostic) 482. Left: the first cross
+// folds up.i/up.j where retail loads them, normalize3d's sum (j, i, k against i, k, j), the forward
+// cross's i-row loads, and the projection rows.
 // @retail 0xc1d90
 void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab const *shape, s_light_projection_ab *entries, short *count)
 {
@@ -1048,9 +1069,9 @@ void __stdcall function_c1d90(s_light_frame_ab const *frame, s_light_shape_ab co
             vector3f reference = *g_4687a8;
             if (i == 1 || i == 3)
                 reference = *g_4687ac;
-            cross_product_c1a80(&reference, &entry->matrix.up, &entry->matrix.left);
+            cross3f_staged(&entry->matrix.up, &reference, &entry->matrix.left);
             normalize3d(&entry->matrix.left);
-            cross_product_c1a80(&entry->matrix.up, &entry->matrix.left, &entry->matrix.forward);
+            cross3f_staged(&entry->matrix.left, &entry->matrix.up, &entry->matrix.forward);
             entry->matrix.position = shape->origin;
             entry->matrix.scale = 1.0f;
             light_projection_point_ab(&entry->matrix, &vertices[faces[i][0]], &entry->points[0]);
@@ -1165,6 +1186,10 @@ void function_c0110()
 // Round 26: the object typed as the file's light object with `flag6` set or cleared in each arm 68,
 // `flag6 = remaining` 60; the header read through the file's object header type (kept) 6; signed
 // flags 6; the object through an inline getter 6.
+// Round 91 (lane 7, harness exact): the object declared at function scope 6; the entry as bytes 6;
+// the flags masked then set when remaining 45; a plain `while (entry = ...)` 6; the iterator declared
+// before `remaining` 6; the object index read from the light at the lookup / the loop test / the
+// guard 6/6/6.
 // @retail 0xc3260
 void __stdcall function_c3260(long light_index, bool clear_object_flag)
 {
@@ -1321,6 +1346,12 @@ point3f *transform4x3f_apply_point(transform4x3f const *matrix, point3f const *p
 // input copied first, both inputs copied before the point call, both outputs via locals. Lane 13
 // round 18 (fast counts, 38 here): a plain auto-inlined copy of the helper 38 (same code); const
 // matrix local 38; the rotations swapped 48; the up input copied into a local first 190.
+// Round 91 (lane 7; harness counts, where the unchanged source gives 38; the real build's two
+// extra are a marker-arm reload pair that drifts with LTCG context): the definition typed as the
+// file's light definition 38; the node arm's object read from the header table directly 40; the
+// light parameter passed directly to 0xc28b0 154; the far point added before the second rotation
+// 220; a `word flags` local for the entry tests 40; a rotation helper taking the vector by value 235
+// or returning it 268.
 // @retail 0xc2d00
 void __stdcall function_c2d00(long light_index)
 {
@@ -1578,6 +1609,10 @@ extern s_object_list *g_4de2f4;
 // nothing scratch lives across it, so it is not the blocker): the fraction pointer defined between
 // copies 3 and 4 / 2 and 3 / 1 and 2 / the tint and copy 1 62/75/76/75 (still EAX, rematerialised);
 // the light's name read into a local before the 0xbab40 call 49 (same code).
+// Round 91 (lane 7; harness counts, where the unchanged source gives 50): the colour copies after
+// the 0xbab40 call 79; the copied view point typed point3f 50; the first blend's fraction named
+// after 0xbad50 50; `object` declared before `object_index` 52; the object through `object_get`
+// 50; the alphas chained 52; a trivial 0xbab40 body (diagnostic) 393.
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {

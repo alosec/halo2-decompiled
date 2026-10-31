@@ -192,6 +192,9 @@ static __forceinline real avoidance_normalize2d(point2f *direction)
 // code); with the file's length helper too 155.
 // Round 232: Once-read node/goal/node-goal/heap/node-heap/goal-heap/all search scalars, then all with full-width captured counts
 // 170, 175, 175, 92, 170, 175, 175, 167. Original executable source restored.
+// Round 48: normalizer with one exit (distance zeroed in the tiny case) 92; with a result variable
+// 101; direction as an aggregate initializer 92; goal through a pointer 92; distance declared at
+// its assignment 92. A whole-file /Op build (diagnostic) makes the root a library call (far worse).
 // @retail 0x2c3680
 short avoidance_add_node(s_avoidance_search *search, point2f const *point, bool side, long value08, short obstacle,
 	short value1a, real cost, short parent)
