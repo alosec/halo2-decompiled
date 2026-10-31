@@ -2066,6 +2066,9 @@ struct s_player_creation_record
 // 0x14f270 with a globals local per arm 267; that plus `inline` 267; through player_get plus
 // the locals 267; its arms swapped 267 (0x14f270 itself 15); the locals with the current
 // written-out block 33. Retail also expands both calls in 0x152f80 (ours calls the variable one).
+// Round 319: Empty-old-controller reset bypass with live old-field reads, install-first
+// arm and shared globals receiver, all eight subsets 42 each (650/650 bytes,
+// first +0x210). All restored; opposite recursive expansion and requested homes remain.
 // @retail 0x14c090
 void __stdcall function_14c090(long index, bool reuse, s_player_creation_record const *record)
 {
@@ -2252,6 +2255,9 @@ static __forceinline long player_round_ticks(real value)
 // two callers; its callee 0xb8540 is a stub here). Block-scoped requests 804 (frame 0x6c, 2842
 // bytes, not packed); two function-scope requests 804; the lunge cooldown through the file's
 // game_seconds_to_ticks_round 701; that with two requests 804; the 0x80 test nested 701.
+// Round 239: complementary readiness/admission/lunge ownership, seven nonempty
+// subsets and the complete byte graph, all eight 701. Original producers, request
+// storage, fields, call tuples and complete body restored; frame remains 0x4c.
 // @retail 0x14f820
 void __stdcall function_14f820(long player_index, long unit_index, byte *input)
 {

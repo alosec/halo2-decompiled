@@ -131,6 +131,10 @@ PRIVATE __forceinline void scripted_vector_scale(vector3f const *vector, real sc
 // declared before left with the left-first chain 87.
 // Round 232: Completed-vector memcpy / native component loop crossed with original / staged cross and native / helper left addition
 // 83, 76, 82, 75, 83, 78, 83, 78. Original executable source restored.
+// Round 4 (lane 18, fast): second products of the j and k cross terms with the operands swapped 30
+// (same code); first add as velocity + forward_part 30 (same code); scale as scale * component 30
+// (same code); scale storing j, k, i 46; cross storing k, j, i 40; velocity declared first 30; cross
+// product straight into velocity, scaled in place 32. Restored.
 // @retail 0x10b010
 void function_10b010(long object_index, real forward_speed, real left_speed, real up_speed)
 {

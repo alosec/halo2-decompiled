@@ -864,6 +864,12 @@ void function_25aba0(long actor_index);
 // workspace clear 330/292/292/292. The common value changes loop and frame allocation; original
 // 0x4c frame, six pops and aggregate workspace restored. State-one split decrement and zero-fill
 // remain.
+// Round 127 (lane 4), on the kept body (every pop but the state-one arm's already as retail: the
+// shared enabled-failure and choice==stamp arms `dec [mem]`, kind-2, level++ and next-handler arms
+// load/dec/store): `level` declared before the owner lookup 60; `level` set to zero just before
+// the slot loop 308 (held in a register); memset workspace alone 134 (957/957, the pop's offset
+// runs to the end); `level = (short)(level - 1)` in the state-one arm 58 (same code); its stamp
+// through g_46eeb8[type] 58 (same code).
 // Round 46 (lane 9): with the memset workspace (957/957, 134) only the state-one arm differs. Ours cross-jumps
 // the three enabled-test failures into that arm's own `dec [mem]` (the arm is `mov [esi+8], edx` then the
 // shared pop), where retail sends them to the fallback-failure pop (0x1a7e63) and keeps a separate state-one

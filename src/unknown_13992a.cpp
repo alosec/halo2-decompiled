@@ -120,6 +120,12 @@ long function_14de70(long arg_1);
 // Round 225: own/rival/both native-size color copies, immutable player handle alone/
 // with each/both copies, and all plus immutable object receiver: 131f each,
 // unchanged fast control 131 versus full 113. Original copies and body restored.
+// Round 33 (plain checks; fast is unfaithful here, 70 on the unchanged source): retail reloads
+// local_3 into EAX after the 0x22bfc0 store, compares the parent in memory and reads it again
+// into EAX (0xd1080 shows the same split); ours reloads local_3 into ECX before the store and
+// keeps the parent in EAX. Nested tests 48; the parent lookup through the inline object_get 48;
+// the two tests in a named bool 48; `(void)&local_3` 48 (diagnostic); the seat flag stored first
+// in the block 520; the parent index in a named local for the test and the lookup 48.
 // Round 29 (fast, control 70): an inline seat getter returning the seat element or NULL 438; the
 // definition folded into the seat expression 70; the seat index in a short local 97 (the unit reload
 // then goes to eax after the result store as in retail, the parent to ecx); NONE-first tests 70; the
