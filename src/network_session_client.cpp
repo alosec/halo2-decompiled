@@ -621,6 +621,18 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 // neighbour) 55 (same code); the player-loop index renamed 55, the session parameter renamed 55
 // (same code: names don't move the registers); named player pointer 58 (same rotation); the
 // flag-only preset pointers 49 (session still ESI).
+// Round 127 (lane 4): the register parameter comes from a first pass with the session on the stack:
+// ours loads it once into ESI at entry, so LTCG passes it in ESI; retail's first pass gave it EBX
+// (its callers do `push ebx; mov ebx, esi; call`). A /Gd compile-only harness of this file with
+// get_data_4a00, set_value_4994 and function_058d20 defined inline reproduces it: without the tail
+// the pass gives the session EBX, the index ESI and the player pointer EDI (retail's, copy loop
+// included); one setter alone, either setter, or the tail without the live test all give ESI; so do
+// dropping the two address tests, the mask test or set_data_4f24 (diagnostics), while dropping the
+// summary getter or the call's two session field arguments gives EBX. Real trials: the function as
+// a session method 55 (same code); the limit helper in set_value_4994's shape 55; member count
+// read before the summary 131; summary fetched after the copy loop 76; the copy loop through a
+// members pointer 55. Harness-only: index declared at block top, the loop argument hoisted, the
+// player loop as a forceinline helper, all ESI.
 // @retail 0x6e720
 bool function_06e720(c_class_58d20 *session)
 {

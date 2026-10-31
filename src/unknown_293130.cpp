@@ -184,6 +184,17 @@ __forceinline void function_293133(real arg_0, vector3f const *arg_1, vector3f *
 // Round 82: projection factor first 43; projection declared before trig 43; angle declared before draws 43;
 // output-returning rotation 43; cosine first 55; output/axis/angle parameters 43; i projected sum axis-first 43;
 // named dot and cosine complement 60 (1409 bytes). All restored; the dot order and sentinel schedule remain.
+// Round 127 (lane 4): the dot written grouped j + (i + k) 42 (it then sums i, k, then j as retail, but
+// ours makes the k product the accumulator where retail makes the i product); on it: inner pair as
+// (k + i) or the products' operands swapped 42 (same code); the rows without named terms 42 (same
+// code); sine/cosine named in the caller and passed in 42; constant-first or named (1 - cos) 42/42;
+// point component first in the x draw 42; cross terms before the dot 63; a named radius for the
+// three point draws 254; the angle passed straight 54; the threshold drawn through function_x82e52f
+// 61. Groupings i + (j + k) 53 and k + (i + j) 114; on the flat dot: cross terms first 66, the helper
+// taking sine and cosine 55 (cosine evaluated first), the parameter read through its address for
+// 0x2936b0 43 (same code). Diagnostics only: extra no-op products cycle the flat dot through four
+// states with period 4 (43/60/53/111), none with i in the first pair; on the grouped dot one extra
+// product before the dot gives retail's i accumulator (59, with the extra code).
 // @retail 0x293130
 long __stdcall function_293130(long arg_0)
 {

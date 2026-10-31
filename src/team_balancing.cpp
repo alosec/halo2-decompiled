@@ -489,6 +489,11 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // Round 230: solution selection at every query, alone, with A/B/both team observations,
 // outer-party lifetime, both candidate-team roots, shared candidate spread and equality-first
 // acceptance: 112/179/150/186/112/182/107/115. Original selection, named post-swap counts and body restored.
+// Round 127 (lane 4): the reference selected right after the candidate copy 151 (0x91dd0 9; the
+// reference is still queried first); the reference on the left of both comparisons 65 (reference
+// still first); the comparison as an in-class solution method called on the candidate 188 (not
+// inlined under /Ob1, 420 bytes); the improvement as an if / else-if pair 150 (0x91dd0 8); the
+// reference pointer declared `const` 67 (same code).
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
