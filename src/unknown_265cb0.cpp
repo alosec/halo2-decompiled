@@ -1244,6 +1244,11 @@ long function_146650(void);
 // subsets 423/256/425/133/424/257/426; all with the rounded-count name 426. Every signed-short
 // product remains exactly representable. Original literals, count name and full body restored;
 // hoisted clock conversion, joined count copy and geometry homes remain.
+// Round 21 (lane 13): ahead as a copy of the position plus `+=` steps 209 (1974 bytes);
+// real_point3d_set 14; vector3f_add_scaled 14; length_sq3f and dot3f for the two sums 14;
+// offset zeroed by a chained assignment 18. A compile-only model of this file gives our exact
+// homes: names, declaration order/scope and symbol count never move them; the slot order follows
+// how many references each vector has (two fewer `&direction` uses give retail's order).
 // @retail 0x267c50
 void function_267c50(long actor_index)
 {

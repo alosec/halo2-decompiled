@@ -401,6 +401,12 @@ PRIVATE inline __int64 bink_read_tsc(void)
 // Round 431: Allocation-clock/memory-decoder/texture-output consumption scopes, seven subsets; all with
 // read-only movie input: 244/244/244/244/244/244/244/244. Original consumption scopes, helpers and
 // complete executable body restored.
+// Round 21 (lane 13): retail builds this body with SSE (movss stores of 1.0f, `fld; fcompi` for the
+// timeout) while this file has no /arch:SSE; no other function here has float code. Retail's size is
+// `((flags & 0x100) | 0x40) << 16` with the mask spilled to a dword slot (the 0x40 frame) and the
+// start time's low half in EDI. `dword large = flags & 0x100` 273; the mask test written at both
+// uses (retail's or/shl size) 269; the allocation result declared after the start time 256; both
+// 287; `(real)` on the seconds before the 0.1f compare 244 (float compare, still fcomp/fnstsw).
 // @retail 0x156090
 void function_156090(char const *name, dword flags)
 {
