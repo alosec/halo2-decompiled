@@ -2988,6 +2988,9 @@ struct s_2a2f0_record
 // Round 224: readonly real strip table, entry/branch constant initialization,
 // record-pointer/direct fields and long/short ordinal combinations with independent
 // dimensions and ordinary count reads: 166/272/175/230/205/268/215/255. All restored.
+// Round 444: native clamped short/word/long/dword pixel counts, promoted immediately
+// 207/207/242/214 or at bounds construction 240/240/243/206. All with independent
+// dimensions and ordinary counts; original body restored, count copy remains.
 // @retail 0x2a2f0
 void __stdcall function_2a2f0(long tag, real alpha)
 {
@@ -3178,7 +3181,8 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
     D3DDevice_SetRenderState(D3DRS_ZBIAS, 0);
 }
 
-// score 853 (was 853): frame 0x2c agrees; capability/save roles, state expansion and scalar homes differ.
+// score 1083 (was 1109): frame 0x2c agrees; small permission now has retail byte tests,
+// but mode-bound/save roles, state expansion and scalar homes differ.
 // Earlier: Frame 0x2c agrees; capability/save roles and state expansion remain.
 // frame 0x2c agrees; saved registers, mode flags and state-call expansion differ.
 // Short capability flags 1195; short rescale state 1204; color homes renamed 978;
@@ -3251,6 +3255,9 @@ PRIVATE __forceinline void set_filter_blending(bool additive)
 // short/long additive input 1457/1457/1453/1453/1457/1457/1453/1453. Actual-mode helper
 // long/short/byte/dword under force-inline 853 each, under inline 1446/1455/1534/1446.
 // Original helper contract, all call inputs and complete body restored.
+// Round 444: small/negative permission pairs byte/bool, signed-char/bool, bool/byte
+// 1083 each; bool/word, byte/word, signed-char/word 1187; dword/bool and dword/byte
+// 1109. Byte small permission alone kept after full plain confirmation (4832/4828 bytes).
 // @retail 0x3a5c0
 bool __stdcall function_3a5c0(byte const *configuration, real low, real high, long mode,
     bool center, bool shift, bool clip, bool skip_state, real *depth_out)
@@ -3258,7 +3265,7 @@ bool __stdcall function_3a5c0(byte const *configuration, real low, real high, lo
     bool result = false;
     real offset = 0.0f;
     bool small = false;
-    long allow_small = false;
+    byte allow_small = false;
     bool allow_negative = false;
     real maximum = 1.0f;
     real inverse_distance = 1.0f / g_48565c;

@@ -84,6 +84,9 @@ PRIVATE inline long swizzle_log2(dword value)
 // Original coordinate captures, helper, table expressions and tail restored.
 // Round 211: existing logarithm signed short/long inputs crossed with bounded short/long counts
 // and short/long results, scores 82/82/82/82/82/82/82/82. Original executable form restored.
+// Round 444: explicit termination at one with byte/signed-char scan counters and
+// long/short/word/byte returns 92 each. Original helper/body restored; coordinate
+// promotion, height/common homes and minimum selection remain.
 // @retail 0x358d0
 void function_358d0(short width, short x, short y, short height, dword *out)
 {

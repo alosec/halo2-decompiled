@@ -684,6 +684,9 @@ struct s_1f9762
 // inside the not-last arm's valid branch with a ternary reversed, if/else or nested `if
 // (direction_valid)` 104/104/104, with a default plus `if` 111. Compile-only: only `direction_valid
 // && !last` (listed) moves the approach after the first return, and it keeps the pointer in EDI.
+// Round 444: caller ordinary-inline difference/normalizer/query boundaries, seven
+// subsets 67 each; all with direction-valid-first guard 191. All declarations and
+// the complete body restored; native approach placement remains.
 // @retail 0x1f9760
 bool function_1f9760(long actor_index, long object_index, point3f const *point, real distance,
 	bool *last_out, bool *direction_valid_out, vector3f *direction_out)
@@ -1466,6 +1469,9 @@ PRIVATE inline real movement_normalize2d(point2f *v)
 // All ordinary sources move the entry homes and regress; original body/helper restored.
 // Ordinary origin with paired radial/side/desired product stages, seven subsets 255 each;
 // all with the complete scalar fraction producer 255. All restored.
+// Round 444: Ordinary origin with zero result after type/side/projection geometry
+// 292/284/284; assigned-sign counterparts 292/281/281; forward-scoped result with
+// direct/assigned sign 300/300. All restored; zero/radius and vector homes remain.
 // @retail 0x1f99d0
 real function_1f99d0(long actor_index, long object_index, short type, point2f const *target,
     point2f const *origin, point2f const *facing, s_obstacle_list const *obstacles)
