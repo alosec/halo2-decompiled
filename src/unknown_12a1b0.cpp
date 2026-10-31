@@ -1061,21 +1061,21 @@ long function_21b940(long looping_sound_index, long definition_index, long pitch
 				}
 				else
 					links->controller_index = NONE;
-				short pitch_range;
+				short chosen_range;
 				if (pitch_range_index != NONE)
-					pitch_range = (short)pitch_range_index;
+					chosen_range = (short)pitch_range_index;
 				else
 				{
 					s_short_bounds *bounds = &tables->pitch_modifiers[playback->playback_index].pitch_bounds;
 					real lower = (real)bounds->lower;
 					real pitch = ((real)bounds->upper - lower) * track->gain + playing->pitch + lower;
-					pitch_range = function_218f50(playback, NONE, pitch);
+					chosen_range = function_218f50(playback, NONE, pitch);
 				}
-				dword permutations = looping_sound_get_permutations(playback, sound, definition, track_index, pitch_range, state == 2);
-				short previous = (short)looping_sound_get_previous_permutation(definition, playback, pitch_range);
-				short permutation = function_219110((s_set_ref *)playback, pitch_range, &permutations, previous, seed, NULL, false);
-				looping_sound_set_permutations(sound, definition, playback, track_index, pitch_range, permutations, permutation);
-				sound_playback_set_chunk(result, definition_index, (char)pitch_range, (char)permutation, 0);
+				dword permutations = looping_sound_get_permutations(playback, sound, definition, track_index, chosen_range, state == 2);
+				short previous = (short)looping_sound_get_previous_permutation(definition, playback, chosen_range);
+				short permutation = function_219110((s_set_ref *)playback, chosen_range, &permutations, previous, seed, NULL, false);
+				looping_sound_set_permutations(sound, definition, playback, track_index, chosen_range, permutations, permutation);
+				sound_playback_set_chunk(result, definition_index, (char)chosen_range, (char)permutation, 0);
 				function_125e60(playing);
 				looping_sound_link_sound(looping_sound_index, track_index, result);
 				++sound->playing_sound_count;
