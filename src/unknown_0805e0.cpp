@@ -885,6 +885,11 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // still takes EAX, so the forward copy index takes EBP and a jump over the loop padding shifts the
 // rest); on it: lower first in the count path 74, upper declared first 73, upper before lower 75, the
 // lower ternary on `position < removed` 73, bounds left unset and zeroed in a final else 73.
+// Round 47: on the current body, `lower = removed > position ? position : removed` 64 (retail's
+// cmovle; upper still EAX because the `cache_full` sete puts the count in ECX); the three-way test
+// with the flag cleared in the `>` arm and the count path 380, upper first there 380; plain entry
+// with that lower 368 (entry as retail but the EDX load, upper coalesced with the count in EAX);
+// plain entry with the three-way test 74, with round 119's mixed read 72.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {

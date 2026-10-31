@@ -129,7 +129,9 @@ struct s_options_player
 
 struct s_engine_options
 {
-	byte unknown00[0x184];
+	byte unknown00[0xc];
+	char mode;
+	byte unknown0d[0x184 - 0xd];
 	dword flags_bit0 : 1;
 	dword flags_bit1 : 1;
 	dword flags_bit2 : 1;
@@ -144,7 +146,8 @@ struct s_engine_options
 	dword : 21;
 	byte unknown188[0x190 - 0x188];
 	long value190;
-	byte unknown194[0x1bc - 0x194];
+	byte unknown194[0x1b8 - 0x194];
+	long value1b8;
 	long value1bc;
 	byte unknown1c0[4];
 	long value1c4;
@@ -1483,7 +1486,8 @@ struct s_item_collection
 	short spawn_time;
 };
 
-// score 5 (was 5): the tick count is sign extended into eax here and into edx in retail.
+// score 5 (was 5): the tick count is sign extended into eax here and into edx in retail, and the tag
+// table base takes edx (retail ecx), as if the ticks were live through the whole fallback arm.
 // collection object reference 5; positive fallback 5; selection scope 5;
 // nested positive groups 5; object plus scope 5; valid-selection result 25;
 // native-short valid selection 29; object plus positive fallback 5. Integer join still differs.
@@ -1493,11 +1497,12 @@ struct s_item_collection
 // arm conversions with long fallback 19; both duration fields reread 5.
 // Shared duration-field address 27; selected short/long snapshot 31/36; explicit source arms 13;
 // direct field conversion 27; record reference 27; positive field guards 23; field scope 27.
-// score 5 (was 5): integer join and tag base still differ. Outer scenario/equipment/root-entry
-// receivers and tag base at entry/selection/fallback/root-entry/table-fallback 5/5/5/38/17/12/38/12.
-// score 5 (was 5): retail's ticks avoid eax and ecx as if live through the fallback arm.
-// Arms swapped 20; group tag local 5; tag index local 17; default after the spawn read 5;
-// fallback ticks before its zero test 6 (ticks in ecx).
+// Outer scenario/equipment/root-entry receivers and tag base at entry/selection/fallback/
+// root-entry/table-fallback 5/5/5/38/17/12/38/12. Arms swapped 20; group tag local 5; tag index
+// local 17; default after the spawn read 5; fallback ticks before its zero test 6 (ticks in ecx).
+// Ticks initialised to 0 5; int ticks 5; collection pointer local 5; one reassigned short spawn
+// time 31; zero default with a final test 21; dword ticks 30; plain conversion instead of the
+// rounding helper keeps the same registers.
 // @retail 0x15ac50
 long function_15ac50(long index)
 {
@@ -2826,10 +2831,14 @@ void function_158090(long player_index, short old_team)
 }
 
 // score 12 (was 12): the player index and the player table base are kept in swapped registers, and
-// the peer lookup after it reloads them the other way round. Tried: an unsigned index parameter 12;
+// the peer lookup after it reloads them the other way round. The swap comes with the data pointer
+// held across the event initializer: read as an expression after it, every register is retail's
+// but the load sinks below the initializer stores. Tried: an unsigned index parameter 12;
 // the table read before the peer call 31; a const table pointer 12; the existing dirty-slot helper 12;
 // the existing cause setter forced inline 69; inline depth one 12; the existing initializer forced
-// inline 73; global optimization off 120.
+// inline 73; global optimization off 120. The team through engine_player_get 14; a pool pointer
+// local 14; the players local declared at function scope 12; the event declared first 12; a player
+// reference 35; a second index local 12.
 // @retail 0x157de0
 void function_157de0(long player_index)
 {
@@ -3267,17 +3276,12 @@ struct s_engine_border_state
 
 void function_36880(s_short_rectangle const *rectangle, color4f const *color);
 
-// score 4 (was 4): the store of the border bottom is scheduled after the call arguments are set up
-// instead of before them. With four stores before a call the last one always sinks below the push
-// (three do not). Tried: every order of the first, second and fourth calls' statements 4 or more;
-// the widening as three ifs 72 or in a short local 4; the third call's top stored last 6; an edge
-// pointer for the third call 4.
 // @retail 0x15ff80
 void function_15ff80(s_engine_border_state const *state)
 {
 	s_short_rectangle bounds = state->bounds;
 	color4f color = state->color;
-	color.alpha = (((real)sin((real)g_510c54->game_time * 3.1415927410125732f / g_510c54->field_2_3) + 1.0f) * 0.5f) * color.alpha;
+	color.alpha = ((sinf((real)g_510c54->game_time * 3.1415927410125732f / g_510c54->field_2_3) + 1.0f) * 0.5f) * color.alpha;
 	bounds.left -= 45;
 	bounds.right += (state->flag1c0 ? 7 : 0) + (state->flag180 ? 54 : 0) + (state->flag138 ? 50 : 0);
 	s_short_rectangle border;
@@ -3399,22 +3403,17 @@ real function_159690(long player_index, long target_index)
 
 void function_1e9f40(long player_index, s_object_values *table);
 
-// score 2 (was 2): the two global reloads after the event call are in the opposite order: retail
-// loads the engine globals before the game state. Ours follows the first read after the join (the
-// lives block's mode test), not the order of the earlier loads. Tried: the lives through
-// engine_options() 2; the out-of-line statistics getter 151 (stays a call); the out-of-line
-// mark-dirty 2; a named game-time local 2; the lookups through the masked index 109.
 // @retail 0x157be0
 void function_157be0(dword player_index)
 {
 	if (game_engine_get())
 	{
 		long index = player_index & 0xffff;
-		if (g_4e6948->mode != 4 && function_x340af0())
+		if (engine_options()->mode != 4 && function_x340af0())
 			function_158140();
 		game_engine_get()->p5(player_index);
 		s_statborg *statistics = game_engine_statborg_inline();
-		if (g_4e6948->mode != 4)
+		if (engine_options()->mode != 4)
 			function_1e9f40(player_index, (s_object_values *)statistics);
 		if ((real)g_510c54->game_time * g_510c54->rate > 1.0f)
 		{
@@ -3424,10 +3423,10 @@ void function_157be0(dword player_index)
 			event.cause_team = engine_player_get(player_index)->team;
 			function_19eb30(&event);
 		}
-		if (g_4e6948->mode != 4)
+		if (engine_options()->mode != 4)
 		{
 			s_engine_player *player = engine_player_get(player_index);
-			long lives = g_4e6948->value1b8;
+			long lives = engine_options()->value1b8;
 			player->value1ac = (short)(lives ? lives : NONE);
 			game_engine_player_mark_dirty((short)index, 0x20);
 		}
@@ -3500,6 +3499,10 @@ int unicode_string_vsnprintf(word *buffer, long maximum_count, const word *forma
 // Round 225: suppression/text nested decision trees, either order, split sentinel/zero,
 // with or without complete notice-type capture: 82/104/104/82/82/104/104/82.
 // Original result graph restored; distinct failure exits and event clear schedule remain.
+// The explicit rejected failure gives retail's block layout but puts the result in al (retail
+// dl), moving the user index to ecx and merging the else-arm tails. With it: byte result 148
+// (setne); if/else fall 148; long state 151; every success returned 189 (ret 0xc); result first
+// 150; short user index 193; text at function scope 148. The flag through engine_options() 82.
 // @retail 0x15f120
 bool function_15f120(long player_index, word *buffer, long size, long suppress_score)
 {
@@ -4750,21 +4753,19 @@ bool function_158eb0()
     return result;
 }
 
-// score 5 (was 5): the mode and the player index are kept in swapped registers: retail computes the
-// mode in ecx and the index in edx, ours the other way round. Ours evaluates the index argument
-// first (right to left, the mode is 0x23f260's first parameter); retail behaves as if the mode were
-// last. Tried: `(long)(flag != 0)` 5; `!!flag` 5; a byte flag 5; `> 1` for `/ 2 > 0` 35.
+// score 5 (was 5): BLOCKED-BY 0x23f260 (mode declared first). The mode and the player index are kept
+// in swapped registers: retail computes the mode in ecx and the index in edx, ours the other way round.
+// Tried: `(long)(flag != 0)` 5; `!!flag` 5; a byte flag 5; `> 1` for `/ 2 > 0` 35.
 // actual mode reference 38; options record reference 5; complete iterator 46;
 // iterator scope 5; byte result 69; wide result 59; byte plus mode reference 66;
-// direct final count rejection 23. Scratch index/mode allocation still differs.
-// Cardinality bias 12; bounded count 43; singleton states 56; retained quotient/raw score 63/63;
-// signed/unsigned halfword result 58/58; bounded extra-player count 46. Scratch exchange remains.
-// score 5 (was 5): mode/index scratch registers still differ. Rejection state 27;
-// rejection predicate 63; wide/byte rejection 51/27; rejection from score 67;
-// rejection cardinality exit 32; rejection fallthrough 85; rejection after iterator 30.
-// score 5 (was 5): BLOCKED-BY 0x23f260 (mode declared first). Mode local before the count 38;
-// in-argument ternary on the global 38; inline helper taking the mode last 5; `!!` on the
-// global 38; index local read after the count, before the flag 5.
+// direct final count rejection 23. Cardinality bias 12; bounded count 43; singleton states 56;
+// retained quotient/raw score 63/63; signed/unsigned halfword result 58/58; bounded extra-player
+// count 46. Rejection state 27; rejection predicate 63; wide/byte rejection 51/27; rejection
+// from score 67; rejection cardinality exit 32; rejection fallthrough 85; rejection after iterator 30.
+// Mode local before the count 38; in-argument ternary on the global 38; inline helper taking the
+// mode last 5; `!!` on the global 38; index local read after the count, before the flag 5.
+// The flag through engine_options() 5; `flag ? 1 : 0` 5; a named score 5; count assigned after
+// its declaration 5; index initialised first 7; the bool flag passed directly 41.
 // @retail 0x158f50
 bool function_158f50()
 {

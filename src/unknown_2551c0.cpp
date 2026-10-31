@@ -131,7 +131,10 @@ short __stdcall function_2551c0(long actor_index)
 // added (`+ cross * sine`) 159 (820 bytes); the same with three scalar axis-by-vector cross terms
 // 139 (814 bytes; the early products become retail's pair but the whole rotation reschedules);
 // found declared before best_score 45; found set before the best score and direction 48; the
-// direction loop as a do/while 43 (same code).
+// direction loop as a do/while 43 (same code). Round 19 (lane 13), on the existing 0xe70b0 call (70, 820
+// bytes; its inlined body perturbs the early cross products and both dots): its state local declared at
+// the function top 70; found before the best score 72; forward and best direction declared first 70; trace
+// first in the loop 70; direction first in the loop 70.
 // @retail 0x2551f0
 bool __stdcall function_2551f0(long actor_index, s_slot *slot)
 {
@@ -623,6 +626,19 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // Round 40 (on the 95 form): 0x110ab0 swapped for another stdcall bool(long) callee 96 (same rotation, so it
 // is the caller's); guard as an early return 95, inner guard part as an early return 95; the 0x1e4a50 element
 // kept as a byte pointer with its +4 radius read in both sums 208.
+// Round 19 (lane 13): the radius read early and accumulated (`radius += size` or `radius = size + radius`)
+// after the projection test, with the else-arm default 211/211 (the read is still forwarded and the
+// 0x1e4a50 call sinks below the test), with the early default 139; the else-arm default with the
+// reduced length guard 205; the else-arm default with the sum named between the delta and the dot 209.
+// The else-arm default alone is 205 positional but aligned 92 (registers masked 30, against 126/81).
+// Round 42 (lane 16): why the late sum moves the call: our build forward-substitutes a radius used once
+// into its use and the pure 0x1e4a50 call goes with it, to whatever point first needs it (retail keeps
+// the call first in the block; 0x1e4a50 is LTCG in retail too, XMM4 stays live across it). Entry-declared
+// radius 141; with the sum after the projection test 139 (call sunk after the dot); sum between the dot
+// and the test 139 (call placed inside the vector math); radius read before the heading test, sum after
+// the projection test 139 (call sunk into the block). The round-72 form (radius used twice through the
+// repeated sum, default in an else arm) rebuilt 95: it keeps the call in place; the first difference is
+// then the 0x110ab0 argument register (ECX; retail EAX) and the rotation after it.
 // @retail 0x255740
 short __stdcall function_255740(long arg_0, s_slot *arg_1)
 {
