@@ -471,7 +471,7 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 	function_189fe0(&request, tag);
 }
 
-// score 223 (was 223): Frame 0x14c versus 0x148, BSP/camera/query homes and duration spill remain.
+// score 223 (was 223): Frame 0x14c versus 0x148; BSP/camera/query homes and duration spill remain.
 // Lane 8 r64 (fast; two callees build differently in the reduced image): existing 0x14ddc0 listener
 // test 295 (aligned 150 against 159: retail's `cmp iv, -0x48; setne`); existing first-local-player
 // helper alone 235; default-first transition re-read from the definition alone 267; all three 277;
@@ -561,6 +561,9 @@ PRIVATE __forceinline void sound_environment_play_cue(long tag)
 // Round 434: existing player-slot helper with complete original camera guard;
 // shared first-player search/native BSP/live duration in eight graphs 294/297/294/297/281/279/281/279.
 // Original guard, helpers, duration observation, query and cue calls restored.
+// Round 445: Separate producer/processing count long/short/word/byte 261/263/263/279;
+// the same four with independent native short request initialization 261/263/263/279.
+// All increase frame or extent; original complete body and helpers restored.
 // @retail 0x18bb80
 void __stdcall function_18bb80(real elapsed)
 {
