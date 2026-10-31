@@ -1274,6 +1274,9 @@ struct s_looping_detail_request
 // tests the optimizer later drops): `else if (sound->source.audible != 1)` 25 at 509/508, and with round 77's
 // three forms a byte match, not kept (the test is implied by the `if` above). Plain else with the struct-order
 // stores, vector3f_add and the camera first 133 (under the keep bar); vector3f_add alone 138, kept.
+// Round 319: Enclosing player-count lifetime with test-produced result, inactive-first
+// arm and native publication-order subsets 165/210/173/208/164/210/172/208
+// (reduced control 141, full 138). All restored; query expansion remains.
 // @retail 0x21cc60
 bool looping_sound_prepare_detail(s_type_a82d9f const *detail, long looping_sound_index, s_looping_detail_request *request)
 {

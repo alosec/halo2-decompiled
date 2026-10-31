@@ -835,6 +835,14 @@ struct s_signed_file_write_parameters
 // with it declared first). Diagnostic: the getter reaching the scratch object through its address
 // 132 (aligned 113 -> 109; 0x2ad7c0 68 -> 173 though its aligned count improves 55 -> 49), so both
 // bodies look compiled with the object address-taken; a natural source of that is not found yet.
+// Round 107 (fast; 0x2ad7c0 53 at the start): the record (storage, owner, pointer, size, flag, the
+// init setting the pointer to the storage; defined in this file, since defined after async_globals
+// its storage catches 0x120a90's node-loop end address) 131, 0x2ad7c0 159; with the getter storing
+// size, owner, then flag (0x2ad7c0's retail order) 129, 0x2ad7c0 160; that plus 0x2ad7c0's size
+// computed in each arm (MIN after the getter) 129, 0x2ad7c0 168 at 693 bytes (aligned 21/17); the
+// reordered getter alone 134, 0x2ad7c0 161; the record without the flag 132, 0x2ad7c0 160.
+// Retail schedules the getter differently at each site (site 1 flag, size, owner; site 2 owner,
+// size, flag; 0x2ad7c0 size, owner, flag), with every parameters load after its stores.
 // Lane 15 r17: the record defined in a /GL- file 134 (no change: LTCG still sees it); the getter
 // through a record pointer 132 (header_size now loaded after the owner store, the flag store still
 // sinks); the flag byte folded in as the record's fourth field (0x5020d4 = 0x5020c8 + 0xc) 131

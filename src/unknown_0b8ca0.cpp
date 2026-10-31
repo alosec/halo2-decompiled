@@ -1665,6 +1665,9 @@ void function_bba20(long index);
 
 transform4x3f *function_b8bd0(long object_index, short node_index);
 
+// Round 27: the parent lookup written through pool->data, the activity bit carried in a byte, the
+// shift-form bit-7 test and the type-below-eight test each regress (298/285/292/292 against 285);
+// the original body is restored.
 // score 285 (was 285): the frame (0x64) agrees; 1239 bytes against 1236. The entry now matches up to
 // +0x76 (pool in EBX, -1 in EAX). Retail inlines the node matrix lookup (0xb8bd0's body, here called
 // out of line because its file is /Ob1) and re-derives pool->data into EBX after the ancestry loop
