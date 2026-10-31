@@ -47,7 +47,11 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 }
 
 // score 128 (was 128): frame 0xa44 agrees; EBP is saved at token traversal rather than the
-// outer block, and read-size/count/cursor homes differ. Unsigned token / unique / both counts
+// outer block, and read-size/count/cursor homes differ. Round 28: the scalar homes sit 4 below retail's (the token
+// array agrees); EBP is saved and restored around the token loop only. Clamp as a MIN macro / an if / a PIN macro
+// 128/128/128 (same code); 0x1a1480's size and success parameters swapped everywhere (retail's call setup order,
+// ebx/eax/ecx, and 0x1a1480 still matches) 128; on it the read size declared at the top of the block / of the
+// function / with both flags at the block top 128/128/128. Unsigned token / unique / both counts
 // 128/128/128; signed-word token / unique / both 232/144/231; returned copy destination 126,
 // with unsigned counts 126; returned name 199, both returned paths 124 (one-use result, restored).
 // Tried: clamp, terminator and first token before the local_7 test, 118 (not kept: retail
