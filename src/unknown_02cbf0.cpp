@@ -49,6 +49,29 @@ static __forceinline long floor_to_long_inline(real value)
 	}
 }
 
+// score 17 (was 17): this round's source permuter over the body found no better form (22 tries in
+// 310s, best 17 on the reduced image and on the full image, equal to the baseline, no confirming
+// build), so the body is unchanged.
+// score 17 (was 17): this round's kind-block forms (the new word stored before the 0x449e0 call, with
+// the instance bit read back from the stored field, the tag read into a local, both together) score
+// 78, 79, 17 and 78, so the store's position and the tag's register stay as they were.
+// score 17 (was 17): this round's first-word OR forms (the flags term first, the category term
+// first, the unknown00 term first, a named low-word local, the two-statement split, the nested
+// tree shape and the previous-word local) all compile to the same 17; retail evaluates the first
+// word's terms as flags, then category, then the kept top bits, and MSVC keeps the reassociated
+// order whatever the source says. The intensity spill slot and the kind block still differ.
+// score 17 (was 17): this round's kind-word forms all compile to the same block (one expression 81,
+// a named shifted word 81, a dword kind 17, the long-domain shift 17, the store before the call with
+// the bit read back from the field 79). Retail shifts the kind in eax before the copy to esi and
+// stores the word before the call; the first word's OR order and the intensity spill slot still differ.
+// score 17 (was 36): the new kind word is now built in esi and its instance bit is taken from a copy
+// of it (`and eax, 0xffffff01`); the word is stored to the entry just after the 0x449e0 call, which is
+// what keeps it live in esi. The first word's OR order, the scaled-intensity spill slot and the
+// reduced image's thunk calls, thunk branches and global addresses still differ.
+// score 36 (was 36): this round's kind-word forms (a named word stored first, the instance bit read
+// back from the stored field) compile identically to the baseline; the packed-word order, the
+// intensity spill slot and the new kind word in esi still differ, and the reduced image's thunk
+// calls, thunk branches and global addresses cannot match.
 // score 36 (was 36): retail ORs the incoming flags and category before the kept top bits of the first
 // word; the scaled intensity spills to `outside`'s home (ours `level`'s: retail's callers push level as a
 // word, BLOCKED-BY 0x133390 and 0x133520, whose held file holds the byte declaration); retail builds the
@@ -177,6 +200,9 @@ static __forceinline long floor_to_long_inline(real value)
 // Round 421: shared masked input 110; uniform record indexing 374; masked/indexed record 364; short record index
 // 36; masked/short index 110; indexed/short index 375; all record inputs 364; entry-scope masked input/all record
 // inputs 394.
+// Round 51: clamp/scaled declarations swapped 36; scaled/clamped role names 36/36; combined names and
+// order 36; kind declared before object tag 36; kind result renamed 36; first word flags/category/old 36;
+// two-use kind word 80 (1033 bytes); its shift split from the OR 79 (1033 bytes). Original restored.
 // @retail 0x2cbf0
 short function_2cbf0(long geometry, long category, short instance, dword flags,
     long tag, dword key, long material, byte *object, short mask, byte mode,
@@ -271,10 +297,12 @@ short function_2cbf0(long geometry, long category, short instance, dword flags,
         entry->flags = (entry->flags & 0x1fffffff) | ((dword)*(word *)(section + 0x14) << 29);
         long object_tag = *(byte **)entry->unknown10 ? **(long **)entry->unknown10 : NONE;
         long kind = function_2d000(object_tag, entry->tag, (entry->flags >> 18) & 0x7ff);
-        entry->unknown00 = (entry->unknown00 & 0x1fffffff) | ((dword)kind << 29);
+        dword kind_word = (dword)kind << 29;
+        kind_word |= entry->unknown00 & 0x1fffffff;
         bool load = entry->tag == NONE;
-        bool instance_bit = (bool)((entry->unknown00 >> 12) & 1);
-        if (function_449e0((short)index, load, instance_bit))
+        void *added = function_449e0((short)index, load, (bool)((kind_word >> 12) & 1));
+        entry->unknown00 = kind_word;
+        if (added)
         {
             s_2cb30_state *state = g_4c0b78.state;
             if (!state->active)

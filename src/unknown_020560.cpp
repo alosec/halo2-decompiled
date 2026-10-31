@@ -1266,6 +1266,10 @@ bool function_0bfe60(dword const *flags, long bit);
 // match). With that form: status declared first 39, `set + index * 3` 38, index from an if 41; the row
 // at both uses 122 and through the existing bit_vector_set 122 (the store folds, no spill); the row
 // declared before the test index 119; the SDK begin-test call 158 (stays out of line).
+// Round 27 (lane 11): status set S_OK in an else arm 139 (441 bytes); the loop counter declared
+// before the loop 52; the push pointer read as `*(dword volatile **)device` 52; the test index written
+// at both calls 142 (as lane 13); status declared before the test index 53; `slot->b == player` 52;
+// `player == g_5234c4` 53.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {

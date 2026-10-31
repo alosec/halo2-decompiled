@@ -9,6 +9,12 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
     real arg_3, bool *arg_4, s_path_trace_result *arg_5);
 
 #pragma inline_depth(0)
+// score 104 (was 104): the frame 0x3c still agrees; the half and offset XMM allocation
+// and the x87/SSE projection scheduling are unchanged, and this round's trials in
+// this file found no lower form of them
+// score 104 (was 104): the frame 0x3c agrees; the half and offset XMM allocation and
+// the x87/SSE projection scheduling remain, and this round's trials in this file
+// found no lower form of them
 // score 104 (was 104): frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling remain.
 // Earlier: frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling differ;
 // tried position base 105; origin base 105; displacement base 105; geometry bases 105; unsigned component 104;
@@ -34,6 +40,10 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // 383); unary minus for both negations 176 (986 bytes); the half step as `0.5f * v + position` 104; the
 // length's squares in i, j, k order 108; the projection straight into its own local (no store to the
 // vector first) 104.
+// Round 126: without this file's inline_depth(0) pair LTCG inlines 0x25d700 and 0x1e4290 (retail calls
+// both): 383 (1119 bytes); and with the header normalize3d for the first normalization 424 (1152), with
+// dot3f for the final test 424, with `-x` for `0.0f - x` 424; normalize3d with the pragma kept (then
+// called, not inlined) 273 (927 bytes).
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {

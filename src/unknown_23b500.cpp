@@ -120,6 +120,18 @@ struct s_spawn_scenario_23aea0
 // 105, the same over the raw dwords 254 (278 bytes, not unrolled), as the nested loops 105, zero-based
 // nested loops 139 (374 bytes), nested loops through an element pointer 103. Ours always ends the loop on a
 // pointer compare (`cmp eax, &weights_end`), retail on the offset (`cmp eax, 0xa8`).
+// Round 126 (real `--fast`): a zero-based loop over the twelve records (source from +0x180) 105; a named
+// `real const *` source indexed by type * 7 121; one twelve-byte record copy per type 257 (279 bytes, not
+// unrolled); the table pointer stored after the two scalar defaults 105; byte-offset destination 254 (278).
+// One-link LTCG screens (exact for this function, which calls nothing): a forceinline copy helper taking
+// the record pointer (2..13 or 0..11) gives the base code; an out-of-file copy function is not inlined into
+// this /Ob1 file even when its definition is `inline` (called). Retail's 12 * type offset with the table
+// address folded into the displacement looks like a loop strength-reduced over a register base.
+// DL200: Overlap-safe default/override/both tuple copies 258/146/282, each with a new reduced
+// caller loss at 0x1574c0; all rejected. Consistent tuple byte-field orders 0/8/4, 4/0/8, 4/8/0,
+// 8/0/4 and 8/4/0 give 117/117/111/111/117. Original two-by-six copies, real field values, scalar
+// overrides, signed guards and includes restored at 105. Integer destination induction and
+// definition receiver remain.
 // @retail 0x23aea0
 void function_23aea0()
 {

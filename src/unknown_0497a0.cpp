@@ -133,6 +133,9 @@
 // Round 433: Exhaustive reciprocal result with entry shapes/source case order, four forms
 // 611/678/611/678; single denominator counterparts 600/696/600/696. All restored;
 // the live-through-wave inverse default is not the missing frame cause.
+// Round 317: Existing shared scalar clamp for six parallel rows in mode-family masks 1-7,
+// then all with force-inline declaration, 702/702/702/581/702/702/702/702. Scaled
+// families grow frame to 0x64; original declarations, inputs and body restored.
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,

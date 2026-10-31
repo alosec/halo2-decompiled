@@ -518,7 +518,7 @@ public:
 	void add_child(c_class_1a2c81 *widget);
 	void remove_child(c_class_1a2c81 *widget);
 	c_class_1a2c81 *find_text(long index);
-	c_class_1a2c81 *find_bitmap(short index);
+	c_class_1a2c81 *find_bitmap(long index);
 	c_class_1a2c81 *find_model(short index);
 	void set_child_value6e(long type, short index, bool value);
 	c_class_1a2c81 *find_by_id(long id);

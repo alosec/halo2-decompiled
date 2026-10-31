@@ -589,6 +589,13 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // Round 231: facing-first positive / both positive predicates / facing-first nonzero /
 // both nonzero predicates 205/231/211/237; with direct component output
 // 175/193/181/199. Original admission and aggregate output restored.
+// Round 28 (lane 10): with direct output stores the aligned count drops 106 -> 93 (the tail and the
+// turned copy then follow retail); the four missing instructions are the facing products, which ours
+// write as `movaps reg, x; mulss reg, [field]` where retail loads the field and multiplies by x.
+// Normalization products as scale * x, y * scale 130 (identical); direct stores 147 (828 bytes, aligned
+// 93); output through vector3f_scale 147 (same code); direct stores without named x/y 160 (821 bytes);
+// normalization as if (!(fabs < eps)) { scale } else zero 131 (845 bytes).
+// BLOCKED-BY 0x1eb8a0 (the form of its inline rotation helper, src/unknown_1eb8a0.cpp).
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

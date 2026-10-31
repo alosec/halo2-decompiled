@@ -152,6 +152,16 @@ void player_action_initialize(s_player_action *arg_0);
 #pragma inline_depth(0)
 // score 134 (was 134): frame 0x54 and selection inputs agree; comparison order,
 // byte-count extension, cyclic operand order, cold clear and output/angle scheduling differ.
+// Round 30 (fast; "aligned" = differing lines after a sequence alignment, base 57): retail's
+// first grenade-count test is the existing function_cdff0 inlined (the NONE check, then a short
+// count: `movsx ax`, `test ax, ax`), but calling it there leaves both calls out of line 403;
+// float stores for field_20/24 164 (aligned 71); an object pointer local for the angle block
+// 184 (aligned 81: retail's esi code there, but the tail's scratch registers rotate); both 178
+// (aligned 30); both with the nested 0x40 latch and the 0x60/0x4630200 masks tested apart 166
+// (aligned 28, 1499 bytes). Left in that form: the latch's `field_92 = false` arm placed inline
+// (retail after the return), the field_8/field_4 copy order, the x87 inclination magnitude (retail
+// squares y in place, `fld st(2); fmulp st(3)`; compile-only screens of four spellings give ours),
+// the comparison order, the byte-count extension and one SIB order.
 // Earlier input-convention gaps are absent in this baseline; both selection helpers and the count query match.
 // Positive nested latch with toggle-first/state-first 159/157; state-first with split invalidation 161;
 // field-first selection comparison 133 (one-point gain dropped); zero comparisons 134 each;
@@ -212,6 +222,19 @@ void player_action_initialize(s_player_action *arg_0);
 // Round 288: coherent count-pointer/native-array and mutable/readonly unit observations across
 // both count consumers, each with original/field-first selection comparison 389, 389, 389, 389, 384, 384, 384, 384. Restored.
 // Round 194: Coherent request byte at use 134; native request bits alone/with bounded short counter 172/165; native saved output bit alone/with per-use byte/native request bits/native bits plus counter/original snapshot plus counter 406/406/407/403/401. All restored; comparison/count and cold output/angle scheduling remain.
+// Round 27 (lane 11): retail inlines existing helpers here, which the inline_depth(0) pragma blocks. With
+// the pragma only around a forceinline wrapper of 0x14d040 (as 0x84750/0x825e0/0x874c0 keep it out of
+// line), 0xcdff0 called at the first count test (LTCG inlines that site only, as retail), 0x13cb40 for
+// the g_510c50 test, 0xcbec0(unit, type, 1) for the cycle loop and 0x11df30 for the yaw/pitch, plus the
+// 0x40 latch through a toggle flag set in the test (retail's arm after the return), the field-first
+// selection compare, float stores for field_20/24, an object pointer for the angle block and the copies
+// in the order block, field_4, field_8: 1 (plain), only the inlined 0xcbec0 count read [edx + edi]
+// where retail has [edi + edx]. Not kept: the flag form needs a match, and without it the arm stays
+// inline (nested latch 140, original latch 152). Steps: short count ternary 114; flag latch and compare
+// 113; float stores and object pointer 84; y squared in its own statement gives retail's x87 pitch only
+// through the float overloads; pragma removed 569 (0x14d040 inlined); copy orders 9/11/11/5, struct
+// block copy 8; SIB call-site forms (result local, unit index local) 1; permuter 600 s, 21 tries, none
+// below 1. Non-flag latch spellings (else first, named pressed bool, store first) all keep the arm inline.
 // @retail 0x186ab0
 void __stdcall function_186ab0(long arg_0, real arg_1, real arg_2, s_player_action *arg_3)
 {
