@@ -156,6 +156,10 @@ void c_animation_channel::clear()
 // Round 85: the byte pair as plain unknown10/unknown11 clears (no pointer) 43 (the four matched callers
 // lose); that with retail's order after an early graph store 43; id before rate before unknown0e 36;
 // frame store after unknown0d 41; frame, id, rate, unknown0e last in retail's order 41.
+// Round 203: identifier memmove early/retail 58/57; native default assignment
+// early/retail 68/68; defaults through copy_from 45/45; complete native
+// replacement assignment/copy_from 75/52. All lose five matched caller controls;
+// original body restored. Saved graph and identifier carriers remain.
 // @retail 0x1c6470
 bool c_animation_channel::set(long graph_tag_index, word flags, c_type_709360 animation_id, long unknown08,
 	char unknown0c, char unknown0d, char unknown0e)
@@ -747,6 +751,15 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // exits 97; first/loop failure exits 97; all dispatch failure exits 97; all failures with direct final
 // update 109; native events with direct final update 109. Word-load/state-clear scheduling and second
 // callback reload remain. Original body restored.
+// Round 126: the callback read through the pointer at every dispatch (no volatile) 133 (loaded at entry);
+// read as the plain parameter at every dispatch, pointer dropped, channel pointer kept 125 (LTCG passes
+// the callback in EAX; callers 0x1c68c0 16, 0x1c6920 8, 0x1cb710 19); the volatile read at the first two
+// dispatches 97 (same code); the pointer read at the first and the parameter at the others 133; the
+// channel flags read into a local before the byte clear 121 (538 bytes).
+// Round 315: Independent initial/end/loop dispatch outputs with native-word versus long carriers, all
+// eight masks 97. Every one-use result form is restored. Original shared result, callback
+// observations, parameter aliases and state graph retained; word-load schedule and second callback
+// reload remain.
 // @retail 0x1c66a0
 void __stdcall c_animation_channel_advance(c_animation_channel *channel, real frame, s_animation_state *state,
 	animation_event_callback callback, long user)

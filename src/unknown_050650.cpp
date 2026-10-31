@@ -242,6 +242,11 @@ static inline real actor_looking_normalize2d(point2f *vector)
 // 8/38/122/128/122/128/8/38; all restored.
 // Round 113: unnamed helper square 6; helper with an else-zero single exit 2 (same code); sqrtf 2;
 // brace-initialised reference copy 23; `>=` epsilon test 34; permuter (48 variants) none below 2.
+// Lane 13 r20: the leaf order follows the first source mention of each field (only the final dot names them);
+// a split x term gives x first but faddp first, a single tree gives the store first but the dot's order; retail
+// needs reference x then aim y first, which one dot cannot spell. Both through normalize2d 122 (inline declaration
+// 122; kept out of line even from a non-/Ob1 file 122); single tree with aim member copies y,x 10 / x,y 12; helper
+// defined after the caller single/named 6/2; single tree with the dot's y term first 6, reference-first 4.
 // @retail 0x296d60
 PRIVATE bool function_296d60(real cosine, vector3f const *reference, vector3f const *aim, bool three_dimensional)
 {
@@ -571,6 +576,10 @@ static inline void actor_looking_rotate(vector3f *vector, vector3f const *axis, 
 // Round 433: Single-exit success stored as byte/char/short/long 370/370/382/383;
 // without the dead entry collision-state value 370/370/382/383. All restored;
 // native success widths do not recover the 0xa8 frame or initial CL zero store.
+// Round 43: retail has two epilogues (`mov al, 1` after the best-direction tail, `mov al, dl` for the
+// result): `return true;` in that tail 343 and with a bool clear 335 (aligned 323, retail's late ebx
+// push), but both pass the collision flag in BL instead of on the stack, so 0x297660 stops matching;
+// bool clear alone 346; long attempt counter 332; with bool clear 345.
 // @retail 0x296e60
 PRIVATE bool function_296e60(point3f const *origin, vector3f const *forward, bool test_collision,
 	real yaw_lower, real yaw_upper, real pitch_lower, real pitch_upper, vector3f *direction)
@@ -704,6 +713,10 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 436 (fast control 301, full 290): point-presence assigned after each successful
 // point producer, bool/byte/word/long 310/310/368/364; assigned at the two
 // geometry consumers 372/372/393/393. All nonexact presence-lifetime forms restored.
+// Round 43: retail copies every point as dwords (struct assignment), not through float setters:
+// all five as `point = ...;` plain 306 (aligned 248 -> 131, but 1388 bytes: the copies tail-merge and the
+// remembered-prop/actor-direction tail moves after the last case), the state+0x30 copy alone 296, each other
+// one alone 375-379 (fast); point_valid given a longer name 290 (homes unchanged).
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)

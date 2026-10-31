@@ -175,6 +175,9 @@ void __stdcall cache_copy_record_use(char const *map_name);
 // Round 38: Native pending request reused by path/copy, conditional value/assignment/const/memcpy
 // and case assignment/memcpy 511 each fast at 1728 bytes; entry assignment/memcpy 507 each
 // at 1732 bytes. Original request flow, descriptor lifetimes and complete body restored.
+// Round 50: pending request as path input 161; call-first pending input 430; transfer buffer local
+// after/before resize 165/519; one-use handle locals in states 7/9/14 151/317/153 and states 7+14
+// 143 (one-use field copies, not kept without a match). Opening body restored.
 // @retail 0x2141f0
 bool function_2141f0(void)
 {

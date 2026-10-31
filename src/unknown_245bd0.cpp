@@ -278,6 +278,11 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // the plane dot's i product, as the dot swap fixes; a single-exit result 57; the test inverted 58;
 // a center pointer used twice 170 (669 bytes); single exit with length_sq3f 150; x and z summed
 // before y 59; the difference written out as plain assignments (diagnostic) 57-61 in every order.
+// Round 28 (lane 10): ours also hoists the 1.0 into XMM0 above the fsqrt for both arms (retail loads
+// it in each arm). The squared distance through the existing out-of-line 0x24550 (k, i, j sum) 303
+// (stays a call, 772 bytes); the sphere helper __forceinline 57 (same code); j + (i + k) grouping (the
+// inline normalize's) 59; the scale helper __forceinline 57 (same code); the point copied by value
+// 397 (helper outlined, 456 bytes).
 // Round 27 (lane 11, real builds): the sphere helper forced inline 57; its parameters (point, sphere,
 // plane, depth) 57, (sphere, point, depth, plane) 57, (point, sphere, depth, plane) 57; the sphere
 // passed as `shapes->spheres + index` 57.

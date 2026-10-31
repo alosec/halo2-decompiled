@@ -630,6 +630,10 @@ void simulation_player_collection_swap(s_type_c67652 *collection, long player_in
 // to the else branch 9/16; the first loop's increment as a statement 9/16, its index stored first
 // 10/18, its key through `watcher->players` 9/16, the mark call given the update's index 104/281; the
 // closing stamp through the session local 41/62; permuter (600 s, 75 tries) none better.
+// Round 19 (lane 13): `collection` declared at the function top or right after the session 228/228
+// (1088 bytes); declared at the top and assigned in the loop 32 (same code); `occupied` declared before
+// `slot` 32; the swap order above with the top-declared collection 36 (registers masked 8 against 10: the
+// occupied key's association, the preheader cursor store and the last record's reads remain).
 // @retail 0x83610
 void __stdcall function_83610(s_simulation_world_owner *watcher, long *count, s_simulation_player_update *updates)
 {

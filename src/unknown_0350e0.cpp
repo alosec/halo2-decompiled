@@ -3054,6 +3054,30 @@ struct s_collision_result_1697c0
 bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const *vector,
     long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *result);
 
+PRIVATE __forceinline void shadow_corner(transform4x3f const *matrix, real x, real y, point3f const *origin,
+    point3f *corner)
+{
+    real z = 0.0f;
+    if (matrix->scale != 1.0f)
+    {
+        x = matrix->scale * x;
+        y = matrix->scale * y;
+        z = matrix->scale * z;
+    }
+    corner->x = matrix->forward.i * x + matrix->up.i * z + matrix->left.i * y + matrix->position.x + origin->x;
+    corner->y = matrix->up.j * z + matrix->left.j * y + matrix->forward.j * x + matrix->position.y + origin->y;
+    corner->z = matrix->up.k * z + matrix->left.k * y + matrix->forward.k * x + matrix->position.z + origin->z + 0.001f;
+}
+
+// score 460 (was 952): the four corners are written out (retail has four copies of the scale test; it also
+// calls End out of line, which only happens once the corner code is this large - a counted loop, even one
+// the compiler unrolls, scores 465-496 and inlines End). Still differs: ours calls Begin out of line
+// (retail inlines Begin and calls only End; the inliner's choice follows the size of the corner code), and the
+// registers/spills of the corner math (retail keeps radius and -radius in stack slots 8 and 0xc, x in 4, z in
+// 0x10). Retail's vertex order is (-r,-r) (r,-r) (r,r) (-r,r); the old draft had x and y swapped.
+// Tried: loop with ternaries (950), local point3f/sign array loops (465-496), shared x/y/z locals in four
+// blocks (456), block-scoped locals (653), pairs loop (906), sum operand permutations per axis (no change),
+// 0.0f - radius (464), a negative_radius local (464).
 // @retail 0x32ce0
 void function_32ce0(long object_index, real opacity)
 {
@@ -3069,21 +3093,10 @@ void function_32ce0(long object_index, real opacity)
         matrix4x3_from_forward_and_up(&matrix, (vector3f const *)(object + 0x70),
             (vector3f const *)(object + 0x7c));
         point3f corners[4];
-        for (long i = 0; i < 4; ++i)
-        {
-            real x = i < 2 ? 0.0f - radius : radius;
-            real y = i == 0 || i == 3 ? 0.0f - radius : radius;
-            real z = 0.0f;
-            if (matrix.scale != 1.0f)
-            {
-                x *= matrix.scale;
-                y *= matrix.scale;
-                z *= matrix.scale;
-            }
-            corners[i].x = matrix.forward.i * x + matrix.up.i * z + matrix.left.i * y + matrix.position.x + collision.point.x;
-            corners[i].y = matrix.up.j * z + matrix.left.j * y + matrix.forward.j * x + matrix.position.y + collision.point.y;
-            corners[i].z = matrix.up.k * z + matrix.left.k * y + matrix.forward.k * x + matrix.position.z + collision.point.z + 0.001f;
-        }
+        shadow_corner(&matrix, radius * -1.0f, radius * -1.0f, &collision.point, &corners[0]);
+        shadow_corner(&matrix, radius, radius * -1.0f, &collision.point, &corners[1]);
+        shadow_corner(&matrix, radius, radius, &collision.point, &corners[2]);
+        shadow_corner(&matrix, radius * -1.0f, radius, &collision.point, &corners[3]);
         real fraction = *(real const *)(collision.unknown00 + 4);
         real alpha = (1.0f - fraction) * opacity;
         D3DDevice_Begin(D3DPT_QUADLIST);
@@ -4257,117 +4270,137 @@ PRIVATE __forceinline void shadow_cross_32350(vector3f const &a, vector3f const 
     out->k = z;
 }
 
+PRIVATE __forceinline real absolute_32350(real value)
+{
+    return value >= 0.0f ? value : 0.0f - value;
+}
+
+// score 506 (was 623): retail returns a separate false byte, not the special flag (`mov al, [esp+0xb]` on every
+// non-success exit; the flag 3d7f0 writes is the byte at [esp+0x13]), so a special object returns false; the draft
+// returned the flag. 31f50's 5th output feeds the depth, its 4th the *2 field (the draft had them swapped), the
+// two cross products are separate branches (cmov before), the frame points come from g_47fd18+0xc, and the final
+// pass is draw_light_source_pass. Still differs: (1) retail pushes esi/edi only after the early exits, ours at
+// entry, and its frame is 4 bytes smaller; (2) 0x4a1e0 takes source/camera/resource in eax/ecx/edx in retail (callee
+// unmatched, same as 0x31170); (3) retail tests the two pass bits as `shr; not; test bl, dl` with ebx = 1 held
+// for the pass inlined below (ours `shr; test 1`, constant 1 not in a register); (4) retail's |x| > |y| keeps
+// both absolute values and re-evaluates the winner in each arm (ja/jbe diamond), ours selects with a move.
+// Tried: the result as a volatile local byte (482; not kept, as it doesn't make the function match), if/else statements for the larger magnitude (531, ternary 524
+// before the frame-point change), `!(bit) || !(bit)` and `== 0` spellings of the gate (same shr/test form).
 // @retail 0x32350
 bool __stdcall function_32350(long index, real input_alpha)
 {
     byte *object = ((s_scalar_object_header *)g_4e0300->data)[index & 0xffff].object;
+    bool result = false;
     real alpha = 0.0f;
-    bool special = false;
+    bool special;
     bool eligible = function_3d7f0(index, &alpha, &special);
     alpha *= input_alpha;
-    if (!eligible || *(long *)(object + 0x14) != NONE || !g_4ba020) return special;
+    if (!eligible || *(long *)(object + 0x14) != NONE || !g_4ba020) return result;
     bool object_flag;
-    if (!function_3d7c0(index, &object_flag)) return special;
-    if (special)
+    if (!function_3d7c0(index, &object_flag)) return result;
+    if (!special)
     {
-        if (g_509413)
+        real radial = *(real *)(object + 0x3c) > 0.00019999999494757503f ? *(real *)(object + 0x3c) : 0.00019999999494757503f;
+        real axial = radial;
+        byte *lighting = function_3dc90(index);
+        bool object_type = object[0xaa] != 1;
+        if (!lighting || !(*(real *)(lighting + 0x1c) > 0.0f)) goto failed;
+        alpha *= *(real *)(lighting + 0x1c);
+        if (!(alpha > 0.09000000357627869f)) goto failed;
         {
-            if (function_32ac0())
+            vector3f const *light_direction = (vector3f *)(lighting + 0xc);
+            point3f const *origin = (point3f *)(object + 0x30);
+            function_31f50(index, origin, light_direction, &radial, &axial);
+            *(point3f *)(g_47fd18 + 0xc) = *origin;
+            *(point3f *)g_47fd18 = *origin;
+            vector3f &forward = *(vector3f *)(g_47fd18 + 0x28);
+            forward = *light_direction;
+            function_30bf0(&forward);
+            real largest;
+            if (absolute_32350(forward.i) > absolute_32350(forward.j)) largest = absolute_32350(forward.i);
+            else largest = absolute_32350(forward.j);
+            real depth = axial * 2.0f + largest;
+            *(real *)(g_47fda0 + 0x2c) = depth - axial;
+            *(real *)(g_47fda0 + 0x30) = depth + axial - axial;
+            *(real *)(g_47fda0 + 0x20) = radial * 2.0f;
+            vector3f const *axis = g_4687ac;
+            vector3f &up = *(vector3f *)(g_47fd18 + 0x34);
+            if (fabs(forward.k * axis->k + forward.i * axis->i + forward.j * axis->j) < 0.8999999761581421f)
+                shadow_cross_32350(forward, *axis, &up);
+            else
+                shadow_cross_32350(forward, *g_4687b4, &up);
+            function_30bf0(&up);
+            byte shape[0x74];
+            function_c1930((s_light_definition_ab *)g_47fda0, (s_light_shape_ab *)shape);
+            function_c1a80((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_definition_ab *)g_47fda0);
+            s_320b0_box box;
+            box.matrix.scale = 1.0f;
+            box.matrix.forward = forward;
+            shadow_cross_32350(up, forward, &box.matrix.left);
+            box.matrix.up = up;
+            box.radius.i = *(real *)(g_47fda0 + 0x30) * 0.5f;
+            box.radius.j = *(real *)(shape + 0x58) * 0.5f;
+            box.radius.k = *(real *)(shape + 0x5c) * 0.5f;
+            point3f center;
+            point3f const &second_point = *(point3f *)(g_47fd18 + 0xc);
+            center.x = second_point.x + box.matrix.forward.i * (0.0f - box.radius.i);
+            center.y = second_point.y + box.matrix.forward.j * (0.0f - box.radius.i);
+            center.z = second_point.z + box.matrix.forward.k * (0.0f - box.radius.i);
+            box.matrix.position.x = *(real *)(g_47fd18) - center.x + second_point.x;
+            box.matrix.position.y = *(real *)(g_47fd18 + 4) - center.y + second_point.y;
+            box.matrix.position.z = *(real *)(g_47fd18 + 8) - center.z + second_point.z;
+            if (!function_320b0(&box)) goto failed;
+            byte projections[6 * 0x1bc];
+            short projection_count;
+            g_4858bc = 0;
+            *(real *)(g_47fd18 + 0x74) = alpha;
+            function_c1d90((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_projection_ab *)projections, &projection_count);
+            real radius = (real)sqrt(box.radius.k * box.radius.k + box.radius.j * box.radius.j + box.radius.i * box.radius.i);
+            function_1320f0(2, projection_count, false, 0, projections, (byte const *)&box.matrix.position, radius, &g_547f88, 0, *(short *)(object + 0x2c));
+            visibility_object_lists_update_flags((s_visibility_object_lists *)&g_54aa68, index, false, 0);
+            function_2cbc0(object_type);
+            function_44720();
+            g_4ba018 = 1;
+            g_4ba014 = 0;
+            if (*(short *)((byte *)g_54aa68.lists[0] + 4) > 0)
             {
-                g_509414 = 1;
-                g_509413 = 0;
-                function_32ce0(index, alpha);
+                g_4c5008 = g_47fda0;
+                g_4ba014 = 0x14;
+                function_30ca0(false, 5);
+                function_4a1e0((s_view_source *)g_47fd18, (s_view_camera *)shape, NONE,
+                    (s_view_flags *)g_47fda0, 1.0f, true, 1.0f);
+                function_48ee0(g_47fd18, shape, g_47fda0);
+                g_485a30 = alpha;
+                function_40e90(0);
+                if (((byte)(g_4c1a48[2].flags >> 10) & 1) && ((byte)(g_4c1a48[1].flags >> 11) & 1))
+                {
+                    draw_configured_pass_r18(10);
+                    function_222a0();
+                    draw_light_source_pass(1, 11, true, false, false, g_4858b8, true);
+                }
+                function_4a780();
             }
-            else g_509414 = 0;
+            g_4ba018 = 0;
+            g_4ba014 = 0;
+            g_509413 = 1;
+            g_509414 = 0;
+            return true;
         }
-        else if (g_509414) function_32ce0(index, alpha);
-        return special;
-    }
-    real radial = *(real *)(object + 0x3c) > 0.00019999999494757503f ? *(real *)(object + 0x3c) : 0.00019999999494757503f;
-    real axial = radial;
-    byte *lighting = function_3dc90(index);
-    bool object_type = object[0xaa] != 1;
-    if (!lighting || !(*(real *)(lighting + 0x1c) > 0.0f)) goto failed;
-    alpha *= *(real *)(lighting + 0x1c);
-    if (!(alpha > 0.09000000357627869f)) goto failed;
-    {
-        vector3f const *light_direction = (vector3f *)(lighting + 0xc);
-        point3f const *origin = (point3f *)(object + 0x30);
-        function_31f50(index, origin, light_direction, &radial, &axial);
-        *(point3f *)(g_47fd18 + 0xc) = *origin;
-        *(point3f *)g_47fd18 = *origin;
-        vector3f &forward = *(vector3f *)(g_47fd18 + 0x28);
-        forward = *light_direction;
-        function_30bf0(&forward);
-        real abs_x = forward.i >= 0.0f ? forward.i : 0.0f - forward.i;
-        real abs_y = forward.j >= 0.0f ? forward.j : 0.0f - forward.j;
-        real largest = abs_x > abs_y ? abs_x : abs_y;
-        real depth = radial * 2.0f + largest;
-        *(real *)(g_47fda0 + 0x2c) = depth - radial;
-        *(real *)(g_47fda0 + 0x30) = depth + radial - radial;
-        *(real *)(g_47fda0 + 0x20) = axial * 2.0f;
-        vector3f const *axis = g_4687ac;
-        if (!(fabs(forward.k * axis->k + forward.i * axis->i + forward.j * axis->j) < 0.8999999761581421f)) axis = g_4687b4;
-        vector3f &up = *(vector3f *)(g_47fd18 + 0x34);
-        shadow_cross_32350(forward, *axis, &up);
-        function_30bf0(&up);
-        byte shape[0x74];
-        function_c1930((s_light_definition_ab *)g_47fda0, (s_light_shape_ab *)shape);
-        function_c1a80((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_definition_ab *)g_47fda0);
-        s_320b0_box box;
-        box.matrix.scale = 1.0f;
-        box.matrix.forward = forward;
-        shadow_cross_32350(up, forward, &box.matrix.left);
-        box.matrix.up = up;
-        box.radius.i = *(real *)(g_47fda0 + 0x30) * 0.5f;
-        box.radius.j = *(real *)(shape + 0x58) * 0.5f;
-        box.radius.k = *(real *)(shape + 0x5c) * 0.5f;
-        point3f center;
-        center.x = origin->x + forward.i * (0.0f - box.radius.i);
-        center.y = origin->y + forward.j * (0.0f - box.radius.i);
-        center.z = origin->z + forward.k * (0.0f - box.radius.i);
-        box.matrix.position.x = *(real *)(g_47fd18) - center.x + origin->x;
-        box.matrix.position.y = *(real *)(g_47fd18 + 4) - center.y + origin->y;
-        box.matrix.position.z = *(real *)(g_47fd18 + 8) - center.z + origin->z;
-        if (!function_320b0(&box)) goto failed;
-        byte projections[6 * 0x1bc];
-        short projection_count;
-        g_4858bc = 0;
-        *(real *)(g_47fd18 + 0x74) = alpha;
-        function_c1d90((s_light_frame_ab *)g_47fd18, (s_light_shape_ab *)shape, (s_light_projection_ab *)projections, &projection_count);
-        real radius = (real)sqrt(box.radius.k * box.radius.k + box.radius.j * box.radius.j + box.radius.i * box.radius.i);
-        function_1320f0(2, projection_count, false, 0, projections, (byte const *)&box.matrix.position, radius, &g_547f88, 0, *(short *)(object + 0x2c));
-        visibility_object_lists_update_flags((s_visibility_object_lists *)&g_54aa68, index, false, 0);
-        function_2cbc0(object_type);
-        function_44720();
-        g_4ba018 = 1;
-        g_4ba014 = 0;
-        if (*(short *)((byte *)g_54aa68.lists[0] + 4) > 0)
-        {
-            g_4c5008 = g_47fda0;
-            g_4ba014 = 0x14;
-            function_30ca0(false, 5);
-            function_4a1e0((s_view_source *)g_47fd18, (s_view_camera *)shape, NONE,
-                (s_view_flags *)g_47fda0, 1.0f, true, 1.0f);
-            function_48ee0(g_47fd18, shape, g_47fda0);
-            g_485a30 = alpha;
-            function_40e90(0);
-            if ((g_4c1a48[2].flags & 0x400) && (g_4c1a48[1].flags & 0x800))
-            {
-                draw_configured_pass_r18(10);
-                function_222a0();
-                draw_source_pass_r18(1, 11, true, false, false, g_4858b8, true);
-            }
-            function_4a780();
-        }
-        g_4ba018 = 0;
-        g_4ba014 = 0;
+    failed:
         g_509413 = 1;
         g_509414 = 0;
-        return true;
+        return result;
     }
-failed:
-    g_509413 = 1;
-    g_509414 = 0;
-    return special;
+    if (g_509413)
+    {
+        if (function_32ac0())
+        {
+            g_509414 = 1;
+            g_509413 = 0;
+            function_32ce0(index, alpha);
+        }
+        else g_509414 = 0;
+    }
+    else if (g_509414) function_32ce0(index, alpha);
+    return result;
 }

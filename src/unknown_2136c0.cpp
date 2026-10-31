@@ -54,7 +54,7 @@ void __stdcall function_2138f0(long arg_0, long arg_1);
 void function_213970(void);
 
 #pragma optimize("s", on)
-// score 131 (was 145): retail clears two storage blocks; separate globals require separate clears and
+// score 131 (was 131): retail clears two storage blocks; separate globals require separate clears and
 // cache-load scheduling differs. Tried language dirty first 145; version dirty first 145; current version
 // tail 152; reset enabled first 145; scalar reset phase 145; forced language inline 169.
 // Without the size pragma 172; stores in address order 145 (184 without the pragma); chained
@@ -76,6 +76,11 @@ void function_213970(void);
 // Round 193: On complete payloads: seven nonzero ownership combinations 131 each; NONE/zero/both chains 131
 // each; query before all resets 128 (three-point gain dropped), between payloads and state 131. Retain only
 // the complete-payload form at 131.
+// Lane 17 r1: size pragma removed (diagnostic) 158; preferences pointer local 131; scalar resets in
+// reverse order 131; progress record memset 141; enable flag after the NONE stores 131; every reset in
+// address order 145. Ours hoists the NONE stores above the clears (separate globals don't alias them);
+// BLOCKED-BY the global layout: both retail blocks' globals are also declared in src/unknown_214c30.cpp
+// and src/unknown_12be90.cpp.
 // Round 40: the two blocks need structs, but block A's globals are also used by src/unknown_214c30.cpp and
 // block B's g_55bd04/g_55bd08 are defined in src/unknown_12be90.cpp. Without the size pragma 158 (language
 // inlined, its read hoisted above the clears); with stores in address order/language first/NONE stores first
@@ -85,6 +90,10 @@ void function_213970(void);
 // joint preference guard 158. All gains below the retention threshold; original body restored.
 // Round 198: Complete payload clear orders with the byte-tail block first/last/middle,
 // size-ordered blocks and all blocks reversed: eight orders, all 131. Original body and bounds restored.
+// Round 2 of lane 18: BLOCKED-BY the separate definitions (block A: src/unknown_213760.cpp and
+// src/unknown_213d20.cpp, with an extern in src/unknown_214c30.cpp; block B: g_55bd04/g_55bd08 in
+// src/unknown_12be90.cpp). Scalar zero stores before the clears 131, without the size pragma 158;
+// enabled flag before the NONE stores 131; NONE stores before the zero stores 131, without the pragma 161.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

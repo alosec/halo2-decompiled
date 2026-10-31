@@ -152,6 +152,16 @@ void player_action_initialize(s_player_action *arg_0);
 #pragma inline_depth(0)
 // score 134 (was 134): frame 0x54 and selection inputs agree; comparison order,
 // byte-count extension, cyclic operand order, cold clear and output/angle scheduling differ.
+// Round 30 (fast; "aligned" = differing lines after a sequence alignment, base 57): retail's
+// first grenade-count test is the existing function_cdff0 inlined (the NONE check, then a short
+// count: `movsx ax`, `test ax, ax`), but calling it there leaves both calls out of line 403;
+// float stores for field_20/24 164 (aligned 71); an object pointer local for the angle block
+// 184 (aligned 81: retail's esi code there, but the tail's scratch registers rotate); both 178
+// (aligned 30); both with the nested 0x40 latch and the 0x60/0x4630200 masks tested apart 166
+// (aligned 28, 1499 bytes). Left in that form: the latch's `field_92 = false` arm placed inline
+// (retail after the return), the field_8/field_4 copy order, the x87 inclination magnitude (retail
+// squares y in place, `fld st(2); fmulp st(3)`; compile-only screens of four spellings give ours),
+// the comparison order, the byte-count extension and one SIB order.
 // Earlier input-convention gaps are absent in this baseline; both selection helpers and the count query match.
 // Positive nested latch with toggle-first/state-first 159/157; state-first with split invalidation 161;
 // field-first selection comparison 133 (one-point gain dropped); zero comparisons 134 each;

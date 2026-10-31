@@ -51,7 +51,19 @@ PRIVATE __forceinline real pinned_real(real const &value, real minimum, real max
 	return value;
 }
 
-// score 30 (was 52): the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
+// score 52 (was 52): the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
+// the blend registers and the color0 store match. Left: the strength add loads the entry's strength,
+// adds and copies back where retail adds it to xmm7 in place (its operands flip only when the strength
+// load comes before the color copy in the i == 0 block, which then changes that block), 0x131c20's
+// `&color` formed in edi and copied to ecx (retail: ecx, then edi), and retail's sete collision test.
+// Round 30 (fast): strength first in the i == 0 block 97 (the add goes in place and the length is
+// retail's, but the copy then advances ebp, `add ebp, 4`, since the entry pointer is dead after it;
+// with memcpy for the copy also 97); `visible = hit && no object` 52 (folded); one entry-color
+// pointer for the copy and the call 161 (821 bytes; it takes esi); the blend written in the call 52.
+// Diagnostic: a store through `record` after the call keeps the load-first add, so it is the add's
+// operand order, not a value reused across the call. Screened (compile-only): only a flag set in a
+// test (`visible = false; if (hit) visible = no object;`) gives retail's sete.
+// the frame, the sky/count homes, the trig temporaries, the x87 direction adds,
 // the blend registers, the color0 store, the in-place strength add and the sete collision test match.
 // Left: the i == 0 block loads the strength before the color copy, so the copy reuses ebp (retail copies
 // through `lea eax, [ebp + 4]` first, a byte shorter), and 0x131c20's `&color` is formed in edi and
@@ -1937,6 +1949,9 @@ PRIVATE __forceinline void surface_sample_unpack(short const *source, s_sample_p
 // Round 420: Cross-path shared UV inputs/ordinal/both/mesh/UV-mesh/ordinal-mesh/all/all with status first:
 // 807/761/807/760/807/760/807/807. UV sharing grows frame to 0x9c; mesh sharing gains one only. Original
 // independent captures, mesh homes and status order restored.
+// Round 44: complete default normal/base/lightmap initializations after material, individually/
+// paired/all, then all after native input captures 761/761/761/759/759/759/759/759.
+// Original default observations and body restored; frame 0x98/0x90 and homes remain.
 // @retail 0xd1e10
 long __stdcall function_d1e10(void const *surface, s_effect_color_query *query, long flags, bool value)
 {

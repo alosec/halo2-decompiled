@@ -16,6 +16,7 @@ The handlers of the unit request table at 0x467564
 #include "unit_requests.h"
 #include "units.h"
 #include "matrix_transform.h"
+#include "vector_products.h"
 #include "normalize3d.h"
 #include "unknown_1cec30.h"
 #include "bit_vector.h"
@@ -616,6 +617,9 @@ void __stdcall function_e73c0(long unit_index, long type)
 
 /* plays the animation of a weapon's request (the ready, put away, firing
    and dual wielding animations) */
+// score 281 (was 281): Frame 4 agrees; action/unit argument staging and both switch table extents differ.
+// Round 236: native case order with cached request type, call-result exit and descending action cases, all subsets 281/281/281/281/292/292/292/292.
+// Original executable body restored.
 // @retail 0xe7440
 bool __stdcall function_e7440(long unit_index, s_unit_request *request)
 {
@@ -3670,6 +3674,9 @@ extern vector3f *g_4687bc;
 /* a raised weapon's point (type 41 update): when its time is up, it
    shoves the target in front of the unit, with damage and an impact
    effect */
+// score 277 (was 287): Frame 0xb8 agrees; unit/target registers, vector copies, true exit and material widths remain.
+// Round 236: complete initial vector copy with entry damage lifetime and center/shove/impact names, all subsets 277/277/277/277/277/277/277/277.
+// Keep only the whole forward-vector initialization; all workspace and name changes restored.
 // @retail 0xec4f0
 bool __stdcall function_ec4f0(long unit_index, long type)
 {
@@ -3691,12 +3698,10 @@ bool __stdcall function_ec4f0(long unit_index, long type)
 
 	byte *target_definition = g_4e3b44[*(long *)target & 0xffff].bytes;
 	s_unit_action_unit *root = UNIT_ACTION_UNIT_GET(function_baf80(target_index));
-	vector3f direction;
+	vector3f direction = unit->forward;
 	point3f target_center;
 	point3f unit_center;
 
-	direction.i = unit->forward.i;
-	direction.j = unit->forward.j;
 	direction.k = 0.0f;
 	if (function_30bf0(&direction) == 0.0f)
 		return false;
@@ -4057,6 +4062,9 @@ extern vector3f *g_4687ac;
 /* hoists a unit onto a ledge (type 49): its animation by the hoist marker,
    facing away from the ledge, its seat transform kept relative to the new
    frame */
+// score 309 (was 327): Frame 0x11c agrees; unit/pool registers, basis/quaternion homes and call/float scheduling remain.
+// Round 236: actual animation result with existing basis cross products, all eight subsets 317/316/317/315/309/307/310/326.
+// Keep actual animation result and shared frame-left cross; other basis helpers restored (extra first cross 307, only two points).
 // @retail 0xecff0
 bool __stdcall function_ecff0(long unit_index, s_unit_request *request)
 {
@@ -4087,9 +4095,9 @@ bool __stdcall function_ecff0(long unit_index, s_unit_request *request)
 	default:
 		return false;
 	}
-	if (!function_10f430(unit_index, 0x6000086, 0x7000101, 0x7000101, name, 0.1f, 0, 0))
+	result = function_10f430(unit_index, 0x6000086, 0x7000101, 0x7000101, name, 0.1f, 0, 0);
+	if (!result)
 		return false;
-	result = true;
 
 	vector3f forward;
 	vector3f up = object_matrix.up;
@@ -4127,9 +4135,7 @@ bool __stdcall function_ecff0(long unit_index, s_unit_request *request)
 
 	frame.scale = 1.0f;
 	frame.forward = forward;
-	frame.left.i = up.j * forward.k - up.k * forward.j;
-	frame.left.j = up.k * forward.i - forward.k * up.i;
-	frame.left.k = forward.j * up.i - up.j * forward.i;
+	cross3f(&up, &forward, &frame.left);
 	frame.up = up;
 	frame.position = object_matrix.position;
 	if (object_matrix.scale != 1.0f)
