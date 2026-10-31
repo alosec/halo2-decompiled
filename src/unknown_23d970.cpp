@@ -608,6 +608,7 @@ PRIVATE inline s_player_state *local_player_state(long local_index)
 // the distance on x87); there u.k takes retail's xmm0 only when no distance store sits between
 // the call and the products (dropped or moved after them: 19-21 differing SSE lines against 33);
 // none of 48 helper/operand/copy-placement combinations does better than the base.
+// Round 322: Complete scalar up snapshot i/j/k permutations all 107; memcpy snapshot 57; memmove 327 at retail length. Original aggregate copy, products and body restored; up K/distance scheduling remains.
 // Round 127 (lane 4): cross3f_staged for the second product 217 again (1270 bytes; aligned, only
 // the first product's colours (right.i/k swapped), the second product's operand order (ours loads
 // forward's component and multiplies right's register, retail copies right's register and

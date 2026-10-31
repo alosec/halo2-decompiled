@@ -63,10 +63,12 @@ struct s_spawn_scenario_23aea0
 // Earlier (105): a block struct over the merged global, byte offsets taken from the array and
 // a real global struct all leave VC strength-reducing the destination into a pointer induction, so
 // retail's integer offset with its base in the displacement is not reachable from this side.
-// Earlier (105): retail's weights are addressed from a base 16 bytes below the array (its
+// retail's weights are addressed from a base 16 bytes below the array (its
 // displacement base is the neighbouring global g_502248) with the byte offset in a register; an
 // element pointer reaches retail's store form (103) but the base, the bound and the override
 // alignment still differ.
+// definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
+// Earlier (105): retail's weights are addressed from a base 16 bytes below the array (its
 // Earlier (105): definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
 // Earlier at 103: the definition now stays in EAX and the source pointer in ECX, but
 // the destination is still an absolute pointer induction instead of retail's integer table
@@ -137,6 +139,7 @@ struct s_spawn_scenario_23aea0
 // same with `(type - 2) * 3 + 2` 254, with an unsigned short type 256; nested loops with a per-batch source
 // pointer 121; one loop storing through `(&globals->value0)[type * 3 - 4]` 105. Diagnostic (not kept): /Os,
 // /Ot and /Oy- keep the pointer induction; /Og- drops the loop optimisation altogether.
+// Round 322: Actual two-by-six destination array/per-batch receiver with field/native/library/grouped-input copies 105/145/145/123 each. Integer destination induction and definition EAX remain; all original tables, copies, overrides and body restored.
 // @retail 0x23aea0
 void function_23aea0()
 {
