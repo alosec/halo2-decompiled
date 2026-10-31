@@ -495,6 +495,10 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // Round 230: solution selection at every query, alone, with A/B/both team observations,
 // outer-party lifetime, both candidate-team roots, shared candidate spread and equality-first
 // acceptance: 112/179/150/186/112/182/107/115. Original selection, named post-swap counts and body restored.
+// Lane 14 r20: the first test as `!(candidate >= reference)` 67; the reference pointer declared
+// `const` 67; the condition rewritten as `<= && (!= || cost)` 100 (512 bytes but reference spread
+// still first and the frame 0x268c); the reference selected right after the candidate copy, before
+// the swaps, 151 (521 bytes; 0x91dd0 9); the cost test written candidate first 67.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
