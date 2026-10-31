@@ -91,6 +91,10 @@ static inline bool player_configuration_is_excluded(s_recent_player const *playe
 // together (both stay), a use of 3 outside the loop (no hoist).
 // Round 311: trailing name/exclusion/online/identity tests produce the actual result
 // 42/42/42/54; native full-width result 57/52/54/56. No match; original body restored.
+// Round 106: one inline online-XUID test (set, not a guest, not machine-local) for the three xuid tests 47; with
+// the machine-local test before the guest test 43; either with the exclusion test kept too 67/71 (140 bytes: the
+// mask is then hoisted into AL as retail, but both guest tests stay); the existing iterate helper with that
+// test 79/79 (102 bytes).
 // Round 443: Two-use admission flags in byte/char/word/short storage 44/44/43/43;
 // direct-success-return counterparts 52/52/51/51. All restored; early ESI, independent
 // successor, mask hoist and failure exit remain.
@@ -534,6 +538,9 @@ void function_1537f0(s_profile_record *record);
 // member), tail clear and sentinel removed 78 (238 bytes); with an XUID identity 78; with the tail
 // clear kept 67, plus an XUID identity 67 (identity still folded each time; retail's +0x1c source
 // needs that 4-aligned type); the entry pointer as the loop variable 98 (292 bytes).
+// Round 106: identity value-initialized 67; that without the tail clear and sentinel 78 (238 bytes); identity
+// declared and zeroed after the entry pointer 67; no tail clear with the links and flags stored before the
+// 0x7f8b0 call 81; the entry pointer passed as the view 67.
 // @retail 0x7f930
 void function_7f930(void)
 {
@@ -909,6 +916,9 @@ long __stdcall function_80330(const s_cached_player_identity *identity, long pos
 // 0x7f8b0 call for the new entry's fill (inlined; the aulldiv, identity and copy registers then match
 // retail) on the current body 98 (1174 bytes), on the 71 form 104 (the four head repairs swap EAX/ECX
 // and next_other is stored from AX), with the heads adjusted in place 104.
+// Round 106: round 149's plain entry rebuilt 71 (aligned 39); it without the flag initialization (each arm sets
+// the direction) 390; time stored through the dword member 66; time read through a zeroed FILETIME 66; the NONE
+// link stores as `(short)NONE` 66; g_4cf97c named once for the next_other store 66.
 // @retail 0x7fe90
 long function_7fe90(const s_cached_player_identity *identity, long position, const s_cached_player_source *source)
 {
