@@ -47,7 +47,12 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 }
 
 // score 128 (was 128): frame 0xa44 agrees; EBP is saved at token traversal rather than the
-// outer block, and read-size/count/cursor homes differ. Unsigned token / unique / both counts
+// outer block, and read-size/count/cursor homes differ. Round 8: in-loop homes are retail
+// cursor/size/next/count/unique at 0x14/0x18/0x1c/0x20/0x24, ours cursor/next/count/size/unique;
+// retail reads the size three times around its clamp (a memory-resident size: a volatile size,
+// diagnostic only, gives the clamp, 102, with EBP still saved late); behavioural local names
+// (size/next/count/unique/token) 128, names in either sort order 128; the token loop after the
+// success test with a NULL first token 127; the walk as a for loop with the first token as init 128. Unsigned token / unique / both counts
 // 128/128/128; signed-word token / unique / both 232/144/231; returned copy destination 126,
 // with unsigned counts 126; returned name 199, both returned paths 124 (one-use result, restored).
 // Tried: clamp, terminator and first token before the local_7 test, 118 (not kept: retail
@@ -68,6 +73,9 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // Original body restored.
 // Mapped cache-index search result, long/unsigned-long/word/signed-byte 133/133/140/137;
 // new-result arm first 188/188/185/188. All restored.
+// Round 231: existing tokenizer null guard / empty guard / nested result / result-first
+// 217/206/213/221; each with current table-entry token observations 217/206/213/221.
+// Original tokenizer and body restored; outer EBP preservation and read-size homes remain.
 // Round 28 (lane 10): the read size, cursor and count homes are also rotated (retail, low to high:
 // size, cursor, count; ours cursor, count, size). Token declared at the block top 128; tokenizer as a
 // for loop 128; token = NULL at the block top 128; size/cursor renamed (size, token_end) 128 (same

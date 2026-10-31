@@ -2212,6 +2212,8 @@ long voice_players_share_team(long other, long player)
 // mode named before the test with the mask inside 56; mask declared after the membership lookup 55.
 // Round 136: defining-unit inline membership/players/both 25,25,25;
 // with separate noinline 25,25,25; mode force-inline alone/with both outlined queries 25,25.
+// Lane 13 r20: team flag taken before the membership call 142; team test as `mode != 2` 25; ternary
+// mask in the block 47; `mode == 3 || mode == 2` 25; mode read from the global field 25.
 // @retail 0x56c60
 dword function_56c60(s_voice_player_settings *settings, long player)
 {

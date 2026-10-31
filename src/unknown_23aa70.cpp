@@ -271,6 +271,11 @@ PRIVATE __forceinline void vertex_decode_23ac30(short x, short y, short z,
 // 175; the node read with a long cast 175; `node != NULL` 175 (each with the node in EBX and the source
 // on the stack); formats 2 and 3 indexed with the format-4 pointer 60. Parameter reorders need the
 // caller in src/structures.cpp.
+// Round 19 (lane 13), format 4 indexed through a `vertices` local: with a const index parameter 175;
+// with format 3 indexed too 175 (registers masked, only 13 aligned differences: the convention flip is
+// the whole gap); with the format read into a long local for the switch 175; the coordinates through a
+// coordinate pointer and the node through the full base expression 107 (636 bytes); the decode written
+// in both arms of the node test 261.
 // @retail 0x23ac30
 void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 	s_vertex_bounds_23ac30 const *bounds, point3f *point, long *node)

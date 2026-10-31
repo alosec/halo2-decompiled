@@ -1649,21 +1649,6 @@ void __stdcall function_def60(point3f *point, long arg_159e6d, short mode, point
 
 /* a biped's collision capsule: its bottom point, the vector to its top and
    its radius, from its two capsule nodes when its definition names them */
-// score 6 (was 6): frame, length, pool/output/node/fallback roles agree; midpoint addition loads differ.
-// Earlier: one-dword frame, stack object index and retail length now agree;
-// pool/definition and output-register roles remain. Existing node queries 105;
-// vector difference and fallback names 134 each, node combinations and entry locals 105.
-// Direct definition producer removes the one-use object alias at 105 (kept, plain);
-// cached object/shared entry 126 each; direct shared entry 105; those four with
-// vector difference 105/126/126/105. Header getter at entry/nodes/both and vector pair 105 each.
-// Round 190: full node transforms 130; direct node fields 98; one radius store 130; both 108;
-// the same four with the existing scaler 130/98/130/108. Fallback-first 98; with shared point
-// difference 8, with scaler 8; shared difference/scaler without reversal 8. Original arm order and
-// shared difference alone 8; commuted means 8; existing object/header getters 6/8. Masked ordinal
-// 118; sequential mean sums 6; both 118; both with header getters 15. Cleanup and full plain 6 kept.
-// Round 435: Existing point setter, either complete operand order 14/14; existing vector addition
-// then in-place scaling, either order 119/119; direct component means, either order 6/6;
-// both position subobjects at midpoint/whole geometry scope 6/104. Original body restored.
 // @retail 0xdf6c0
 void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long arg_159e6d, real *radius)
 {
@@ -1676,9 +1661,12 @@ void __stdcall function_df6c0(point3f *bottom, vector3f *axis, long arg_159e6d, 
 
 		if (TEST_FIELD_BIT((*(dword *)(definition + 0x264) >> 1) & 1))
 		{
-			bottom->x = (first_node->position.x + second_node->position.x) * 0.5f;
-			bottom->y = (first_node->position.y + second_node->position.y) * 0.5f;
-			bottom->z = (first_node->position.z + second_node->position.z) * 0.5f;
+			point3f const *second_point = &second_node->position;
+			point3f const *first_point = &first_node->position;
+
+			bottom->x = (first_point->x + second_point->x) * 0.5f;
+			bottom->y = (first_point->y + second_point->y) * 0.5f;
+			bottom->z = (first_point->z + second_point->z) * 0.5f;
 			*axis = *g_4687a4;
 		}
 		else
@@ -2207,6 +2195,9 @@ bool __stdcall function_e23e0(long arg_159e6d, point3f const *point, real value,
 // Round 435: Actual lookup-return receiver with shared/separate traversal output,
 // long/char/dword root 77/79/88/90/81/83; long root with entry placement declaration
 // 77/79. Original body and calls restored; six stack offsets remain.
+// Round 32 (lane 1): MATCH (fast and plain) with 0xe23e0's fourth parameter retyped from bool * to
+// s_list_rigid_bodies const * and &list passed (retail pushes the list's address; 0xe23e0 only passes it on).
+// 0xe23e0 is a contributor's finished function, so held until its owner OKs the type-only change.
 // @retail 0xe1b60
 bool __stdcall function_e1b60(long arg_159e6d, point3f const *point, real value)
 {
@@ -3579,6 +3570,11 @@ real magnitude3d(vector3f const *v);
 // Round 435: Word/long event carriers 19/19; complete short/long conditionals 19/19;
 // fallback defaults 60/60; complementary nested selection 20/20. Original body restored;
 // the actor carrier across the magnitude call still differs.
+// Round 32: magnitude3d (0x24590) marked inline in src/unknown_023540.cpp 2 (fast and plain; only the
+// order of the 0x1fb7e0 argument setup left), but six of its unmatched callers rise (0xf8eb0 946->1030,
+// 0xd1e10 761->791, 0x185be0 731->918, 0x1aa0d0 375->402, 0x1d24a0 920->942, 0x2c0d60 899->953), so
+// restored; actor index local 19; magnitude compared as `magnitude3d(...) < 1.5707964f` 19; long type 19;
+// the type as one ternary 19.
 // @retail 0xe3380
 void __stdcall function_e3380(long arg_159e6d)
 {

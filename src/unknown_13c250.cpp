@@ -82,10 +82,17 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
     return TEST_FIELD_BIT(arg_1->field_10a2);
 }
 // score 144 (was 144): frame 0xd8 agrees; carried-item receiver reloads, append-count observations and
-// ranking handoff remain (the carried-payload reloads, the memory count and the ranking handoff).
+// ranking handoff remain. Retail's count is a plain stack local: it stores count 1 straight at the
+// first append (the count known zero there, even after the 0xcbe60 call) and reloads the pool data at
+// the second carried lookup. Round 8 (lane 2): appends as `local_3[local_2] = x; local_2++;` 164 (840
+// bytes); as `local_3[local_2++] = x` 164; `if (!local_2)` 144; the scenario pointer read at each use
+// 144; plain count with one-expression appends 281.
+// Earlier: carried-payload reloads, memory count and ranking handoff remain;
+// receiver/count reloads and ranking dispatch remain; retail reads the
 // frame 0xd8 agrees; carried-item receiver reloads, append-count observations and ranking handoff remain.
 
 // Earlier: carried-payload reloads, memory count and ranking handoff remain.
+// ranking handoff remain (the carried-payload reloads, the memory count and the ranking handoff).
 // Earlier: receiver/count reloads and ranking dispatch remain; retail reads the
 // count once per append (no volatile re-read) yet keeps it in memory, and holds the found
 // candidate apart from the best-ranked one (0x5000720 is a switch case there).
@@ -118,6 +125,9 @@ __forceinline bool function_13c253(s_13c251 const *arg_1)
 // 183; indexed scan with the preferred case 176; indexed scan with the preferred pre-test 139 (subthreshold);
 // completed-count snapshot 165; known-zero carried append 196; known-zero fallback append 179;
 // one-observation second append 147. Opening body restored.
+// Round 231: complete priority-zero result, long / unsigned / short / enum
+// 176/176/181/176; each with ordinary cardinality 280/280/276/280. Original
+// ranking, inherited count and body restored; receiver reloads and ranking handoff remain.
 // Round 28 (lane 10): retail's count is a non-volatile memory local (the first append and the
 // fallback's first append store the constant 1 after `count == 0`, each later append rereads it, and the
 // ranking loop reads it once into EBX), and retail does not merge the second and third unit lookups

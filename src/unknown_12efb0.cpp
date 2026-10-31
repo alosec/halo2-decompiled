@@ -255,6 +255,8 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 // 755/739. Original full-width count, Boolean state, loop and complete body restored.
 // Round 228: native aggregate value inputs scalar/merge/both/color/scalar-color/merge-color/all
 // 886/813/977/826/976/934/1081; all with by-value publication 1240. Original helper contracts and body restored.
+// Round 237: Plain scalar/merge/color native component loops 1/2/3/4/5/6/7, then all with normalized publication loop: 618/616/619/616/619/616/620/620.
+// Original executable body restored.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {

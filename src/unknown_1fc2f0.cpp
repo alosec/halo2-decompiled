@@ -294,6 +294,10 @@ void function_1fc660(s_tracked_point *tracked, s_tracking_state const *state, s_
 // DL192: Common native velocity publication 61; scaled add 96; in-place scale/add 50; reused squared length
 // 77; late tick conversion 45; with native input copy 137, squared length 54, squared length/scaled add 95.
 // Late ticks move first difference to +0x5a but enlarge by four bytes; all restored.
+// Round 203: plain component loops for prediction/ticks/delta, their three
+// pairs and all phases 100/43/80/115/102/80/107; all with a short ordinal 144.
+// Tick-only loop is identical code; original body restored. Rate/tick register
+// reuse, j-first prediction and limit/delta scheduling remain.
 // @retail 0x1fc4b0
 void function_1fc4b0(s_tracked_point *tracked, s_tracking_state const *state, s_tracking_output *output)
 {
