@@ -751,6 +751,13 @@ long animation_events_dispatch(s_graph_tag *graph, s_animation *animation, dword
 // exits 97; first/loop failure exits 97; all dispatch failure exits 97; all failures with direct final
 // update 109; native events with direct final update 109. Word-load/state-clear scheduling and second
 // callback reload remain. Original body restored.
+// Round 3 (lane 18): retail stores the looked-up variant to the channel, tests flag 8, sets the rate and
+// only then stores the identity local from the same register. The channel field stored first and the
+// identity reread after the rate 103; a variant local stored to the channel and, after the rate, to the
+// identity 99 (the identity store lands where retail's does, but the result is read from the stack, not
+// through EAX); chained identity/channel assignment 97 (same code); flag1 tested as `(flags >> 1) & 1` 90
+// at 531 bytes (`test al, 2` in place of retail's shr/test; the gain is only realignment); no volatile read,
+// with the third dispatch reading the parameter 133 (+0x4). Original body restored.
 // Round 126: the callback read through the pointer at every dispatch (no volatile) 133 (loaded at entry);
 // read as the plain parameter at every dispatch, pointer dropped, channel pointer kept 125 (LTCG passes
 // the callback in EAX; callers 0x1c68c0 16, 0x1c6920 8, 0x1cb710 19); the volatile read at the first two
