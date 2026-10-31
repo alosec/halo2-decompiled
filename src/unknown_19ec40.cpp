@@ -188,6 +188,10 @@ real distance_sq3f(point3f const *a, point3f const *b);
 // One shared result-index store, initialized/deferred index ownership, optional-distance
 // initialization and read-only table/entry receivers 77/77/105/105/77/77/105/105. Key preheader
 // and global/point/index/entry homes remain; original body restored.
+// Round 3 (lane 18, plain listing: distance_sq3f is inlined here, so no callee clobber set is involved):
+// split result store 65; fabsf for the height test 65; the globals local declared in the loop body (bound
+// read from g_4e0350) 113 (334 bytes); capacity test inverted (full arm first) 73; best stored before
+// results[0] 66.
 // @retail 0x19ec40
 long function_19ec40(
 	point3f const *point,

@@ -252,6 +252,9 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 // input captures and their four combinations 1606/1364/1394/1606/1555/1394/1555;
 // all with first-normalizer result join 1540. Complete original helpers, vector snapshot,
 // cross captures and body restored; frame 0x5d0 versus 0x58c and indexed homes remain.
+// Actual point-state/point-definition/contact-definition byte offsets, subsets 1-7: 1383/1381/1400/1400/1369/1404/1390; all with typed contact offset 1456.
+// Reduced control 1363/6238 with frame 0x5cc differs from full 1364/6243 with frame 0x5d0; every offset form regresses against its control.
+// Full original signed loops, live counts/bases, input captures, helpers, math groups and body restored.
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {

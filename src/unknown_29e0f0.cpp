@@ -77,6 +77,9 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
     real local_2 = arg_0->z - arg_1->z;
     return (real)sqrt(local_2 * local_2 + local_1 * local_1 + local_0 * local_0);
 }
+// Round 27: the instruction order follows retail closely, but the locals sit in different frame
+// slots, the group pointer is in EBP where retail keeps EBX and retail parks the group index in the
+// incoming s_reference slot at 0x80; no form found this round.
 // score 398 (was 398): frame 0x64 now agrees; selected defaults, point bitmap, endpoint homes, root-table roles and x87 scheduling differ.
 // Earlier: frame 0x68/0x64, induction/endpoint homes and x87 scheduling differ.
 // Earlier: table-pointer roles now agree; frame 0x68/0x64, outer-loop reload placement, inner-loop registers and x87 square order remain.
@@ -141,6 +144,9 @@ PRIVATE __forceinline real function_29e3b1(point3f const *arg_0, point3f const *
 // Round 434: scan-scoped selected group/first/both/terminal/group-terminal/first-terminal/all
 // constant defaults 438/438/440/438/440/440/444; all plus scan-scoped best distance 468. Frame
 // stays 0x64; the last grows to 1609 bytes. Late group default recovers root registers but loses an entry store; restored.
+// Round 205: Consistent link-array base with outer/inner/both actual cursors 464/433/447; record cursor 433;
+// outer-record/inner-record/all cursors 500/455/436; all with shared bitmap operations 458.
+// All restored; selected-default, endpoint and bitmap homes and root-table roles remain.
 // @retail 0x29e0f0
 bool __stdcall function_29e0f0(point3f const *arg_0, long arg_1, s_reference arg_2,
     s_29de21 *arg_3, s_29e0f9 *arg_4)

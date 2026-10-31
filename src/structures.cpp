@@ -171,7 +171,7 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
-// score 68 (was 68): VC threads the exclusion flag on every edge (retail keeps it in BL: `mov bl, 1;
+// score 61 (was 61): VC threads the exclusion flag on every edge (retail keeps it in BL: `mov bl, 1;
 // jmp` in the scenery arm, `xor bl, bl` before 0xbf9a0 and `test bl, bl` again after it, so
 // &triangle->c takes EDI and the collision lives in its parameter slot: stored after the requery,
 // reloaded after 0xbf9a0); the byte result is converted with setne. Retail 0x14af40 has the
@@ -238,6 +238,9 @@ static __forceinline bool structure_bsp_collision_available()
 // model query with `if (excluded) return result;` 65; the model result stored in `result` and the
 // requery reading the source's collision 64; the flag set in the scenery arm, the model query in an
 // else-if and the requery in `if (!excluded)` 82 (258 bytes).
+// Round 44: existing availability producer result-first/guard returns/nested outcomes/
+// structure once/settings once/both/both guarded/both with BSP receiver 61/98/98/61/78/78/98/61.
+// Original helper/body restored; exclusion BL and source-slot join remain.
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {
@@ -765,6 +768,12 @@ done:
 // Round 229: collision object observed at each use 125; complete eligibility observations 216,
 // both 216; query success in the actual result 158, with object/eligibility/both 158/233/233;
 // all with admitted-geometry result lifetime 267. Full original body restored.
+// Lane 15 r19: retail's caller pushes the constant 1 for the third stack parameter and retail never
+// reads that slot; retail's result byte lives in the surface parameter's slot (dead once the surface
+// pointer is in EBP). Result as a local with the parameter unread 126 (LTCG drops the parameter,
+// `ret 0xc`, matched caller 0xd2a50 56), plus `(void)&parameter` 126 (0xd2a50 56); the parameter read in
+// the retry test 124 (471 bytes, 0xd2a50 kept; LTCG keeps the read); the two exclusion tests as one
+// nested if 125 (same code), with the object branch first 130.
 // @retail 0x14af40
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)

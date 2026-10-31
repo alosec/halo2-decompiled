@@ -848,6 +848,12 @@ done:
 // Round 225: complete scenario/definition-owner/both/mode/scenario-mode/owner-mode/all/
 // all with full-width result 188/198/192/194/207/175/205/192. Owner-mode gains only
 // one at retail length, with a larger frame; below threshold. Original reads and scans restored.
+// Round 30 (lane 10, one-file harness exact): retail compares the bottom `next` in memory and reloads
+// it at the loop top, and keeps `result` in its stack slot (store, then reload at the exit); ours
+// carries `next` in CX across the back edge and holds NONE in EBX from entry. Current cleared at entry
+// 173; first scan as a while loop 202 (617 bytes); `goto done` on the exhausted iterator 185 (619);
+// block selection as if/else 176; squad lookup without the word cast 176; third scan without the
+// palette re-read 188.
 // @retail 0x205010
 short function_205010(s_squad_iterator *iterator)
 {
@@ -1202,6 +1208,12 @@ struct s_squad_tree_definition
 // Round 436: native external group/squad/both count-and-element descriptors 31/31/31;
 // actual group/squad/paired descriptor receivers 31/31/31/31, readonly pair 31.
 // All native descriptor declarations and executable forms restored; folded parent loads remain.
+// Round 30 (lane 10): no other retail function has the folded-load/dead-add/copy shape with the
+// pointer dead afterwards. Group pointer reused for the parent and the walk 31; record bound to
+// `T *const &` in pass 3/4/both 31/31/31; `T const &` elements in both passes 31; `long const &`
+// parent field in pass 4 31 (pass 3 37); pass-3 append through an inline helper taking the group
+// pointer 31; sibling walk as a while loop 74; pass-4 while loop without the pragma 175; /Ob1 file
+// flags without the pragma 31 (diagnostic: same code as the pragma).
 // @retail 0x2009d0
 void function_2009d0(void)
 {
@@ -2021,6 +2033,13 @@ bool function_1e11b0(long actor_index, bool active);
 // (retail's full-width return exactly); on that body squad_get, parameter address taken, parameter read
 // through its address, squad re-fetched after the loop, extra parameter uses 71-95: the parameter never
 // gets a callee-saved register, so the pointer is never split.
+// Round 30 (lane 10, one-file harness exact): a diagnostic extra read of the parameter at the top of
+// the loop body (every pass) gives it a callee-saved register and splits the squad pointer around the
+// loop as retail does; the same read beside the conditional store does not, so retail's parameter
+// outweighs the pointer without any every-pass use. Word flag store as 0x203d70 62 (199 bytes); that
+// with 0x203d70's short-view flag test 61; the existing step with the statement pragma 71 (191);
+// existing squad_get with the word store 62; squad re-fetched after the loop 79 (212). A 32-form
+// screen of loop form, flag store width, return spelling, pragma placement and lookup: 62 or more.
 // @retail 0x203bf0
 bool function_203bf0(long squad_index)
 {
@@ -2440,13 +2459,17 @@ struct s_actor_options;
 void function_1e4570(long arg_0, s_actor_options const *arg_1);
 void function_26b290(long arg_0);
 
-// score 2 (was 3): the squad flag bit is turned into a 0/1 value by
+// score 2 (was 2): the squad flag bit is turned into a 0/1 value by
 // shifting first and masking after, retail masks first and shifts.
 // Also tried (all canonicalised to shift-then-mask or a byte form): word,
 // byte, bool and dword bitfields 2/166, `!= 0` 2, `? 1 : 0` 2, `!!` 2,
 // `/ 0x40` 2, `(word)`/`(dword)` casts of the mask 2, a `(byte)` cast 166,
 // short/dword/byte reads of the flags 2/166, `== 0x40` 167. In all of retail
 // only 0x203bf0 (bit 7 of the same byte) shows the mask-then-shift shape.
+// Lane 13 r20: word_flags_set setter 2; byte read 166; squad bitfield split out of `word : 7` 2;
+// `!= 0` on both sides 207; compared with the long argument 175. Compile-only, all folded: a bit-parameter
+// inline helper, signed/unsigned division, 0x7f/0xffc0/~0x3f masks, shl/shr pairs, bit 22 of the dword at +0,
+// byte/word/dword/long/bool/two-bit bitfields, __int64, signed char, a named mask local.
 // @retail 0x202e90
 void __stdcall function_202e90(long arg_0, short arg_1, long arg_2)
 {
