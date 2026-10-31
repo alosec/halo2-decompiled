@@ -145,6 +145,9 @@ void function_262800(long actor_index, s_reference reference, bool unknown);
 // Round 429: complete readiness arms/path-owned completion/both/separate release/
 // readiness-release/completion-release/all/all with one actor acquisition
 // 104/104/94/47/104/104/94/101 fast; all restored.
+// Round 106 (plain): top actor with the unknown0c test folded into the view test 52; the current body as
+// single-exit nesting 132 (304 bytes); the top-actor body nested the same way 102 (302 bytes); readiness as
+// `... ? true : false` 66; state declared first with both locals const 52.
 // @retail 0x1b89d0
 void __stdcall function_1b89d0(long actor_index, s_slot *slot)
 {
