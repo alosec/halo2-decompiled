@@ -267,6 +267,10 @@ void function_117510(long index)
 }
 
 // score 139 (was 139): frame 0x1c agrees; link-base/endpoint carriers, pinned-word test and correction staging differ.
+// Round 26 (fast): retail re-reads link->a/link->b at every pin test (per-use form, aligned 156 -> 91, 742 bytes);
+// on it: a before b 154, b before a 157, rest length read at its square 175, vector3d_from_points3d delta 154, const
+// link 154, i,j,k square order 154. Left there: our first pin test keeps the top link->a read in EBX and splits
+// its test, and the link pointer add folds into the first field load. All restored.
 // Shared difference 154; vertex base 155; distinct correction 161, with shared difference 161;
 // both shared scales 154, with difference 154; early rest square 155; all producers/lifetimes 162.
 // All executable forms restored.
@@ -409,7 +413,14 @@ static inline dword surface_random()
 	return g_4e7408->seed >> 16;
 }
 
-// score 160 (was 160): Frame 0x28 versus 0x20; old-direction, cross/projection and random/time staging differ.
+// score 139 (was 160): frame 0x28 versus 0x20; retail keeps the seed pointer in ESI from entry and finishes the
+// seed update before the time product; its rotation reads the direction global directly (projection first, cross
+// j/k spilled), and its oscillation tail stores the sine/cosine results as floats (fst) with float 0.01f/0.3f factors.
+// Round 26: the float time product (fimul), the random fraction and a float oscillation/angle gave retail's head
+// x87 code (160 -> 139). Then: random drawn before the time product 197; double oscillation with float constants
+// 140; sinf/cosf in the tail 157 (883 bytes), three spellings 157; cos operand order compiles the same; in-place
+// rotation helper projection-first 183 (849 bytes), cross-first 188, dot3f with a struct cross 170, cross3f in the
+// helper 171; projection then cross3f on the global directly 181; projection before cross3f on the copy 161.
 // Earlier: frame 0x28 against 0x20 and random/time/oscillation staging remain; shared cross product reaches retail length.
 // Earlier frame 0x24 against 0x20 and the random-seed/oscillation schedule. Reading the frame
 // count again after the 0x117c80 call (as retail does) gives retail's convention: wind in EBX, definition in EDI.
@@ -451,10 +462,10 @@ static inline dword surface_random()
 void function_117dd0(long index, vector3f *wind)
 {
 	s_surface_definition *definition = surface_definition(surface_record(index));
-	real time = (real)(g_510c54->game_time * (double)g_510c54->field_2_3);
-	dword random = random_next(&g_4e7408->seed);
-	double oscillation = cos(time * 0.005f);
-	real angle = (real)(random * (double)(1.0f/65535.0f) * oscillation * oscillation * 0.15f);
+	real time = (real)g_510c54->game_time * g_510c54->field_2_3;
+	real fraction = function_x82e52f(&g_4e7408->seed, NULL, 0);
+	real oscillation = (real)cos(time * 0.005f);
+	real angle = fraction * oscillation * oscillation * 0.15f;
 	if (!g_55e714)
 	{
 		g_55ecd4 = g_4417f0[(short)((surface_random() * 1026) >> 16)];
@@ -482,6 +493,9 @@ void function_117dd0(long index, vector3f *wind)
 	wind->i = (real)(g_55ecd4.i * strength); wind->j = (real)(g_55ecd4.j * strength); wind->k = (real)(g_55ecd4.k * strength);
 }
 // score 109 (was 109): the loop's vertex cursor points at the normal's j (retail: k), so the dot product,
+// Round 26 (fast, fast baseline 101): Verlet steps as one expression per component 176 (760 bytes), with the
+// acceleration first 176; that plus the else-loop vertex pointer 134 (747 bytes); the else-loop pointer with the drag
+// field read at each use 204 (719 bytes); all three 171 (744 bytes). All restored.
 // frame 0x48 agrees; normal.j versus normal.k cursor and weight/vector scheduling differ.
 // tangent and position sums load and schedule in another order; retail adds the acceleration and the force
 // as first operands. Weights stored after the acceleration (retail stores them first, with the current

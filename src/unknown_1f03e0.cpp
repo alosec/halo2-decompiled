@@ -253,7 +253,7 @@ struct s_shape_ground
 };
 
 // @retail 0x1f2e60
-bool function_1f2e60(s_shape_ground const *ground, bool moving, vector3f const *velocity, bool stepping, point3f const *base, real height)
+bool function_1f2e60(s_shape_ground const *ground, bool moving, vector3f const *velocity, point3f const *base, bool stepping, real height)
 {
 	point3f const *const *base_reference = &base;
 	real base_height = (*base_reference)->z;
@@ -460,7 +460,15 @@ PRIVATE inline void contact_cross(vector3f const *a, vector3f const *b, vector3f
     out->k = a->i * b->j - a->j * b->i;
 }
 
-// score 144 (was 144): Frame 0x14 agrees; request/count registers, projection and cross scheduling remain.
+// score 122 (was 144): the loop now agrees (0x1f2e60's base parameter before its stepping flag, so the
+// request dies at the base argument as in retail); left: `lowest` is stored after `selected` (retail first),
+// the first cross keeps i/j/k in XMM0/1/2 (retail XMM1/2/0) so the two selected arms are not tail-merged
+// (28 bytes), and the averaging path's copies, sum order and dot order.
+// Round 106: 0x1f2e60's (base, stepping) order at its definition and all four calls 122 (kept); on it,
+// `lowest` declared before `selected` 120 (prefix exact through +0xd5; two points, not kept); `*out = *a` /
+// `*out = average` in the two arms with no `support` join 197 (both copies then exactly retail's; 1005 bytes),
+// with the average summed i, j, k 197 (aligned 63), and with `dot_a < dot_average` 197 (aligned 58: retail's
+// compare); the height argument spelled as at 0x1f2250 (same code); contact_cross's j term as b.i * a.k (same code).
 // Earlier: Frame 0x14 agrees; request/count/table registers and cross publication still differ.
 // Earlier: frame 0x14 agrees; request/count registers and cross scheduling differ.
 // Word component handle 207; unsigned selection 203; final scale helper 203;
@@ -540,8 +548,8 @@ void function_1f2a80(byte const *request, bool moving,
         byte *entry = *(byte **)(component + 0x88) + indices[i] * 0x48;
         real const &z = *(real *)(entry + 0x30);
         if (lowest > z && z > -0.999f && function_1f2e60((s_shape_ground *)entry, moving,
-            velocity, ((*(dword *)(request + 0x18) >> 1) & 1) != 0,
-            (point3f const *)(request + 0x1c), *(real *)(*(byte *const *)request + 0xc)))
+            velocity, (point3f const *)(request + 0x1c),
+            ((*(dword *)(request + 0x18) >> 1) & 1) != 0, *(real *)(*(byte *const *)request + 0xc)))
         {
             lowest = z;
             selected = i;
@@ -1132,7 +1140,10 @@ PRIVATE inline void shape_rotate_vector(matrix3x3 const *matrix, vector3f const 
 // subtraction from the source 269, support add alone 88, both adds alone 38; helper rows i L,F,U 12, F,U,L 16,
 // L,U,F 70 (harness; 1016 bytes); `support = false` at its declaration 218; carrier delta through vector3f_add
 // 88; override add as velocity + position 19. Unparenthesised term order inside a row is canonicalised (216 orders
-// alike in a compile-only harness). Earlier notes follow.
+// alike in a compile-only harness). Round 106: the order is the function's float-sum ranking, which
+// rotates with the tuple count: the count clamp as an `if` 84 (all rows and the override add flip);
+// the clamp as `count < 0xfe ? count : 0xfe` 10; a named pointer for the second rotation's vector 89,
+// for both rotations 103; a `short` count 31. Earlier notes follow.
 // Earlier: Frame 0x58 agrees; final override load order and rotation coefficient residency remain.
 // Earlier: Frame 0x58 agrees; final override loads and rotation coefficient residency remain.
 // Earlier: Frame 0x58 agrees; final override loads and rotation coefficient residency remain.
@@ -1413,8 +1424,8 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
             byte *contact = *(byte **)(component + 0x88) + i * 0x48;
             if (*(long *)(request + 0x44) == *(long *)(contact + 0x14) &&
                 *(real *)(contact + 0x30) > *(real *)((*(byte **)request) + 0x54) &&
-                function_1f2e60((s_shape_ground *)contact, moving, velocity, (((*(dword *)(request + 0x18) >> 1) & 1) != 0),
-                    (point3f const *)(request + 0x1c), *(real *)((*(byte **)request) + 0xc)))
+                function_1f2e60((s_shape_ground *)contact, moving, velocity, (point3f const *)(request + 0x1c),
+                    (((*(dword *)(request + 0x18) >> 1) & 1) != 0), *(real *)((*(byte **)request) + 0xc)))
             {
                 desired.i = *(real *)(contact + 0x28) * -1.0f;
                 desired.j = *(real *)(contact + 0x2c) * -1.0f;
@@ -1461,8 +1472,8 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
             byte *candidate = *(byte **)(component + 0x88);
             for (long i = 0; i < contacts; ++i)
             {
-                if (function_1f2e60((s_shape_ground *)candidate, moving, velocity, (((*(dword *)(request + 0x18) >> 1) & 1) != 0),
-                    (point3f const *)(request + 0x1c), *(real *)((*(byte **)request) + 0xc)) &&
+                if (function_1f2e60((s_shape_ground *)candidate, moving, velocity, (point3f const *)(request + 0x1c),
+                    (((*(dword *)(request + 0x18) >> 1) & 1) != 0), *(real *)((*(byte **)request) + 0xc)) &&
                     (!((*(dword *)(request + 0x18) & 2) != 0) || *(long *)(request + 0x44) == NONE || *(long *)(request + 0x44) == *(long *)(candidate + 0x14)))
                 {
                     real dot = dot3f(&direction, (vector3f *)(candidate + 0x28));
@@ -1511,8 +1522,8 @@ bool function_1f2250(vector3f const *velocity, byte const *request, vector3f con
     for (long i = 0; i < *(long *)(component + 0x8c); ++i)
     {
         byte *contact = *(byte **)(component + 0x88) + i * 0x48;
-        if (function_1f2e60((s_shape_ground *)contact, moving, velocity, (((*(dword *)(request + 0x18) >> 1) & 1) != 0),
-            (point3f const *)(request + 0x1c), *(real *)((*(byte **)request) + 0xc)))
+        if (function_1f2e60((s_shape_ground *)contact, moving, velocity, (point3f const *)(request + 0x1c),
+            (((*(dword *)(request + 0x18) >> 1) & 1) != 0), *(real *)((*(byte **)request) + 0xc)))
         {
             real projection = 0.0f - shape_dot(*(vector3f *)(contact + 0x28), relative);
             if (((*(dword *)(request + 0x18) & 2) != 0) && height - 0.001f > *(real *)(contact + 0x24) && projection > *speed)

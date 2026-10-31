@@ -159,6 +159,9 @@ PRIVATE __forceinline void function_29b6c0(vector3f const *arg_0,
 // Round 304: common unchanged/scaled output publication, scalar vector/point/both 480/401/486;
 // native vector/point/both 475/454/530; scalar/native and native/scalar 524/469.
 // Original normalizers and body restored; early J and magnitude/yaw homes remain.
+// Round 442: Five rotation-result scalar declaration orders and three complete role-name/home
+// orders, 389 each in eight compiled forms. All matched controls preserved; original helper,
+// sibling and body restored.
 // @retail 0x29b2e0
 void function_29b2e0(long arg_0, long arg_1, vector3f const *arg_2,
     vector3f const *arg_3, real arg_4, vector3f *arg_5)

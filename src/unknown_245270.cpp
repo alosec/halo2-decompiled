@@ -279,7 +279,8 @@ void function_245400(s_source_245400 const *source, long index,
 	function_244ca0(height, radius, list, field_00, field_04, surface->field_08,
 		material->field_04, material->field_05, point, material->field_06);
 }
-// score 203 (was 203): the transform block is the only place left where retail's arithmetic
+// score 203 (was 203): frame 0x24 versus 0x2c; source receiver and side-byte homes remain.
+// Earlier: the transform block is the only place left where retail's arithmetic
 // differs from the shared helpers: retail's point transform sums (forward.*x + up.*z) + left.*y
 // + position.*, where the shared point transform sums (up.*z + left.*y) + forward.*x, and an
 // inline expression written in retail's order reproduces retail's point-transform instructions
@@ -294,7 +295,6 @@ void function_245400(s_source_245400 const *source, long index,
 // ...), and that declaration and its call live in src/unknown_245850.cpp. Retail's 0x244de0
 // takes the direction vector in EAX and the transformed point in ECX, ours takes the point in
 // EAX and the vector in EDX; per the parameter-order rule neither is changed.
-// score 203 (was 203): frame 0x24 versus 0x2c; source receiver and side-byte homes remain.
 // Earlier: Frame 0x24 versus 0x2c, source receiver and independent side homes remain;
 // frame 0x24 versus 0x2c. Retail receives the source in ecx and keeps it in esi
 // until the plane-table read (scheduled after the edge vector), computes both side flags eagerly (one
@@ -463,6 +463,7 @@ void function_245400(s_source_245400 const *source, long index,
 // short 206/206, word 206/206; the independent side spill reuses the matrix argument home.
 // Actual marked point transform, return/native output 405/405; scaled-vector/both calls 386/582;
 // each with a force-inline declaration 405/405/386/582. Original body and declarations restored.
+// Round 441: Native point ownership, complete result with copy/setter after rejection 209/219, beside edge 206/216; transform-only in-place point after direction 220/205, before direction 211/208. All exact-only forms restored; original frame/source/side homes remain.
 // @retail 0x245540
 void function_245540(long arg_0, s_source_245400 const *arg_1,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
