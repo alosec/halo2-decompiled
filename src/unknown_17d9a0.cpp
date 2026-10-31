@@ -178,6 +178,15 @@ PRIVATE inline void decal_project_corner_17d9a0(transform4x3f const *matrix, rea
 // ternary 156, both lengths named 150, first length named with if/else 143 (986 bytes, aligned 131:
 // zero path stores the shared zero as retail; the epsilon load is hoisted and the projection lookup
 // and product orders remain). Next: the edge helper with if/else plus a form for the lookup.
+// Round 107 (fast; aligned count = unmatched instructions after alignment, base 94/93): bounds by
+// value to the corner helper 192; corner helper forceinline 138 (identical); edges through
+// vector2d_from_points2d with an if/else inverse 143 (986 bytes, aligned 86/87: the tail is retail's
+// but for the epsilon load and the determinant reusing e1.j); that plus each corner through the
+// existing 0x120810 180 (975 bytes, aligned 50/54: lookup, stores and tail retail's; left are the
+// products' operand order per corner, retail's `mov al, [positive]` before each corner's products
+// with `movzx` at the index, the first corner's axis in ax/positive in cl, and the plane store
+// through the normal's base); with real_point3d_set as the lookup's argument 180; with the side
+// byte read before the point 180 (aligned 56/60).
 // Lane 15 r17, on the existing 0x120810 per corner (189): plane pointer 198, with a point-first dot
 // 196 (store base as retail; the first two dot products then load the point first); edges as a
 // vector2f through vector2d_from_points2d with the inverse as if/else 182 (975 bytes; the tail is
