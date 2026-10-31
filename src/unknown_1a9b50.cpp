@@ -776,6 +776,11 @@ static __forceinline long real_to_long(real value);
 // Round 220: Early distance-limit scope/exhaustive/conditional/complementary producers 398/402/402/402;
 // the same four with the actual native slot formal and no cast alias 398/402/402/402. All retain
 // retail length but regress; complete original body, formal, sole declaration and every query restored.
+// Round 42: complete target/object velocity scalar values retained at all uses
+// 513/502; complete prop-facing value 489; target/object, target/facing and
+// object/facing value pairs 555/583/544; all scalar values 603; all native vector
+// values 574. Original pointers, fresh reads, arithmetic, query aliases and body
+// restored; frame 0x58, early rejection and magnitude/query homes remain.
 // @retail 0x1aab50
 bool __stdcall function_1aab50(long arg_0, s_slot *arg_1)
 {

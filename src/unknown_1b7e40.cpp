@@ -69,6 +69,11 @@ long function_25d810(long object_index, long actor_index, bool create);
 bool function_25d9b0(long prop_index);
 
 // score 125 (was 125): Frame 0xc and invitation call agree; actor/node EBX/EBP roles and fallback/evaluation placement remain.
+// Round 30 (fast, file and callees in the image; with this function alone the image is unfaithful,
+// 157 on the same source): the lookups through the existing actor_get/prop_node_get/
+// element_502424_get and prop_node_view 125 (same code, kept in place of the written-out bodies);
+// the found path breaking out of the loop 186; the evaluation inside the invitation branch with
+// the fallback going to it 125; node declared first 125.
 // Earlier: retail passes the actor index to function_26f060 in ECX and
 // the invitation type in EDI, ours passes them in EAX and ESI; that choice also swaps
 // the prop index and the node between ESI/EBP and EBP/EDI through the body. The
@@ -99,11 +104,11 @@ bool function_25d9b0(long prop_index);
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {
-	s_actor_view *actor = (s_actor_view *)(g_4f55f0->data + (actor_index & 0xffff) * sizeof(s_actor_view));
+	s_actor_view *actor = actor_get(actor_index);
 	long prop_index = actor->prop_index;
 	s_prop_node_view *node = NULL;
 	if (prop_index != NONE)
-		node = (s_prop_node_view *)(g_502418->data + (prop_index & 0xffff) * sizeof(s_prop_node_view));
+		node = prop_node_get(prop_index);
 	short priority;
 	if (actor_has_joint_invitation(actor_index, 0x12))
 	{
@@ -115,7 +120,7 @@ short __stdcall function_1b7e40(long actor_index)
 		while ((local_1 = function_26f0c0(&iterator)) != NULL)
 		{
 			short invitation_index = iterator.reference.unknown0;
-			s_502424_element *joint = (s_502424_element *)(g_502424->data + (((s_slot_owner_entry *)actor)->joint_invitations[invitation_index].joint_index & 0xffff) * sizeof(s_502424_element));
+			s_502424_element *joint = element_502424_get(((s_slot_owner_entry *)actor)->joint_invitations[invitation_index].joint_index);
 			if (!node || joint->target.unknown0 != node->object_index)
 			{
 				long new_prop;
@@ -124,7 +129,7 @@ short __stdcall function_1b7e40(long actor_index)
 					joint_decline(actor_index, iterator.reference.unknown0);
 					continue;
 				}
-				node = (s_prop_node_view *)(g_502418->data + (new_prop & 0xffff) * sizeof(s_prop_node_view));
+				node = prop_node_get(new_prop);
 			}
 			priority = *(short *)((byte *)joint + ((s_slot_owner_entry *)actor)->joint_invitations[invitation_index].participant_index * 12 + 0xa);
 			if (priority <= 0)
@@ -137,20 +142,14 @@ short __stdcall function_1b7e40(long actor_index)
 	{
 		if (actor->unknown07c == NONE || !node)
 			return 0;
-		node = (s_prop_node_view *)(g_502418->data + (prop_index & 0xffff) * sizeof(s_prop_node_view));
+		node = prop_node_get(prop_index);
 		if (node->unknown27 < 2)
 			return 0;
 		priority = 3;
 	}
 evaluate:
 	s_type_5cfb45 *state = function_25d690((s_prop_datum *)node);
-	s_prop_view_fields *view = NULL;
-	if (node->view_index != NONE)
-	{
-		byte *local_0 = g_502414->data + (node->view_index & 0xffff) * 0x124;
-		if (local_0)
-			view = (s_prop_view_fields *)(local_0 + 0x70);
-	}
+	s_prop_view_fields *view = prop_node_view(node);
 	vector3f velocity;
 	function_ba1d0(node->object_index, &velocity, NULL);
 	if (node->unknown28 > 1.6f && (real)sqrt((double)(velocity.i * velocity.i + velocity.j * velocity.j + velocity.k * velocity.k)) < 1.0f &&
@@ -265,6 +264,11 @@ evaluate:
 // Round 37 (the single-exit form, all 88 at 278 bytes, the call still inlined): as is; with
 // the existing magnitude3d; with the direct function_25d740 call; with the actor and prop
 // node lookups written out (as matched 0x1b7b90 does); written out with magnitude3d.
+// Round 27 (lane 11, on the single-exit form, 90 at 292 bytes): a const view 90; velocity declared
+// before the view 90; `view != NULL` 90; the velocity query before the view lookup 59 at 264 bytes
+// (the lookup still inlined; only the calls' new order realigns the listing, not kept). Our LTCG
+// keeps 0x25d740 out of line in 0x1aa0d0/0x1aab50/0x1ca2d0/0x262ba0/0x264b50 and inlines it only
+// here and in 0x261510.
 // @retail 0x1b81c0
 short __stdcall function_1b81c0(long actor_index, s_slot *slot, bool active)
 {

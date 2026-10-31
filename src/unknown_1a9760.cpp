@@ -9,6 +9,12 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
     real arg_3, bool *arg_4, s_path_trace_result *arg_5);
 
 #pragma inline_depth(0)
+// score 104 (was 104): the frame 0x3c still agrees; the half and offset XMM allocation
+// and the x87/SSE projection scheduling are unchanged, and this round's trials in
+// this file found no lower form of them
+// score 104 (was 104): the frame 0x3c agrees; the half and offset XMM allocation and
+// the x87/SSE projection scheduling remain, and this round's trials in this file
+// found no lower form of them
 // score 104 (was 104): frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling remain.
 // Earlier: frame 0x3c agrees; half/offset XMM allocation and x87/SSE projection scheduling differ;
 // tried position base 105; origin base 105; displacement base 105; geometry bases 105; unsigned component 104;
@@ -29,6 +35,10 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // Round 288: shared affine/difference producers with in-place/distinct output, ordinary/forced
 // difference declaration and original/earlier magnitude 262, 251, 262, 251, 262, 234, 262, 234. Original restored.
 // Round 194: Advancing position/scale-input/origin component pointers and complete subsets 105/105/104/105/105/104/105/105; complete second-projection differences/products/both 105/105/104; per-component named half-step 105. All preserve the original grouping but give no gain; original body and inherited inline boundary restored.
+// Round 126: without this file's inline_depth(0) pair LTCG inlines 0x25d700 and 0x1e4290 (retail calls
+// both): 383 (1119 bytes); and with the header normalize3d for the first normalization 424 (1152), with
+// dot3f for the final test 424, with `-x` for `0.0f - x` 424; normalize3d with the pragma kept (then
+// called, not inlined) 273 (927 bytes).
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {

@@ -401,6 +401,17 @@ PRIVATE inline __int64 bink_read_tsc(void)
 // Round 431: Allocation-clock/memory-decoder/texture-output consumption scopes, seven subsets; all with
 // read-only movie input: 244/244/244/244/244/244/244/244. Original consumption scopes, helpers and
 // complete executable body restored.
+// Round 104: retail is SSE code (movss stores, fcompi), so the body belongs with src/unknown_1564e0.cpp's SSE
+// Bink functions (moved there, with the memory helper in unknown_01e930.h). There: the ternary testing
+// `(flags & 0x100)` itself gives retail's and/or 0x40/shl 0x10 (a `large` local gives neg/sbb); the movie open as
+// an if/else with a call per arm gives retail's branch and spills the mask; `size` read back from
+// permanent_memory_size after the three stores gives retail's ebp size/esi block/edi start; the retry loop as a
+// do/while is unrotated (for (;;) and do-while(true) rotate); `!((real)timing_ticks_to_seconds(elapsed) < 0.1f)`
+// gives fld dword/fcompi/jbe; `function_1358c0(g_55ece8.format)` stays a call; the success path inside a positive
+// last texture test puts the shared failure exit last; one bool for both loading queries gives cmp al, bl.
+// Together aligned 109 -> 74 but 322 at 1061 bytes: frame 0x44 (retail packs start with the first clock temporary
+// and the second clock temporary with the memory status, ours the other way), two zero stores to the status slot
+// at entry unexplained, D3DDevice_IsBusy out of line in every unrotated loop form, the size constant 10 in ebp.
 // @retail 0x156090
 void function_156090(char const *name, dword flags)
 {

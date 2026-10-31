@@ -191,6 +191,9 @@ PRIVATE __forceinline void function_2922b5(vector3f const *arg_0, vector3f const
 // Round 424: paired hit-response orders 0213/1023/1032/1302/0132
 // 629/629/628/627/628; first three with completed clamp result 726 each.
 // Two-point best rejected; original response order and helper restored.
+// Existing staged cross in basis/rotation/projection subsets, then all with point setter
+// 651/629/651/626/645/626/645/659; three-point best rejected;
+// original producers and in-place snapshots restored.
 // @retail 0x2922b0
 bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, real *arg_4, real *arg_5, bool arg_6)

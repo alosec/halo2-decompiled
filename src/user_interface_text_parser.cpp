@@ -485,6 +485,9 @@ done:
 // 54; the name typed as dword 49/54. Round 36, on the retail-order body: the missing-definition path
 // copying and returning early 72 (189 bytes); `&g_55c6e4[0]` at both uses 54; the buffer named in a
 // local for both uses 54; const definition pointer and tag read 54; the default label first 54.
+// Round 317: Existing getter default-first/complete-result arms, crossed with case-9 priority
+// and direct tag consumption, 52/56/59/54/63/45/61/45. Four-count leads rejected;
+// all original getter statements, shared buffer and parser body restored.
 // score 32 (was 49): retail's case order (0, 1, 9, 2, 3, 4, 7, 8) with the copy repeated after the
 // translation; ours still keeps the switch's value in EDI from the entry and pushes the buffer address
 // in ESI where retail pushes it as an immediate, and the selector load lands in ECX.

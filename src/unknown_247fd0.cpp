@@ -163,6 +163,10 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // child index 76, with field_10 first 137; field_10 after the field_14/16/18 sample 184/168/152;
 // field_50 read into a named pointer for the compare 70; field_10 stored right after the record
 // link/record pointer/field_08/flag bits/seed-type bitfield 227/178/200/217/204.
+// Round 41 (fast): parent's unknown04 read into a local before the draws and stored last 243 (876
+// bytes), stored in retail's place 234; a parent pointer local for the first child-list address
+// 70 (copy propagated), with field_10 first 133; the four word samples' local in its own block 70,
+// with field_10 first 133.
 // Round 314: Independent sample outputs with direct/named scales and computation/entry declarations:
 // 70/70/70/70; in retail timestamp order 133/133/133/133. Original sample workspace restored; folded
 // compare and downstream register rotation remain.
