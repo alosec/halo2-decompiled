@@ -367,6 +367,10 @@ struct s_1f8a70_actor
 	byte unknown00[0x4ac];
 	s_1f8a70_frame frame;
 };
+// Round 27: the route switch's real default and the failure block's own false reach retail's frame
+// 0x80 but score 415; dropping the result initializer matches retail's prologue order and its frame
+// yet loses retail's `xor bl,bl` before the 0x1f86a0 call (416); retail's mode 3 also sets route_mode
+// = 1 and our case 3 does not (423 alone, 405 with the actor pointer hoisted); the original is kept.
 // score 228 (was 228): frame 0x84 versus retail 0x80; pool/data entry schedule and unit-output/route/result homes differ.
 // Round 46 leads (aligned diff 59 at 228): retail's failure block stores result = false itself and the
 // route switch has a real default storing false (`default: result = false; break;` and `failed:

@@ -62,11 +62,11 @@ struct s_spawn_scenario_23aea0
 // score 105 (was 105): a block struct over the merged global, byte offsets taken from the array and
 // a real global struct all leave VC strength-reducing the destination into a pointer induction, so
 // retail's integer offset with its base in the displacement is not reachable from this side.
-// score 105 (was 105): retail's weights are addressed from a base 16 bytes below the array (its
+// Earlier (105): retail's weights are addressed from a base 16 bytes below the array (its
 // displacement base is the neighbouring global g_502248) with the byte offset in a register; an
 // element pointer reaches retail's store form (103) but the base, the bound and the override
 // alignment still differ.
-// score 105 (was 105): definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
+// Earlier (105): definition uses ECX and destination uses a pointer instead of retail integer offset; override alignment differs.
 // Earlier at 103: the definition now stays in EAX and the source pointer in ECX, but
 // the destination is still an absolute pointer induction instead of retail's integer table
 // offset 0x18..0xa8; the prologue publishes the default table after the first scalar store
@@ -115,6 +115,11 @@ struct s_spawn_scenario_23aea0
 // reference local, while loop, `<= 13`, zero-based ordinal, struct copy (not unrolled).
 // Screens show VC keeps an integer offset only when two different global symbols share the
 // induction, and then rebases it to start at 0; retail's starts at 0x18 (12 * type, not rebased).
+// Round 9 (lane 2, fast): retail's offset is 12 * type for type 2..13 with the base 0x18 below the first
+// weight, i.e. `types[type - 2]` with `type` the definition's entry index; written that way as one loop
+// 105, the same over the raw dwords 254 (278 bytes, not unrolled), as the nested loops 105, zero-based
+// nested loops 139 (374 bytes), nested loops through an element pointer 103. Ours always ends the loop on a
+// pointer compare (`cmp eax, &weights_end`), retail on the offset (`cmp eax, 0xa8`).
 // Round 126 (real `--fast`): a zero-based loop over the twelve records (source from +0x180) 105; a named
 // `real const *` source indexed by type * 7 121; one twelve-byte record copy per type 257 (279 bytes, not
 // unrolled); the table pointer stored after the two scalar defaults 105; byte-offset destination 254 (278).
