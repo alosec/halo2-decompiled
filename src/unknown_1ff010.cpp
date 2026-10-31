@@ -510,9 +510,6 @@ void __stdcall function_26c2d0(long prop_index);
 bool function_1fef40(s_type_c3b527 const *target, long actor_index);
 extern vector3f *g_4687b0;
 void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
-// Round 19: unchanged; the inline planar normalisation still compares the length before the
-// divide where retail compares it after, and carries the magnitude and the reciprocal in
-// different registers; no new form was found.
 // score 130 (was 130): frame 0x20 agrees. Retail tests the planar length after the scale products
 // with the zero in xmm0 and does not carry that zero into the inlined rotation (memory 0.0 for i, a
 // fresh xorps for j/k); ours zeroes xmm6 before the divide and keeps it through the rotation, whose
@@ -579,10 +576,26 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // native guarded input plus field reads 131; complete vector setter at requested direction/turn
 // input/both 176/147/168; completed output workspace 130; workspace plus requested/turn/both
 // 176/147/168; direct final setter 147 (828 bytes); round 42: turned, horizontal or the planar
+// magnitude/x/y at function scope 130 each (identical). Round 19: the inline planar normalisation
+// still compares the length before the divide where retail compares it after, and carries the
+// magnitude and the reciprocal in different registers. Round 8 (lane 2): the cause is the 0.0f
+// constant: ours zeroes xmm6 once and keeps it from the length test through the rotation's cosine
+// products, retail keeps the zero in xmm0 for the three tests and rematerialises it (memory, then
+// xorps) in the rotation, so it follows the rotation helper's shape (src/unknown_1eb8a0.cpp, another
+// lane's file this round). Horizontal pair as an aggregate of the two components 166 (835 bytes);
+// only the normalized turned pair stored back into the direction 176 (801); the k copy dropped
+// (pair stored back) 159 (818); integer-zero magnitude test 130; speed-first output products 130.
 // magnitude/x/y at function scope 130 each (identical).
 // Round 231: facing-first positive / both positive predicates / facing-first nonzero /
 // both nonzero predicates 205/231/211/237; with direct component output
 // 175/193/181/199. Original admission and aggregate output restored.
+// Round 28 (lane 10): with direct output stores the aligned count drops 106 -> 93 (the tail and the
+// turned copy then follow retail); the four missing instructions are the facing products, which ours
+// write as `movaps reg, x; mulss reg, [field]` where retail loads the field and multiplies by x.
+// Normalization products as scale * x, y * scale 130 (identical); direct stores 147 (828 bytes, aligned
+// 93); output through vector3f_scale 147 (same code); direct stores without named x/y 160 (821 bytes);
+// normalization as if (!(fabs < eps)) { scale } else zero 131 (845 bytes).
+// BLOCKED-BY 0x1eb8a0 (the form of its inline rotation helper, src/unknown_1eb8a0.cpp).
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

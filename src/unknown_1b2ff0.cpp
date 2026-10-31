@@ -138,6 +138,10 @@ s_slot_handler_2 g_47e1c0 =
 // Round 307: Complete tried-mask/encounter-key/const actor lifetime subsets
 // 194/107/194/107/194/107/194; all with unsigned ordinal 199. Original context reads,
 // actor lifetime, ordinals and shared math restored; direction SIMD homes and reciprocal copy remain.
+// Round 7 (m3 lane 2): the scale written out as s*x, y*s, z*s (diagnostic) 107, the same code, so operand
+// order is canonicalized and only the colouring of x/y/z/reciprocal decides the copy; point arms swapped
+// (`!= NONE` first) 139 (same colours); distance declared before point/direction 107; `best_score < score`
+// 107; const target 107; a named reference to the target's point 107.
 // Round 42 (a compile-only build reproduces the colouring; 176 forms, the reciprocal always takes xmm0):
 // transform branch first 139; transform success folded into the test 170; point declared in the transform
 // branch 107; one fallback assignment with a shared subtraction 196; three arms 169.

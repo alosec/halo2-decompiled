@@ -97,6 +97,15 @@ static inline void sound_track_start_impulse(long index, long handle)
 	}
 }
 
+// score 16 (was 16): retail materialises the entry address (`add eax, [edx + 0x70]`,
+// `mov eax, [eax + 0x3c]`) and scales the entry index before the tag mask, our build folds
+// the base into the member load (`mov ecx, [edx + 0x70]`, `mov eax, [ecx + eax + 0x3c]`),
+// one byte longer; after the call to 0x222930 retail copies the parameter address through
+// eax, ours through edx. Every source shape of the entry address (typed indexing, an entry
+// reference, a pointer copy, the base and the scaled offset in locals, unsigned arithmetic,
+// the operands swapped, the field's address taken) compiles to the same folded bytes, so
+// what differs is the compiler's choice of addressing mode, not the source; the permuter
+// was killed by its time limit twice without producing a candidate.
 // score 16 (was 16): retail forms the entry address as a scaled index added to the entries
 // array (`imul`, `add eax, [edx + 0x70]`, `mov eax, [eax + 0x3c]`), ours folds the base into
 // the load; after the call to 0x222930 retail copies the parameter address through eax, ours
