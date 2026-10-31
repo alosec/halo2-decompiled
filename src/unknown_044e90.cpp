@@ -2,7 +2,7 @@
 #include "unknown_044e90.h"
 #include "normalize3d.h"
 
-// score 421 (was 421): frame 0x7494 versus 0x74a4; list strides, entry/table and plane homes differ.
+// score 421 (was 421): Frame 0x7494 versus 0x74a4; list strides, entry/table and plane homes differ.
 // Storage headers are at 0xb0/0x10bc/0x20c8/0x40d4 versus retail 0xb0/0x10c0/0x20d0/0x40e0.
 // Input plane homes are 0x2c/0x30/0x34/0x38 versus 0x34/0x38/0x3c/0x40; normal registers,
 // inverse-scale reuse, distance division and capacity-release scheduling also differ.
@@ -76,6 +76,13 @@
 // count/capacity/pointer, capacity/pointer/count, capacity/count/pointer:
 // 418/418/418/417/417/417; initialization by real capacity pairs, counts/capacities
 // or capacities/counts 418/418. Four-point gain rejected; original header/body restored.
+// Round 443: Native eight-byte storage plus ordinary-inline transform/containment/query
+// declarations, seven subsets and all plus both publication boundaries, 417 each at 1742 bytes
+// with frame 0x74a4. Four-point lead rejected; original header/body restored; entry/table and
+// plane/list homes remain.
+// Round 445: Real storage alignment eight with natural/eight plane-array alignment,
+// each with aggregate/explicit query fields, 429 each; storage sixteen on the same four
+// graphs 417 each. Four-point lead below keep gate; complete header and body restored.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {

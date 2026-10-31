@@ -1863,6 +1863,12 @@ PRIVATE __forceinline bool audio_target_is_current(byte *actor, long object_inde
 // BX); the switch result in its own bool 289 (DL); the 0x80 group as a forced-inline bool helper
 // 299 (LTCG then inlines 0x203330); the 0x40 test as `!(actor && (a != NONE || b != NONE))` 277
 // (same code); the loop's success return in the else arm after the advance code 277 (same code).
+// Round 18 (lane 14, fast; this function's reduced-image control is 453 at 2273 bytes against the full
+// build's 277): `object[0x39d] <= 0` gives retail's `ja` but not its target, 453; the 0x40 test with the
+// actor test negated as a whole 453 (same code); the 0x80 block as an `else if` with the 0x100 test after
+// it 453; the 0x40 failure as the else arm 638 (frame 0x28); `<= 0` with the failure arm braced 453.
+// Everything before the 0x40 failure block matches but for branch targets: ours reloads the definition
+// before `eligible = false`, retail stores first and so shares the 0x1a block's tail.
 // @retail 0x20d8c0
 short function_20d8c0(long source_index, s_audio_priority_table *table, byte const *request,
     long object_index, long target_index, long previous_index, long *tag_index, real *weight)
