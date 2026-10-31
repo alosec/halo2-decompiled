@@ -656,6 +656,13 @@ static inline bool session_set_machine_limit(c_class_58d20 *session, long value)
 // neighbour) 55 (same code); the player-loop index renamed 55, the session parameter renamed 55
 // (same code: names don't move the registers); named player pointer 58 (same rotation); the
 // flag-only preset pointers 49 (session still ESI).
+// Lane 14 r19: diagnostics (reverted): without the three in-loop session uses the session is not
+// enregistered at all (152); without only the 0x49c8 read in the call block it takes EBX with retail's
+// index ESI and player pointer EDI (35, the rest is the constant), so the session outweighs the loop index
+// by less than one call-block use. Forms (fast, listing the inlined callees 0x5c490 0x58d20 0x5b080
+// 0x5c5c0 0x6e910, which reproduces the plain 55): variant address named before the loop 52 (substituted
+// back); `continue` guards 55; `do { } while (++i < 16)` 221; `while (i < 16)` 221; the loops through
+// the membership getter 0x5a680 55; 0x6e910's team parameter as `long` (no `char` truncation) 55.
 // @retail 0x6e720
 bool function_06e720(c_class_58d20 *session)
 {

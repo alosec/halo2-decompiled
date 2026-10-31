@@ -1574,6 +1574,10 @@ extern s_object_list *g_4de2f4;
 // the light 49, as an element of the radius block 49 (same code); re-derived from the pool global
 // 282; `&light->fraction` passed to 0xbab40 with the pointer kept for the later read 49, the
 // pointer declared between the two calls 49 (same code).
+// Lane 14 r19 (fast with the callees listed reproduces 49; 0xbab40 gets retail's three pushes and
+// nothing scratch lives across it, so it is not the blocker): the fraction pointer defined between
+// copies 3 and 4 / 2 and 3 / 1 and 2 / the tint and copy 1 62/75/76/75 (still EAX, rematerialised);
+// the light's name read into a local before the 0xbab40 call 49 (same code).
 // @retail 0xc0c80
 void __stdcall function_c0c80(long light_index)
 {
