@@ -430,6 +430,13 @@ short function_1b8cc0(long object_index, long *seat_object_index);
 bool function_1b9200(long object_index, long prop_index);
 point3f *function_b9dd0(long object_index, point3f *result);
 
+// score 47 (was 47): NONE is still kept in EBP where retail keeps it in EBX and the special
+// flag still travels in BL where retail uses CL (the special path does `mov cl, 1; jmp
+// tail` and the scan stores 0 at its start); this round's trials in this file found no
+// lower form of that carrier choice
+// score 47 (was 47): NONE is still kept in EBP where retail keeps it in EBX and the special
+// flag still travels in BL where retail uses CL; this round's trials in this file found
+// no lower form of that carrier choice
 // score 47 (was 47): NONE in EBP (retail EBX) and the special flag in BL (retail CL: the special
 // path does `mov cl, 1; jmp tail`, the scan stores 0 at its start) remain; the tail and the
 // proximity block now match. Round 78: the tail's prop node as a named pointer 85 -> 51 and the

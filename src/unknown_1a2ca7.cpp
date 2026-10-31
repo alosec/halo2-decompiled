@@ -925,6 +925,9 @@ static inline XUID *message_entry_get_xuid(s_entry *entry)
 // message pointer 157; getter through the field at +0 145; ternary getter 145 (VC folds
 // `p ? p : NULL` to p, so only the qualified read keeps retail's test); sender reused for
 // the copy 135.
+// Round 50: account-entry, added player and account-id role names 81 each; split message and
+// player declarations 81 each; inline reference allocation 81; account-copy buffer name 81;
+// exclusion declarations swapped 81. Opening body restored.
 // @retail 0x1a4441
 long players_list_add_message_senders(XUID const *excluded, long excluded_count)
 {

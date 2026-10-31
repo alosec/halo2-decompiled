@@ -926,6 +926,11 @@ bool function_108530(long device_index, long name)
 // Isolated ramp-down zero/min/both if-clamps 121/121/121; const initial velocity 121;
 // all-read/all-read-write ramp-down references 121/130; shared velocity with stored initial 125;
 // entry velocity copy plus reused parameter 152. Original body restored.
+// Round 106: retail keeps the ramp-down time only in its stack slot and gives XMM6 to the initial
+// velocity (XMM register count is the trade); the ramp-down minimum with the time on the left 121;
+// the cruise velocity through the motion field (no velocity local) 134 (aligned 53 against 72: retail's
+// acceleration/deceleration blocks); the deceleration through the velocity local 121 (same code);
+// constant-first half times 121 (same code); cruise time as duration - ramp-up - ramp-down 123.
 // Round 2 of lane 18, on the per-branch cruise-velocity store (134, exact tail blocks): no remaining
 // local 134; remaining clamp as an if 134; up-time clamps before the down-time zero clamp 134; no delta
 // local 163; fresh pinned-target local 134; fresh down-time local 144 (callers 26/28); initial before

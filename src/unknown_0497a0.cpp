@@ -133,6 +133,9 @@
 // Round 433: Exhaustive reciprocal result with entry shapes/source case order, four forms
 // 611/678/611/678; single denominator counterparts 600/696/600/696. All restored;
 // the live-through-wave inverse default is not the missing frame cause.
+// Round 317: Existing shared scalar clamp for six parallel rows in mode-family masks 1-7,
+// then all with force-inline declaration, 702/702/702/581/702/702/702/702. Scaled
+// families grow frame to 0x64; original declarations, inputs and body restored.
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -520,6 +523,9 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Round 433: Independent transition endpoints/shared camera displacement/both 615 each;
 // definition observed at every use alone/with either/with both 626 each, all plus source
 // observations 634. All restored; native phase receivers do not recover the early carriers.
+// Round 443: Existing alpha/tint/pixel ordinary-inline producer boundaries, seven subsets and
+// all with definition before source, 615 each. All original declarations, pixel qualifier and
+// body restored; output/definition carriers, endpoint layout and color/vector homes remain.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {
@@ -749,6 +755,9 @@ void __stdcall function_43720(s_43740_input *input)
 // position computed before the input fill 62 (retail computes it before the pushes; ours
 // still interleaves it); a named vertex count used for the field and the call 64, with the
 // position first 64 (0x42b20 4).
+// Round 443: Ordinary-inline declarations at lookup/texture/submission boundaries, seven
+// subsets 62 each; all plus shader-relative normal 67 and matched caller 62. All declarations
+// and original body restored; early tag/EBP and signed-slot homes remain.
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {

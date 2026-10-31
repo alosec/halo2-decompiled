@@ -282,6 +282,14 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 // zeros 57; the arm as a const local {0, 0, 1} copied to the normal 397 (456 bytes); distance declared
 // ahead of the radius test 57; the arm through the normal member (`plane->n.i = plane->n.j = 0.f`) 57,
 // with unit z first 57. 1.0 stays hoisted ahead of the fsqrt in every form.
+// Round 28 (lane 10): ours also hoists the 1.0 into XMM0 above the fsqrt for both arms (retail loads
+// it in each arm). The squared distance through the existing out-of-line 0x24550 (k, i, j sum) 303
+// (stays a call, 772 bytes); the sphere helper __forceinline 57 (same code); j + (i + k) grouping (the
+// inline normalize's) 59; the scale helper __forceinline 57 (same code); the point copied by value
+// 397 (helper outlined, 456 bytes).
+// Round 27 (lane 11, real builds): the sphere helper forced inline 57; its parameters (point, sphere,
+// plane, depth) 57, (sphere, point, depth, plane) 57, (point, sphere, depth, plane) 57; the sphere
+// passed as `shapes->spheres + index` 57.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
