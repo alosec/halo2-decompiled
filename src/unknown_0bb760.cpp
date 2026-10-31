@@ -556,6 +556,12 @@ void function_3dd10(long object_index, bool force);
 // with the first scan's mask, weight and last stores reversed 134. A compile-only screen shows the
 // unroll needs the float add: an integer sum or no sum leaves the `<` loop rolled. Calling the
 // existing 0x131c20 (HSV flag) in the found block is not inlined, 374 (again).
+// Round 128: inverse at the top of the found block again 132 (round 55's form: left are the not-found
+// exit's own 1.0 reload, the variant byte read after the blend's fstp, and the first scan's exits);
+// on it the first scan as a signed for loop 638 (unrolled, 1309 bytes), the same with the weight, the
+// mask or the last index address-taken 638 each (taking an accumulator's address does not stop the
+// unroll); the mixing moved after the second loop on a found choice pointer 145. The weight, mask and
+// last index are memory-resident in both builds, so that is not what stops retail's unroll.
 // @retail 0xbe240
 void __stdcall function_be240(long object_index, dword color_mask, color3f const *colors)
 {
@@ -731,6 +737,9 @@ color3f *function_131c20(color3f const *a, color3f const *b, dword flags, real t
 // indexed by i 164; the destination pointer stepped at the end of the body 161; red scaled by `*=`
 // and green and blue as `value *` 91 (identical code: VC picks the mulss operand order itself); the
 // destination formed after the count test 99 (again).
+// Round 86: scalar component copy 139; blend-only count 169; scale-only count 170;
+// blend-only function array 173; scale-only function array 139; shared inner counter 105;
+// shared function pointer 91; advancing outer entry pointer 203. Original body restored.
 // @retail 0xbe8e0
 bool __stdcall function_be8e0(long object_index)
 {

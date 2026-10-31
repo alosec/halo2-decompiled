@@ -409,6 +409,9 @@ bool function_270750(byte *buffer, long unknown, s_actor_point_target const *tar
 // Round 429: special predicate at use/completion byte/both/traversal phase scope/
 // predicate-scope/byte-scope/all/all with long completion 358/314/350/315/358/314/350/369.
 // One-point byte gains rejected; original clearing, traversal and geometry restored.
+// Round 320: advancing link-output receiver with long/short/word link counts 368/368/368;
+// long previous-index combinations 366/382/365; long path count with long/short link count 316/316.
+// First forms recover frame 0xe4 but regress; complete original body and memcpy restored.
 // @retail 0x270d90
 PRIVATE short function_270d90(long actor_index, s_type_f17a25 *state,
 	s_path_result_view const *result, short node_index, short maximum_steps,
@@ -787,6 +790,9 @@ bool function_2715a0(byte *buffer)
 // N227: Native signed root/bounded hash/signed collision lookup carriers, seven subsets
 // 515/509/538/501/540/517/542; all with readonly node 542. Original lookup domains
 // and body restored; state/node/link registers and heap expansion remain.
+// Round 320: actual exclusion-search ordinal as result, short/long with joined/separate query guards
+// 599/584/599/584; all live penalty reads 578/567/578/567. All lengthen the body.
+// Complete original search, penalty snapshot, heap operations and result qualifier restored.
 // @retail 0x271630
 PRIVATE bool function_271630(s_type_f17a25 *state)
 {
@@ -1080,7 +1086,7 @@ struct s_flag_word_bits
    vertex indices are unsigned words: its comparisons with long NONE do not
    reject 0xffff. Only destination sector words have an effective NONE test.
    Link type stores write the low short; the upper short stays untouched. */
-// score 452 (was 452): Frame 0x2c/0x34, data/count registers and vector endpoint homes differ.
+// score 383 (was 383): Frame 0x30 versus retail 0x34; flag-mask, edge-index and endpoint homes differ.
 // Earlier surface word-bit view 452 (from 475).
 // Frame 0x2c/0x34, data/count registers and endpoint homes remain. Signed edge byte 464; direct parameter 452;
 // native surface bits 452; long surface cursor 483; output cursor 541; indexed vector helper 452; native
@@ -1094,19 +1100,19 @@ struct s_flag_word_bits
 // Round 429: direct parameter, early count 452; case orders 0,2,5,1/6 original/early count
 // 456/456; 1/6,0,2,5 original/early 476/476; 2,5,1/6,0 original/early 461/461;
 // 5,2,0,1/6 early 463. Seven forms reach retail length; all bodies restored.
-// score 256 (was 292): the ring walk names its two edge vertices so the point copy and the
+// Earlier 256 (was 292): the ring walk names its two edge vertices so the point copy and the
 // vector difference share one pair of vertex pointers, and the edge flag byte is stored
 // before the two cleared flag bytes; the state and flag mask registers still differ.
-// score 292 (was 312): the surface list is walked as retail's do-while and the ring walk stores
+// Earlier 292 (was 312): the surface list is walked as retail's do-while and the ring walk stores
 // the edge flag byte in retail's order, so the loop tails and the ring entries now agree; the
 // state pointer and the flag mask still use swapped registers, the case 0 edge comparison uses
 // another register and the ring walk's edge pointer comes from a register, not retail's stack home.
-// score 312 (was 427): retail's frame (0x34), argument offsets and length agree with ours, the
+// Earlier 312 (was 427): retail's frame (0x34), argument offsets and length agree with ours, the
 // surface vertices are named locals so the link points and the segment ends land in retail's stack
 // homes, the node distance is three named components summed in z, y, x order and the link fields
 // are stored in retail's order; the state pointer and the flag mask still use swapped registers,
 // the case 0 edge comparison uses another register and the ring walk still differs.
-// score 383 (was 452): retail's pathfinding, node-array, count and node-index registers and the
+// Earlier 383 (was 452): retail's pathfinding, node-array, count and node-index registers and the
 // local homes now agree with ours, and the length matches retail's 1760 bytes; the frame is 0x30
 // against retail's 0x34, the flag mask and the edge index still use different registers, and the
 // two edge endpoints are not kept in retail's stack homes.
@@ -1117,6 +1123,9 @@ struct s_flag_word_bits
 // back scores 256, but it hand-copies vector3d_from_points3d for the flag0d distance (three named components summed
 // z, y, x) and adds one-use segment_start/segment_end (declared end first) and link_end pointers; those are not kept
 // without a match. The swapped facing branch in 0x263810 alone scores 150 (was 152), not kept.
+// Round 320: shared movement mask/long movement ordinal/converted-point lexical homes,
+// nonempty subsets 448/392/448/383/448/392/448; all with entry point workspaces 448.
+// Mask capture recovers frame 0x34 but regresses; original observations, loops, copies and body restored.
 // @retail 0x272020
 PRIVATE short function_272020(s_pathfinding_data const *pathfinding,
 	s_path_node_key_view const *node, s_path_link_view *links, s_type_f17a25 const *state)

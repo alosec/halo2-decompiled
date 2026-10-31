@@ -478,6 +478,14 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // without the loop 85; the difference through a helper returning its output 34 (normalize3d 79);
 // `while (length > travelled && !result)` 102. Diagnostic only: a normalize summing
 // `i*i + (j*j + k*k)` with the subtraction through a pointer 8.
+// Lane 18 r1: the magnitude's three terms are reordered by rank whatever the text (all 12 sum spellings
+// give the same code; a parenthesised pair is summed first); the direction written k, j, i by hand 94
+// (then i is kept on x87), through a pointer local 80 (k kept, sum k, i, j). Scale as `(1.0f / m) * i`
+// then `j * inverse`, `k * inverse` (another file's normalize) 94: retail's scale block and loop-entry
+// jump exactly, but the sum j, i, k; the scale statements in all six orders with either operand order
+// 34-37; the BSP index read at its use with the BSP pointer declared first 37 (word load, in BX); the BSP
+// pointer a local with the index and structure read at use 36 (DI); BSP pointer and index locals with the
+// structure at use 36 (index back to a dword load).
 // @retail 0xc0840
 bool function_c0840(point3f const *start, point3f const *end, point3f *out, real *distance)
 {
