@@ -178,6 +178,16 @@ void function_221490(
 // read after the mixbin compare 135.
 // Round 439: native field/aggregate output-pair publication, each with four real cache/mask/count
 // completion orders, 95 each (286 bytes). Original complete append and input observations restored.
+// Round 92 (--fast, reproduces 83): on the `changed`-initialised form (90, 281 bytes, frame 0xd8; i in EBX,
+// out count in EAX, cursor on the list): `long i = 0` at its declaration 91; i declared first, reversed
+// compares, count stored from out_count, seen mask declared first 90 each; a loop-invariant
+// `current = list->pairs` 90, with the volume read after the mixbin compare 97 (the pointed-to array
+// takes the cursor, anchored at its volume, retail's anchor but on the list); settings-pairs pointer
+// 90/135; per-element settings pair pointer 97/90; list volume compared before settings' volume, settings
+// fields read at each use: mixbin local 113 (current) / 108, both at each use 106 (current) / 87 (settings
+// then arrives in EAX: convention change). Retail: settings cursor at +4, list mixbin [list+4 + i*8], list
+// volume through the difference, i in EDI as the shared zero. Both arrays through loop-invariant
+// pointers (either declaration order) with the late volume 97/97. All restored.
 // @retail 0x2215d0
 void function_2215d0(
 	s_mixbin_list *list,
@@ -267,6 +277,7 @@ set_all:
 // all with SDK append count 75; output/scalars with late volume 131, SDK count 75.
 // Scoped output/scalars gives 75 plain (291/281, frame 0xd8), but regresses an
 // unmatched caller by 56; original output/state lifetimes restored.
+// Round 92: the forms screened on 0x2215d0 (same body; see its note) 87..135, none below 83. Restored.
 // Round 47: retail walks the settings pairs (ESI) and indexes the list pairs from a spilled
 // list+4; every form below still walks the list. Index initialised at its declaration 83
 // (same code); list-pairs base pointer before the loop 95, with the volume read late 97, declared
