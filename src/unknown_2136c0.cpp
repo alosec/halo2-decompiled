@@ -90,6 +90,10 @@ void function_213970(void);
 // joint preference guard 158. All gains below the retention threshold; original body restored.
 // Round 198: Complete payload clear orders with the byte-tail block first/last/middle,
 // size-ordered blocks and all blocks reversed: eight orders, all 131. Original body and bounds restored.
+// Round 2 of lane 18: BLOCKED-BY the separate definitions (block A: src/unknown_213760.cpp and
+// src/unknown_213d20.cpp, with an extern in src/unknown_214c30.cpp; block B: g_55bd04/g_55bd08 in
+// src/unknown_12be90.cpp). Scalar zero stores before the clears 131, without the size pragma 158;
+// enabled flag before the NONE stores 131; NONE stores before the zero stores 131, without the pragma 161.
 // @retail 0x2136c0
 void function_2136c0(void)
 {

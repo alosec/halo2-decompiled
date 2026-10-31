@@ -631,6 +631,9 @@ PRIVATE __forceinline real function_255741(vector3f const *arg_0, vector3f const
 // 0x1e4a50 call sinks below the test), with the early default 139; the else-arm default with the
 // reduced length guard 205; the else-arm default with the sum named between the delta and the dot 209.
 // The else-arm default alone is 205 positional but aligned 92 (registers masked 30, against 126/81).
+// Round 40 (on the 95 form): 0x110ab0 swapped for another stdcall bool(long) callee 96 (same rotation, so it
+// is the caller's); guard as an early return 95, inner guard part as an early return 95; the 0x1e4a50 element
+// kept as a byte pointer with its +4 radius read in both sums 208.
 // Round 42 (lane 16): why the late sum moves the call: our build forward-substitutes a radius used once
 // into its use and the pure 0x1e4a50 call goes with it, to whatever point first needs it (retail keeps
 // the call first in the block; 0x1e4a50 is LTCG in retail too, XMM4 stays live across it). Entry-declared

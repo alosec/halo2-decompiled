@@ -460,6 +460,14 @@ static __forceinline void point_add_scaled_c35a0(point3f const *point, vector3f 
 // 36 (retail's word load, but in BX with the BSP pointer in EBP); with the BSP pointer at its use too 37;
 // with the structure at its use 36; all three globals at their use 37; the BSP pointer alone at its use 34;
 // the result declared after travelled/step 34.
+// Lane 18 r1: the magnitude's three terms are reordered by rank whatever the text (all 12 sum spellings
+// give the same code; a parenthesised pair is summed first); the direction written k, j, i by hand 94
+// (then i is kept on x87), through a pointer local 80 (k kept, sum k, i, j). Scale as `(1.0f / m) * i`
+// then `j * inverse`, `k * inverse` (another file's normalize) 94: retail's scale block and loop-entry
+// jump exactly, but the sum j, i, k; the scale statements in all six orders with either operand order
+// 34-37; the BSP index read at its use with the BSP pointer declared first 37 (word load, in BX); the BSP
+// pointer a local with the index and structure read at use 36 (DI); BSP pointer and index locals with the
+// structure at use 36 (index back to a dword load).
 // Round 91 (lane 7, one-file LTCG harness, exact here): the cause is how the difference is stored;
 // with the subtraction written as a component loop `direction.n[c] = end->n[c] - start->n[c]` (matched
 // 0xfa580's form) ours keeps k and squares it first like retail: the loop alone 80, with normalize3d
