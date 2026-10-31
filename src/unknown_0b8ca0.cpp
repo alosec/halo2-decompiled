@@ -1729,6 +1729,11 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // The two-point pointer forms are exact-match-only and rejected; original declaration and body
 // restored. Accepted header-table reload, expanded node query and transform carriers remain.
 // Round 194: Node-address/inverse phases after node, link and header writes 290/281/289/291/292/287; before first parent write 281/285. Native activity on inverse phases 278/286/283/280. On 278, hidden/connection/component shift subsets 285/281/278/284/285/281/284. Best 278 gains seven, rejected; original header and body restored.
+// Round 4 (lane 18, fast): the header's active bit as a byte bitfield of the header view 281 (retail's
+// byte shr/and; four-point gain, not kept); on it the bit-7 flag test by shift 285, the header from
+// OBJECT_HEADER_GET(index) 302, the type test as `!((1 << type) & 0x80)` 290, the active flag not
+// volatile 289, the 0xc0 bit 6 test by shift 281. The slot_handler.h node-matrix helper can't be
+// included here (its header view clashes with this file's). Restored.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {
