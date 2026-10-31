@@ -869,6 +869,7 @@ real function_18cac0(long arg_0);
 // Round 309: Plain two-mask search with long/unsigned-long/short/word scan, absent-side
 // continuation 229/229/230/230; complete admission 233/233/234/234. Both native clears,
 // original side selection and whole executable body restored; camera/gain-view homes remain.
+// Round 441: BSP-before-first-mask query contract with native real table/outer maximum/consistent audibility combinations 156/156/156/156/167/167/167/167. Original query definition, declaration, call and complete body restored; camera/clear-result and side homes remain.
 // @retail 0x221a70
 void __stdcall function_221a70(long arg_0, s_voice_position_batch *arg_1)
 {

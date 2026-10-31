@@ -658,7 +658,7 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
     widget->function_22f52e()->set_text(text);
 }
 
-// score 573 (was 573): retail biases EBP by 0x70 (lea ebp,[esp-0x70]) and keeps the friend flags in
+// score 557 (was 573): retail biases EBP by 0x70 (lea ebp,[esp-0x70]) and keeps the friend flags in
 // ESI and the timestamp in EDI; ours uses a plain frame, spills the flags to a slot and packs the six
 // small locals differently.
 // Frame 0x85c agrees; EBP bias 0x70, flags/time/state homes and status-helper transport remain.
@@ -733,6 +733,9 @@ PRIVATE __forceinline void show_friend_detail(c_text_widget_45a5e0 *widget, word
 // Round 308: Complete primary-slot/team-mode/paired-total input subsets 636/606/662/668/687/667/680;
 // all with long primary-slot result 679. All regress and retain ordinary EBP; original observations,
 // count expressions and executable body restored. Frame bias and flag/time homes remain.
+// Round 441: Signed-short dynamic search/competitor/list subsets 565/569/568/566/557/562/561;
+// all dynamic plus fixed-team short 556 (two extra edits gain one against selected 557).
+// Search/list short kept at 557 plain, 1964/2041 bytes; frame 0x864, unbiased EBP and flags/time homes remain.
 // @retail 0x2b65b8
 void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const *friend_, s_friend_session_2b642e *session)
 {
@@ -943,7 +946,7 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
                     function_1630e0(message, format, minutes, seconds);
                     show_friend_detail(text[row++], message);
                 }
-                for (long i = 0; i < *(short *)(details + 0xa80); i++)
+                for (short i = 0; i < *(short *)(details + 0xa80); i++)
                 {
                     if (xuid_equal((XUID const *)(details + 0xa82), &friend_->xuid, true))
                     {
@@ -974,7 +977,7 @@ void c_y_menu_player_selected_screen::update_friend_details(XONLINE_FRIEND const
                 }
             }
             if (8 - row >= (unsigned)*(short *)(details + 0xa80)) value10d8 = 0;
-            for (long i = 0; row < 8 && i < *(short *)(details + 0xa80); i++)
+            for (short i = 0; row < 8 && i < *(short *)(details + 0xa80); i++)
             {
                 long index = (value10d8 + i) % *(short *)(details + 0xa80);
                 ((c_widget *)this)->function_230134(0x1200027e, format);

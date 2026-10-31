@@ -271,6 +271,10 @@ bool camera_velocity_profile_new(s_camera_velocity_profile *profile, real total_
 // conversions written in the sum 83; PIN + 2x3 with the segment times in a float array 88, with
 // per-segment {rate, acceleration} pairs 88; compile-only, all 720 orders of the six 2x3 fills, a
 // time array, a time loop and factored per-segment terms keep the same single spilled peak.
+// DL201: native contiguous start/peak pair copied by memcpy/memmove, second peak from
+// its original field/copied home 96/110/97/103; with complete conditional first count
+// 95/105/50/100. Original arrays, observations and six-term expression
+// restored; extra coefficient promotion and frame 0x10/0x1c remain.
 // @retail 0x16be50
 real camera_velocity_profile_evaluate(s_camera_velocity_profile const *profile, long ticks)
 {

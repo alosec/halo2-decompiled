@@ -187,6 +187,9 @@ PRIVATE __forceinline void function_29ab94(vector3f const *arg_0, real arg_1, ve
 // coefficient/complete expression parts 409/409. Frame/input homes remain; original body restored.
 // Round 251: native value-input scale 476; all six complete scaled-product declaration orders 476 each; complete scale plus planar staged products 476. Original repeated helper contracts and body restored.
 // DL190: Native real root/magnitude-absolute/planar-absolute API subsets 1-7 all 383; all with native correction root/absolute 383. Original arithmetic and helpers restored; frame, requested-vector stack ownership and x87 homes remain.
+// Round 442: Ordinary-inline declarations at the three query boundaries in seven subsets, then
+// all plus turning publication, 383 each in eight compiled forms. All original declarations,
+// helpers and body restored.
 // @retail 0x29ab90
 void __stdcall function_29ab90(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

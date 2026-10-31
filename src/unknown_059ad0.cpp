@@ -3529,6 +3529,10 @@ void function_61050(c_class_58d20 *session, long channel_index,
 long network_observer_attach_channel(s_network_observer *observer, long owner_index, const XNADDR *address);
 
 // score 119 (was 119): frame 8 agrees; attach scratch rotation and separate reject tails remain (fast control 131, full 119).
+// Round 104 (plain): the machine address read through a named source pointer (pointer, reference, byte pointer or
+// split copy) 151 at 463 bytes: the first attach then takes retail's eax/ecx and the reason-7 exits merge, but the
+// copy loses retail's `lea eax, [edi + 0xa]` and the member/reservation scratch stay rotated; a shared XNADDR
+// pointer for both attaches 119; channel declared first 119; split machine copy 119; time read after now 174.
 // Earlier: the channel call's arguments are set up in the other
 // registers, the failure reason is written before the return value is cleared
 // instead of after, the member's flag byte is read through a computed address
@@ -3746,6 +3750,9 @@ bool function_07ab10(long key_index, s_type_99af70 *address, long local, word po
 // Round 299: entry address/address-and-remote workspaces 136/136; false result
 // after lookup/close/transport 139/143/153, each with entry address 139/143/153.
 // Original workspaces, result lifetime and body restored; host/session and cleanup remain.
+// Round 44: actual returned outcome from availability/registration/resolution, alone/paired/all,
+// then all with channel outcome 187/187/187/187/187/187/187/187.
+// Original result, cleanup and body restored; host/session staging and clock remain.
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,
