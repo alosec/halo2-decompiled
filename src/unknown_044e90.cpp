@@ -76,6 +76,10 @@
 // count/capacity/pointer, capacity/pointer/count, capacity/count/pointer:
 // 418/418/418/417/417/417; initialization by real capacity pairs, counts/capacities
 // or capacities/counts 418/418. Four-point gain rejected; original header/body restored.
+// Round 443: Native eight-byte storage plus ordinary-inline transform/containment/query
+// declarations, seven subsets and all plus both publication boundaries, 417 each at 1742 bytes
+// with frame 0x74a4. Four-point lead rejected; original header/body restored; entry/table and
+// plane/list homes remain.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {

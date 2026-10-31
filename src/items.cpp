@@ -1323,12 +1323,14 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 
 // score 158 (was 185): Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
 // the frame 0xac agrees; the release byte's read-modify-write,
+// the frame 0xac agrees; the release byte's read-modify-write,
 // the tail, the event-point homes and the location-call setup are unchanged, and
 // this round's trials in this file left them where they are
 // score 185 (was 185): the frame 0xac agrees; the release byte's read-modify-write,
 // the tail, the event-point homes and the location-call setup remain, and this
 // round's trials in this file left them where they are
 // score 185 (was 185): Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
 // Earlier: Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
 // Earlier 154 (was 154): frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
 // Frame 0xac agrees; release-byte RMW/tail and event/location homes remain.

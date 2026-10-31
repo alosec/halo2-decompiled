@@ -124,6 +124,13 @@ real normalize2d(point2f *arg_0);
 // Round 302: Clearance after successful normalization, with shared expanded radius,
 // distinct squared/root length and existing scaled-add subsets: all eight 270.
 // Original clearance lifetime, output access and body restored; output/vector homes remain.
+// Round 29 (fast): a second copy of the input point, after the center, with the to-center vector
+// computed in place over it (as retail's stores show) 235, as local_6 only 229, taken first 239; with
+// an actor-to-center vector computed before the first test and used in both later tests 226; on that,
+// the squared length written i-then-j 222, the 3D squared length i, j, k 219, both 215 (retail's 0x28
+// copy / 0x34 center layout and vector sources; output still EBX, 1032 bytes); product operand and
+// sum orders in the two dot tests 215-226 (canonicalised); the arg_5 path as an else with one final
+// false return 215 (same code); without the output self-address read 238.
 // Round 46: retail's 0x28 slot is one variable: the point copy is stored there and the
 // point-to-center vector is written over it component by component (copy y stored after the
 // vector's i). A to-center vector copied from the point and differenced in place puts the
