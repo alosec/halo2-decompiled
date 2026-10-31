@@ -664,6 +664,10 @@ PRIVATE __forceinline void decal_rotate_vector_17fd20(vector3f const *forward, v
 // Round 429: exact-frame count order 563 (one-point gain rejected); edge fields at use 694;
 // both 694; complete group-owned selection workspace 769; count/workspace 768; edge/workspace
 // and all three 790/790; all with ring anchor at use 707. Original body restored.
+// DL round 206: selected edge direction at acceptance 647; with early pivot offset 633;
+// with native point setter 648; early offset and point setter 682; those four with
+// the staged shared cross product 647/633/648/682. Frames shrink to 0x21d4/0x21cc;
+// original endpoints, pivot timing, helper operations and complete body restored.
 // @retail 0x17fd20
 void function_17fd20(s_decal_mesh_view const *mesh, long tag_index,
 	s_decal_output_17dd80 *output, s_decal_projection_17fd20 *projection, s_decal_placement const *placement)

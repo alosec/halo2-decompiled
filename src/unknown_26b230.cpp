@@ -2309,6 +2309,9 @@ void *actor_get_character_situation_entry(long actor_index);
 // shift); one iterator per actor loop 283 (same code); structure global at each use 318; named stamp
 // index in both marking arms 319 (retail's direct marking addresses, later loops misaligned by padding);
 // with `while (selected < 50 && cursor < count)` as well 326.
+// DL round 206: candidate evaluator/collector inline modes 1/0, 0/1, 1/1, 2/0,
+// 0/2, 2/1, 1/2, 2/2 (ordinary, inline, forced) 283/283/283/1749/459/1749/459/3173.
+// Forced evaluator expansion also loses matched neighbours; all declarations and body restored.
 // @retail 0x269870
 void function_269870(long clump_index)
 {

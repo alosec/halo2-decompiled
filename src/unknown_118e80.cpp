@@ -299,6 +299,9 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 // Round 230: complete object-element observations alone 326; with saved header base 294;
 // with named slot 305; with both 292; those four with per-use tag elements
 // 382/349/422/332. Original body and producer restored.
+// DL round 206: existing matrix/vector, matrix3x3/vector and axes-vector producers
+// 220/296/296; early-arm callee inline 220; producer/inline pairs 220/296/296;
+// early-arm callee forced 1340. All producer, body and external declarations restored.
 // @retail 0x1197b0
 void function_1197b0(long object_index)
 {
