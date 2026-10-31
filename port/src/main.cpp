@@ -1017,6 +1017,32 @@ void report_fault(int signal_number, siginfo_t* info, void* context) {
         line[length++] = '\n';
         write(2, line, static_cast<size_t>(length));
     }
+    /* H2_FAULT_REGDUMP="x21:0x200,x23:0x40": that many bytes behind a
+       register's guest pointer, eight words a line */
+    if (const char* dump = std::getenv("H2_FAULT_REGDUMP")) {
+        const char* cursor = dump;
+        while (*cursor == 'x') {
+            char* end = nullptr;
+            const long reg = std::strtol(cursor + 1, &end, 10);
+            if (end == cursor + 1 || *end != ':' || reg < 0 || reg > 28)
+                break;
+            const unsigned long bytes = std::strtoul(end + 1, &end, 16);
+            const auto value = static_cast<std::uint32_t>(state->uc_mcontext->__ss.__x[reg]);
+            for (unsigned long offset = 0; offset < bytes; offset += 32) {
+                length = std::snprintf(line, sizeof(line), "h2-port:   x%ld+0x%03lx:", reg, offset);
+                for (unsigned long word = 0; word < 32 && offset + word < bytes; word += 4) {
+                    const auto address = h2::port::kGuestBias + value + offset + word;
+                    if (!readable(address))
+                        break;
+                    length += std::snprintf(line + length, sizeof(line) - length, " %08x",
+                                            *reinterpret_cast<const std::uint32_t*>(address));
+                }
+                line[length++] = '\n';
+                write(2, line, static_cast<size_t>(length));
+            }
+            cursor = *end ? end + 1 : end;
+        }
+    }
     /* H2_FAULT_DUMP="0x510c98,0x5023f4": guest words to print at the fault */
     if (const char* dump = std::getenv("H2_FAULT_DUMP")) {
         const char* cursor = dump;
