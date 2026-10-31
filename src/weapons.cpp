@@ -3185,6 +3185,9 @@ struct s_ammo_conversion_entry
 // Round 43: positive byte acquisition 202; ordinal conversion scan on it 215; direct destination,
 // both-element and definition-only observations 207/235/228; unsigned conversion quantity 204,
 // with conditional minimum 196, plus direct destination 205. Original body and field type restored.
+// Round 319: Capacity-failure continue with cached count, conversion-first arm and
+// twice-used offered quantity subsets 210/207/196/207/210/207/196/207. All
+// restored; frame 0x20 agrees but destination/tag and conversion homes remain.
 // @retail 0xffc60
 bool __stdcall function_ffc60(long weapon_index, long other_index, long player_index, long event_index, short *rounds)
 {
@@ -3296,7 +3299,8 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
     return unit ? unit->player_index : NONE;
 }
 
-// score 606 plain per round 87 (was 565; fast 637 -> 640): the three behaviour fixes below are applied by the
+// score 604 (was 604): frame 0x1c64 versus 0x1c60; weapon/barrel and scalar homes remain.
+// Earlier: the three behaviour fixes below are applied by the
 // coordinator (round 87 review) and kept although the count rises. Frame 0x1c64 versus 0x1c60; weapon/barrel and
 // scalar homes remain.
 // Plain single-store unit 637; later effect locals 659; long marker count 607;
@@ -3349,6 +3353,9 @@ PRIVATE __forceinline long unit_player_index_102fb0(long unit_index)
 // fixes). A plain (non-volatile) unit index set to NONE then overwritten gives retail's 0x1c60 frame and aligned
 // count 229 (219 with the scale order, 227 with all fixes) but 2503-2509 bytes, positional 645-649: the next lead.
 // The two parameter-address references were code-identical no-ops and are removed.
+// Round 239: complementary shot/failure/both results 570/570/571 fast; ordinary
+// holder counterparts 660 each; both byte results 571, ordinary holder 660. Fast
+// control 640; four promising forms all 604 plain. Original body restored.
 // @retail 0x102fb0
 void __stdcall function_102fb0(long weapon_index, short barrel_index)
 {
