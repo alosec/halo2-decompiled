@@ -205,6 +205,12 @@ PRIVATE __forceinline real function_1d24a7(point3f const *arg_0, point3f const *
 // combinations 947/938/938/954/947/920/954; all with projected-vector result
 // 958. Original kernels, short scale loop, coefficient pair, solver response
 // sharing and full body restored; entry, frame and record/vector homes remain.
+// Round 203: existing shared scale/accumulation/real-dot kernels, seven
+// subsets and all with shared displacement 1199/920/920/1199/1199/920/1199/1199.
+// Coordinated solver inline declaration on counted/expanded kernels 920/1199;
+// existing center point setter on expanded scale/scale-add 1168/1168.
+// Point production retains the expanded entry pair and grows frame to 0x1d8;
+// all helpers, declarations, original center copy and body restored.
 // @retail 0x1d24a0
 void __stdcall function_1d24a0(s_havok_component *arg_0, float arg_1)
 {
