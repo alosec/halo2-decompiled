@@ -749,7 +749,7 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 
 // Round 48 (Kimi 2): repeat_state and loop_alternate held in one named 8-byte record matched byte for byte
 // (0 at 823); not kept, a struct that only groups locals to move their stack homes.
-// score 30 (was 60): every remaining difference is a stack offset. Retail keeps the loop bool
+// score 30 (was 30): every remaining difference is a stack offset. Retail keeps the loop bool
 // in a dword-aligned unit (its low byte) between repeat_state and the listener; ours is a
 // one-byte home in the lowest unit, which shifts the lighter dwords by four and reorders the
 // heavier ones. Retail's order: sound flags, effect, entry offset, controller, state, index,
@@ -846,6 +846,12 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // Round 49 (fast, baseline 58): the alternate expression directly in SET_BIT 139; direct raw gain 58;
 // both 139; a function-scope looping pointer with direct gain 58; cumulative const effect, controller index,
 // tag flags and tag index on that neutral graph 58 each. Opening body restored.
+// Round 9 (fast baseline 58, plain 30): the 8-byte {repeat state, alternate} record now matches byte for
+// byte in the plain check (fast 28); not kept, a struct that only groups two locals. A one-file frame probe
+// shows a lone bool always takes the bottom byte slot whatever its uses, so retail's dword slot needs the
+// pair in one aggregate. Real trials (fast): the looping test named and used twice 210 (830 bytes); the
+// definition read before the looping block 201; a function-scope looping pointer 58; one if/else choosing
+// state and alternate 67.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

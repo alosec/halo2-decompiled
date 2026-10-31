@@ -29,6 +29,11 @@ bool function_1f5110(long arg_0, point2f const *arg_1, real arg_2,
 // Round 288: shared affine/difference producers with in-place/distinct output, ordinary/forced
 // difference declaration and original/earlier magnitude 262, 251, 262, 251, 262, 234, 262, 234. Original restored.
 // Round 194: Advancing position/scale-input/origin component pointers and complete subsets 105/105/104/105/105/104/105/105; complete second-projection differences/products/both 105/105/104; per-component named half-step 105. All preserve the original grouping but give no gain; original body and inherited inline boundary restored.
+// Round 9 (lane 2, fast): the existing prop-level getter 0x2684f0 for the opening test 230 (979 bytes; the
+// inline-depth window keeps it out of line), without the window 320 (1072 bytes; the body alone without it
+// 383); unary minus for both negations 176 (986 bytes); the half step as `0.5f * v + position` 104; the
+// length's squares in i, j, k order 108; the projection straight into its own local (no store to the
+// vector first) 104.
 // @retail 0x1a9760
 void __stdcall function_1a9760(long arg_0, s_slot *arg_1)
 {

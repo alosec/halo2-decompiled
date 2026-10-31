@@ -2987,6 +2987,12 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // effect index 128; system looked up first 114. On the spawn form: colours after the cursor 90, mode
 // first 90, mode after the colours 89, colour B in the call 129, b4 first 111, early return 94, shared
 // colour helper (system, A, B) 90; per-call-mode colour/scope/b4/next variants 107-122.
+// Round 9 (lane 2, fast; 0x176f60 matches unless given): spawn cursor 90; the cursor assigned before the
+// colour reads 89; spawn cursor with the mode read per call 109 (0x177040 then takes the effect index in
+// EAX and the particle system in ECX, 0x176f60 25); with 0x178c80's colour block (colours read at the
+// call, `multiplied` named) 116 (325 bytes, 0x176f60 25); that block with the mode per call 101 (332
+// bytes, 0x176f60 25). The one-file harness gives the effect index a register too, so it cannot screen
+// this convention.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3028,7 +3034,7 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 	return next_index;
 }
 
-// score 12 (was 176): only rows x and y of the node point transform differ: retail sums them as
+// score 12 (was 12): only rows x and y of the node point transform differ: retail sums them as
 // left*y + forward*x + up*z (row z as written), the function-wide reassociation order. Round 170: the
 // single exit (`result = true; goto done;`) gave the early BL, and 0x152450's `next` player search the rest.
 // Before round 170: frame 0x50 agrees; early false BL, bitmap/count/unit carriers and point/advance scheduling remain.
@@ -3088,6 +3094,14 @@ long __stdcall function_177040(long particle_system_index, long effect_index)
 // point and delta declared at the loop top/first/unit scope/entry 12 each; location index before the
 // unit 15; 0x179fb0's mode-0 iterator 12 (0x179fb0 46); a `players` pool local 20; while-form search
 // 234.
+// Round 9 (lane 2, one-file harness): VC orders each row's three products by when the point helper's
+// coordinate locals were defined (latest first); the helper reading z, x, y in that order plus one more
+// scalar local gives retail's three rows exactly, but breaks matched 0x179fb0, so the cause is in this
+// caller. Extra scalar locals rotate only row z (one: forward/up/left, two: left/forward/up, three or more
+// back); pointer locals, renames, statement orders of the scale block and all six term orders move
+// nothing. Real trials: radius at unit scope 161; definition radius named and used in the test 112;
+// squared radius at unit scope 161; absent-node arm first 149 (823 bytes); position copy in the node
+// arm 163 (836 bytes).
 // @retail 0x1778d0
 bool function_1778d0(void)
 {
