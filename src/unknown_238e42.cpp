@@ -954,6 +954,9 @@ bool __stdcall function_2399da(long controller_index)
 // the rank-3 test inverted with the update first 92; own rank read before the identity test 90;
 // the identity test with `!= 0` and other spellings 90; `if (!may_change) { deny; return; }`
 // inside `if (!have_member)` 114.
+// Round 2 of lane 18: validity test through an inline helper (as 0x24b5bc's file has it) 90; flat
+// dispatch (remove, deny, rank 3, set) 90; set-rank first with deny and rank-3 returns 95; removal
+// re-deriving the identity from the selection 147; one shared controller-mask local 176.
 // @retail 0x2393ae
 void __stdcall function_2393ae(long controller_index, long rank)
 {

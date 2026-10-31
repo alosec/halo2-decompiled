@@ -1232,6 +1232,13 @@ extern vector3f *g_4687ac;
 // 166 (frame 0x30); the two side query vectors only 164; all three with the radius read again inside
 // the radius block 171; endpoints through vector3f_add_scaled with 0 - radius / -radius 180/180 (769
 // bytes). Body restored.
+// Lane 15 round 18: retail inlines the two-point ray test 0x16a040 for all three queries (its
+// vector homes give retail's sharing: first query/start, both offset queries). With 0x16a040
+// made `inline` (noinline declaration dropped): three calls 187 (frame 0x3c); radius field at
+// each use 166 (integer registers and opening as retail; end.z spilled into end's home); block
+// radius local 188/170; origin-side endpoints first 174 (frame 0x30); endpoints through
+// vector3f_add_scaled 158 (F0 spill as retail); with a named negative radius 159; offset queries
+// joined by || 158. Not kept: 0x1c8df0 then inlines three of its 0x16a040 calls (170 -> 457).
 // @retail 0xfc030
 bool function_fc030(long projectile_index, point3f const *point, s_collision_result_1697c0 *collision)
 {

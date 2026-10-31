@@ -359,6 +359,10 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // a for loop 208; the cursors passed to the helper by address 207, the helper also advancing them
 // 206 (inlining promotes them back to registers); the result declared first in the function 218;
 // the cursors and counter declared at the function top 207.
+// Round 40: index loop with items[i], b[i], &data.v[i * 4] passed straight to 0x991d0 207 (data
+// cursor and counter in memory as retail, but the items cursor takes EDI and the handle spills);
+// through the helper 208; handle/index renamed three ways 207; handle/index declared in each
+// case block 166 (with the index loop 189).
 // Round 42 (lane 16): the case 5 owner call through a peers local 105 (the case 1 local declared
 // for the whole function and assigned in both cases: the case 5 tail then matches, retail reuses
 // EBX for the table; reverted at review: a one-use copy is kept only with a match); count read into one local for the ==1 test, chain and loop 176; memcmp
