@@ -770,6 +770,11 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // Round 80: forward declaration first 196; const view 115; first-plane receiver 285,
 // with j-k-i offset order 285; inner do/while and condition increment 115/115;
 // const x value/reference 141/119. Original body restored.
+// Lane 15 r19: retail loads all three vector_e4 components before the forward copy (ours loads e4.i
+// after it, which swaps XMM3/XMM4 from there on). Both planes through one forceinline plane helper
+// 281 (1867 bytes); plane 0's d as one negated expression 143; near distance after the copy 141;
+// forward pointer removed 264 (1867 bytes); clip denominator / distance / both as single
+// expressions 247/251/117.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {

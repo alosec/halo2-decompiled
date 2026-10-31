@@ -596,6 +596,11 @@ PRIVATE __forceinline real inverse_sqrt_1e6360(real squared)
 // Round 430: native definition/output fields and real view of the existing dual-use output field,
 // all seven subsets 132; ordinary bit sample on that complete field graph 170. Original declarations
 // and body restored; constant/limit XMM ownership, jitter order and spill homes remain.
+// Lane 15 r19 (fast checks need 0x24590 listed): jitter in retail's order (on/off, signs, scales,
+// `*=`) with a plain long 233 (1020 bytes; the jitter block then has retail's shape, bits in EAX and
+// retail's test order), with the volatile long 202 (1053 bytes); the blend factor as one
+// if/else-if/else chain 215 (1081 bytes); factor declared before input_fraction 165;
+// `1 + (def - 1) * blend` and `blend * (def - 1) + 1` 132/132 (identical code).
 // @retail 0x1e6360
 void function_1e6360(s_biped_physics_output *output, real rate, long object_index, real blend)
 {

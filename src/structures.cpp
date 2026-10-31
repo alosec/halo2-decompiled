@@ -765,6 +765,12 @@ done:
 // Round 229: collision object observed at each use 125; complete eligibility observations 216,
 // both 216; query success in the actual result 158, with object/eligibility/both 158/233/233;
 // all with admitted-geometry result lifetime 267. Full original body restored.
+// Lane 15 r19: retail's caller pushes the constant 1 for the third stack parameter and retail never
+// reads that slot; retail's result byte lives in the surface parameter's slot (dead once the surface
+// pointer is in EBP). Result as a local with the parameter unread 126 (LTCG drops the parameter,
+// `ret 0xc`, matched caller 0xd2a50 56), plus `(void)&parameter` 126 (0xd2a50 56); the parameter read in
+// the retry test 124 (471 bytes, 0xd2a50 kept; LTCG keeps the read); the two exclusion tests as one
+// nested if 125 (same code), with the object branch first 130.
 // @retail 0x14af40
 bool function_14af40(bool include_objects, point3f const *point, vector3f const *direction,
     long ignore_object_index, bool result, void *surface, point3f *probe)
