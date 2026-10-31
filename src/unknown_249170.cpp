@@ -143,6 +143,10 @@ PRIVATE __forceinline point2f const *particle_spawn_extents(s_particle_system_da
 // a double sine 507. Harness only: the two zero stores in all 60 placements among the four trig stores
 // (both statement orders) keep xorps (or the velocity lea) between fld and fsin; the velocity through
 // vector3f_assign and the position through real_point3d_set 493; the position setter alone 305 (positional).
+// Round 29 (lane 11): case 1 with sinf for the sine 6, cosf for the cosine 4, both 8; the cosine store
+// before the sine store 11 (the one-use sine is evaluated at its use, after the fcos); the sine declared
+// before the radius call 2 (same code: it is carried past the call). Our scheduler fills the fld latency
+// before case 1's fsin with the xorps (as retail does in case 6) where retail's case 1 and case 4 do not.
 // @retail 0x249170
 void function_249170(real const *values, s_particle_spawn_state *particle, s_particle_spawn_definition const *definition, s_particle_system_datum const *system)
 {
