@@ -1203,6 +1203,12 @@ void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped
 // Round 47: real output workspace with pointer/direct movement field 94/94; real movement workspace 94;
 // two-use velocity copy 109; read-only query result 94; split query declaration 94; late declarations
 // swapped 94; complete movement workspace 103 (frame 0x1ec). Original body restored.
+// Round 43 (lane 16): still BLOCKED-BY 0x1c4b00 (its definition is in a file held by another lane this round;
+// retail spills the found flag to a stack byte and pushes the whole dword) and the MOV/LEA order at the first
+// 0x1e5af0 call follows that callee's register setup (BLOCKED-BY 0x1e5af0, also in a held file). Squared length
+// grouped (k + j) + i / (j + k) + i 94/94 (the inner pair stays j, k); word found flag with the grouped squares
+// 16 (exact-only: left are the MOV/LEA pair, the squares and the flag's stack byte); the squared-length test
+// passed straight to the flag setter 94; the +0x17c block address at each use 94.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {
