@@ -114,6 +114,9 @@ void __stdcall function_1d6560(s_havok_component *component, s_physics_model_own
 // MiniMax R: both flag results computed as ((flags & 8) | 0x30) >> 2 and >> 3 instead of branching: 95 (not kept).
 // Round 200: byte/char/short/word layer result 92/91/119/119; with one direct full-width type
 // 141/141/121/121, all four lose the matched caller. Original layer and dispatch restored.
+// Round 320: both rigid-body flags read live through the model; repeated/shared byte type
+// and original/explicit object-bit result arms 117/111/114/117; explicit level tests
+// 117/111/114/117. Every form loses the matched caller; complete original body restored.
 // @retail 0x1d69d0
 long function_1d69d0(s_havok_component *component, long kind, s_physics_model_owner *owner, long level, long rigid_body_index)
 {
