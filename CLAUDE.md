@@ -227,6 +227,14 @@ See `port/README.md` "Play" for the full commands.
   passes its direction (`0x41b8c`): plasma bolts were green smears drawn
   along their colour. Compare the registers and pushes at the call with
   the callee's prologue.
+  Likewise `0xdc5c0`'s animation-driven case (physics modes 4/5) called
+  `0x1e67f0` with (position, body, body) where retail passes the body's
+  position, the animation's position and its velocity: the velocity slot
+  got a world position, so a drone entering a landing animation flew off
+  at ~70 units/s through 01b's walls and the elevator's `ai_strength`
+  wait never cleared (fixed 2026-11-01; the progress bot's
+  `kill_enemies 0` had hidden it: `track_squads LO HI` logs a squad's
+  units every frame, `kill_unit DATUM` kills one by datum).
   Likewise `0xfd740`/`0xfd7d0` (projectile material effects) handed
   `0x1883e0` their output pointers in the callers' order, so stuck and
   detonating projectiles created effects from sound tags: a rare

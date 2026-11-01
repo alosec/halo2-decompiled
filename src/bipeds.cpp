@@ -1339,8 +1339,14 @@ void __stdcall function_dc5c0(long arg_159e6d, s_biped_physics_output *output)
 		function_e59e0(arg_159e6d, &velocity, &position);
 		havok_component_rigid_body_position_get(0, component, &body);
 		animation_id = *(long *)((s_animation_state *)state)->current_animation_get(&current);
+		/* retail (0xdd09f) passes the body's position, the animation's
+		   position (edx) and its velocity (ecx): 0x1e67f0 stores them at
+		   +0x2c, +0x38 and +0x44. Passing (position, body, body) made the
+		   body's world position the animation velocity, so a biped entering
+		   an animation-driven mode (a drone landing) was flung away at tens
+		   of units a second, through the level's walls */
 		function_1e67f0((s_type_94656b *)output,
-			(s_character_physics_component *)&velocity, animation_id, &position, &body, &body);
+			(s_character_physics_component *)&velocity, animation_id, &body, &position, (point3f *)&velocity);
 		break;
 	}
 
