@@ -4,6 +4,7 @@
 // collectors (the second one optional) are wrapped in ones that keep the
 // original direction.
 #include <xmmintrin.h>
+#include "flip_collector_forwarders.h"
 
 static __declspec(align(16)) const unsigned long g_4124a0[4] = {0x80000000, 0x80000000, 0x80000000, 0x80000000};
 
@@ -47,6 +48,7 @@ class flipped_collector_2ec580 : public nearest_collector_2ec580
 public:
 	flipped_collector_2ec580(__m128 const &direction, void *target) : direction(direction), target(target) {}
 	virtual ~flipped_collector_2ec580() {}
+	virtual void add_hit(void const *hit) { flip_cast_forward(this, hit); }
 
 	__m128 direction;
 	void *target;

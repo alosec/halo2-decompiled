@@ -5,6 +5,7 @@
 // direction turned around, and each collector wrapped in one that turns its
 // results back.
 #include <xmmintrin.h>
+#include "flip_collector_forwarders.h"
 
 struct query_header_2ed2a0
 {
@@ -38,6 +39,8 @@ class swapped_collector_2ed2a0 : public collector_2ed2a0
 public:
 	__m128 direction;
 	void *collector;
+
+	virtual void add_hit(void const *hit) { flip_cast_forward(this, hit); }
 
 	swapped_collector_2ed2a0(__m128 const &direction_, void *collector_) :
 		direction(direction_),

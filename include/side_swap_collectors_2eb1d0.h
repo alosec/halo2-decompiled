@@ -1,3 +1,4 @@
+#include "flip_collector_forwarders.h"
 #ifndef SIDE_SWAP_COLLECTORS_2EB1D0_H
 #define SIDE_SWAP_COLLECTORS_2EB1D0_H
 // Havok (third-party physics library): the collectors a pair query uses when
@@ -21,7 +22,7 @@ class swapped_collector_2eb1d0 : public stopping_collector_2eb1d0
 public:
 	swapped_collector_2eb1d0(void *target) : target(target) {}
 	virtual ~swapped_collector_2eb1d0() {}
-	virtual void add_pair(long first, long second) {}
+	virtual void add_pair(long first, long second) { flip_pair_forward(this, (void const *)first, (void const *)second); }
 
 	void *target;
 };
@@ -41,7 +42,7 @@ class flipped_collector_2ed110 : public nearest_collector_2ed110
 public:
 	flipped_collector_2ed110(void *target) : target(target) {}
 	virtual ~flipped_collector_2ed110() {}
-	virtual void add_hit(void const *hit) {}
+	virtual void add_hit(void const *hit) { flip_point_forward(this, hit); }
 
 	void *target;
 };

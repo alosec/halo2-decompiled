@@ -2,6 +2,7 @@
 // Havok (third-party physics library): makes a new object for a pair of
 // shapes whose first holds a number of parts (0x2f8ff0).
 #include "parts_agent_2f8ff0.h"
+#include "flip_collector_forwarders.h"
 
 // @retail 0x2f93e0
 sized_2ed170 *__cdecl function_2f93e0(parts_description_2f8ff0 const *description, typed_2ed170 **other, dispatcher_2ed170 **dispatcher, long arg_3)
@@ -28,7 +29,7 @@ class flipped_hit_collector_2f9440 : public nearest_collector_2f9440
 public:
 	flipped_hit_collector_2f9440(collector_2f89b0 *target) : target(target) {}
 	virtual ~flipped_hit_collector_2f9440() {}
-	virtual void add_hit(void const *hit) {}
+	virtual void add_hit(void const *hit) { flip_point_forward(this, hit); }
 
 	collector_2f89b0 *target;
 };

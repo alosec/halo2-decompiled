@@ -7,6 +7,7 @@
 // Each query is bracketed by two marks in a timing stream.
 
 #include "timer_mark_2ebc80.h"
+#include "flip_collector_forwarders.h"
 
 class shape_2ebc80;
 
@@ -315,7 +316,7 @@ class swapped_collector_2ec310 : public stopping_collector_2ec310
 public:
 	swapped_collector_2ec310(collector_2ebc80 *target) : target(target) {}
 	virtual ~swapped_collector_2ec310() {}
-	virtual void add_pair(long first, long second) {}
+	virtual void add_pair(long first, long second) { flip_pair_forward(this, (void const *)first, (void const *)second); }
 
 	collector_2ebc80 *target;
 };
@@ -337,7 +338,7 @@ class flipped_collector_2ec370 : public nearest_collector_2ec370
 public:
 	flipped_collector_2ec370(void *target) : target(target) {}
 	virtual ~flipped_collector_2ec370() {}
-	virtual void add_hit(void const *hit) {}
+	virtual void add_hit(void const *hit) { flip_point_forward(this, hit); }
 
 	void *target;
 };

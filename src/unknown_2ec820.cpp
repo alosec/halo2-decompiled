@@ -3,6 +3,7 @@
 // an array of 8-byte elements, releasing the storage unless the array does
 // not own it.
 #include "reference_counted_2d88a0.h"
+#include "flip_collector_forwarders.h"
 #include <xmmintrin.h>
 #include "keyed_list_2ec680.h"
 #include "agent_table_2e5d50.h"
@@ -117,7 +118,7 @@ class swapped_collector_2ec880 : public stopping_collector_2ec880
 public:
 	swapped_collector_2ec880(collector_2ebc80 *target) : target(target) {}
 	virtual ~swapped_collector_2ec880() {}
-	virtual void add_pair(long first, long second) {}
+	virtual void add_pair(long first, long second) { flip_pair_forward(this, (void const *)first, (void const *)second); }
 
 	collector_2ebc80 *target;
 };
@@ -138,7 +139,7 @@ class flipped_hit_collector_2ec8e0 : public nearest_collector_2ec8e0
 public:
 	flipped_hit_collector_2ec8e0(void *target) : target(target) {}
 	virtual ~flipped_hit_collector_2ec8e0() {}
-	virtual void add_hit(void const *hit) {}
+	virtual void add_hit(void const *hit) { flip_point_forward(this, hit); }
 
 	void *target;
 };
@@ -150,6 +151,7 @@ class flipped_collector_2eca50 : public nearest_collector_2ec8e0
 public:
 	flipped_collector_2eca50(__m128 const &direction, void *target) : direction(direction), target(target) {}
 	virtual ~flipped_collector_2eca50() {}
+	virtual void add_hit(void const *hit) { flip_cast_forward(this, hit); }
 
 	__m128 direction;
 	void *target;

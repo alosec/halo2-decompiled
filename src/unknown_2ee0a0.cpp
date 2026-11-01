@@ -4,6 +4,7 @@
 // (the second one optional) are wrapped in ones that keep the original
 // direction.
 #include <xmmintrin.h>
+#include "flip_collector_forwarders.h"
 
 static __declspec(align(16)) const unsigned long g_4124a0[4] = {0x80000000, 0x80000000, 0x80000000, 0x80000000};
 
@@ -37,6 +38,7 @@ class flipped_2ee0a0 : public nearest_base_2ee0a0
 {
 public:
 	virtual ~flipped_2ee0a0() {}
+	virtual void add_hit(void const *hit) { flip_cast_forward(this, hit); }
 	__m128 direction;
 	long target;
 	flipped_2ee0a0(__m128 const &direction_, long target_) : direction(direction_), target(target_) {}

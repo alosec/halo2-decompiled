@@ -3,6 +3,7 @@
 // a collector of their own: one that stops at the first hit, one that keeps
 // the nearest distance, and one that flips the vectors the children added.
 #include <xmmintrin.h>
+#include "flip_collector_forwarders.h"
 
 static __declspec(align(16)) const unsigned long g_4124a0[4] = {0x80000000, 0x80000000, 0x80000000, 0x80000000};
 
@@ -21,6 +22,7 @@ class first_hit_2eded0 : public collector_2edb60
 {
 public:
 	virtual ~first_hit_2eded0() {}
+	virtual void add_pair(long first, long second) { flip_pair_forward(this, (void const *)first, (void const *)second); }
 
 	long target;
 
@@ -41,6 +43,7 @@ class nearest_2edf30 : public nearest_base_2edf30
 {
 public:
 	virtual ~nearest_2edf30() {}
+	virtual void add_hit(void const *hit) { flip_point_forward(this, hit); }
 
 	long target;
 
