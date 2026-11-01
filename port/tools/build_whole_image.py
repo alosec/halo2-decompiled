@@ -463,6 +463,7 @@ def symbol_addresses(units, tag="retail"):
     for unit in units:
         lines = unit.source.read_text(errors="replace").split("\n")
         pending = None
+        pending_deleting = False
         for line in lines:
             adjustor = re.search(r'@retail 0x([0-9a-f]+) adjustor ([A-Za-z_]\w*) (0x[0-9a-f]+|\d+)', line)
             if adjustor:
@@ -492,12 +493,20 @@ def symbol_addresses(units, tag="retail"):
             found = re.search(r'@' + tag + r' 0x([0-9a-f]+)', line)
             if found:
                 pending = int(found.group(1), 16)
+                # "@retail ADDR deleting" over a destructor's definition: the
+                # class's deleting destructor is at ADDR (upstream's form; the
+                # named form above says the class instead), which pins the
+                # class's table when vtables are bound
+                pending_deleting = re.search(r'@' + tag + r' 0x[0-9a-f]+ deleting\s*$', line) is not None
                 continue
             if pending is not None:
                 m = re.search(r'((?:[A-Za-z_]\w*::)*~?[A-Za-z_]\w*)\s*\(', line)
                 if m and not line.lstrip().startswith(("//", "/*", "*")):
                     qualified = m.group(1)
                     result.setdefault((unit.relative, qualified), pending)
+                    owner = re.match(r'(?:.*::)?([A-Za-z_]\w*)::~\1$', qualified)
+                    if pending_deleting and owner:
+                        result.setdefault((unit.relative, f"{owner.group(1)}::__deleting"), pending)
                     key = (unit.relative, qualified.split("::")[-1])
                     bare.setdefault(key, set()).add(pending)
                     pending = None
@@ -742,7 +751,9 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
                     word = word_at.get(position + 4 * index) or 0
                     if not 0x12000 <= word < 0x379c4c:
                         return False
-                    if word == 0x32131e and slot and slot in retail_of:
+                    # (whether or not the class's own function is tagged: a
+                    # native body there still makes the class concrete)
+                    if word == 0x32131e and slot:
                         return False
                 return True
             # only when the anchored table cannot be the class's: a slot the
@@ -751,8 +762,16 @@ def bind_retail_vtables(xbe_path, compiled, scans, tag_addresses, delete_functio
                 if not any(entry[1][1] for entry in candidates) and not is_table(start) else []
             if better:
                 best = max(better, key=placed)
-                if [placed(p) for p in better].count(placed(best)) == 1:
+                tied = [p for p in better if placed(p) == placed(best)]
+                # a tie goes to the table the structor itself stores (0x181a10,
+                # c_query_array_collector's deleting destructor, stores its own
+                # 0x453b90 after the abstract base's 0x453b70; its address also
+                # sits in 0x453b80's second slot)
+                stored = [p for p in tied if p in {entry[0] for entry in candidates}]
+                if len(tied) == 1:
                     start = best
+                elif len(stored) == 1:
+                    start = stored[0]
         if start is not None:
             bind(symbol, slots, start)
             continue
