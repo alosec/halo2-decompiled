@@ -163,6 +163,86 @@ static void report_tracked_squads(unsigned long frame)
 	}
 }
 
+/* "watch_ai 1": living AI bipeds a player could never reach, so a wait on
+   their squad's strength would never clear (01b's elevator drones, flung
+   out of the station at ~75 u/s): logged once per unit and reason as
+   "h2-stray frame unit squad NAME reason pos". Reasons: "fast" (over 30
+   u/s, every frame) and "floorless" (in the loaded structure bsp with no
+   floor within 30 units below at ten checks running, 30 frames apart;
+   flyers hovering over a drop show too) */
+static bool g_watch_ai;
+static dword g_stray_reported[0x800];   /* datum per object index and reason bit */
+static byte g_stray_floorless[0x800];   /* consecutive floorless checks */
+
+static void report_stray_ai(unsigned long frame)
+{
+	if (!g_watch_ai || !g_4e0300 || !g_4e0300->data || !g_4f55f0 || !g_4f55f0->data || !g_4e0350)
+		return;
+	for (long index = 0; index < g_4e0300->maximum_count && index < 0x800; ++index)
+	{
+		byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+		byte *object = *(byte **)(header + 8);
+		if (!*(short const *)header || !object || header[3] != 0)
+			continue;
+		long actor_index = *(long const *)(object + 0x12c);
+		if (actor_index == NONE || *(real const *)(object + 0xec) <= 0.0f || *(long const *)(object + 0x14) != NONE)
+			continue;   /* living AI bipeds on foot */
+		dword datum = ((dword)*(short const *)header << 16) | (dword)index;
+		if ((g_stray_reported[index] & 0xfffffff8) != (datum << 3 & 0xfffffff8))
+		{
+			g_stray_reported[index] = datum << 3;   /* a new unit in this slot */
+			g_stray_floorless[index] = 0;
+		}
+		vector3f velocity = {0.0f, 0.0f, 0.0f};
+		function_ba1d0((long)datum, &velocity, 0);
+		real const *p = (real const *)(object + 0x64);
+		char const *reason = NULL;
+		dword bit = 0;
+		if (velocity.i * velocity.i + velocity.j * velocity.j + velocity.k * velocity.k > 30.0f * 30.0f)
+			reason = "fast", bit = 1;
+		else if ((frame + index) % 30 == 0)
+		{
+			s_location location;
+			function_11bed0(&location, (point3f const *)p);
+			/* outside the loaded structure bsp: in another bsp's rooms, not
+			   reachable now and not testable here */
+			if (location.leaf_index != NONE)
+			{
+				point3f start = {p[0], p[1], p[2] + 0.5f};
+				vector3f down = {0.0f, 0.0f, -30.0f};
+				s_collision_result_1697c0 floor;
+				floor.unknown24 = NONE;
+				/* for ten checks running: troops dropping into a bay or
+				   jumping a gap are floorless for a moment */
+				if (function_1697c0(0x84000d, &start, &down, (long)datum, NONE, &floor))
+					g_stray_floorless[index] = 0;
+				else if (++g_stray_floorless[index] >= 10)
+					reason = "floorless", bit = 4;
+			}
+		}
+		if (!reason || g_stray_reported[index] & bit)
+			continue;
+		g_stray_reported[index] |= bit;
+		long squad = *(long const *)((byte const *)g_4f55f0->data + (actor_index & 0xffff) * 0x888 + 0x30);
+		byte const *scenario = (byte const *)g_4e0350;
+		char name[33] = "?";
+		if (squad >= 0 && squad < *(long const *)(scenario + 0x160))
+		{
+			char const *text = *(char const * const *)(scenario + 0x164) + squad * 0x74;
+			long i = 0;
+			for (; i < 32 && text[i]; ++i)
+				name[i] = text[i];
+			name[i] = 0;
+		}
+		char line[200];
+		_snprintf(line, sizeof(line), "h2-stray frame %lu unit %08lx squad %ld %s %s pos %ld %ld %ld vel %ld %ld %ld",
+			frame, (unsigned long)datum, squad, name, reason, (long)(p[0] * 1000.0f), (long)(p[1] * 1000.0f),
+			(long)(p[2] * 1000.0f), (long)(velocity.i * 1000.0f), (long)(velocity.j * 1000.0f),
+			(long)(velocity.k * 1000.0f));
+		host_h2_log(line);
+	}
+}
+
 static void report_scripts(unsigned long frame)
 {
 	report_action_latches(frame);
@@ -214,6 +294,7 @@ static void report_scripts(unsigned long frame)
      kill_enemies R      kill AI bipeds of other teams within R units
      kill_unit DATUM     kill the unit with that datum index (hex, as
                          "units" prints it), with or without an actor
+     watch_ai 1|0        log living AI a player could never reach (h2-stray)
      units R             the units within R units: index, type, team, body
                          vitality, position
      enter_vehicle L     the first player into the nearest free seat with
@@ -411,6 +492,11 @@ static void run_test_commands(void)
 				function_d6bc0((long)datum);
 			_snprintf(line, sizeof(line), "h2-test kill_unit %08lx %s", (long)datum, alive ? "killed" : "not found");
 			host_h2_log(line);
+		}
+		else if (command_is(command, "watch_ai", &rest))
+		{
+			g_watch_ai = parse_real(&rest) != 0.0f;
+			host_h2_log(g_watch_ai ? "h2-test watch_ai on" : "h2-test watch_ai off");
 		}
 		else if (command_is(command, "track_squads", &rest))
 		{
@@ -731,6 +817,7 @@ extern "C" void h2_port_report_state(void)
 		host_h2_log(line);
 		report_bipeds(frame, player->unit_index, position);
 		report_tracked_squads(frame);
+		report_stray_ai(frame);
 		/* in a vehicle the unit's position is its seat's, relative to the
 		   vehicle: also report the root object's (world) position */
 		#define OBJECT(index) (((s_player_object_header *)g_4e0300->data)[(index) & 0xffff].object)

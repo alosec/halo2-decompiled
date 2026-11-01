@@ -681,12 +681,13 @@ public:
         if (tracing_frame())
             std::fprintf(stderr,
                          "h2-frame: draw rt %08x %ux%u prim %u n %u src %u mode %u vp %u ps %u tex %08x/%08x "
-                         "blend %u %u>%u z %u%u f%u cull %u mask %x view %g %g %g %g data %08x bb %08x fb %08x\n",
+                         "blend %u %u>%u z %u%u f%u alpha test %u f%u ref %.3f cull %u mask %x view %g %g %g %g data %08x bb %08x fb %08x\n",
                          packet.render_target, packet.target_width, packet.target_height, packet.primitive,
                          packet.vertex_count, packet.vertex_source, packet.vertex_mode, packet.vertex_program_start,
                          packet.has_pixel_shader, packet.textures[0].header, packet.textures[0].format,
                          packet.blend_enable, packet.blend_src_color, packet.blend_dst_color,
-                         packet.depth_test_enable, packet.depth_write_enable, packet.depth_func, packet.cull,
+                         packet.depth_test_enable, packet.depth_write_enable, packet.depth_func,
+                         packet.alpha_test_enable, packet.alpha_func, packet.alpha_ref, packet.cull,
                          packet.color_write_mask, packet.viewport_x, packet.viewport_y, packet.viewport_width,
                          packet.viewport_height, packet.textures[0].data, packet.back_buffer_data,
                          packet.front_buffer_data);
