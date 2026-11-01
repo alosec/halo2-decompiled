@@ -16,6 +16,7 @@ extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *
 extern "C" unsigned int host_h2_trace_flags(void);
 extern "C" void host_h2_log(const char *message);
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
+bool function_183910(long component_index, point3f const *origin, point3f *point, vector3f *normal);
 extern s_record_pool *g_4e030c;   /* the dynamic lights */
 extern "C" unsigned int host_h2_guest_command(char *buffer, unsigned int size);
 bool __stdcall function_c5460(long object_index, long ignore_index, point3f const *position, point3f *result,
@@ -491,6 +492,37 @@ static void run_test_commands(void)
 			if (alive)
 				function_d6bc0((long)datum);
 			_snprintf(line, sizeof(line), "h2-test kill_unit %08lx %s", (long)datum, alive ? "killed" : "not found");
+			host_h2_log(line);
+		}
+		else if (command_is(command, "closest", &rest))
+		{
+			/* a unit's closest point to a spot 3 units off its centre, as an
+			   explosion's falloff measures it (0xbaff0 through 0x183910; the
+			   centre when no contact is found) */
+			char const *p = rest;
+			while (*p == ' ')
+				++p;
+			dword datum = 0;
+			for (; (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f'); ++p)
+				datum = datum * 16 + (dword)(*p <= '9' ? *p - '0' : *p - 'a' + 10);
+			long index = (long)(datum & 0xffff);
+			byte const *header = index < g_4e0300->maximum_count ? (byte const *)g_4e0300->data + index * 0xc : 0;
+			byte *object = header && *(short const *)header == (short)(datum >> 16) ? *(byte **)(header + 8) : 0;
+			long component = object ? *(long const *)(object + 0xb4) : NONE;
+			if (!object || component == NONE)
+				_snprintf(line, sizeof(line), "h2-test closest %08lx none", (long)datum);
+			else
+			{
+				real const *centre = (real const *)(object + 0x30);
+				point3f origin = {centre[0] + 3.0f, centre[1], centre[2]};
+				point3f point;
+				vector3f normal;
+				bool found = function_183910(component, &origin, &point, &normal);
+				real dx = point.x - origin.x, dy = point.y - origin.y, dz = point.z - origin.z;
+				_snprintf(line, sizeof(line), "h2-test closest %08lx %s surface %ld centre 3000", (long)datum,
+					found ? "contact" : "no contact",
+					found ? (long)(__builtin_sqrtf(dx * dx + dy * dy + dz * dz) * 1000.0f) : 3000L);
+			}
 			host_h2_log(line);
 		}
 		else if (command_is(command, "watch_ai", &rest))
