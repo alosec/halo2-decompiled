@@ -3262,7 +3262,10 @@ bool __stdcall function_3a5c0(byte const *configuration, real low, real high, lo
     if (!skip_state)
     {
         function_14bc0((short)g_4858b8, 0, true);
-        function_14f60(0, 0);
+        /* index 3: the depth surface read as A8R8G8B8 (retail loads edi = 3
+           at 0x3a5f4 and keeps it to the call at 0x3a7e3); with 0, the back
+           buffer, the fog weighed scene colours as depth */
+        function_14f60(0, 3);
         function_0224f0(0, D3DTSS_ADDRESSU, 3);
         function_0224f0(0, D3DTSS_ADDRESSV, 3);
         function_0224f0(0, D3DTSS_ADDRESSW, 3);
