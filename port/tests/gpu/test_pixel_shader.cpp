@@ -414,7 +414,7 @@ void run_gpu_jobs(std::vector<GpuJob>& jobs) {
         for (auto& c : j.k.c0) put4(kb, c);
         for (auto& c : j.k.c1) put4(kb, c);
         put4(kb, j.k.final_c0); put4(kb, j.k.final_c1); put4(kb, j.k.fog_color);
-        for (int i = 0; i < 12; ++i) put4(kb, V4{}); /* bump_env, bump_luminance, color_key */
+        for (int i = 0; i < 20; ++i) put4(kb, V4{}); /* bump_env, bump_luminance, color_key, border_color, border_extent */
         write_file(base + ".in", std::string(reinterpret_cast<char*>(ib.data()), ib.size() * 4));
         write_file(base + ".k", std::string(reinterpret_cast<char*>(kb.data()), kb.size() * 4));
         std::remove((base + ".out").c_str());

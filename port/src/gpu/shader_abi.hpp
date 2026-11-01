@@ -76,6 +76,10 @@ struct H2PixelConstants {
     float4 bump_env[4];      /* stage n: (m00, m01, m10, m11) of D3DTSS_BUMPENVMAT */
     float4 bump_luminance[4];/* stage n: (scale, offset, 0, 0) */
     float4 color_key[4];     /* stage n: colour-key colour, RGBA */
+    float4 border_color[4];  /* stage n: D3DTSS_BORDERCOLOR, RGBA */
+    float4 border_extent[4]; /* stage n: (u max, v max, u border, v border);
+                                the maxima are the texture's size for a
+                                linear texture (texel coordinates), else 1 */
 };
 
 /* The four texture stages. Each stage is bound as all three kinds so a
@@ -87,6 +91,18 @@ struct H2Textures {
     texture3d<float> volume[4];
     sampler samplers[4];
 };
+
+/* D3DTADDRESS_BORDER: a 2D lookup outside the texture returns the stage's
+   border colour. Done here rather than by the sampler because Metal has only
+   three fixed border colours, and none for unnormalized (linear texture)
+   coordinates; object shadow maps rely on a white, zero-alpha border. */
+inline float4 h2_border(constant H2PixelConstants &k, int n, float2 uv, float4 s)
+{
+    const float4 e = k.border_extent[n];
+    const bool out_u = e.z != 0.0 && (uv.x < 0.0 || uv.x > e.x);
+    const bool out_v = e.w != 0.0 && (uv.y < 0.0 || uv.y > e.y);
+    return (out_u || out_v) ? k.border_color[n] : s;
+}
 )msl";
 
 /* What a translated vertex program needs from the backend beyond its code. */

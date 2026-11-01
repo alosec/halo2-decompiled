@@ -382,7 +382,8 @@ void Translator::sample_plain(int i, unsigned mode) {
     else if (kind == 3)
         o_ << "    t" << n << " = t.volume[" << n << "].sample(t.samplers[" << n << "], " << tc << ".xyz / " << tc << ".w);\n";
     else
-        o_ << "    t" << n << " = t.tex2d[" << n << "].sample(t.samplers[" << n << "], " << tc << ".xy / " << tc << ".w);\n";
+        o_ << "    {\n        float2 uv = " << tc << ".xy / " << tc << ".w;\n        t" << n << " = h2_border(k, " << n
+           << ", uv, t.tex2d[" << n << "].sample(t.samplers[" << n << "], uv));\n    }\n";
 }
 
 void Translator::texture_stages() {
@@ -451,7 +452,7 @@ void Translator::texture_stages() {
             o_ << "    {\n        float2 duv = " << p << ".rg;\n"
                << "        float4 bm = k.bump_env[" << n << "];\n"
                << "        float2 uv = " << tc << ".xy + float2(bm.x * duv.x + bm.z * duv.y, bm.y * duv.x + bm.w * duv.y);\n"
-               << "        t" << n << " = t.tex2d[" << n << "].sample(t.samplers[" << n << "], uv);\n";
+               << "        t" << n << " = h2_border(k, " << n << ", uv, t.tex2d[" << n << "].sample(t.samplers[" << n << "], uv));\n";
             if (m == TM_BUMPENVMAP_LUM)
                 o_ << "        t" << n << ".rgb *= saturate(k.bump_luminance[" << n << "].x * " << p
                    << ".b + k.bump_luminance[" << n << "].y);\n";

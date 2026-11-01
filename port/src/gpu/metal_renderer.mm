@@ -237,7 +237,7 @@ std::string fixed_function_pixel_shader(bool texture0) {
         "{\n"
         "    float4 color = in.diffuse;\n";
     if (texture0)
-        source += "    color *= t.tex2d[0].sample(t.samplers[0], in.texcoord[0].xy);\n";
+        source += "    color *= h2_border(k, 0, in.texcoord[0].xy, t.tex2d[0].sample(t.samplers[0], in.texcoord[0].xy));\n";
     source += "    return color;\n}\n";
     return source;
 }
@@ -713,9 +713,10 @@ public:
         }
         if (tracing_frame()) {
             for (int t = 0; t < 4; ++t)
-                std::fprintf(stderr, "h2-frame:   tex%d %08x data %08x fmt %08x pal %08x\n", t,
+                std::fprintf(stderr, "h2-frame:   tex%d %08x data %08x fmt %08x pal %08x address %u/%u/%u border %08x\n", t,
                              packet.textures[t].header, packet.textures[t].data, packet.textures[t].format,
-                             packet.textures[t].palette);
+                             packet.textures[t].palette, packet.textures[t].address_u, packet.textures[t].address_v,
+                             packet.textures[t].address_w, packet.textures[t].border_color);
             const std::uint32_t* ps = packet.pixel_shader;
             std::fprintf(stderr, "h2-frame:   ps");
             for (int i = 0; i < 60; ++i)
@@ -1752,16 +1753,45 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         if (!words)
             return nullptr;
         const std::uint32_t data = words[1] | 0x80000000u;
-        auto found = targets_.find(data);
-        if (found != targets_.end()) {
-            note_drawn(found->second);
-            return &found->second;
-        }
         TextureDescription description;
         int width = 0, height = 0;
         if (describe_texture(words[3], words[4], description)) {
             width = static_cast<int>(description.width);
             height = static_cast<int>(description.height);
+        }
+        auto found = targets_.find(data);
+        if (found != targets_.end()) {
+            if (width <= 0 || height <= 0 ||
+                (found->second.guest_width == width && found->second.guest_height == height)) {
+                note_drawn(found->second);
+                return &found->second;
+            }
+            /* surfaces of different sizes share memory (the 128x128 object
+               shadow maps reuse the 160x120 glow buffer's): drawing into the
+               old size clipped the shadow map and left the glow's pixels
+               where the projection expects the shadow map's white edge */
+            if (trace_gpu())
+                std::fprintf(stderr, "h2-gpu: render target %08x resized %dx%d -> %dx%d\n", data,
+                             found->second.guest_width, found->second.guest_height, width, height);
+            if (&found->second == current_) {
+                end_encoder();
+                current_ = &back_;
+                current_depth_ = nullptr;
+            }
+            render_textures_.erase(data);
+            const auto size_key = [data](int w, int h) {
+                return (static_cast<std::uint64_t>(data) << 32) | (static_cast<std::uint64_t>(w) << 16) |
+                       static_cast<std::uint64_t>(h);
+            };
+            spare_targets_[size_key(found->second.guest_width, found->second.guest_height)] = found->second;
+            targets_.erase(found);
+            auto spare = spare_targets_.find(size_key(width, height));
+            if (spare != spare_targets_.end()) {
+                Target& made = targets_.emplace(data, spare->second).first->second;
+                spare_targets_.erase(spare);
+                note_drawn(made);
+                return &made;
+            }
         }
         if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
             return nullptr;
@@ -1911,8 +1941,13 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
            adds its fog over dst * the constant) */
         const auto constant = unpack_argb(packet.blend_constant);
         [encoder_ setBlendColorRed:constant[0] green:constant[1] blue:constant[2] alpha:constant[3]];
+        /* the bias is in steps of the depth buffer, as Metal's is: one step of
+           the Xbox's 24-bit buffer is 2^-24, the float buffer's step near the far
+           plane. Scaling it to depth units made it ~0 and decals z-fought the
+           surfaces under them (hard-edged dark wedges that flickered) */
         if (packet.depth_bias != 0.0f || packet.depth_slope_scale != 0.0f)
-            [encoder_ setDepthBias:packet.depth_bias / kDepthUnits slopeScale:packet.depth_slope_scale clamp:0.0f];
+            [encoder_ setDepthBias:packet.depth_bias
+                        slopeScale:packet.depth_slope_scale clamp:0.0f];
         else
             [encoder_ setDepthBias:0.0f slopeScale:0.0f clamp:0.0f];
 
@@ -1984,6 +2019,8 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             float bump_env[4][4];
             float bump_luminance[4][4];
             float color_key[4][4];
+            float border_color[4][4];
+            float border_extent[4][4];
         } k = {};
         if (packet.has_pixel_shader) {
             /* D3DPIXELSHADERDEF: PSConstant0[8] at word 10, PSConstant1[8] at
@@ -2007,6 +2044,15 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             k.bump_env[stage][0] = 1.0f;
             k.bump_env[stage][3] = 1.0f;
             k.bump_luminance[stage][0] = 1.0f;
+            const auto border = unpack_argb(packet.textures[stage].border_color);
+            std::memcpy(k.border_color[stage], border.data(), 16);
+            const CachedTexture* entry = bound[stage];
+            if (entry && entry->texture && entry->kind == 2) {
+                k.border_extent[stage][0] = entry->linear ? static_cast<float>(entry->texture.width) : 1.0f;
+                k.border_extent[stage][1] = entry->linear ? static_cast<float>(entry->texture.height) : 1.0f;
+                k.border_extent[stage][2] = packet.textures[stage].address_u == H2_GPU_BORDER ? 1.0f : 0.0f;
+                k.border_extent[stage][3] = packet.textures[stage].address_v == H2_GPU_BORDER ? 1.0f : 0.0f;
+            }
         }
         [encoder_ setFragmentBytes:&k length:sizeof(k) atIndex:0];
         struct {
@@ -2104,6 +2150,9 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     Target back_;
     std::unordered_map<std::uint32_t, Target> targets_;
     Target* current_ = nullptr;
+    /* targets set aside while another surface size uses their memory, keyed
+       by (data, width, height) */
+    std::unordered_map<std::uint64_t, Target> spare_targets_;
     bool capture_window_ = false;
     bool window_kept_ = false;
     id<MTLBuffer> window_readback_ = nil;
