@@ -1216,11 +1216,13 @@ void update_input(GameSession& session) {
         const auto key = [&](SDL_Scancode code) { return keys[code]; };
         /* Halo 2 defaults: A jump, B melee, X action/reload, Y weapon swap,
            left trigger grenade, right trigger fire, left stick crouch,
-           right stick zoom, white flashlight, black grenade swap */
+           right stick zoom, white flashlight, black grenade swap; left
+           shift is the left trigger too (a vehicle's boost, as PC games put
+           it) */
         struct KeyMap { SDL_Scancode code; const char* button; };
         static const KeyMap keymap[] = {
             {SDL_SCANCODE_SPACE, "a"}, {SDL_SCANCODE_F, "b"}, {SDL_SCANCODE_E, "x"},
-            {SDL_SCANCODE_Q, "y"}, {SDL_SCANCODE_G, "lt"}, {SDL_SCANCODE_LCTRL, "ls"},
+            {SDL_SCANCODE_Q, "y"}, {SDL_SCANCODE_G, "lt"}, {SDL_SCANCODE_LSHIFT, "lt"}, {SDL_SCANCODE_LCTRL, "ls"},
             {SDL_SCANCODE_Z, "rs"}, {SDL_SCANCODE_T, "white"}, {SDL_SCANCODE_TAB, "black"},
             {SDL_SCANCODE_RETURN, "start"}, {SDL_SCANCODE_ESCAPE, "back"},
             {SDL_SCANCODE_UP, "up"}, {SDL_SCANCODE_DOWN, "down"},
