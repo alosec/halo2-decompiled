@@ -1177,30 +1177,33 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         }
     }
 
-    /* the 16 registers of vertices 0..count-1 */
-    bool fetch_vertices(const h2_gpu_draw& packet, std::uint32_t count, float* out) {
+    /* the 16 registers of vertices first..first+count-1 */
+    bool fetch_vertices(const h2_gpu_draw& packet, std::uint32_t first, std::uint32_t count, float* out) {
         if (packet.vertex_source == H2_GPU_VERTICES_INLINE) {
             const auto* source = guest<float>(packet.inline_vertices);
-            if (!source || count > packet.inline_vertex_count)
+            if (!source || first + count > packet.inline_vertex_count)
                 return false;
-            std::memcpy(out, source, static_cast<std::size_t>(count) * 16 * 16);
+            std::memcpy(out, source + static_cast<std::size_t>(first) * 64, static_cast<std::size_t>(count) * 16 * 16);
             return true;
         }
         /* each array's whole span checked once: the guest memory checks lock,
            and a check per element of every vertex dominated the frame */
-        enum : std::uint8_t { kDefault, kChecked, kPerElement };
+        enum : std::uint8_t { kDefault, kChecked, kPerElement, kUnread };
         std::uint8_t mode[16];
         const std::uint8_t* base[16] = {};
         for (int index = 0; index < 16; ++index) {
             const h2_gpu_vertex_array& array = packet.vertex_arrays[index];
-            mode[index] = kDefault;
+            /* registers the vertex program never reads are left unwritten */
+            mode[index] = attributes_read_ & (1u << index) ? kDefault : kUnread;
+            if (mode[index] == kUnread)
+                continue;
             if ((array.format >> 4) == 0 || !array.address || !count)
                 continue;
             const std::size_t span = static_cast<std::size_t>(count - 1) * array.stride + element_bytes(array.format);
-            const auto* first = guest<std::uint8_t>(array.address);
-            if (first && arena_.host_range_accessible(first, span, false)) {
+            const auto* start = guest<std::uint8_t>(array.address + first * array.stride);
+            if (start && arena_.host_range_accessible(start, span, false)) {
                 mode[index] = kChecked;
-                base[index] = first;
+                base[index] = start;
             } else {
                 mode[index] = kPerElement;
             }
@@ -1210,6 +1213,8 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             for (int index = 0; index < 16; ++index) {
                 const h2_gpu_vertex_array& array = packet.vertex_arrays[index];
                 float* value = registers + index * 4;
+                if (mode[index] == kUnread)
+                    continue;
                 if (mode[index] == kChecked) {
                     decode_attribute(base[index] + static_cast<std::size_t>(vertex) * array.stride, array.format, value);
                     continue;
@@ -1218,7 +1223,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
                     std::memcpy(value, packet.vertex_defaults[index], 16);
                     continue;
                 }
-                const std::uint32_t address = array.address + vertex * array.stride;
+                const std::uint32_t address = array.address + (first + vertex) * array.stride;
                 const auto* element = guest<std::uint8_t>(address);
                 if (!element || !arena_.host_range_accessible(element, element_bytes(array.format), false)) {
                     std::memcpy(value, packet.vertex_defaults[index], 16);
@@ -1230,17 +1235,18 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         return true;
     }
 
-    std::string vertex_source(const h2_gpu_draw& packet, std::uint64_t& key, bool& ok) {
-        ok = true;
+    /* the draw's vertex program source (cached; nullptr when it can't be
+       translated); attributes_read_ is set to the registers it reads */
+    const std::string* vertex_source(const h2_gpu_draw& packet, std::uint64_t& key) {
         if (packet.vertex_mode != H2_GPU_VERTEX_PROGRAM) {
+            static const std::string screen = kScreenVertexProgram;
             key = 1;
-            return kScreenVertexProgram;
+            attributes_read_ = 0xffff;
+            return &screen;
         }
         const auto* program = guest<std::uint32_t>(packet.vertex_program);
-        if (!program || packet.vertex_program_start >= packet.vertex_program_length) {
-            ok = false;
-            return {};
-        }
+        if (!program || packet.vertex_program_start >= packet.vertex_program_length)
+            return nullptr;
         /* the program runs from its start to the first instruction flagged
            final: hash the slots from the start (the translator stops at the
            final flag, so later garbage does not matter, but hashing it would
@@ -1259,11 +1265,11 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             VertexProgramInfo info = translate_vertex_program(program, packet.vertex_program_length, start);
             if (!info.error.empty()) {
                 std::fprintf(stderr, "h2-gpu: vertex program at %zu: %s\n", start, info.error.c_str());
-                ok = false;
-                return {};
+                return nullptr;
             }
-            found = vertex_cache_.emplace(key, info.source).first;
+            found = vertex_cache_.emplace(key, CachedVertexProgram{info.source, info.attributes_read}).first;
         }
+        attributes_read_ = found->second.attributes_read;
         /* the frame trace names each draw's vertex program and saves its translation */
         if (tracing_frame()) {
             std::fprintf(stderr, "h2-frame:   vs %016llx (%zu instructions)\n",
@@ -1273,21 +1279,22 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
                 std::snprintf(path, sizeof(path), "%s/vs-%016llx.metal", dump_dir,
                               static_cast<unsigned long long>(key));
                 if (FILE* file = std::fopen(path, "w")) {
-                    std::fwrite(found->second.data(), 1, found->second.size(), file);
+                    std::fwrite(found->second.source.data(), 1, found->second.source.size(), file);
                     std::fclose(file);
                 }
             }
         }
-        return found->second;
+        return &found->second.source;
     }
 
-    std::string pixel_source(const h2_gpu_draw& packet, const PixelShaderContext& context, std::uint64_t& key,
-                             bool& ok) {
-        ok = true;
+    /* the draw's pixel shader source (cached; nullptr when it can't be translated) */
+    const std::string* pixel_source(const h2_gpu_draw& packet, const PixelShaderContext& context, std::uint64_t& key) {
         if (!packet.has_pixel_shader) {
+            static const std::string with_texture = fixed_function_pixel_shader(true);
+            static const std::string without_texture = fixed_function_pixel_shader(false);
             const bool texture0 = packet.textures[0].header != 0;
             key = texture0 ? 2 : 3;
-            return fixed_function_pixel_shader(texture0);
+            return texture0 ? &with_texture : &without_texture;
         }
         key = hash_bytes(packet.pixel_shader, sizeof(packet.pixel_shader));
         key = hash_bytes(&context, sizeof(context), key);
@@ -1298,8 +1305,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             PixelShaderInfo info = translate_pixel_shader(definition, context);
             if (!info.error.empty()) {
                 std::fprintf(stderr, "h2-gpu: pixel shader: %s\n", info.error.c_str());
-                ok = false;
-                return {};
+                return nullptr;
             }
             found = pixel_cache_.emplace(key, info.source).first;
         }
@@ -1316,17 +1322,16 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
                 }
             }
         }
-        return found->second;
+        return &found->second;
     }
 
     id<MTLRenderPipelineState> pipeline(const h2_gpu_draw& packet, const PixelShaderContext& context) {
-        bool ok = false;
         PipelineKey key;
-        const std::string vertex = vertex_source(packet, key.vertex, ok);
-        if (!ok)
+        const std::string* vertex = vertex_source(packet, key.vertex);
+        if (!vertex)
             return nil;
-        const std::string fragment = pixel_source(packet, context, key.fragment, ok);
-        if (!ok)
+        const std::string* fragment = pixel_source(packet, context, key.fragment);
+        if (!fragment)
             return nil;
         key.blend = (packet.blend_enable ? 1u : 0u) | (packet.color_write_mask << 1) |
                     (packet.blend_op_color << 8) | (packet.blend_op_alpha << 12);
@@ -1342,7 +1347,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         if (cached != libraries_.end()) {
             library = cached->second;
         } else {
-            std::string source = std::string(kShaderPrelude) + vertex + "\n" + fragment + "\n" + kEntryPoints;
+            std::string source = std::string(kShaderPrelude) + *vertex + "\n" + *fragment + "\n" + kEntryPoints;
             NSError* failure = nil;
             MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
             options.mathMode = MTLMathModeSafe;
@@ -1879,7 +1884,15 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         const MTLPrimitiveType primitive = convert_primitive(packet.primitive, order, sequence);
         if (sequence.empty())
             return true;
-        const std::uint32_t vertex_count = *std::max_element(sequence.begin(), sequence.end()) + 1;
+        /* decode only the vertices the draw uses: draws from big shared
+           buffers start far into them, and decoding from vertex 0 cost
+           several times the work */
+        const auto [lowest, highest] = std::minmax_element(sequence.begin(), sequence.end());
+        const std::uint32_t first_vertex = *lowest;
+        const std::uint32_t vertex_count = *highest - first_vertex + 1;
+        if (first_vertex)
+            for (auto& index : sequence)
+                index -= first_vertex;
         if (vertex_count > 1u << 20) {
             if (tracing_frame())
                 std::fprintf(stderr, "h2-frame:   failed: vertex count\n");
@@ -1909,7 +1922,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
                 std::fprintf(stderr, "h2-frame:   failed: vertex space\n");
             return false;
         }
-        if (!fetch_vertices(packet, vertex_count, static_cast<float*>(vertex_pointer))) {
+        if (!fetch_vertices(packet, first_vertex, vertex_count, static_cast<float*>(vertex_pointer))) {
             if (tracing_frame())
                 std::fprintf(stderr, "h2-frame:   failed: fetch vertices\n");
             return false;
@@ -2187,7 +2200,12 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     std::vector<std::pair<std::uint32_t, int>> closed_tests_;   /* (the game's index, slot) */
     std::unordered_map<std::uint32_t, std::uint32_t> results_;
     std::uint32_t back_buffer_data_ = 0;
-    std::unordered_map<std::uint64_t, std::string> vertex_cache_;
+    struct CachedVertexProgram {
+        std::string source;
+        std::uint32_t attributes_read;
+    };
+    std::unordered_map<std::uint64_t, CachedVertexProgram> vertex_cache_;
+    std::uint32_t attributes_read_ = 0xffff;   /* of the last vertex_source() */
     std::unordered_map<std::uint64_t, std::string> pixel_cache_;
     std::unordered_map<std::uint64_t, id<MTLLibrary>> libraries_;
     std::unordered_map<PipelineKey, id<MTLRenderPipelineState>, PipelineKeyHash> pipelines_;
