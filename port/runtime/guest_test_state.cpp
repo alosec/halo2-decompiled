@@ -130,6 +130,39 @@ static void report_bipeds(unsigned long frame, long player_unit, real const *pla
 	}
 }
 
+/* "track_squads LO HI": every frame, the units whose actors are in squads
+   LO..HI (scenario squad indices): position, velocity, physics mode */
+static long g_track_low = NONE, g_track_high = NONE;
+
+static void report_tracked_squads(unsigned long frame)
+{
+	if (g_track_low == NONE || !g_4e0300 || !g_4e0300->data || !g_4f55f0 || !g_4f55f0->data)
+		return;
+	for (long index = 0; index < g_4e0300->maximum_count; ++index)
+	{
+		byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+		byte *object = *(byte **)(header + 8);
+		if (!*(short const *)header || !object || header[3] != 0)
+			continue;
+		long actor_index = *(long const *)(object + 0x12c);
+		if (actor_index == NONE)
+			continue;
+		long squad = *(long const *)((byte const *)g_4f55f0->data + (actor_index & 0xffff) * 0x888 + 0x30);
+		if (squad < g_track_low || squad > g_track_high)
+			continue;
+		long datum = (long)(((dword)*(short const *)header << 16) | (dword)index);
+		vector3f velocity = {0.0f, 0.0f, 0.0f};
+		function_ba1d0(datum, &velocity, 0);
+		real const *p = (real const *)(object + 0x64);
+		char line[200];
+		_snprintf(line, sizeof(line), "h2-track frame %lu unit %08lx squad %ld pos %ld %ld %ld vel %ld %ld %ld mode %d body %ld",
+			frame, datum, squad, (long)(p[0] * 1000.0f), (long)(p[1] * 1000.0f), (long)(p[2] * 1000.0f),
+			(long)(velocity.i * 1000.0f), (long)(velocity.j * 1000.0f), (long)(velocity.k * 1000.0f),
+			(int)object[0x3dc], (long)(*(real const *)(object + 0xec) * 1000.0f));
+		host_h2_log(line);
+	}
+}
+
 static void report_scripts(unsigned long frame)
 {
 	report_action_latches(frame);
@@ -179,6 +212,8 @@ static void report_scripts(unsigned long frame)
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
      kill_enemies R      kill AI bipeds of other teams within R units
+     kill_unit DATUM     kill the unit with that datum index (hex, as
+                         "units" prints it), with or without an actor
      units R             the units within R units: index, type, team, body
                          vitality, position
      enter_vehicle L     the first player into the nearest free seat with
@@ -357,6 +392,31 @@ static void run_test_commands(void)
 			}
 			_snprintf(line, sizeof(line), "h2-test killed %ld", killed);
 			host_h2_log(line);
+		}
+		else if (command_is(command, "kill_unit", &rest))
+		{
+			/* a unit by the datum index "units" lists, with or without an
+			   actor (one stuck inside the level's geometry keeps its squad
+			   counted alive) */
+			char const *p = rest;
+			while (*p == ' ')
+				++p;
+			dword datum = 0;
+			for (; (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f'); ++p)
+				datum = datum * 16 + (dword)(*p <= '9' ? *p - '0' : *p - 'a' + 10);
+			long index = (long)(datum & 0xffff);
+			byte const *header = index < g_4e0300->maximum_count ? (byte const *)g_4e0300->data + index * 0xc : 0;
+			bool alive = header && *(short const *)header == (short)(datum >> 16) && *(byte **)(header + 8);
+			if (alive)
+				function_d6bc0((long)datum);
+			_snprintf(line, sizeof(line), "h2-test kill_unit %08lx %s", (long)datum, alive ? "killed" : "not found");
+			host_h2_log(line);
+		}
+		else if (command_is(command, "track_squads", &rest))
+		{
+			g_track_low = (long)parse_real(&rest);
+			g_track_high = (long)parse_real(&rest);
+			host_h2_log("h2-test track_squads set");
 		}
 		else if (command_is(command, "units", &rest))
 		{
@@ -670,6 +730,7 @@ extern "C" void h2_port_report_state(void)
 			MILLI(*(real const *)(unit + 0xf4)));   /* recent shield damage: the shield effect draws while above 0 */
 		host_h2_log(line);
 		report_bipeds(frame, player->unit_index, position);
+		report_tracked_squads(frame);
 		/* in a vehicle the unit's position is its seat's, relative to the
 		   vehicle: also report the root object's (world) position */
 		#define OBJECT(index) (((s_player_object_header *)g_4e0300->data)[(index) & 0xffff].object)
