@@ -29,6 +29,8 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <mutex>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -54,6 +56,21 @@ constexpr int kGuestHeight = 480;
 /* the depth buffer's units (D24S8) */
 constexpr float kDepthUnits = 16777215.0f;
 constexpr std::size_t kFrameBufferBytes = 64u << 20;
+
+/* H2_TRACE=frametime: each frame over 45 ms with what it spent its time on
+   (shader compiles, GPU wait, texture uploads, render targets made), and
+   every 300 frames a histogram of frame intervals */
+bool trace_frametime() {
+    static const bool enabled = [] {
+        const char* trace = std::getenv("H2_TRACE");
+        return trace && std::strstr(trace, "frametime");
+    }();
+    return enabled;
+}
+
+double now_ms() {
+    return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 bool trace_gpu() {
     static const bool enabled = [] {
@@ -826,8 +843,26 @@ public:
                     window_height_ = static_cast<int>(h);
                     window_kept_ = true;
                 }
-                if (drawable)
-                    [command_buffer_ presentDrawable:drawable];
+                if (drawable) {
+                    /* each frame on screen for the game's own frame time (two
+                       vblanks in play, one in the menus): presented at the
+                       display's next refresh, a 30 Hz game on a 60 or 120 Hz
+                       display (or a variable one) showed frames for uneven
+                       numbers of refreshes as the game's clock drifted
+                       against the display's: judder at a steady 30 fps */
+                    const double now = now_ms();
+                    if (last_present_ms_) {
+                        const double interval = std::min(now - last_present_ms_, 100.0);
+                        present_interval_ms_ += (interval - present_interval_ms_) * 0.1;
+                    }
+                    last_present_ms_ = now;
+                    const CFTimeInterval minimum = present_interval_ms_ > 25.0 ? 1.0 / 30.0 : 1.0 / 60.0;
+                    if (trace_frametime())
+                        [drawable addPresentedHandler:^(id<MTLDrawable> shown) {
+                            note_presented(shown.presentedTime);
+                        }];
+                    [command_buffer_ presentDrawable:drawable afterMinimumDuration:minimum];
+                }
             }
             if (keep_pixels) {
                 if (!readback_ || readback_.length < static_cast<NSUInteger>(width_ * height_ * 4))
@@ -850,7 +885,9 @@ public:
                 dump_targets(dump_dir, "");
             [command_buffer_ commit];
             /* one frame in flight: the per-frame buffers are reused next frame */
+            const double wait_start = now_ms();
             [command_buffer_ waitUntilCompleted];
+            timing_.gpu_wait_ms += now_ms() - wait_start;
             command_buffer_ = nil;
             collect_visibility_results();
             frame_offset_ = 0;
@@ -858,6 +895,8 @@ public:
             ++frame_;
             ++stats_.frames;
             kept_ = keep_pixels;
+            if (trace_frametime())
+                report_frame_time();
             if (trace_gpu() && (frame_ <= 4 || frame_ % 120 == 0))
                 std::fprintf(stderr, "h2-gpu: frame %llu draws %llu skipped %llu failed %llu pipelines %llu textures %llu\n",
                              static_cast<unsigned long long>(frame_),
@@ -1337,41 +1376,28 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
                     (packet.blend_op_color << 8) | (packet.blend_op_alpha << 12);
         key.blend_factors = packet.blend_src_color | (packet.blend_dst_color << 8) |
                             (packet.blend_src_alpha << 16) | (packet.blend_dst_alpha << 24);
+        collect_compiled();
         auto found = pipelines_.find(key);
         if (found != pipelines_.end())
             return found->second;
+        if (compiling_.count(key)) {
+            /* still compiling: drawn once it is (a traced frame waits) */
+            static const bool sync = std::getenv("H2_SHADER_SYNC") != nullptr;
+            return sync || tracing_frame() ? wait_compiled(key, DISPATCH_TIME_FOREVER) : nil;
+        }
 
         const std::uint64_t library_key = key.vertex * 1000003ull ^ key.fragment;
-        id<MTLLibrary> library = nil;
         auto cached = libraries_.find(library_key);
-        if (cached != libraries_.end()) {
-            library = cached->second;
-        } else {
-            std::string source = std::string(kShaderPrelude) + *vertex + "\n" + *fragment + "\n" + kEntryPoints;
-            NSError* failure = nil;
-            MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
-            options.mathMode = MTLMathModeSafe;
-            options.preserveInvariance = YES;
-            library = [device_ newLibraryWithSource:@(source.c_str()) options:options error:&failure];
-            if (!library) {
-                std::fprintf(stderr, "h2-gpu: shader compile failed: %s\n",
-                             failure.localizedDescription.UTF8String);
-                if (std::getenv("H2_GPU_DUMP_FAILED")) {
-                    if (FILE* dump = std::fopen("h2-gpu-failed.metal", "w")) {
-                        std::fwrite(source.data(), 1, source.size(), dump);
-                        std::fclose(dump);
-                    }
-                }
-                libraries_.emplace(library_key, nil);
-                return nil;
-            }
-            libraries_.emplace(library_key, library);
-        }
-        if (!library)
-            return nil;
+        if (cached != libraries_.end() && !cached->second)
+            return nil;   /* its source does not compile */
+        id<MTLLibrary> library = cached != libraries_.end() ? cached->second : nil;
+        /* H2_SHADER_SALT=text: a comment atop every source, so that none is
+           in the system's shader cache (a first play's compiles, timed) */
+        static const char* salt = std::getenv("H2_SHADER_SALT");
+        std::string source = library ? std::string()
+                                     : (salt ? std::string("// ") + salt + "\n" : std::string()) + kShaderPrelude +
+                                           *vertex + "\n" + *fragment + "\n" + kEntryPoints;
         MTLRenderPipelineDescriptor* descriptor = [[MTLRenderPipelineDescriptor alloc] init];
-        descriptor.vertexFunction = [library newFunctionWithName:@"h2_vertex_main"];
-        descriptor.fragmentFunction = [library newFunctionWithName:@"h2_fragment_main"];
         descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
         descriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
         descriptor.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
@@ -1389,15 +1415,114 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         if (packet.color_write_mask & 4) mask |= MTLColorWriteMaskBlue;
         if (packet.color_write_mask & 8) mask |= MTLColorWriteMaskAlpha;
         attachment.writeMask = mask;
-        NSError* failure = nil;
-        id<MTLRenderPipelineState> state = [device_ newRenderPipelineStateWithDescriptor:descriptor error:&failure];
-        if (!state)
-            std::fprintf(stderr, "h2-gpu: pipeline failed: %s\n", failure.localizedDescription.UTF8String);
-        else
-            ++stats_.pipelines;
-        pipelines_.emplace(key, state);
-        return state;
+
+        /* compiled on another thread: a shader the system's cache has is
+           ready within the short wait below and drawn at once, while a new
+           one (a few hundred ms to compile) is left out of the frames until
+           it is ready instead of stopping the game */
+        auto job = std::make_shared<CompileJob>();
+        job->key = key;
+        job->library_key = library_key;
+        job->library = library;
+        job->done = dispatch_semaphore_create(0);
+        compiling_.emplace(key, job);
+        ++timing_.compiles;
+        id<MTLDevice> device = device_;
+        dispatch_async(compile_queue_, ^{
+            const double compile_start = now_ms();
+            id<MTLLibrary> built = job->library;
+            NSError* failure = nil;
+            if (!built) {
+                MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
+                options.mathMode = MTLMathModeSafe;
+                options.preserveInvariance = YES;
+                built = [device newLibraryWithSource:@(source.c_str()) options:options error:&failure];
+                if (!built) {
+                    std::fprintf(stderr, "h2-gpu: shader compile failed: %s\n",
+                                 failure.localizedDescription.UTF8String);
+                    if (std::getenv("H2_GPU_DUMP_FAILED")) {
+                        if (FILE* dump = std::fopen("h2-gpu-failed.metal", "w")) {
+                            std::fwrite(source.data(), 1, source.size(), dump);
+                            std::fclose(dump);
+                        }
+                    }
+                }
+            }
+            id<MTLRenderPipelineState> state = nil;
+            if (built) {
+                descriptor.vertexFunction = [built newFunctionWithName:@"h2_vertex_main"];
+                descriptor.fragmentFunction = [built newFunctionWithName:@"h2_fragment_main"];
+                state = [device newRenderPipelineStateWithDescriptor:descriptor error:&failure];
+                if (!state)
+                    std::fprintf(stderr, "h2-gpu: pipeline failed: %s\n", failure.localizedDescription.UTF8String);
+            }
+            job->library = built;
+            job->state = state;
+            job->milliseconds = now_ms() - compile_start;
+            {
+                std::lock_guard<std::mutex> lock(compiled_mutex_);
+                compiled_.push_back(job);
+            }
+            dispatch_semaphore_signal(job->done);
+        });
+        /* H2_SHADER_SYNC=1: every draw waits for its shaders (frames that
+           match draw for draw, as a test may need) */
+        static const bool sync = std::getenv("H2_SHADER_SYNC") != nullptr;
+        return wait_compiled(key, sync || tracing_frame() ? DISPATCH_TIME_FOREVER
+                                                          : dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_MSEC));
     }
+
+    struct CompileJob {
+        PipelineKey key;
+        std::uint64_t library_key = 0;
+        id<MTLLibrary> library = nil;
+        id<MTLRenderPipelineState> state = nil;
+        dispatch_semaphore_t done = nil;
+        double milliseconds = 0;
+    };
+
+    /* the pipeline of a job still compiling, once it is done or the time is
+       up (nil then) */
+    id<MTLRenderPipelineState> wait_compiled(const PipelineKey& key, dispatch_time_t until) {
+        auto pending = compiling_.find(key);
+        if (pending == compiling_.end())
+            return nil;
+        const double wait_start = now_ms();
+        const bool done = dispatch_semaphore_wait(pending->second->done, until) == 0;
+        timing_.compile_ms += now_ms() - wait_start;
+        if (!done)
+            return nil;
+        dispatch_semaphore_signal(pending->second->done);   /* for collect_compiled's wait-free check */
+        collect_compiled();
+        auto found = pipelines_.find(key);
+        return found != pipelines_.end() ? found->second : nil;
+    }
+
+    /* the jobs done since the last look, into the caches */
+    void collect_compiled() {
+        std::vector<std::shared_ptr<CompileJob>> done;
+        {
+            std::lock_guard<std::mutex> lock(compiled_mutex_);
+            done.swap(compiled_);
+        }
+        for (const auto& job : done) {
+            libraries_.emplace(job->library_key, job->library);
+            pipelines_.emplace(job->key, job->state);
+            compiling_.erase(job->key);
+            if (job->state)
+                ++stats_.pipelines;
+            ++timing_.pipelines;
+            if (job->milliseconds > 20 && trace_frametime())
+                std::fprintf(stderr, "h2-frametime: frame %llu compiled a shader in %.1f ms\n",
+                             static_cast<unsigned long long>(frame_), job->milliseconds);
+        }
+    }
+
+    std::unordered_map<PipelineKey, std::shared_ptr<CompileJob>, PipelineKeyHash> compiling_;
+    std::mutex compiled_mutex_;
+    std::vector<std::shared_ptr<CompileJob>> compiled_;
+    dispatch_queue_t compile_queue_ =
+        dispatch_queue_create("h2.shader-compile", DISPATCH_QUEUE_CONCURRENT);
 
     id<MTLDepthStencilState> depth_stencil(const h2_gpu_draw& packet) {
         const std::uint64_t key = (packet.depth_test_enable ? 1ull : 0ull) | (packet.depth_write_enable ? 2ull : 0ull) |
@@ -1602,6 +1727,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             /* the game wrote a texture over a target's old memory */
             if (trace_gpu())
                 std::fprintf(stderr, "h2-gpu: render target %08x replaced by a texture\n", stage.data);
+            ++timing_.replaced;
             render_textures_.erase(stage.data);
             targets_.erase(rendered);
             rendered = targets_.end();
@@ -1669,6 +1795,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         if (entry.texture && entry.content == content)
             return &entry;
         entry.changed_frame = frame_;
+        ++timing_.uploads;
         entry.content = content;
         entry.linear = description.linear;
         entry.is_signed = description.format && description.format->is_signed;
@@ -1751,6 +1878,69 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
 
     /* the target behind a D3DSurface header (0 = the back buffer): its
        texels' address keys it, and its Format/Size words size it */
+    double last_present_ms_ = 0, present_interval_ms_ = 33.3;
+
+    /* H2_TRACE=frametime: how long each frame stayed on screen (the
+       drawables' presented times, on Core Animation's thread) */
+    std::mutex presented_mutex_;
+    CFTimeInterval last_presented_ = 0;
+    unsigned shown_histogram_[6] = {};   /* <20, <30, <37, <45, <70, more ms */
+    unsigned shown_count_ = 0;
+    void note_presented(CFTimeInterval at) {
+        if (at <= 0)
+            return;   /* not shown (dropped) */
+        std::lock_guard<std::mutex> lock(presented_mutex_);
+        if (last_presented_) {
+            const double shown = (at - last_presented_) * 1000.0;
+            static const double edges[5] = {20, 30, 37, 45, 70};
+            int bucket = 0;
+            while (bucket < 5 && shown >= edges[bucket])
+                ++bucket;
+            ++shown_histogram_[bucket];
+            if (++shown_count_ % 300 == 0) {
+                const auto* h = shown_histogram_;
+                std::fprintf(stderr, "h2-frametime: on screen: <20 %u, <30 %u, <37 %u, <45 %u, <70 %u, more %u\n",
+                             h[0], h[1], h[2], h[3], h[4], h[5]);
+                std::fill(std::begin(shown_histogram_), std::end(shown_histogram_), 0u);
+            }
+        }
+        last_presented_ = at;
+    }
+
+    struct FrameTiming {
+        double last = 0, compile_ms = 0, gpu_wait_ms = 0;
+        unsigned compiles = 0, pipelines = 0, uploads = 0, targets = 0, resizes = 0, replaced = 0;
+        unsigned histogram[6] = {};   /* <20, <36, <45, <70, <120, more ms */
+    } timing_;
+
+    void report_frame_time() {
+        const double now = now_ms();
+        const double interval = timing_.last ? now - timing_.last : 0;
+        timing_.last = now;
+        static const double edges[5] = {20, 36, 45, 70, 120};
+        int bucket = 0;
+        while (bucket < 5 && interval >= edges[bucket])
+            ++bucket;
+        ++timing_.histogram[bucket];
+        if (interval > 45)
+            std::fprintf(stderr, "h2-frametime: frame %llu %.1f ms: compile %.1f ms (%u libraries, %u pipelines) "
+                                 "gpu wait %.1f ms, uploads %u, targets made %u, resized %u, replaced %u\n",
+                         static_cast<unsigned long long>(frame_), interval, timing_.compile_ms, timing_.compiles,
+                         timing_.pipelines, timing_.gpu_wait_ms, timing_.uploads, timing_.targets, timing_.resizes,
+                         timing_.replaced);
+        if (frame_ % 300 == 0) {
+            const auto* h = timing_.histogram;
+            std::fprintf(stderr, "h2-frametime: frames to %llu: <20 %u, <36 %u, <45 %u, <70 %u, <120 %u, more %u\n",
+                         static_cast<unsigned long long>(frame_), h[0], h[1], h[2], h[3], h[4], h[5]);
+            std::fill(std::begin(timing_.histogram), std::end(timing_.histogram), 0u);
+        }
+        const double last = timing_.last;
+        const auto histogram = std::to_array(timing_.histogram);
+        timing_ = FrameTiming{};
+        timing_.last = last;
+        std::copy(histogram.begin(), histogram.end(), timing_.histogram);
+    }
+
     Target* target_for(std::uint32_t header) {
         if (!header)
             return &back_;
@@ -1783,6 +1973,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
                 current_ = &back_;
                 current_depth_ = nullptr;
             }
+            ++timing_.resizes;
             render_textures_.erase(data);
             const auto size_key = [data](int w, int h) {
                 return (static_cast<std::uint64_t>(data) << 32) | (static_cast<std::uint64_t>(w) << 16) |
@@ -1800,6 +1991,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         }
         if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
             return nullptr;
+        ++timing_.targets;
         Target target;
         /* a screen-sized target is drawn at the back buffer's scale, so that it
            can share the back buffer's depth */

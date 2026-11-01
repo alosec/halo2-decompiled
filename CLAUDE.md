@@ -70,7 +70,14 @@ See `port/README.md` "Play" for the full commands.
     `H2_RECORD_FPS`, default 60). Launch the user's sessions with it (and
     `H2_TRACE=state`) so reports can be found by time in the video;
   - `H2_TRACE=audio` lists voice formats;
-  - `H2_TRACE=audio-voices` gives per-voice levels.
+  - `H2_TRACE=audio-voices` gives per-voice levels;
+  - `H2_TRACE=frametime` logs each frame over 45 ms with what it spent
+    (shader compiles, GPU wait, uploads, targets), interval histograms and,
+    in a visible window, how long frames stayed on screen. Shaders compile
+    on another thread (a new one is left out of frames until ready);
+    `H2_SHADER_SYNC=1` waits instead (frames that match draw for draw) and
+    `H2_SHADER_SALT=text` defeats the system shader cache to time a first
+    play.
 - **Playtesting harness (play the game yourself; don't ask the user to):**
   `port/tools/h2_driver.py` launches the game hidden and silent with a fresh
   profile and drives it while it runs: `press(button, frames)` (any
