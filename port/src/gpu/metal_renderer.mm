@@ -465,11 +465,13 @@ private:
            perspective depth, a + b/w, and turns it back when packing */
         float infinite_depth = 0.0f;
         std::uint64_t noted_frame = ~0ull;
+        std::uint64_t written = 0;   /* draw_serial_ of the last depth write */
     };
 
     struct Target {
         id<MTLTexture> color = nil;
         DepthBuffer own_depth;   /* used when the game binds no depth surface */
+        std::uint64_t drawn = 0;   /* draw_serial_ of the last draw into it */
         int width = 0, height = 0;               /* Metal pixels */
         int guest_width = 0, guest_height = 0;   /* the game's pixels */
         bool has_content = false;
@@ -764,6 +766,9 @@ public:
             return;
         bind(target, depth_for(*target, packet.depth_stencil));
         note_projection(packet);
+        target->drawn = ++draw_serial_;
+        if (current_depth_ && packet.depth_test_enable && packet.depth_write_enable)
+            current_depth_->written = draw_serial_;
         @autoreleasepool {
             if (!encode_draw(packet))
                 ++stats_.draws_failed;
@@ -1115,6 +1120,12 @@ fragment float4 h2_pack_fragment(PackOut in [[stage_in]], depth2d<float> depth [
             const auto* words = guest<std::uint32_t>(surface);
             if (!words || (words[1] | 0x80000000u) != stage.data || !buffer.texture)
                 continue;
+            /* the same memory as a colour target (g_509370): the one written
+               last holds the bytes (a loading screen draws into that view
+               and samples it back) */
+            if (auto colour = targets_.find(stage.data); colour != targets_.end() &&
+                                                           colour->second.drawn > buffer.written)
+                return nullptr;
             end_encoder();
             begin_command_buffer();
             if (!buffer.packed) {
@@ -2522,6 +2533,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     id<MTLSamplerState> placeholder_sampler_ = nil;
     id<MTLRenderPipelineState> present_pipeline_ = nil;
     id<MTLRenderPipelineState> depth_pack_pipeline_ = nil;
+    std::uint64_t draw_serial_ = 0;   /* draws so far, to order writes to shared memory */
     id<MTLRenderPipelineState> clear_pipelines_[16] = {};  /* by colour write mask */
     std::unordered_map<std::uint64_t, id<MTLDepthStencilState>> clear_depth_states_;
     std::vector<id<MTLBuffer>> frame_buffers_;
