@@ -123,6 +123,20 @@ public:
 		reset();
 	}
 
+	/* retail table 0x4129d4's slot (0x301a00): the hit kept when it is the
+	   first or the closest yet; without it every hit was dropped and the
+	   casts here never found anything */
+	virtual void add_hit(hit_2fe830 const *candidate)
+	{
+		if (!has_hit || candidate->distance() < hit.distance())
+		{
+			has_hit = true;
+			hit.position = candidate->position;
+			hit.normal = candidate->normal;
+			early_out = candidate->distance();
+		}
+	}
+
 	void reset()
 	{
 		has_hit = false;
