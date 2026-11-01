@@ -211,6 +211,18 @@ See `port/README.md` "Play" for the full commands.
 - **Vtable binding.** Classes with no virtuals of their own store retail
   tables inline; identical-code folding shares destructors; stack layout
   differences expose retail's out-of-bounds writes.
+- **Stand-in collectors without retail's slots.** Havok code builds local
+  collectors whose retail tables (0x412970/78/80 flip collectors, 0x4129d4
+  closest hit, 0x453b90 closest point) do the work in slot 1; recovered
+  source declared stand-in classes with an empty slot 1 or none, and nothing
+  bound them. Results vanished (swapped queries found nothing; explosions
+  measured from object centres: tank shells barely hurt Ghosts) or a report
+  called past the table (the Warthog/Elite crash). Find them by scanning
+  retail for functions that store a table address (`mov [esp+n], 0x4.....`
+  or through a register) and checking `vtables_bound` in
+  `whole-image-report.json` for the class built there; a binding to the
+  wrong neighbour table is as bad (c_query_array_collector sat on
+  0x453b80).
 - **Xbox DSound semantics.** A submix (MIXIN) buffer passes its input even
   if the game never plays it; dialogue goes through one (fixed 625675f1).
   The Armory tutorial's "look at the light" steps need those lines.
