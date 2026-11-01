@@ -452,19 +452,6 @@ private:
         bool pending_stencil_clear = false;
         double clear_depth = 1.0;
         std::uint32_t clear_stencil = 0;
-        /* the game reads its depth surface as an A8R8G8B8 texture (03a's
-           atmospheric fog, function_3a5c0): the depth and stencil packed as
-           the NV2A's D24S8 bytes, made when a draw samples it */
-        id<MTLTexture> stencil_view = nil;
-        id<MTLTexture> packed = nil;
-        CachedTexture sampled;
-        /* the depth (0..1) of a point infinitely far, from the projection of
-           the last draw that wrote this buffer through a vertex program
-           (0: unknown). The game draws with a w-buffer (D3DRS_ZENABLE 2),
-           which keeps eye distance over the far plane's; the renderer keeps
-           perspective depth, a + b/w, and turns it back when packing */
-        float infinite_depth = 0.0f;
-        std::uint64_t noted_frame = ~0ull;
     };
 
     struct Target {
@@ -525,8 +512,7 @@ public:
         current_depth_ = &back_.own_depth;
         frame_buffers_.push_back([device_ newBufferWithLength:kFrameBufferBytes options:MTLResourceStorageModeShared]);
         visibility_buffer_ = [device_ newBufferWithLength:kVisibilitySlots * 8 options:MTLResourceStorageModeShared];
-        if (!build_placeholders(error) || !build_present_pipeline(error) || !build_clear_pipelines(error) ||
-            !build_depth_pack_pipeline(error))
+        if (!build_placeholders(error) || !build_present_pipeline(error) || !build_clear_pipelines(error))
             return false;
         return true;
     }
@@ -763,7 +749,6 @@ public:
         if (packet.vertex_count == 0)
             return;
         bind(target, depth_for(*target, packet.depth_stencil));
-        note_projection(packet);
         @autoreleasepool {
             if (!encode_draw(packet))
                 ++stats_.draws_failed;
@@ -1028,135 +1013,6 @@ fragment ClearFragment h2_clear_fragment(ClearOut in [[stage_in]], constant Clea
             clear_pipelines_[mask] = state;
         }
         return true;
-    }
-
-    bool build_depth_pack_pipeline(std::string& error) {
-        static const char* source = R"msl(
-#include <metal_stdlib>
-using namespace metal;
-struct PackOut { float4 position [[position]]; };
-vertex PackOut h2_pack_vertex(uint vid [[vertex_id]]) {
-    float2 corner = float2((vid << 1) & 2, vid & 2);
-    PackOut o;
-    o.position = float4(corner * 2.0 - 1.0, 0.0, 1.0);
-    return o;
-}
-struct PackClears { float depth_cleared, depth, stencil_cleared, stencil, infinite; };
-/* D24S8 read as A8R8G8B8: A depth bits 23..16, R 15..8, G 7..0, B stencil */
-fragment float4 h2_pack_fragment(PackOut in [[stage_in]], depth2d<float> depth [[texture(0)]],
-                                 texture2d<uint> stencil [[texture(1)]], constant PackClears &k [[buffer(0)]]) {
-    uint2 xy = uint2(in.position.xy);
-    float z = k.depth_cleared != 0.0 ? k.depth : depth.read(xy);
-    /* perspective depth back to the w-buffer's eye distance over the far
-       plane's: z = p (1 - n/w) gives w/far = (1 - p)/(z - p) */
-    if (k.infinite > 1.0)
-        z = (1.0 - k.infinite) / (z - k.infinite);
-    uint s = k.stencil_cleared != 0.0 ? uint(k.stencil) : stencil.read(xy).r;
-    uint z24 = uint(clamp(z, 0.0, 1.0) * 16777215.0 + 0.5);
-    return float4(float((z24 >> 8) & 255u), float(z24 & 255u), float(s & 255u), float(z24 >> 16)) / 255.0;
-}
-)msl";
-        NSError* failure = nil;
-        id<MTLLibrary> library = [device_ newLibraryWithSource:@(source) options:nil error:&failure];
-        if (!library) {
-            error = std::string("depth pack shader: ") + failure.localizedDescription.UTF8String;
-            return false;
-        }
-        MTLRenderPipelineDescriptor* descriptor = [[MTLRenderPipelineDescriptor alloc] init];
-        descriptor.vertexFunction = [library newFunctionWithName:@"h2_pack_vertex"];
-        descriptor.fragmentFunction = [library newFunctionWithName:@"h2_pack_fragment"];
-        descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-        depth_pack_pipeline_ = [device_ newRenderPipelineStateWithDescriptor:descriptor error:&failure];
-        if (!depth_pack_pipeline_) {
-            error = std::string("depth pack pipeline: ") + failure.localizedDescription.UTF8String;
-            return false;
-        }
-        return true;
-    }
-
-    /* the projection of a draw that writes depth: the game's transform
-       (c0..c3 the rows of the projection, c10/c11 the screen scale and
-       offset, as the environment programs use them) gives z/w = a + b/w for
-       c2 = a c3 + b (0, 0, 0, 1); the screen depth of an infinitely far
-       point is then c10.z a + c11.z */
-    void note_projection(const h2_gpu_draw& packet) {
-        if (packet.vertex_mode != H2_GPU_VERTEX_PROGRAM || !packet.depth_write_enable || !packet.vertex_constants ||
-            !current_depth_ || (current_depth_->infinite_depth != 0.0f && current_depth_->noted_frame == frame_))
-            return;
-        const auto* c = guest<float>(packet.vertex_constants);
-        if (!c)
-            return;
-        const float* c2 = c + 4 * 2;
-        const float* c3 = c + 4 * 3;
-        const float* c10 = c + 4 * 10;
-        const float* c11 = c + 4 * 11;
-        int k = 0;
-        for (int i = 1; i < 3; ++i)
-            if (std::fabs(c3[i]) > std::fabs(c3[k]))
-                k = i;
-        if (std::fabs(c3[k]) < 1e-6f || c10[2] <= 0.0f)
-            return;
-        const float a = c2[k] / c3[k];
-        for (int i = 0; i < 3; ++i)
-            if (std::fabs(c2[i] - a * c3[i]) > 1e-3f * std::fabs(a * c3[k]))
-                return;   /* not a projection of the view's depth row */
-        const float infinite = (c10[2] * a + c11[2]) / kDepthUnits;
-        if (infinite > 1.0f && infinite < 1.5f) {
-            current_depth_->infinite_depth = infinite;
-            current_depth_->noted_frame = frame_;
-        }
-    }
-
-    /* a texture over the game's depth surface: the depth buffer drawn into,
-       packed into the bytes the NV2A keeps there (index 3 of function_14f60,
-       g_509368: the depth surface's memory as A8R8G8B8) */
-    CachedTexture* depth_texture(const h2_gpu_texture& stage) {
-        for (auto& [surface, buffer] : depths_) {
-            const auto* words = guest<std::uint32_t>(surface);
-            if (!words || (words[1] | 0x80000000u) != stage.data || !buffer.texture)
-                continue;
-            end_encoder();
-            begin_command_buffer();
-            if (!buffer.packed) {
-                MTLTextureDescriptor* descriptor = [MTLTextureDescriptor
-                    texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm width:buffer.width
-                                                height:buffer.height mipmapped:NO];
-                descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-                descriptor.storageMode = MTLStorageModePrivate;
-                buffer.packed = [device_ newTextureWithDescriptor:descriptor];
-                buffer.stencil_view = [buffer.texture newTextureViewWithPixelFormat:MTLPixelFormatX32_Stencil8];
-            }
-            MTLRenderPassDescriptor* pass = [MTLRenderPassDescriptor renderPassDescriptor];
-            pass.colorAttachments[0].texture = buffer.packed;
-            pass.colorAttachments[0].loadAction = MTLLoadActionDontCare;
-            pass.colorAttachments[0].storeAction = MTLStoreActionStore;
-            id<MTLRenderCommandEncoder> encoder = [command_buffer_ renderCommandEncoderWithDescriptor:pass];
-            const float clears[5] = {buffer.pending_depth_clear || !buffer.has_content ? 1.0f : 0.0f,
-                                     static_cast<float>(buffer.clear_depth),
-                                     buffer.pending_stencil_clear || !buffer.has_content ? 1.0f : 0.0f,
-                                     static_cast<float>(buffer.clear_stencil), buffer.infinite_depth};
-            [encoder setRenderPipelineState:depth_pack_pipeline_];
-            [encoder setFragmentTexture:buffer.texture atIndex:0];
-            [encoder setFragmentTexture:buffer.stencil_view atIndex:1];
-            [encoder setFragmentBytes:clears length:sizeof(clears) atIndex:0];
-            [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
-            [encoder endEncoding];
-            CachedTexture& entry = buffer.sampled;
-            entry.texture = buffer.packed;
-            entry.kind = 2;
-            TextureDescription description;
-            entry.linear = describe_texture(stage.format, stage.size, description) ? description.linear : true;
-            const int guest_width = entry.linear ? static_cast<int>(description.width) : buffer.width;
-            const int guest_height = entry.linear ? static_cast<int>(description.height) : buffer.height;
-            entry.texel_scale_x = guest_width > 0 ? static_cast<float>(buffer.width) / guest_width : 1.0f;
-            entry.texel_scale_y = guest_height > 0 ? static_cast<float>(buffer.height) / guest_height : 1.0f;
-            entry.is_signed = false;
-            entry.last_frame = frame_;
-            if (tracing_frame())
-                std::fprintf(stderr, "h2-frame:   texture %08x is depth surface %08x, packed\n", stage.data, surface);
-            return &entry;
-        }
-        return nullptr;
     }
 
     bool build_present_pipeline(std::string& error) {
@@ -1755,7 +1611,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
         DepthBuffer buffer;
         MTLTextureDescriptor* descriptor = [MTLTextureDescriptor
             texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float_Stencil8 width:width height:height mipmapped:NO];
-        descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsagePixelFormatView;
+        descriptor.usage = MTLTextureUsageRenderTarget;
         descriptor.storageMode = MTLStorageModePrivate;
         buffer.texture = [device_ newTextureWithDescriptor:descriptor];
         buffer.width = width;
@@ -1866,11 +1722,6 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     CachedTexture* texture(const h2_gpu_texture& stage) {
         if (!stage.header || !stage.data)
             return nullptr;
-        /* the depth surface's memory: what the depth buffer holds, also where
-           a colour target shares it (function_14600's g_509370 views it as a
-           back buffer; the NV2A keeps one copy of the bytes) */
-        if (CachedTexture* depth = depth_texture(stage))
-            return depth;
         auto rendered = targets_.find(stage.data);
         if (rendered != targets_.end() && &rendered->second != current_ &&
             guest_hash(rendered->second) != rendered->second.guest_hash) {
@@ -2521,7 +2372,6 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
     id<MTLTexture> placeholder_3d_ = nil;
     id<MTLSamplerState> placeholder_sampler_ = nil;
     id<MTLRenderPipelineState> present_pipeline_ = nil;
-    id<MTLRenderPipelineState> depth_pack_pipeline_ = nil;
     id<MTLRenderPipelineState> clear_pipelines_[16] = {};  /* by colour write mask */
     std::unordered_map<std::uint64_t, id<MTLDepthStencilState>> clear_depth_states_;
     std::vector<id<MTLBuffer>> frame_buffers_;
