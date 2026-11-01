@@ -30,6 +30,17 @@ cmake -S . -B build/release -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 cmake --build build/release --target h2-whole-image halo2-port
 ```
 
+The whole-image builder requires `default.xbe` at build time to reconstruct
+retail virtual tables. Missing input now stops the build instead of silently
+producing an image with incomplete virtual dispatch. The initial check validates
+the XBE magic only; it does not verify the supported build or the entire file.
+
+To keep game files outside the checkout, configure with
+`-DH2_RETAIL_XBE="/path/to/game/default.xbe"` and run with
+`--data-root "/path/to/game"`. Direct invocations of
+`port/tools/build_whole_image.py` accept `--xbe` for the same input.
+Compile-only `--check` does not require an XBE.
+
 **Run:**
 
 ```

@@ -46,6 +46,19 @@ RETAIL_TEXT = range(0x12000, 0x379c4c)
 ADDRESS_NAME = re.compile(r'(?:^|[?@])g_(?:unknown_)?([0-9a-f]{5,6})(?:_[A-Za-z0-9_]+)?(?:@|$)')
 
 
+def require_retail_xbe(path):
+    """Reject missing vtable input before compiling an unusable whole image."""
+    if not path.is_file():
+        raise ValueError(
+            f"retail XBE is required to reconstruct virtual tables: {path}. "
+            "Pass --xbe /path/to/default.xbe (CMake: -DH2_RETAIL_XBE=/path/to/default.xbe). "
+            "A whole image built without retail virtual tables can crash on boot.")
+    with path.open("rb") as stream:
+        if stream.read(4) != b"XBEH":
+            raise ValueError(f"retail virtual-table input is not an XBE: {path}")
+    return path.resolve()
+
+
 def elf_name(symbol):
     """ELF linkers read '@' in a symbol name as a version tag, which merges
     overloads such as ?f@@YAXJ@Z and ?f@@YAX_N@Z. MS mangling never uses '%'."""
@@ -969,6 +982,13 @@ def main():
     args = parser.parse_args()
     PREFERRED.update(args.prefer)
     root = args.root.resolve()
+    # Compile-only diagnostics need no retail data; a runnable whole image does.
+    xbe_path = None
+    if not args.check:
+        try:
+            xbe_path = require_retail_xbe(args.xbe or root / "orig/game/default.xbe")
+        except (ValueError, OSError) as error:
+            parser.error(str(error))
     args.include = [root / "port/include", root / "port/include/crt",
                     root / "port/include/xdk", root / "include"]
     work = args.work.resolve()
@@ -1193,9 +1213,8 @@ def main():
     # address in the XBE's data to its native function, so a retail vtable
     # runs recovered code in every slot recovered under any class name, and a
     # slot nobody recovered faults with its retail address.
-    xbe_path = args.xbe or root / "orig/game/default.xbe"
     retail_vtables = bind_retail_vtables(xbe_path, compiled, scans, tag_addresses,
-                                         delete_functions) if xbe_path.exists() else {}
+                                         delete_functions)
     vtable_patches = getattr(bind_retail_vtables, "patches", [])
     report["vtable_patches"] = len(vtable_patches)
     for symbol, address in retail_vtables.items():

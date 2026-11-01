@@ -3944,6 +3944,8 @@ add_test(
 # trap stubs for what no unit defines yet (tools/build_whole_image.py).
 set(H2_WHOLE_IMAGE_DIR "${CMAKE_BINARY_DIR}/port/whole")
 set(H2_WHOLE_IMAGE "${H2_WHOLE_IMAGE_DIR}/whole-image.elf")
+set(H2_RETAIL_XBE "${PROJECT_SOURCE_DIR}/orig/game/default.xbe" CACHE FILEPATH
+    "User-supplied retail XBE required to reconstruct whole-image virtual tables")
 add_custom_target(h2-whole-image
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/build_whole_image.py
             --root ${PROJECT_SOURCE_DIR}
@@ -3951,6 +3953,7 @@ add_custom_target(h2-whole-image
             --lld ${H2_LLD}
             --plugin $<TARGET_FILE:h2_guest_rebase>
             --work ${H2_WHOLE_IMAGE_DIR}
+            --xbe "${H2_RETAIL_XBE}"
             --bindings ${H2_MAIN_MENU_BINDINGS}
             --start ${CMAKE_CURRENT_SOURCE_DIR}/runtime/whole_image_start.s
             --linker-script ${CMAKE_CURRENT_SOURCE_DIR}/runtime/main_menu_guest.ld
