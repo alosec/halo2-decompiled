@@ -217,8 +217,16 @@ def main():
         last_report = 0
         idle = 0   # polls with nothing to do
         footing = None   # the last place the player stood
+        deathless = False
         while g.frame < args.frames:
             g.wait(150)
+            # the hook drops commands while there is no player unit (07a's
+            # long opening cinematic): send deathless again until it is on,
+            # or the bot plays mortal, dies and reverts forever
+            if not deathless:
+                deathless = any(r == "deathless on" for r in g.test_replies)
+                if not deathless:
+                    g.guest("deathless 1")
             # deathless, a fall into a pit never ends (07b's chasms): back to
             # the last place the player stood
             st = g.state
