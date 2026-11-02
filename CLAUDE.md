@@ -483,7 +483,9 @@ How we work:
 - **Byte checks:** we can't run `tools/check.py` (no XDK), so each PR says
   matching is unverified.
 - **Provenance:** the PR template's checklist is the user's own attestation.
-  Leave it unticked for them.
+  Tick it only on their word: on 2026-11-01 they had #793-#795, #858, #866,
+  #881, #883 and #961 ticked (each says the work was AI-assisted, from their
+  retail copy and the repository's tools, no external sources).
 - **Coordination:** the maintainers coordinate on #104; machine 3 clears
   files.
 
