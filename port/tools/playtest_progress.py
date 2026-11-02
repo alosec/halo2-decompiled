@@ -220,6 +220,7 @@ def main():
         g.guest("deathless 1")
         last_report = 0
         idle = 0   # polls with nothing to do
+        polls = 0
         footing = None   # the last place the player stood
         deathless = False
         while g.frame < args.frames:
@@ -440,6 +441,32 @@ def main():
                 g.guest("safe_to_save")
                 g.wait(3)
                 print("frame", g.frame, "->", next((r for r in g.test_replies[replies:] if r.startswith("safe_to_save")), "no reply"), flush=True)
+            polls += 1
+            if args.kill_radius > 0 and polls % 12 == 11 and any(
+                    w in t for t in waiting_texts
+                    for w in ("ai_living_count", "ai_strength", "ai_living_fraction", "ai_nonswarm_count")):
+                # hunt: kills reach only kill_radius around the volumes the bot
+                # visits, but a wait on a squad's count may be on enemies
+                # elsewhere (08b's last e8 Wraith shelling the Scarab): go
+                # beside the nearest enemy and kill around it, as a player
+                # would walk up to them
+                replies = len(g.test_replies)
+                g.guest("nearest_enemy")
+                g.wait(3)
+                reply = next((r for r in g.test_replies[replies:] if r.startswith("nearest_enemy")), "no reply")
+                if reply.split()[-1] not in ("none", "reply"):
+                    datum = reply.split()[-1]
+                    replies = len(g.test_replies)
+                    g.guest("goto_unit " + datum)
+                    g.wait(30)
+                    went = next((r for r in g.test_replies[replies:] if r.startswith("goto_unit")), "no reply")
+                    replies = len(g.test_replies)
+                    g.guest("kill_enemies %d" % args.kill_radius)
+                    g.wait(30)
+                    killed = next((r for r in g.test_replies[replies:] if r.startswith("killed")), "no reply")
+                    reply = "%s: %s, %s" % (datum, went, killed)
+                print("frame", g.frame, "-> hunt", reply, flush=True)
+                continue
             if places:
                 # one place a poll, the least served first: every thread's
                 # wait gets its turn

@@ -297,6 +297,7 @@ static void report_scripts(unsigned long frame)
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
      kill_enemies R      kill AI bipeds hostile to the player within R units
+     nearest_enemy       the nearest of those (any distance), for goto_unit
      kill_unit DATUM     kill the unit with that datum index (hex, as
                          "units" prints it), with or without an actor
      watch_ai 1|0        log living AI a player could never reach (h2-stray)
@@ -483,6 +484,42 @@ static void run_test_commands(void)
 			}
 			_snprintf(line, sizeof(line), "h2-test killed %ld", killed);
 			host_h2_log(line);
+		}
+		else if (command_is(command, "nearest_enemy", &rest))
+		{
+			/* the nearest living AI biped hostile to the player, on foot or
+			   seated (a Wraith's driver), for the bot to go beside before a
+			   kill_enemies: 08b's last e8 Wraith bombards the Scarab from
+			   beyond a volume's reach */
+			short team = *(short const *)(unit + 0x138);
+			real const *at = (real const *)(unit + 0x64);
+			long best = NONE;
+			real best_distance = 0.0f;
+			for (long index = 0; index < g_4e0300->maximum_count; ++index)
+			{
+				byte const *header = (byte const *)g_4e0300->data + index * 0xc;
+				byte *object = *(byte **)(header + 8);
+				if (!*(short const *)header || !object || header[3] != 0 || *(long const *)(object + 0x12c) == NONE)
+					continue;
+				short other = *(short const *)(object + 0x138);
+				if (other == team || *(real const *)(object + 0xec) <= 0.0f || !function_1df560(team, other))
+					continue;
+				real const *p = (real const *)(object + 0x30);
+				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
+				real distance = dx * dx + dy * dy + dz * dz;
+				if (best == NONE || distance < best_distance)
+				{
+					best = (long)(((dword)*(short const *)header << 16) | (dword)index);
+					best_distance = distance;
+				}
+			}
+			if (best == NONE)
+				host_h2_log("h2-test nearest_enemy none");
+			else
+			{
+				_snprintf(line, sizeof(line), "h2-test nearest_enemy %08lx", (unsigned long)best);
+				host_h2_log(line);
+			}
 		}
 		else if (command_is(command, "kill_unit", &rest))
 		{
