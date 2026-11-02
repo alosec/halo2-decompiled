@@ -2906,8 +2906,11 @@ void __stdcall function_d7b80(s_type_1e6529 *data, long object_index, short node
 
 	if (local_9127e6)
 	{
-		shield_children = !((local_9127e6->flags >> 4) & 1);
-		body_children = !((local_9127e6->flags >> 6) & 1);
+		/* retail keeps !bit 4 at frame +3 and !bit 6 at +6 (0xd7c3f,
+		   0xd7c4c), then gates the shield damage of a parent on +6 (0xd80c1)
+		   and its body damage on +3 (0xd813f) */
+		shield_children = !((local_9127e6->flags >> 6) & 1);
+		body_children = !((local_9127e6->flags >> 4) & 1);
 	}
 
 	for (long i = object_count - 1; i >= 0; i--)
