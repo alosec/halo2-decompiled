@@ -15,6 +15,7 @@ extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *
 
 extern "C" unsigned int host_h2_trace_flags(void);
 extern "C" void host_h2_log(const char *message);
+bool function_1df560(short team_a, short team_b);   /* teams are enemies */
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
 bool function_183910(long component_index, point3f const *origin, point3f *point, vector3f *normal);
 struct s_type_1e6529;
@@ -295,7 +296,7 @@ static void report_scripts(unsigned long frame)
      deathless 1|0       keep the first player's body and shields full, and
                          set its cannot-die flag (object_cannot_die's bit 14
                          of +0x10a) against one-blow kills
-     kill_enemies R      kill AI bipeds of other teams within R units
+     kill_enemies R      kill AI bipeds hostile to the player within R units
      kill_unit DATUM     kill the unit with that datum index (hex, as
                          "units" prints it), with or without an actor
      watch_ai 1|0        log living AI a player could never reach (h2-stray)
@@ -457,7 +458,12 @@ static void run_test_commands(void)
 				byte *object = *(byte **)(header + 8);
 				if (!*(short const *)header || !object || header[3] != 0 || *(long const *)(object + 0x12c) == NONE)
 					continue;   /* AI bipeds only */
-				if (*(short const *)(object + 0x138) == team || *(real const *)(object + 0xec) <= 0.0f)
+				/* enemies by the game's allegiance (0x1df560), not every other
+				   team: 08b's allied Elites and Johnson's marines are other
+				   teams, and killing Johnson left e7's Scarab waiting on him
+				   to board forever */
+				if (*(short const *)(object + 0x138) == team || *(real const *)(object + 0xec) <= 0.0f
+					|| !function_1df560(team, *(short const *)(object + 0x138)))
 					continue;
 				real const *p = (real const *)(object + 0x64);
 				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
