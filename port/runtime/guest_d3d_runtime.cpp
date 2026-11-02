@@ -847,6 +847,7 @@ void fill_texture(h2_gpu_texture *out, D3DBaseTexture *texture, D3DPalette *pale
     out->max_mip_level = stage[D3DTSS_MAXMIPLEVEL];
     out->color_key = stage[D3DTSS_COLORKEYCOLOR];
     out->color_key_op = stage[D3DTSS_COLORKEYOP];
+    out->alpha_kill = stage[D3DTSS_ALPHAKILL] != 0;
 }
 
 /* the state every draw carries */

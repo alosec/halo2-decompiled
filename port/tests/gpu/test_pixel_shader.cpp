@@ -414,7 +414,7 @@ void run_gpu_jobs(std::vector<GpuJob>& jobs) {
         for (auto& c : j.k.c0) put4(kb, c);
         for (auto& c : j.k.c1) put4(kb, c);
         put4(kb, j.k.final_c0); put4(kb, j.k.final_c1); put4(kb, j.k.fog_color);
-        for (int i = 0; i < 20; ++i) put4(kb, V4{}); /* bump_env, bump_luminance, color_key, border_color, border_extent */
+        for (int i = 0; i < 21; ++i) put4(kb, V4{}); /* bump_env, bump_luminance, color_key, border_color, border_extent, alpha_kill */
         write_file(base + ".in", std::string(reinterpret_cast<char*>(ib.data()), ib.size() * 4));
         write_file(base + ".k", std::string(reinterpret_cast<char*>(kb.data()), kb.size() * 4));
         std::remove((base + ".out").c_str());
@@ -547,7 +547,8 @@ int main(int argc, char** argv) {
         d.final_abcd() = inputs(in(T0), in(V0), in(ZERO), in(ZERO));
         d.final_efg() = inputs(0, 0, in(T0, true), 0);
         auto s = translate_and_compile("tex_times_diffuse_final", d);
-        check(contains(s, "t0 = t.tex2d[0].sample(t.samplers[0], in.texcoord[0].xy / in.texcoord[0].w)"),
+        check(contains(s, "float2 uv = in.texcoord[0].xy / in.texcoord[0].w;") &&
+                  contains(s, "t0 = h2_border(k, 0, uv, t.tex2d[0].sample(t.samplers[0], uv));"),
               "tex_times_diffuse_final: projected 2D sample of stage 0");
         check(contains(s, "float3 out_rgb = float3((t0.rgb * v0.rgb));"), "tex_times_diffuse_final: rgb = t0 * v0");
         check(contains(s, "float out_a = float(t0.a);"), "tex_times_diffuse_final: alpha = t0.a");

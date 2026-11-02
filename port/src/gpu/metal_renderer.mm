@@ -254,7 +254,9 @@ std::string fixed_function_pixel_shader(bool texture0) {
         "{\n"
         "    float4 color = in.diffuse;\n";
     if (texture0)
-        source += "    color *= h2_border(k, 0, in.texcoord[0].xy, t.tex2d[0].sample(t.samplers[0], in.texcoord[0].xy));\n";
+        source += "    float4 t0 = h2_border(k, 0, in.texcoord[0].xy, t.tex2d[0].sample(t.samplers[0], in.texcoord[0].xy));\n"
+                  "    if (k.alpha_kill[0] != 0.0 && t0.a <= 0.0) discard_fragment();\n"
+                  "    color *= t0;\n";
     source += "    return color;\n}\n";
     return source;
 }
@@ -2387,6 +2389,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             float color_key[4][4];
             float border_color[4][4];
             float border_extent[4][4];
+            float alpha_kill[4];
         } k = {};
         if (packet.has_pixel_shader) {
             /* D3DPIXELSHADERDEF: PSConstant0[8] at word 10, PSConstant1[8] at
@@ -2410,6 +2413,7 @@ fragment float4 h2_present_fragment(PresentOut in [[stage_in]], texture2d<float>
             k.bump_env[stage][0] = 1.0f;
             k.bump_env[stage][3] = 1.0f;
             k.bump_luminance[stage][0] = 1.0f;
+            k.alpha_kill[stage] = packet.textures[stage].alpha_kill && packet.textures[stage].header ? 1.0f : 0.0f;
             const auto border = unpack_argb(packet.textures[stage].border_color);
             std::memcpy(k.border_color[stage], border.data(), 16);
             const CachedTexture* entry = bound[stage];

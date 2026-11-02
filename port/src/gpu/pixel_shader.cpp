@@ -384,6 +384,9 @@ void Translator::sample_plain(int i, unsigned mode) {
     else
         o_ << "    {\n        float2 uv = " << tc << ".xy / " << tc << ".w;\n        t" << n << " = h2_border(k, " << n
            << ", uv, t.tex2d[" << n << "].sample(t.samplers[" << n << "], uv));\n    }\n";
+    /* D3DTSS_ALPHAKILL: the NV2A drops the fragment when the stage's texel
+       alpha is 0 */
+    o_ << "    if (k.alpha_kill[" << n << "] != 0.0 && t" << n << ".a <= 0.0) discard_fragment();\n";
 }
 
 void Translator::texture_stages() {

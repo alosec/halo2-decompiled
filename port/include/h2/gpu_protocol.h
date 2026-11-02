@@ -119,6 +119,7 @@ typedef struct h2_gpu_texture {
     h2_gpu_u32 max_mip_level;
     h2_gpu_u32 color_key;      /* ARGB; 0 when colour keying is off */
     h2_gpu_u32 color_key_op;   /* 0 off; the raw D3DTSS_COLORKEYOP otherwise */
+    h2_gpu_u32 alpha_kill;     /* D3DTSS_ALPHAKILL set: a texel of alpha 0 discards the fragment */
 } h2_gpu_texture;
 
 /* Fixed-function texture stage combining, used only when no pixel shader

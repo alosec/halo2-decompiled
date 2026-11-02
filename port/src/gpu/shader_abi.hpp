@@ -80,6 +80,10 @@ struct H2PixelConstants {
     float4 border_extent[4]; /* stage n: (u max, v max, u border, v border);
                                 the maxima are the texture's size for a
                                 linear texture (texel coordinates), else 1 */
+    float4 alpha_kill;       /* component n: stage n's D3DTSS_ALPHAKILL (a texel
+                                of alpha 0 discards the fragment, as the NV2A
+                                does; the HUD's meters draw their backing
+                                quads with it) */
 };
 
 /* The four texture stages. Each stage is bound as all three kinds so a
