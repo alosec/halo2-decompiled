@@ -1324,8 +1324,12 @@ void __stdcall function_dc5c0(long arg_159e6d, s_biped_physics_output *output)
 			ground_velocity = *g_4687a4;
 			moved = true;
 		}
-		function_1e6850((s_type_94656b *)output, moved, (point3f *)&ground_velocity,
-			&target_position, distance);
+		/* retail (0xdd03a-0xdd03f) pushes the target's position ([esp+0x8c],
+		   whose z is facing.k * 0.3 + position.z in the fallback above) and
+		   passes its velocity in ecx ([esp+0x3c], the copy of *g_4687a4);
+		   0x1e6850 stores the stack one at +0xc0 and ecx's at +0xcc */
+		function_1e6850((s_type_94656b *)output, moved, &target_position,
+			(point3f *)&ground_velocity, distance);
 		break;
 	}
 	case 4:
@@ -4177,8 +4181,9 @@ struct s_biped_physics_move
 	vector3f up;
 	byte unknown30[0x54 - 0x30];
 	bool placed;
-	byte unknown55[0x64 - 0x55];
-	point3f position;
+	byte unknown55[0x58 - 0x55];
+	point3f placement;	/* where a mode 4/5 move puts the biped (0x1fc660 writes it with placed) */
+	point3f position;	/* +0x64: a vector mode 1 subtracts from the velocity */
 };
 
 void __stdcall function_1e55d0(s_biped_physics_move *move, void *physics, s_biped_physics_output *output);
@@ -4234,7 +4239,10 @@ bool __stdcall function_e24f0(long arg_159e6d, long *names, s_biped_physics_outp
 	function_e2e90(arg_159e6d, &names[0], &names[1], move.direction, move.value, (byte *)&names[2]);
 	if ((biped->physics_mode == 4 || biped->physics_mode == 5) && move.placed)
 	{
-		function_b75a0(arg_159e6d, &move.position, NULL, NULL, NULL, false);
+		/* retail (0xe2650-0xe2660) passes move + 0x58, the point 0x1fc660
+		   stores with the placed flag; +0x64 is never written in modes 4/5,
+		   so the biped was placed at the origin */
+		function_b75a0(arg_159e6d, &move.placement, NULL, NULL, NULL, false);
 	}
 	/* the moving class is the requested animation's (retail keeps it in ebx),
 	   not the kept moving one's: otherwise a biped asked to idle while it
