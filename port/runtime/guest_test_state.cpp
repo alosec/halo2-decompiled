@@ -17,6 +17,9 @@ extern "C" unsigned int host_h2_trace_flags(void);
 extern "C" void host_h2_log(const char *message);
 void function_ba1d0(long object_index, vector3f *linear_velocity, vector3f *angular_velocity);
 bool function_183910(long component_index, point3f const *origin, point3f *point, vector3f *normal);
+struct s_type_1e6529;
+void function_d6660(s_type_1e6529 *data, long definition_index);
+long function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 extern s_record_pool *g_4e030c;   /* the dynamic lights */
 extern "C" unsigned int host_h2_guest_command(char *buffer, unsigned int size);
 bool __stdcall function_c5460(long object_index, long ignore_index, point3f const *position, point3f *result,
@@ -494,6 +497,37 @@ static void run_test_commands(void)
 			_snprintf(line, sizeof(line), "h2-test kill_unit %08lx %s", (long)datum, alive ? "killed" : "not found");
 			host_h2_log(line);
 		}
+		else if (command_is(command, "explode", &rest))
+		{
+			/* "explode TAG X Y Z": a damage effect's area damage at a point, as
+			   a projectile detonating there deals it (0xfc330 -> 0xd6c80);
+			   TAG is the jpt! datum (hex) */
+			char const *p = rest;
+			while (*p == ' ')
+				++p;
+			dword tag = 0;
+			for (; (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f'); ++p)
+				tag = tag * 16 + (dword)(*p <= '9' ? *p - '0' : *p - 'a' + 10);
+			rest = p;
+			point3f point;
+			point.x = parse_real(&rest);
+			point.y = parse_real(&rest);
+			point.z = parse_real(&rest);
+			byte data[0x88];
+			function_d6660((s_type_1e6529 *)data, (long)tag);
+			s_location location;
+			function_11bed0(&location, &point);
+			*(long *)(data + 0x1c) = location.leaf_index;
+			*(short *)(data + 0x20) = (short)location.cluster_index;
+			*(short *)(data + 0x22) = (short)location.bsp_index;
+			*(point3f *)(data + 0x24) = point;
+			*(point3f *)(data + 0x30) = point;
+			vector3f down = {0.0f, 0.0f, -1.0f};
+			*(vector3f *)(data + 0x3c) = down;
+			long hit = function_d6c80((s_type_1e6529 *)data, NONE);
+			_snprintf(line, sizeof(line), "h2-test explode %08lx first %08lx", (unsigned long)tag, (unsigned long)hit);
+			host_h2_log(line);
+		}
 		else if (command_is(command, "ray", &rest))
 		{
 			/* what a projectile's ray (0x2480000f, as 0xfc330's tests) from
@@ -573,10 +607,10 @@ static void run_test_commands(void)
 				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
 				if (dx * dx + dy * dy + dz * dz > radius * radius)
 					continue;
-				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx",
+				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx tag %08lx shield %.2f",
 					(long)(((dword)*(short const *)header << 16) | (dword)index), header[3],
 					*(short const *)(object + 0x138), *(real const *)(object + 0xec), p[0], p[1], p[2],
-					*(long const *)(object + 0x14));
+					*(long const *)(object + 0x14), *(long const *)object, *(real const *)(object + 0xf0));
 				host_h2_log(line);
 			}
 			host_h2_log("h2-test units end");
