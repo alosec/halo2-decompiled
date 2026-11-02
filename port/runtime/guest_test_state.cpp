@@ -494,6 +494,26 @@ static void run_test_commands(void)
 			_snprintf(line, sizeof(line), "h2-test kill_unit %08lx %s", (long)datum, alive ? "killed" : "not found");
 			host_h2_log(line);
 		}
+		else if (command_is(command, "ray", &rest))
+		{
+			/* what a projectile's ray (0x2480000f, as 0xfc330's tests) from
+			   X Y Z along DX DY DZ hits first: type, fraction, object */
+			point3f start;
+			vector3f along;
+			start.x = parse_real(&rest);
+			start.y = parse_real(&rest);
+			start.z = parse_real(&rest);
+			along.i = parse_real(&rest);
+			along.j = parse_real(&rest);
+			along.k = parse_real(&rest);
+			long result[0x60 / 4];
+			for (long i = 0; i < 0x60 / 4; ++i)
+				result[i] = 0;
+			bool hit = function_1697c0(0x2480000f, &start, &along, NONE, NONE, (s_collision_result_1697c0 *)result);
+			_snprintf(line, sizeof(line), "h2-test ray %s type %ld t %ld object %08lx",
+				hit ? "hit" : "miss", result[0], (long)(*(real *)&result[1] * 1000.0f), (unsigned long)result[0x40 / 4]);
+			host_h2_log(line);
+		}
 		else if (command_is(command, "closest", &rest))
 		{
 			/* a unit's closest point to a spot 3 units off its centre, as an
