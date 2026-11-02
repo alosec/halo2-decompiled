@@ -345,7 +345,10 @@ def main():
                               [r for r in g.test_replies[replies:] if r.startswith(("enter_vehicle", "killed"))],
                               flush=True)
                         acted[key] = count + 1
-                    elif ACTOR_NEAR_WAIT.search(text) and count < 8:
+                    elif ACTOR_NEAR_WAIT.search(text) and count < 40:
+                        # one unit a try, through every candidate (03b's second
+                        # Scarab pilot was the ninth nearest: with kills limited
+                        # to a player's reach, eight tries never found him)
                         # near the command script's own actor (03b's Scarab
                         # pilots): visit the living units of other teams
                         # nearby, nearest first, one a try
