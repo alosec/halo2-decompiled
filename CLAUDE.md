@@ -223,6 +223,24 @@ See `port/README.md` "Play" for the full commands.
   `whole-image-report.json` for the class built there; a binding to the
   wrong neighbour table is as bad (c_query_array_collector sat on
   0x453b80).
+- **Stand-in classes for placement-constructed retail objects.** Main's
+  drafts build retail objects with `new (p) c_x(...)` from stand-in
+  classes. Right after the `new`, the compiler calls the stand-in's own
+  virtuals directly, so a stub body runs instead of retail's slot:
+  0x1ea9c0's list shape `child_count() { return 0; }` left every child
+  key unresolved (crash at the first map load). A class that declares
+  only its last few slots binds inside the real table:
+  `c_shape_contact_listener` (slots 10 and 11 of 0x455f8c) bound to
+  0x455fb4, and the narrow phase read shape types from the next table
+  (crash in combat). Check that each bound table is one retail code
+  stores (`mov [reg], table`) or a static object's data holds; a bound
+  address nothing refers to is suspect (still open:
+  `c_game_engine_45c948` binds to 0x45c8f0, but `g_47fc8c` holds
+  0x45c948).
+- **After each upstream merge:** check `frontend: N compiled, 0 skipped`
+  and diff the `stubbed` list. Upstream signature changes leave
+  fork-only callers on unbound mangled names (0xc5460's bool, 0x144f0's
+  argument order), which are silently stubbed.
 - **Xbox DSound semantics.** A submix (MIXIN) buffer passes its input even
   if the game never plays it; dialogue goes through one (fixed 625675f1).
   The Armory tutorial's "look at the light" steps need those lines.
