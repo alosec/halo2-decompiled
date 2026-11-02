@@ -132,6 +132,27 @@ void function_123bf0(void)
 
 /* saves the game state: its header to the next of the two saved copies, its
    memory to the cache file of that slot */
+#if H2_WHOLE_IMAGE
+long player_slot_get_single_profile(void);
+long player_slot_get_single_profile_index(void);
+void function_19048c(long arg_0);
+bool function_124840(long arg_0, void const *arg_1, long arg_2, long arg_3);
+
+static void checkpoint_save_to_profile(void)
+{
+	/* campaign games only, as 0x1241b0 */
+	if (!g_4e6948 || *(long *)((byte *)g_4e6948 + 8) != 1 || *((byte *)g_4e6948 + 0x134))
+		return;
+	long profile_index = player_slot_get_single_profile_index();
+	if (profile_index == NONE)
+		return;
+	/* and the profile marked as holding a saved campaign, which offers
+	   Resume Campaign (0x1241b0 follows a write with 0x19048c too) */
+	if (function_124840(profile_index, game_state_globals.base_address, 0x1288, 0x3fe000))
+		function_19048c(player_slot_get_single_profile());
+}
+#endif
+
 // @retail 0x123e20
 void function_123e20(void)
 {
@@ -148,6 +169,14 @@ void function_123e20(void)
 	memcpy(&game_state_globals.saved_headers[game_state_globals.slot], game_state_globals.arena, sizeof(s_arena_header));
 	g_46e320[4](0);
 	g_4e6398 = g_485ab0;
+#if H2_WHOLE_IMAGE
+	/* port-only: the checkpoint also goes to the profile's saved game
+	   (auxilary.bin, which Resume Campaign reads), as Save and Quit writes it
+	   (0x1241b0's synchronous path, 0x124840); retail kept checkpoints only
+	   in the cache partition, so a crash lost everything since the last
+	   Save and Quit or level start */
+	checkpoint_save_to_profile();
+#endif
 }
 
 /* the texture cache's lent blocks (unknown_12c0d0.cpp) */
