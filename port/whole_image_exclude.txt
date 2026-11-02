@@ -30,3 +30,17 @@ src/unknown_372680.cpp
 # Effects on the player's own weapon (the BR's and SMG's muzzle flashes)
 # found no first-person marker and showed nothing.
 src/first_person_marker_native.cpp
+
+# Port drafts superseded by main's recoveries. src/unknown_0bf0f0.cpp is a
+# void draft of 0xbf0f0 (main matched it, returning the object, in
+# src/unknown_0b8ca0.cpp) whose calls to 0x108b10 and 0xd5060 named
+# signatures nothing defines, so they were stubbed. The native 0xc0350 in
+# src/light_record_native.cpp passed its up vector to 0xc0c80 where retail
+# passes the new light's index, returned nothing, and as a native rewrite
+# took 0xc0350's slot in the retail code map over src/unknown_0bffa0.cpp's.
+# The curated menu build keeps all three.
+src/unknown_0bf0f0.cpp
+src/light_record_native.cpp
+# The curated menu build's structure bsp callback table: nothing in the
+# whole image reads it, and its arena entry has no definition.
+port/runtime/guest_structure_bsp_callbacks.cpp
