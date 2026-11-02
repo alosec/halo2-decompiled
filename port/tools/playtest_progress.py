@@ -195,6 +195,10 @@ def main():
     parser.add_argument("--map", required=True)
     parser.add_argument("--frames", type=int, default=120000)
     parser.add_argument("--work")
+    parser.add_argument("--kill-radius", type=int, default=0,
+                        help="kill only enemies within this many units of the player when a wait counts AI "
+                             "(0: all of them, wherever they are). A wait that never clears with a radius a "
+                             "player could reach is a gate: its enemies are stranded (01b's flung elevator drones)")
     parser.add_argument("--thorough", action="store_true",
                         help="serve the mission script's places only once no encounter script has one left "
                              "(07b's and 08a's missions wait only for the end volume, so the default jumps to it)")
@@ -293,7 +297,7 @@ def main():
                                                                or args.thorough and encounter(thread["script"])):
                             places.append((count, order, key[0], key[1], "cross", hop))
                         if "(ai_actors" in text and count < 8:
-                            g.guest("kill_enemies 0")   # and the enemies the wait counts (08b's e7 brutes)
+                            g.guest("kill_enemies %d" % args.kill_radius)   # and the enemies the wait counts (08b's e7 brutes)
                     elif targets and "(not (volume_test" not in text and count < len(SAMPLES):
                         volume = live_volume(g, volumes, targets[0]) if targets[0] in attached else volumes[targets[0]]
                         if volume and not (g.state and inside(volume, g.state["pos"])):
@@ -335,7 +339,7 @@ def main():
                         if "regret" in text:   # Regret is fought aboard his throne
                             g.guest("enter_vehicle 0 boss")
                             g.wait(60)
-                        g.guest("kill_enemies %d" % (10 if "regret" in text else 0))
+                        g.guest("kill_enemies %d" % (10 if "regret" in text else args.kill_radius))
                         g.wait(30)
                         print("frame", g.frame, thread["script"], node, "-> boss round",
                               [r for r in g.test_replies[replies:] if r.startswith(("enter_vehicle", "killed"))],
@@ -401,7 +405,7 @@ def main():
                            or "ai_nonswarm_count" in text) \
                             and count < 6:
                         replies = len(g.test_replies)
-                        g.guest("kill_enemies 0")
+                        g.guest("kill_enemies %d" % args.kill_radius)
                         g.wait(30)
                         reply = next((r for r in g.test_replies[replies:] if r.startswith("killed")), "no reply")
                         print("frame", g.frame, thread["script"], node, "-> kill enemies", reply, flush=True)
