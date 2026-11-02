@@ -948,6 +948,21 @@ bool __stdcall game_variants_received(s_pending_message_header *header)
 // (stores in order, `xor ebx` after the pushes); shared header tick helper 3; force-inline tick
 // helper with a separate zero assignment 3; plain inline allocator 297 (kept out of line).
 // Every spelling hoists the first zero store above the last push, as in 0x223b60.
+// Result declared after the allocation 70; tick reader __forceinline 3, inline 3; start
+// tick read before the null result 3; null result in an else arm 3; tick reader without
+// volatile 127 (the zero stores vanish).
+// Round 117: a barrier inside the tick reader after the zero store 3, before it 4 (the zero xor
+// again after the pushes); the header's address taken 3; the page count read before the tick
+// read 17; the reader with external linkage 3.
+// Round 133: the tick as `volatile long ticks[2]` 3; as two volatile longs 10; unsigned 3; as a
+// volatile LARGE_INTEGER 3; this function placed before 0x194260 3; the retry counter at the
+// allocator's top 17 (0x194260 then 8).
+// Round 66: bitwise-or write result 53 (240 bytes); file != NULL 3; call-first short-circuit result 47;
+// null-initialized file 3; write-failure early exit 85; NULL != file 3; write == true 5; write != false 3.
+// Opening body restored.
+// Round 30 (lane 17, fast; a compile-only build gives the same order): the reader's ticks declared, then zeroed 3;
+// file declared first, then the result 3; result zeroed after the allocation 70 (221 bytes); braced success
+// assignment 3; braced asm block 3; harness: `__int64 volatile`, LARGE_INTEGER QuadPart, forceinline reader 3 each.
 // @retail 0x194160
 bool __stdcall game_variants_retry(s_pending_message_header *header)
 {

@@ -6,6 +6,7 @@
 #include "unknown_0259d0.h"
 #include "unknown_2c0d00.h"
 #include "unknown_11cc90.h"
+#include "vector2f_products.h"
 #include <math.h>
 #include <string.h>
 
@@ -27,7 +28,7 @@ transform4x3f *function_ba160(long object_index, transform4x3f *matrix);
 void function_11bed0(s_location *location, point3f const *point);
 short __stdcall function_bb050(long mask, dword type_mask, void const *location,
     point3f const *position, real radius, long *objects, short maximum_count);
-short function_26f930(long object_index, s_object_marker *markers, short capacity, long flags);
+short function_26f930(long object_index, s_object_marker *markers, short capacity, word flags);
 short function_26fbf0(long object_index, s_object_marker *markers, short capacity, long flags);
 short function_26fe20(long object_index, s_object_marker *markers, short capacity, long flags);
 bool function_26f8f0(s_object_marker const *marker);
@@ -210,7 +211,7 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
     s_path_settings const *settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
     point3f const *position, real radius, vector3f const *direction, long unit_index, long ignore_index);
 
-// score 866 (was 866): frame 0x2cb8 versus 0x2cac; actor/unit retention and priority/query/marker homes remain.
+// score 882 (was 882): frame 0x2cb8 versus 0x2cac; actor/unit retention and priority/query/marker homes remain.
 // point workspace names 866; initial actor value 869; query index value 916;
 // conditional self-unit 911; wide initial predicates 1011; native location copy 911.
 // Frame pointer 1207; size preference 1436; native object fields 866;
@@ -238,12 +239,85 @@ void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_in
 // Round 385: Word obstacle mask with native sphere/motion combinations, reduced
 // 916/894/914/897/914/897/897/897; word+byte sphere 917 plain, plus byte motion 919,
 // plus separate location/raised workspaces 898. Original masks and query storage restored.
+// Individual full-width ignore/block/minimum/maximum priorities 897/897/897/900;
+// ignore-block/minimum-maximum/ignore-minimum/block-maximum pairs 894/920/894/894 (fast).
+// Original signed-short limits, query storage, qualifiers and complete body restored.
 // Round 176: Immutable declaration-produced actor with original/ordinary settings/ordinary unit/both
 // input homes 957/991/978/989; with independent location and raised point 973/993/949/982.
 // All original actor publication, query storage, qualifiers, operands and complete body restored.
+// Round 37: normalized/object, normalized/sphere and all relative-position workspaces shared per
+// object 866/867/867, at entry 866/867/867; all with independent query storage 889, ordinary actor
+// pointer 959. Original vectors, query record, qualifiers, operands and complete body restored.
+// Round 79 (plain): no unit_index volatile 917 (fast 867: fast misleads here); unit no-obstacle bit
+// tested as a word `(bool)((w >> 2) & 1)` 919 (retail's `mov dl, byte; shr dl, 2; test dl, 1`);
+// location and raised point as separate locals 889; both 918; no actor volatile 959; no settings
+// volatile 931. Retail holds actor_index/unit_index/self_unit in ebx/edi/ebp (reloaded on the
+// object loop's back edge) with its zero in ebp.
+// Round 220: Paired exhaustive confidence results bool/byte/word/long 914/914/928/942f; shared real dot
+// then both tests 870/870/909/892f (unchanged reduced control 866, full 899). All regress against
+// the calibrated control; original confidence defaults, query storage, qualifiers and body restored.
+// Round 321: Mask-owned output selection with word obstacle/byte sphere/Boolean moving subsets 0-7: 948/947/960/959/949/948/963/962f (control 866, full 899).
+// Round 321: Frame/actor/unit homes remain; all original Boolean, masks, qualifiers and body restored.
+// Round 35 (lane 11): location and raised point as plain locals instead of the grouping struct 888 fast
+// but 906 plain (fast misleads here; frame 0x2cb4). All three volatiles dropped 1014f (aligned 630 -> 583;
+// settings in EBX, zero in EDI), that with the settings volatile kept 1014f (same code), plus self_unit
+// declared first 1014f. On the plain-local form (fast): all volatiles dropped 1005 (frame 0x2cb0, aligned 525); no unit_index volatile 924; no actor
+// volatile 974 (aligned 524); no settings volatile 904; raised at function scope 888; location declared
+// before the actor block 888. Ours hoists the object-table global load to the entry for both lookups;
+// retail loads it inside each block (four loads against three).
+// Round 27 (m3 lane 15, plain): retail reads `settings` once into ECX, keeps `unit_index` in EDI and reads
+// the actor's fields from the computed actor address (none of the three volatiles is retail's), and EBP is
+// self_unit (its NULL is the entry's zero, so the priority/range zeros come from it). The settings
+// volatile dropped 882 (kept, 3705 bytes); on 899: the location/raised grouping struct as plain locals
+// 906 (3718 bytes), no unit_index volatile 917, no actor volatile 959 (3680 bytes); on 882: no unit_index
+// volatile 938, plain locals 925 (3702 bytes), no actor volatile 996 (3648 bytes), both 998 (3646 bytes),
+// self_unit declared first 882 (same code); the previous-direction dot and the other-actor offset and dot
+// through dot3f/vector3d_from_points3d 893 (3694 bytes), with the object offset and its squared length
+// through vector3d_from_points3d/length_sq3f too 899 (3690 bytes). Retail lays the type-0 arm's
+// other-actor branch out before the join (the offset/radius test) and its `else if` branch and types
+// 1/7/11 after it; ours keeps source order.
+// Round 121 (m3 lane 5, plain): aligned by opcode, the bodies differ in one moved block: retail's
+// other-actor branch falls into the join (offset/radius test, no-obstacle bit, classification start)
+// and the second type-0 branch and the type 1/7/11 arms sit after the classification's first `jmp`;
+// ours ends each inflation path with `sete bl; jmp` (skip flag in BL, tail-duplicated) where retail
+// keeps the flag at [esp+0x12]. Retail also re-reads the type byte at each later use (range test,
+// `1 << type`, sphere loop). The type read at each use, no type local 903 (3695 bytes); that without
+// the unit_index volatile 938, without the actor volatile 978, without both 999; that with the skip
+// flag assigned before each inflation block 949.
+// Post-admission restricted/classification/device default subsets 1..7:
+// 882/906/906/914/914/906/906f (control 931); all plus late inflation 906f.
+// Restricted/classification/device alone 918/932/918 plain. Frame 0x2cb8 remains;
+// all original constant lifetimes, qualifiers, buffers and complete body restored.
+// Round 57 (m3 lane 1, fast): retail shares the raised point's slot with the sphere-loop center and
+// reuses location's slot for the object count. Location in its own block ending at the query 925,
+// with the count declared first 925; type-0 center/offset at the other-actor block scope 882;
+// object matrix at the loop-body top 882; sphere center at the object-loop scope 882.
+// Round 479: positive index/visibility/self-vehicle admission subsets 1/2/4/3/5/6/7
+// all 931f (control 931); actual returned object transform 940f. Original gates,
+// defaults, matrix consumers and complete body restored.
+// Round 40 (m3 lane 15, plain; fast misleads): other-actor test inverted (NONE branch first) 886; type-1 skip flag as a
+// conditional set (retail's `mov byte [esp+0x12], 1`) 936; enabled declared with the per-object defaults (retail sets
+// it in the settings-test block) 918; unit/definition no-obstacle bits as `(bool)((*(word *)p >> n) & 1)` 917 (retail's
+// byte shift form; aligned 710 -> 699); that with the inverted test 938. Retail also stores straight = 1 again on the
+// actor == NONE path.
+// Round 23 (lane 18, plain; fast misleads here, 931 fast against 882 plain): aligned before straight 882;
+// the 0x26c flag before the dot 883; self unit chosen right after its fetch 881; the range pair before
+// the ignore/block priorities 881; range maximum read before the minimum 882 (one-point moves, not kept).
+// Round 234: Native header/sphere/both/filter-word/header-filter/sphere-filter/all observations 888/880/946/925/930/880/946; all with library sphere copy 946. Sphere forms reach retail length but frame 0x2cc4 versus 0x2cac and gain only two; rejected. Header frame 0x2ce4. Original complete body restored; actor/unit and priority/query/marker homes remain.
+// N303: Distinct first-second/first-third/second-third/all marker batches grouped at collection
+// or object scope: 908f each (control 931f, baseline 882 plain). Exact-only forms restored;
+// original separate buffers, query storage, qualifiers and full body retained.
+// Round 317: Native first/second/vehicle relative-vector subsets 1..7, all with shared marker dots
+// 916/916/911/921/913/913/929/917 fast. Original full body restored.
+// Paired-marker ordinary 918; original body restored.
+// Actor/unit and priority/query/marker homes and excess twelve frame bytes remain.
+// M315: native returned object count with complete priority/ordinary actor-unit/independent-query
+// home subsets 0..7: 915/919/993/1011/903/943/1000/1013 fast (control 931).
+// Count plus independent query, count alone and count plus priorities: 903/938/923 plain.
+// Original body restored; frame, actor/unit and priority/query/marker homes remain.
 // @retail 0x2c0d60
 void __stdcall function_2c0d60(vector3f const *previous_direction, long actor_index, byte flags,
-    s_path_settings const *volatile settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
+    s_path_settings const *settings, s_obstacle_list *obstacles, s_obstacle_list *blocking_obstacles,
     point3f const *position, real radius, vector3f const *direction, volatile long unit_index, long ignore_index)
 {
     short ignore_priority = 0;
@@ -776,10 +850,7 @@ PRIVATE __forceinline real normalize_offset_direction_2c(point2f *v)
     if (fabs(magnitude) < 0.0001f)
         magnitude = 0.0f;
     else
-    {
-        real inverse = 1.0f / magnitude;
-        scale_offset_direction_2c(inverse, v, v);
-    }
+        scale_offset_direction_2c(1.0f / magnitude, v, v);
     return magnitude;
 }
 
@@ -864,11 +935,6 @@ void function_2c2740(point2f const *point, point2f const *center, real radius, b
 
 #include "unknown_1fa590.h"
 
-PRIVATE __forceinline word edge_node_2c(s_pathfinding_edge const *edge, long side)
-{
-    return side ? edge->surface : edge->unknown0c;
-}
-
 PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, long index)
 {
     if (index == NONE || index == 0xffff)
@@ -876,8 +942,85 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
     s_pathfinding_node const *node = &data->nodes[index];
     return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
 }
-// score 385 (was 385): frame 0x28 agrees; zero/radius schedule, history homes and indexed node-word lowering remain.
 
+/* the same test of the node on one side of an edge, read as the edge's word */
+PRIVATE __forceinline bool edge_node_open_2c(s_pathfinding_data const *data, s_pathfinding_edge const *edge,
+    long side)
+{
+    word index = edge->nodes[side];
+    if (index == NONE || index == (word)NONE)
+        return false;
+    s_pathfinding_node const *node = &data->nodes[index];
+    return (node->flags & 1) && (!(node->flags & 2) || !function_1fa6b0(node, data));
+}
+// MiniMax R (11-01, fourth round): no new form, no lower score. The frame stays 0x30 against
+// retail's 0x28, and the edge pointer keeps the 0x1c home where retail keeps 0x18 (the magnitude
+// takes retail's 0x1c home here). This round: writing the two offsets directly (origin->x +
+// normal.x * radius, and origin->x + normal.x * (0.0f - radius) for the other side, the way
+// 0x2c2910 and 0x2c2740 write theirs) drops the frame to retail's 0x28 and removes the
+// direction.x spill, but the edge pointer's home then moves to 0x1c where retail keeps it at
+// 0x18, so the whole body shifts (358, the same with the product first); flipping the operand
+// order of the two origin adds and writing them with += leave the code unchanged (322);
+// declaring the edge pointer at function scope leaves the code unchanged (322) and with the
+// direct offsets gives the same 358; writing the normalisation out in the body, with the
+// magnitude in a local of the body and with the scaling written out as well, compiles to the
+// same code as the helper (322), so the homes are not decided by the helper's shape. A permuter
+// run over the function was started but its full-image baseline build did not finish inside two
+// hours on this shared machine, so it produced no result to apply.
+// MiniMax R (11-01, third round): no new form, no lower score. The crossing test written as three
+// ifs over one flag reproduces retail's accumulator exactly (that block now matches retail's
+// shape), but the function scores 369 with the helper-built offsets and 345 with the per-coordinate
+// ones; the per-coordinate offsets give retail's frame (0x28) and, together with the crossing
+// block, retail's length (1312 bytes), yet the xmm allocation and the place of the surface loop's
+// `if (side)` block still differ. This round: the side branch swapped gives 322 and as a ternary
+// 336; the offsets written straight into the first and second vectors give 419 and the negated
+// form 429. Also this round: retail consumes the zero in `0.0f - radius` (subss xmm0, xmm4) right
+// after the normalisation while ours copies it and keeps it to the comparison, so the negated
+// radius in a local (399), the two offset adds in the other order (415), the other offset first
+// (348) and the normal written as two statements (322, the same code) all leave the zero in xmm7.
+// MiniMax R (11-01, second round): no new form, no lower score. The permuter on this function ran
+// thirty tries from the 322 baseline without a new best. The frame stays 0x30 against retail's
+// 0x28, the zero is still in xmm7 (retail xmm0), the radius still in xmm6 (retail xmm4), the
+// direction still in xmm0/xmm5 (retail xmm7/xmm6) and ours still re-reads vertex1 at the select
+// where retail keeps it in EBX.
+// MiniMax R (11-01): tried, not kept: 322 (was 324), under the 8-point keep bar, so the code keeps
+// the two initialised declarations (324). Declaring the two marker variables without an
+// initialiser and assigning them in the other order puts the two entry stores in retail's order
+// (the marker at [esp+0xc] first); the later rounds' 322 figures above were measured with that
+// form in place. The frame stays 0x30
+// against retail's 0x28, the zero is still in xmm7 (retail xmm0), the radius still in xmm6 (retail
+// xmm4) and ours still re-reads vertex1 at the select where retail keeps it in EBX.
+// MiniMax R (11-01): no new form, no lower score. The vertex pair's declaration order swapped and
+// the from/to choice made where the addresses are built score 325/346/325/342; the frame stays
+// 0x30 against retail's 0x28 and ours still re-reads vertex1 at the select where retail keeps it
+// in EBX.
+// score 324 (was 324): frame 0x30 versus 0x28. This 324 (round 27) comes from the file's dot_product2d
+// and the shared cross_product2d of vector2f_products.h, not from the reverted two-scalar copy: the
+// zero is now made again before the compares as retail does (ours xmm7, retail xmm0), but ours still
+// copies it for 0 - radius after the first offset where retail subtracts in place before both
+// offsets, so ours keeps radius in xmm6 (retail xmm4) and spills direction.x and the first offset's y
+// (the 8 extra frame bytes). Earlier: ours kept 0.0 in xmm6 for the whole loop. The edge pointer sits
+// in ebx (retail esi) and the vertex in memory (retail ebx). Retail's crossing test is one byte set
+// three times (`xor dl, dl` before the normalisation, `mov dl, 1` per test): the flag form
+// `crossing = false; if (..) crossing = true` x3 reached 318 in earlier rounds (kept out: flag rule);
+// on the 347 and 324 bodies of round 27 it is 371 (1331 bytes).
+// Round 29 (lane A): the direction as two scalars (no address-taken struct) leaves it in registers
+// as retail does: 347 -> 324, 1312 bytes. The frame is still 0x30 against retail's 0x28: ours keeps
+// the normal's x at esp+0x18 and its y at esp+0x34 where retail has the y at 0x2c and the x at
+// 0x34, and ours still spends a slot on the spilled direction.x.
+// Review (coordinator): the two-scalar direction (324) is a hand copy of vector2d_from_points2d's body
+// with no match, so the code stays at main's helper call (347); body copies are kept only with a match.
+// Round 79 kept: the edge's node pair as a real array, the fixed-side tests on the edge's word
+// (edge_node_open_2c: retail's `mov cx, word; movzx eax, cx; cmp cx, 0xffff`), the long test on
+// the indexed ones, start/end vertices by if/else, complete geometry before the tests, the ring
+// direction as `bool forward`, the portal loop stepping through the portal pointer with the source
+// edge formed first, the previous vertex by if/else, no volatile on first_vertex and the walking
+// edge in its own local (retail stores the edge index back to its own slot at entry) 347.
+// Round 79 tried on 347/318: flag 318; offsets summed product-first/direct products/second difference
+// first/both scales first 318/338/343/354; `|` of the crossing parts 371; the `||` crossing in one
+// expression 350; vertex-select polarity flip no change; on 347: offset and difference interleaved
+// 403, one offset reused 403, direction from the vertex indices before the start pointer 394.
+// Data must stay in EBP: forms that move it let LTCG pass it in a register (ret 0x14).
 // Earlier: frame 0x28 agrees; zero/radius schedule, history homes and indexed node loads remain.
 // Earlier: Frame 0x28 and length agree; zero/radius schedule, history homes and indexed node loads differ.
 // frame 0x28 agrees; zero/radius schedule, history homes and indexed node loads remain.
@@ -946,17 +1089,117 @@ PRIVATE __forceinline bool path_node_open_2c(s_pathfinding_data const *data, lon
 // Round 175: Full-width unsigned incoming/ring/complete selected-vertex domains and all
 // subsets 385 each; all with unsigned equality-only ring-edge anchor 385. Native word values
 // and distinct NONE bit patterns preserved. All original domains, histories and body restored.
+// Round 91: node pair indexed through the edge's real word pair 434 (data to eax, frame 0x2c);
+// word index in the open test 409; portal loop stepping through the portal pointer, source edge
+// before the side test, vertex selected by value 432 (data to ebx); first_vertex without volatile
+// 404 (aligned diff 500 -> 461, convention kept); that with the indexed pair 433.
+// Round 420: Incoming edge used as mutable working index, with iteration/traversal receiver and short/word bounded
+// ring counts: 415 each; the same four with early ring anchor 361 each (1295 bytes). Original input copy,
+// receiver/count and anchor lifetimes restored; frame remains 0x30 versus 0x28.
+// Round 194: Shared point-setter normal/positive/negative producers and subsets 422/470/447/479/468/508/535; all plus successful output setters 513. All grow away from retail and restore the original helpers, geometry and complete traversal.
+// Round 317: Complete negative crossing result with factored rejection, second-test order
+// and sentinel priority, 369/369/413/413/411/411/411/411. Frames 0x30/0x38/0x28;
+// sentinel-first recovers retail frame but regresses. Original body restored.
+// Round 27 (m3 lane 15, fast): on 347, the two cross tests through cross_product2d alone 347 (same
+// code), the dot test through dot_product2d alone 347, both together 324 (kept, plain 324), the dot
+// through the vector2f dot_product2d as well 324; the flag form on 347/324 371/371 (1331 bytes);
+// on 324: first_vertex declared before previous_vertex 322 (retail's entry store order); with it the
+// normal by two assignments, normalize_local2d_2c, normalize2d_fast, the ring exits as two statements
+// 322 each; a negative_radius local before the first offset 398, before the normal 424 (1281 bytes);
+// the offsets written per coordinate with that local, origin first/product first 360/360 (1268
+// bytes). Compile-only: unary minus in place of `0.0f -` gives identical code.
+// Round 252: Common successful output across all three success paths: long/dword/word/native point at entry
+// and after working-edge declaration 459/459/456/401/459/459/456/401. Original complete executable source
+// restored; Frame 0x30 versus 0x28, zero/radius ownership, history homes and crossing allocation remain.
+// Round 47 (m3 lane 1, fast; positional count, aligned diff tracked too: baseline 283): the -radius scale
+// before the +radius one, each with its origin add, 353 (1281 bytes, aligned 234: frame 0x28, radius in XMM4
+// and retail's in-place `0 - radius`); both scales first then the adds 351 (aligned 233), with the other
+// offset's y add first 410; the adds as `offset.x += origin->x` 324 (same code); the offsets per coordinate
+// as `normal.x * radius + origin->x` (and `* (0.0f - radius)`) 360 (1268 bytes, aligned 172: the whole
+// normalisation/offset/difference block then matches retail), origin first 360, -radius pair first 368;
+// on that per-coordinate form the crossing as three `crossing = true` sets 347 (1312 bytes, aligned 161) or
+// as `first | second | (first_vertex == NONE)` 347 (1312 bytes, aligned 137). Retail evaluates all three
+// crossing tests into one flag (DL), so the || form keeps it 44 bytes short.
+// Round 121 (m3 lane 5, fast): the offsets per coordinate as the matched 0x2c2910/0x2c2740 write them
+// (`origin->x + normal.x * radius`, `* (0.0f - radius)` for the other side, no negative-radius local)
+// 360 (1268 bytes), but the whole float block is then retail's (frame 0x28, the zero in xmm0 consumed by
+// `0 - radius`, radius xmm4, direction xmm7/xmm6, no spills); with the crossing as one flag set by three
+// ifs 347 (1312), plus first_vertex declared first 345 (1312); per-coordinate offsets plus first_vertex
+// first 358, plus the flag declared before the normal (retail's `xor dl, dl` inside the x87 length) 361
+// (edge slot 0x18 as retail); that flag at the loop top 341, before the vertex loads 304 (frame 0x2c),
+// before the start pointer 347; vertex by if/else 361; edge, vertex0/1 or vertex declared at the loop
+// top or function scope 361 (same code). Left on the matched float block: ours re-reads vertex1 from
+// the edge at the select where retail keeps it in EBX, so ours holds the widened side in ESI (retail
+// spills it to the magnitude slot) and the edge pointer takes EBX (retail ESI). Also: direction renamed
+// segment 324 (same code); edge declared at function scope 324; the portal search as a while with
+// nested ifs and the step at the bottom 379 (1288).
+// Round 123 (lane 6, fast): the offsets as direct products (`origin->x + normal.x * radius`, `* (0.0f - radius)`),
+// as 0x2c2910/0x2c2740 write theirs, 360 (1268 bytes); the dot test's operands swapped 324 and both cross tests as
+// `cross_product2d(direction, x) > 0.0f` 324 (same code); `first_vertex == NONE` first in the crossing `||` 348;
+// the second offset's vector from the start computed first 349.
+// Round 40 (m3 lane 15, fast; positional/aligned, base 324/248): offsets per coordinate plus the three-if flag and
+// first_vertex first 345/149 (frame 0x28, prologue retail's); with the flag declared before the normal 361/119 (the
+// whole float block retail's, 1288 bytes), at the loop top 341/161, before the vertex loads 304/148 (1315); on 361/119:
+// select as vertex1 then an if 365/121, side-first compares 361/119, first_edge/count/vertex declared at function
+// scope 361/119 (same code); the ring walk as a forceinline helper with a local edge copy 323/106 (1276: the selected
+// vertex shares EBX with vertex1 as in retail), a ring-local walking edge pointer without a helper 323/106 (same code),
+// through the pointers 361/119; the parameter as the walking edge alone 416/248, with the flag block 430/142, with the
+// 361 block 426/125, plus the ring-local edge 430/111; flag before the vertex loads with the ring-local edge 296/133
+// (flag in the side slot, frame 0x2c). Retail stores the outer edge to 0x18 at each ring step, so the ring copy is not
+// retail's; left: edge EBX against ESI, side kept in EDI (retail spills it to 0x1c), edge/magnitude homes swapped.
+// Round 443: repeated native byte/word/long/dword side-index values at entry
+// 324/411/386/386; at iteration entry 324/411/386/386. Original Boolean input,
+// radius, traversal, predicates and complete body restored.
+// Round 352: Complete projection/orientation results phased/together, each with
+// first/sentinel/second/pair-first Boolean accumulation: 404/404/404/423/403/403/403/422. Frame
+// 0x30, zero/radius and vertex allocation remain; original geometry, helpers and traversal
+// restored.
+// Round 234: Planar start/end/both/origin/start-origin/end-origin/all input records 424/338/426/346/419/362/444; all via library copies 444. Frames 0x38/0x40/0x48 regress from 0x30 versus retail 0x28. Original full body restored; zero/radius schedule and vertex homes remain.
+// N303: Final vertex from the already selected endpoints: conditional/if-else/default-to/default-from
+// 361/361/369/369; default before geometry to/from 369/375; native word endpoints/all indices
+// 397/358. Original body restored; frame 0x30 versus 0x28 and geometry/vertex homes remain.
+// Round 317: Actual endpoint-word/point/node lvalue subsets 1..7, all plus first portal lvalue
+// 333/324/333/324/333/324/333/333 fast; all original receivers and body restored.
+// Frame 0x30 versus 0x28, zero/radius lifetime and endpoint/history homes remain.
+// Round 73 (m3 lane 16, fast; positional/aligned; 324 stands, every gain below needs the flag, so nothing is kept without
+// a match). Base F = direct offsets (`origin->x + normal.x * radius`, `* (0.0f - radius)`), the three-if crossing flag
+// declared before the normal: 363/134 (1288), float block identical to retail apart from the shift. On F: first_vertex
+// first 361/132; end pointer before start 347/143 (1312); vertex1 read first 366/138; select by if/else 363/134; vertex =
+// vertex1 then if 367/134; widened side named 321/135; first_vertex + side 319/133; end + side 307/144; all three 305/142.
+// G = F + first_vertex first + end first (345/141): one variable for vertex1 and vertex 334/162; count first 345; ring
+// through a pointer local initialised from edge 212/98 (1292: vertex shares EBX with vertex1 as retail); in the ring's
+// body or after the forward test 345; with `edge = &edges[i]` kept and `walk = edge` at the bottom 204/97 (1312); any ring
+// read through edge instead of walk (seven masks) 345; edge address-taken in the ring (three placements) 345; first
+// comparison on bool 204; second on bool 316/178; helper re-reading the node word 204 (same code). H = 204 + surface index
+// read inside the test 204/96 (retail's load after the first jump); on H: the selected vertex read from the edge 166/79
+// (edge ESI, table EDI as retail, but word temps); vertices at every use 276/143; from/to at use 225/136; from/to as two
+// ternaries 320/77 (edge ESI), to first 222/79, vertex1 first 341/64 (vertex1/vertex EBX, edge ESI, vertex0 lost to the
+// widened side); a 30-form grid of from/to spellings best 183/87; walk from the table 385; chained tail 212; two-ifs and
+// for-increment tails 204; long count 205; count before first_edge 202/95. Single-variable ring on H (345/140): only this
+// form gives retail's edge store and reload at the ring's bottom, so the pointer local is not retail's; named long index
+// for `!forward` 277/112 (vertex1 EBX, vertex0 EDI, edge memory, but the test folds to setne); on one read only 345; byte
+// or bool index 353; first_edge at the loop top 320/158; first_edge or count declared elsewhere 345; first-edge pointer
+// compare 369; named next edge 345/355; named open result or ring node 345; both 380. Retail keeps edge ESI, vertex EBX,
+// vertex0 and node index and ring index EDI, and spills first_edge, count and the widened side: ours always spills vertex
+// or edge instead of first_edge. Plain subsets on the kept body: first_vertex first 322; surface in test 321; end first
+// 341; ring pointer 353; first_vertex + surface 319; first_vertex + end 339; end + surface 338; those three 336; pointer
+// + first_vertex 351; pointer + surface 352; pointer + end 342; all four 339.
+// Round 482: Actual typed edge-surface/flag and portal-edge-pair fields, masks
+// 1..7, tie 324; complete fields with first-history declaration first 322.
+// Two-point gain rejected; original headers and complete traversal restored.
+// Frame 0x30/0x28, zero/radius residency and endpoint/history homes remain.
 // @retail 0x2c3030
 bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real radius,
     long edge_index, bool side, point2f *result)
 {
     long previous_vertex = NONE;
-    volatile long first_vertex = NONE;
+    long first_vertex = NONE;
+    long current_edge = edge_index;
     for (;;)
     {
-        s_pathfinding_edge const *edge = &data->edges[edge_index];
-        bool first_open = path_node_open_2c(data, edge_node_2c(edge, 0));
-        long node_index = edge_node_2c(edge, !first_open);
+        s_pathfinding_edge const *edge = &data->edges[current_edge];
+        bool first_open = edge_node_open_2c(data, edge, 0);
+        long node_index = edge->nodes[!first_open];
         if (!path_node_open_2c(data, node_index))
             return false;
         s_pathfinding_node const *node = &data->nodes[node_index];
@@ -964,7 +1207,7 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         if (previous_vertex != NONE && surface_index != NONE && data->surface_count > 0)
         {
             s_pathfinding_edge const *portal = &data->edges[data->surfaces[surface_index].index];
-            long opposite = edge_node_2c(portal, portal->surface != node_index);
+            long opposite = portal->nodes[portal->surface != node_index];
             if (path_node_open_2c(data, opposite))
             {
                 *result = *(point2f const *)&data->vertices[previous_vertex];
@@ -973,26 +1216,36 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         }
         long vertex0 = edge->vertices[0];
         long vertex1 = edge->vertices[1];
-        point2f const *start = (point2f const *)&data->vertices[first_open ? vertex1 : vertex0];
-        point2f const *end = (point2f const *)&data->vertices[first_open ? vertex0 : vertex1];
+        long from_vertex, to_vertex;
+        if (first_open)
+        {
+            from_vertex = vertex1;
+            to_vertex = vertex0;
+        }
+        else
+        {
+            from_vertex = vertex0;
+            to_vertex = vertex1;
+        }
+        point2f const *start = (point2f const *)&data->vertices[from_vertex];
+        point2f const *end = (point2f const *)&data->vertices[to_vertex];
         point2f direction;
         vector2d_from_points2d(start, end, &direction);
         point2f normal = { direction.y, 0.0f - direction.x };
         normalize_offset_direction_2c(&normal);
-        point2f offset;
+        point2f offset, other_offset;
         scale_offset_direction_2c(radius, &normal, &offset);
         offset.x = origin->x + offset.x;
         offset.y = origin->y + offset.y;
-        point2f first;
+        scale_offset_direction_2c(0.0f - radius, &normal, &other_offset);
+        other_offset.x = origin->x + other_offset.x;
+        other_offset.y = origin->y + other_offset.y;
+        point2f first, second;
         vector2d_from_points2d(&offset, start, &first);
-        bool first_crossing = (first.y * direction.y + first.x * direction.x < 0.0f ? 1 : 0) == side &&
-            first.x * direction.y - first.y * direction.x < 0.0f;
-        scale_offset_direction_2c(0.0f - radius, &normal, &offset);
-        offset.x = origin->x + offset.x;
-        offset.y = origin->y + offset.y;
-        point2f second;
-        vector2d_from_points2d(&offset, start, &second);
-        bool second_crossing = second.x * direction.y - second.y * direction.x < 0.0f;
+        vector2d_from_points2d(&other_offset, start, &second);
+        bool first_crossing = (dot_product2d(&first, &direction) < 0.0f ? 1 : 0) == side &&
+            cross_product2d((vector2f const *)&first, (vector2f const *)&direction) < 0.0f;
+        bool second_crossing = cross_product2d((vector2f const *)&second, (vector2f const *)&direction) < 0.0f;
         bool crossing = first_crossing || second_crossing || first_vertex == NONE;
         long vertex = ((crossing != first_open) == side) ? vertex1 : vertex0;
         if (vertex == previous_vertex)
@@ -1013,19 +1266,24 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
         }
         if (!(node->flags & 8))
         {
+            s_pathfinding_surface const *portal;
             for (long surface = node->first_surface; surface != NONE && data->surface_count > 0;
-                surface = data->surfaces[surface].next)
+                surface = portal->next)
             {
-                s_pathfinding_surface const *portal = &data->surfaces[surface];
-                if (portal->type == 0 && ((long const *)portal->unknown0c)[!side] == edge_index)
+                portal = &data->surfaces[surface];
+                if (portal->type == 0)
                 {
+                    s_pathfinding_edge const *source = &data->edges[portal->index];
+                    if (((long const *)portal->unknown0c)[!side] != current_edge)
+                        continue;
                     s_pathfinding_edge const *target = &data->edges[portal->object_index];
-                    if (path_node_open_2c(data, edge_node_2c(target, 0)) ||
-                        path_node_open_2c(data, edge_node_2c(target, 1)))
+                    if (edge_node_open_2c(data, target, 0) || edge_node_open_2c(data, target, 1))
                     {
-                        s_pathfinding_edge const *source = &data->edges[portal->index];
-                        edge_index = portal->object_index;
-                        previous_vertex = source->vertices[side ? 0 : 1];
+                        current_edge = portal->object_index;
+                        if (side)
+                            previous_vertex = source->vertices[0];
+                        else
+                            previous_vertex = source->vertices[1];
                         first_vertex = NONE;
                         goto next_edge;
                     }
@@ -1033,18 +1291,18 @@ bool function_2c3030(s_pathfinding_data const *data, point2f const *origin, real
             }
         }
         {
-            long first_edge = edge_index;
+            long first_edge = current_edge;
             short count = 0;
             for (;;)
             {
-                long direction_index = vertex != edge->vertices[1];
-                if (path_node_open_2c(data, edge_node_2c(edge, direction_index)) == side)
+                bool forward = vertex == edge->vertices[1];
+                if (path_node_open_2c(data, edge->nodes[!forward]) == side)
                     break;
-                edge_index = edge->next_edges[direction_index];
-                if (edge_index == 0xffff)
+                current_edge = edge->next_edges[!forward];
+                if (current_edge == 0xffff)
                     return false;
-                edge = &data->edges[edge_index];
-                if (edge_index == first_edge || ++count > 50)
+                edge = &data->edges[current_edge];
+                if (current_edge == first_edge || ++count > 50)
                     return false;
             }
         }
@@ -1057,150 +1315,66 @@ __declspec(noinline) real normalize2d(point2f *v);
 
 real function_11cc90(vector2f const *a, vector2f const *b);
 
-// score 172 (was 172): frame 0x34 and the first 0x3e bytes agree; retail keeps the shared return-true block
-// after the length test (both final compares jump back to it), forwards x87 values in the direction
-// normalizations, and rounds the second side through memory before its clamp.
-// Round 144: VC keeps the last of the merged `return true` blocks; with both final compares as
-// `return a < b;` the early block sits after the length test as retail's (al 85 against 88) but the
-// tail becomes `mov eax, 1` / `xor eax, eax` returns, 371; distance compare alone 254, angle alone 254;
-// one `result` assigned from each compare, returned once 172 (identical); `result = false; if (c) result
-// = true;` in each 226; length test `<= 0.0f` / `0.0f >=` 172/172; body under `if (length > 0)` with
-// `return true` last 243.
-// Round 76: signed angles through the existing function_11cc90 (single-result form there) 419, masked 90;
-// with explicit true/false distance return 332; distance compare first < second 407; angle compare
-// first sum < negated second sum 270; with both explicit returns 240; distance sums target first 172
-// (kept); single-exit result 440; direct direction initialisers 409; length test as <= 0 or 0 < length
-// unchanged; the file's other normalize helper unchanged; distances computed per pair 240. On 172: side
-// dots through dot_product2d 372 (1480 bytes, masked 27), plus if-form clamps 358, plus no volatile on
-// the first side 363 (1465 bytes, masked 22, frame 0x38: the first side gets its own slot); no volatile
-// alone 379; clamps as if statements 379; clamps first side first 397.
-// Earlier: frame 0x3c versus 0x34 and angular/planar homes differ.
-// Zero-first length guard 342; cross before angle 413; direct angle selection 403;
-// frame pointer 458; shared side dot products 384.
-// Nested expansion zero 1163, one 342; global optimization off 2011; size policy 518;
-// ordinary signed-angle inline 342.
-// Earlier: Frame 0x3c versus 0x34 and angular homes remain; direct perpendicular inputs 383; existing shared angle target pair 403, all four 419, endpoint pair 385; all shared angles plus direct perpendicular inputs 440 (fast).
-// Earlier: frame 0x3c versus 0x34 and angular homes remain;
-// early endpoint wrap 365; target-angles first 387; endpoint direction reuse angular 374,
-// distance 360, both 376; angular reuse with direction or projection names each 374 (fast).
-// Round 122: Perpendicular reuse at first/second angular endpoint 402/393; first/second distance
-// endpoint 346/350; first endpoint in both branches 382.
-// Frame 0x3c versus 0x34 and angular homes remain; direct perpendicular inputs 383; existing shared angle target pair 403, all four 419, endpoint pair 385; all shared angles plus direct perpendicular inputs 440 (fast).
-// frame 0x3c versus 0x34 and angular homes remain;
-// Round 342: first-clamp tests 342; second-clamp tests 342; separate second-clamp scalar 410;
-// second angular endpoint reuse 373; second distance endpoint reuse 360.
-// Round 54: first/second directions initialised directly 376 (x87 forwarding matches, y preload
-// missing), through normalize_local2d_2c 342/376, out-of-line normalize2d 414, plain first side 374.
-// Round 194: shared branch vectors all/targets/endpoints 361/350/342; endpoint-first
-// shared declarations and entry scope 361/361; shared vectors with ordinary first side
-// 374, native result 385, both 387. Original workspaces and qualifier restored.
-// Lane 9 r23: shared normalize2d_fast for the side directions/the direction 172/172 (same code);
-// volatile on the second side instead of the first 397; normal as two scalars 236; second side
-// computed before the first 392. Retail keeps the first direction's y in XMM0 from its subtraction
-// (fst/movss) and stores the second side through memory, the first side in the direction's slot.
-// Lane 9 r25: `<= 0.0f` length test and `>= 0.0f` side test 172 (retail's comiss operand order, but the
-// merged return-true block still sits at the end); both results returned as comparisons 370 (the
-// return-true block moves to retail's place but the results widen to eax), angle or distance result
-// alone 254/254; one result assigned in both branches 172; `if (!(a < b)) return false; return true;`
-// at both ends 171 (retail's final `ja`); nested body with one return true 243; result = true with
-// false assignments 424.
-// Round 10 (lane 10): y-first squared length for the side directions and swapped cross operands
-// in 0x11cc90 give identical code; final compares as `c ? true : false` identical. Lead: side dots
-// through dot_product2d with no volatile, if-form clamps and the SECOND side computed first 350
-// (1465 bytes, frame 0x34, the first side shares the direction slot, aligned 22); plus length
-// test `<= 0.0f` and side test `>= 0.0f` (retail's comiss orders) 349 (aligned 19); plus both
-// final compares `return a < b;` 339 (early true block in place, aligned 13: left are the 32-bit
-// return values that no longer merge into it and the second normalization's hoisted x load).
-// On that lead: `(bool)` returns 349; one value return only 373; `if (!(c)) return false` 349;
-// nested body with final `return true` 362; shared `return false` after an if/else 361;
-// single-exit result 376; explicit y-first side expressions 358.
-// Round 150 (fast): the lead rebuilt (`<=` length test, dot_product2d sides second first, if-form clamps,
-// `>=` side test, both finals `return a < b;`) 339 at 1467 bytes, aligned 13. Its first difference: in both
-// side normalizations ours loads x before the magnitude test and scales it in place (`x * inverse`, no
-// else-arm load) where retail scales `inverse * x[mem]` and loads x in the else arm, as it does in the
-// direction's normalization. On the lead: side directions through normalize_local2d_2c (both/first only)
-// or normalize2d_fast 339/339/339 (identical code); finals as `c ? true : false` 349 (1465 bytes, AL
-// returns but the true block back at the end); first side computed first 354; first clamp first 353.
-// Vector declaration order 172; split direction declarations 172; second-side declaration first 172;
-// direct distance comparison 172; angle-wrap order 191; named angle sums 172;
-// named side product 172; nested single result 414.
-// Native unsigned/signed byte returns with original tests, terminal comparison values and
-// a shared narrow result 172/172/172/172/172/172; shared-dot second-side-first ordinary
-// storage with narrow value returns 350/350 at 1465 bytes. Original bool contract restored.
-// Round 382: both direction constructions before normalization, first/second
-// construction and normalization orders, with original/late perpendicular:
-// 178/395/386/395/178/395/386/395. Original complete producer sequence restored.
-// Round 251: complete side-direction first/second-input staging 411/409;
-// entry-direction first/second-input staging 410/410; side/entry first-first,
-// first-second, second-first, second-second 472/472/457/471. Original outputs and body restored.
-// Round 384: scale helper output-pointer result with original/result-first/guard normalizer
-// 172/172/172; ordinary scale with result-first/guard normalizer 172/172;
-// complete native scale results with original/result-first/guard normalizer 460/460/460.
-// All helper result contracts and original complete normalizer restored.
-// Round 220: Normalizer complete input via native/readonly/component/library copy
-// 518/518/172/518; each with zero-length guard return 518/518/172/518.
-// Original normalizer and complete body restored; true-return host and y forwarding remain.
-// Round 172 DL: Native vector storage for sides/entry/both/angular/distance/all,
-// then sides/all with the native normalizer, 172 each. Shared real totals with
-// one final comparison, angular arm first, if/value/result/entry-if/entry-value
-// 279/398/269/279/398; distance arm first if/value/entry-result 417/399/407.
-// All original types, tests, helper calls and complete body restored;
-// early true-return host and side-direction forwarding remain.
-// Round 175: Return produced by the initial length test/native scale input/both/symmetric side
-// product terms/result with terms/scale with terms/all/all with if-form clamps
-// 359/470/466/172/359/470/466/471. Native scale input loses both matched geometry siblings;
-// all original helper inputs, qualifier, branch returns, arithmetic and body restored.
+/* true when the first corner is the better way round from the origin to the
+   endpoint (always when the two coincide): by the angles turned when both
+   corners lie on one side of the line, by the distance through each otherwise */
 // @retail 0x2c2a70
 bool function_2c2a70(point2f const *origin, point2f const *endpoint,
     point2f const *first, point2f const *second, point2f const *target)
 {
     point2f direction;
     vector2d_from_points2d(origin, endpoint, &direction);
-    if (!(normalize_offset_direction_2c(&direction) > 0.0f))
-        return true;
-    point2f normal = { 0.0f - direction.y, direction.x };
-    point2f first_direction, second_direction;
-    vector2d_from_points2d(first, origin, &first_direction);
-    normalize_offset_direction_2c(&first_direction);
-    vector2d_from_points2d(second, origin, &second_direction);
-    normalize_offset_direction_2c(&second_direction);
-    volatile real first_side = first_direction.y * normal.y + first_direction.x * normal.x;
-    real second_side = second_direction.y * normal.y + second_direction.x * normal.x;
-    second_side = fabs(second_side) < 0.001 ? 0.0f : second_side;
-    first_side = fabs(first_side) < 0.001 ? 0.0f : first_side;
-    if (!(first_side * second_side < 0.0f))
+    bool result;
+    if (normalize_offset_direction_2c(&direction) <= 0.0f)
+        result = true;
+    else
     {
-        point2f target_first, target_second, endpoint_first, endpoint_second;
-        vector2d_from_points2d(first, target, &target_first);
-        normalize2d(&target_first);
-        vector2d_from_points2d(second, target, &target_second);
-        normalize2d(&target_second);
-        vector2d_from_points2d(first, endpoint, &endpoint_first);
-        normalize2d(&endpoint_first);
-        vector2d_from_points2d(second, endpoint, &endpoint_second);
-        normalize2d(&endpoint_second);
-        real first_target_angle = function_11cc90((vector2f const *)&target_first, (vector2f const *)&first_direction);
-        real first_endpoint_angle = function_11cc90((vector2f const *)&first_direction, (vector2f const *)&endpoint_first);
-        real second_target_angle = function_11cc90((vector2f const *)&target_second, (vector2f const *)&second_direction);
-        real second_endpoint_angle = function_11cc90((vector2f const *)&second_direction, (vector2f const *)&endpoint_second);
-        if (second_endpoint_angle > 0.0f)
-            second_endpoint_angle -= 6.2831854820251465f;
-        if (first_endpoint_angle < 0.0f)
-            first_endpoint_angle += 6.2831854820251465f;
-        if (first_target_angle + first_endpoint_angle < 0.0f - (second_target_angle + second_endpoint_angle))
-            return true;
-        return false;
+        point2f normal = { 0.0f - direction.y, direction.x };
+        point2f first_direction, second_direction;
+        vector2d_from_points2d(first, origin, &first_direction);
+        normalize_offset_direction_2c(&first_direction);
+        vector2d_from_points2d(second, origin, &second_direction);
+        normalize_offset_direction_2c(&second_direction);
+        real second_side = dot_product2d(&second_direction, &normal);
+        real first_side = dot_product2d(&first_direction, &normal);
+        if (fabs(second_side) < 0.001)
+            second_side = 0.0f;
+        if (fabs(first_side) < 0.001)
+            first_side = 0.0f;
+        if (first_side * second_side >= 0.0f)
+        {
+            point2f target_first, target_second, endpoint_first, endpoint_second;
+            vector2d_from_points2d(first, target, &target_first);
+            normalize2d(&target_first);
+            vector2d_from_points2d(second, target, &target_second);
+            normalize2d(&target_second);
+            vector2d_from_points2d(first, endpoint, &endpoint_first);
+            normalize2d(&endpoint_first);
+            vector2d_from_points2d(second, endpoint, &endpoint_second);
+            normalize2d(&endpoint_second);
+            real first_target_angle = function_11cc90((vector2f const *)&target_first, (vector2f const *)&first_direction);
+            real first_endpoint_angle = function_11cc90((vector2f const *)&first_direction, (vector2f const *)&endpoint_first);
+            real second_target_angle = function_11cc90((vector2f const *)&target_second, (vector2f const *)&second_direction);
+            real second_endpoint_angle = function_11cc90((vector2f const *)&second_direction, (vector2f const *)&endpoint_second);
+            if (second_endpoint_angle > 0.0f)
+                second_endpoint_angle -= 6.2831854820251465f;
+            if (first_endpoint_angle < 0.0f)
+                first_endpoint_angle += 6.2831854820251465f;
+            result = first_target_angle + first_endpoint_angle < 0.0f - (second_target_angle + second_endpoint_angle);
+        }
+        else
+        {
+            point2f target_first, endpoint_first, target_second, endpoint_second;
+            vector2d_from_points2d(target, first, &target_first);
+            vector2d_from_points2d(endpoint, first, &endpoint_first);
+            vector2d_from_points2d(target, second, &target_second);
+            vector2d_from_points2d(endpoint, second, &endpoint_second);
+            real first_distance = (real)sqrt(length_sq2f(&target_first)) + (real)sqrt(length_sq2f(&endpoint_first));
+            real second_distance = (real)sqrt(length_sq2f(&target_second)) + (real)sqrt(length_sq2f(&endpoint_second));
+            result = first_distance < second_distance;
+        }
     }
-    point2f target_first, endpoint_first, target_second, endpoint_second;
-    vector2d_from_points2d(target, first, &target_first);
-    vector2d_from_points2d(endpoint, first, &endpoint_first);
-    vector2d_from_points2d(target, second, &target_second);
-    vector2d_from_points2d(endpoint, second, &endpoint_second);
-    real first_distance = (real)sqrt(length_sq2f(&target_first)) + (real)sqrt(length_sq2f(&endpoint_first));
-    real second_distance = (real)sqrt(length_sq2f(&target_second)) + (real)sqrt(length_sq2f(&endpoint_second));
-    if (first_distance < second_distance)
-        return true;
-    return false;
+    return result;
 }
 
 #include "globals.h"
@@ -1231,7 +1405,11 @@ bool __stdcall function_26ccb0(s_pathfinding_data const *pathfinding, s_obstacle
     s_path_location const *location, s_avoidance_trace *trace);
 bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start, long sector_index,
     s_type_c3b527 const *end, long target_sector_index, long location, s_path_trace_result *trace);
-// score 444 (was 444): frame 0x11c versus 0x10c, 1740 bytes against 1746. Ours copies the whole step
+// MiniMax lane E (11-01): reading the step through a pointer instead of copying it, as retail does,
+// scores 490 (490 as well when the pointer is assigned in a second statement); no form tried
+// lowered the 444.
+// score 420 (was 420): the shape is retail's (see round 27 below); registers and frame homes differ, 1737 bytes against 1746.
+// Earlier 444: frame 0x11c versus 0x10c, 1740 bytes against 1746. Ours copies the whole step
 // (`rep movsd`) where retail reads it through a pointer and keeps only its type and link in stack slots;
 // retail places the count <= 1 arm at the end, keeps 0 in EBX for the whole function, compares the
 // loop indexes against the count on the stack (ours holds it in bx) and forms the output element at
@@ -1366,52 +1544,134 @@ bool function_26c4e0(s_pathfinding_data *pathfinding, s_type_c3b527 const *start
 // after successful selection alone/inline/noinline 502/502/502; the same three with the immutable
 // current type retained across all uses 502/502/502. All original declarations, address and
 // metadata lifetimes, native record snapshot, qualifiers and complete body restored.
+// Round 37: native member-produced record, const/mutable and before/after the pure output address,
+// 494/493/494/493; complete coordinate member producers 469/464/469/464. Query/radius homes recover,
+// but the 0x11c frame remains; original complete record copy and body restored.
+// Round 79: candidate direction by direct initialiser (retail forwards y, `fst`) 458; step through a
+// pointer with type/link in two short locals and the output element at the emit 509 (1686 bytes,
+// frame 0x104, aligned unmatched 442 -> 317); both 517; no output_index volatile (retail: di) 486,
+// with the step pointer 541 (aligned 308); no source-radius volatile 469/498; source pointer before
+// the loop identical code.
+// Round 301: Full count / named terminal ordinal / both 496/474/500;
+// with paired word corner results 490/472/491; complete bound graph
+// with ordinary radius, without/with word corners 500/491. Original count,
+// ordinal expressions, Boolean corner carriers, radius qualification and body restored.
+// Round 229: attempt-owned tangent orientation with complement passed to the second call and
+// advance after unsuccessful attempts; bool/byte/word/long with indexed centers 446/459/444/448;
+// branch-selected centers 446/451/442/439. Original orientation phases and full body restored.
+// Coupled paired word/short corner results on long orientation 444/444; word orientation
+// 439/439. Best 439 is a five-point gain above 30, rejected; complete original body restored.
+// Round 45: complete four-field scalar input snapshots, short/long metadata
+// subsets 0/1/2/4/3/5/6/7, 459/461/470/470/461/461/470/461. Frame 0x10c
+// recovered, radius/zero homes still differ; match-only forms and full body restored.
+// Round 35 (lane 11): the file's direction normalizer now passes `1.0f / magnitude` straight to the
+// scale helper as 0x2c2910/0x2c2740 do (that matched 0x2c2a70); here it gives an in-place y product
+// (444 -> 458), so this body calls the file's other normalizer, normalize_local2d_2c (444, identical code).
+// Also (fast): normalize2d_fast 444 (same code); out-of-line normalize2d 562; step through a pointer with
+// short type/link locals set for a typed step, type re-read through it at the emit, output element at
+// the emit 509 (frame 0x104, 1686 bytes); that with a long type local 515.
+// Round 27 (m3 lane 15, plain): both point differences through vector3d_from_points3d with length_sq3f
+// 501 (1707 bytes), the differences alone 501; delta as a vector3f with length_sq3f 444 (same code); no
+// output_index volatile 486, no source_radius volatile 469 (round 79's numbers after this round's
+// 0x2c3030/0x2c0d60 changes).
+// Round 121 (m3 lane 5, fast = full here): retail sets next/edge/found together at the loop top, at
+// the scan's typed step (a second `mov ebx, 0xffff`) and at a candidate's success. `edge = 0xffff`
+// also in the scan's `end < count` block 471 (gives that second store); edge assigned only where next
+// is chosen, no initialiser 469 (1757 bytes); the one-step arm with its own `return` 444 (same code);
+// the copy-last block after the loop through two gotos 444 (same code: its placement is not source
+// order); the next-step pointer only inside the corner branch, the fallback indexing points[next] 478.
+// Round 443: zero-extended word type with short/word/long/dword link results,
+// at typed selection 493/493/492/492; at native emission with common stores
+// 517/520/517/517. Complete record, signed domains and body restored.
+// Round 479: native positioned-point subobject with short/long type-link
+// combinations 477/488/477/476; native position subobject 474/471/473/471
+// (fast control 444). Original complete record snapshot and body restored.
+// Round 27 (lane 17, fast; aligned = difflib over the listing): body rewritten to retail's map, 444 -> 420 (aligned 442 ->
+// 238, 1737 bytes, frame 0x10c; both volatiles gone: the source radius's alone cost 9, 411 with it, its `mov; mov; fld` needs
+// another form): count > 1 arm first, a step pointer in place of the record copy, type/link locals set in the
+// typed branch, the corner logic inside the untyped branch, a plain output index (its volatile removed), the corner chosen by
+// if/else, target.z set once outside the attempts, a named location, the next side in its own bool assigned at the loop end,
+// sector read before the output index. On the way: the rewrite alone 453 (1696, aligned 289), plus corner/z/location 429 (1727),
+// no second `edge = 0xffff` in the scan 429 (aligned 268; retail has that store), plus next side 412, plus sector order 411. The
+// first conversion nested as 0x210850's body 408 (1747, aligned 244; retail's two copies merge in the second, not kept: that
+// helper's shape written out); without the type/link locals 482-492, without one of them 480/482 (with nesting 433/470); the
+// scan as the compound `while (end < count && type == NONE)` with a test after it 456 (hence the break form). Registers
+// left: retail zero EBX (ours EDX, 0xc4 count in ESI where retail EDX), y read first through the query (`mov edx,[ecx+0x18]`),
+// points EDX, index EDI, step ECX then +0x84, NONE ESI, edge EBX, count never enregistered in the loop; ours points ECX, index
+// EDX, step EDI, NONE EBX, edge in memory. Retail also stores query+4 at +0x64 (never read). Retail inlines existing 0x210a30
+// (and 0x210850) here: a call to 0x210a30 stays out of line even with an inline or __forceinline declaration (697, 1495 bytes;
+// its file has /Ob1). Tried on these: the origin as two statements, y first or x first, 491/492; sector read before the origin 443
+// (1746 bytes, aligned 273); origin through the query, source after it, zero-init first 428/429; data as an if or if/else 429;
+// the count/data locals named 451; used shared with the no-data arm 469; scan as a for 548 (1858); type as long 487; out point pointer
+// 450-481 (aligned down to 245, 1757-1770); both conversions nested 410; z in a local +4; second edge store 442-449 (1770-1777).
+// DL237: Complete native query-source mutable/immutable/memcpy/memmove copies 495/495/495/504;
+// with existing origin setter 524/524/524/529. All restored; source-radius staging, persistent
+// zero and metadata homes remain.
+// Round 316: Eager classification short/word/long/dword with short/long links
+// 427/420/415/422/473/420/473/420; eager word with paired corner results
+// short/word/byte/long 451/451/415/424. Five-point 415 lead rejected above 30;
+// original classification, Boolean corners and complete body restored.
+// Round 331: Consumed trace/world start and destination positions shared separately/both 435/438/405;
+// in-place second-tangent output alone/with start/with destination/with both 424/440/445/444; all with
+// paired short corner results 454. Best: both positions shared (start/target hoisted to the step scope,
+// the else arm's start/end reusing them) 405 plain, frame 0xf4 versus 0x10c, 1709 bytes. NOT kept: locals
+// shared across arms to steer the frame are kept only with a match; body restored at 420.
+// Round 529: successive source/expanded-radius assignments crossed with candidate-direction,
+// circle-center and tangent-point workspace identities: 420/420/420/420/420/420/420/420.
+// Frame agrees; radius staging folds and zero/metadata homes remain. Original complete body restored.
+// Round 371: Native selected successor/type/link widths, subsets 1/2/4/3/5/6/7,
+// 455/424/463/462/456/424/458; all with full output count 503. Original short
+// carriers and complete pointer body restored; radius/zero/metadata homes remain.
 // @retail 0x2c2060
 void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_view const *points,
     short *result_count, s_path_step_view *result, bool *complete)
 {
-    volatile real source_radius = query->source.radius;
-    real radius = (real)(source_radius + 0.05);
+    real radius = (real)(query->source.radius + 0.05);
     s_pathfinding_data *data = *(long *)((byte *)g_4e0348 + 0xc4) > 0 ?
         *(s_pathfinding_data **)((byte *)g_4e0348 + 0xc8) : 0;
     if (data)
     {
-        if (count <= 1)
+        if (count > 1)
         {
-            *result_count = 1;
-            result[0] = points[0];
-        }
-        else
-        {
-            point2f origin = *(point2f *)&query->source.point.point;
+            s_type_c3b527 const *source = (s_type_c3b527 *)&query->source.point;
+            point2f origin = *(point2f *)&source->point;
             long sector = points[0].node_index;
+            short index = 0;
             short used = 0;
             bool copied_last = false;
-            for (short index = 0; index < count; )
+            while (index < count)
             {
-                s_path_step_view const entry = points[index];
-                s_path_step_view *out = &result[used];
+                s_path_step_view const *step = &points[index];
                 short next = NONE;
                 long edge = 0xffff;
                 bool found = false;
-                volatile short output_index;
-                if (entry.type != NONE)
+                short type = NONE;
+                short link = NONE;
+                short output_index;
+                if (step->type != NONE)
+                {
                     next = index;
+                    type = step->type;
+                    link = step->link_index;
+                }
                 else
                 {
                     short end = index;
-                    while (end < count && points[end].type == NONE)
-                        ++end;
-                    if (end < count)
+                    while (end < count)
                     {
-                        next = end;
-                        found = true;
+                        if (points[end].type != NONE)
+                        {
+                            next = end;
+                            found = true;
+                            break;
+                        }
+                        ++end;
                     }
                     for (short candidate = end - 1; candidate >= index; --candidate)
                     {
                         point2f direction;
                         vector2d_from_points2d(&origin, (point2f *)&points[candidate].point.point, &direction);
-                        real distance = normalize_offset_direction_2c(&direction);
+                        real distance = normalize_local2d_2c(&direction);
                         if (!(distance > 0.0f))
                             break;
                         s_avoidance_trace trace;
@@ -1428,42 +1688,54 @@ void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_vi
                         copied_last = true;
                         break;
                     }
-                }
-                s_path_step_view const *next_step = &points[next];
-                if (edge != 0xffff && next_step->type == NONE)
-                {
-                    point2f corners[2];
-                    bool left = function_2c3030((s_pathfinding_data *)query->pathfinding,
-                        &origin, radius, edge, true, &corners[0]);
-                    bool right = function_2c3030((s_pathfinding_data *)query->pathfinding,
-                        &origin, radius, edge, false, &corners[1]);
-                    if (right && left)
+                    if (edge != 0xffff)
                     {
-                        point2f const *previous = next > 0 ? (point2f *)&points[next - 1].point.point :
-                            (point2f *)&query->source.point.point;
-                        point2f const *endpoint = (point2f *)&next_step->point.point;
-                        bool side = function_2c2a70(previous, endpoint, &corners[0], &corners[1], &origin);
-                        point3f start = { origin.x, origin.y, 0.0f };
-                        for (short attempt = 0; attempt < 2; ++attempt)
+                        s_path_step_view const *next_step = &points[next];
+                        if (next_step->type == NONE)
                         {
-                            point2f center = corners[side ? 0 : 1];
-                            point2f tangents[2], candidate;
-                            function_2c2740(&origin, &center, radius, side, &tangents[0]);
-                            side = !side;
-                            function_2c2740(endpoint, &center, radius, side, &tangents[1]);
-                            function_2c2910(&center, tangents, &origin, radius, &candidate);
-                            point3f target = { candidate.x, candidate.y, 0.0f };
-                            s_path_trace_result first, second;
-                            function_26c4e0(data, (s_type_c3b527 *)&start, sector, (s_type_c3b527 *)&target,
-                                NONE, (long)&query->location, &first);
-                            if (!((s_sector_trace_result *)&first)->blocked &&
-                                !function_26c4e0(data, (s_type_c3b527 *)&target, ((s_sector_trace_result *)&first)->sector_index,
-                                    &next_step->point, next_step->node_index, (long)&query->location, &second))
+                            point2f corners[2];
+                            bool left = function_2c3030((s_pathfinding_data *)query->pathfinding,
+                                &origin, radius, edge, true, &corners[0]);
+                            bool right = function_2c3030((s_pathfinding_data *)query->pathfinding,
+                                &origin, radius, edge, false, &corners[1]);
+                            if (right && left)
                             {
-                                sector = ((s_sector_trace_result *)&first)->sector_index;
-                                origin = candidate;
-                                output_index = next_step->point.output_index;
-                                goto emit;
+                                point2f const *previous = next > 0 ? (point2f *)&points[next - 1].point.point :
+                                    (point2f *)&source->point;
+                                point2f const *endpoint = (point2f *)&next_step->point.point;
+                                bool side = function_2c2a70(previous, endpoint, &corners[0], &corners[1], &origin);
+                                point3f start = { origin.x, origin.y, 0.0f };
+                                point3f target;
+                                target.z = 0.0f;
+                                long location = (long)&query->location;
+                                for (short attempt = 0; attempt < 2; ++attempt)
+                                {
+                                    point2f center;
+                                    if (side)
+                                        center = corners[0];
+                                    else
+                                        center = corners[1];
+                                    point2f tangents[2], candidate;
+                                    function_2c2740(&origin, &center, radius, side, &tangents[0]);
+                                    bool other_side = !side;
+                                    function_2c2740(endpoint, &center, radius, other_side, &tangents[1]);
+                                    function_2c2910(&center, tangents, &origin, radius, &candidate);
+                                    target.x = candidate.x;
+                                    target.y = candidate.y;
+                                    s_path_trace_result first, second;
+                                    function_26c4e0(data, (s_type_c3b527 *)&start, sector, (s_type_c3b527 *)&target,
+                                        NONE, location, &first);
+                                    if (!((s_sector_trace_result *)&first)->blocked &&
+                                        !function_26c4e0(data, (s_type_c3b527 *)&target, ((s_sector_trace_result *)&first)->sector_index,
+                                            &next_step->point, next_step->node_index, location, &second))
+                                    {
+                                        sector = ((s_sector_trace_result *)&first)->sector_index;
+                                        origin = candidate;
+                                        output_index = next_step->point.output_index;
+                                        goto emit;
+                                    }
+                                    side = other_side;
+                                }
                             }
                         }
                     }
@@ -1476,23 +1748,24 @@ void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_vi
                 }
                 else
                 {
-                    origin = *(point2f *)&next_step->point.point;
-                    sector = next_step->node_index;
-                    output_index = next_step->point.output_index;
+                    origin = *(point2f *)&points[next].point.point;
+                    sector = points[next].node_index;
+                    output_index = points[next].point.output_index;
                     next = index + 1;
                 }
             emit:
+                s_path_step_view *out = &result[used];
                 out->node_index = sector;
                 out->point.point.x = origin.x;
                 out->point.point.y = origin.y;
-                out->point.point.z = entry.point.point.z;
+                out->point.point.z = step->point.point.z;
                 out->point.output_index = output_index;
-                out->unknown02 = entry.unknown02;
+                out->unknown02 = step->unknown02;
                 ++used;
-                if (entry.type != NONE)
+                if (type != NONE)
                 {
-                    out->type = entry.type;
-                    out->link_index = entry.link_index;
+                    out->type = step->type;
+                    out->link_index = link;
                 }
                 else
                 {
@@ -1502,7 +1775,6 @@ void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_vi
                 if (used >= 4)
                     break;
                 point3f delta;
-                s_type_c3b527 const *source = (s_type_c3b527 *)&query->source.point;
                 if (source->output_index == out->point.output_index)
                 {
                     delta.x = out->point.point.x - source->point.x;
@@ -1527,6 +1799,11 @@ void __stdcall function_2c2060(s_type_f17a25 *query, short count, s_path_step_vi
             *result_count = used;
             if (!copied_last)
                 *complete = false;
+        }
+        else
+        {
+            *result_count = 1;
+            result[0] = points[0];
         }
     }
     else

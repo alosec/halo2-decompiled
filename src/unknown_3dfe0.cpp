@@ -21,7 +21,27 @@ void function_3e4e0(dword *current, dword const *target, real step);
 // force 0x10), update's false store sits after the force test, and special takes esi for edi.
 // update = false before force 218 (homes as retail, sample/update timestamps swap esi/edi);
 // that plus update elapsed after the object 186; update before the object 216;
-// object, update, update elapsed, force 186; an inline object getter for both lookups 27.
+// object, update, update elapsed, force 186; an inline object getter for both lookups 27;
+// force/object renamed (reset, stale; entity, body) 27; special declared before type 26 (tail
+// order as retail, special still in esi); named sample/update timestamps 27, with update first
+// 218; the other entry orders of update elapsed/object/force/update 169-240.
+// Round 57: read-only byte object 27; the existing object type and flag field 27;
+// object declaration hoisted 27; update declaration hoisted 27; object/update declarations
+// hoisted 27; object/update/force declarations hoisted 27; special/type declarations split
+// with original assignment order 27; a multi-use clamped sample interval 27. Body restored.
+// Round 55: the object lookup written at each use 285 (873 bytes); `bool update = false;` as the first
+// statement 227 (object loads straight into ebx as retail, but update leaves the parameter slot and
+// the sample/update timestamps swap esi/edi), after the cache lookup 227, before the elapsed return
+// 227, after it 216; force as a flag set in an if 55 (830 bytes); `update = force` with
+// `if (!force && (object[0xc1] & 1)) return;` 228; force as `!(initialized && valid)` 27 (same code).
+// Round 50 (lane 13, fast): entry object/update elapsed/update/force 186, force before update 214; timestamps named or a
+// `now` local on that order 186; force byte or char 112; update elapsed below update 171; force one test + assign 82; force
+// set in an if 55; update after the clamp 30; `update = force` 228, flag test first 246; update assigned in both arms 221
+// (aligned 13; object and force homes as retail, the false store in the else arm); force renamed a_force, z_force 27.
+// Lead, BLOCKED-BY 0xd4080's definition line (its file is another lane's this round): retail sets up `lea esi` before the
+// push, so 0xd4080's last two parameters swap (flag, then record; 0x3d2c0 stays matched, 0xd4080 364 -> 363): 23, special
+// declared first 21, with update assigned in both arms 222 (aligned 7: only the early false store and retail's object
+// reload in the force arm remain). All 24 entry orders with either arm on that lead: 21 is the lowest count, aligned 7.
 // @retail 0x3dfe0
 void function_3dfe0(long cache_index, long object_index, real priority)
 {

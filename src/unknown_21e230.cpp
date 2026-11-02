@@ -7,7 +7,7 @@
 #include "unknown_21e230.h"
 
 // @retail 0x21e230
-void sound_mixbins_add(s_mixbin_settings *settings, long mixbin, real decibels)
+void sound_mixbins_add(s_mixbin_settings *settings, long mixbin, s_decibels decibels)
 {
 	settings->pairs[settings->mixbins.dwMixBinCount].dwMixBin = mixbin;
 	settings->pairs[settings->mixbins.dwMixBinCount].lVolume = sound_decibels_to_volume(decibels);

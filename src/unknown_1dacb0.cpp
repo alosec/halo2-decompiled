@@ -1157,6 +1157,94 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // member/native iterator and retained/producer-written mode default: 932/986/932/986/932/893/932/895.
 // All reach 2825 bytes; native reset fixes initial class/NONE roles and result +0x14 but adds entry
 // candidate stores and leaves traversal/candidate homes. Original constructors and complete body restored.
+// Round 268: One retained selection-success or selection-absence test, bool/byte/short/long, shared by
+// loop and requests: 1023/1023/998/1000/991/991/999/999. Original body restored.
+// Round 417: existing native resource hierarchy expanded through one/two/three levels,
+// original/resolved/both requests: 2101/2157/3335, 1989/1988/2978, 828/828/828. Full
+// expansion ties but changes matched helper controls; all declarations and body restored.
+// Unsigned class key/set key/both/all four input-key domains 828 each; definitions
+// and shared declarations restored.
+// Round 425: Iterator graph field at every post-search graph use, with all eight
+// requested mode/class/type field subsets, 969/964/1008/1024/969/964/1008/1024.
+// Original graph/key owners, constructors, iterator outputs and requests restored.
+// Round 197: Immutable native candidate with both member transfers and native-iterator/
+// readonly named-source/readonly iterator-entry masks 0..7 all 997 at 2825 bytes.
+// The matched channel-refresh caller also differs; original complete body restored.
+// DL204: last native named-record selection, guarded/conditional complete result,
+// mutable/readonly source and member/aggregate iterator 990/1005/990/1005/990/1005/990/1005. Restored.
+// Round 459: Resolved-output defaults after corresponding key stores,
+// mode/class/both/type/mode-type/class-type/all 828/828/828/828/828/828/828; all after traversal defaults
+// 826. Original initialization restored. All executable trial forms restored.
+// Round 262: Ordinary inline metadata on existing private resource levels: outer alone 3524
+// (310/2825); middle/inner and all remaining pairs/triple 828 each; all with forced existing
+// animation-resource expansion 828. All provider metadata, target body and request tuples restored.
+// Round 43 (lane 14, fast, both bodies): single exit as the matched 0x1dc790 1040 (2857 bytes); 0x1dc790's
+// iterator field order 828 (code changes); both 1040; iterator outputs declared after the iterator initialisation
+// 826 (two-point gain rejected); that with 0x1dc790's field order 828. Retail gives found_mode's dead parameter home
+// to the per-attempt candidate (ours to iterator_mode) and the no-result path its own epilogue.
+// Round 489: chained candidate/result assignment in the named branch, native iterator, late constant
+// candidate and missing name branch first, combinations 978/976/984/982/991/989/984/982.
+// All reach 2825 bytes but regress; original complete producer, iterator and body restored.
+// Round 211: native resolved-key array in six fixed mode/class/type layouts 823 each;
+// entry-before-result array 978; array initialized after iterator setup 821.
+// Best gain seven is below the keep floor; grouped storage also requires a match.
+// Original separate outputs and complete body restored; result/class/NONE homes remain.
+// Round 53 (m3 lane 1): 736 of the 810 differing lines are one inserted instruction per resource
+// request: retail holds a zero in EBP from the fifth type request (all keys 0x30000d9) through the
+// inheritance loop's index/offset stores (`cmp eax, ebp`, `mov [home], ebp`), ours tests with
+// `test eax, eax` and stores immediates, so all later lines shift. In the first 100 lines retail gives
+// the dead found-mode argument home to the loop candidate (then the request pointer; index and offset
+// take the found-class/found-type homes); ours gives it to the iterator mode output. Candidate renamed
+// 828 (same code); `while ((entry = iterate()) != NULL) {...; if (found) break;}` 998 (rotated,
+// 2839 bytes); `while (true)` with both breaks 998; the three outputs as one record (grouping
+// diagnostic) 823 (candidate, request pointer, index and offset homes then retail's; result sits below
+// the record); candidate declared beside the outputs and reset each pass 932 (frame 0x30); result as
+// `named ? named->animation_id : c_type_709360()` 978.
+// Round 68: the found_mode slot goes to iterator_mode (the found-class slot when found_mode is unused, 987);
+// retail gives it to the per-pass candidate, as a grouped mode/class/type record does (823, grouping form).
+// Renamed candidate/mode/result (four forms) 828 each. While loop with break on result/candidate/guarded
+// copy 998/998/999 (iterate call duplicated at the bottom); one result write per pass 993 (2825 bytes);
+// candidate declared after the lookup 996; candidate before the iterate call 967 (as listed).
+// Round 216: Complete selected identifier through optional outputs and return copy
+// after outputs/after requests, with member/native iterator and before/after-lookup reset:
+// 998/998/998/998/1017/1017/1017/1017. Original constructor and publication lifetimes restored.
+// Round 234: Downstream request eligibility as the actual urgent argument, bool/byte/short/long after
+// outputs 996/995/1008/1009; before outputs 996/995/1009/1010. Original search and request guards
+// restored.
+// Round 47 (m3 lane 14, fast): both builds keep `mode` in EBP for the first four type requests; once it is dead
+// retail caches a zero there (`xor ebp, ebp` before the fifth request's lookups, `cmp reg, ebp` for its tests and
+// the inheritance loop's tests, index and offset zero stores), ours uses `test` and immediates and jumps over
+// the loop's alignment padding (`jle; jmp`) where retail falls through it. The found outputs stored after the
+// requests 1009 (2849 bytes); the iterated kinds requested before the asked-for ones 980; the named-animation
+// pointer declared at the block top 828; the iterator outputs declared before the iterator 828; the iterator
+// declared after the entry pointer 828. 0x1dbc80 stays 828 in every form.
+// Round 43 (lane 15, fast): retail keeps the three iterator outputs contiguous in mode, class, type order and gives the
+// per-attempt candidate found_mode's dead parameter home; the three outputs as one `long found[3]` do the same (807, not kept: locals packed into an array are against the lane rules; the
+// global alignment falls 163 -> 141, candidate stores now at retail's [esp+0x60]); with the iterator stored graph, zeros, keys as
+// retail and matched 0x1dc790 807, not kept (no gain). On that: initialised array 823, anonymous struct 823, memset of the array 807, any array/result names
+// or array declared first 807 (renaming the locals on the old form 828: names do not move this home). Outputs and id as one named
+// struct: 972 (2807 bytes), retail's first 11 instructions and frame, with loop forms for/while/flag all the same code (for or
+// while with a break 997, 2839 bytes; flag 972); a second id set on both loop exits gives retail's reload path and jump shape 979
+// (2825 bytes; on the array form 988), the store-order permutations of the iterator 818-972. Left: retail's NONE reloaded after
+// the je (`or eax, -1`), ECX carrying the id from the loop to the 0x1dd9d0 call, the second request's EBX/EBP roles and the late
+// zero carrier.
+// M294: Per-attempt scalar candidate graph/index short/short, short/long, long/short, long/long,
+// defaults before/after lookup:
+// 1012/1012/1012/1012/1012/1012/1012/1012. Original complete executable source restored.
+// P260: Partial resolved-output sentinels before result construction, subsets
+// mode/class/both/type/mode-type/class-type: 830/830/979/830/979/979; mode/class after it
+// 830/830. Original constructor, iterator and complete body restored.
+// N308: Shared resource/inheritance counter zero lifetimes and independent resource ordinals,
+// seven subsets 1011/902/1007/828/1011/902/1007; complete graph with plain inheritance while 1007.
+// Several shared users regress; every helper and original body restored. Return/output/candidate
+// homes, class/NONE roles and persistent zero carrier remain.
+// Round 520: actual named-table pointer/reference before/after candidate construction,
+// original/native iterator: 828/828/828/828/826/826/826/826.
+// Field receivers do not match; two-count initialization gains rejected. Body restored.
+// M319: Native urgent-resource/inheritance/both endpoints, field-read bounds
+// 1325/807/1341; cached bounds 999/808/999; urgent/both equality bounds 999/999.
+// Inheritance-only 807/808 loses matched 0x1dc8c0 to 565/558; shared-user
+// gate rejects both. Every helper/body restored; initial/output homes and zero remain.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
@@ -1265,6 +1353,90 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 // resets, member/native iterator and retained/producer-written mode defaults:
 // 932/986/932/986/932/893/932/895 at 2825 bytes. Initial result home/class roles improve with native
 // reset, but entry candidate stores and traversal homes remain. Original constructors and body restored.
+// Round 268: One retained selection-success or selection-absence test, bool/byte/short/long, shared by
+// loop and requests: 1023/1023/998/1000/991/991/999/999. Original body restored.
+// Round 417: existing native resource hierarchy expanded through one/two/three levels,
+// original/resolved/both requests: 2101/2157/3335, 1989/1988/2978, 828/828/828. Full
+// expansion ties but changes matched helper controls; unsigned class key/set key/both/
+// all four input-key domains 828 each. All declarations and executable source restored.
+// Round 191: Persistent-result admission 828; with immutable candidate 978, late candidate 996,
+// paired native transfers 988, iterator-owned request keys 1016, native iterator 826, direct result
+// 978, retained lookup name 828. Two-point gain rejected; original body restored.
+// DL199: Member stdcall, fastcall and inline with member/native iterator give 828/826 each; cdecl
+// gives 839/839 and loses twelve checked matches. Two-point reductions rejected. Inline trials
+// recover all controls. Return/candidate/output homes and late zero carrier remain; original body
+// and declaration restored.
+// T47: Full native iterator memset before key publication, with requested-key ownership
+// subsets 0..7: 996/999/1021/1042/999/999/1023/1042. Native clear reaches retail
+// length in some forms but does not recover the homes; original complete body restored.
+// Round 459: Resolved-output defaults after corresponding key stores,
+// mode/class/both/type/mode-type/class-type/all 828/828/828/828/828/828/828; all after traversal defaults
+// 826. Original initialization restored. All executable trial forms restored.
+// Round 471: Separate selected graph/index short/short, short/long, long/short, long/long,
+// materialized before/after outputs 1024/1002/1017/1000/1018/1001/1014/1002.
+// All selected-component carriers and original constructor lifetimes restored.
+// Round 43 (lane 14, fast, both bodies): single exit as the matched 0x1dc790 1040 (2857 bytes); 0x1dc790's
+// iterator field order 828 (code changes); both 1040; iterator outputs declared after the iterator initialisation
+// 826 (two-point gain rejected); that with 0x1dc790's field order 828. Retail gives found_mode's dead parameter home
+// to the per-attempt candidate (ours to iterator_mode) and the no-result path its own epilogue.
+// Round 489: chained candidate/result assignment in the named branch, native iterator, late constant
+// candidate and missing name branch first, combinations 978/976/984/982/991/989/984/982.
+// All reach 2825 bytes but regress; original complete producer, iterator and body restored.
+// Round 211: native resolved-key array in six fixed mode/class/type layouts 823 each;
+// entry-before-result array 978; array initialized after iterator setup 821.
+// Best gain seven is below the keep floor; grouped storage also requires a match.
+// Original separate outputs and complete body restored; result/class/NONE homes remain.
+// Round 53 (m3 lane 1; zero-carrier/argument-home analysis in the note above 0x1db170): `for (;;)`
+// with both breaks 998; early `return c_type_709360();` with result scoped in the block 988 (2825
+// bytes); the sibling 0x1dc8c0's iterator store order (graph, step, entries, keys) 828 (stores
+// reorder only); the body inside `if (weapon_class != NONE)` 1040; the iterator declared after its
+// outputs 828 (same code).
+// Round 68: class test as an enclosing `if (weapon_class != NONE)` block 1040 (2857 bytes: retail's three
+// exit blocks and result kept in ECX to the 0x1dd9d0 push, exact LCS 113 unmatched against 136, but the
+// first request's loop heads take the alignment retail gives their joins); with a while/break loop 1049
+// (LCS 106); with the candidate after the lookup 1031; outputs declared after the iterator setup 826, with
+// the enclosing if 1038; entry pointer declared in the loop body 828.
+// Round 119 (lane 8, fast): retail gives found_mode's dead home (+0x4c) to the per-attempt candidate,
+// ours to iterator_mode. The three outputs initialized before the class test 979 (stored before the
+// branch, home unchanged); outputs and candidate renamed to sort after `result` 828 (same code: names do
+// not move these slots); the candidate declared at the loop-body top 967 (2825 bytes, constructed before
+// the iterate call); a pre-tested `while (result.index == NONE)` 828 (same code); that with the outputs
+// set after the iterator fields 826.
+// Round 216: Complete selected identifier through optional outputs and return copy
+// after outputs/after requests, with member/native iterator and before/after-lookup reset:
+// 998/998/998/998/1017/1017/1017/1017. Original constructor and publication lifetimes restored.
+// Round 234: Downstream request eligibility as the actual urgent argument, bool/byte/short/long after
+// outputs 996/995/1008/1009; before outputs 996/995/1009/1010. Original search and request guards
+// restored.
+// Round 43 (lane 15, fast): retail keeps the three iterator outputs contiguous in mode, class, type order and gives the
+// per-attempt candidate found_mode's dead parameter home; the three outputs as one `long found[3]` do the same (807, not kept: locals packed into an array are against the lane rules; the
+// global alignment falls 163 -> 141, candidate stores now at retail's [esp+0x60]); with the iterator stored graph, zeros, keys as
+// retail and matched 0x1dc790 807, not kept (no gain). On that: initialised array 823, anonymous struct 823, memset of the array 807, any array/result names
+// or array declared first 807 (renaming the locals on the old form 828: names do not move this home). Outputs and id as one named
+// struct: 972 (2807 bytes), retail's first 11 instructions and frame, with loop forms for/while/flag all the same code (for or
+// while with a break 997, 2839 bytes; flag 972); a second id set on both loop exits gives retail's reload path and jump shape 979
+// (2825 bytes; on the array form 988), the store-order permutations of the iterator 818-972. Left: retail's NONE reloaded after
+// the je (`or eax, -1`), ECX carrying the id from the loop to the 0x1dd9d0 call, the second request's EBX/EBP roles and the late
+// zero carrier.
+// DL229: unsigned resolved mode/class/type storage in seven subsets 828 each;
+// all with native iterator aggregate 826. Exact-only API casts and every key type restored;
+// class/NONE, result/candidate/output homes and later zero carrier remain.
+// DL239: Optional mode/class/type output publication via memcpy subsets 1..7, then all memmove:
+// 828/828/828/828/828/828/828/1059. Original complete body, output order, native identifier and
+// iterator restored; frame 0x2c agrees, class/NONE and result/candidate/output homes plus late
+// zero carrier remain.
+// N308: Shared resource base/native list metadata/empty-request return, seven subsets,
+// 1098/1436/1546/828/1098/1436/1546; complete graph with readonly metadata 1546. Several
+// shared users regress; all helpers and original body restored. Result/output/candidate homes,
+// class/NONE roles and persistent zero carrier remain.
+// Round 78 (m3 lane 12, fast; aligned counts are stack-masked): the found outputs as one three-long key struct 823 (2807 bytes, retail's
+// frame homes for the outputs; not kept, gain under 8). On that: the candidate at function scope 925 (2825 bytes), the candidate as a ternary
+// 952, `while (true)` with a break 997 (2839). `if (weapon_class != NONE)` around the body for the early return 1040 (2857 bytes) but
+// aligned 984 -> 125: the result stays in ECX across the outputs and retail's jne/jmp loop exit appears; iterator stores in 0x1dc8c0's order on
+// it 1040, aligned 119 (not kept: positional rise while the padding jumps shift). Left there: result takes found_mode's home where retail gives it to
+// the candidate, no zero carrier in EBP, `this` in EBP and the mode in memory for the second request. On it: names of the result, key or iterator 1040
+// (no move); candidate at function scope 1030 (2856), loop condition on the candidate 1030, break form 1076, a reset candidate 1042; the second mode in a local 1040.
+// 0x1dd560 or 0x1236f0 marked inline on it 1040 each (no move).
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

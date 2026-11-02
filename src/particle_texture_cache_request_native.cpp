@@ -71,7 +71,7 @@ extern s_texture_cache_file g_557c90[6];
 extern long g_55aca8;
 extern dword g_46e488;
 extern s_job_node *g_510810;
-extern s_thread_stack g_5020c8;
+extern s_thread_stack g_4fa0c8;
 
 // @retail 0x1a0e70
 long __stdcall function_1a0e70(s_async_task *task)
@@ -302,9 +302,9 @@ void function_120a90(void)
     async_globals.free_list_mutex = CreateMutexA(NULL, FALSE, NULL);
     async_globals.work_list_mutex = CreateMutexA(NULL, FALSE, NULL);
     async_globals.work_semaphore = CreateSemaphoreA(NULL, 0, 150, NULL);
-    g_5020c8.unknown00 = 0;
-    g_5020c8.unknown04 = 0x4fa0c8;
-    g_5020c8.unknown08 = 0x8000;
+    g_4fa0c8.owner = NULL;
+    g_4fa0c8.buffer = g_4fa0c8.storage;
+    g_4fa0c8.size = 0x8000;
     async_globals.thread = CreateThread(NULL, 0x4000, async_thread_proc,
         NULL, 0, NULL);
     SetThreadPriority(async_globals.thread, 1);

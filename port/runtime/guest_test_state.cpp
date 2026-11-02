@@ -24,7 +24,7 @@ long function_d6c80(s_type_1e6529 *data, long ignore_object_index);
 extern s_record_pool *g_4e030c;   /* the dynamic lights */
 extern "C" unsigned int host_h2_guest_command(char *buffer, unsigned int size);
 bool __stdcall function_c5460(long object_index, long ignore_index, point3f const *position, point3f *result,
-	long a5, real radius, long a7);
+	long a5, real radius, bool a7);
 bool function_11c470(long trigger_volume_index, point3f const *point);
 bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);

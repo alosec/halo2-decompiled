@@ -32,14 +32,17 @@ long function_189fe0(s_sound_request const *request, long tag_index);
 long function_189340(long object_index, long tag_index, long audible, s_sound_marker const *marker, s_sound_source_callbacks const *source, real scale, long platform_playback, char const *variant);
 
 // score 21 (was 21): retail reads the object index once, after the playback call, into
-// single late retained object load and five-byte extent gap remain.
-// Earlier: retail reads the object index once, after the playback call, into
-// late object carrier/reload still adds five bytes; qualified object refresh 100f/85p;
+// ebx and copies it to esi for the call; ours reads it into esi at the call and again
+// into ebx for the started test (526 bytes). With plain reads at the call, test and
+// dispatch (round 45, 90) the late read is one load as in retail, but into esi (the
+// call's register) with the sound index in edi, and the NONE branch stores esi for the
+// object index. Round 45: the early object local for every later use 116; the started
+// test nested 21, with plain late reads 90; plain call read with the test and dispatch
+// through the reference 28. Earlier: late object carrier/reload still adds five bytes;
+// qualified object refresh 100f/85p;
 // playback then refresh 101f/35p; chained request zeros 121f; initial result 118f; refresh with zeros
 // 103f/85p; object-first admission 118f; byte positioned state 118f; refreshed nested admission 100f/85p.
-// retail reads the object index once, after the playback call, into
-// ebx and copies it to esi for the call; ours reads it into esi at the call and again
-// into ebx for the started test (526 bytes). Argument-list assignment 85; plain reads
+// Argument-list assignment 85; plain reads
 // throughout 116; second half plain 90; all three through the reference 28; first half
 // plain 41; the first test alone through the reference 169; non-volatile reference 116.
 // frame 0xa0 agrees; +0x115 consumes the slot pointer
@@ -68,6 +71,20 @@ long function_189340(long object_index, long tag_index, long audible, s_sound_ma
 // Post-playback notification object 118f; two-phase object 118f; full source-result join 118f;
 // result with notification object 118f; positioned-source-first admission 118f; admission with
 // notification 118f; admission with result 118f; all source/object lifetimes 118f (control 118f).
+// Round 55 plain: const spatialization data 21; const slot 21; const class 21; const tag data 21;
+// const class/spatialization 21; const slot/spatialization 21; const slot/class 21; all four 21.
+// Round 118: plain reads throughout 114f/116p; the started test and dispatch through the
+// early object local 149f/103p; the call too 114f/116p; the object local read in the
+// positioned branch only 160f/147p; the call and started dispatch in a by-value inline
+// helper 127f/57p (521 bytes; the playback label call then runs before the variant push).
+// Round 134 (plain): `object = *object_reference` inside the playback call's arguments, `object` for the test and
+// dispatch 85 (the NONE request's zero stores change); a named local read through the reference before the call
+// for all three uses 85 (it takes ESI, the sound index EDI); the call and dispatch in a by-value inline helper
+// taking the label 135 (482 bytes); no reference with the object-marker half of the description in an inline helper
+// 152 (frame 0x88); the started test through the reference, the dispatch plain 28. A one-file LTCG harness (this
+// file, the callees' files, the ballast) gives the reduced image's 118, not the full build's 21. Retail reads the
+// object index once after the 0x18d5b0 call into EBX (a memory-resident parameter with its load reused across
+// the call); the address-taken reference forces a second read after the call, plain reads enregister it in EBP.
 // @retail 0x189cd0 standard
 void __stdcall function_189cd0(long tag_index, long object_index, real scale, long a, long b, long label, long duration_address)
 {

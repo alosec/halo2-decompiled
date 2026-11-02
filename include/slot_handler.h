@@ -128,7 +128,7 @@ static inline real slot_random_range(real lower, real upper)
 }
 
 /* rounds as the x87 does (unknown_0259d0's fld/fistp idiom) */
-static inline long real_to_long(real value)
+static __forceinline long real_to_long(real value)
 {
 	long result;
 
@@ -937,18 +937,21 @@ inline s_actor_view *element_502420_member_next(s_element_502420_member_iterator
 }
 
 /* clears the actor's state at 0x4ac..0x5b6 (inlined by several start
-   callbacks) */
+   callbacks). The movement fields at 0x4ac and 0x504 are cleared through a
+   second lookup of the actor, made with the first (one read of the data):
+   retail's stores to them stay after all the others (0x1b3ee0, 0x1c0430) */
 inline void actor_reset_state(long actor_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
+	s_actor_view *movement_actor = actor_get(actor_index);
 
 	actor->unknown50c = false;
 	actor->unknown5ac = NONE;
 	actor->unknown5b0 = NONE;
 	actor->unknown5b4 = 0;
 	actor->unknown5b6 = 0;
-	actor->unknown4ac = 0;
-	actor->unknown504 = 0;
+	movement_actor->unknown4ac = 0;
+	movement_actor->unknown504 = 0;
 }
 
 /* callees of both lane B (0x1b0000..0x1bffff) and lane C (0x1c0000..0x1cffff)

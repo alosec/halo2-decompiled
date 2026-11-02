@@ -27,6 +27,10 @@ long atol(const char* text);
 long strtol(const char* text, char** end, int base);
 unsigned long strtoul(const char* text, char** end, int base);
 int rand(void);
+/* port/runtime/guest_heap.cpp */
+void* malloc(size_t size);
+void* calloc(size_t count, size_t size);
+void free(void* address);
 void qsort(void* base, size_t count, size_t size,
            int (__cdecl* compare)(const void*, const void*));
 

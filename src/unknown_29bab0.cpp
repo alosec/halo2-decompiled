@@ -114,6 +114,109 @@ PRIVATE __forceinline real function_29bab4(vector3f const *arg_0, vector3f const
 // DH round 234: direct input/live lateral-radius field with last/scale/direction query
 // output defaults, eight combinations 835/835/808/808/832/832/805/805. All restored;
 // early input/heading and normalizer memory-product homes remain on frame 0x88.
+// Round 408: direct input with lookup/position ordinary/inline/noinline declaration
+// pairs, excluding ordinary/ordinary, 804 each (eight forms). Original declarations,
+// complete body, input home and all arithmetic helpers restored.
+// Round 417: direct input, per-use heading/up receivers and planar-normalizer inline
+// declaration, seven subsets then all with staged cross: 903/803/891/803/903/803/891/803.
+// All executable source, helper calls and declarations restored.
+// Round 425: Direct input with collision-output flag/flag/vector lexical homes, all seven
+// subsets 803 each; all three with the false flag initialized at first use 805. Original
+// input access, query homes, initialization, helpers and complete body restored.
+// Initial heading/default/input setter subsets and all with output setters
+// 833/847/886/744/832/839/827/871; new-frame normalizer fabsf/input/inline subsets
+// 744/746/746/744/744/936/936; best 744 at frame 0x88 and retail length
+// gains six, below the keep threshold. Original input access, helpers and body restored.
+// Round 246: initial heading library copy with paired defaults, normalized input
+// and final output transfers in all eight combinations 803/803/803/803/803/803/803/810,
+// all on direct input. Original copies, parameter observation and whole body restored.
+// Round 47 (lane 10, fast with 0x1f9e70 and 0x110ab0 listed; retail keeps arg_1 in EDI and the +0x290 pointer in
+// EBX from the prologue, ours the other way): the +0x290 pointer defined right after the actor 833, before the
+// arg_8 test 833, before the 0x26c test 833; local_5 copied from the field with the pointer defined after it 741
+// (positional only: aligned 590 -> 614), the pointer after local_7/local_8/local_10 741 each; local_7 before
+// local_6 753; local_3 declared after the 0x26c test 746; local_8 and its 0xb9dd0 call before the pointer 816.
+// Round 144 (lane 4, fast): ours keeps the input pointer in EBX from the prologue (retail reads it from its
+// stack home, pushes EBX late for the heading pointer and loads the input into EDI only in the final arm), and
+// caches the three normalizer components on the x87 stack (retail `fld [x]; fmul [x]` each). A branch-local
+// input pointer copy 750 (same code); the normalizer squares through a two-pointer double dot 807; the epsilon
+// test as `fabs(local_0) < 0.0001f` 750 (retail's dword constant, nothing else moves); the input reference
+// taken after the position query 750; the normalized copy declared before the heading copies 750.
+// Round 260: Native i/k/j norm with real-absolute/shared-scale/single-result combinations
+// 792/786/792/786/791/785/791/785 on direct input. Original promoted products, input access, helpers and
+// entire body restored.
+// DH round 262: direct-input normalized setter with branch planar target/input/heading lexical-home
+// subsets, then all with the planar magnitude identity, eight 750 at 3499 bytes. Frame 0x8c; all restored.
+// DH round 264: Direct input and native normalized-input setter with zero-default/magnitude-default/
+// canonical-magnitude/entry-result normalizer exits 807/754/811/750; matching float-absolute
+// forms 807/754/811/750. All at retail length but frame 0x8c; original input, helper and body
+// restored; early handle/heading and memory-product homes remain.
+// Round 47 (m3 lane 13, fast, input reference kept; without it the input moves to EAX, frame 0x8c): the shared
+// normalize3d() from include/normalize3d.h gives retail's normalizer instruction for instruction (memory squares,
+// fst/fabs, dword epsilon, in-place mulss, zero store; homes 4 off) 771 (aligned 421 -> 413); the planar input and
+// heading copies as `*(vector2f const *)` struct copies (retail's dword moves) 750 at 3499 bytes; both 797; both
+// plus magnitude2d() for the radial distance (retail's float squares) 833 at frame 0x8c; that plus the radial test
+// evaluated once through a conditional expression (retail's single fcompi branch) 850. Swapping the names of two
+// vector locals moves no home. Retail keeps the object index in EDI and pushes EBX late for the heading pointer;
+// ours holds the input pointer in EBX from the prologue.
+// Y492: direct-input native planar input/heading/both copies 813/813/821;
+// with normalized-input setter 758/758/766; both planar copies with initial-heading
+// setter, without/with normalized-input setter 820/823. All restored; early
+// input/heading and normalizer memory-product homes remain.
+// Round 288: On native normalized-input setter/direct input: mode default/history coefficient/both/correction root/mode+root/history+root/all/all with shared addition; shared addition alone and with mode/history/root/mode+history/mode+root/history+root,
+// 822/807/822/750/822/807/822/813/749/822/755/749/813/822/755 (fast). Original complete body, observations, helpers and call roles restored.
+// Round 298: Uniform existing bound macro/direct input with normalized-input setter, staged cross
+// and real absolute API in all eight combinations 804/750/750/809/807/750/748/816. Two-point gain
+// rejected; original input, helpers and body restored. Frame/input/heading and norm homes remain.
+// DH round 262: direct-input normalized setter with branch planar target/input/heading lexical-home
+// subsets, then all with the planar magnitude identity, eight 750 at 3499 bytes. Frame 0x8c; all restored.
+// DH round 264: Direct input and native normalized-input setter with zero-default/magnitude-default/
+// canonical-magnitude/entry-result normalizer exits 807/754/811/750; matching float-absolute
+// forms 807/754/811/750. All at retail length but frame 0x8c; original input, helper and body
+// restored; early handle/heading and memory-product homes remain.
+// Round 500: direct input and normalizer output orders ikj/jik/jki/kij,
+// 804 each; with real absolute-length storage 748 each (two-point gains rejected).
+// Original input access, helper and full body restored; early input/heading homes remain.
+// DH round 266: heading/response/spare initialization after input normalization, subsets
+// 1/2/4/3/5/6/7 and all with reversed defaults: 834/827/796/831/831/850/837/837.
+// Direct-input lifetime graphs miss early heading and memory-product homes; original restored.
+// Round 153 (lane 4, fast): collision flag declared first 750; input reference declared after the character
+// lookup 750, at its first use 750; collision flag between the actor and object lookups 750; heading pointer
+// declared const 750 (all the same code: retail still holds the object index in EDI and pushes EBX late).
+// DH271: Native component aggregates for heading/default pair/normalized input, masks 1/2/4/3/5/6/7, then
+// all with reversed independent defaults, 819/840/811/882/784/813/847/832. All new forms use direct input
+// and regress; original input observation, real vector copies, private helpers and full body restored. Early
+// input/object/heading and memory-product homes remain.
+// DL231: Direct-input complete radial square/scaled projections/scaled correction, seven subsets; all with
+// ordinary correction inline: 750/748/748/804/750/748/748/840. Frame/input/heading and normalizer memory-
+// product homes remain; original executable source restored.
+// Round 254: Direct input normalized before readonly position provider, with complete input
+// setter, real absolute API and single normalizer exit combinations
+// 812/813/815/817/768/829/768/829. Original input access, helper and body restored; early
+// input/heading and normalization homes remain.
+// Round 29 (lane 17; register-masked aligned difference 156 -> 122, 3499 bytes). Kept, all retail's shapes: the first clamp as MIN
+// of the expression (retail evaluates it twice), normalize3d(), planar struct copies, a named blend complement, one test for the
+// two false dot/range exits, the float sqrt(1 - g*g). Fast, from the old body: the volatile parameter
+// read at each use 824 (3516 bytes), with normalize3d 766 (3502), with the planar copies too 760 (3479), planar copies alone 807; MIN
+// at both clamps 922 (3589; masked 140), first only 859 (3537), second only 861 (3547); on normalize3d and the planar copies, MIN
+// at both 838 (3553; masked 118), first only 727 (3509), second only 780 (3519), with the float sqrt 785/788. Grid of those plus the
+// single radial test: 63 forms 727..., best without MIN 767 (normalize3d, float sqrt). On the 727 form: dots named before the inverse
+// 771 (3503), with the named blend 720 (3504; call results in one-use locals, not kept), named blend 768 (3500; masked 112), complement
+// only 768 (3503), i and j stored before the second clamp's test 791 (3518), with the named dots 784; single radial test through
+// magnitude2d or sqrt 818/818 (3474, frame 0x8c: retail's shape but its x87 squares need two more slots), with one false test 827;
+// direct input 714 (3499, frame 0x8c: the input moves to EAX, not retail's stack argument, so the reference stays), with one false
+// test 743, float sqrt 770, both 720, named dots only 768, named blend only 712, neither 721. One false test alone 742, float sqrt
+// alone 785, both 719, with a named factor and complement 718 (masked 114; the factor copy beside a direct read of the field is a
+// mix, not kept), with the complement only 716 (kept).
+// On the kept body: MIN at both clamps 771 (3546 bytes; masked 109), as retail evaluates both; at neither 817 (3461; masked 127).
+// The two clamps differ only because of those scores: the second still needs its MIN once other bytes fall.
+// Not kept at review (11-02): the set needs MIN at the first of two identical clamps only, chosen by score (a mix);
+// no consistent form beats 750 (on that body MIN at both 771, at neither 817), so the body is restored at 750.
+// DH282: Complete double squared-magnitude producer with repeated component inputs, all square parts and
+// single-result completion, seven nonempty subsets then all with k/j/i component declaration priority [750,
+// 750, 805, 798, 798, 798, 801, 801]. Original executable body restored.
+// M315: direct input/native normalized setter with all six complete projection-product declaration
+// orders 818 each; with scaled products at each residual or before all residuals 806/806.
+// Original body and private helper restored; frame/input/heading and normalizer memory homes remain.
 // @retail 0x29bab0
 void __stdcall function_29bab0(long arg_0, long arg_1, vector3f const *arg_2,
 	vector3f *arg_3, short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)

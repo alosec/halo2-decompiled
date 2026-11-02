@@ -26,6 +26,11 @@ struct s_emitter_248340
 };
 
 // score 4 (was 4): virtual-table setup precedes the tag-result spill in retail;
+// Lane 16 round 74: retail's store is a register-allocator spill made just before the call (the
+// value stays in EAX, the vtable takes EDX); the volatile's store comes at once. The particle system
+// definition as one reused local (outer and block) 4, without the volatile 27 (caller 0x247140 lost);
+// a block-scoped definition local without the volatile 27; the group query inline in the call 8;
+// plain tag with the emitter decrement first 27.
 // tried group const query 4; tag const query 4; both const queries 4; group signed return 4;
 // tag unsigned return 4; tag const home 4; tag unsigned home 4; const query receiver 4. Restored.
 // second virtual-call vtable/spill order remains.
@@ -45,6 +50,23 @@ struct s_emitter_248340
 // Volatile tag at function scope 4; all three locals at function scope 4; group declared before the
 // volatile tag 4; without the volatile, (void)&tag 27 and tag at function scope 27 (particle moves to
 // the stack and caller 0x247140 138).
+// Round 39: nested queries as a diagnostic (27: no spill and particle stays in ebx, but the two stack
+// arguments are pushed before the queries, so retail used named locals); the tag local set by the
+// guard's query and re-queried in the block 27 (31 with the volatile); the emitter decrement before
+// the particle store 8; the definition as a reference 4.
+// Round 57: without the volatile the all-stack first pass gives the tag ebx and particle ebp
+// (so particle stays a stack argument); renaming tag, definition index, group, particle or
+// emitter leaves that pass unchanged. Without the volatile (one-file harness, aligned counts): plain
+// 11 (`ret 8`, tag in ebx); tag declared before the definition index, emitter decrement first, group
+// named: the same code as plain.
+// Round 97: plain tag with the emitter address at the end or entry 27/27 (caller 138); tag read through
+// its address 27; both addresses 27; const group home 4; const definition pointer 4;
+// const particle or emitter parameter 4/4 (caller 137).
+// Round 70 (--fast): parameters reordered to (particle, system, emitter) at the definition, declaration
+// and call (0x247140 sets eax before ebx) 4, caller 0x247140 194, so the declared order stays; the volatile
+// moved to the group 35 (caller 138); a `register` tag without the volatile 27 (caller 138); the volatile
+// moved to the definition index 27 (caller still matched: the tag then takes edi, the definition index the
+// emitter's home); the system definition named before its tag index 4.
 // @retail 0x248340
 void function_248340(s_particle_system_datum *system, s_object_246eb0 *particle,
 	s_emitter_248340 *emitter)

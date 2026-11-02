@@ -44,6 +44,8 @@ public:
 
 struct s_contact_body_view
 {
+	/* the shape at this level of the body */
+	c_contact_shape_view *get_shape() const { return shape; }
 	c_contact_shape_view *shape;
 	long key;
 	long unknown08;
@@ -141,12 +143,12 @@ PRIVATE __forceinline long contact_metadata_pin(long value, long lower, long upp
 
 PRIVATE __forceinline bool contact_shape_has_material(s_contact_body_view const *body)
 {
-	if (body->shape->type() == 0x18)
+	if (body->get_shape()->type() == 0x18)
 		return false;
-	long metadata = body->shape->metadata;
+	long metadata = body->get_shape()->metadata;
 	if (!metadata)
 		return false;
-	if (contact_metadata_pin(body->shape->metadata, 1, 16) == metadata)
+	if (contact_metadata_pin(body->get_shape()->metadata, 1, 16) == metadata)
 		return false;
 	return *(byte *)(metadata + 0x1e) != 0xff;
 }
@@ -160,9 +162,9 @@ PRIVATE __forceinline long function_1d4884(long arg_0)
 
 PRIVATE __forceinline bool function_1d4885(s_contact_body_view const *arg_0)
 {
- if (arg_0->shape->type() == 0x18)
+ if (arg_0->get_shape()->type() == 0x18)
   return false;
- long local_0 = arg_0->shape->metadata;
+ long local_0 = arg_0->get_shape()->metadata;
  if (!local_0)
   return false;
  long bounded = function_1d4884(local_0);
@@ -644,51 +646,6 @@ PRIVATE inline s_havok_component_flags *havok_component_flags_get(long component
 	return &((s_havok_component_flags *)g_51e9b8->data)[component_index & 0xffff];
 }
 
-/* an object 0x1c2910 makes */
-c_havok_reference_counted *g_4f55b0;
-
-/* drops the references to 0x1c2910's object and to g_47f048 */
-PRIVATE __forceinline void function_1c2891(short *arg_0, c_havok_reference_counted *arg_1)
-{
-	--*arg_0;
-	if (*arg_0 == 0)
-	{
-		if (function_279740((long)arg_1))
-			*arg_0 = 1;
-		else
-			delete arg_1;
-	}
-}
-
-// score 45 (was 45): ours keeps both objects in ESI with EDI as the zero; retail
-// keeps the second object in EDI with a separate count pointer (lea esi, [edi + 6])
-// live across the call, EBX as the zero, and no null test before the second delete.
-// Plain havok_reference_remove for the second object 48 (null test gone, still no
-// count pointer); through a local 48; a `delete this` member on the class 48; first
-// object through a local 45, with the plain second release 48.
-// retail zeroes EBX and keeps three callee-saved registers, holds
-// g_47f048 in EDI and &reference_count in ESI; ours zeroes EDI, holds g_47f048 in
-// ESI, folds the count address into the object pointer and tests it before the delete.
-// and clears it in EDI, retail loads it into ESI and clears it in EBX.
-// Round 378: Prefix-result zero arm, postfix old-count arm, nonzero completion
-// after decrement/reload and prefix-result completion, normal range arms [45, 55, 45, 45],
-// delete-first arms [45, 56, 45, 45]. Original helper and body restored.
-// Round 279: actual decrement value owns store and zero test; short arithmetic with
-// count/object-reference parameter combinations 47/47/47/47 (129 bytes), long arithmetic
-// 43/43/43/43 (125 bytes). Two-point gain rejected; original helper and body restored.
-// Separate count address, third saved register and delete-null test remain.
-// @retail 0x1c2890
-void function_1c2890(void)
-{
-	if (g_4f55b0)
-	{
-		havok_reference_remove(g_4f55b0);
-		g_4f55b0 = NULL;
-	}
-	c_havok_reference_counted *local_0 = (c_havok_reference_counted *)g_47f048;
-	function_1c2891(&local_0->reference_count, local_0);
-	g_47f048 = NULL;
-}
 
 // @retail 0x1c29d0
 void function_1c29d0(void)
@@ -871,6 +828,22 @@ void function_1c54b0(char const *variants, long object_index)
 // after the discard call: entity_count renamed total/size/a_count, i renamed entity_index/j, count
 // renamed matched, island renamed group, removed renamed discarded: 18 each (names never move the
 // ebx/ebp swap).
+// Round 42 (a compile-only build reproduces all four; 158 forms screened there): entity count read at each use 4,
+// with the flag after the call 18; world local read at each iteration 4; entity local 4; nested tests 4.
+// Round 89, with the flag after the discard call: entity-array pointer 75; island_index renamed
+// active_island 18; increment in the outer for clause 18; scoped object, entity or flags locals 18 each;
+// inner while 18; const entity count 18; function-scope flag cleared after the index update 63.
+// Lane 10 round 42 (a compile-only harness reproduces ours and the 18 form exactly; every one of 60
+// declaration orders and 27 name sets keeps EBP for the count with the flag after the call, and the island
+// index is reloaded before the world in every form): `if (!removed) island_index++;` 91; flag set in an
+// else arm without an initialiser 73; island-array local with the flag after the call 18; function-scope
+// flag cleared at the top of each iteration 18; `entity_count == count` with the flag after the call 18;
+// a 600 s permuter run (71 tries), none below 4.
+// Lane 15 round 42 (fast): outer while with the flag after the call 18; a named next index 4; a named step
+// with the flag after the call 18; an island-table local with the flag after the call 18; a for-scoped entity
+// index with the flag after the call 18; a byte flag with the flag after the call 18. Compile-only, 26 forms
+// of the index update, flag type and world read (`island_index = !removed + island_index`, a bool kept flag,
+// a world local read per iteration with the discard through the global): the reload pair never swaps.
 // @retail 0x1c50c0
 void function_1c50c0(void)
 {
@@ -951,6 +924,24 @@ bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_un
 // the call-cycle entry moved through declaration order (function_146bf0 declared first in
 // src/unknown_278f00.cpp, function_146da0 before function_1c4040 in src/unknown_146a20.cpp) 2, with
 // function_1c4040 then in a custom convention (attempt EAX, active CL) and 15 matched lost.
+// Round 32 (fast, each reproducing the baseline): function_146bf0 declared before function_278f00 here,
+// with function_146da0 before function_1c4040 in src/unknown_146a20.cpp 1; plus function_1c3770
+// declared first here and function_1c2690 before function_1c27a0 there 1; function_1d1540 declared
+// before function_b8840 in src/bipeds.cpp 1; function_278f00 before function_146bf0 in
+// src/unknown_0b8ca0.cpp 1; function_278f00 before function_1c51c0 in src/unknown_1c39c0.cpp 1.
+// Round 106 (fast): our walk reaches function_1c4040 through 0x278f00 -> 0x1c3770 -> 0x1d1540 ->
+// 0x1c39c0 -> here before 0x146bf0. This function moved ahead of the file's 0x146bf0/0x278f00 callers 1;
+// moved to the end of the file 1; function_146da0 before function_1c4040 in src/unknown_146a20.cpp
+// (alone) 1; function_1c4040 declared before function_278f00 here 1; function_146bf0 before
+// function_1c3770 in src/unknown_278f00.cpp 1 (function_1c4040 25, 0x1c39c0 lost at 41).
+// Round 61: attempt declared before force 3; callee declaration at the TU top 1; consistent inline
+// declaration 1; byte callee result 1; the other caller's function_146da0 declaration first 1;
+// callee declared before function_278f00/function_146bf0 1; function_146bf0/callee/function_278f00
+// order 1; callee after both 1. Original declarations restored.
+// Round 55 (lane 11, fast): 0x146bf0 declared first in this file 1; 0x278f00 declared first 1; 0x146da0 then
+// 0x146bf0 declared first 1; this body moved into src/unknown_1c39c0.cpp (diagnostic) 1; 0x1c4040's definition
+// moved to the end of this file 1. Its other caller 0x146bf0 stays built ahead of it; the declarations that move
+// that sit in src/unknown_278f00.cpp and src/unknown_146a20.cpp, both other lanes' files this round.
 // @retail 0x1c51c0
 void function_1c51c0(long component_index)
 {
@@ -1132,6 +1123,24 @@ struct s_1c4040
 // Round 163: coordinated cdecl/stdcall with bool, byte, signed-char active and
 // unsigned-long attempt transport 187/193 in every pair. All original declarations
 // and bodies restored; frame 0x14 agrees, but active remains DL rather than AL.
+// Round 42, in a diagnostic custom regime (0x1c51c0's call removed: 30, attempt EAX, active CL): world declared
+// first 30; island-array store without the volatile cast 27; long active 30; fixed island read through g_51e9a4
+// (world local only for the array choice) 31 with retail's AL/ECX ranking but the world load hoisted into EDX
+// before sub esp; every world read through g_51e9a4 32.
+// Round 90: declaration-first paths in three adjacent translation units, singly and combined, 8 each.
+// In the diagnostic custom regime: fixed-island direct read with a two-use retry local 31; the
+// complementary array-direct read 31; adding a two-use active local 31; world declared before the
+// record 31; block-scoped world 32. Original body and declaration order restored.
+// Lane 10 round 42: the convention follows where LTCG enters the object code's large call cycle, which
+// this function, 0x146bf0 and 0x278f00 belong to through 0xb8540 (BLOCKED-BY 0xb8540: its body is disabled,
+// see src/unknown_0b8540.cpp); the island-scan count in EDX rather than ECX follows from DL. Body trials:
+// separate index for the island scan 8; island element read at each use 150; entity read through the
+// priority view at both uses 143; fixed island read at each use 78; for-scoped indices 8.
+// Lane 15 round 42 (fast): the active choice as if/else stores 20; a named copy of the active flag 8; `active
+// == false` 8; a named array local before the volatile store 192 (553 bytes); the world pointer declared before
+// the record 8. A static definition (diagnostic:
+// the other caller in src/unknown_146a20.cpp no longer links) gives the custom convention, attempt EAX and
+// active CL 13, with 0x1c51c0 at 2.
 // @retail 0x1c4040
 bool function_1c4040(long attempt, bool active, bool any_object, bool even_if_unknown, long excluded_component_index)
 {
@@ -1436,11 +1445,7 @@ public:
  virtual c_contact_shape_view *child(long key, void *buffer) = 0;
 };
 
-class c_contact_rule_fallback
-{
-public:
- hkBool accepts(long a, long b);
-};
+#include "pair_filter_class.h"
 
 class c_contact_rule_filter
 {
@@ -1458,18 +1463,6 @@ PRIVATE __forceinline hkBool contact_metadata_flag(long metadata)
  return result;
 }
 
-// score 4 (was 4): retail joins the two child-shape arms in EAX and copies the
-// shape into ESI there, ours assigns ESI in each arm. Kept: the flag through an
-// hkBool helper 14 (it replaced a volatile byte copy), the root's rigid body as
-// `type == 1 ? entity : NULL` 4. Shape join tried: if/else 14 (before the rigid
-// body form), inverted if/else 19, default shape then child 80, inline shape helper
-// 4, inline unwrap helper 4, child copy 13, inverted ternary 9.
-// Round 166: Native full-width key/filter-child/readonly receiver contracts, all seven subsets 4;
-// one hidden result on the recovered flag/rigid-body graph 65. Original contracts and body
-// restored.
-// Round 213: native aligned scratch
-// vector/renamed-vector/real/renamed-real/long/renamed-long/renamed-byte/renamed-SIMD [4, 4, 4,
-// 4, 4, 4, 4, 4]. Child-result join remains.
 // @retail 0x1c32d0
 hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view const *a, s_contact_body_view const *b,
  c_contact_shape_container *container, long key)
@@ -1480,7 +1473,7 @@ hkBool c_contact_rule_filter::accepts(void const *query, s_contact_body_view con
   root = root->parent;
  if ((hkEntity *)g_47f048 == root->entity)
  {
-  c_contact_shape_view *shape = key != NONE ? container->child(key, buffer) : b->shape;
+  c_contact_shape_view *shape = key != NONE ? container->child(key, buffer) : b->get_shape();
   if (shape->type() == 0x15)
    shape = *(c_contact_shape_view **)((byte *)shape + 0xc);
   if (shape->type() == 0x17)
@@ -1554,6 +1547,31 @@ PRIVATE inline void contact_motion_vector(vector3f *out, hkVector4 const *value)
 // Round 88: while loop 3; index shared with the fill loop 3; mirror initialised from the index 3;
 // `count > i` 5; count initialised 3. This is 0x1d10b0's only caller, so its parameters can be
 // reordered to (component, index, change) in src/unknown_1cec30.cpp for the register-argument order.
+// Round 42 (0x1d10b0's file on the avoid list again): index declared before the mirror 3; mirror declared with
+// the selection locals 3; index declared outside the for 3; int index 3; fill loop counting into count 139.
+// Lane 10 round 42: the EBX compare comes from the mirror's zero (with no mirror at all the entry test is
+// retail's `test eax, eax`, 125 diagnostic; no reload in the impulse path 106 diagnostic); index initialised
+// before the selection 162; mirror zeroed before the selection 166; mirror stored at the top of each iteration
+// 111; default-NONE selected index in place of the goto 3; selected index stored before the count 5.
+// BLOCKED-BY 0x1d10b0 (its file on the avoid list; free in lane 15 round 42, form below, not kept).
+// Lane 15 round 42: 0x1d10b0's parameters as (component, index, velocity) in a free function 1, but 0x1d10b0
+// itself 1 (`[edx+ecx+0x40]`); as a member of s_havok_component (`component->...(index, &b)`, its siblings
+// 0x1d0bb0/0x1d0c00/0x1d0b20 are members and retail addresses `[index*0x60+data+0x40]`) 1 with 0x1d10b0 still
+// matched (plain check): the setup-order pair goes and only the entry `cmp eax, ebx` is left. Not kept (a gain
+// of 2 without a match). With no mirror at all the body is retail's except the index spills: the two stores,
+// the reload after the impulse call and the 4-byte frame slot (126 positional, 858 bytes, all three aligned).
+// Entry test, compile-only: the zero of the mirror store is shared with the compare in that block, so mirror
+// typed dword/int/unsigned, declared apart, set from the index, `i = local_0 = 0`, `local_0 = i = 0`, an
+// int index, store-through-index before the test all keep `cmp eax, ebx`; `(local_0 = i) < count` re-reads the
+// volatile; the mirror set in each selection arm gives `test eax, eax` but `mov [slot], 0` (+4 bytes); stored at
+// the top of each iteration with a store after the loop `test eax, eax` but no head merge. Plain loop with
+// `inline` on 0x1d1160's definition 126; with an unused fifth parameter on 0x1d1160 126. Fast, from 3: a positive
+// guard around the for 3; the mirror set in each selection arm 36 (872 bytes); the mirror stored at the top of each
+// iteration and after the loop 119 (870 bytes); `i = local_0 = 0` 161 (882 bytes); int index 3.
+// Round 124: uninitialised loop state inside a positive do guard 39; `_count`, vector names and count
+// declared first 39 each; reversed guard and initialised count 39 each; guarded for 39. Guard only around
+// the mirror 5, braced 5, nonzero 143 (882 bytes), induction in the for initializer 147 (882), literal zero 5;
+// the same-scope while with 0x1d10b0 as a component member 3 (the member stays matched). Restored.
 // @retail 0x1c4c50
 bool __stdcall function_1c4c50(long object_index, long node_index, point3f const *point,
  vector3f const *change_a, vector3f const *change_b, long *result_object, vector3f *linear, vector3f *angular)

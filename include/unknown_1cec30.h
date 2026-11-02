@@ -108,6 +108,8 @@ struct hkTransform
 	void transform_compose_in_place(hkTransform const &b);
 	void transform_set_to_inverse(hkTransform const &t);
 
+	hkRotation const &rotation_part() const { return m_rotation; }
+
 	hkRotation m_rotation;
 	hkVector4 m_translation;
 };
@@ -264,7 +266,9 @@ struct s_havok_component_rigid_body
 	point3f position;
 	vector3f linear_velocity;
 	vector3f angular_velocity;
-	byte unknown24[0x40 - 0x24];
+	byte unknown24[0x30 - 0x24];
+	/* the velocity of the surfaces the body rests on (function_1d87b0) */
+	hkVector4 unknown30;
 	hkRigidBody *rigid_body;
 	byte unknown44;
 	byte flags45;
@@ -411,6 +415,12 @@ struct s_havok_component
 			dword flag11 : 1;
 			dword flags12 : 20;
 		};
+		struct
+		{
+			dword : 18;
+			/* no surface-velocity push (function_1d87b0, function_1cf520) */
+			dword flag18 : 1;
+		};
 	};
 	long object_index;
 	long unknown0c;
@@ -441,6 +451,7 @@ struct s_havok_component
 	bool rigid_body_keyframed(long rigid_body_index);
 	void rigid_body_inertia_get(long rigid_body_index, struct matrix3x3 *inertia);
 	real rigid_body_mass_get(long rigid_body_index);
+	real function_1d1230(long rigid_body_index);
 	void rigid_body_matrix_get(long rigid_body_index, struct transform4x3f *matrix);
 };
 

@@ -70,7 +70,21 @@ PRIVATE __forceinline void function_2922b5(vector3f const *arg_0, vector3f const
 	arg_3->k = local_6;
 }
 
-// score 629 (was 629): Frame 0x108 agrees; early EBX/BL success, hit-byte and basis/rotation homes remain.
+// score 618 (was 618): Frame 0x108 agrees; first +0x31 stores success at +0x1b instead of +0x17.
+// Frame 0x108 agrees; success/input/minimum/hit homes differ from +0x31.
+// Earlier: the true initializer uses BL, saving EBX early.
+// Frame 0x108 agrees; first +0x31 stores success at +0x1b instead of +0x17.
+// Input/minimum/hit homes, inactive-exit layout and later basis/ray/root/rotation homes differ.
+// Frame 0x108 agrees; success/hit/input/minimum homes, inactive-exit placement and axis schedules remain.
+// Earlier at 629: Frame 0x108 agrees; the true initializer uses BL, saving EBX early.
+// Retail stores true directly in its result byte and returns immediate one on the inactive path.
+// Hit/basis/ray/root/rotation homes follow.
+// Frame 0x108 and the prologue agree (success in retail's stack byte); our
+// early-true exit sits inline where retail places it last, then hit/basis/ray/root/rotation homes follow.
+// Before round 47: success retained in BL with EBX saved early instead of retail's stack byte.
+// Frame 0x108 and the prologue agree (success in retail's stack byte); our
+// Frame 0x108 agrees; the true initializer uses BL, saving EBX early.
+// Early constant minimum with long success 635, with early point copy 651; final products differ.
 // MiniMax H run 14: the cross helper 0x2922b1 with its sign flipped and the operands swapped at
 // all four calls (same results) 622; under the keep bar, not kept.
 // Frame 0x108 agrees; early success BL/EBX and hit/basis/ray/root/rotation homes remain.
@@ -183,6 +197,81 @@ PRIVATE __forceinline void function_2922b5(vector3f const *arg_0, vector3f const
 // Round 177: Success from the completed raw-distance minimum 689; with existing point/rotation/
 // both/ray/point+ray/rotation+ray/all setters 707/706/707/711/711/711/711. All restored;
 // frame shrinks to 0x104 and native success/hit/basis/rotation homes remain unresolved.
+// Round 238: Actual ray origin/length/distance cursors 643/659/659;
+// origin+length/origin+distance/length+distance 660/660/645; all three/all plus hit cursor
+// 728/728. Original indexed arrays, countdown, success and helper snapshots restored.
+// Round 249: Root return / limited-angle output with pointer/reference, output-first/last,
+// and limit-first/original input roles: all eight 637. Original outputs, helpers and calls restored.
+// Round 424: paired hit-response orders 0213/1023/1032/1302/0132
+// 629/629/628/627/628; first three with completed clamp result 726 each.
+// Two-point best rejected; original response order and helper restored.
+// Existing staged cross in basis/rotation/projection subsets, then all with point setter
+// 651/629/651/626/645/626/645/659; three-point best rejected;
+// original producers and in-place snapshots restored.
+// Round 457: native second-rotation result/two distinct rotation results, original/early
+// minimum, original/staged rotation cross: 628/642/634/648/628/642/634/648.
+// One-point best rejected; original complete body and all in-place snapshots restored.
+// Round 259: all six cross-product parts named before subtraction, paired axis schedules
+// ijk/ikj/jik/jki/kij/kji and positive/negative arm schedules, 636 each. Original
+// helper, complete input/result snapshots and body restored; frame agrees, success/basis homes remain.
+// Round 288: Complete ray-margin snapshot at post-settings/active/post-basis/post-origin phases, each without/with the complete angle-limit observation,
+// 695/721/699/724/678/726/678/726 (fast). Original complete body, observations, helpers and call roles restored.
+// Round 272: Basis declarations 798/879/897/978/987; entry collision workspace/original basis,
+// cross-first basis, cross-first with entry ray workspace 629/629/629/629/629/629/629/632.
+// Original executable body and declarations restored; remaining allocation differences persist.
+// Round 47 (m3 lane 13): `if (!(range > 0.0f)) return true; else {...}` with the FLT_MAX minimum at the top
+// 618 plain (kept; retail's `mov al, 1` exit and early minimum store); the early return alone 623; as a guard
+// with the body at function scope 680; `if (range > 0) {...} else return true;` 679 (retail's exit last);
+// nested `return local_0;` then `return true;` 679, with the range read first inside it 657 (prologue through
+// the arg_6 test exact, divergence starts at the basis cross products); the range read once before the test
+// 619; read first inside the else 618 (still reloaded); cross-product operands swapped in the helper's first or
+// third part 618 (same code).
+// Round 288: Complete ray-margin snapshot at post-settings/active/post-basis/post-origin phases, each without/with the complete angle-limit observation,
+// 695/721/699/724/678/726/678/726 (fast). Original complete body, observations, helpers and call roles restored.
+// Round 498: Closed origin/query/both regions 618/618/618; branch-owned root outputs alone
+// or with origin/query/both 633 each; all regions with the existing staged basis/projection
+// cross 690. Memory-result/input/minimum/hit ordering and later producer homes remain; original
+// body, helpers, every query and all in-place input/result snapshots restored.
+// Round 272: Basis declarations 798/879/897/978/987; entry collision workspace/original basis,
+// cross-first basis, cross-first with entry ray workspace 629/629/629/629/629/629/629/632.
+// Original executable body and declarations restored; remaining allocation differences persist.
+// DH269: Native hit/minimum/uninitialized-input entry lifetimes, subsets 1/2/4/3/5/6/7,
+// 631/636/618/639/631/636/639; all with success after acquisitions 639. External input
+// copy stays after acquisitions; original full body restored. Success/input/minimum/hit homes remain.
+// Round 300: Single inactive goto to the common result exit, staged cross basis/rotation/projection
+// masks 0..7: 635/657/635/657/632/651/632/651. All restore early EBX/BL success and regress.
+// Original constant inactive return, private producers, in-place snapshots and complete body
+// restored; success/hit/input/minimum homes and axis schedules remain.
+// DL229: distinct shadowed ray-index/response-scalar/projection-object identities in seven subsets,
+// then complete basis identities, eight at 618. Original names and complete body restored;
+// native success/input/minimum/hit homes and inactive-exit placement remain.
+// Round 306: Native output-vector memset with input memcpy/hit memset/final memcpy subsets:
+// 692/692/702/702/692/704/702/709. Output clear recovers the initial success home at 692, first +0x50,
+// but all forms regress. Original scalar stores, hit bytes, helpers, in-place snapshots, complete body
+// and includes restored at 618.
+// DH271: Four-query remaining byte/short/word/dword with native long array ordinal 618/618/618/618; with
+// word ordinal 726/726/726/726. Native countdown widths canonicalize; word ordinal loses the matching frame
+// and shrinks away from retail. Entire original body, hit/result producers, helpers and in-place snapshots
+// restored; success/input/minimum/hit homes remain.
+// Round 257: Actual ray/projection coordinate consumers and every rotation-row product node,
+// seven subsets, then short coordinate counters: 630/639/624/638/628/641/644/720. Original
+// private producer, complete in-place snapshots and full body restored; success/input/
+// minimum/hit homes and inactive-return placement remain.
+// DH280: Existing native cross/point/rotation publication subsets, then all with the native ray publisher
+// [618, 630, 630, 628, 623, 630, 624, 628]. Original executable body restored.
+// Round 73 (m3 lane 16, fast; 618 stands, every form below scores higher): the active test as a positive if with `return
+// true` last 679 (2839 bytes, aligned 473 -> 462: retail's exit layout at the function's end); with `else local_0 = true` 679; the range read once before the test 666 (2828, aligned 461; retail's
+// `comiss xmm1, xmm0` and the later store from xmm1), declared before the input copy 675; the ray loop as a plain for 755
+// (2768, frame 0x100: index scaled, no byte offset or count down), with the positive test 746, with the range too 724.
+// Eight name sets for success, minimum, hit flags and basis 666 each (same code). Next cause: low slots, retail
+// remaining/point cursor/success/offset/minimum/hit/basis/hit cursor/range, ours
+// remaining/offset/minimum/success/basis/hit/point cursor/hit cursor/range.
+// DH283: Native coordinate input/origin/projection producer subsets 1-7
+// 667/721/739/618/667/721/739; complete graph with aggregate hit initialization 730.
+// Original input copies, private producers, in-place snapshots and complete body restored.
+// DH295: Joint query-count/ordinal/minimum lexical priorities, all six orders, then two
+// opposing orders with the reused per-ray length renamed: eight at 618. Original names
+// and complete body restored; success/input/minimum/hit and later vector homes remain.
 // @retail 0x2922b0
 bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	vector3f *arg_3, real *arg_4, real *arg_5, bool arg_6)
@@ -191,19 +280,21 @@ bool __stdcall function_2922b0(long arg_0, long arg_1, vector3f *arg_2,
 	s_slot_object_view *local_1 = object_get(arg_1);
 	s_2922b0 const *local_2 = (s_2922b0 const *)function_1e5450(arg_0, local_1->tag_index);
 	vector3f local_3 = *arg_2;
+	real local_4 = 3.402823466e38f;
 	*arg_5 = 0.0f;
 	bool local_5[4];
 	local_5[0] = false;
 	local_5[1] = false;
 	local_5[2] = false;
 	local_5[3] = false;
-	if (local_2->field_48 > 0.0f)
+	if (!(local_2->field_48 > 0.0f))
+		return true;
+	else
 	{
 		arg_3->i = 0.0f;
 		arg_3->j = 0.0f;
 		arg_3->k = 0.0f;
 		real local_6 = local_2->field_48;
-		real local_4 = 3.402823466e38f;
 		vector3f local_7;
 		vector3f local_8;
 		vector3f local_9;

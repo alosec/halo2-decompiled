@@ -142,7 +142,7 @@ union s_185be7
 };
 
 #pragma inline_depth(1)
-// score 780 (was 780): Frame 0xe0 and state/output carriers agree; control-root EBX versus NONE, settings/zero homes and flag joins remain.
+// score 690 (was 690): Frame 0xe0 and state/output carriers agree; control-root EBX versus NONE, settings/zero homes and flag joins remain.
 // Earlier 780 (was 780): Frame 0xe0 and state/output carriers agree; the flag bits are now set with retail's branches. Left: settings/zero homes, clamp-arm placement and unthreaded repeated flag tests.
 // Round 86 (fast, aligned counts in brackets, 383 at the start): turn rates assigned in both arms (retail loads
 // the stored rates on the else path) 788 [367] and the attachment index NONE per path (retail sets it on each
@@ -262,11 +262,111 @@ union s_185be7
 // Round 265: adjacent selected-input/input-five/input-four shared-mask groups, all
 // seven subsets and complete grouping with full-width selection 813/895/1033/954/990/990/1031/1030.
 // Original individual masks, selected byte and complete body restored.
+// Independent lower/upper bounds, parameter/result 780/928; independent upper/lower
+// 943/929; upper-first exclusive 943/949; ordinary lower/upper parameter/result 780/928.
+// Original clamp, complete body and all caller expressions restored.
 // Round 186: Native input memcpy with byte/word scratch aggregate masks 0-3 780/979/942/979; memmove
 // with the same masks 1109/1104/1111/1102. Complete original body and helpers restored.
 // Round 188: existing reset whole-output void/result/subobject-reference/whole-output-reference
 // contracts, forced then ordinary inline: 961/961/780/961/961/961/780/961.
 // Complete output contracts grow the frame; original reset and whole body restored.
+// Round 267: reset groups float/word/index 781, index/float/word 782,
+// index/word/float 783, word/float/index 783, word/index/float 783;
+// split admission 780; inactive update/return 1026; chained indices first 782.
+// Original six-store producer and complete body restored.
+// Round 417: native output one-bit groups at 18/1c/20, subsets 1-7:
+// 1008/958/993/803/995/825/938; all Boolean bitfield domains 1066.
+// Output size/offsets agree; every native view and store form restored.
+// Round 220: Parent-before-attachment acquisition, nested/direct-parent/direct-slot/direct-both 767 each;
+// the same four with promoted component result 767 each. Keep nested native-short acquisition, plain 767;
+// all other observations, widths and helpers restored. Control-root/NONE, settings/zero and flag joins remain.
+// Round 222: native control bit with arithmetic/real-array entry; live/cached/constant roots 767
+// each, complete per-field roots 1006 each. Original body and shared type restored; control-
+// root/NONE and settings/zero homes remain.
+// Round 231: all four rate bounds once 963; exponent once 731 (kept, plain); both 962;
+// shared two-row retained weight 913; bounds/weight 966; exponent/weight 811; all three
+// 963, with read-only rate receiver 963. Keep only the exponent shared by its test and
+// power call; control-root/NONE, settings/zero homes and flag joins remain.
+// Independent final input-five/four/seven Boolean ownership, subsets 1-7: 728/754/776/750/777/757/786; all with selected-input Boolean 784.
+// The three-point input-five lead is below the retention gate; every original predicate observation, individual helper call, root and full body restored.
+// Round 452: shared object/header getters and readonly settings, subsets 1-7,
+// 731 each; complete shared graph with ordinary lookup/predicate inline 810.
+// The control-root/NONE and range-result homes remain; original full source restored.
+// Round 461: raw third-input byte/word/long/dword across duration and latch tests
+// 734/730/733/733; complementary inactive bool/byte/short/long 731/731/728/730.
+// Gains at most three rejected; original Boolean carrier and complete body restored.
+// Round 265: library range / paired axis-duration / paired response-weight-angle
+// selection, their pairs and all: 951/1095/1037/1123/1181/1293/1311; complete
+// upper-first nesting 1320. Native frame, original custom clamps and full body restored.
+// Round 484: shared-exponent range-result positive/conditional/unordered ownership
+// 935/935/800; default before lower bound/selected record 735/735; the three
+// branch-owned forms with exponent declaration at range scope 935/935/800.
+// Original fraction producer, exponent observation and complete body restored.
+// Round 270: Unsigned controlled/parent/attached datum carriers, seven subsets 731 each;
+// all four datum carriers 731. Minimum/range/fraction scalar identities on the shared-exponent
+// graph, seven subsets 731 each; exponent identity too 731. Original carriers, names and full
+// body restored; control-root/NONE, settings/zero homes and flag joins remain.
+// Round 487: plain mapping loops for independent bindings / action masks / both / movement masks /
+// bindings+movement / action+movement / all 725/725/725/731/725/725/725; all with native output
+// initialization 1027. Bindings or action masks with the two-use short inactive predicate 723/723;
+// the action-mask loop with the inactive predicate scored 723 at 3770/3777 bytes. Not kept (m3 review):
+// retail has no mask table or loop (one hoisted test of the flag, then three immediate ors or three
+// ands), and the short inverted predicate alone is a 2-point form. Entry root/NONE and scalar homes remain.
+// Round 270: Unsigned controlled/parent/attached datum carriers, seven subsets 731 each;
+// all four datum carriers 731. Minimum/range/fraction scalar identities on the shared-exponent
+// graph, seven subsets 731 each; exponent identity too 731. Original carriers, names and full
+// body restored; control-root/NONE, settings/zero homes and flag joins remain.
+// Round 245: existing current/previous angle return pointers, separately/together, 805/837/830;
+// selected input source retained alone/with current/previous/both angle returns 961/995/959/980;
+// both returns with complete two-coordinate correction 821. Every form regresses; original
+// input observation, direct output consumers and complete executable source restored.
+// DH round 268: independent byte/word scratch declarations, clear order and entry scope,
+// seven subsets 731/743/743/731/731/743/743; complete graph with purpose names 743.
+// Original scratch lifetimes, CRT clears and complete body restored.
+// Round 352: Settings/state acquisition after local-input clear or full output reset,
+// independently/together and both orders: 1012/743/1010/741/1012/1012/744/744. Original
+// acquisition order, helpers and complete body restored; control-root/NONE, settings/zero homes
+// and flag joins remain.
+// Round 506: single held-input/filter-copy traversal, live/maintained masks with
+// dword/word bits and long/short ordinals 1148/1136/1130/1109/1148/1136/1133/1112.
+// Frames grow to 0xe4/0xe8; original two scans, masks and complete body restored.
+// Round 305: Exponent declarations before range scalars, parent lookup, active lookup and function
+// entry: real 731 each; complete double power overload 951 each, frame 0xe8. Original overload, read
+// point and full body restored; root/NONE, scalar homes and flag joins remain.
+// M294: Consumed range/filter-copy-mask/angular-output scopes, seven subsets,
+// then all with immutable controlled index:
+// 731/731/731/731/731/731/731/731. Original complete executable source restored.
+// Round 257: Actual button/duration source cursors and held-input source cursor, seven
+// subsets, then short copy ordinal: 731/690/839/690/839/845/845/854. Keep only the duration
+// source cursor, 690 plain at 3782/3777 bytes; the paired source cursor ties.
+// Sole caller 0x186ab0 remains 134/1486. Control-root/NONE, settings/zero and flag joins remain.
+// Round 237: Native copy destination button/duration/both cursors 690/691/691; inferred byte/word/both
+// flag destinations 858/848/864; complete exact-valued promoted angular coefficient
+// alone/with native destinations 1018/1075. Original helper, widths, scalars and body
+// restored; control-root/NONE, settings/zero homes and flag joins remain.
+// AC468: Shared input-five/four/seven branch ownership retaining the individual flag-helper calls,
+// seven subsets and all with selected-input ownership: 1121/1111/1152/1134/1155/1159/1150/1140.
+// The branches collapse stores and lose the native frame. Original helper calls, masks, observations,
+// two scans and retained duration cursor restored; root/NONE, settings/zero and flag joins remain.
+// AC474: Existing object-predicate positive/failure result ownership in bool/byte/word/long,
+// 826/826/829/835/852/852/846/872. Original conjunction and complete body restored; native frame,
+// control-root/NONE, settings/zero homes and flag joins remain.
+// AC477: Contiguous invalid-index/float-zero/short-zero reset fills, subsets 1..7, then
+// ordinary inline complete fill: 960/1021/1030/694/962/1021/1030/1030. Original reset and
+// complete body restored; control-root/NONE, settings/zero homes and flag joins remain.
+// Round 526: Actual held-input mask shifted through low bits, fixed/sparse termination,
+// word/dword remainder and indexed/cursor input 802/832/821/856/1109/1109/1125/1125.
+// Original two scans, duration cursor and complete body restored; control-root/NONE,
+// settings/zero homes and flag joins remain.
+// N322: Late action-eligibility/selected-input/hold-release phase scopes, subsets 1/2/4/3/5/6/7,
+// then complete phase-carrier names: 690/690/690/690/690/690/690/690. All generated target metrics
+// tie; original complete body restored, control-root/NONE, settings/zero homes and flag joins remain.
+// AC480: Native entry array, branch-owned angular output and shared two-coordinate difference,
+// subsets 1/2/4/3/5/6/7, then branch output with early uninitialized response vector: 690/839/764/839/764/855/855/839.
+// Original complete body restored; control-root/NONE and scalar homes remain.
+// Round 372: complete allowed/blocked turn-admission results in bool/byte/word/long
+// storage: 692/692/692/692/692/692/692/692. Original direct gate and body restored;
+// control-root/NONE, settings/zero homes and flag joins remain.
 // @retail 0x185be0
 void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s_186ab4 *arg_4, s_186ab3 *arg_5)
 {
@@ -292,23 +392,27 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
         {
             byte *local_8 = function_185be2(local_7);
             long local_9 = *(long *)(local_8 + 0x14);
-            short local_10 = *(short *)(local_8 + 0x1fc);
-            if (local_9 != NONE && local_10 != NONE)
+            if (local_9 != NONE)
             {
-                byte *local_11 = function_185be2(local_9);
-                byte *local_12 = (byte *)g_4e3b44[*(long *)local_11 & 0xffff].data;
-                byte *local_13 = *(byte **)(local_12 + 0x1cc) + local_10 * 0xb0;
-                real local_14 = *(real *)(local_13 + 0x54);
-                real local_15 = *(real *)(local_13 + 0x58) - local_14;
-                real local_16 = 0.0f;
-                if (local_15 > 0.0f)
-                    local_16 = function_185be1((magnitude3d((vector3f *)(local_11 + 0x88)) - local_14) / local_15, 0.0f, 1.0f);
-                if (*(real *)(local_13 + 0x5c) != 0.0f)
-                    local_16 = (real)pow(local_16, *(real *)(local_13 + 0x5c));
-                if (*(real *)(local_13 + 0x44) > 0.0f || *(real *)(local_13 + 0x48) > 0.0f)
-                    local_5.field_0[0] = ((*(real *)(local_13 + 0x48) - *(real *)(local_13 + 0x44)) * local_16 + *(real *)(local_13 + 0x44)) * 0.01745329238474369f;
-                if (*(real *)(local_13 + 0x4c) > 0.0f || *(real *)(local_13 + 0x50) > 0.0f)
-                    local_5.field_0[1] = ((*(real *)(local_13 + 0x50) - *(real *)(local_13 + 0x4c)) * local_16 + *(real *)(local_13 + 0x4c)) * 0.01745329238474369f;
+                short local_10 = *(short *)(local_8 + 0x1fc);
+                if (local_10 != NONE)
+                {
+                    byte *local_11 = function_185be2(local_9);
+                    byte *local_12 = (byte *)g_4e3b44[*(long *)local_11 & 0xffff].data;
+                    byte *local_13 = *(byte **)(local_12 + 0x1cc) + local_10 * 0xb0;
+                    real local_14 = *(real *)(local_13 + 0x54);
+                    real local_15 = *(real *)(local_13 + 0x58) - local_14;
+                    real local_16 = 0.0f;
+                    if (local_15 > 0.0f)
+                        local_16 = function_185be1((magnitude3d((vector3f *)(local_11 + 0x88)) - local_14) / local_15, 0.0f, 1.0f);
+                    real exponent = *(real *)(local_13 + 0x5c);
+                    if (exponent != 0.0f)
+                        local_16 = (real)pow(local_16, exponent);
+                    if (*(real *)(local_13 + 0x44) > 0.0f || *(real *)(local_13 + 0x48) > 0.0f)
+                        local_5.field_0[0] = ((*(real *)(local_13 + 0x48) - *(real *)(local_13 + 0x44)) * local_16 + *(real *)(local_13 + 0x44)) * 0.01745329238474369f;
+                    if (*(real *)(local_13 + 0x4c) > 0.0f || *(real *)(local_13 + 0x50) > 0.0f)
+                        local_5.field_0[1] = ((*(real *)(local_13 + 0x50) - *(real *)(local_13 + 0x4c)) * local_16 + *(real *)(local_13 + 0x4c)) * 0.01745329238474369f;
+                }
             }
         }
         arg_5->field_0 = local_2.field_38;
@@ -426,8 +530,16 @@ void __stdcall function_185be0(long arg_0, long arg_1, real arg_2, real arg_3, s
             }
         }
         local_8 = local_1->field_c;
+        word const *duration_source = local_2.field_10;
         for (long local_24 = 0; local_24 < 16; local_24++)
-            if (!(local_8 & (1 << local_24))) { local_3[local_24] = local_2.field_0[local_24]; local_4[local_24] = local_2.field_10[local_24]; }
+        {
+            if (!(local_8 & (1 << local_24)))
+            {
+                local_3[local_24] = local_2.field_0[local_24];
+                local_4[local_24] = *duration_source;
+            }
+            ++duration_source;
+        }
         bool local_9 = function_185be3(local_1->field_0) && function_e4050(local_1->field_0);
         if (local_3[10] == 1)
         {

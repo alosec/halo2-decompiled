@@ -160,7 +160,18 @@ point3f *function_b9ef0(long object_index, point3f *result)
 	return result;
 }
 
-// score 31 (was 31): frame 0xa4, entry, collision block and marker-branch layout agree; the two
+// score 2 (was 2): only constant-one and crouching-height load scheduling remains; frame 0xa4 and all other instructions agree.
+// Lane 16 round 74: compile-only, the load order follows what comes between the z store and the next
+// call: a call right after the store gives the 1.0-first order, any store there (the origin and forward
+// copies, the sentinel) gives ours. Real: if/else crouch with a named height sum and the sentinel first 2;
+// one-statement height with the forward copy first 32; inverted if/else with a scaled height and
+// origin/forward/sentinel order 252; sentinel ahead of the first call 31; origin declared at its copy 2.
+// Round 74: named call result in a ternary/if-else 2/2; immutable crouch 2; immutable/read-only unit 2/2;
+// immutable inner tag pointer 2; shared height-pair pointer alone/with immutable crouch 2/2. Opening graph restored.
+// Round 73: definition-pointer rename 2; direct explicit read-add-store 17; explicit store on the two-local graph 2;
+// standing-only/crouching-only temporaries 2/2; named total with explicit store 2; early constant-one 2;
+// raw crouching-height load before the calls 12. Opening graph restored.
+// Earlier: frame 0xa4, entry, collision block and marker-branch layout agree; the two
 // height loads are swapped, the seated object goes to EDX (retail EBP, so the marker temporaries
 // rotate one register off), and the parent branch loads the tag table before the object table
 // (ours EAX for the object table is a byte shorter, which also keeps a later je short: 5 bytes).
@@ -234,6 +245,19 @@ point3f *function_b9ef0(long object_index, point3f *result)
 // fresh post-call parent table base 31; separate same-parent and parent bases 31.
 // Shared object getter at entry/same-parent/both/parent/entry-parent/same-parent-parent/all
 // 327/31/334/31/327/31/334; all with readonly receiver views 334. Original lookups restored.
+// Round 398: early/reversed weighted declarations; lexical contribution names; readonly terms; height-phase scope with original/named/readonly terms; scoped readonly tag
+// 2/2/2/2/2/2/2/2; all restored.
+// Round 400: If-else crouch, staged complement and complete staged weights in masks 1-7, then
+// complete height scope: 2/2/2/2/2/2/2/2. Original producers and arithmetic restored.
+// Round 41: scale-first product 2; named height sum 2; scale local 2; `z = product + z` 2; crouch declared
+// at function scope 2. Retail's biped copy of this blend (0xe5d50) loads the crouching height before the 1.0
+// constant, as ours does here; 1.0 is used once in 0xcafc0, so it is not a shared value.
+// Round 52: the parentless branch as a force-inline helper with its own lookups 267; heights read through
+// the definition macro at each use 117; the raise through the point 0xb9dd0 returns 265; heights as a
+// two-element field 2; definition local declared after the others 2; a 600 s permuter run, best 2.
+// Compile-only screens of the blend (unused locals, if/else or default-first crouch, sum/product orders,
+// named or array terms, 1.0 as a global, lerp helpers; flag variants only as compile-only screens) all keep the
+// crouching height first.
 // @retail 0xcafc0
 void function_cafc0(long unit_index, point3f *position)
 {

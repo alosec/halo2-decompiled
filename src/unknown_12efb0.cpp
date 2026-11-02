@@ -246,6 +246,109 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 // clamp 812. Color-only reaches retail length but regresses; original helpers restored.
 // Round 390: Source-radius input snapshot with per-cluster default-range, color-alpha and
 // signed-byte palette combinations 694/770/710/670/702/728/629/728. Original helpers and body restored.
+// Round 407: native palette scalar/RGB/weighted/footer fields with radius snapshot, byte
+// palette and shared scenario receiver combinations 616/616/705/705/694/694/702/702. Original record and body restored.
+// Round 417: contribution-first destination sums in scalar/merge/color, all seven subsets,
+// then all with factor-first normalized publication: 616 each. Original helpers and body restored.
+// Round 425: Bounded cluster count short/word/unsigned-long, each with original/inverse
+// weighted-state, 618/700/618/700/616/698; short/word ordinal paired with its count
+// 755/739. Original full-width count, Boolean state, loop and complete body restored.
+// Round 228: native aggregate value inputs scalar/merge/both/color/scalar-color/merge-color/all
+// 886/813/977/826/976/934/1081; all with by-value publication 1240. Original helper contracts and body restored.
+// Round 237: Plain scalar/merge/color native component loops 1/2/3/4/5/6/7, then all with normalized publication loop: 618/616/619/616/619/616/620/620.
+// Original executable body restored.
+// Round 242: shared two-source range conditional/nested/result/guard forms with word palette
+// 619/619/675/618, with byte palette 708/708/670/708. Original helpers and body restored;
+// palette/record and zero/SSE accumulator carriers remain.
+// Round 251: Native accumulated-value return in scalar/merge/both/color/scalar-color/merge-color/all helpers
+// 1013/1013/1287/1145/1419/1426/1647; all with byte palette 1625. Original helper contracts, input-weight
+// capture and complete body restored; palette/record and SSE carriers remain.
+// Round 264: Library contribution clamp, paired radius caps and paired fallback bounds,
+// subsets 1/2/4/3/5/6/7 and full upper-first clamp 2071/836/848/2166/2161/942/2251/2228.
+// All enlarge code; original selections, input captures and complete body restored.
+// Round 111 (lane 7; an LTCG env link of this file, the caller's file and its callee closure reproduces the full
+// listing, checked against a plain build at 683): retail keeps the record base in ESI through the arm and
+// re-reads the slot byte at the source_index store (`movsx edx, byte [esi+0x6f]`), compares the slot as a byte
+// (`cmp cl, al`, NONE in EAX, the 0x130f60 result moved to EDX), and keeps the palette record in EBX. The slot byte
+// read from the record at every use 683 (3832 bytes, plain); a char slot with the store re-reading the byte 683;
+// a named cluster-index local 616 (same code), with the byte reads 683; accumulator statement orders in the
+// three-scalar helper: m,w,colours,i,d,h 616; colours,w,m,i,d,h 616; colours,i,d,h,m,w 703; colours,i,d,h,w,m
+// 691; w,colours,i,d,h,m 691; w,m,i,d,h,colours 687; i,d,h,colours,w,m 691; reversed 691; colours,w,i,d,h,m 691;
+// the weight parameter bound first or second (diagnostic) 616 (same code); the clamped weight in a new local
+// 617; weight-first products 616; the three scalars named in locals first 617.
+// Round 113 (m3 lane 7, env link = check): char slot with `long slot_index = palette_slot;` at the top of the branch,
+// the NULL record assigned in the else arm before the table test and the source index re-read from the byte 683 (3832
+// bytes; widening in retail's block, but index and record share EDI); that with the source index from `slot_index`
+// 756 (3849 bytes); with the slot read before the flag and source stores 683; the normalization helper reading the
+// weight, or the intensity, into a named local first 616/616 (same code). Diagnostic: the fog accumulators escaping
+// to an out-of-line call still leave the normalization stores interleaved (retail keeps load-multiply-store order).
+// Round 440: complete immediate contribution products in scalar/merge/color, subsets 1/2/4/3/5/6/7, then
+// all with six-field publication 616/616/615/616/615/615/616/616. The 615 forms gain only one and are
+// rejected. Original product trees, all reads/stores, alias-safe source-weight copy and complete
+// helpers/body restored.
+// Round 270: Existing weighted-result default owned by each source arm, bool/byte/short/long
+// at arm entry 631/631/779/701; after falloff 824/824/828/829.
+// Original default, helpers and complete body restored; palette/record and SSE carriers remain.
+// Round 275: Byte admission with reused long/short promoted index 756/757; each with immutable provider result, earlier record default, and both 756/757 each.
+// Original executable source restored; palette/selected-record and zero/SIMD accumulator carriers remain.
+// Round 277: Object-owned library clear/unit-default pairs,
+// fog/weighted/color/fog-weighted/fog-color/weighted-color 616/621/622/616/618/622; all is the same
+// fog-weighted form. All with byte palette 705; all zero-prefix clears 724. Original initialization
+// and body restored; palette/record and SIMD accumulator carriers remain.
+// Round 286: Existing unit-interval producer lower/upper early returns 661/660;
+// lower/upper separate result 615/621; lower/upper conditional result 661/660;
+// lower/upper default guarded result 646/711. Original helper and body restored.
+// Round 290: actual index-output default owned by its provider, short/char palette with immutable
+// tag-result/readonly-record combinations, 703/703/703/703/699/699/699/699; frame 0x4820 agrees.
+// Original caller default, field observations, helpers and body restored; palette/record and SIMD carriers remain.
+// Round 444: Double scalar-contribution/merge-fraction/color-contribution result domains,
+// subsets 1/2/4/3/5/6/7 then all with complete publication reciprocals: 838/839/772/823/867/828/833/927. Original helper
+// precision, alias-safe source-weight capture and full body restored; palette/record and SIMD carriers remain.
+// Round 446: native palette/radius/alpha field lvalues, seven subsets
+// 683/616/683/616/683/616/683; all with previous-index field 681. Original observations, helpers and body restored.
+// Round 292: Overlap-safe scalar-RGB/merge-record/four-channel input copies, subsets 1/2/4/3/5/6/7,
+// 1100/888/961/1214/1194/1077/1328; all with normalized-publication input copy 1552. All enlarge
+// frame/code; original helper bodies and source-weight capture restored. Palette/record/SIMD homes remain.
+// Round 76 (lane 12; plain 695 on the last form, fast otherwise; "al" is the aligned count against this body's 353,
+// "st" the same with register names masked against 109): retail's shape comes from a whole set of helper-level
+// forms. Weight and remaining updates last in the three-scalar helper (as matched 0x1317a0) with the nested clamp
+// call al 361; with the clamp written in the helper (`if (w < 0) w = 0; else if (w > 1) w = 1;`) 696, al 332 and that
+// helper then has retail's exact schedule apart from register names (the same clamp as a named local or through the
+// clamp inline 723, al 361); that plus char slot/getter shaped like matched 0x1318a0/re-read byte at the source-index
+// store and a named tag local surviving 0x1317a0 (EDI in retail, both arms) 701, al 424; the merge helper's weight
+// and remaining last, the four-channel helper taking r, g, b, a by value 688, al 181, st 57; the three output blocks
+// written directly in the body with their own inverse (every load/copy product side then right) 672, al 124, st 32;
+// the tag test nested with the 0x88 pointer inside it 701 (3817 bytes; -1 back in a register), st 27; the second-arm clamp as
+// `x < 0 ? 0 : (x > 1 ? 1 : x)` on a named x 705, st 21; `long slot_index = palette_slot;` with one tag local at
+// loop scope: 695, al 98, st 21, the 3819-byte form: record in EBX, cluster index in EDI, frame and loop head as retail.
+// Left on that form: retail moves the 0x130f60 result to EDX and keeps -1 in EAX (ours -1 in EDX, result in EAX, one
+// instruction short, so every later line is one off), the 0x88 pointer read, the second/third colour product sides
+// (retail L, C, L; ours C, L, C), the second four-channel call's schedule, the 0x6c store. Tried for -1 in EAX, all
+// unchanged: result declared before the out value, at function scope, split from its call; tag at function scope;
+// slot declared earlier; `NONE !=` tests; the tag lookup through a helper; a named no-source value (696, al 82);
+// diagnostics adding -1 uses or dropping a result use. The 0x88 pointer before the tag test loses -1 again (674).
+// None kept: the positional count stays above 616 until the -1 tie clears. Retry from these forms.
+// N295: Independent palette-input/metadata-default/weighted-state lifetimes before the provider,
+// subsets 1-7 625/718/755/618/625/625/625; all with signed-byte palette 749. Original order,
+// body and helpers restored; palette/record and SIMD accumulator homes remain.
+// Round 510: complete pre-store scalar/merge/color product families 616/616/616/599/599/599/600; all
+// with publication products 600. Cross-store one-use products rejected without a match. Color phases
+// ICWR/IWCR/IWRC/WICR/WRIC/CWIR/CWRI/CRWI (C RGB, I intensity, W weight, R remainder)
+// 775/775/775/748/748/616/614/612; two/four-point leads rejected. Original helpers and complete body
+// restored; palette/record and SIMD carriers remain.
+// Round 44 (lane 15, fast, with a CAVEAT line): the palette slot as a char local, retail's `cmp cl, al`, 705 (3835
+// bytes, masked 131 against 130), read right after the palette call 705; long slot with the test on the byte field 761
+// (3856); the record pointer cleared only in the palette arm, retail's `xor ebx, ebx` position, 616 (same code), with
+// the char slot 705. The -1 in EAX tie stays.
+// N306: Native output combined/separate rejection, nested/intensity-first acceptance, each with
+// original/early-exit merge: 616/616/616/616/616/616/616/616. Original helpers and complete body restored;
+// palette/record and SIMD zero/contribution carriers remain.
+// P271: Conditional intensity computed after the RGB stores, load/default, guarded
+// default, if/else and named conditional, with short/char palette:
+// 609/712/720/720/698/702/708/708. Original helper and body restored; palette/record/SIMD homes remain.
+// P271 follow-up: Late two-use intensity with CWRI/CRWI/CWIR, conditional-result
+// CIWR/CWRI/CRWI/CWIR, and late two-use CRIW: 703/703/609/609/703/703/609/703.
+// Original helpers/body restored; isolated seven-point lead remains below the keep gate.
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {

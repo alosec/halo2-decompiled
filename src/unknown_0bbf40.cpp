@@ -304,14 +304,9 @@ s_object_gc_entry_ab g_440570[6] =
     {0, false, 0, 0}
 };
 
-// score 110 (was 110): the size constant is 0x2a08 where retail uses 0x2a04 and the prologue pushes
-// EBP where retail pushes EBX.
-// score 110 (was 110): our loop is rotated (the action test copied to the bottom); retail's stays
-// top-tested, re-reads the state at its top and duplicates the loop setup into each level path.
-// Only nested loops (outer per entry, inner `do ... while (again)`) stay top-tested here: 171, with
-// the one exit goto to a shared final clear 192. `again` uninitialised + `if (again) continue` 134
-// (gives retail's +8 entry pointer); `next = !again` flag 122 (393 bytes, retail's sete); single
-// state variable with the exit goto 161.
+/* runs the table's gather and action callbacks that apply to the current memory pressure
+   level (from the stored request, or from the loop allocator's and the object pool's free
+   space), while 0xbf1c0 says more room is still needed, then clears the request */
 // @retail 0xbf380
 void function_bf380()
 {
@@ -323,53 +318,58 @@ void function_bf380()
         level = !globals[2];
     else
     {
-        s_loop_allocator *loop = (s_loop_allocator *)g_4de2ec;
-        long used = loop->last ? (byte *)loop->last + loop->last->size - loop->base : 0;
-        if (loop->size - used <= 0xcccc || 0x800 - g_4e0300->actual_count <= 0x66)
+        long used;
+        if (!((s_loop_allocator *)g_4de2ec)->last)
+            used = 0;
+        else
+            used = (byte *)((s_loop_allocator *)g_4de2ec)->last + ((s_loop_allocator *)g_4de2ec)->last->size - ((s_loop_allocator *)g_4de2ec)->base;
+        if (((s_loop_allocator *)g_4de2ec)->size - used <= 0xcccc || 0x800 - g_4e0300->actual_count <= 0x66)
             level = 3;
         else if (((s_object_gc_globals_ab *)g_4de2f4)->count >= 0x32)
             level = 2;
     }
-    if (level == NONE)
+    if (level != NONE)
     {
-        ((byte *)g_4de2f4)[1] = 0;
-        ((byte *)g_4de2f4)[2] = 0;
-        return;
-    }
-    bool critical = false;
-    bool again = false;
-    bool gathered = false;
-    s_object_gc_entry_ab *entry = g_440570;
-    for (;;)
-    {
-        byte *state = (byte *)g_4de2f4;
-        if (!entry->action)
+        bool critical = false;
+        bool again;
+        bool gathered = false;
+        s_object_gc_entry_ab *entry = g_440570;
+        for (;;)
         {
-            state[1] = 0;
-            state[2] = 0;
-            return;
-        }
-        if (!function_bf1c0(level, &critical))
-            break;
-        if ((entry->levels & (1 << level)) && (!entry->critical_only || critical))
-        {
-            if (!gathered)
+            bool valid = false;
+            if (entry->action)
+                valid = true;
+            if (!valid)
             {
-                if (entry->gather)
-                    entry->gather(level, scratch, sizeof(scratch));
-                gathered = true;
+                ((byte *)g_4de2f4)[1] = 0;
+                ((byte *)g_4de2f4)[2] = 0;
+                return;
             }
-            again = false;
-            entry->action(level, scratch, sizeof(scratch), &again, unused, sizeof(unused));
-            if (!again)
+            if (!function_bf1c0(level, &critical))
+            {
+                ((byte *)g_4de2f4)[1] = 0;
+                ((byte *)g_4de2f4)[2] = 0;
+                return;
+            }
+            bool advance = true;
+            if ((entry->levels & (1 << level)) && (!entry->critical_only || critical))
+            {
+                if (!gathered)
+                {
+                    if (entry->gather)
+                        entry->gather(level, scratch, sizeof(scratch));
+                    gathered = true;
+                }
+                again = false;
+                entry->action(level, scratch, sizeof(scratch), &again, unused, sizeof(unused));
+                advance = !again;
+            }
+            if (advance)
             {
                 entry++;
                 gathered = false;
             }
-            continue;
         }
-        entry++;
-        gathered = false;
     }
     ((byte *)g_4de2f4)[1] = 0;
     ((byte *)g_4de2f4)[2] = 0;
@@ -732,31 +732,26 @@ void __stdcall function_bc300(long object_index)
 	record_pool_release(g_4e0300, object_index);
 }
 
-// score 42 (was 42): the mask is applied to the index before the record pointer is loaded; retail
-// loads the pointer first. Tried: a shared absolute index 42; the header reused for the refreshed
-// lookup 68; a function-scope block pointer 42; allocator noinline 42; old size read before allocation
-// 81; size optimization 107; global optimization off 151; shared index, block scope and allocator
-// noinline together 42.
 // @retail 0xbc380
-bool function_bc380(long object_index, long block_offset, long size, long alignment_bits)
+bool function_bc380(long object_index, long block_offset, short size, long alignment_bits)
 {
 	bool result = false;
 	s_object_memory_header_ab *header = (s_object_memory_header_ab *)g_4e0300->data + (object_index & 0xffff);
 	if ((short)size == 0)
 	{
-		s_object_block_ab *block = (s_object_block_ab *)((byte *)header->object + (short)block_offset);
+		s_object_block_ab *block = (s_object_block_ab *)((byte *)object_get_0bbf40(object_index) + (short)block_offset);
 		block->offset = NONE;
 		block->size = 0;
 		return true;
 	}
 	long mask = (1 << (byte)alignment_bits) - 1;
 	long extra = (short)size + mask;
-	if (loop_reallocate((s_loop_allocator *)g_4de2ec, &header->object, header->size + extra, 0, 0))
+	long new_size = header->size + extra;
+	if (loop_reallocate((s_loop_allocator *)g_4de2ec, &header->object, new_size, 0, 0))
 	{
 		short old_size = header->size;
-		header->size = (short)(old_size + extra);
-		s_object_memory_header_ab *current = (s_object_memory_header_ab *)g_4e0300->data + (object_index & 0xffff);
-		s_object_block_ab *block = (s_object_block_ab *)((byte *)current->object + (short)block_offset);
+		header->size += (short)extra;
+		s_object_block_ab *block = (s_object_block_ab *)((byte *)object_get_0bbf40(object_index) + (short)block_offset);
 		block->offset = (short)((old_size + mask) & ~mask);
 		block->size = (short)size;
 		memset((byte *)header->object + old_size, 0, extra);
@@ -1009,21 +1004,6 @@ bool __stdcall function_be8e0(long object_index);
 struct s_havok_component;
 void function_1ced00(s_havok_component *component);
 
-// score 1 (was 122): inactive return XOR AL versus retail MOV AL,BL; matching delayed EBP and object/header homes retained.
-// register (`mov al, bl`); retail saves ebp only after the two header gates, as ours now does.
-// Round 50: object read through the table before the flags clear (object in ebp, header in the
-// parameter slot) 123; with the result returned at the end of the awake branch 1 (kept); not-awake
-// test as an early return 114; result declared before the header or assigned after its declaration 1;
-// result declared inside the awake branch 30; inverted final test with an early return 122.
-// Awake-predicate bool/byte/char/short results 127/132/132/164; native byte/char/short/word
-// accumulators with common result exits 17/17/100/100. All restored.
-// Countdown common/separate/paired result exits 27/28/28; reused countdown predicate 43;
-// countdown activity accumulation 41; one done exit 27; positive call contributions 148;
-// positive contributions with countdown result 145. Original body retained.
-// Round 34: both activity exits returning active 1; one fallthrough activity return or an explicit
-// done join 123 each; countdown assignment-return with one activity return 123; inactive result
-// ORed with the awake bit, logically or bitwise, 1 each; inactive result ANDed with that bit 1;
-// double-negated inactive result 1.
 // @retail 0xbc470
 bool __stdcall function_bc470(long object_index)
 {
@@ -1032,41 +1012,43 @@ bool __stdcall function_bc470(long object_index)
     if (header->flags & 2)
     {
         if (header->flags & 0x20)
-            return true;
-        s_post_physics_object_ab *object = ((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
-        header->flags &= ~4;
-        if (TEST_FIELD_BIT(object->flag2))
-            function_bba20(object_index);
-        long mode = g_4e6948->mode;
-        if (mode >= 4 && mode <= 5 && (((byte *)object)[0xd8] & 1))
-            function_a9570(object_index);
-        if (*(short *)((byte *)((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object + 0x12a) != NONE)
+            active = true;
+        else
         {
-            s_animation_state *animation = (s_animation_state *)((byte *)object + *(short *)((byte *)object + 0x12a));
-            if (animation->graph_tag_index != NONE)
-                active = animation->blend_counters_update();
+            s_post_physics_object_ab *object = ((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object;
+            header->flags &= ~4;
+            if (TEST_FIELD_BIT(object->flag2))
+                function_bba20(object_index);
+            long mode = g_4e6948->mode;
+            if (mode >= 4 && mode <= 5 && (((byte *)object)[0xd8] & 1))
+                function_a9570(object_index);
+            if (*(short *)((byte *)((s_post_physics_header_ab *)g_4e0300->data)[object_index & 0xffff].object + 0x12a) != NONE)
+            {
+                s_animation_state *animation = (s_animation_state *)((byte *)object + *(short *)((byte *)object + 0x12a));
+                if (animation->graph_tag_index != NONE)
+                    active = animation->blend_counters_update();
+            }
+            active |= object_dispatch_update(object_index);
+            active |= function_d5de0(object_index);
+            active |= function_be8e0(object_index);
+            long child = object->child;
+            while (child != NONE)
+            {
+                active |= function_bc470(child);
+                child = ((s_post_physics_header_ab *)g_4e0300->data)[child & 0xffff].object->sibling;
+            }
+            if (object->component != NONE && TEST_FIELD_BIT(object->flag6))
+                function_1ced00((s_havok_component *)(g_51e9b8->data + (object->component & 0xffff) * 0xa0));
+            if (object->awake_countdown > 0)
+            {
+                object->awake_countdown--;
+                active = true;
+            }
+            else if (!active && !(header->flags & 4))
+                header->flags &= ~2;
         }
-        active |= object_dispatch_update(object_index);
-        active |= function_d5de0(object_index);
-        active |= function_be8e0(object_index);
-        long child = object->child;
-        while (child != NONE)
-        {
-            active |= function_bc470(child);
-            child = ((s_post_physics_header_ab *)g_4e0300->data)[child & 0xffff].object->sibling;
-        }
-        if (object->component != NONE && TEST_FIELD_BIT(object->flag6))
-            function_1ced00((s_havok_component *)(g_51e9b8->data + (object->component & 0xffff) * 0xa0));
-        if (object->awake_countdown > 0)
-        {
-            object->awake_countdown--;
-            return true;
-        }
-        if (!active && !(header->flags & 4))
-            header->flags &= ~2;
-        return active;
     }
-    return false;
+    return active;
 }
 
 

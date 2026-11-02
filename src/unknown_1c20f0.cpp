@@ -3,6 +3,8 @@
 #include "slot_handler.h"
 #include "unknown_0259a0.h"
 #include "unknown_1e3920.h"
+#include "unknown_26b230.h"
+#include "vector_products.h"
 #include <string.h>
 
 /* slot handler 0x81 (g_47eff8): the actor looks for a way around (a prop to
@@ -90,10 +92,27 @@ static inline void point_along_vector_1c19b0(point3f const *point, vector3f cons
 // sample_end/contact_end names, location/node and start/origin declaration orders 23 each.
 // Round 393: origin input/trace/collision library copies in seven subsets 23 each;
 // native initial origin with both output copies 215. Original producers and complete body restored.
+// Round 90: end named below/ground/target 23/26/23; both conversions passed straight to the call 26;
+// a position pointer for the final call 160; the step scale written in the call 23; tick names 23.
+// Round 40: helper storing a local point once 316; end from a by-value point producer 226;
+// end/delta/start/origin renamed 23 each (frame unchanged); ticks and call as an inline/forceinline
+// helper 267/335.
+// Round 91: a position pointer for origin/trace/final, origin/final, trace/final and origin/trace
+// 23/23/131/23; its early declaration 52; height/origin/final and height/trace/final 24/24;
+// reversed rounded-count productions 30; all restored.
+// Round 61: the cause is 0x26d100's `&point` read: it makes the end point escape, so its stores are ordered
+// against the up-vector loads and get a later frame slot. 0x26d100 reading `point` directly 4 (its callers'
+// setup then moves point into ECX); 0x26d100's parameters as (up, point, output, collision), the order its
+// own bytes give (point the only stack argument), with start computed before direction and result first:
+// this function and 0x26d100 match (fast) with every matched caller kept. BLOCKED-BY 0x270400 (two of
+// the call lines are in contributor code); without the reorder start/result first 37 on 0x26d100.
+// Round 195 (lane 3, fast): the point helper storing through x/y/z temporaries 164 (907 bytes); the end point
+// from the existing vector3f_add_scaled 23; end declared first in the loop block 23; node_index declared at
+// its call 23; the direction read through a pointer to the parameter dropped 23 (same code, kept).
+// 0x26d100's file is on another lane's list this round, so its reorder was not retried.
 // @retail 0x1c19b0
 bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_type_f17a25 *path)
 {
-	vector3f const *const *direction_slot = &direction;
 	s_actor_view *actor = actor_get(actor_index);
 	s_structure_bsp_pathfinding_view *bsp = (s_structure_bsp_pathfinding_view *)g_4e0348;
 	s_pathfinding_data *pathfinding = NULL;
@@ -117,7 +136,7 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 	{
 		s_path_trace_result trace;
 
-		function_26c590(pathfinding, &actor->position, actor->unknown27c.unknown10, NONE, *direction_slot, 5.0f, NULL, &trace);
+		function_26c590(pathfinding, &actor->position, actor->unknown27c.unknown10, NONE, direction, 5.0f, NULL, &trace);
 		origin = trace.point;
 		distance = trace.distance;
 		if (function_1697c0(0x1808c2d, &origin, g_4687bc, actor->unknown018, NONE, &collision.result))
@@ -166,34 +185,27 @@ bool __stdcall function_1c19b0(long actor_index, vector3f const *direction, s_ty
 	return result;
 }
 
-// score 80 (was 80): actor/sentinel allocation and rotated prop walk differ at the 0x0c frame.
-// Actor is held in ESI after the global lookup; retail masks its stack index first and uses EBX.
-// Tail advance after selection 96; shared direction setter 96; selected-result gate 97,
-// with setter 97; actor read at every use 85, with setter 84; both 85, with setter 84.
-// Round 86: the walk through function_26be00/function_26be30 gives retail's unrotated loop and
-// index-first actor lookup, but NONE stays an immediate (retail keeps it in EAX, the actor in
-// EBX): 97, with separate true/false returns 95, + position pointer 94, three declaration
-// orders 95/94/95; a private copy of the prop iterator 99, with separate returns 96.
-// Current index before lookup/next cursor, rejection guards, reused post-scan
-// decision and closest-first combinations 80, 80, 85, 85, 80, 80, 85, 85.
+struct s_node_view;
+void function_26be00(long actor_index, s_iterator *iterator);
+s_node_view *function_26be30(s_iterator *iterator);
+
 // @retail 0x1c1d50
 bool __stdcall function_1c1d50(long actor_index, s_type_f17a25 *path)
 {
+	bool result = false;
 	long closest_index = NONE;
 	s_actor_view *actor = actor_get(actor_index);
 	real closest = 3.4028235e38f;
-	long prop_index;
+	s_iterator iterator;
+	s_prop_node_view *node;
 
-	for (prop_index = actor->first_prop_index; prop_index != NONE; )
+	function_26be00(actor_index, &iterator);
+	while ((node = (s_prop_node_view *)function_26be30(&iterator)) != NULL)
 	{
-		s_prop_node_view *node = prop_node_get(prop_index);
-		long index = prop_index;
-
-		prop_index = node->next_index;
 		if (node->view_index != NONE && node->unknown27 >= 2 && closest > node->unknown28)
 		{
 			closest = node->unknown28;
-			closest_index = index;
+			closest_index = iterator.index;
 		}
 	}
 	if (closest_index != NONE)
@@ -201,20 +213,19 @@ bool __stdcall function_1c1d50(long actor_index, s_type_f17a25 *path)
 		s_prop_state_point_81 *prop = (s_prop_state_point_81 *)prop_node_state(prop_node_get(closest_index));
 		vector3f direction;
 
-		direction.i = prop->position.x - actor->position.x;
-		direction.j = prop->position.y - actor->position.y;
+		vector2d_from_points2d((point2f const *)&actor->position, (point2f const *)&prop->position, (point2f *)&direction);
 		direction.k = 0.0f;
 		if (function_30bf0(&direction) == 0.0f)
 		{
 			direction = actor->unknown290;
 		}
 		function_1c19b0(actor_index, &direction, path);
+		result = true;
 	}
-	return closest_index != NONE;
+	return result;
 }
 
 void scripted_vector_scale(vector3f const *vector, real scale, vector3f *result);
-void scripted_vector_add_scaled(vector3f const *a, vector3f const *b, real scale, vector3f *result);
 
 // @retail 0x1c1e70
 bool function_1c1e70(long actor_index, s_type_f17a25 *path)
@@ -238,7 +249,7 @@ bool function_1c1e70(long actor_index, s_type_f17a25 *path)
 	perpendicular.k = facing.k;
 	directions[0] = facing;
 	scripted_vector_scale(&facing, 0.70710677f, &directions[1]);
-	scripted_vector_add_scaled(&directions[1], &perpendicular, 0.70710677f, &directions[1]);
+	vector3f_add_scaled(&directions[1], &perpendicular, 0.70710677f, &directions[1]);
 	scripted_vector_scale(&facing, 0.70710677f, &directions[2]);
 	directions[2].i = directions[2].i - perpendicular.i * 0.70710677f;
 	directions[2].j = directions[2].j - perpendicular.j * 0.70710677f;
@@ -248,7 +259,7 @@ bool function_1c1e70(long actor_index, s_type_f17a25 *path)
 	directions[4].j = perpendicular.j * -1.0f;
 	directions[4].k = perpendicular.k * -1.0f;
 	scripted_vector_scale(&facing, -0.70710677f, &directions[5]);
-	scripted_vector_add_scaled(&directions[5], &perpendicular, 0.70710677f, &directions[5]);
+	vector3f_add_scaled(&directions[5], &perpendicular, 0.70710677f, &directions[5]);
 	scripted_vector_scale(&facing, -0.70710677f, &directions[6]);
 	directions[6].i = directions[6].i - perpendicular.i * 0.70710677f;
 	directions[6].j = directions[6].j - perpendicular.j * 0.70710677f;

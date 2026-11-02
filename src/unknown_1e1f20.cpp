@@ -20,98 +20,42 @@ struct s_ai_weapon_definition
 
 long function_cbd50(long unit_index, short weapon_index);
 
-/* the weapon in the unit's current slot (0xcbd50, inlined by LTCG) */
-static inline long unit_get_current_weapon(long unit_index)
-{
-	return function_cbd50(unit_index, ai_object_get(unit_index)->current_weapon);
-}
-
-// score 22 (was 22): primary link observation and fallback handle transfer still differ.
-// Earlier: primary compare/load sharing and fallback handle transfer differ.
-// ordinary shared weapon query/nested gate 37/37; primary expression/index 36/37;
-// fallback index/direct exit 37/45; force-inline private query/read-only actor 37/37.
-// primary link compare/reread and fallback handle transfer differ.
-// Ordinary primary reads 37; ordinary guard/lookup alone 22/22; conditional primary 28;
-// direct fallback output 49; primary success output 45; success before fallback 34; integer result 22.
-// Round 129: query through the existing 0xcbd50 22 (kept; retail's fallback copies the unit
-// index to EAX before masking, ours masks in place); with ordinary primary reads 67; actor
-// fetched again for the fallback 60; early returns 68; nested fallback test 67; object,
-// header, handler and unit-pointer slot reads screened, no change.
-// Earlier: primary observation and fallback register transfer remain.
-// Inner result first with ordinary/original reads 39/22; native/unsigned
-// inner result 37/37; wide slot 47; inner both arms/selection 47/47;
-// inner entry result with direct fallback 45.
-// object input 37; readonly object input 37; object reference input 37; native slot 44;
-// reference and native slot 44; object result arms 47; object result first 37;
-// reference result first 37.
+/* the weapon in the current slot of the unit at +0x274 when the flag at
+   +0x268 is set, else (or when that one holds none) of the actor's unit at
+   +0x18 (0xcbd50 inlined by LTCG) */
 // @retail 0x1e1f20
 long function_1e1f20(long actor_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
 	long result = NONE;
 
-	if (actor->unknown268 && *(long volatile *)&actor->unknown274 != NONE)
-		result = unit_get_current_weapon(*(long volatile *)&actor->unknown274);
+	if (actor->unknown268 && actor->unknown274 != NONE)
+	{
+		long unit_index = actor->unknown274;
+		result = function_cbd50(unit_index, ai_object_get(actor->unknown274)->current_weapon);
+	}
 	if (result == NONE && actor->unknown018 != NONE)
-		result = unit_get_current_weapon(actor->unknown018);
+	{
+		long unit_index = actor->unknown018;
+		result = function_cbd50(unit_index, ai_object_get(actor->unknown018)->current_weapon);
+	}
 	return result;
 }
 
-/* the weapon in the unit's slot at +0x213 (0xcbd50, inlined by LTCG) */
-PRIVATE inline long secondary_weapon_get(long unit_index)
-{
-	return function_cbd50(unit_index, *((signed char *)ai_object_get(unit_index) + 0x213));
-}
-
-// score 12 (was 12): separate outer sentinel register and exit remain; the actor-base prefix agrees.
-// Earlier: with the slot query through 0xcbd50 (inlined) the actor-base add,
-// the masked-index copy and the inner sentinel are retail's; retail still keeps a separate
-// Frameless; independent outer sentinel and unit EDX lifetime still differ.
-// Actor-base addition, masked-index copy and inner sentinel agree; retail still keeps a separate
-// NONE result in ECX for the absent-unit exit (`or ecx, -1` ... `mov eax, ecx`).
-// Round 129: result initialised NONE then assigned 20 (separate result, but unit ECX and
-// result EDX); if/else 20; unit local with early return 22; direct call with early return 12;
-// force-inline private query 12; 60 screened local/field/getter/declaration-order forms 18-26.
-// Before: result after actor 24; unit-seeded result 28; caller noinline/inline 20/20;
-// word/short query slot 21/21; unsigned query datum 20; ordinary query contract 20; separate
-// outer failure return 22; result lifetime from entry 24; native unit index 20; readonly actor
-// input 20; existing weapon slot helper 20; shared query separate outer exit 22; shared query
-// result from entry 24; result assigned from both arms 21; existing query forceinline
-// declaration 20; inner entry result/both-arm assignment 20/20; absent slot return 19; inner
-// slot selection 20; inner sentinel early exit 19; readonly unit 20; two result lifetimes 24;
-// absent unit input return 22; unit pointer/readonly boundary 20/20; actor query boundary 27;
-// actor result first/from tests 30/27; slot sentinel result 27; actor slot sentinel 27; unit
-// and slot sentinel results 31.
-// result from entry 24; result assigned from both arms 21; existing query forceinline declaration
-// 20.
-// actor-base load folding and merged sentinel exits remain.
-// Inner entry result/both-arm assignment 20/20; absent slot return 19;
-// inner slot selection 20; inner sentinel early exit 19; readonly unit 20;
-// two result lifetimes 24; absent unit input return 22.
-// Earlier: base folding and separate outer sentinel remain.
-// Earlier 20 (was 20): base folding and separate outer sentinel remain.
-// Actor/object/both query force-inline 20/20/20; separate secondary call 66;
-// native outer/inner result 20/20; unsigned inner/outer result 20/20.
-// Unit pointer/readonly boundary 20/20; actor query boundary 27; actor result
-// first/from tests 30/27; slot sentinel result 27; actor slot sentinel 27;
-// unit and slot sentinel results 31.
-// Shared-query unit-seeded result 28; field-derived absent arm 20; unsigned/native query
-// input 12/12; unsigned query result 12; read-only actor with shared query 12; private query
-// C/stack contracts 12/12.
-// Private query output pointer last/first, result after actor/from entry 20/24/20/24;
-// output reference last/first, result after actor/from entry 20/24/20/24. Shared slot query unchanged.
-// Unit then result 20; result then unit/entry result with unit 24/24; unit two result arms 22;
-// field two result arms 12; result goto done 20; field pointer result/early return 20/17;
-// direct else 12; success guard 20; conditional return 12; field reference 17;
-// repeated actor query 22.
+/* the weapon in the slot at +0x213 of the actor's unit, NONE without a unit
+   (0xcbd50 inlined by LTCG) */
 // @retail 0x1e1fd0
 long function_1e1fd0(long actor_index)
 {
 	s_actor_view *actor = actor_get(actor_index);
+	long result = NONE;
 
-	if (actor->unknown018 == NONE)
-		return NONE;
-	return secondary_weapon_get(actor->unknown018);
+	if (actor->unknown018 != NONE)
+	{
+		long unit_index = actor->unknown018;
+		result = function_cbd50(unit_index, *((signed char *)ai_object_get(actor->unknown018) + 0x213));
+	}
+	return result;
 }
 
 // @retail 0x1e2030
@@ -499,40 +443,14 @@ struct s_node_view;
 void function_26be00(long actor_index, s_iterator *iterator);
 s_node_view *function_26be30(s_iterator *iterator);
 
-// score 7 (was 7): slot address and callback lookup allocation differ (the slot loop is matched
-// 0x1e1740's loop source, and a compile without LTCG allocates it like retail);
-// shared slot/condition callback/at-use callback 10/10/10; nullable slot
-// before lookup/after test 10/10; handler local/slot reference 10/10;
-// direct slot expressions 7.
-// slot cursor/cursor callback at use 115/115; signed slot type 7;
-// direct actor index 7; inclusive current count 99; empty callback continue 7;
-// counter lifetime from entry 30; callback declared before slot 7.
-// Type through slot/slot element, ternary on the expression/slot/inverted, callback before/after slot
-// 7/7/7/10/7/7; view and prop walk through the existing 0x25d740 wrapper and 0x26be00/0x26be30 7 (same
-// code, kept); 0x25d690 through its wrapper or a noinline declaration without the pragma: inlined, 132;
-// a 600 s permuter run (72 tries), none below 7.
-// Direct lookup with slot callback 10; pointer arithmetic/scaled offset 7/7;
-// later index reference/per-iteration index snapshot 7/7;
-// slot/callback/both outside the loop 7/7/7; inverted slot test 7.
-// Localised (reduced image, prop walk removed): the loop alone, or with any prefix that leaves
-// no zero in ebx, gets retail's allocation; every prefix with the reset helper's zero in ebx gets
-// ours. Reset with the parameter read directly 7; actor from the parameter 7; 0x28c before 0x278
-// 9; location after the two stores 15; 0x4fc before the 0x4ac test 11; nested swarm test with a
-// named perception index 7.
-// Further trials: slot-offset/type allocation and delayed slot-address formation remain.
-// uniform actor reads 157; entry iterator lifetime 7.
-// native prop result 7; actor/iterator 157.
-// actor/native prop 157; iterator/native prop 7.
-// all three receivers 157; all three/nested view validity 157.
 // @retail 0x1e23c0
 void function_1e23c0(long actor_index)
 {
- const long *index_reference = &actor_index;
- s_actor_view *actor = actor_get(*index_reference);
+ s_actor_view *actor = actor_get(actor_index);
  location_make_empty((s_location *)((byte *)actor + 0x250));
  *(bool *)((byte *)actor + 0x278) = false;
  *(long *)((byte *)actor + 0x28c) = NONE;
- actor_reset_state(*index_reference);
+ actor_reset_state(actor_index);
  if (actor->unknown4ac == 2)
   *(long *)((byte *)actor + 0x4c8) = NONE;
  *(long *)((byte *)actor + 0x4fc) = NONE;
@@ -543,10 +461,10 @@ void function_1e23c0(long actor_index)
   s_slot *slot = &actor->slots[i];
   t_slot_proc callback = g_46eeb8[slot->type]->proc30;
   if (callback)
-   callback(*index_reference, i < 4 ? &actor->slots[i] : NULL);
+   callback(actor_index, i < 4 ? &actor->slots[i] : NULL);
  }
  s_iterator iterator;
- function_26be00(*index_reference, &iterator);
+ function_26be00(actor_index, &iterator);
  s_prop_node_view *prop;
  while ((prop = (s_prop_node_view *)function_26be30(&iterator)) != NULL)
  {
@@ -579,9 +497,8 @@ void function_203f60(long actor_index);
 void function_203fb0(long actor_index);
 
 // @retail 0x1e3400
-void function_1e3400(long actor_index, long squad_index)
+void function_1e3400(long actor_index, short squad_index)
 {
- const long *squad_reference = &squad_index;
  s_actor_view *actor = actor_get(actor_index);
  function_1e22d0(actor_index, false);
  if (*((byte *)actor + 0xa))
@@ -590,14 +507,14 @@ void function_1e3400(long actor_index, long squad_index)
   function_203ed0(actor_index, false);
  if (function_1e13f0(actor_index))
  {
-  if ((short)*squad_reference != NONE)
+  if (squad_index != NONE)
   {
-   function_203d70(actor_index, (short)*squad_reference, true);
+   function_203d70(actor_index, squad_index, true);
    return;
   }
  }
  else
-  *(long *)((byte *)actor + 0x34) = (short)*squad_reference;
+  *(long *)((byte *)actor + 0x34) = squad_index;
  function_203f60(actor_index);
 }
 
@@ -675,7 +592,7 @@ void function_1e1740(long actor_index, long object_index);
 void function_26dc20(long actor_index);
 void swarm_leader_detach(long actor_index);
 
-// score 285 (was 285): frame 0x1c versus 0x20, entry actor displacement and cleanup stack homes remain.
+// score 281 (was 281): frame 0x1c versus 0x20, entry actor displacement and cleanup stack homes remain.
 // Earlier: Frame 0x20 agrees; early actor-pool allocation, cleanup and slot homes remain.
 // frame 0x1c versus 0x20, early actor/pool allocation,
 // cleanup countdown and slot homes remain.
@@ -793,6 +710,53 @@ void swarm_leader_detach(long actor_index);
 // DH round 234 (fast control 261, ordinary 285): direct callback-field observations with
 // native iterator/cleanup lexical scopes and unsigned cleanup ordinal, eight forms 261 each.
 // Original body restored; frame 0x1c/0x20 and actor/displacement/countdown homes remain.
+// Round 186 (fast control 261, ordinary 285): participant pool/readonly pool/guarded data/pool-data
+// observations with original/const callback locals 262/262, 262/262, 261/261, 262/262.
+// Original pool observations, callback local and body restored; frame and cleanup homes remain.
+// DH round 236: terminal three-slot table ordinal initialized at function entry or before
+// the tag query, long/short/byte/dword in each lifetime: eight 261 fast, equal to unchanged
+// fast control (full 285). Original ordinal lifetime and entire executable body restored;
+// frame 0x1c/0x20, actor displacement and cleanup countdown homes remain.
+// Y423: Absent-stop continuation with empty-memory continuation, false-count
+// dispatch first and ordinary-unit branch first, all eight subsets 261 fast
+// against unchanged fast 261 (ordinary 285). Original complete body restored.
+// Round 179 (plain 285; an LTCG link of this file with the callee closure, globals and the callers' files
+// reproduces the full listing exactly, where --fast does not): `value` as bool at the definition and all
+// eight declarations 286 plain; memory test through the entry actor with the body re-derived 1028 bytes,
+// with the participant index read per store 1044; joint_decline called (stays a call, 900 bytes); the
+// participant index read per store alone 996 bytes; the duplicate memory pointer re-derivation dropped:
+// identical code, kept. Without unknown_272b70's object (0x272b70 unresolved, so the 0x258600 ->
+// 0x258540 -> 0x258480 chain is compiled with unknown clobbers) the entry and slot loop take retail's
+// registers (actor EBP, index EDI, offset spilled to [esp+0x10]): the allocation follows what LTCG knows
+// about 0x258600's chain. The memory loop is joint_decline inlined, which its /Ob1 file prevents.
+// Round 184 (lane 3, fast control 261, plain 285): the iterator compare against the entry actor 285;
+// the 0x7c test and argument through the entry actor 287 (964 bytes); the tail reads (0x3f4, 7, 0x1c,
+// 0x18, 0x54) through it 291 (974 bytes); the prop-list clear through it 290; 0x1e1740's slot-local
+// loop 261 (same code). 0x258600 takes the actor index in EDI in both builds. Still BLOCKED-BY
+// 0x26ed40 (inlined in retail, kept out of line by its file's flags).
+// Round 132 (lane 6, plain): the prop-owner scan through the existing record-pool iterator
+// (data_iterator_next_inlined) in place of the hand-expanded index scan and NULL test 281 (kept;
+// 981 bytes; the found block now sits out of line as in retail); on that: the prop walk through
+// prop_node_get at each use 284; through one prop_node_get pointer local 290 (965 bytes); the
+// participant index read at each store 299 (997 bytes); the scan through the datum iterator 281
+// (same code); every actor read through a fresh actor_get with no actor local 310 (1012 bytes, but
+// aligned 153 against 190: frame 0x20, index EDI, callback ECX and the spilled offset are then all
+// retail's, and only retail's cached actor pointer in EBP is missing).
+// Round 67 (lane 16, plain each): every function in 0x258600's callee closure (0x258540, 0x258480, 0x16ba40) is
+// matched, so that lead is not a stub or unmatched body there; 0x2628f0 (a direct callee) and deeper 0x1e3b60,
+// 0xcc810, 0x203bf0 and 0x28f8d0 are unmatched. A named bool for the definition bit (`bool counted = definition
+// && ...; if (counted)`) 285 (identical code); the memory test through the entry actor with the body re-derived
+// 352 (1028 bytes: frame 0x20 and the cursor spilled to +0x14 as retail, but the actor offset and index fold into
+// one `index * 0xb6 + i` multiply instead of retail's spilled offset plus an i*12 IV); that with a short memory
+// index 371 (1044 bytes); the bit tested as `*definition & 8` 285; 0x203ed0's argument as `value != 0` 285.
+// Y488: native actor members at 0x10/0x1c/0x3f4, seven subsets and
+// all with short bounded cleanup ordinal, eight 261 against fast control 261.
+// Real type and complete body restored; ordinary 285, frame/actor/cleanup homes remain.
+// Y499: native cleanup/prop-iterator/actor-iterator phase scopes, seven subsets and
+// all with terminal receiver role name, eight 266 against fast control 266 (ordinary 281).
+// Original body restored; frame 0x1c/0x20, actor/displacement and cleanup homes remain.
+// M305: Native terminal parallel-table bound walk, for/while, less/not-equal and pointer declaration orders
+// 270/269/270/269/270/269/270/269 fast versus unchanged fast 266 (ordinary 281).
 // @retail 0x1e1a00
 void __stdcall function_1e1a00(long actor_index, long value)
 {
@@ -811,7 +775,6 @@ void __stdcall function_1e1a00(long actor_index, long value)
 		s_slot_memory_entry *memory = &actor_get(actor_index)->memory[memory_index];
 		if (memory->type != NONE)
 		{
-			memory = &actor_get(actor_index)->memory[memory_index];
 			byte *entry = g_502424->data + (memory->unknown4 & 0xffff) * 0xbc;
 			long slot = *(short *)((byte *)memory + 2);
 			*(long *)(entry + slot * 12 + 4) = NONE;
@@ -838,12 +801,12 @@ void __stdcall function_1e1a00(long actor_index, long value)
 		record_pool_release(g_502418, current);
 	}
 	actor_get(actor_index)->first_prop_index = NONE;
-	long index = NONE;
-	while ((index = data_next_absolute_index_inlined(g_50241c, index + 1)) != NONE)
+	s_record_pool_iterator prop_iterator;
+	byte *prop;
+	prop_iterator.data = g_50241c;
+	prop_iterator.index = NONE;
+	while ((prop = data_iterator_next_inlined(&prop_iterator)) != NULL)
 	{
-		byte *prop = g_50241c->data + g_50241c->size * index;
-		if (!prop)
-			break;
 		if (*(long *)(prop + 0x1c) == actor_index)
 			*(long *)(prop + 0x1c) = NONE;
 	}

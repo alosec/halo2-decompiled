@@ -4,7 +4,9 @@
 
 #include "unknown_11c920.h"
 #include "unknown_0259d0.h"
+#include "matrix_transform.h"
 #include "data_array.h"
+#include "vector_products.h"
 #include "globals.h"
 #include <float.h>
 #include <math.h>
@@ -196,12 +198,21 @@ PRIVATE inline void shape_scale3d(vector3f const *v, real scale, vector3f *out)
 	out->k = v->k * scale;
 }
 
+/* the sum of two squares */
+PRIVATE inline real shape_square_sum(real const &a, real const &b)
+{
+	real square = a * a;
+	square += b * b;
+	return square;
+}
+
 /* The point test inlined into the shape collection query. */
 PRIVATE inline bool shape_sphere_point(s_sphere const *sphere, point3f const *point, plane3f *plane, real *depth)
 {
 	vector3f d;
 	vector3d_from_points3d(&sphere->center, point, &d);
-	real distance_squared = d.j * d.j + d.k * d.k + d.i * d.i;
+	real distance_squared = shape_square_sum(d.i, d.k);
+	distance_squared += d.j * d.j;
 	if (sphere->radius * sphere->radius > distance_squared)
 	{
 		real distance = (real)sqrt(distance_squared);
@@ -212,7 +223,8 @@ PRIVATE inline bool shape_sphere_point(s_sphere const *sphere, point3f const *po
 		}
 		else
 		{
-			plane->i = plane->j = 0.f;
+			plane->i = 0.f;
+			plane->j = 0.f;
 			plane->k = 1.f;
 		}
 		plane->d = dot3f((vector3f const *)&sphere->center, &plane->n) + sphere->radius;
@@ -232,39 +244,6 @@ PRIVATE inline void shape_copy_header(s_shape_header const *source, s_shape_head
 	out->unknown0e = source->unknown0e;
 }
 
-// score 57 (was 61): the sphere test's normal: retail multiplies the x and z
-// differences in place (normal x/y/z in xmm1/xmm3/xmm2) and loads 1.0 in each arm;
-// ours multiplies copies of the scale and hoists 1.0 into xmm0 before the fsqrt.
-// The unit-z arm's zero stores chained (y first, then x) 57 (each order with y or z
-// first 57, x first 61); depth before plane->d 61-65; distance-squared order i,k,j 61,
-// k,i,j 59; the scale helper's statement orders 61-158, operand orders 57;
-// scale declared first 61; the difference vector by fields 61; in-place scale + copy 397.
-// the first float of the pair is loaded into XMM2 here and
-// into XMM1 in retail, so the registers of the following subtractions are
-// swapped as well.
-// score 61 (was 61): separate normal workspace 397; default normal workspace 397;
-// displacement in output normal 181; radius-square local 61; component-square lifetimes 61;
-// immutable distance 61; sphere reference 61; point reference 61. Sphere XMM homes still differ.
-// score 57 (was 57): sphere displacement/normal homes and reciprocal-one hoisting remain.
-// Shared scaled difference 57; original-grouping squared-distance accumulator and paired
-// difference 61/61; normal memset and accumulator/reset 176/180; plain component scale
-// loop and shared-difference loop 57/57; normal reset with scale loop 175.
-// sphere displacement XMM homes and the early reciprocal-one load remain.
-// Shared squared length/self product 152/152; outside-sphere exit 57; root declared first 57;
-// default output before normalization 174; center/sphere value copies 397/396; center plus squared helper 397.
-
-// score 57 (was 57): displacement/normal XMM homes and early reciprocal-one load remain;
-// late radius after normal/before root/after root, shared double-factor scale, in-place input,
-// late radius with scale, native factor and partial squared distance 62, 65, 65, 397, 397, 397, 397, 61.
-// sphere displacement/normal coalescing and reciprocal-one hoisting remain.
-// Containment-test return, successful plane/depth pointer returns, normal-first projection,
-// projection value, existing reverse dot in either input order and test/projection result all 57.
-// score 57 (was 57): the normal's x and z products go in place only when the sum's first reads of
-// the difference's x and z are memory reads and y's is not; a pointer local to the difference read
-// for x and z in a statement sum x, z, y, with the dot product's inputs swapped and the unit-z
-// zeros stored separately, matches. Unit-z arm first 62; double reciprocal 397; reciprocal in the
-// call 57; regrouped sums 57-61; direct statement sums in each order 61; dot swap 57; zero stores
-// 61; difference in the plane normal 177; squared-length/self-dot helpers with both fixes 152.
 // @retail 0x245ef0
 bool function_245ef0(s_shapes const *shapes, point3f const *point, s_shape_result *result)
 {
@@ -312,8 +291,8 @@ PRIVATE inline real shape_dot_reverse(vector3f const *a, vector3f const *b)
 	return a->k * b->k + a->j * b->j + a->i * b->i;
 }
 
-// score 40 (was 40): the float is loaded into XMM1 and moved to XMM0; retail loads it into XMM0 and
-// moves XMM5 into XMM1.
+/* the fraction of direction at which point, moving along it, first touches the sphere (0 when it
+   starts inside), with the sphere's tangent plane there */
 // @retail 0x2461a0
 bool function_2461a0(
 	s_sphere const *sphere,
@@ -326,8 +305,7 @@ bool function_2461a0(
 	vector3f d;
 	vector3d_from_points3d(point, &sphere->center, &d);
 	real radius_squared = sphere->radius * sphere->radius;
-	real c = d.k * d.k;
-	c += d.i * d.i;
+	real c = shape_square_sum(d.k, d.i);
 	c += d.j * d.j;
 	c -= radius_squared;
 	if (0.f >= c)
@@ -343,7 +321,7 @@ bool function_2461a0(
 		{
 			real a = direction->j * direction->j + direction->k * direction->k + direction->i * direction->i;
 			real discriminant = b * b - a * c;
-			if (discriminant >= g_45dbd8)
+			if (discriminant >= 0.f)
 			{
 				/* retail compares the unrounded root and divides the rounded one */
 				real root = b - sqrt(discriminant);
@@ -368,11 +346,17 @@ bool function_2461a0(
 			plane->j = 0.f;
 			plane->k = 1.f;
 		}
-		plane->d = dot3f((vector3f const *)&sphere->center, &plane->n) + sphere->radius;
+		plane->d = dot3f(&plane->n, (vector3f const *)&sphere->center) + sphere->radius;
 	}
 	return result;
 }
 
+// score 104 (was 106): every sum now associates as in retail (the compiler reorders unparenthesized
+// sums of three products); what still differs is scheduling of the first block: retail multiplies
+// v.k by u.k from memory before summing a, and keeps a in XMM3 and uv in XMM0 (ours XMM4, XMM1), which
+// swaps registers to the end. Tried: any subset of the four parenthesized sums (151-214), w computed
+// k, j, i by hand (211), a or uu parenthesized (180, 206), uv unparenthesized in any order (214),
+// uv as += statements (182), a/uv/uu statement orders (104-217), den = a * uu (104).
 // @retail 0x246360
 bool function_246360(
 	vector3f const *direction,
@@ -393,10 +377,10 @@ bool function_246360(
 	}
 	vector3f w;
 	vector3d_from_points3d(&capsule->origin, start, &w);
-	real uw = dot3f(u, &w);
-	real vw = v->k * w.k + v->j * w.j + v->i * w.i;
+	real uw = (u->j * w.j + u->i * w.i) + u->k * w.k;
+	real vw = (v->k * w.k + v->j * w.j) + v->i * w.i;
 	real b = vw * uv - uw * a;
-	real c = (w.k * w.k + w.j * w.j + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
+	real c = ((w.k * w.k + w.j * w.j) + w.i * w.i - capsule->radius * capsule->radius) * a - vw * vw;
 	real disc = b * b - c * den;
 	if (0.f > disc)
 	{
@@ -462,7 +446,7 @@ bool function_246360(
 	q.i = u->i * t_enter + w.i;
 	q.j = u->j * t_enter + w.j;
 	q.k = u->k * t_enter + w.k;
-	real along = (v->k * q.k + v->j * q.j + q.i * v->i) / a;
+	real along = ((v->k * q.k + v->j * q.j) + q.i * v->i) / a;
 	real back = 0.f - along;
 	plane->i = v->i * back + q.i;
 	plane->j = v->j * back + q.j;
@@ -477,16 +461,8 @@ bool function_246360(
 	return true;
 }
 
-// score 53 (was 53): the multiplier is kept in XMM1 and multiplied into XMM0; retail loads the
-// multiplier into XMM0 and multiplies by XMM1.
-// score 53 (was 53): plane object reference 210; origin reference 57; direction reference 53;
-// projected-start initializer 53; projected-direction initializer 53; paired initializers 55;
-// vertex-end traversal 66; quotient update 53. Projection operands and edge allocation still differ.
-// operand text order of the six products is canonicalised (each flip 53);
-// the negated distance computed at entry 164; both projected points through one inline
-// point-plus-scaled-normal helper 83, though it gives retail's three plane-first loads for the
-// start point and the last two direction products (only the first direction product and the
-// edge loop's registers still differ).
+/* where along start + t * direction (t in [0, 1]) the segment first enters a prism, and the
+   prism's top plane */
 // @retail 0x2466b0
 bool function_2466b0(
 	point3f const *start,
@@ -496,10 +472,10 @@ bool function_2466b0(
 	plane3f *out)
 {
 	real b = plane_distance_to_point(&prism->plane, start);
-	real a;
 	real t0 = 0.f;
 	real t1 = 1.f;
-	if (!(fabs(a = shape_dot_reverse(&prism->plane.n, direction)) < k_real_epsilon))
+	real a = shape_dot_reverse(&prism->plane.n, direction);
+	if (!(fabs(a) < k_real_epsilon))
 	{
 		real inv = 1.f / a;
 		real s0 = 0.f - inv * b;
@@ -535,37 +511,32 @@ bool function_2466b0(
 	{
 		return false;
 	}
-	real nb = 0.f - b;
-	real q0[3];
-	q0[0] = prism->plane.i * nb + start->x;
-	q0[1] = prism->plane.j * nb + start->y;
-	q0[2] = prism->plane.k * nb + start->z;
+	vector3f q0;
+	vector3f_add_scaled((vector3f const *)start, &prism->plane.n, -b, &q0);
 	real na = 0.f - a;
 	real q1[3];
 	q1[0] = na * prism->plane.i + direction->i;
 	q1[1] = prism->plane.j * na + direction->j;
 	q1[2] = prism->plane.k * na + direction->k;
 	point2f s2;
-	prism_project(q0, prism->axis, prism->side, &s2);
+	prism_project(&q0.i, prism->axis, prism->side, &s2);
 	point2f d2;
 	prism_project(q1, prism->axis, prism->side, &d2);
 	long count = prism->point_count;
+	long i = 0;
 	if (count > 0)
 	{
-		long i = 1;
-		point2f const *local_0 = prism->points;
 		do
 		{
-			long next = i >= count ? 0 : i;
-			point2f const *cur = local_0;
-			point2f offset;
-			offset.y = s2.y - cur->y;
-			offset.x = s2.x - cur->x;
+			point2f const *vertex = &prism->points[i];
+			long next = (i + 1 >= count) ? 0 : i + 1;
+			point2f const *next_vertex = &prism->points[next];
 			point2f edge;
-			edge.y = prism->points[next].y - cur->y;
-			edge.x = prism->points[next].x - cur->x;
-			real denom = edge.y * d2.x - d2.y * edge.x;
-			real num = offset.y * edge.x - edge.y * offset.x;
+			vector2d_from_points2d(vertex, next_vertex, &edge);
+			point2f offset;
+			vector2d_from_points2d(vertex, &s2, &offset);
+			real denom = shape_cross2d(&d2, &edge);
+			real num = shape_cross2d(&edge, &offset);
 			if (!(fabs(denom) < k_real_epsilon))
 			{
 				real r = num / denom;
@@ -592,9 +563,8 @@ bool function_2466b0(
 			{
 				return false;
 			}
-			local_0++;
 			i++;
-		} while (i - 1 < count);
+		} while (i < count);
 	}
 	*t = t0;
 	out->n = prism->plane.n;
@@ -736,27 +706,6 @@ struct s_frame_2477b0
 	matrix3x3 rotation;
 	point3f position;
 };
-
-PRIVATE __forceinline vector3f *function_2477b1(
-	matrix3x3 const *matrix, vector3f const *vector, vector3f *out)
-{
-	vector3f copy;
-	if (vector == out)
-	{
-		copy = *vector;
-		vector = &copy;
-	}
-	out->i = matrix->left.i * vector->j + matrix->up.i * vector->k + matrix->forward.i * vector->i;
-	real j = matrix->left.j * vector->j;
-	j += matrix->forward.j * vector->i;
-	j += matrix->up.j * vector->k;
-	out->j = j;
-	real k = matrix->left.k * vector->j;
-	k += matrix->forward.k * vector->i;
-	k += matrix->up.k * vector->k;
-	out->k = k;
-	return out;
-}
 
 // @retail 0x2477b0
 void function_2477b0(

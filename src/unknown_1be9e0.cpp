@@ -136,7 +136,6 @@ static __forceinline long real_to_long(real value);
 // countdown arms reversed 87 (retail length); accepted arms reversed 57; earlier
 // participant-sum declaration 24; direct accepted return 67; count result 90;
 // node-level return removed on the narrow-sum graph 81.
-// they need no casts).
 // Round 165: explicit negative eligibility exits, original/full-width retry snapshot,
 // status-three-first and both 24/27/43/46; positive nested eligibility with the same
 // three alternatives 24/27/43/46. Narrow sum, early counter and original body restored.
@@ -150,6 +149,30 @@ static __forceinline long real_to_long(real value);
 // flat early returns 143; one final return for the count failure 131;
 // count result by if/else 90; else-return nesting alone 24; count test
 // `>= 2` first on the explicit-return graph 24.
+// Round 45: VC keeps a merged return at its first occurrence. The countdown returning
+// g_46fbe8 while it counts (expiry falling to the node-level g_46fbe4) with the count test
+// returning both values keeps the count test's g_46fbe4 return separate, as retail, but the
+// merged g_46fbe8 return then sits after the countdown: 87 at retail's 457 bytes (count test
+// `< 2` first 87); the same with the NONE test as an early return 128 (448 bytes); with the
+// countdown also returning both 90 (461 bytes); the node failure as an else return 24;
+// g_46fbe8 returned once at the end after else returns for the node failure and NONE, with
+// the count test returning g_46fbe4 or both values: 24, 24 (same code).
+// Round 56: inline definition 24; multi-exit finished result after the actor 60, in the
+// participant branch 24, eligible branch 93, property branch 62; continue result in the
+// participant/eligible/function scopes 72/91/119. Original returns and result lifetimes restored.
+// Round 118: the slot's data block typed through `slot->unknownc` 24 (same code: retail
+// addresses the slot itself); the countdown returning g_46fbe8 while it counts and the
+// count test returning g_46fbe8 on success, both failures falling to the node-level
+// g_46fbe4 87 (retail length, the shared g_46fbe4 return then sits after the count test);
+// that with the missing prop as an early return 128; with the node failure as an early
+// return 131; the missing prop and node failure sharing one final return 81.
+// Round 134: the participant loop and count test as an inline helper returning the status 402 out of
+// line (195 bytes), 146 forced inline (470 bytes); both continuing paths `goto` a g_46fbe8 return after
+// the missing-prop return 24; an early missing-prop return with the countdown test reversed 141 (440 bytes);
+// the count test first in an if/else 57; the count failure through a named local 24. A compile-only screen
+// (it reproduces the return order: ours g_46fbe4, pause, g_46fbe8, g_46fbe4; retail g_46fbe4, pause, g_46fbe4,
+// g_46fbe4, g_46fbe8) of 378 + 180 combinations of the count test, countdown, node failure, missing prop and final
+// return forms, gotos, one result, and casts or a local on any one return found none with retail's order.
 // @retail 0x1beb70
 short __stdcall function_1beb70(long actor_index, s_slot *slot, bool active)
 {

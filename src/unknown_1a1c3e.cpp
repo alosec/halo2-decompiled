@@ -298,7 +298,26 @@ void motion_sensor_blip_set_position(point2f const *point, s_motion_sensor_blip 
 // 26; conditional pool refresh with header reference 24, with absolute slot 24.
 // the sensor table pointer is kept in ECX, retail keeps it in EAX. Tried (r27b): the
 // mask written inline at each test 26; the friendly-team test as `!= NONE && call` with
-// the rider branch in the else 26.
+// the rider branch in the else 26. The rider lookup in both arms of the friendly test through a
+// forceinline vehicle-type helper 261 (480 bytes: no cross-jump; the no-call arm also keeps
+// the data pointer, which retail re-reads); one pool local for both lookups 108 (pool in EBX,
+// NONE no longer a register); rider index as a ternary 26; no-rider arm first 60 (366); a named
+// rider pointer 26.
+// Round 59: the existing object accessor at the initial/both lookups 26/26; the existing header
+// accessor at the initial/both lookups 26/26; direct team reads 137; a pre-call pool with inline
+// masks 119; a post-test pool select 87; a single-exit pool refresh 83; a shared initial/rider
+// pool with the single-exit refresh 114. Original body restored.
+// Round 57 (m3 lane 9): without the friendly-team call ours keeps the data pointer for the rider lookup, so only
+// retail's partial reload of the array pointer after the call is missing (a load our build never inserts on
+// one path); a global store in 0x1df560 (diagnostic) changes nothing (26). The array pointer in a local at the
+// rider block start 26 (sunk); the same local for the first lookup only 26; an unsigned mask 26; a char team
+// local 121; a byte result 26.
+// Round 152: retail's first lookup leaves the pool global in eax (scaled index ecx, data and then the
+// mask in edx), and its no-call branch targets the instruction after the rider block's global reload
+// (0x1a1edc, past 0x1a1ed7), possibly a late pass acting because eax still holds the value (not tested); ours
+// puts the global and data in ecx and the mask in eax, so nothing survives. The friendly test as a bool
+// `!= NONE && call` local 26, as a flag set under the 0x12c test 26; the type in a long local 26, in a
+// char local 26; a short mask 26.
 // @retail 0x1a1e49
 char motion_sensor_object_type(long local_player_index, long object_index)
 {
@@ -390,12 +409,8 @@ __forceinline short function_1a1fb0(short height)
 	return height;
 }
 
-// score 9 (was 9): retail loads the global after the store of the height, ours loads it before.
-// The volatile view keeps the blip on the stack, reread at each use, as retail. Tried (r27b): the
-// plain form 78 (the blip travels in ebx); a `const` reference to the blip without volatile 51
-// (on the stack but kept in ebx).
-// Scoped primary receiver 9; split branch receivers 9; store in the override condition 9;
-// a two-use height-field pointer 61; a shared setter 9; const receivers 9; clamp-and-store helper 34.
+/* sets a blip's type and its height from the object it shows; the volatile view keeps
+   the blip on the stack (retail's ret 4) and reads it once after the type call */
 // @retail 0x1a1faf
 void motion_sensor_blip_set_type(long local_player_index, long object_index, s_motion_sensor_blip *blip)
 {
@@ -415,17 +430,15 @@ void motion_sensor_blip_set_type(long local_player_index, long object_index, s_m
 		{
 			short height = SENSOR_DEFINITION(object->definition_index)->height194;
 			height = function_1a1fb0(height);
-			local_1 = *local_0;
-			local_1->height = (char)height;
+			blip->height = (char)height;
 			if (g_4e6948->state == 2 && (type == 7 || type == 8))
-				local_1->height = 2;
+				blip->height = 2;
 		}
 		else if ((1 << object->type) & 0x1000)
 		{
 			short height = SENSOR_DEFINITION(object->definition_index)->heightc2;
 			height = function_1a1fb0(height);
-			local_1 = *local_0;
-			local_1->height = (char)height;
+			blip->height = (char)height;
 		}
 	}
 }

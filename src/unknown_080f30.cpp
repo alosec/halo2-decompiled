@@ -272,6 +272,9 @@ struct s_pending_message_storage : s_pending_message_header
 // score 14 (was 14): the frame is 0x1c against retail's 0x18 and the stack-slot offsets
 // differ throughout; retail gives the pump counter and the size the two lowest slots and
 // packs the time stamp's high half into the tick counter's slot, ours gives it its own.
+// Round 103: const capacity, split capacity read, null allocation outside or inside the guard,
+// requested_capacity and worker_allocation 14 each; cached capacity for the request size 80 (287
+// bytes), for the optional size 20 (281). Original body restored.
 // unsigned capacity 14; result after both outputs 85; result after pointer output 85; unsigned
 // capacity and late result 85; published field output 14; published field test 14; both
 // published field consumers 14; allocation-result flow 45. _ReadWriteBarrier before the
@@ -289,6 +292,22 @@ struct s_pending_message_storage : s_pending_message_header
 // Direct capacity field reads 14; storage-first guard 40; full-width unsigned result 92;
 // optimistic result with failure arms 98; request/allocation shared exits 14/14;
 // native int capacity 14; direct capacity with full-width result 92.
+// Round 89 (frame probe): ours packs the first time stamp with pumps and gives start's spilled high half
+// its own slot; retail packs start with the time stamp (pumps alone). Renames, declaration moves, clamp
+// spellings and start as a parameter keep this layout; it changes only when start is fully spilled.
+// Named now in the helper 14; elapsed -= start 94 (0x8c790 67); result declared first 14.
+// Round 60 (header helper, checked on all its users): the helper's result declared before start 15
+// (both pushes then precede the time stamp stores as in retail, but `xor esi, esi` moves between
+// them; 0x6a8a0 2 -> 12, 0x18f260 4 -> 75); pumps declared at the helper's top 14; the page count
+// read without a local 14 (0x1241b0 lost, 0x862e0 148); const start 14; a named second reading 14.
+// A one-link harness of this file shows the same 0x1c frame for start passed in as the helper's
+// first parameter, with or without pumps at the top, and for joined size/page tests.
+// Round 26 (all on a copy of the helper in this file, header untouched): a second named copy of start 14; the
+// elapsed time or the elapsed seconds through their own helpers taking start 14/14; start as an inner helper's
+// parameter 14; start and the pump count both as its parameters 105 (286 bytes, frame 0x14: the request moves to
+// the stack, as for the pump count initialised at the helper's top 105); a pump count declared at the top and set
+// at the loop 14. Packing follows live ranges, not scope: that last form still gives the first time stamp's slot to
+// the pump count.
 // @retail 0x80e10
 bool function_80e10(s_pending_message_storage *request, void **output, long *size)
 {

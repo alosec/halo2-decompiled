@@ -33,14 +33,15 @@ __int64 timing_counter_resume(timing_counter *c)
 	return total;
 }
 
-// score 4: identical body and length; our prologue stores the first delta
-// zero before pushing esi, while retail pushes esi first and then stores both
-// zero dwords. The permuter found no better variant.
+/* a compiler barrier ahead of the time stamp read, as 0x194260 has before its timer mark */
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 // @retail 0x223b60
 __int64 timing_counter_stop(timing_counter *c)
 {
 	if (!c->stopped)
 	{
+		_ReadWriteBarrier();
 		__int64 delta = read_tsc() - c->start;
 		if (delta < 0) delta = 0;
 		c->total += delta;
@@ -48,6 +49,7 @@ __int64 timing_counter_stop(timing_counter *c)
 	}
 	return c->total;
 }
+#pragma function(_ReadWriteBarrier)
 
 // @retail 0x223bb0
 double timing_ticks_to_seconds(__int64 ticks)
@@ -71,34 +73,23 @@ __int64 timing_counter_peek(timing_counter *c)
 	return total;
 }
 
-// score 28: the conversion is correct, but our compiler keeps the union local
-// in registers (`movzx eax`; `shr ax`) while retail keeps it in memory
-// (`xor ecx, ecx`; `mov cx, [eax]`; `shr word ptr [esp + 4], 5`) and puts the
-// blue channel in dl. No source shape or annealed permuter run reproduced it.
 // @retail 0x223e70
 void function_223e70(const word *rgb, S3TC_COLOR *out)
 {
-	union
-	{
-		dword d;
-		word w;
-		byte bytes[4];
-	} u;
+	S3TC_COLOR color;
 	word w = *rgb;
-	dword c = w;
-	byte b = (byte)(c << 3);
-	b |= b >> 5;
-	u.d = c;
-	u.w >>= 5;
-	byte g = (byte)(u.bytes[0] << 2);
-	g |= g >> 6;
-	byte r = (byte)(u.d >> 6);
-	r <<= 3;
-	r |= r >> 5;
-	u.bytes[0] = b;
-	u.bytes[1] = g;
-	u.bytes[2] = r;
-	*(dword *)out = u.d;
+	color.b = (byte)w;
+	w >>= 5;
+	color.g = (byte)w;
+	w >>= 6;
+	color.r = (byte)w;
+	color.b <<= 3;
+	color.g <<= 2;
+	color.r <<= 3;
+	color.b |= color.b >> 5;
+	color.g |= color.g >> 6;
+	color.r |= color.r >> 5;
+	*out = color;
 }
 
 PRIVATE inline s_fixup_element *fixup_entry_target(s_fixup_entry *entry, byte *base8)

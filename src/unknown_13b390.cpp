@@ -59,35 +59,24 @@ byte const g_44178c[k_number_of_function_types] = { 0, 1, 2, 4, 6, 20, 32, 12, 4
 real function_17c900(short function_type, real input);
 real function_17ca10(real x, short curve);
 
-/* sqrt(a) / sqrt(b), approximately: the square root of a from its bits (built in a's own
-   storage), times rsqrtss of b */
+/* sqrt(a) / sqrt(b), approximately: the square root of a from its bits, times rsqrtss of b */
 static __forceinline real square_root_ratio_approximate(real a, real b)
 {
-	*(long *)&a = (*(long *)&a >> 1) + 0x1fc00000;
+	real root;
+	*(long *)&root = (*(long *)&a >> 1) + 0x1fc00000;
+	real denominator = b;
 	real reciprocal;
 
 #if H2_NATIVE_PORT
-	reciprocal = 1.0f / __builtin_sqrtf(b);
-	return reciprocal * a;
+	reciprocal = 1.0f / __builtin_sqrtf(denominator);
 #else
 	__asm
 	{
-		rsqrtss xmm0, b
+		rsqrtss xmm0, denominator
 		movss reciprocal, xmm0
-		fld reciprocal
-		fmul a
 	}
 #endif
-}
-
-struct vector2f
-{
-	real i, j;
-};
-
-static inline real length_sq2f(vector2f const *v)
-{
-	return v->i * v->i + v->j * v->j;
+	return root * reciprocal;
 }
 
 /* a squared plus b squared, from two coordinate differences */
@@ -113,10 +102,6 @@ point2f *function_13bec0(s_tag_data const *function, byte range_index, byte poin
 	return NULL;
 }
 
-// score 11 (was 364): the remaining differences are in square_root_ratio_approximate, in both
-// spline2 ranges (7 instructions in the low range, 4 in the high): retail spills the numerator into
-// the slot rsqrtss then reuses for its operand and stores the shifted root before that operand;
-// ours uses other slots and emits the two stores in the opposite order.
 // @retail 0x13b390
 real function_13b390(void const *function, real input, real range)
 {
@@ -249,7 +234,8 @@ real function_13b390(void const *function, real input, real range)
 					}
 					else if (!(fabs(start_length_squared - end_length_squared) < 0.0001f))
 					{
-						real ratio = square_root_ratio_approximate(start_length_squared, end_length_squared);
+						/* bound by reference: retail keeps the ratio in memory across the input's load */
+						real const &ratio = square_root_ratio_approximate(start_length_squared, end_length_squared);
 						real value = (real)pow(input, ratio);
 						t = 0.0f > value ? 0.0f : (value > 1.0f ? 1.0f : value);
 					}
@@ -268,22 +254,17 @@ real function_13b390(void const *function, real input, real range)
 					point2f const *p1 = function_13bec0(field_4_7, 1, 1);
 					point2f const *p2 = function_13bec0(field_4_7, 1, 2);
 					point2f const *p3 = function_13bec0(field_4_7, 1, 3);
-					/* the differences are passed y first here, which is the order retail evaluates them in the high range */
-					real end_length_squared = length_squared_components(p2->y - p3->y, p2->x - p3->x);
+					real end_length_squared = length_squared_components(p2->x - p3->x, p2->y - p3->y);
 					if (end_length_squared > 0.0001f)
 					{
-						/* also y first; the length is still x squared plus y squared */
-						vector2f vector;
-						vector.j = p0->y - p1->y;
-						vector.i = p0->x - p1->x;
-						real start_length_squared = length_sq2f(&vector);
+						real start_length_squared = length_squared_components(p0->x - p1->x, p0->y - p1->y);
 						if (fabs(start_length_squared) < 0.0001f)
 						{
 							t = 1.0f;
 						}
 						else if (!(fabs(start_length_squared - end_length_squared) < 0.0001f))
 						{
-							real ratio = square_root_ratio_approximate(start_length_squared, end_length_squared);
+							real const &ratio = square_root_ratio_approximate(start_length_squared, end_length_squared);
 							real value = (real)pow(input, ratio);
 							t = 0.0f > value ? 0.0f : (value > 1.0f ? 1.0f : value);
 						}

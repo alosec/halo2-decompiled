@@ -864,4 +864,9 @@ typedef struct D3DTexture *LPDIRECT3DTEXTURE8;
 typedef struct D3DSurface *LPDIRECT3DSURFACE8;
 typedef struct D3DDevice *LPDIRECT3DDEVICE8;
 
+/* a register combiner stage's four inputs (A, B, C, D), one byte each,
+   A in the high byte */
+#define PS_COMBINERINPUTS(a, b, c, d) \
+    ((DWORD)(((a) << 24) | ((b) << 16) | ((c) << 8) | (d)))
+
 #endif

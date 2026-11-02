@@ -70,6 +70,19 @@ PRIVATE __forceinline long texture_floor(real value)
 // Round 69: bitmap/bias at function scope 4/4; reversed level compare 4; `>=` magnitude test 90;
 // tag local for the NONE test 4. Harness: EAX only when the bitmap is a constant zero; a constant
 // bitmap in the arm, an unconditional bitmap or a call without it keep EDX.
+// Round 123: bit scan in an inline index helper 4; bit scan split into two asm statements 4;
+// bias assigned in the arm without its zero default 65; ignored call result named 4; bitmap
+// narrowed to short at the floor 16. Harness: the second floor's asm decides it (an asm copy
+// that clobbers EDX in place of ECX gives EAX here).
+// Round 10: integer level index before its float 4; const floor parameter 4; named bit before the
+// clear 4; element address as &state[...] 4; definition count read inline in the floor call 4.
+// Round 71: the entry body in a helper keeping (state, entry, index) 415 (90 bytes, out of line), (state, index)
+// 431, the part after the NONE test 409; the same three forceinline 4/4/4; forceinline bitmap getter 114 (379
+// bytes), bias getter 114 (379), level helper 4, bitmap and bias getters 114, all three 114.
+// Inline call-and-store helper with evaluated arguments 4; mask-without-bit helper 4; single-bit helper 4; both 4.
+// Round 85: scan index initialized 53; masked shift index 18; const entry pointer 4; count declared outside
+// its arm 4; adjusted value declared outside its arm 8; implicit floor conversion 4; split level initialization 4;
+// named truncated level 4; ordinary inline floor helper 166. Opening body and helper declaration restored.
 // @retail 0x1b0a0
 void __stdcall function_1b0a0(byte *state)
 {
@@ -115,7 +128,11 @@ void __stdcall function_1b0a0(byte *state)
 struct s_slot_key
 {
 	byte a;
-	long b;
+	union
+	{
+		long b;
+		real amount; /* 0x3c270 keeps its clamped amount here once the lookup is done */
+	};
 	long c;
 	long d;
 	long e;
@@ -232,40 +249,6 @@ void function_16f60(byte *state, word const *range)
     }
 }
 
-// score 93 (was 93): frameless BX entry agrees; dispatch span and selective setter expansion
-// differ. Retail lays out separate mode 3 and mode 4 bodies in mode order (no mode compare) and
-// inlines fewer setter calls (mode 3 six, modes 4/5 two, mode 6 one, the rest call 0x222d0).
-// Complete case orders 0/12/34/6/5 114; 0/12/5/34/6 119; 0/12/6/34/5 103 kept;
-// 0/34/12/5/6 158; 0/5/12/34/6 151; 0/6/12/34/5 167; 0/34/5/6/12 224; 0/6/5/34/12 165.
-// Code rows 91 to 80; 780/772 bytes.
-// Inline/noinline/force-inline setter declarations 103/377/224; early native/enum comparison
-// 103/103; early reference/both values 179/179; comparison-call branches 93, 776/772 bytes.
-// common exit 99; sixth exit 93; comparison exit 93; fifth exit 93; sixth comparison exit 93; fifth
-// sixth exit 93; explicit default common exit 99; fourth comparison first 93.
-// BX dispatch agrees; selective setter expansion and shared tails remain.
-// Earlier 103 from 117: frameless BX entry agrees; dispatch span and selective setter expansion differ.
-// 0/34/12/5/6 158; 0/5/12/34/6 151; 0/6/12/34/5 167;
-// 0/34/5/6/12 224; 0/6/5/34/12 165. Code rows 91 to 80; 780/772 bytes.
-// Earlier 93 from 103: dispatch span and selective setter expansion still differ.
-// Inline/noinline/force-inline setter declarations 103/377/224; early native/enum comparison 103/103;
-// early reference/both values 179/179; comparison-call branches 93, 776/772 bytes.
-// Complete group orders 05316/05631/03516/03651: 222/156/221/197;
-// 06153/06315/06513/05361: 145/196/168/223 (1=one/two, 3=three/four).
-// frameless BX entry agrees; dispatch span and selective setter expansion
-// differ.
-// dispatch span and selective setter expansion still differ.
-// 103/103;
-// sixth exit 93; explicit default common exit 99; fourth comparison first 93. Selective setter
-// expansion and shared tails remain.
-// frameless BX entry agrees; dispatch span and selective setter expansion differ.
-// 0/34/5/6/12 224; 0/6/5/34/12 165. Earlier code rows 91 to 80; 780/772 bytes.
-// Reference-call branches first/second mode 144/145; paired-label orders 93/93/93;
-// complete group orders 0/12/34/5/6, 0/12/5/6/34, 0/34/6/12/5 105/106/197.
-// Shared keep-pass group/conditional comparison/mask-call branches 282/270/207;
-// shared first one/two/three calls 188/235/292; first one/three with group 313/368.
-// Round 85: separate mode 3 and 4 bodies in mode order 196 (860 bytes: modes 3 and 4 inline
-// more calls than retail); orders 0/12/6/3/4/5 154 (824), 12/3/4/5/6/0 307, 0/12/3/4/6/5 235;
-// break with one selector store after the switch 279.
 // @retail 0x15370
 void function_15370(short mode)
 {
@@ -286,26 +269,23 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILWRITEMASK, 255);
 		g_467010 = mode;
 		return;
-	case 6:
+	case 3:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
 		function_0222d0(D3DRS_STENCILREF, 0);
-		function_0222d0(D3DRS_STENCILMASK, 3);
+		function_0222d0(D3DRS_STENCILMASK, 1);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
 		g_467010 = mode;
 		return;
-	case 3: case 4:
+	case 4:
 		function_0222d0(D3DRS_STENCILENABLE, TRUE);
 		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
 		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
-		if (mode == 3)
-			function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
-		else
-			function_0222d0(D3DRS_STENCILFUNC, D3DCMP_NOTEQUAL);
+		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_NOTEQUAL);
 		function_0222d0(D3DRS_STENCILREF, 0);
 		function_0222d0(D3DRS_STENCILMASK, 1);
 		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
@@ -322,7 +302,17 @@ void function_15370(short mode)
 		function_0222d0(D3DRS_STENCILWRITEMASK, 2);
 		g_467010 = mode;
 		return;
-
+	case 6:
+		function_0222d0(D3DRS_STENCILENABLE, TRUE);
+		function_0222d0(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
+		function_0222d0(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
+		function_0222d0(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
+		function_0222d0(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
+		function_0222d0(D3DRS_STENCILREF, 0);
+		function_0222d0(D3DRS_STENCILMASK, 3);
+		function_0222d0(D3DRS_STENCILWRITEMASK, 0);
+		g_467010 = mode;
+		return;
 	}
 	g_467010 = mode;
 }
@@ -748,7 +738,7 @@ void function_020f30(real b, real a)
 void function_0222d0(D3DRENDERSTATETYPE state, dword value)
 {
 	g_4b81fc[state] = value;
-	D3DDevice_SetRenderState(state, value);
+	D3DDevice::SetRenderState(state, value);
 }
 
 // @retail 0x224f0
@@ -870,6 +860,78 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
     *direction = sample->direction;
 }
 
+// score 547 (was 547): Frame 0x18/0x2c, input/selection homes and scan registers differ (override layout and
+// fraction retention now as retail).
+// Native point-difference producer subsets nearest/anchor/both/opposite/nearest+opposite/
+// anchor+opposite/all: 626/627/626/685/668/685/668; all plus shared dot 668 (exact-only).
+// The one-point nearest gains are ineligible; original scalar producers and arithmetic restored.
+// Frame 0x1c versus 0x2c; count/selection/projection and fraction homes differ.
+// Round 428: complete squared products in both searches, projection products and both 627 each;
+// actual selected-record common copy tail, with either/both products and common distance storage,
+// 748 each at 1944/2122 bytes. All original sums, copy paths and body restored.
+// Round 44: nearest/opposite real cursors with ordinal bounds, alone/both, 646/750/765;
+// actual pointer-end traversal alone/both 696/629/798; nearest ordinal/opposite pointer
+// 604 (kept, plain; 2138/2122 bytes), inverse 618. Frame shrinks to 0x18; the position
+// input arrives in EAX rather than EDX; search/fraction homes remain.
+// Round 450: one sample-table observation on cursor/end traversal 594; complete query
+// value 729; both 727; live count 604, with table/query/both 594/729/727; entry delta 604.
+// Singleton/multi-record shared table scope 589 (kept, plain; 2127/2122 bytes).
+// Round 248: pointer-end scans with direct ordinals, pointer/ordinal exclusions and shared
+// table ends 736/723/713/737/679/693/735/850; all original traversals restored.
+// Round 62 (m3 lane 16): the override copies as the else arm of `if (!g_5093f4)` (retail places them after the
+// blend) 581; with the implied `|| opposite == NONE` dropped from the copy-first test 570 (kept, plain); fraction
+// assigned under `if (opposite != NONE)` 570; `second` as `opposite != NONE ? samples + opposite : NULL` tested
+// before the call (retail's `add esi, ecx; je`) 576; the fraction pieces alone 584; index second scan
+// (`j != nearest`) 726, with the fraction pieces 731. Retail-shaped body (index scans over
+// `source->entries[i]` with `i != nearest`, ternary `second`, override else arm): 661 at 2033 bytes (LCS-aligned
+// 564 against the old body's 987): position stays in EDX as retail, but VC shares one zero register for the
+// count test, `nearest` and `i` (`xor eax, eax; cmp ebx, eax` where retail has `test ebx, ebx` and separate
+// `xor edi, edi`/`xor eax, eax`) and keeps `nearest` in memory; with that body's first scan declaring y, x, z
+// (retail's x, y, z load order) 661; with vector3d_from_points3d/dot3f/length_sq3f in the second scan 661; a short
+// `nearest` (diagnostic: no zero merge, `nearest` in EDI, loop 1's registers as retail, but a movsx) 651, aligned
+// 294. Retail's 0x2c frame holds two vector3f homes (an x spill at +0x24 and delta.k at +0x38, which shares the
+// fallback vector's slots); every vector spelling here scalarizes fully (frame 0x20).
+// On the kept 570 body: first scan indexed (`samples + i`) 583; entries read inside the count == 1 arm (aligned 961 ->
+// 602, but source and position then arrive in EAX/ECX) 597; both 612; the retail-shaped body with the kept tail 664
+// (aligned 425); that body with one `samples` local 715.
+// Round 261: Coherent interpolation inline declaration, alone/with fraction-provider inline, each with
+// original/unsigned selected ordinals/zero-default fraction/both result forms: 608 each (2145/2122
+// bytes). All declarations and original body restored; count/selection/fraction homes and frame
+// remain.
+// Round 74 (m3 lane 12, fast): the existing cross-file distance_sq3f (0x24550) for scan 1 on this body 570 (same
+// code). Retail-shaped index body (scan 1 through distance_sq3f, delta/offset through vector3d_from_points3d, dot3f,
+// length_sq3f, `second` ternary then `fraction = 0; if (second) fraction = ...`) 654 (2033 bytes, aligned 307);
+// one shared index 654; scan 2's distance through distance_sq3f 576 (2094 bytes, aligned 253: retail's y, z, x loads
+// and projection order); with delta assigned k, i, j 608 (2062 bytes, aligned 246: retail's delta loads); either
+// dot3f argument order same code; offset written out 583/831 (frame 0x30, entries re-read per component); offset at
+// block scope 576/608; `nearest` declared before the count == 1 test 575/607. Still missing there: offset's own
+// 12-byte home at +0x14 (retail stores x into it each iteration), delta.k at +0x28, nearest in EDI, and the
+// fraction reloaded around 0x22750 (ours keeps it in xmm2 in every form).
+// Round 297: Nearest/opposite/both ordinal-first candidate publications 570 each; native unsigned selected ordinals with all four publication pairs 570 each; shared true distance reduction 570. Original state updates, ordinal domains, reductions and complete body restored; frame/input and selected-sample/fraction homes remain.
+// Round 299: Nearest/opposite/both selected pointer results 547/803/745; zero-default fraction pairs
+// 547/803/745; both pointers with indexed nearest traversal 763/763. One-use nearest-result aliases restored.
+// Direct actual selected-record state, no alias, 547; keep this ninth form, plain at exact 2122 bytes with
+// all 11610 matches preserved. Original opposite ordinal, traversal, scalar trees and copy/blend paths
+// retained. Frame/input, scan and fraction homes remain.
+// Round 301: Direct opposite ordinal on nearest-pointer result, counter/pointer-end bounds 815/700; nearest
+// indexed 782/685; complete query value 654/614, with indexed nearest 623/602. Original visits, float
+// trees and body restored; frame 0x18/0x2c, position transport and scan expansion remain.
+// Round 464: actual fallback-vector entry declaration/entry initialization/branch const/
+// branch setter with common-exit/nested singleton joins: 547/594/547/547/547/594/547/547.
+// Frame remains 0x18 versus 0x2c; original fallback, singleton exit and full body restored.
+// Round 506: final direction scaled-difference shared/native producers with late/entry vector,
+// dead search-delta reuse or shared setter 557/557/557/547/557/557/557/557. Original
+// vector/scalar producers and entire body restored; frame/input and fraction homes remain.
+// Round 511: complete sample-position captures nearest/anchor/opposite subsets through
+// memcpy 742/589/781/701/873/729/900; all through memmove 1483. Original
+// body restored; native frame/input, scan and fraction homes remain.
+// Round 136 (m3 lane 6, fast): second scan loading y, z, x 592 (2112 B); the fraction as `= 0; if (opposite !=
+// NONE)` 547 (same code); opposite declared after its distance 547 (same code); entries read at the count == 1
+// call with the samples local after it 592 (2127 B); y, z, x loads with the if-form fraction 592.
+// Also round 136: delta through vector3d_from_points3d 547; scan 2's offset through vector3d_from_points3d, dot3f
+// and length_sq3f 547 (both same score at 2122 B).
+// DH294: Joint count/selected-ordinal/blend-fraction lexical priorities, seven subsets and all
+// with native vector-owner names, 547 each. Original names and complete body restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)
@@ -877,76 +939,81 @@ void __stdcall function_22cf0(s_light_sample_source const *source, real *red, re
     long count = *(long *)((byte *)g_4e0344->bsp + 0x38);
     if (count > 0)
     {
-        if (g_5093f4)
+        if (!g_5093f4)
+        {
+            s_light_sample const *samples = source->entries;
+            if (count == 1)
+            {
+                copy_light_sample(samples, order, red, green, blue, direction);
+                return;
+            }
+            s_light_sample const *first = samples;
+            real closest_distance = 1048576.0f;
+            s_light_sample const *nearest_sample = samples;
+            for (long i = 0; i < count; ++i)
+            {
+                real x = position->x - nearest_sample->position.x;
+                real y = position->y - nearest_sample->position.y;
+                real z = position->z - nearest_sample->position.z;
+                real distance = z * z + x * x + y * y;
+                if (distance < closest_distance)
+                {
+                    closest_distance = distance;
+                    first = nearest_sample;
+                }
+                ++nearest_sample;
+            }
+            vector3f delta;
+            delta.i = position->x - first->position.x;
+            delta.j = position->y - first->position.y;
+            delta.k = position->z - first->position.z;
+            long opposite = NONE;
+            real other_distance = 1048576.0f;
+            for (s_light_sample const *opposite_sample = samples;
+                 opposite_sample < samples + count; ++opposite_sample)
+            {
+                if (opposite_sample != first)
+                {
+                    real x = position->x - opposite_sample->position.x;
+                    real y = position->y - opposite_sample->position.y;
+                    real z = position->z - opposite_sample->position.z;
+                    real projection = delta.k * z + delta.j * y + delta.i * x;
+                    if (projection <= 0.0f)
+                    {
+                        real distance = z * z + y * y + x * x;
+                        if (distance < other_distance)
+                        {
+                            other_distance = distance;
+                            opposite = opposite_sample - samples;
+                        }
+                    }
+                }
+            }
+            real fraction = opposite != NONE
+                ? function_022c30(&first->position, position, &samples[opposite].position) : 0.0f;
+            if (fraction <= 0.0f)
+                copy_light_sample(first, order, red, green, blue, direction);
+            else
+            {
+                s_light_sample const *second = samples + opposite;
+                if (fraction >= 1.0f)
+                    copy_light_sample(second, order, red, green, blue, direction);
+                else
+                {
+                    function_022750(second->red, order, first->red, red, fraction);
+                    function_022750(second->green, order, first->green, green, fraction);
+                    function_022750(second->blue, order, first->blue, blue, fraction);
+                    direction->i = (second->direction.i - first->direction.i) * fraction + first->direction.i;
+                    direction->j = (second->direction.j - first->direction.j) * fraction + first->direction.j;
+                    direction->k = (second->direction.k - first->direction.k) * fraction + first->direction.k;
+                }
+            }
+        }
+        else
         {
             memcpy(red, g_4b8940, sizeof(g_4b8940));
             memcpy(green, g_4b8964, sizeof(g_4b8964));
             memcpy(blue, g_4b8988, sizeof(g_4b8988));
-            return;
-        }
-        if (count == 1)
-        {
-            copy_light_sample(source->entries, order, red, green, blue, direction);
-            return;
-        }
-        long nearest = 0;
-        real closest_distance = 1048576.0f;
-        for (long i = 0; i < count; ++i)
-        {
-            real x = position->x - source->entries[i].position.x;
-            real y = position->y - source->entries[i].position.y;
-            real z = position->z - source->entries[i].position.z;
-            real distance = z * z + x * x + y * y;
-            if (distance < closest_distance)
-            {
-                closest_distance = distance;
-                nearest = i;
-            }
-        }
-        s_light_sample const *first = source->entries + nearest;
-        vector3f delta;
-        delta.i = position->x - first->position.x;
-        delta.j = position->y - first->position.y;
-        delta.k = position->z - first->position.z;
-        long opposite = NONE;
-        real other_distance = 1048576.0f;
-        for (long j = 0; j < count; ++j)
-        {
-            if (j != nearest)
-            {
-                real x = position->x - source->entries[j].position.x;
-                real y = position->y - source->entries[j].position.y;
-                real z = position->z - source->entries[j].position.z;
-                real projection = delta.k * z + delta.j * y + delta.i * x;
-                if (projection <= 0.0f)
-                {
-                    real distance = z * z + y * y + x * x;
-                    if (distance < other_distance)
-                    {
-                        other_distance = distance;
-                        opposite = j;
-                    }
-                }
-            }
-        }
-        real fraction = opposite != NONE
-            ? function_022c30(&first->position, position, &source->entries[opposite].position) : 0.0f;
-        if (fraction <= 0.0f || opposite == NONE)
-            copy_light_sample(first, order, red, green, blue, direction);
-        else
-        {
-            s_light_sample const *second = source->entries + opposite;
-            if (fraction >= 1.0f)
-                copy_light_sample(second, order, red, green, blue, direction);
-            else
-            {
-                function_022750(second->red, order, first->red, red, fraction);
-                function_022750(second->green, order, first->green, green, fraction);
-                function_022750(second->blue, order, first->blue, blue, fraction);
-                direction->i = (second->direction.i - first->direction.i) * fraction + first->direction.i;
-                direction->j = (second->direction.j - first->direction.j) * fraction + first->direction.j;
-                direction->k = (second->direction.k - first->direction.k) * fraction + first->direction.k;
-            }
         }
     }
     else
@@ -1249,13 +1316,6 @@ bool __stdcall function_246a0(void *context)
 typedef long (__stdcall *visibility_draw_callback)(s_slot *slot, byte *data);
 bool function_0bfe60(dword const *flags, long bit);
 
-// score 52 (was 52): the zeroed register is EDI in ours and EBP in retail, and the block the
-// test jumps to is laid out differently.
-// score 52 (was 52): the code is retail's apart from the colours (loop counter and total
-// EDI where retail has EBP, the test index EBP where retail has EDI) and ADD for retail's LEA
-// of the bitset row; push pointer without volatile 56; device as a field pointer 56 (52 with
-// volatile); total zeroed in an else arm 139; one combined query-result test 52;
-// &bitsets[set][0] 52; slots + index 52; the push expansion in a forced-inline helper 52.
 // @retail 0x20bb0
 void __stdcall function_20bb0(long player, dword mask, long const *indices, long count, bool query, visibility_draw_callback draw)
 {
@@ -1275,8 +1335,7 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
                 {
                     long test = index * 3 + set;
                     HRESULT status = S_OK;
-                    dword *bitset = g_51f40c.bitsets[set];
-                    if (function_0bfe60(bitset, index))
+                    if (function_0bfe60(g_51f40c.bitsets[set], index))
                     {
                         UINT pixels;
                         ULONGLONG timestamp;
@@ -1288,8 +1347,8 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
                     if (status == S_OK)
                     {
                         dword *device = (dword *)D3D__pDevice;
-                        dword volatile *push = (dword volatile *)device[0];
-                        if (push >= (dword volatile *)device[1])
+                        dword volatile *push = (dword *)device[0];
+                        if (push >= (dword *)device[1])
                         {
                             dword full_size = D3D::CDevice::m_PushSegmentSize;
                             push = D3D::MakeRequestedSpace(full_size >> 1, full_size);
@@ -1300,11 +1359,13 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
                         device[0] = (dword)(push + 3);
                         total = draw(slot, slot->data);
                         status = D3DDevice_EndVisibilityTest(test);
-                        total = PIN(total, 0, 65535);
                     }
-                    slot->k = total;
+                    slot->k = PIN(total, 0, 65535);
                     if (status == S_OK)
+                    {
+                        dword *bitset = g_51f40c.bitsets[set];
                         bitset[index >> 5] |= 1 << (index & 31);
+                    }
                 }
                 else
                     draw(slot, slot->data);
@@ -1315,17 +1376,9 @@ void __stdcall function_20bb0(long player, dword mask, long const *indices, long
 
 
 long __stdcall function_3bf20(s_slot *slot, byte *data);
+extern "C" void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
 
-// score 71 (was 71): the test of the global comes after the test of the call in ours and before
-// it in retail, and ours is twenty-five bytes shorter. Retail puts the failed lookup's exit last,
-// forms the slot pointer after the global test (with the frame counter loaded before it), and
-// spills the clamped amount into the key's second field with a store in each clamp arm; the
-// amount here is that field (memory), so its stores merge before the draw call. `valid` lands in
-// the parameter's home as a plain bool. Tried: a plain amount 108 (frame 0x1c, own slot); the key
-// in its own block 108; that and the rest under `index != NONE` 101; the positive guard alone 92;
-// with a slot pointer 91; the global and valid tests nested, both else arms written out 87; the
-// frame computed before the slot pointer 99; the frame read before it 93; one clamped
-// assignment from a named product 87; the key built in an inline helper 108.
 // @retail 0x3c270
 bool __stdcall function_3c270(dword value)
 {
@@ -1338,26 +1391,39 @@ bool __stdcall function_3c270(dword value)
     key.d = 0;
     key.e = 0;
     long index = function_0209b0(&key, &value, 4);
-    if (index == NONE) return false;
-    bool valid = false;
-    bool available;
-    real &amount = *(real *)&key.b;
-    if (g_51f408 && g_51f40c.slots[index].valid)
+    if (index != NONE)
     {
-        long frame = ((long)g_485aa0 + 1) % 3;
-        amount = g_51f40c.slots[index].f * g_5234c8;
-        amount = PIN(amount, 0.0f, 1.0f);
-        valid = true;
-        available = (g_51f40c.bitsets[frame][index >> 5] & (1 << (index & 31))) == 0;
+        bool valid = false;
+        bool available;
+        if (g_51f408)
+        {
+            /* the frame counter is read before the slot is looked at */
+            long counter = (long)g_485aa0;
+            _ReadWriteBarrier();
+            s_slot *slot = &g_51f40c.slots[index];
+            if (slot->valid)
+            {
+                long frame = (counter + 1) % 3;
+                key.amount = PIN(slot->f * g_5234c8, 0.0f, 1.0f);
+                valid = true;
+                available = (g_51f40c.bitsets[frame][index >> 5] & (1 << (index & 31))) == 0;
+            }
+            else
+            {
+                key.amount = 0.0f;
+                available = false;
+            }
+        }
+        else
+        {
+            key.amount = 0.0f;
+            available = false;
+        }
+        function_20bb0(player, 0x20, &index, 1, true, function_3bf20);
+        if (valid && !available && !(key.amount > 0.0f)) return false;
+        return true;
     }
-    else
-    {
-        amount = 0.0f;
-        available = false;
-    }
-    function_20bb0(player, 0x20, &index, 1, true, function_3bf20);
-    if (valid && !available && !(amount > 0.0f)) return false;
-    return true;
+    return false;
 }
 
 void function_015b70(void);

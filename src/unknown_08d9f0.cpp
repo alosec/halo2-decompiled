@@ -8,6 +8,7 @@
 #include "online_attributes.h"
 #include <xtl.h>
 #include <string.h>
+#include "online_result_cache.h"
 
 class c_class_93590;
 class c_class_938e0;
@@ -92,7 +93,6 @@ extern bool g_510554;
 extern dword g_510558;
 extern bool g_510580;
 extern long g_510584;
-extern long g_5107dc;
 
 bool network_link_initialize(c_class_93590 *link);
 bool network_observer_initialize(s_network_observer *observer, void *unknown04,
@@ -241,6 +241,8 @@ void function_8dd70(void);
 // complete chain, short readiness, observations and entire body restored.
 // Native gateway/handler entry declarations with immutable entry decision,
 // seven subsets and complete receiver role names: 221 each. Original lifetimes restored.
+// Final-completion bool/byte/short/long at admitted/entry scope all 230; original success return
+// and cleanup restored. No flagged completion form matches.
 // @retail 0x8d9f0
 void function_8d9f0(void)
 {
@@ -334,7 +336,7 @@ void function_8d9f0(void)
 					function_53210();
 					memset(&g_510580, 0, 0x268);
 					g_510584 = NONE;
-					g_5107dc = NONE;
+					g_510588.registered_index = NONE;
 					g_4d8ba0 = true;
 					return;
 				}

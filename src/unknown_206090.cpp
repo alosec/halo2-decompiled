@@ -141,7 +141,7 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 
 #pragma inline_depth(1)
 #include "vector_products.h"
-// score 1364 (was 1364): frame 0x5d0 versus 0x58c, component/velocity homes and indexed contact induction remain.
+// score 1355 (was 1355): frame 0x5cc versus 0x58c, component/velocity homes and indexed contact induction remain.
 // Frame 0x5d0 versus 0x58c; component/velocity homes, contact induction and scheduling remain.
 // Earlier 1585 (was 1596): Frame 0x590 versus 0x58c; component/velocity homes and contact induction remain.
 // Earlier 1600 from 1600: frame 0x580 versus 0x58c; velocity homes and contact induction differ;
@@ -224,6 +224,10 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 // +0x88 named once 1451 (read once, as retail); operands of the steering product swapped 1403
 // (same code); retail's cross operand form written out 1439 (diagnostic); ray record at function
 // scope 1403 (frame 0x5cc). All restored.
+// Round 400: Joint coefficient branches 1364; word impact count 1386; word list probes 1369;
+// coefficient/count, coefficient/probes, count/probes, all word and all byte
+// 1378/1364/1399/1394/1410. The byte form has frame 0x5c8; the others 0x5d0.
+// Joint coefficients reach 6238 bytes without lowering the score.
 // Round 175: Native reference cross-formal subsets and magnitude input contract all 1364;
 // canonical object calls, no address cancellations. On the current float-product graph, ordinary
 // magnitude components/first-cross components/both/second-normalizer components/magnitude-normalizer/
@@ -233,6 +237,89 @@ PRIVATE __forceinline void function_206096(vector3f const *arg_0, real arg_1, ve
 // Round 253: Native component cursors scale/add/paired normalizers/scale-add/
 // scale-normalizers/add-normalizers/all/all with ordered end tests
 // 1638/1877/1557/1671/1535/1809/1633/3684. Original complete kernels, captures and body restored.
+// Round 274: Narrow velocity/query/ray phase scopes, seven subsets 1364/1364/1364/1362/1362/1362/1362;
+// all with bounded contact-velocity publication 1362. Two-point ray-scope lead below gate;
+// original full body and every helper restored, frame remains 0x5d0 versus 0x58c.
+// Round 189: char search result 1364; short search result 1435; long search result 1435; component role name
+// 1364; all pointer-root names 1364; separate velocity declarations 1364; direct native byte admission 1417;
+// existing point setter 1364.
+// Original body retained; frame 0x5d0 versus 0x58c, component/velocity homes and contact induction remain. All checked matches survive.
+// Round 41: Native impact list/pool/both schemas and signed list count, then list/count,
+// pool/count, all three and all with direct kind equality:
+// 1368/1364/1368/1365/1382/1365/1382/1404. List-only schema reaches 6238 bytes;
+// frame stays 0x5d0 and component/velocity homes still differ. All original types and body restored.
+// Round 195: On current float products, scalar magnitude/second-normalizer/first-cross
+// input captures and their four combinations 1606/1364/1394/1606/1555/1394/1555;
+// all with first-normalizer result join 1540. Complete original helpers, vector snapshot,
+// cross captures and body restored; frame 0x5d0 versus 0x58c and indexed homes remain.
+// Actual point-state/point-definition/contact-definition byte offsets, subsets 1-7: 1383/1381/1400/1400/1369/1404/1390; all with typed contact offset 1456.
+// Reduced control 1363/6238 with frame 0x5cc differs from full 1364/6243 with frame 0x5d0; every offset form regresses against its control.
+// Full original signed loops, live counts/bases, input captures, helpers, math groups and body restored.
+// Round 452: native vector memcpy at magnitude/default/dynamic copy boundaries,
+// subsets 1-7, 1364/1366/1366/1364/1364/1366/1366; complete memmove graph 1477.
+// The caller/callee control reproduces full 1364/6243 without a target caveat.
+// Original native copies, magnitude capture, helpers and complete body restored.
+// Round 251: Native vector returns in scale/add/scale-add/cross/scale-cross/add-cross/all
+// 1885/1941/2425/1674/2156/2117/2599; all with direct magnitude input 2277. Complete original helpers, magnitude
+// snapshot, cross captures and body restored; frame 0x5cc versus 0x58c remains.
+// Round 265: existing staged cross at point velocity/point torque/contact velocity/contact torque
+// 1418/1417/1422/1384; paired points/paired contacts/private sites/all 1455/1360/1400/1445.
+// Three-point contact-pair lead rejected; original body/captures restored, frame remains 0x5cc.
+// Round 276: Projection snapshots through the existing scalar setter:
+// direction/velocity/normalized-force/direction-velocity/direction-force/velocity-force/all
+// 1438/1400/1360/1447/1441/1410/1452; all with contact-velocity publication 1421. Three-point lead
+// rejected.
+// Original executable source restored; Frame 0x5cc versus 0x58c, component/velocity/query homes and contact induction remain.
+// Round 245: direct impact-position scalar stores with descriptor calculation/contact/phases/entry
+// lifetimes 1402/1392/1397/1444; existing point setter with those lifetimes 1404/1392/1397/1444.
+// The scalar forms reduce frame 0x5cc to 0x5c0 but regress; original position copy,
+// descriptor lifetime, magnitude capture and complete executable source restored.
+// DH round 268: retained second-input scalar capture orders ikj/jik/jki/kij/kji
+// 1363/1363/1383/1383/1383; const captures ijk/kji/kij 1363/1383/1383.
+// All inputs stayed before the first store; frame 0x5cc remained. Original helper and body restored.
+// Round 505: Existing impact initializer, calculation/contact/phase/entry descriptor scopes,
+// each with original/existing-setter position: 1401/1401/1358/1358/1383/1383/1439/1439.
+// Contact-scope five-point gain rejected; original field construction and all body scopes restored.
+// DL227: Real collected-array duplicate/active search cursors, index/relational/sentinel pairs
+// 0-1/0-2/1-0/1-1/1-2/2-0/2-1/2-2: 1415/1415/1432/1432/1432/1433/1433/1433. Original searches
+// restored; frame 0x5cc and component/velocity/contact homes remain.
+// Round 309: Direct absolute force/range/nonnegative-root predicate subsets 1..7
+// 1415/1389/1411/1388/1419/1386/1407; paired strict open intervals 1442.
+// Original conditional magnitudes, both root guards, captures, private helpers and complete body restored; frame/home differences remain.
+// Round 312: actual selected friction vector, default/explicit selection with native/setter
+// transfer and separate/in-place normalized direction: 1417/1372/1465/1395;
+// 1357/1474/1485/1400. Native explicit selection with a separate direction gains six
+// at 6243 bytes, below the gate; pointer selection, original copies, all kernels and body restored.
+// Round 314: Captured magnitude through the existing k/j/i dot kernel, with original/
+// first/second/both shared scale tails, mutable or immutable capture, all 1403 at 6259
+// bytes. Original magnitude, normalizers, includes and body restored; frame remains 0x5cc.
+// M298: Separate collected membership and compatible-contact searches; body/head
+// membership exits, byte/native list indexing and admitted/rejected filtering, eight forms
+// [1449, 1449, 1449, 1449, 1449, 1449, 1449, 1449]. Original nested searches and all helpers restored.
+// Round 356: Existing scaled translation with point/contact/both lever-arm subtraction,
+// without/with shared contact-velocity sum: 1355/1407/1380/1362/1355/1407/1380/1362.
+// Scaled translation alone kept, 1355 plain at 6243/6238; original captures and helper bodies preserved.
+// DL236: Branch-owned tangent default/late force default/live control-bit subsets 1..7, then shared scalar default setters: 1365/1376/1367/1425/1423/1391/1382/1423.
+// Native byte/short/long/dword final result at completion/entry: 1411/1407/1408/1408/1423/1392/1393/1393. All restored; frame 0x5cc versus 0x58c and component/velocity/query/list homes remain; Boolean interface and caller preserved.
+// Y522: Existing rigid-body mass/keyframe/get helpers, seven subsets
+// 1417/1387/1470/1355/1417/1387/1470; direct member mass/keyframe with getter 1470.
+// All original producer bodies and force source restored; frame and velocity/query homes remain.
+// DL240: Native contact direction/velocity/residual projection loops, masks 1/2/4/3/5/6/7/15:
+// 1396/1405/1382/1417/1389/1373/1376/1398. Final mask includes moving-surface correction. All
+// regress; original body, float trees, captures and helpers restored. Frame 0x5cc versus 0x58c and
+// component/velocity/query homes remain.
+// Round 137 (m3 lane 6, fast control 1355 = plain): the velocity outputs declared one per line, angular first
+// 1355; the ray record and force vector declared at the first loop's top 1355; contact velocity at function scope
+// 1355; the two collected arrays declared at entry 1355; the two arrays in swapped order 1355 (all the same code:
+// no declaration moves a slot, so the extra 0x40 bytes are compiler temporaries, not declared locals).
+// N322: Fused point-spring/contact-slip sums and native ray-origin setter, subsets 1/2/4/3/5/6/7:
+// 1406/1468/1365/1403/1381/1395/1396; all with native contact-velocity setter 1416.
+// Final publication uses frame 0x5c0 but regresses; original body and all kernels/captures restored,
+// with frame 0x5cc versus 0x58c.
+// DL245: Frame 0x5cc and component/velocity/query/list homes remain. Static/active count dword subsets 1355 each; word/long and long/word 1394; word/word and short/short 1351; byte/byte 1400. Four-point leads rejected. Matched impact-producer inline subsets 1355 each; every user unchanged. Original bodies and all declarations restored.
+// P275: Actual contact-settings control bitfield with native point-row typing, read-only
+// receivers and full-width zero/one control, subsets 0-7: 1355/1355/1355/1355/1356/1356/1356/1356.
+// Original types and full body restored; frame 0x5cc/0x58c and component/velocity/query homes remain.
 // @retail 0x206090
 bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, vector3f *arg_2)
 {
@@ -430,9 +517,7 @@ bool __stdcall function_206090(s_vehicle_physics_state *arg_0, vector3f *arg_1, 
                         local_48 = *g_4687b0;
                     real local_71 = -(*(real *)(local_40 + 0xc) - local_0->field_b10[local_38].field_84 - 0.0001f);
                     point3f local_100;
-                    local_100.x = local_46->i * local_71 + local_0->field_b10[local_38].field_34.x;
-                    local_100.y = local_46->j * local_71 + local_0->field_b10[local_38].field_34.y;
-                    local_100.z = local_46->k * local_71 + local_0->field_b10[local_38].field_34.z;
+                    vector3f_add_scaled((vector3f const *)&local_0->field_b10[local_38].field_34, local_46, local_71, (vector3f *)&local_100);
                     s_impact_data local_72;
                     local_72.unknown00 = false;
                     local_72.component_a = *(long *)(local_2 + 0xb4);

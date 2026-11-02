@@ -397,14 +397,30 @@ inline real item_real_random_range(real lower, real upper)
 {
 	dword *seed = &g_4e7408->unknown0;
 	*seed = *seed * 0x19660d + 0x3c6ef35f;
-	return lower + (upper - lower) * ((real)(*seed >> 16) * (1.0f / 65535.0f));
+	return ((upper - lower) * ((real)(*seed >> 16) * (1.0f / 65535.0f))) + lower;
 }
 
-// score 6 (was 6): the effect call's argument setup has three x87
+// score 2 (was 2): frame 0x14 and retail length agree; the final x87 add
+// follows the third owner-field load, where retail puts it before that load.
+// Earlier: writing the product before the lower bound fixed the other x87
+// scheduling differences.
+// Earlier 6 (was 6): the three x87 instructions around the effect call's argument
+// pushes are still one slot early here (the fxch st(1) after the first push 0,
+// the delay spill before the tag-index load and the fstp st(0) before the push
+// eax); this round found no lower form of the argument setup
+// Earlier 6 (was 6): the argument setup still keeps the fxch st(1) after the first
+// push 0, the delay spill before the tag-index load and the fstp st(0) before the
+// push eax; this round added no lower form (the owner's field order, the delay
+// expression's spelling and the source permuter leave the three x87
+// instructions where they are)
+// Earlier 6 (was 6): the effect call's argument setup has three x87
 // instructions one slot earlier in ours: the fxch st(1) before the first push 0,
 // the delay spill before the tag-index load and the fstp st(0) before the push
 // eax; the x87 sequence, the argument registers and the owner struct's stores
 // all match
+// Product-first range span/sample/offset named subsets 1..7: 2/76/76/61/61/61/61;
+// scalar offset accumulator 61. Original range producer and complete body restored;
+// frame 0x14 and last add/third owner-field load scheduling remain.
 // @retail 0x10d4e0
 void function_10d4e0(long item_index)
 {
@@ -556,7 +572,14 @@ struct s_item_collision_bsp
 	s_item_collision_instance *instances;
 };
 
-// score 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
+// MiniMax D (11-01): no new form, no lower score; the frame still gives the speed slot 0x10 and the spin slots
+// 0x20 where retail has the spin at 0x10 and the speed at 0x28, so the spin scale stays in a stack slot instead
+// of x87 st(1) and the plane joins keep their own xmm order.
+// score 211 (was 211): Frame 0xa0 agrees; protected plane-index width, plane joins and pending spin-k homes differ.
+// Earlier 211 (was 249): one shared spin scale for both spin branches, with the third spin
+// component scaled after the branch so the pending value and the scale stay on the x87 stack.
+// Plane-index width, plane-join registers and the transform product rows still differ.
+// Earlier 249 (was 249): Frame 0xa0 agrees; protected plane-index width, plane joins and spin stores remain.
 // plane-index width, plane-join registers and spin stores differ;
 // seed before square root 249; fallback input copy 364; up pointer 253;
 // plane input scalars 254; angular output initializer 253.
@@ -584,6 +607,62 @@ struct s_item_collision_bsp
 // Round 208: six uniform normal-column operand combinations, native cross-product
 // operands, and joint complete normal/distance products all 249. Sum trees,
 // plane inputs, random draws and the whole original body restored.
+// Round 285: existing staged spin cross/shared final linear sum/both/shared final angular sum/
+// cross-angular/both sums/all/all with marker-first storage: 249/249/249/249/249/249/249/249 fast.
+// Original complete body restored; protected plane width, join homes and spin tail remain.
+// Round 434: complete axis/impulse/both snapshots 342/345/351; with the existing staged cross
+// 342/345/351; both with a native material index, without/with staged cross 350/350. Combined
+// captures grow the frame to 0xac; original observations, plane interface, spin workspaces and body restored.
+// DL202: Double pending spin scale, with uniform factor ownership and native linear/angular/both
+// output initializers, all eight subsets 252 each (1342/1361 bytes, frame 0xa4 versus 0xa0).
+// Original real factor, native outputs and complete body restored; protected plane-index
+// width, plane joins and pending spin-k homes remain.
+// Round 252: Spin/axis/final-output lexical name families in all seven subsets, then all with contact-
+// position naming 211/211/211/211/211/211/211/211. Original complete executable source restored; Protected
+// plane-index width, plane joins and pending spin-k homes remain.
+// Round 266: untransformed plane copies dijk/kjid/kijd/jikd/ikjd/jkid/dkij/kdji
+// 211/210/211/211/210/209/211/210. Two-point best gain rejected; original copies and
+// complete body restored. Protected width, plane-join and pending spin homes remain.
+// Round 276: Existing scalar setters at
+// untransformed/transformed/both-output/untransformed-transformed/untransformed-outputs/transformed-outputs/all
+// transfers 210/211/211/210/210/211/210; all with axis copies 269. One-point leads rejected.
+// Original executable source restored; Frame 0xa0 agrees; protected plane-index width, plane joins and pending spin-k homes remain.
+// Round 288: Existing integer-step/fraction helpers at the speed/final draws on the common spin-k
+// join, eight combinations 211/211/211/211/211/263/263/263. Integer-step and final-only fraction forms
+// tie; speed-fraction forms shrink to 1331 bytes and regress. Original expanded draws, common scale,
+// protected plane interface and whole body restored.
+// DL224: Axial source pointer/conditional pointer/selected external reference 311 each; all
+// original spin products at the common join on those three graphs 328 each; shared float scale
+// with pointer/reference 328 each. Original source observations, random draws, pending-k join and
+// helper interfaces restored; protected plane width and plane/spin homes remain.
+// Round 461: Common collision-plane query with field/Boolean selection, branch/conditional
+// input and either plane declaration order: 290/348/290/348/290/348/290/348.
+// Boolean selection raises sibling 140 to 235; original query branches and complete body restored.
+// Round 310: Single spin workspace with native/CRT/setter/indexed axial capture, original/early
+// factor declaration: 274/274/274/274/255/255/272/272. Original axis, real factor, pending-k
+// join and complete body restored; protected plane width and plane/spin homes remain.
+// Round 296: Standard native-array normal/paired-axis/paired-spin producer subsets 1..7
+// 322/272/293/351/414/326/389; all with standard linear addition 375. Normal range capture grows
+// frame to 0xa4; original complete body, protected plane interface and include set restored.
+// Round 309: Genuine uninitialized final-linear/final-angular/both-plane output declarations reserved at
+// entry, subsets 1..7, then all after admission: 213/211/213/211/213/211/213/213. Original declaration lifetimes
+// and body restored; plane width, plane joins and spin/speed homes remain.
+// Round 289: Consistent item/matrix/collision reads at each use, subsets 1..7, then all with
+// paired shared final sums: 459/328/443/308/474/331/447/474. All regress; original receivers,
+// observations, helper calls, protected plane interface and complete body restored.
+// Round 312: Both getter results consumed through actual returned plane inputs, with
+// scalar/native untransformed publication, original/setter transformed normals and both
+// plane declaration orders: 261/283/261/283/261/283/261/283. Native plane publication
+// grows frame to 0xa4; original producers and full body restored. Protected index width,
+// plane joins and spin/speed homes remain.
+// N315: Shared actual collision-instance pointer/readonly pointer/reference/readonly
+// reference, with separate/direct matrix fields, 211 each (1365/1361 bytes).
+// Original receivers, matrix observations and body restored; plane width, join and spin homes remain.
+// N317: Actual fallback-speed scalar reserved at workspace/entry, crossed with
+// earlier common-factor and axial-vector storage, all eight forms 211. Original
+// uninitialized declarations and complete body restored; protected plane width,
+// plane-join allocation and native spin/speed homes remain.
+// N319: Axial scalar setter with separate axis retained, crossed with fallback/final setters and exact-group length provider: eight 211. Original producers and full body restored; protected plane width and plane/spin homes remain.
 // @retail 0x10cf80
 void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effect)
 {
@@ -631,7 +710,7 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 					surface_plane.d = matrix->position.z * surface_plane.k + matrix->position.y * surface_plane.j +
 						matrix->position.x * surface_plane.i + matrix->scale * plane.d;
 				}
-				real distance = marker.matrix.position.z * surface_plane.k + marker.matrix.position.y * surface_plane.j +
+				real distance = (marker.matrix.position.z * surface_plane.k + marker.matrix.position.y * surface_plane.j) +
 					surface_plane.i * marker.matrix.position.x - surface_plane.d;
 				real offset = 0.05f - distance;
 				point3f position;
@@ -648,6 +727,7 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 		function_10c850(item_index);
 	}
 
+	real spin_scale;
 	if (item->ignore_object_index == NONE && (item->flags_c1 & 1) &&
 		(TEST_FIELD_BIT(item->flag5) || TEST_FIELD_BIT(item->flag6)))
 	{
@@ -656,15 +736,15 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 			axis = marker.matrix.up;
 		else
 			axis = *g_4687b0;
-		real speed = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -1.5707964f, 1.5707964f);
-		spin.i = axis.i * speed;
-		spin.j = axis.j * speed;
-		spin.k = axis.k * speed;
+		spin_scale = function_259d0(&g_4e7408->unknown0, __FILE__, __LINE__, -1.5707964f, 1.5707964f);
+		spin.i = axis.i * spin_scale;
+		spin.j = axis.j * spin_scale;
+		spin.k = axis.k;
 	}
 	else
 	{
 		dword *seed = &g_4e7408->unknown0;
-		real speed = (real)sqrt(impulse->j * impulse->j + impulse->k * impulse->k + impulse->i * impulse->i);
+		real speed = (real)sqrt((impulse->j * impulse->j + impulse->k * impulse->k) + impulse->i * impulse->i);
 		if (speed < 0.0001f)
 		{
 			*seed = *seed * 0x19660d + 0x3c6ef35f;
@@ -676,11 +756,11 @@ void function_10cf80(vector3f const *impulse, long item_index, bool trigger_effe
 		if (!(function_30bf0(&spin) > 0.0f))
 			random_unit_vector(&spin, seed);
 		*seed = *seed * 0x19660d + 0x3c6ef35f;
-		real random_speed = (real)(*seed >> 16) * (1.0f / 65535.0f) * speed * 1.5707964f;
-		spin.i *= random_speed;
-		spin.j *= random_speed;
-		spin.k *= random_speed;
+		spin_scale = (real)(*seed >> 16) * (1.0f / 65535.0f) * speed * 1.5707964f;
+		spin.i *= spin_scale;
+		spin.j *= spin_scale;
 	}
+	spin.k = spin.k * spin_scale;
 	{
 		vector3f velocity;
 		vector3f angular_velocity;
@@ -855,6 +935,9 @@ void function_b92d0(long index, s_object_marker const *old_parent, transform4x3f
 
 // score 130 (was 130): frame 0xc0 versus 0xb4 and initial product ranks differ. Shared scale 130; inline
 // depth one 130; size preference 277; complete rotated vector 207; fallback vector initializer 130.
+// The axis as three real locals (no cross3f address) gives retail's frame 0xb4 and 848 bytes but 159.
+// The square's products come out i, k, j whatever their source order; retail's j, i, k come only
+// from a separate statement for the dot product, which then folds facing loads into mulss: 173-175.
 // @retail 0x10d710
 void function_10d710(vector3f const *facing, long object_index, point3f const *origin, point3f *position)
 {
@@ -982,7 +1065,8 @@ struct s_item_flags_view_10b850
     byte flag6 : 1;
     byte flag7 : 1;
 };
-// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
+// score 813 (was 813): Frame 0x154 versus 0x12c; entry Boolean publications and collision/carrier/rotation homes remain.
+// Earlier: Frame 0x154 versus 0x12c; entry Boolean publications and carrier/collision/flow/marker/rotation homes differ.
 
 // Earlier: Frame 0x154 versus 0x12c, entry Boolean bytes and collision/carrier/rotation homes still differ.
 // Earlier: Frame 0x154 versus 0x12c and Boolean/vector homes remain.
@@ -1065,6 +1149,62 @@ struct s_item_flags_view_10b850
 // both complete formal orders, 813 each; reversed original pointer contract 813;
 // reversed private dot formals on the latter and two new native receiver contracts 813 each.
 // Original rotation helper, all four callers and every dot tuple restored; frame remains 0x154.
+// Round 285: existing staged orientation cross at first/second/third/fourth/first-two/last-two/
+// all sites, then all with staged flow cross: 821/821/821/818/813/820/820/935 fast.
+// Original complete body and helpers restored; frame and Boolean/vector homes remain.
+// Round 223: complete persistent decisions in signed-byte/byte/short/word storage 813/813/872/872;
+// complete contact decisions in those domains 813/813/897/897. Original complete body restored.
+// Round 237: Lexical persistent/contact/motion families 1/2/3/4/5/6/7, then all with earlier constant settled declaration: 813/813/813/813/813/813/813/813.
+// Original executable body restored.
+// Round 252: Native accumulated-vector return with pointer/reference/value accumulator and additive inputs
+// 964/964/1106/964/964/1106/1092/1092. Original complete executable source restored; Frame 0x154 versus
+// 0x12c and Boolean/native workspace homes remain.
+// Round 266: library counter/correction/lift bounds, seven nonempty subsets and
+// all with bounded unsigned count, 871/897/912/876/895/923/939/939. Correction/lift recover frame
+// 0x148 but regress. Original bounds, flow operands, helpers and body restored.
+// Round 276: Complete carrier-input/linear/angular/carrier-linear/carrier-angular/linear-angular/all
+// scalar snapshot transfers 863/879/884/896/863/886/916; all with scalar ray construction 908. Initial
+// forms recover frame 0x148 but regress.
+// Original executable source restored; Original frame 0x154 versus 0x12c, Boolean publications and carrier/collision/rotation homes remain.
+// Round 288: Paired contact-position setters with predicted-position/contact-copy/ray helper masks
+// 0..7 894/887/883/883/821/886/876/882. Native point boundaries recover frame 0x148 in initial forms
+// but regress; complete original constructions, copies, helpers, rotation and flow operands restored.
+// DL224: Isolated staged flow cross 927; with complete rotation publication kij 934; with pre-
+// projection cosine-product orders ijk/ikj/jik/jki/kij/kji 924 each. All original flow operands,
+// private helpers and complete body restored; frame, entry Boolean publications and
+// carrier/collision/rotation homes remain.
+// Round 461: Overlap-safe carrier/linear/angular input transfers, subsets 1-7, then all
+// with the marker-matrix transfer: 892/873/859/837/916/861/907/920.
+// Original native copies, input observations, helper graph and complete body restored.
+// Round 310: Explicit native active/attached/anchored gate producers in all Boolean subsets,
+// then all byte carriers, 887 each (4068 bytes; frame 0x148). None matches; all one-use
+// observations restored. Original frame 0x154/0x12c, entry publications and motion/rotation
+// homes remain.
+// Round 296: Standard carrier/linear/angular input-copy subsets 1..7 872/900/880/811/876/871/879;
+// all with standard matrix transfer 896. Angular copy with rotation publication kij/kji 806/814;
+// kij with angular-before-linear capture 805, angular role name 806. The 805 form reaches 4096
+// bytes but plain loses 0x54590 by two reloads; nearby standard include and backward angular copy
+// remain 805 with the same loss. Original body, rotation producer and includes restored.
+// Round 309: Plain component loops at complete integration/ray, paired contact displacement and settled
+// angular projection producers, subsets 1..7, then all unsigned counters: 862/871/970/856/866/833/929/929. Some loops
+// reach frame 0x148 but regress. Original output producers and body restored; frame, entry Boolean
+// and native workspace homes remain.
+// Round 289: Narrow initial query-ray lifetime with early collision constant, narrow flow-side
+// scope and complete rotation kij publication, eight subsets: 887/886/887/886/887/886/887/886.
+// Frame falls to 0x13c and extent 4068 but scores regress; exact-only query result, original scopes,
+// rotation helper and complete executable body restored.
+// Round 312: Actual private producer output pointers consumed at basis-cross, cross-normalizer
+// and carrier-add motion boundaries, subsets 1-7, then all with library matrix transfer:
+// 813 each. Matched cross-helper sibling preserved throughout; all helper interfaces,
+// consumers and entire body restored. Frame 0x154/0x12c and Boolean/native homes remain.
+// N315: Complete axial-dot producer, direct/successive accumulation, original/
+// early plain-cross phase and complementary-cosine node, masks 0..7:
+// 813/823/814/823/813/823/814/823. Original helper/body restored; frame and native homes remain.
+// N317: Successive destination rotation rows, two/three stores, immediate/early
+// complete cosine products and compound/explicit updates: 877/914/902/915/
+// 877/914/902/915. Frame stays 0x154; original helper and whole body restored;
+// entry Boolean publications and native collision/carrier/rotation homes remain.
+// N319: Retained cosine locals plus complete per-row sums, sequential/staged sums and cosine/sine products: 832/840/841/840/815/837/826/837. Original helper and full body restored; frame 0x154/0x12c and Boolean/vector homes remain.
 // @retail 0x10b850
 void __stdcall function_10b850(long object_index)
 {
@@ -1286,7 +1426,21 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 	function_10cf80(&velocity, object_index, false);
 }
 
-// score 154 (was 154): Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
+// score 140 (was 140): frame 0xac agrees; return byte +0xe/+0xf, release-byte RMW/tail,
+// event/point homes and location-call setup remain. Paired existing point setters kept.
+// Earlier: the frame 0xac agrees; the release byte's read-modify-write,
+// the tail, the event-point homes and the location-call setup are unchanged, and
+// this round's trials in this file left them where they are
+// the frame 0xac agrees; the release byte's read-modify-write,
+// the tail, the event-point homes and the location-call setup remain, and this
+// round's trials in this file left them where they are
+// Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Frame 0xac agrees; return byte +0xe versus +0xf, release-byte RMW/tail and event/location homes remain.
+// Earlier: the frame 0xac agrees; the release byte's read-modify-write,
+// Earlier: Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Frame 0xac agrees; release-byte RMW/tail, event-point homes and location-call setup remain.
+// Earlier: Frame 0xac agrees; release-byte RMW/tail, event homes and protected location-call setup remain.
 // Earlier 154 (was 154): frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
 // Frame 0xac agrees; release-byte RMW/tail and event/location homes remain.
 // frame 0xac agrees; release RMW/tail, event homes and location-call setup remain.
@@ -1365,6 +1519,94 @@ static __forceinline void item_release_impulse_10b4d0(long object_index)
 // Round 259: Complete contact/event/owner/impulse workspace-name families, eight
 // lexical home orders 154 each. Original helper and all workspaces restored; release
 // byte RMW/tail and event-point homes remain.
+// Round 205: immutable addressed impulse output, with none/rate/gain/both/
+// direction/direction-rate/direction-gain/all input snapshots 154/200/200/200/194/194/194/194.
+// Original mutable output and input graph restored; release-byte RMW/tail and event homes remain.
+// Round 223: unsigned/signed word and dword full-byte bitfields, each with word/byte named-bit units,
+// 185/213/185/213/185/213/185/213. Actual record layout and complete body restored.
+// Round 237: Two-use spinning predicate feeds accumulated result, bool/byte/short/long after damping and before damping: 158/191/191/195/190/239/188/193.
+// Keep the bool spin predicate for damping admission and result accumulation after damping; it is observed once and used twice. All other variants restored; frame 0xac, return-byte home +0xe versus +0xf and release/event/location differences remain.
+// Round 210: On the retained twice-used spin graph, spin entry declaration, spin name, both,
+// result name, result plus entry, both names, and both names plus entry 158 each; that complete
+// home graph with byte accumulator 159 (873 bytes). Names do not move the +0xe return byte to
+// +0xf; frame 0xac, release tail and event homes remain. Original names, declarations, Boolean
+// accumulator, impulse helper and complete body restored.
+// Round 46: Captured-spin logical OR previous-first/spin-first/conditional 185/188/202; byte bitwise/logical accumulation 159/182; long bitwise/logical 178/205; entry bool with logical OR 186. Original body restored.
+// Direct native event origin/position getter output, native/library parallel copy,
+// owner/scalar publication before/after getter: all eight 227 (921 bytes, frame 0xa0).
+// Original separate point, returned receiver, initializer order and complete body restored.
+// Round 465: uninitialized owner/event/point entry-declaration subsets 1..7, then all three
+// at active-object scope, 158 each on the two-Boolean graph. Original workspaces and full body restored.
+// Round 267: Conditional success publication after damping with bool/byte/short/long accumulator
+// 202/197/212/213; before damping 202/197/212/213. All exact-match-only forms restored;
+// original twice-used spin snapshot and bitwise result accumulation retained.
+// Round 269: Native two-use spin byte/char/short/long 191/190/191/195; exhaustive branch-owned
+// result defaults with those carriers 191/190/191/195. Frame/return-byte/release homes remain;
+// original spin Boolean, default, helper and complete body restored.
+// N271: full spin-byte capture, byte/signed-byte/word/dword with mask decoding 191/194/189/190;
+// with shift decoding 158/158/185/189. Original twice-used Boolean and complete body restored;
+// result byte +0xe/+0xf, release-byte RMW/early impulse sharing and event homes remain.
+// Round N274: Existing scalar setters at release/damping/event boundaries, masks 1..7,
+// 171/159/180/140/140/141/141; all with entry contact point 141. Paired point setters with
+// direct filled-buffer inputs 158; with entry event record 158. Minimal paired setters
+// retained, plain 140 at 892/892 bytes; other graphs and original impulse helper restored.
+// Round 297: Merged spin-success arm, bool/byte/short/long accumulator, completion 190/185/202/203 and entry 190/185/202/203. Bool recovers return-byte +0xf but shrinks to 874/892 bytes. Original two-use spin result, paired point setters and full body restored; release RMW/tail and event/location homes remain.
+// Round 288: Native Boolean flag allocation units, with branch-spin/release-setter/damping-setter
+// masks 0..7, 242/233/242/233/242/234/242/234. Native Boolean units move the frame to 0xa8 and disrupt
+// entry allocation; original word units, shared release helper, paired point setters and full body
+// restored.
+// Round 453: Final other-update/spin reduction, bool/long and bool/byte carriers with
+// bitwise/logical joins, masks 0..7 (exact-only): 195/207/193/207/209/206/209/206.
+// Original executable body restored.
+// Round 242: On the paired-setter/two-use-spin graph, native short/long countdown values
+// captured before admission or after the positive test, with spin consumed after damping,
+// 140/176/140/144; before damping 173/178/173/173. Original timer reads, spin consumption,
+// paired event setters and full body restored; frame 0xac, return-byte +0xe/+0xf and
+// release/event homes remain. Earlier terminal-only short work preceded this graph.
+// Round 506: native event category/location/both on paired setters 140/140/140; each
+// with actual filled-point consumption 158/158/158; signed category/location 140;
+// complete graph with accumulated spin arm 189. Original types and full body restored.
+// Round 306: Joint contact and owner/event/position entry declarations in seven subsets, then the
+// complete reverse declaration order: 140 each. Original body and all workspaces restored; return byte
+// +0xe/+0xf, release RMW/tail and event/location homes remain. Both existing point setters and the
+// two-use spin capture are preserved.
+// Round 311: Current paired-setter/two-use-spin graph with inverse idle outcome,
+// bool/byte/short/long and bitwise/logical spin reduction 179/189/179/189/186/182/187/184.
+// Original result, spin capture, helper, setters and full body restored; return-byte and release/event homes remain.
+// Round 296: Standard native-array release/damping multiplication and paired event-transfer
+// subsets 1..7 289/231/260/181/278/247/249; all with backward paired event transfer 247. Original
+// helper, setters, body and includes restored; return-byte, release RMW/tail and event homes remain.
+// N304: Spin field read at both uses before damping, bool/byte/short/long results
+// with bitwise/logical accumulation: 173/173/168/174/198/191/185/190. Bool/byte
+// recover return byte +0xf but regress; original two-use spin snapshot retained.
+// Round 466: Complete independent direction-component inputs in the existing two-site
+// release helper, all six acquisition orders and scale before/among captures: 171 each,
+// 901 bytes. Exact-only input captures restored with the complete helper and body;
+// return-byte, release-tail and event/location homes remain.
+// Round 257: Surface-clause/timer-admission evaluation priority and adjacent parent
+// declaration, seven subsets, then failed-attachment arm first: 139/142/140/141/139/142/141/207.
+// One-point forms rejected; original paired setters, spin capture, release helper and
+// complete body restored. Return byte +0xe/+0xf and release/event homes remain.
+// P261: shared contact/event point at entry/active scope 137/137 (three-point gain, rejected);
+// with sentinel before/after point query 157/160 in either scope; separate points with
+// sentinel before/after 160/161. Paired setters, spin capture and complete body restored.
+// P264: constant accumulator before object acquisition, bool/byte/short/long
+// 143/144/160/160; between object/tag acquisition 143/144/160/160.
+// Original result lifetime, paired point setters, two-use spin and body restored.
+// P269: shared contact/event point with owner memcpy/memmove at initialization, magnitude,
+// location joins 137/137/140/165/165/164; complete object/team/player publication at the
+// latter two joins 132/138; the magnitude-join field publication with the common active-scope
+// point reached 132 plain at 892/892. Not kept (coordinator): the same form as N315 (owner copy
+// written out as three field stores, the contact and event points folded into one local), a
+// steering form at exactly the keep bar. Body restored.
+// N315: Complete owner-field publication (P/O/T: player/object/team)
+// POT/PTO/OPT/OTP/TPO/TOP
+// 138/138/137/136/138/137; metadata/location joins 138/139. OTP and OPT
+// with a common contact/event output point, entry/active scope, 132/132/133/133.
+// Plain 132 at 892/892 with the shared point and OTP: not kept (coordinator: the owner struct
+// copy written out field by field in an order picked from six by score). Shared point alone not
+// measured. Return-byte +0xe/+0xf and release/event loads remain.
+// N319: Inactive-parent default with late active overwrite, long/dword parent and bool/byte/short/long accumulator: 196/192/200/202/196/192/200/202. Original parent join and full body restored; return-byte/release/event homes remain.
 // @retail 0x10b4d0
 bool __stdcall function_10b4d0(long object_index)
 {
@@ -1410,14 +1652,15 @@ bool __stdcall function_10b4d0(long object_index)
                     result = true;
                 }
             }
-            if (TEST_FIELD_BIT(item->flag4))
+            bool spinning = TEST_FIELD_BIT(item->flag4);
+            if (spinning)
             {
                 item->angular_velocity.i *= 0.9f;
                 item->angular_velocity.j *= 0.9f;
                 item->angular_velocity.k *= 0.9f;
                 function_10d5f0(object_index);
-                result = true;
             }
+            result |= spinning;
         }
         if (!(item->flags_c1 & 1))
         {
@@ -1442,8 +1685,8 @@ bool __stdcall function_10b4d0(long object_index)
                     *(byte *)&data.unknown84 = 4;
                     data.unknown54 = 1.0f;
                     object_get_root_location(object_index, (s_location *)&data.unknown1c);
-                    data.origin = *event_point;
-                    data.position = data.origin;
+                    real_point3d_set(&data.origin, event_point->x, event_point->y, event_point->z);
+                    real_point3d_set(&data.position, data.origin.x, data.origin.y, data.origin.z);
                     function_d6c80(&data, NONE);
                 }
                 function_176780(object_index, (s_effect_owner const *)&owner, 0.0f, *(long *)(definition + 0x128), 0.0f, NULL, NULL);

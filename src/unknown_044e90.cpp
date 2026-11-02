@@ -2,19 +2,22 @@
 #include "unknown_044e90.h"
 #include "normalize3d.h"
 
-// score 421 (was 434): frame length and instruction count agree with retail.
-// Still differs: the header workspace is 16 bytes smaller than retail's, so the
-// visibility list slots sit lower in the frame (0xb0/0x10bc/0x20c8/0x40d4 against
-// retail's 0xb0/0x10c0/0x20d0/0x40e0) and the frame is 0x7494 against 0x74a4; the
-// globals and the visibility calls name different addresses in this build; in the
-// plane loop retail holds the source plane at 0x34/0x38/0x3c/0x40 with the normals
-// in xmm4/xmm5/xmm6 and one 1.0f in xmm3, ours holds them at 0x2c/0x30/0x34/0x38
-// with xmm3/xmm4/xmm5 and reloads 1.0f, and retail divides the distance in a
-// register while ours reloads it from the stack; retail zeroes the plane distance
-// when the transform scale is 0.0f and ours leaves it unchanged; retail hoists the
-// four list capacities before the first release test while ours tests them in
-// turn; after the visibility query ours reloads the view table once more than
-// retail, which shifts the rest of the tail.
+struct s_visibility_bound_record
+{
+    point3f center;
+    real radius;
+    byte transform_index;
+    byte padding[3];
+};
+
+// MiniMax S (11-01): the entry address and the flags load keep the first difference at +0x10; no lower score.
+// score 406 (was 406): Frame 0x74a4 and list strides agree; entry/table and plane homes remain.
+// Earlier: frame/list strides and entry/table/plane homes differed.
+// Earlier: Frame 0x7494 versus 0x74a4; list strides, entry/table and plane homes differ.
+// Storage headers are at 0xb0/0x10bc/0x20c8/0x40d4 versus retail 0xb0/0x10c0/0x20d0/0x40e0.
+// Input plane homes are 0x2c/0x30/0x34/0x38 versus 0x34/0x38/0x3c/0x40; normal registers,
+// inverse-scale reuse, distance division and capacity-release scheduling also differ.
+// Scale-zero distance handling may differ semantically; it remains unchanged pending a behavior fix.
 // plain plane for 2649; native view ranges 438; plane copy blocks 438; center point setter 438; views read
 // before entry 442; entry bitfield 441
 // Round 310: long bound index 438; explicit plane query 438; visibility-word pointer 438;
@@ -68,6 +71,132 @@
 // Round 162: Native selection fields alone/table/aligned/aligned-table 438/447/439/448; the same
 // four with the existing normal scaler 438/447/439/448. Entry/table and plane/list homes remain;
 // original external fields, storage alignment and all arithmetic restored.
+// Round 273: native storage alignment eight/sixteen, crossed with original/frustum/view
+// plane-normal declarations, eight forms 417/1742 each with frame 0x74a4. Four-point gain
+// below gate. On that layout scale/plane-name/both/table/scale-table/plane-table/all/
+// all-readonly-query 421/417/421/455/468/455/468/468. Header and entire body restored.
+// Round 38: Independent list objects, list/transform lifetimes branch/branch, branch/entry,
+// entry/branch and entry/entry, each with default/eight-byte alignment:
+// 418/418/419/419/419/419/419/419 fast, all 1742 bytes. Branch/branch recovers frame 0x74a4;
+// three-point gain rejected. Original combined workspace and complete body restored.
+// Round 218: Live view source/direct ranges/both/both with native short view 481/474/453/450;
+// native eight-byte storage alignment on those graphs 481/473/453/449. List/plane and entry/table
+// homes remain; original header, observations and complete body restored.
+// Round 435: Native eight-byte storage alignment plus chained counts and paired capacities,
+// field orders pointer/count/capacity, pointer/capacity/count, count/pointer/capacity,
+// count/capacity/pointer, capacity/pointer/count, capacity/count/pointer:
+// 418/418/418/417/417/417; initialization by real capacity pairs, counts/capacities
+// or capacities/counts 418/418. Four-point gain rejected; original header/body restored.
+// Round 443: Native eight-byte storage plus ordinary-inline transform/containment/query
+// declarations, seven subsets and all plus both publication boundaries, 417 each at 1742 bytes
+// with frame 0x74a4. Four-point lead rejected; original header/body restored; entry/table and
+// plane/list homes remain.
+// Round 445: Real storage alignment eight with natural/eight plane-array alignment,
+// each with aggregate/explicit query fields, 429 each; storage sixteen on the same four
+// graphs 417 each. Four-point lead below keep gate; complete header and body restored.
+// Round 97 (lane 7): retail stores 0 into the plane distance when the transform scale is 0 (a value
+// difference: its zero path shares the distance store with the division path); `else p.d = 0.0f;` alone
+// 444, on the 16-aligned storage template (417) 441. On that: the normal computed in both transform arms into
+// a local vector and stored once at the join with `0.0f - p.d` (retail's join stores) 462; with
+// `transform->scale != 0.0f` 450; with the normal locals defined after the distance block (the transform block
+// is then retail's but for register rotation) 475 at 1700 bytes; with the release tests as
+// `!(capacity & 0x80000000)` (retail's `test/js` and capacity reloads) 448 at 1744 bytes, aligned differences
+// 294 -> 235; parts arms swapped 448 (the two calls' identical pushes stay hoisted, retail sets up each call in
+// its arm). Left on that graph: the entry pointer in EDI (retail EBX, pushes interleaved), the tag table loaded
+// in each branch (retail once into ESI before the tag test) and register rotations.
+// Round 456: Persistent global entry reference; flags/table input graphs on native/default storage alignment:
+// 421/457/433/454/417/455/432/452. Original executable body and supporting declarations restored.
+// Round 467: Full-width input ordinals entry/section/both, then both with live
+// selection fields, original storage 438/421/438/466; native eight-byte storage
+// 435/417/435/465. Four-point aligned lead rejected; original header and body restored.
+// Round 471: Native workspace list construction on eight-byte storage, original/reverse
+// object order and six field-group orders 573 each (1620 bytes). Constructor and native
+// alignment removed; original branch-local descriptor publication and full header restored.
+// Round 474: Unsigned capacity/sign-mask on native four/eight storage 456/454;
+// external-storage bit view 456/454; native allocation-count view 456/454;
+// aligned whole-plane publication with bit/count or mask 480/480. Header and
+// body restored; cleanup tests/preloads recover but entry roles and length regress.
+// Round 437: Native sixteen-byte storage with the per-part containment output
+// 406 reduced; with const query 406; live flags 442/442; branch-owned query data
+// 448/447, with const query 448/447. Ordinary judgment unavailable; original
+// storage, observations and complete body restored. Frame/list and pointer homes remain.
+// Round 230: Native bound record and sixteen-byte storage with point/vector copy/component
+// construction/direct shared scale 417/417/450/424; per-part containment output on those
+// graphs 406/406/449/421. Native point form kept at 406 after full validation; all call values
+// and float grouping retained. Storage has its own type identity.
+// Round 233: fixed-six indexed input with plane/normal scopes loop/branch, frustum/branch,
+// view/branch, loop/frustum, loop/view, frustum/frustum, view/view and view/frustum
+// 415 each at 1742 bytes. Original cursor, all observations and complete body restored.
+// Round 437: Native sixteen-byte storage with the per-part containment output
+// 406 reduced; with const query 406; live flags 442/442; branch-owned query data
+// 448/447, with const query 448/447. Ordinary judgment unavailable; original
+// storage, observations and complete body restored. Frame/list and pointer homes remain.
+// Round 476: Distance-before-normal graph, original/eight-byte storage, scalar/shared normal scale and direct/whole-plane output: 463/461/441/442/457/455/457/458.
+// Scalar forms shrink to 1716; shared scale recovers 1742 but regresses. Original zero-scale behavior, whole body and header restored; entry/table and plane/list homes remain.
+// Round 481: Complete scalar-normal initialization schedules i/j/k, j/i/k, j/k/i on
+// native-four storage 421/420/420; all five non-original schedules on eight-byte storage
+// 417/416/416/417/417. Best five-point form rejected; original body and header restored.
+// Round 483: native-eight storage with complete descriptor publication orders
+// second/first/third/fourth 416; second/first/fourth/third 417; second/third/first/fourth
+// and second/third/fourth/first 418/418; third/second/first/fourth and
+// third/first/second/fourth 417/417; fourth/third/second/first and
+// first/third/second/fourth 418/418. Five-point lead below gate; body/header restored.
+// Round 485: Native-eight storage with second/first descriptor publication and
+// j/i/k or j/k/i normal creation, original/reversed final pair 415/416/415/416;
+// coherent tag table 454/455/454/455. On the first graph, short frustum/early
+// containment/both/short view/view with containment/both ordinals/all three
+// 425/404/427/427/416/421/410. Eight-byte 404 loses three caller matches in the
+// full check and is rejected. Sixteen-byte storage retains fast 404 and recovers
+// all three callers, but its closing full check hangs. Complete body and storage
+// restored; original frame/list strides and entry/table/plane homes remain.
+// Round 238: copied-plane normal reused in place, with all shared rotation-dot/position-dot/
+// inverse-scale subsets 459/459/478/478/459/459/478/478. Dot regroupings exact-only;
+// original complete plane/normal producers restored; frame agrees, entry/table and plane homes remain.
+// Round 230: Native bound record and sixteen-byte storage with point/vector copy/component
+// construction/direct shared scale 417/417/450/424; per-part containment output on those
+// graphs 406/406/449/421. Native point form kept at 406 after full validation; all call values
+// and float grouping retained. Storage has its own type identity.
+// Round 233: fixed-six indexed input with plane/normal scopes loop/branch, frustum/branch,
+// view/branch, loop/frustum, loop/view, frustum/frustum, view/view and view/frustum
+// 415 each at 1742 bytes. Original cursor, all observations and complete body restored.
+// Round 302: frame remains 0x74a4; input-plane/query homes are eight bytes low and entry register
+// lifetimes differ.
+// Complete point helper with local/direct input, output at use/part entry and ordinary/inline declaration 626/648;
+// all eight regroup the float expressions and miss, so restored.
+// Round 240: Successive complete rotation-row/center-row/position-product statements, seven
+// subsets and all with coherent plane/query home names: 406/403/403/406/406/403/403/403.
+// Original operands, grouping, zero-scale handling and complete executable body restored.
+// On the successive center graph, uninitialized output storage before the bound copy/at part
+// entry: 403/403. Below-margin center gain and both lifetimes restored.
+// Round 267: actual destination-plane transform, indexed/pointer/reference with
+// assignment/library copies 485/485/476/476/476/476; indexed/pointer with existing
+// normal scaler 472/460. Original input-plane and output publication restored;
+// entry/table and plane/query homes remain at the 0x74a4 frame.
+// Round 27 (m3 lane 18, fast; register-masked aligned 108 for the kept form): the plane transformed in place with one common store (retail's transform block
+// register for register) 476 (1700) [84]; all 24 combinations of that, the scale test written transform->scale != 0, the index read through a reference (no effect), flags at each
+// use and sign-mask capacity tests: scale test + flags 420 (1744) [94], scale test alone 427, flags alone 442, in place + flags + sign mask 445 (1760) [71], other combinations
+// 455-487. Plus: scale test in place 476; the query-data arms as if/else 484; bool false arm first 480 (1778) [71], with a two-step source pointer 480; table local at the top 447 (1744) [77].
+// Retail also reads the four capacities into registers once and re-reads them after each free, and pushes the sign-extended index at the visible-list calls.
+// Round 248: Complete independent scalar normal results joined after both transform arms,
+// loop/frustum/view/query declaration scopes with normal-first/distance-first publication: 459 each.
+// Original input plane, scalar lifetimes, publication and zero-scale behavior restored.
+// Round 311: Complete fallback bound value, const value and library copy 434/434/434;
+// with native fallback transform values 467/467/467; value/const bounds with library transform copies
+// 467/467. All actual record observations restored; entry/table and plane/query homes remain.
+// Round 515: Boolean instance selector with coherent live flags/table input/branch-owned
+// query-data subsets 419/444/442/447/453/443/462/448. Original selectors, observations,
+// zero-scale behavior and complete body restored; entry/table and plane/query homes remain.
+// Round 517: Output-array/query ownership: array at entry 406; query uninitialized at entry 413;
+// both uninitialized at entry 413; both per view/frustum 407/407; entry array with view/frustum
+// query 407/407; both initialized at entry 422. Original declaration scopes and all values restored;
+// entry/table and plane/query homes remain.
+// Round 471: Uninitialized containment output at entry/fallback/part-loop/part/record/transform/point-input/query,
+// 433 each. Original false initialization and complete body restored.
+// Round 525: Complete input-plane memcpy/memmove with native/library normal and center transfers,
+// eight graphs 406/406/444/444/456/458/445/446. All original transfers and full body restored; entry/table and plane/query homes remain.
+// Round 527: Uninitialized reciprocal declaration at function/query/view/frustum scope,
+// each with the original/fallback-entry center-output scope: 406 each. Every original
+// reciprocal producer, center scope and full body restored; entry/table and plane/query homes remain.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {
@@ -186,22 +315,20 @@ void __stdcall function_44e90(short entry_index, short section_index)
         for (long part = 0; part < *(long *)(geometry + 8); ++part)
         {
             dword bit = 1 << (part & 31);
+            bool contained = false;
             if (!(visible[part >> 5] & bit))
             {
                 word bound_index = *(word *)(*(byte **)(geometry + 0xc) + part * 8 + 4);
-                byte *bound = *(byte **)(geometry + 0x14) + bound_index * 20;
-                transform4x3f const *transform = &workspace.transforms[bound[0x10]];
-                point3f local = *(point3f *)bound;
+                s_visibility_bound_record const *bound = (s_visibility_bound_record const *)*(byte **)(geometry + 0x14) + bound_index;
+                transform4x3f const *transform = &workspace.transforms[bound->transform_index];
+                point3f local = bound->center;
                 if (transform->scale != 1.0f)
-                {
                     vector3f_scale((vector3f const *)&local, transform->scale, (vector3f *)&local);
-                }
                 point3f center;
                 center.x = transform->forward.i * local.x + transform->left.i * local.y + transform->up.i * local.z + transform->position.x;
                 center.y = transform->forward.j * local.x + transform->left.j * local.y + transform->up.j * local.z + transform->position.y;
                 center.z = transform->forward.k * local.x + transform->left.k * local.y + transform->up.k * local.z + transform->position.z;
-                bool contained = false;
-                if (function_165010((s_frustum_set_view *)views, section_index, &center, *(real *)(bound + 0xc), &contained))
+                if (function_165010((s_frustum_set_view *)views, section_index, &center, bound->radius, &contained))
                 {
                     entry->unknown00 |= 1;
                     visible[part >> 5] |= bit;

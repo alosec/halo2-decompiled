@@ -13,139 +13,6 @@ long replication_table_find_in_chains(s_handle_peers *peers, long *handles, long
 void replication_table_release(s_handle_peers *peers, long handle);
 void replication_table_release_chain(s_handle_peers *peers, long count, long const *handles);
 
-// score 132 (was 132): frame 0x48, receiver EBP and pending counter ESI agree; selector,
-// cursor/entry/query homes and load scheduling remain. Earlier 170: the peers table is read through a local; the
-// index is read inside the enabled test, the cursor is declared under the index test, advanced
-// before the stores and the size is one expression, so retail's prologue and output block match.
-// Left: our cursor, entry pointer and item-priority slots sit 4 bytes below retail's and our
-// chain loop keeps its counter in a stack slot instead of ESI.
-// chain loop has one count test. Left: receiver EDI/EBP (ours keeps the index in ebx, retail spills it
-// and reloads it each iteration), so every callee-saved register rotates.
-// Lane 8 r64 (199 = output cursor local, no `<= 0` guards before the chain loops, `priority = 0.0f`
-// for a blocked active chain, `entries[index].field` in full, for loop with continue): cursor plus
-// guards 220 (output slot reused); plus active `priority = 0.0f` 216 (814 bytes); size as one
-// expression with `(handles_count > 1 ? 2 : 0)` 202 (retail's setle/dec/and, but the cursor gets a
-// +4 bias); output indexed by count 207 (same bias); `out = cursor++` per entry 239, declared before
-// the loop 236 (aligned 134: no bias, cursor at retail's spot, registers rotated); all 23 other
-// orders of the type/count/priority/size declarations 236 (identical code).
-// Earlier baseline: Frame 0x48 agrees; receiver EDI/EBP and callback/output/blocked homes remain.
-// Earlier 217 from 217: Frame 0x48 agrees; receiver and aggregate/blocked homes remain.
-// Earlier 217 from 217: frame 0x48 agrees; receiver EDI/EBP and count,
-// priority, size and blocked homes remain. Both redundant count guards removed
-// 249; separate native arrays 249; distinct counter names 249; result-home names
-// 249; arrays and counter names 249; pending-only guard 242; active-only 220.
-// Earlier 217 from 217: Frame 0x48 agrees; receiver/output-slot/priority homes remain. Active priority result 228; mutable cursor 250; native entry/peer/both arrays 236/266/238; shared handle buffer 220; linked for 217; query enum 217; cursor plus priority 259; unmasked arm first 216.
-// Frame 0x48 agrees; receiver EDI/EBP and query/blocked homes remain.
-// Frame 0x48 agrees; receiver/output-slot/priority homes remain. Active priority result 228; mutable cursor 250; native entry/peer/both arrays 236/266/238; shared handle buffer 220; linked for 217; query enum 217; cursor plus priority 259; unmasked arm first 216.
-// State snapshot 217; direct handled states 247; default chain count 238;
-// invalid-priority-first arms 221; state/default/arm combination 238.
-// Entry-scope guarded arrays 217; shared blocked workspace 217; shared chain
-// index 217; shared callback outputs 224; all-ready predicate 220.
-// Priority/size/both before pending lookup 221/218/221; active priority/size/both 217/217/217;
-// both priorities/all four early 221/221.
-// Remaining capacity 262; failed-query counts 239; size accumulation first 229;
-// separate chain size 239; capacity/count/size combination 272.
-// Pending/active/both counted while 217/217/294; pending/active unsigned chain index 217/217; shared dispatch and chain aggregation 340.
-// Round 111: Positive pending/active/both equality termination 217/217/217; active state first 253; Boolean-OR blocked reduction 264.
-// Pending/active/both separate chain lengths 219/219/221;
-// pre-query peer flags 229; flags plus separate lengths 254.
-// Pending/active/both callback outputs before traversal 217/217/217; both with guarded
-// output cursor 250; both with emitted-count output indexing 250 (fast); all restored.
-// Guarded aggregate priority/size/emitted-count/query-count names and all four together
-// 217/217/217/217/217; receiver and callback-output homes remain.
-// Round 115: Guarded distinct indices 217; separate blocked names 217; separate callback-output names 217; aggregate declarations first 217; guarded index/blocked names together 217. Opening body restored.
-// Pending/active/both invalid-query continues 229/217/229; zero-state exit 217; output-failure exit 217; initialized handle arrays 297; pending/active selector after lookup 219/217. Receiver and callback/output/blocked homes remain.
-// Disabled-entry exit 239; empty-list exit 239; both admission exits with later count 246; those
-// exits with advancing cursor 244; those exits with active zero-priority join 243. All reach 814
-// bytes but regress.
-// Round 357: Simple pending/masked-active/both arms first 248/216/246; all query kinds
-// after their queries 275; single-handle counts after callbacks 275. Opening body restored.
-// Round 165: Pending/active/both byte blocked predicates 217/217/217;
-// pending/active/both dword 247/228/247; mixed dword/byte and byte/dword 247/228.
-// Original Boolean predicates, all guards and executable body restored.
-// Round 165 follow-up: Unsigned handle/link/both domains 217/217/217; readonly
-// entry/peer/both views 217/217/217; unsigned handle with both readonly views 217;
-// all domains/views 217. Original signed locals and mutable views restored.
-// Enabled/nonempty count initialization 230/219; narrow pending/active array names
-// 217/217; pending-before-ready/active-before-waiting names 217/217; enabled count
-// with pending-before-ready 230; nonempty count with active-before-waiting 219.
-// Callback priority/size names before handle homes, pending/active combinations
-// and after-handle query names: 217 each; receiver and callback homes remain.
-// Round 234: Native state dispatch, either case order, with original pointers,
-// entry reference, peer reference and both references: 244 each (816 bytes).
-// Original guarded callback/output graph and executable body restored.
-// Native state with direct entry/entry-plus-peer/peer fields 236/238/266; native flags
-// with direct entry/peer 239/229; both snapshots with direct entry/entry-plus-peer/peer
-// 239/239/229. Original entry/peer cursors, field reads and callback/output homes restored.
-// Round 188: Chain-query inline/noinline/forceinline/inline-out-of-line declarations, then each
-// with native word state observed once:
-// 217,217,217,217,217,217,217,217 fast; reduced control 217, full 217. Original executable source restored.
-// Round 191: Native two-use payload mask at active gate, with original/cursor/
-// conditional size/both output forms 217/250/214/244; before state selection,
-// consistently serving applicable callbacks, 217/250/214/244. Three-point best
-// restored; original field observations, output graph and executable body restored.
-// Round 153: Once-computed validity with readiness AND pending/active/both 233/220/240; blocked OR
-// pending/active 249/232; AND-OR/OR-AND 249/251; both readiness byte/long 240/269. Original
-// callback/reduction graph restored.
-// Round 254: shared callback owner after peer/before peer/before handle 262/262/262;
-// entry table alone/with owner 261/242; enabled/nonempty/entry-scope table with owner
-// 246/244/248. Original live pointer observations and executable body restored.
-// Round 193: Private pending/active/both chain maxima; each with private pending size;
-// both maxima with conditional pending publication, without/with private size: 227/240/228/227/218/241/288/235. Original restored.
-// Round 195: Pending/active reversed-relational and conditional-replacement maximum
-// graphs, alone and in all pairs, 217 in eight forms. Equality/unordered choices retained;
-// original body restored, with receiver and callback/output/blocked homes unresolved.
-// Round 104: an entry pointer for the body's reads 216; also driving the loop step 216; size as one
-// expression 202 (aligned count unchanged); count incremented first 209; the `index != NONE` guard that
-// repeated the loop test removed 199 (identical code, kept).
-// Round 31 lead (170 at 814 bytes, not kept: mixed reads and a repeated loop guard): a
-// `s_handle_peers *peers = table;` local for the peer lookup and the three single-handle calls (the
-// chain loops keep `table->`) puts every callee-saved register where retail has it (this EBP,
-// peer/count EDI, table/index ESI, type EBX) 207; the output in 0x8b890's order (`out = cursor;
-// count++; cursor++;`, size as one expression with `(handles_count > 1 ? 2 : 0)`) then gives retail's
-// output block exactly 175; index read inside `if (unknown09)` and the cursor declared under `if
-// (index != NONE)` with a `for (; ...)` loop gives retail's prologue 170. Left: in the first chain
-// loop retail keeps the chain index in ESI, the vtable in EBX and spills type to [esp+0x34] (reloaded
-// before the join); ours keeps type in EBX and spills the index, shifting the cursor/entry/item slots
-// by 4. On that lead: type declared last/at function scope, one shared chain index, the first loop's
-// item locals at block scope, the chain query through the local 170 each; `type = 3` after the loop
-// 249 (782 bytes); type set only on the unblocked exit 228; the local in the loops too 216; a 600 s
-// permuter run 158 only through a volatile read; an entry pointer for the reads 195. Without the local: the sibling output order 234,
-// with the cursor inside the flag test 232; count renamed result 199 (identical).
-// Round 250: two-use pending handle 199; pending array cursor 258; both 258;
-// active array cursor 207; handle/active 207; both cursors 213; handle/both 213;
-// all with cursors before chain queries 214. Original traversal restored.
-// Round 169: Recovered receiver/output graph: selector, distinct chain-index and callback-output
-// identities, all seven subsets 170; native dword selector 170. Pending selector/index
-// interference and the four-byte cursor/entry/callback home shift remain.
-// Conditional pending/active/both aggregate zero joins 170/170/170;
-// post-query pending/active/both failure lifetimes 173/170/173; both joins with late/shared predicates 173/170.
-// Complete per-use/table-local/traversal-local/owner-local roots on the EBP graph 231/228/228/222; original body restored.
-// Round 173: native signed-byte/byte/short/word selector on the recovered EBP graph
-// 216/216/200/200; complete post-query selector publication at those widths
-// 278/278/266/266. Original selector, table observations and body restored; cursor/entry
-// homes and pending selector/chain-index residency remain.
-// Round 73: retail spills type around the first chain loop only (stored before the chain query, reloaded
-// into EBX at the join) and keeps the counter in ESI and the vtable in EBX; ours keeps type in EBX and
-// spills the counter. Renaming type (two names) or the chain counters (two names) 170 each; the first
-// chain counter declared with its zero before `type = 3` 189.
-// Round 396: real pending/active array cursors after/before lookup on the EBP graph
-// 216,132,242,221,148,247,247,252; active post-lookup cursor kept at 132 plain, 823/814 bytes.
-// Pending selector now spills at +0x20 versus +0x34; cursor/query homes remain four bytes low.
-// Round 227: On the aligned receiver graph, early size reduction/conditional maxima/both
-// 170/170/170; positive availability and its three combinations 171 each;
-// all with a private pending total 218. Original reductions restored; selector/induction
-// interference and the four-byte cursor/entry/callback shift remain.
-// Round 175: On the recovered EBP graph, pending/active/both native chain-buffer names
-// 170/170/170; two-use pending callback handle 170, with either/both buffers 170/170/170;
-// complete graph with alternate buffer home order 170. Original executable body restored.
-// Round 180: Pending/active selector constants after queries and single-item counts after
-// callbacks, masks 1-7, then all with single-item selectors after callbacks:
-// 172/170/172/229/230/229/230/229. Original executable body restored.
-// Round 399: retained active-cursor graph, output/selector/input names in masks 1-7,
-// all with callback-output names, native count/index names, those with selector/input,
-// explicit remaining-count pointer walk and that walk with count/selector names: 132 each.
-// Active remaining count still coalesces with selector at +0x20; complete body restored.
 // @retail 0x98150
 long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 {
@@ -181,7 +48,9 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 							{
 								real item_priority;
 								long item_size;
-								table->owner->v3(handles[i], entries[handles[i] & 0x3ff].unknown04, a1, &item_priority, &item_size);
+								s_handle_peers *chain_peers = table;
+
+								chain_peers->owner->v3(handles[i], entries[handles[i] & 0x3ff].unknown04, a1, &item_priority, &item_size);
 								if (item_priority > 0.0f)
 									priority = priority > item_priority ? priority : item_priority;
 								else
@@ -212,16 +81,16 @@ long c_handle_table_450cd0::v1(long a1, long max_count, void *output)
 								handles_count = replication_table_get_chain(table, handle, handles);
 								priority = 0.0f;
 								size = 0;
-								long const *active_cursor = handles;
 								for (long i = 0; i < handles_count; i++)
 								{
 									real item_priority;
-									table->owner->v9(*active_cursor, a1, &item_priority);
+									s_handle_peers *chain_peers = table;
+
+									chain_peers->owner->v9(handles[i], a1, &item_priority);
 									if (item_priority > 0.0f)
 										priority = priority > item_priority ? priority : item_priority;
 									else
 										blocked = true;
-									++active_cursor;
 								}
 								if (blocked)
 									priority = 0.0f;

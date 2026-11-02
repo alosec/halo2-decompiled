@@ -19,7 +19,6 @@ extern "C" int h2_native_async_abort_admitted(void);
 #endif
 
 s_async_globals async_globals;
-s_thread_stack g_5020c8;
 s_job_node *g_510810;
 
 // @retail 0x1208b0
@@ -171,9 +170,9 @@ void function_120a90(void)
 	async_globals.free_list_mutex = CreateMutexA(NULL, FALSE, NULL);
 	async_globals.work_list_mutex = CreateMutexA(NULL, FALSE, NULL);
 	async_globals.work_semaphore = CreateSemaphoreA(NULL, 0, 150, NULL);
-	g_5020c8.unknown00 = 0;
-	g_5020c8.unknown04 = 0x4fa0c8;
-	g_5020c8.unknown08 = 0x8000;
+	g_4fa0c8.owner = NULL;
+	g_4fa0c8.buffer = g_4fa0c8.storage;
+	g_4fa0c8.size = sizeof(g_4fa0c8.storage);
 	async_globals.thread = CreateThread(NULL, 0x4000, async_thread_proc, NULL, 0, NULL);
 	SetThreadPriority(async_globals.thread, 1);
 }
@@ -271,7 +270,10 @@ extern "C" int h2_native_async_queue_initialize(void)
 		return 0;
 
 	memset(&async_globals, 0, sizeof(async_globals));
-	memset(&g_5020c8, 0, sizeof(g_5020c8));
+	g_4fa0c8.owner = NULL;
+	g_4fa0c8.buffer = NULL;
+	g_4fa0c8.size = 0;
+	g_4fa0c8.external = false;
 	g_510810 = NULL;
 	for (long i = 0; i < 150; i++)
 	{
@@ -292,8 +294,8 @@ extern "C" int h2_native_async_queue_initialize(void)
 		memset(&async_globals, 0, sizeof(async_globals));
 		return 0;
 	}
-	g_5020c8.unknown04 = 0x4fa0c8;
-	g_5020c8.unknown08 = 0x8000;
+	g_4fa0c8.buffer = g_4fa0c8.storage;
+	g_4fa0c8.size = sizeof(g_4fa0c8.storage);
 	return 1;
 }
 
@@ -336,7 +338,10 @@ extern "C" int h2_native_async_queue_teardown(void)
 	if (async_globals.free_list_mutex || async_globals.work_list_mutex)
 		return 0;
 	memset(&async_globals, 0, sizeof(async_globals));
-	memset(&g_5020c8, 0, sizeof(g_5020c8));
+	g_4fa0c8.owner = NULL;
+	g_4fa0c8.buffer = NULL;
+	g_4fa0c8.size = 0;
+	g_4fa0c8.external = false;
 	g_510810 = NULL;
 	return 1;
 }

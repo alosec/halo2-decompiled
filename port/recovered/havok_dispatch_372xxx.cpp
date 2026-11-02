@@ -159,14 +159,14 @@ void grouping_3720a0::function_372390(groups_372300 *groups)
 			// the group's size; the third word counts the members listed
 			group->size = -((long *)parents->data)[i];
 			members[0] = i;
-			group->capacity_and_flags = 1;
+			group->written = 1;
 			((long *)parents->data)[i] = groups->size - 1;
 		}
 		else
 		{
 			members_372300 *group = &groups->data[table[table[i]]];
-			group->data[group->capacity_and_flags] = i;
-			group->capacity_and_flags++;
+			group->data[group->written] = i;
+			group->written++;
 		}
 	}
 	// (retail runs the arrays' resize to 0, whose growth never happens)

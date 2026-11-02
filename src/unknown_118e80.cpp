@@ -12,6 +12,7 @@
 #include "object_queries.h"
 #include <math.h>
 #include "vector_products.h"
+#include "normalize3d.h"
 
 /* the object as this reads it */
 struct s_forward_flags
@@ -184,8 +185,8 @@ void function_b7360(long object_index);
 void function_bba20(long object_index);
 real function_30bf0(vector3f *vector);
 void function_118e80(long object_index, vector3f *forward);
-bool function_1faf80(vector3f *facing, long object_index, void const *settings_pointer,
-	vector3f const *control, real threshold, real *turn);
+bool function_1faf80(long object_index, void const *settings_pointer, vector3f const *control,
+	real threshold, vector3f *facing, real *turn);
 void function_11f0d0(vector3f *position, vector3f *forward, vector3f const *target, real rate, real max_angle, real scale);
 void function_11d180(vector3f const *in, vector3f const *up, vector3f *forward, vector3f *left, vector3f *out);
 real function_11ce20(vector3f const *a, vector3f const *b);
@@ -219,7 +220,20 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 		up->k = matrix->up.k * k + matrix->left.k * j + matrix->forward.k * i;
 	}
 }
-// score 220 (was 220): Frame 0x78/0x6c, early ESI save and basis/position homes remain.
+// MiniMax E (11-01): no new form, no lower score; left: frame 0x78 against retail's 0x6c, the
+// basis/position homes and the early ESI save (the 36-point form needs 0x11f0d0 in
+// src/unknown_11eed0.cpp).
+// score 220 (was 220): BLOCKED-BY 0x11f0d0. Our frame is 0x78 with ESI saved in the prologue; retail's
+// is 0x6c with ESI pushed after the 0x1faf80 exit and popped after the dispatch call. The cause is
+// 0x11f0d0's named `double s` (and `double angle`, and its acos helper's double return): under LTCG a
+// callee's double local makes this function keep 8-byte stack parity, so it pads its frame and cannot
+// save ESI late. Retail's 0x11f0d0 divides in float (fdivr [step]) and multiplies each component in
+// double without folding the last multiply (fld; fmul st(1); ...; fstp st(0)); a double parameter of an
+// inlined helper gives that code without the alignment need, a double local or any float form does not.
+// Earlier: retail's first 11d180 call writes the cross product into the stack slot its later two calls
+// write the rotated forward into: the position in a nested block (242), that first call's fourth
+// argument (260), both (258). The basis and position stack homes still differ; the eight vector locals
+// keep the homes they have here. Frame 0x78/0x6c, early ESI save and basis/position homes remain.
 // Earlier baseline: Frame 0x78 versus 0x6c, early ESI save and basis/position homes remain.
 // Earlier: Frame 0x78 versus 0x6c; early ESI save and basis/position homes remain.
 // frame 0x78 versus 0x6c; early ESI save and basis/position homes remain.
@@ -293,6 +307,38 @@ PRIVATE __forceinline void world_up_1197b0(long object_index, vector3f *up)
 // Round 188: native point/vector position with memcpy/memmove, original then entry
 // uninitialized declarations: 220/220/223/223/220/220/223/223. Memmove reaches retail
 // 1030-byte length but regresses; original position transfer and body restored.
+// Round 211: outgoing up/forward/turn overlap-safe transfers in all seven subsets, then all three
+// with the late position transfer, scores 224/223/233/223/233/230/241/251. Original executable
+// form restored.
+// Round 230: complete object-element observations alone 326; with saved header base 294;
+// with named slot 305; with both 292; those four with per-use tag elements
+// 382/349/422/332. Original body and producer restored.
+// DL round 206: existing matrix/vector, matrix3x3/vector and axes-vector producers
+// 220/296/296; early-arm callee inline 220; producer/inline pairs 220/296/296;
+// early-arm callee forced 1340. All producer, body and external declarations restored.
+// Round 100 (lane 7, plain unless noted): the temporary velocity (with world-up and the basis calls),
+// the first basis call's left, the later forward/left pair and the position each in their own block
+// give retail's slot packing (0x6c) but a 4-byte pad and the early ESI 260; without the position block
+// 266 (--fast 94 with the late ESI, a reduced-image artifact); 0x11ce20 called (&target_up, &up), as
+// retail's ECX/EDX setup implies, 218 (--fast 200); the speed scale read at each use 232 (--fast 190);
+// both 230. Diagnostics with the block-scope form: 0x11f0d0's double locals and acos return as real 73
+// (frame 0x6c, retail's late ESI; 0x11f0d0 2 -> 89, its last multiply folds); angle and acos real with
+// `double s` kept 260 (0x11f0d0 2); the difference written per use with a real scale 73 (0x11f0d0 81,
+// 0xc60c0 401 -> 416); an inline helper with a double scale parameter for the three position components
+// 73 with 0x11f0d0 unchanged at 2 (0xc60c0 401 -> 416), not kept: a new one-caller helper without a match.
+// On that helper form (0x11f0d0 with `real angle` and the double-parameter step): the block scopes 73;
+// plus both final dots with the local first 73; plus 0x11ce20 called (&target_up, &up) 71; with that
+// call alone 71; plus the speed scale read at each use 37 (plain; 0xc60c0 416); plus the final stores
+// forward-first 38; plus the dots local-first 37; plus world-up's two lookups read straight from the
+// pool, no table local (--fast) 36. Left at 36: the forward dot's i product order, the final stores
+// (retail interleaves both copies, ours writes the forward copy through `lea ecx`), and the second
+// 0x11f0d0 call re-deriving &up (`lea esi`) where ours copies EBX.
+// Round 244: complete ordinary-path requested-forward values via native/const,
+// aggregate/const, memcpy/memmove and entry copy/memmove constructions
+// 295/295/264/264/295/314/295/314. Original input observations and body restored.
+// Round 288: plain world-up component rows with long/short/dword/word counters,
+// scalar/native-vector captures 224/318/224/318/295/300/295/300.
+// Original producer and body restored; frame, early-save and basis homes remain.
 // @retail 0x1197b0
 void function_1197b0(long object_index)
 {
@@ -300,7 +346,7 @@ void function_1197b0(long object_index)
 	s_facing_definition_1197b0 *definition = (s_facing_definition_1197b0 *)g_4e3b44[object->definition_index & 0xffff].bytes;
 	if ((bool)((definition->flags >> 4) & 1))
 	{
-		function_1faf80(&object->requested_forward, object_index, definition->settings, &object->control, 0.9f, &object->turn);
+		function_1faf80(object_index, definition->settings, &object->control, 0.9f, &object->requested_forward, &object->turn);
 		return;
 	}
 	real max_angle = definition->max_angle;
@@ -652,15 +698,8 @@ bool function_119380(long arg_0, s_119380 *arg_1)
 
 
 void function_1e54d0(void *arg_0, long arg_1);
-bool function_bc380(long arg_0, long arg_1, long arg_2, long arg_3);
+bool function_bc380(long arg_0, long arg_1, short arg_2, long arg_3);
 
-// score 83 (was 83): the object table base and the looked up object are kept in different
-// registers, one word field is loaded zero extended here and as a plain word in retail, and the
-// value stored at the 0x134 slot is sign extended differently. Round 81: retail passes the
-// size to 0xbc380 as a 16-bit argument (xor eax, eax; mov ax, ...), which needs that callee's
-// shared declaration changed; success path inside if (!= NONE) with return false after 88
-// (registers right, false epilogue laid out last); return false at the guard 96 (laid out in
-// line); result from the guard test 108; || on the two bools 95; result set in both arms 88
 // @retail 0x118510
 bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
 {
@@ -685,16 +724,18 @@ bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
     *(short *)((byte *)local_0 + 0x206) = 0;
     function_118f90((s_orientation_request_118f90 *)((byte *)local_0 + 0x13c));
     s_forward_object *local_3 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
-    bool local_4 = false;
-    if (local_3->animation_state_offset == NONE)
-        goto done;
-    {
+    bool local_4;
+    if (local_3->animation_state_offset != NONE)
         local_4 = true;
+    else
+        local_4 = false;
+    if (local_4)
+    {
         short local_5 = *(short const *)((byte const *)arg_1 + 0xb4);
         if (local_5 != NONE)
         {
             *(long *)((byte *)local_0 + 0x134) = local_5;
-            local_4 = function_bc380(arg_0, 0x138, *(word const *)((byte const *)arg_1 + 0xb6), 0) != 0;
+            local_4 = function_bc380(arg_0, 0x138, *(short const *)((byte const *)arg_1 + 0xb6), 0) != 0;
             local_0 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
         }
         else
@@ -705,22 +746,11 @@ bool __stdcall function_118510(long arg_0, void const *arg_1, bool *arg_2)
             *(short *)((byte *)local_0 + 0x12e) = local_6;
             if (g_4e6948->state == 1 && (local_6 == 0 || local_6 == NONE))
                 *(short *)((byte *)local_0 + 0x12e) = *(short *)(local_1 + 0xc0);
-            s_forward_object *local_7 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
-            s_animation_state *local_8 = (s_animation_state *)((byte *)local_7 + local_7->animation_state_offset);
-            long local_9 = local_8->unknown70;
-            long local_10 = local_8->unknown7c;
-            if (local_8->animation_set(0x7000001, 0x7000101, 0x7000101, 0x7000001, 2, 0x3f))
-            {
-                bool local_11 = local_9 != 0x7000001;
-                bool local_12 = local_10 != 0x7000001;
-                if (local_11 | local_12)
-                    function_ba350(arg_0, 0.267f);
-            }
+            function_119650(arg_0, 0x7000001, 0x7000001, 0.0f, 2);
         }
         else
             *arg_2 = true;
     }
-done:
     return local_4;
 }
 
@@ -748,8 +778,7 @@ struct s_118b80
 struct s_118b81
 {
     long field_0;
-    byte field_4;
-    byte field_5[3];
+    dword field_4;
     long field_8;
     long field_c;
 };
@@ -761,77 +790,7 @@ bool havok_component_any_rigid_body_active(s_havok_component *arg_0);
 void function_1e68a0(s_character_physics_update_input_datum_a *arg_0, s_source_a *arg_1,
     long arg_2, long arg_3, long arg_4, bool arg_5, bool arg_6, bool arg_7,
     bool arg_8, bool arg_9, point3f *arg_10, point3f *arg_11, point3f *arg_12);
-void function_1e5a60(s_biped_physics_result *arg_0, s_biped_physics_input const *arg_1, void *arg_2);
-// score 78 (was 78): Frame 0x6c and builder setup agree; literal-one test allocation, separate result mask and final byte stores remain.
-// Earlier: the builder now gets retail's values (0xc0 bit 8 as its first flag, the
-// 0x12c bit 5 as its second; they were in the first and fourth places) and the parent handle is
-// chosen in an if/else. Left: retail loads the definition word with `mov al, 1; test al, cl`,
-// tests the result bit and its copy separately (`test cl, 1`, then `mov al, cl; and al, 1`),
-// writes the output and state bits with byte or/and, and evaluates the 3/1 scale after the
-// state test. On the kept form: the existing flag setter for the two output bits 86, also for
-// the state bit 101 (633 bytes), with the scale as a shifted bit test 98, with that scale inside
-// each state branch as a ternary 95, as an if 84. Earlier (with the old builder values): frame
-// agrees; target size 225; global optimization off 639; saturation before increment 139;
-// shared output-bit branch 95; direct final state result 101; absent-component exit 99; signed
-// flags with early Boolean 99; long state with early Boolean 135; counter reset before
-// increment 103; threshold default and override 99; snapshot after word 95; earlier threshold
-// 129; unsigned saturation 97; unsupported counter first 106; valid byte last 96; native word
-// field 95; native counters 95; both native fields 95; returned position 144; active-query
-// result 95; native source receiver 95; definition subrecord at use 95; inactive-body exit 95;
-// native flag snapshot 129; low parent bit first 95; absent-state arm first 98; split Boolean
-// output tests 99; copied position 162; shared threshold product 101; existing definition view
-// 95; counter names 95; existing mask setter 112; result through setter 95; setter with split
-// output tests/direct threshold 106/101; short query 124; builder scope 98; direct
-// parent/read-only tag receivers 95/95; admission word/mask 136/166; native output byte 95;
-// shared counter and output decision 123; shared counter carrier 95; byte with shared counter 95;
-// reversed adjacent output publications 95; final native word 102.
-
-// Previous forms at 87 and 95: Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
-// Previous forms at 87 (was 95): Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
-// Earlier: Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
-// Earlier note: Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
-// Frame 0x6c agrees; saved-bit/word/handle allocation and final state width remain.
-// frame 0x6c agrees; flag/handle carriers and final state stores differ.
-// Target size 225; global optimization off 639; saturation before increment 139;
-// shared output-bit branch 95; direct final state result 101.
-// Word-flag/handle registers and call Boolean roles still differ.
-// absent-component exit 99; signed flags with early Boolean 99; long state with early Boolean 135;
-// counter reset before increment 103; threshold default and override 99.
-// Frame agrees; word/Boolean carriers and final state width remain. Snapshot after word 95; earlier threshold 129; unsigned saturation 97; unsupported counter first 106; valid byte last 96 (fast).
-// flag-word/handle registers and final flag-store width still differ.
-// native word field 95; native counters 95; both native fields 95; returned position 144
-// active-query result 95; native source receiver 95; definition subrecord at use 95
-// inactive-body exit 95.
-// Flag/handle carriers and final state width remain; native flag snapshot 129;
-// low parent bit first 95; absent-state arm first 98; split Boolean output tests 99;
-// copied position 162; shared threshold product 101; existing definition view 95; counter names 95.
-// Saved first bit byte/word/signed-byte 120/119/120; query byte/signed-byte 101/101;
-// word-bit with byte query 127; signed-bit/query 119; unsigned dword query 112.
-// Existing mask setter 112; result through setter 95; setter with split output tests/direct threshold
-// 106/101; short query 124; builder scope 98; direct parent/read-only tag receivers 95/95.
-// Admission word/mask 136/166; native output byte 95; shared counter and output decision 123;
-// shared counter carrier 95; byte with shared counter 95; reversed adjacent output publications
-// 95; final native word 102. Word/Boolean allocation and final store width remain.
-// Direct builder handle/flag/both 127/129/127; state before counters 114; direct handle and earlier state
-// 128; supported/unsupported/both increments before dispatch 99/107/104. All restored.
-// Entry and builder setup agree; definition-bit test, separate result mask and final state-byte stores remain.
-// metadata-flags 89; result-byte 87.
-// metadata-flags-result-byte 89; independent-output-tests 78.
-// metadata-flags-independent-output-tests 99; result-byte-independent-output-tests 78.
-// metadata-flags-result-byte-independent-output-tests 99; metadata-before-builder 114.
-// bool-result 93; byte-state 96.
-// bool-result-byte-state 111; word-result 84.
-// word-result-byte-state 102; byte-state-shifted-scale 96.
-// bool-result-byte-state-shifted-scale 111; word-result-byte-state-shifted-scale 102.
-// Round 53: output bits as if/else word bitfields 86 (byte RMWs as retail), result bit as a bitfield 86,
-// output bits through forward_flags_set 86; state bit byte writes 94, byte clear 86, byte set 89,
-// forward_flags_set 101 (byte read and RMWs as retail, 633 bytes); that plus the scale per state arm
-// as a shifted-bit ternary 84 (state tail now retail's sequence), with the bit named before the
-// state test 82; per-arm scale alone 87, shifted 101, named bit 96; named result bit before or after
-// the counters 84. Left: retail's `mov al, 1; test al, cl` and a first `test cl, 1` before `and al, 1`.
-// Output-only result byte/bool/word/dword 84/84/85/85; with definition mask 87/87/88/88.
-// Common counter-output stores with branch saturation, long/dword/short/word 93/93/93/93;
-// common counter-output stores with completion saturation, long/dword/short/word 93/93/93/93.
+void function_1e5a60(void *arg_0, s_biped_physics_result *arg_1, s_biped_physics_input const *arg_2);
 // @retail 0x118b80
 void __stdcall function_118b80(long arg_0)
 {
@@ -866,11 +825,17 @@ void __stdcall function_118b80(long arg_0)
                 local_9, (bool)((local_8 >> 8) & 1), TEST_FIELD_BIT(local_1->flags.flag5), false,
                 false, local_7, &local_6,
                 (point3f *)&local_1->forward, (point3f *)&local_1->control);
-            local_10.field_14 = true;
             if (!(bool)((*(dword *)local_12 >> 4) & 1))
+            {
+                local_10.field_14 = true;
                 local_10.field_44 = *(long *)((byte *)local_1 + 0x1a8);
-            function_1e5a60((s_biped_physics_result *)&local_11,
-                (s_biped_physics_input const *)&local_10, local_13);
+            }
+            else
+            {
+                local_10.field_14 = true;
+            }
+            function_1e5a60(local_13, (s_biped_physics_result *)&local_11,
+                (s_biped_physics_input const *)&local_10);
             if (local_11.field_4 & 1)
             {
                 long local_14 = *((byte *)local_1 + 0x130) + 1;
@@ -887,24 +852,19 @@ void __stdcall function_118b80(long arg_0)
                     local_15 = 0xfe;
                 *((byte *)local_1 + 0x131) = (byte)local_15;
             }
-            if (local_11.field_4 & 1)
-                *((byte *)local_1 + 0x12d) |= 1;
-            else
-                *((byte *)local_1 + 0x12d) &= ~1;
-            if (local_11.field_4 & 1)
-                *((byte *)local_1 + 0x12c) |= 0x80;
-            else
-                *((byte *)local_1 + 0x12c) &= ~0x80;
-            real threshold_scale = (*(dword *)local_12 & 8) ? 3.0f : 1.0f;
+            forward_flags_set(&local_1->flags, 0x100, (bool)(local_11.field_4 & 1));
+            forward_flags_set(&local_1->flags, 0x80, (bool)(local_11.field_4 & 1));
             if (TEST_FIELD_BIT(local_1->flags.flag5))
             {
+                real threshold_scale = (bool)((*(dword *)local_12 >> 3) & 1) ? 3.0f : 1.0f;
                 if (*((byte *)local_1 + 0x131) * g_510c54->rate > threshold_scale * 0.15f)
-                    local_1->flags.flag5 = false;
+                    forward_flags_set(&local_1->flags, 0x20, false);
             }
             else
             {
+                real threshold_scale = (bool)((*(dword *)local_12 >> 3) & 1) ? 3.0f : 1.0f;
                 if (local_7 || *((byte *)local_1 + 0x130) * g_510c54->rate > threshold_scale * 0.15f)
-                    local_1->flags.flag5 = true;
+                    forward_flags_set(&local_1->flags, 0x20, true);
             }
         }
     }
@@ -952,159 +912,68 @@ void __stdcall function_d6bc0(long arg_0);
 void function_b75a0(long arg_0, point3f const *arg_1, vector3f const *arg_2, vector3f const *arg_3,
     s_location const *arg_4, bool arg_5);
 void __stdcall function_b93b0(long arg_0, long arg_1, short arg_2);
-// score 156 (was 156): Frame 0x124 agrees; quotient/query, sweep/impact/location homes, word loads and owner-call transport remain.
-// Round 67: query count declared after saved outputs 156; existing assignment helper after the
-// query 156 and before it 292; pre-query helper with later best fraction 283; explicit pre-query
-// stores with saved outputs before count 283; pre-query long saved words 285 and first/third/
-// second acquisition 285; query-first long saved words with first/third/second acquisition 153
-// (three-point gain restored).
-// Retail's homes (frame offsets): selected 0xc, best 0x10, second word 0x14, third 0x18, normal 0x1c,
-// first word 0x28, location 0x2c, point 0x34, sweep 0x40, count 0x4c; ours keep the count at 0x2c and
-// the sweep before the point (0x38/0x44). Round 83: sweep before the query 292 (its products now
-// schedule after a hoisted constant); count declared before the query 156; sweep declared before the
-// buffer 156; saved records declared before the sweep 156; descriptive sweep/impact names 156; first
-// and second word names swapped 156 (homes unchanged).
-// Round 44: short/long-unit adjacent word bitfields 151/339; first-third-second words 153;
-// word/handle acquisition order 218; normal between words 162; sweep in radius/center argument
-// evaluation 293/293; named radius on the current frame 151. Opening body restored.
-// Frame 0x124 agrees; quotient/query, sweep/impact/location homes, word loads and owner-call transport remain.
-// Earlier: Frame 0x124 agrees; quotient spill, sweep/impact/location homes and owner-call setup remain.
-// frame 0x124 agrees; query/sweep timing and owner-call setup differ.
-// frame 0x124 agrees; query/sweep timing and owner-call setup differ.
-// Complete request type 278; scale at each use 278; aggregate sweep 278;
-// point/normal/location copies first 278; target size optimization 536.
-// Query before sweep 159; distinct later-up output 288; double best fraction 255;
-// named radius field 278; const sweep with distinct later-up output 288.
-// Sweep/impact homes and store scheduling still differ.
-// targeted sweep name 278; sweep/impact names exchanged 278; completed normal reused 285; candidate
-// countdown 284; header flag at use 278.
-// Frame 0x124 agrees; quotient spill and sweep/impact homes remain. Native collision result 159; later best fraction 161; later quotient 281; candidate cursor 393; bool return 159 (fast).
-// Frame 0x124 agrees; quotient/sweep/impact homes and owner-call setup remain.
-// Long saved identifiers first 152, second 152, third 151 kept (plain); all three 154; early
-// fraction 161; first/third 157; second/third 157; first/second 158 (fast).
-// Quotient spill, sweep/impact homes and owner-call setup remain.
-// Sweep components before query i/j/k/ij/ik/jk each 159; all components 293;
-// aggregate sweep before query 293, with retained long third saved identifier.
-// Frame 0x124 agrees; quotient/sweep/location homes and word loads remain.
-// second identifier first 149; location home name 151; native request after lifetime gains 151; distinct
-// up after lifetime gains 180; location before identifiers 218; long first with second first 154; long
-// second with second first 154; both long with second first 150.
-// quotient spill, sweep/impact/location homes and owner-call setup remain.
-// Repeated quotient after query 287; native sweep array loop 731; exhausted-selection exit 290;
-// selected handle after tuple 162; normal before point 160.
-// Existing combined velocity helper 390; readonly candidate/tag/both 151/151/151; selected object before default index 151;
-// separate collision result 151; helper with readonly paths 390; result/object/tag lifetimes 151.
-// Private unscaled input/native in-place copy/shared in-place scale 337 each; point/location
-// between words 162/164; second word then point 161; identifier declarations 151; timer home name
-// 151. Quotient/sweep/impact homes and protected owner-call setup remain.
-// Candidate index short/word 366/366; native query count 153; reflection conditional 151; with native count
-// 153; ordinary while scan 151; fraction-first comparison 151; nested candidate admission 151. All restored.
-// Complete speed square/all component squares 151/151; each with saved-word lexical homes
-// 151/151; each with scalar homes 151/151; complete magnitude with both home groups 151;
-// complete speed square with existing out-of-place scale 151 (fast).
-// response flag result arms 361; complete reflection dot 151; shared reflection products 164; native reflection
-// vector 164; complete response vector 185; existing rounding helper 151; response arms and collision fill 361;
-// dot with native reflection vector 164; rounding with reflection products 163; rounding with reflection vector
-// 163; rounding with native query count 154; rounding/count/reflection products 166.
-// Numerator-first quotient 151; uniform sweep products 151; post-query native sweep copy 329;
-// quotient/products and quotient/copy 151/329; early sweep with products/quotient/both
-// 151/151/151.
-// Immutable speed/radius/quotient/all scalars 151/151/151/151; native entry success 397;
-// speed-test-produced success 317; immutable query count and candidate 151; native selected
-// collision record 345 at retail length, with wrong entry frame. All restored.
-// Probe/input/both workspace scopes 151/175/175; complete request library copies 151;
-// probe/input/both scopes with request copies 151/175/175; actual selected-header byte 151.
-// root accessor 151; candidate accessor 151; selected accessor 151; root candidate accessors 151; root
-// selected accessors 151; candidate selected accessors 151; all object accessors 151; all native header
-// 151.
-// Round 137: double speed/radius/quotient, speed-radius/speed-quotient/radius-quotient/all 334,339,332,259,332,329,261;
-// all with double selected fraction 337 (exact-only precision diagnostics; all restored).
-// Round 332: Candidate/collision/eligibility inline contracts, each and every
-// combination, 151; candidate/collision noinline pair 151. All restored.
-// Round 149: Native unsigned first/second identifier words and third full-word carrier, all combinations;
-// unsigned pair with second capture first [151, 151, 151, 151, 151, 151, 151, 149]; all restored.
-// Round 220: Collision/effect/both request declarations before the scan 200/200/200;
-// both at entry 203. Real request names, candidate-buffer name and both name groups 151/151/151;
-// combined pre-scan requests with names 200. Wider request lifetimes grow frame to 0x180;
-// original request ownership, query-first sweep and saved identifiers restored.
-// Round 199: Ordinary input/scalars/count/saved words/vector names/late quotient/early sweep/readonly
-// receivers 151/151/153/154/151/287/293/151. Consistent pool/header observations, alone, with word
-// order, with independent saved words and with early sweep: 346/339/346/339/348/341/291/275.
-// Round 201: Response storage: normal/sweep reorientation and sweep reflection 176/160/177; paired
-// direction/reflection 193/174; consumed-input left output alone/with sweep reflection 176/194; saved-
-// velocity left output 176. All restored.
-// Round 352: native stored-velocity fields with direct, scalar-first, named-product and combined
-// products 151 each; each with one three-use velocity snapshot 374 (frame 0x128). Original
-// external record, response expressions, query-first sweep and saved identifiers restored.
-// Round 80: sweep stored before the query 283 (count and location homes as retail, but the point and
-// sweep homes swapped and j/k folded as q*j/q*k where retail loads j/k); with the point/sweep renamed
-// 283; with the capture declarations first 283; through the existing vector3f_scale 283. The tail is
-// 0xb77d0's body, which retail inlines here: calling the existing 0xb77d0 391 (stays a call), with a
-// forceinline declaration 391. Original body restored.
-// Round 7: response minimum as a ternary, response products scale-first, speed test summed j/k/i 156
-// each (identical code); sweep before the query 283 (now the start through the call matches; the
-// sweep stores land at 0x3c not retail's 0x48 and the candidate loop gains a jump over its alignment),
-// with quotient-first products 283. The zero register (retail XMM3) decides the response arm.
-// Lane 9 r29 (fast): role names for every local 156 and names flipping the 12-byte/8-byte
-// alphabetical order 156 (identical code); sweep before the query with the captures declared
-// first 292 (1329 bytes); sweep declared beside the scale 156; separate response vector 156.
-// Round 12 (lane 10): sweep before the query with the maximum-fraction constant declared after it 283
-// (the constant's early load and slot then as retail; the extra count is our loop entry jumping over
-// 7 bytes of alignment where retail pads 6 and falls through, shifting every later line: retail
-// computes and stores the sweep one component at a time in one register, j and k loaded then
-// multiplied, where ours folds j/k as q*j/q*k); on that, component-first products 283 (same code),
-// point declared ahead of the sweep 283 (same code). On the current body: the sweep renamed to sort
-// before the point 156 and declared at the top of the block 156 (same code and homes: neither the
-// name nor the declaration order moves these slots). All restored.
+static __inline real squared_length_jk(vector3f const *v)
+{
+    real length_squared = v->j * v->j;
+    length_squared += v->k * v->k;
+    return length_squared;
+}
+static __inline void vector3f_negate(vector3f const *v, vector3f *r)
+{
+    r->i = 0.0f - v->i;
+    r->j = 0.0f - v->j;
+    r->k = 0.0f - v->k;
+}
 // @retail 0x119c10
 long function_119c10(long arg_0)
 {
-    (void)&arg_0;
     s_forward_object *local_0 = ((s_forward_object_header *)g_4e0300->data)[arg_0 & 0xffff].object;
     long local_1 = NONE;
     vector3f local_2;
     function_ba1d0(arg_0, &local_2, NULL);
-    real local_3 = (real)sqrt(local_2.i * local_2.i + local_2.k * local_2.k + local_2.j * local_2.j);
+    real local_3 = (real)sqrt(squared_length_jk(&local_2) + local_2.i * local_2.i);
     if (local_3 > 0.0001f)
     {
         real local_4 = *(real *)((byte *)local_0 + 0x3c) + 0.1f;
-        real local_5 = local_4 / local_3;
-        real local_7 = 3.402823466e+38f;
-        long local_8[16];
-        long local_9 = function_bb050(1, 3, (byte *)local_0 + 0x28, &local_0->center, local_4, local_8, 16);
-        vector3f local_6;
-        local_6.i = local_5 * local_2.i;
-        local_6.j = local_2.j * local_5;
-        local_6.k = local_2.k * local_5;
-        short local_10;
-        short local_11;
+        real local_7;
+        long local_10;
+        long local_11;
         long local_12;
         point3f local_13;
         vector3f local_14;
         s_location local_15;
-        for (long local_16 = 0; local_16 < local_9; local_16++)
+        /* the scan's scope: its scaled velocity gives up its frame slot to the later output vector */
         {
-            long local_17 = local_8[local_16];
-            s_forward_object *local_18 = ((s_forward_object_header *)g_4e0300->data)[local_17 & 0xffff].object;
-            if (!TEST_FIELD_BIT(local_18->frozen)
-                && function_1df560(*(short *)((byte *)local_0 + 0x12e), *(short *)((byte *)local_18 + 0x138)))
+            vector3f local_6;
+            real local_5 = local_4 / local_3;
+            vector3f_scale(&local_2, local_5, &local_6);
+            local_7 = 3.402823466e+38f;
+            long local_8[16];
+            long local_9 = function_bb050(1, 3, (byte *)local_0 + 0x28, &local_0->center, local_4, local_8, 16);
+            for (long local_16 = 0; local_16 < local_9; local_16++)
             {
-                s_119c10 local_19;
-                local_19.field_24 = NONE;
-                if (function_1696d0(0x1800038, (s_biped_ground_collision *)&local_19, local_17,
-                    &local_0->center, &local_6, NONE, NONE) && local_19.field_0 == 4)
+                long local_17 = local_8[local_16];
+                s_forward_object *local_18 = ((s_forward_object_header *)g_4e0300->data)[local_17 & 0xffff].object;
+                if (!TEST_FIELD_BIT(local_18->frozen)
+                    && function_1df560(*(short *)((byte *)local_0 + 0x12e), *(short *)((byte *)local_18 + 0x138)))
                 {
-                    byte *local_20 = g_4e0300->data + (local_19.field_40 & 0xffff) * 12;
-                    if (!local_20[3] && local_7 > local_19.field_4)
+                    s_119c10 local_19;
+                    local_19.field_24 = NONE;
+                    if (function_1696d0(0x1800038, (s_biped_ground_collision *)&local_19, local_17,
+                        &local_0->center, &local_6, NONE, NONE) && local_19.field_0 == 4)
                     {
-                        local_1 = local_19.field_40;
-                        local_10 = local_19.field_44;
-                        local_11 = local_19.field_46;
-                        local_12 = local_19.field_5a;
-                        local_13 = local_19.field_8;
-                        local_14 = local_19.field_28;
-                        local_15 = local_19.field_1c;
-                        local_7 = local_19.field_4;
+                        byte *local_20 = g_4e0300->data + (local_19.field_40 & 0xffff) * 12;
+                        if (!local_20[3] && local_7 > local_19.field_4)
+                        {
+                            local_1 = local_19.field_40;
+                            local_11 = local_19.field_46;
+                            local_10 = local_19.field_44;
+                            local_12 = local_19.field_5a;
+                            local_13 = local_19.field_8;
+                            local_14 = local_19.field_28;
+                            local_15 = local_19.field_1c;
+                            local_7 = local_19.field_4;
+                        }
                     }
                 }
             }
@@ -1136,13 +1005,12 @@ long function_119c10(long arg_0)
                 function_d6bc0(arg_0);
             else if ((bool)((*(dword *)(local_21 + 0xbc) >> 5) & 1))
             {
-                local_2.i = 0.0f - local_14.i;
-                local_2.j = 0.0f - local_14.j;
-                local_2.k = 0.0f - local_14.k;
+                vector3f_negate(&local_14, &local_2);
                 vector3f local_26;
-                function_11d180(&local_2, &local_0->up, &local_2, &local_26, &local_6);
-                function_b75a0(arg_0, &local_13, &local_2, &local_6, &local_15, false);
-                function_b93b0(local_1, arg_0, (short)(local_11));
+                vector3f local_30;
+                function_11d180(&local_2, &local_0->up, &local_2, &local_26, &local_30);
+                function_b75a0(arg_0, &local_13, &local_2, &local_30, &local_15, false);
+                function_b93b0(local_1, arg_0, (short)local_11);
                 real local_27 = g_510c54->field_2_3 * 0.2f;
                 long local_28;
                 __asm
@@ -1154,15 +1022,13 @@ long function_119c10(long arg_0)
             }
             else
             {
-                real local_29 = (0.0f - (local_14.k * local_2.k + local_14.j * local_2.j + local_14.i * local_2.i)) * 1.7f;
+                real local_29 = (0.0f - dot3f(&local_14, &local_2)) * 1.7f;
                 if (0.4f > local_29)
                     local_29 = 0.4f;
-                local_2.i = local_14.i * local_29 + *(real *)((byte *)local_0 + 0x88);
-                local_2.j = local_14.j * local_29 + *(real *)((byte *)local_0 + 0x8c);
-                local_2.k = local_14.k * local_29 + local_0->value90;
+                vector3f_add_scaled((vector3f const *)((byte *)local_0 + 0x88), &local_14, local_29, &local_2);
                 function_b7740(arg_0, &local_2, NULL, false);
                 function_1c4b00(arg_0, &local_2, NULL, 1);
-                if (local_2.k * local_2.k + local_2.j * local_2.j + local_2.i * local_2.i > 0.0001f)
+                if (length_sq3f(&local_2) > 0.0001f)
                 {
                     function_b9b90(arg_0, false);
                     function_b7360(arg_0);
@@ -1210,42 +1076,85 @@ void function_1e6120(s_biped_physics_output *arg_0, void *arg_1, real arg_2, boo
     bool arg_5, real arg_6);
 void __stdcall function_1e55d0(s_biped_physics_move *arg_0, void *arg_1, s_biped_physics_output *arg_2);
 
-// score 94 (was 94): Frame 0x1f0 agrees; call setup, movement loads and force-call publication still differ.
-// MOV/LEA call setup, movement flag merge, force argument and activity register still differ;
-// MOV/LEA setup, component loads and force-byte publication still differ;
-// stationary/byte/word movement result 107/98/111; complete flag value 98;
-// initial-state/parent/update/countdown activity values 265/119/98/101. Original body restored.
-// Earlier frame-correct forms targeted call setup, flag merge, component loads and result homes.
-// Branch flag store 131; long force 130; native velocity copy 131; long activity
-// 164; reversed result OR 131; parent result earlier 123; update/countdown result earlier 131.
-// With original flag store, early parent result 109; long force 101; both 110.
-// Native motion/input/state fields 98 each; request/output/all basis copies 98 each;
-// movement-output and orientation-output scopes 98 each.
-// BLOCKED-BY 0x1c4b00: retail's body tests its last parameter as a
-// byte (a bool), so retail keeps the found flag in a stack byte and pushes the dword;
-// our declaration is a long (definition in a file this lane may not edit), so ours
-// zero-extends and every later instruction is one line off. The flag-4 store through
-// the shared flags setter, the countdown reset stored as NONE (EBX holds NONE as in
-// retail) and the countdown decremented on the field give retail's code there.
-// Still differs: MOV/LEA order at the first 0x1e5af0 call (a named output pointer 92).
-// Squared length summed k, j, i as statements gives retail's load order but only 2.
-// Bitfield store with the NONE reset 108; branch store 119; ternary store 119.
-// Force byte/word/signed-byte 94/16/94; readonly metadata 94; metadata with byte/word force 94/16;
-// absent-parent first 94; absent-parent with byte force 94. The single-use word carrier is rejected unless exact.
-// Result homes/movement scope/early activity/direct velocity receiver/refresh names/read-only movement 94
-// each; conditional orientation success 112; short activity 168.
-// Squared length in i, j, k order, through the shared squared-length or dot helper 94 each;
-// a vector3f field at 0x138 of the output read directly 92 (retail's k, j, i loads); with a
-// word force result 14 (the rest is the force push and the MOV/LEA order). Named output, up and
-// forward pointers 94/92 with the field.
-// Word force with ordered squares/native publication/output receiver 14/16/16; squares and
-// publication/squares and output/output and publication 14/14/16; all three 14; ordered squares with final
-// mask setter 14. Changed single-use word carrier is exact-only; all restored.
-// Direct force query 101; velocity-input/complete-input/nested-input scopes 94/94/94; direct query
-// with those input scopes 101/101/101; direct query with reversed orientation result 101 (fast).
-// existing rounding helper 101; chained sentinel words 96; native sentinel library fill 278; byte parent
-// countdown 94; postfix parent countdown 100; shared final flag clear 94; signed short force 16; rounding helper
-// with signed force 62.
+// score 94 (was 94): frame 0x1f0 agrees; basis MOV/LEA, squared-component loads and force-result
+// publication differ; the force formal still requires a zero extension.
+// Earlier: retail pushes the whole found-flag dword to 0x1c4b00 and keeps its MOV/LEA
+// order at the first 0x1e5af0 call; both callees live in files this lane may not edit
+// (BLOCKED-BY 0x1c4b00 and 0x1e5af0). Frame 0x1f0 agrees; call setup, movement loads and
+// force-call publication still differ.
+// Retail spills the found flag to a stack byte and pushes the whole dword to 0x1c4b00 (no zero-extension), so
+// 0x1c4b00 takes a bool; ours declares a long and zero-extends, and every later instruction is one line off.
+// Round 37: 0x1c4b00's flag as a bool in its definition and every declaration gives 44 (0x1c4b00 and its matched
+// callers keep matching; 0xe24f0's resting call then has retail's shape too, but its count rises 742 -> 748 by a
+// shift, so it was reverted); with it, the squared length through length_sq3f on a vector3f field at output
+// offset 0x138 (retail's k, j, i loads) 42; that read alone 92. Then left: the MOV/LEA order at the first
+// 0x1e5af0 call and, from the velocity copy into the re-fetched object on, retail loading the source's i into
+// ECX before the object pointer, with every later scratch register following that rotation. On the 42 form:
+// the object fetched inside the copy (cast or a `velocity` field at 0x88) 42/42; a velocity field through the
+// object local 42; a pointer to the stepped velocity used by the copy and the call 42; the copy written per
+// component 103 (1051 bytes).
+// Earlier, with the long force flag: stationary/byte/word movement result 107/98/111; complete flag value 98;
+// initial-state/parent/update/countdown activity values 265/119/98/101; branch flag store 131; long force 130;
+// native velocity copy 131; long activity 164; reversed result OR 131; parent result earlier 123;
+// update/countdown result earlier 131; with the original flag store, early parent result 109; long force 101;
+// both 110; native motion/input/state fields 98 each; request/output/all basis copies 98 each; movement-output and
+// orientation-output scopes 98 each; the flag-4 store through the shared flags setter, the countdown reset stored
+// as NONE (EBX holds NONE as in retail) and the countdown decremented on the field give retail's code there; a
+// named output pointer 92; squared length summed k, j, i as statements 2 fewer; bitfield store with the NONE reset
+// 108; branch store 119; ternary store 119; force byte/word/signed-byte 94/16/94; readonly metadata 94; metadata
+// with byte/word force 94/16; absent-parent first 94, with byte force 94; result homes/movement scope/early
+// activity/direct velocity receiver/refresh names/read-only movement 94 each; conditional orientation success 112;
+// short activity 168; squared length in i, j, k order, through the shared squared-length or dot helper 94 each; a
+// vector3f field at 0x138 of the output read directly 92, with a word force result 14; named output, up and
+// forward pointers 94/92 with the field; word force with ordered squares/native publication/output receiver
+// 14/16/16, and the pairs and all three 14/14/16/14, with the final mask setter 14; direct force query 101;
+// velocity-input/complete-input/nested-input scopes 94/94/94, with the direct query 101 each, with reversed
+// orientation result 101; existing rounding helper 101; chained sentinel words 96; native sentinel library fill
+// 278; byte parent countdown 94; postfix parent countdown 100; shared final flag clear 94; signed short force 16;
+// rounding helper with signed force 62; object/input/both flags read at each use 156/132/121; existing basis
+// helper inline/noinline declarations 94/94, inline with those observations 156/132/121; existing vector
+// assignment at requested/output-basis/velocity copy masks 1-7 269/149/290/101/280/162/302, all copies with the
+// terminal flag setter 302.
+// Round 104 (long force flag): first movement-flag test inverted 175; physics block address at each use 94;
+// parent countdown arms inverted 94; motion test passed straight to the flag setter 94; word found flag 16
+// (same lines, a length coincidence). Still BLOCKED-BY 0x1c4b00's long force parameter.
+// Round 47: real output workspace with pointer/direct movement field 94/94; real movement workspace 94;
+// two-use velocity copy 109; read-only query result 94; split query declaration 94; late declarations
+// swapped 94; complete movement workspace 103 (frame 0x1ec). Original body restored.
+// Round 43 (lane 16): still BLOCKED-BY 0x1c4b00 (its definition is in a file held by another lane this round;
+// retail spills the found flag to a stack byte and pushes the whole dword) and the MOV/LEA order at the first
+// 0x1e5af0 call follows that callee's register setup (BLOCKED-BY 0x1e5af0, also in a held file). Squared length
+// grouped (k + j) + i / (j + k) + i 94/94 (the inner pair stays j, k); word found flag with the grouped squares
+// 16 (exact-only: left are the MOV/LEA pair, the squares and the flag's stack byte); the squared-length test
+// passed straight to the flag setter 94; the +0x17c block address at each use 94.
+// Round 100 (lane 7, plain unless noted): 0x1c4b00's force as bool in its definition and all 13
+// declarations 44 (every matched caller still matches; 0xe24f0 648 -> 654, its over-long listing
+// shifted by the retail-shaped stack-byte push), with length_sq3f on the 0x138 vector through a
+// pointer 44, through a vector3f field of the output (--fast) 42; on the long form the 0x138 squared
+// length through dot3f 94; the found flag held in a long local (--fast) 95.
+// Round I (MiniMax lane I, fast): its 42 came from dropping the function_119bc0 call and passing the flag
+// uninitialised (a behaviour change, not kept); with the call kept and the squared length summed as three
+// statements 92, as one expression 94. Original body restored.
+// Round 115 (fast, agreeing with the full count here): BLOCKED-BY 0x1c4b00 still: its long force parameter is
+// declared in three files other lanes hold this round (projectiles.cpp, unknown_0a76b0.cpp, unknown_1eb8a0.cpp).
+// 0x1e5af0's parameters as (physics, up, output, forward), definition, declarations and all five calls, 92: the
+// MOV/LEA order at the first call becomes retail's and 0x1e5af0 and its other callers keep their counts (retail's
+// setups at 0x118700 and 0xe3c90 load EAX, ECX, EDX in that order; 0xdd360's loads ECX first); length_sq3f on a
+// vector3f field at 0x138 of the output 92 (retail's k, j, i loads), through the existing pointer 94; both 90;
+// the countdown at 0x206 in a short local 94; as a word local with `(short)countdown <= 0` 90 (retail's
+// `xor eax, eax; mov ax` load and the first difference moves to +0x1bd, but `add eax, 0xffff` for retail's
+// `dec eax`); a short `remaining = word - 1` local, with or without a word local, 94 (same code).
+// J228: query/reset inline contracts singly and paired 94/94/94; each with all three squared
+// components named 94/94/94; the pair with the existing final flag setter, alone/staged, 94/94.
+// All five matched controls survive. Original declarations and body restored; the byte force
+// contract still needs coordinated declarations in protected contributor files.
+// Round 226: overlap-safe library copies at requested/output-basis/velocity masks 1-7:
+// 263/148/272/54/265/154/275; contiguous paired axes 314. Velocity-only memmove 54/1034 not kept:
+// retail copies inline, so the memmove call is one retail does not make. Original copy restored;
+// basis MOV/LEA, component loads and force publication remain.
+// Round 278: final frozen/flag/parent conjunction orders 021/102/120/201/210
+// 101/101/100/96/96; reversed timestamp predicate with 012/201/210 94/96/96. Restored.
+// M305: Complete physics-input owner/object-flags/input-flags/settings declaration orders 0132/0312/1023/1203/1230/2013/2103/3120 132/121/94/94/94/143/143/121.
 // @retail 0x118700
 bool __stdcall function_118700(long arg_0)
 {

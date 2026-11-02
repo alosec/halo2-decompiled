@@ -27,6 +27,15 @@ public:
 // and the offsets that follow them differ. _ReadWriteBarrier (as 0x8c790 has it):
 // before the return 9 (key loads after the pushes); key a, b locals then barrier 6;
 // key b, a locals then barrier 4 (retail's stores, but xor esi after push edi).
+// Round 21 (m3 lane 2): a barrier at the top of the shared helper 4 (xor esi after the key
+// stores; 0x6a8a0 3, 0x199740 4); an s_key local copy 8; the reader's local as volatile
+// ULARGE_INTEGER halves 4; the reader plain inline 4; (diagnostic) a non-volatile reader
+// local named in the asm block 49 (retail's order, but an extra lea and a 0x1c frame).
+// Compile-only screens: every volatile spelling hoists the first zero store into the prologue.
+// Round 58 (fast): key b, a locals without a barrier 4; key a, b locals 6; the helper's result zeroed
+// before the time read 75, with a barrier before the read 74, with key locals too 74, key locals and a
+// call-site barrier 75; result and pump count zeroed before the read 75. Diagnostics (reverted): volatile
+// key locals 96; the helper's update/release copied to volatile locals, either order, 22/22.
 // @retail 0x18f260
 long c_resource_lock::method0(long handle)
 {
