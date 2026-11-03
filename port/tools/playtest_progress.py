@@ -249,6 +249,11 @@ def main():
             if threads and (ours < len(threads) / 2 or foreign >= 3):
                 done = True   # another map's scripts run now (some names, like
                 break         # cinematic_skip_start, are in every map)
+            # a dormant thread (sleep -2: never woken, or put back by its
+            # encounter's sleep_forever) waits for nothing yet: serving its
+            # first sleep_until only teleports the player about (03a's e9,
+            # 03b's e16 Banshees)
+            threads = {index: t for index, t in threads.items() if t["sleep"] != -2}
             places = []   # (times served, thread order, script, node, kind, volume name)
             away = []     # places in another structure bsp (the mission's first)
             # the latest encounter among the threads waiting for a bsp: only it
