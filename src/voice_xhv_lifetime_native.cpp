@@ -144,7 +144,7 @@ static_assert(offsetof(s_game_options_view, state) == 8,
 	"game options state offset");
 
 void function_53a20(dword port, void *data, dword size)
-	__asm__("?function_53a20@@YGXKPAXK@Z");
+	__asm__("?function_53a20@@YAXKPAXK@Z");
 
 long h2_voice_local_chat_data_ready(
 	c_voice_xhv *xhv, dword port, dword size, void *data)

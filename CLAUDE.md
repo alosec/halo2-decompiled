@@ -234,9 +234,11 @@ See `port/README.md` "Play" for the full commands.
   0x455fb4, and the narrow phase read shape types from the next table
   (crash in combat). Check that each bound table is one retail code
   stores (`mov [reg], table`) or a static object's data holds; a bound
-  address nothing refers to is suspect (still open:
-  `c_game_engine_45c948` binds to 0x45c8f0, but `g_47fc8c` holds
-  0x45c948).
+  address nothing refers to is suspect. `c_game_engine_45c948` bound
+  to 0x45c8f0 (`g_47fc8c` holds 0x45c948): its untagged inline
+  stand-ins took the tags of `c_game_engine_a`'s same-named members
+  through the builder's bare-name fallback, now limited to definitions
+  written inside a class body.
 - **After each upstream merge:** check `frontend: N compiled, 0 skipped`
   and diff the `stubbed` list. Upstream signature changes leave
   fork-only callers on unbound mangled names (0xc5460's bool, 0x144f0's

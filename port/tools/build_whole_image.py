@@ -507,8 +507,13 @@ def symbol_addresses(units, tag="retail"):
                     owner = re.match(r'(?:.*::)?([A-Za-z_]\w*)::~\1$', qualified)
                     if pending_deleting and owner:
                         result.setdefault((unit.relative, f"{owner.group(1)}::__deleting"), pending)
-                    key = (unit.relative, qualified.split("::")[-1])
-                    bare.setdefault(key, set()).add(pending)
+                    # only a definition written without its class (inside
+                    # the class body) stands for the bare name: a qualified
+                    # one would lend its tag to another class's same-named
+                    # member (c_game_engine_a::v0's 0x2bda60 bound
+                    # c_game_engine_45c948 to 0x45c8f0, not 0x45c948)
+                    if "::" not in qualified:
+                        bare.setdefault((unit.relative, qualified), set()).add(pending)
                     pending = None
     for key, addresses in bare.items():
         if len(addresses) == 1:
