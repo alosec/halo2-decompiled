@@ -303,6 +303,7 @@ static void report_scripts(unsigned long frame)
      watch_ai 1|0        log living AI a player could never reach (h2-stray)
      units R             the units within R units: index, type, team, body
                          vitality, position
+     wake NAME           a dormant script runs, as the script command wake
      enter_vehicle L     the first player into the nearest free seat with
                          seat label (string id) L, 0 for any, placed beside
                          its vehicle first (the seat request the script's
@@ -632,6 +633,27 @@ static void run_test_commands(void)
 			g_track_low = (long)parse_real(&rest);
 			g_track_high = (long)parse_real(&rest);
 			host_h2_log("h2-test track_squads set");
+		}
+		else if (command_is(command, "wake", &rest))
+		{
+			/* "wake NAME": a dormant script (sleep -2) runs, as the script
+			   command wake does (0x2087e0's caller sets its sleep to 0) */
+			while (*rest == ' ')
+				++rest;
+			long woken = 0;
+			s_hs_scenario const *scenario = (s_hs_scenario const *)g_4e0350;
+			for (long index = 0; g_4f9384 && index < g_4f9384->maximum_count; ++index)
+			{
+				s_hs_thread *thread = &((s_hs_thread *)g_4f9384->data)[index];
+				if (thread->salt && thread->script_index != NONE && thread->script_index < scenario->script_count &&
+					!strcmp(scenario->scripts[thread->script_index].name, rest) && thread->sleep_until == -2)
+				{
+					thread->sleep_until = 0;
+					++woken;
+				}
+			}
+			_snprintf(line, sizeof(line), "h2-test wake %s %ld", rest, woken);
+			host_h2_log(line);
 		}
 		else if (command_is(command, "units", &rest))
 		{
