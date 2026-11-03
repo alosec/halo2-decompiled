@@ -270,6 +270,15 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 // first test in a static inline helper 173 (433), forceinline 110; class flag alone in a helper 163; class getter
 // helper 110; the lookup's header helper as if/else with named locals 131 (0x221810 17, 0x129aa0 96), as nested
 // inline getters 110. Restored: retail's first lookup would need conditional depth two or a costlier callee.
+// Lane 14 r55 (fast): an early return for a NONE tag 152 (483 B); the tag's flag tested ahead of the class lookup
+// 160 (446 B; both 0x221810 calls then stay out of line as in retail, but in the wrong test order); one sound_class
+// local for both lookups 110 (same code); the flags built in state.flags 150 (484 B); the flags as one OR of three
+// conditional terms 160 (490 B).
+// Round 35 (m3 lane 18, fast with the matched callers): the variant pointer read from the request at
+// each use 110 (same code); the flag word kept in its local through the variant test and stored just
+// before the playback call 130 (470 bytes); that with the priority from the request's audible field 130
+// (470 bytes); the object/source/platform stores before the flag word 134 (0x1895f0 4, 0x189a50 3);
+// an early `return NONE` for a NONE tag 152 (483 bytes). All restored.
 // @retail 0x189fe0
 long function_189fe0(s_sound_request const *request, long tag_index)
 {
@@ -715,6 +724,9 @@ long function_1895f0(s_sound_position const *position, real scale, long tag_inde
 // `goto local_2` dropped 2 (kept). One, two or three unused initialised probe locals (diagnostic) 2 each,
 // so the symbol count does not decide it. Retail puts `mov al, 1` just before the last pop after this
 // kind of call elsewhere (0x11b50b, 0x1bc56b, 0x98750); ours puts it before the first of the two.
+// Round 75 (plain; --fast matches with a CAVEAT): the 0x1895f0 call cast to void 2; the perpendicular
+// distance computed before the along test 140 (660 bytes); the distance before the forward copy 2; the
+// position sums camera-first 2; the velocity before the forward normalize 41.
 // @retail 0x1897c0
 bool function_1897c0(long local_player_index, long unit_index, long tag_index, s_location const *location, point3f const *origin, vector3f const *direction)
 {

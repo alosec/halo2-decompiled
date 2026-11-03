@@ -152,6 +152,13 @@ extern long g_55c154;
 // type read once into a local 160 (586: `this` EDI, the type in the item's stack home). Retail and our one-load body
 // colour saved EDI, entry ESI, `this` EBX; every two-arm body flips to `this` EDI, entry ESI, saved EBX, and EBX then
 // also takes the hoisted constant 1; the spill or home reuse goes with the unbiased frame. Original body restored.
+// Round 65 (m3 lane 10, fast): two load arms with a controller-index local 172 (589 B), with g_54e4a0 copied before the
+// g_54e49c store 181, plain 174 (595 B), with game-type and controller-index locals 162 (580 B); the one-load body with
+// a controller-index local 89 (569 B). Every two-arm form flips the frame to unbiased at +0x1.
+// Round 140 (m3 lane 5, fast; all on two load arms written `if (selected == NONE) { if (load(saved)) {...} } else if
+// (load(selected)) {...}` with the game type read once into a local for its three uses): with the controller index
+// read once into a local 161 (587 B); with the named destination for the copy 185 (571 B); selected arm first 160
+// (586 B); under a named `create_default` bool 160 (586 B); controller local and named destination 184 (572 B).
 // @retail 0x2ca284
 void c_class_2c9e69::handle_item(s_controller_reference **controller, long *item)
 {
@@ -379,6 +386,10 @@ void c_class_2c9e69::select_last_variant()
 // result as the buffer argument 21 (the result moves to ESI, the receiver still re-read); name-arm copy only 13 (159,
 // remeasured: EDI for EBX); that with plain text 36; `variant == NONE && text` / `variant != NONE && text` 36 (159, the
 // second variant test is not threaded away); name-arm copy with the buffer at function scope 13.
+// Round 30 (lane 18, fast): the datum read through widget_item 23; text as the base widget without the
+// qualifier, cast at the empty call 36 (154 bytes); name-arm copy only re-measured 13 (159 bytes: the empty
+// arm tests the stack home, the name arm takes EDI for EBX), with the copy named label/caption/variant_text/
+// a_text 13 each; the name-arm copy without the qualifier 36 (154 bytes). Restored.
 // @retail 0x2c9ff4
 void c_class_2c9e69::v20(c_class_1a2c81 *item, long unused)
 {

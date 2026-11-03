@@ -254,6 +254,9 @@ bool function_1b8eb0(long actor_index, long object_index, short seat_index, bool
 // count 121 (390 bytes); the occupant's object in a named pointer for the team read 3.
 // Round 124: actor declared after the last-object local/seat array/count 3/3/116; object and team
 // rejections inverted 3/3; object and team tests nested 3/3; the else-if split into an else 3. Restored.
+// Round 34 (lane 17, fast): occupant declared at the loop top 3; team compare written actor-first 4;
+// occupant test as `== NONE` with the team arm in the else 49; last_object_index stored before the
+// object test 8; result declared after the count 52 (366 bytes). Restored.
 // @retail 0x1b8f30
 bool function_1b8f30(long actor_index, long object_index)
 {
@@ -644,6 +647,9 @@ extern "C" void _ReadWriteBarrier(void);
 // Round 125: pointer names reversed 6; split state initialization 6; split actor initialization 6;
 // actor declared first 6; outer comparison reversed 6; threshold written > 6 gives 8; memcpy point 6;
 // const slot parameter 6; final store before the outer test 52 (189 bytes).
+// Round 34 (lane 17, fast): an early return for a busy actor with the barrier 14 (209 bytes); the
+// state declared inside the NONE block 6; the flags block's stores 0x41c first 6; flags read into a
+// byte before the barrier 38; the busy field in a named long 6. Without the barrier (re-measured) 44.
 // @retail 0x1ba8c0
 void __stdcall function_1ba8c0(long actor_index, s_slot *slot, s_slot_target_list *list)
 {
@@ -1004,53 +1010,25 @@ short __stdcall function_1b9890(long actor_index, s_slot *slot)
 
 /* invites the clump members to the joint, the nearest first, when the
    object has more than one seat to take */
-// score 17 (was 17): retail still loads the element pool's data right after the table
-// pointer into EDX and keeps the element record in ECX, ours loads the data later into
-// ESI and the record into EAX; this round's declaration-order trials (the element
-// pointer before or after the actor) move the whole prologue instead, and the body
-// after the call matches
-// MiniMax R (11-01): no new form, no lower score; the record read directly in the call 31 and the
-// element access first 22/30 all move the record's register further from retail's ECX.
-// score 17 (was 17): the element pointer is still formed after the call's argument
-// pushes, so the element pool's data has to survive them and lands in ESI with the
-// record in EAX; retail forms it before the pushes, so the data stays in the
-// volatile EDX with the record in ECX. This round's trials in this file could not
-// move the two data loads
-// score 17 (was 17): the call to the joint invitation now hands its arguments over
-// in retail's registers (the joint index in EAX and the priority in EDI), so the
-// whole gap is the prologue: retail loads the element pool's data into EDX right
-// after the table pointer and keeps the element record in ECX, ours loads the data
-// late into ESI and keeps the record in EAX
-// score 17 (was 17): the prologue still loads the element pool data late into ESI
-// and the element record into EAX where retail loads the data into EDX right after
-// the table pointer and the record into ECX; the two inline lookups have the same
-// shape, so this round's trials could not change the order of the data loads
-// score 17 (was 17): retail loads the element pool data into EDX before the
-// actor is fetched and keeps the element record in ECX, ours loads the data
-// later into ESI and the record in EAX. Both read the actor pool global
-// first, so the difference is the order of the two data loads.
-// score 17 (was 17): the pool-data load and record/seat registers still differ before the seat query.
-// Round 123: object-index rename 17; buffers before lookups 17; shared target view 17;
-// returned-count helper 21, with an initialized count 21, a direct object field 21, or the
-// object local after the counters 21; split count initialization 17; early twice-read clump index
-// with the helper 122 (405 bytes).
 // @retail 0x1bb3a0
 short __stdcall function_1bb3a0(long actor_index, long joint_index, long a, long b)
 {
+	long count = 0;
+	short free_count = 0;
 	s_actor_view *actor = actor_get(actor_index);
 	s_4c_element *element = (s_4c_element *)element_502424_get(joint_index);
-	long local_0 = element->object_index;
-	long count = 0;
-	short seat_count = 0;
-	short free_count = 0;
 	point3f position;
-	s_object_seat seats[0x40];
 
-	function_c8a40(local_0, seats, &seat_count, 0x40);
-	for (short i = 0; i < seat_count; i++)
 	{
-		if (!TEST_FIELD_BIT(seats[i].definition->flags.bit11))
-			free_count++;
+		short seat_count = 0;
+		s_object_seat seats[0x40];
+
+		function_c8a40(element->object_index, seats, &seat_count, 0x40);
+		for (short i = 0; i < seat_count; i++)
+		{
+			if (!TEST_FIELD_BIT(seats[i].definition->flags.bit11))
+				free_count++;
+		}
 	}
 	function_b9dd0(element->object_index, &position);
 	if (free_count > 1 && actor->unknown07c != NONE)
@@ -1535,6 +1513,39 @@ void function_1f86a0(long actor_index);
 // AC468: Complemented specified/root predicate in bool/byte/short/long, each with native/original
 // slot-member payload first: 136/136/136/136/139/139/138/138. Original predicate and payload restored;
 // frame 0x10 versus 0x14, raw-mask spill and entry/root carriers remain.
+// Y538: Saved-mask complement alone in bool/byte/short/long, each with native/original
+// member payload, 245/245/245/245/265/265/254/254. All restored; frame, raw-mask spill
+// and entry/root carriers remain. The actual 0x34-byte member payload is neutral in every pair.
+// AC489: Separate distance/seat validation guards and negative special admission, seven
+// subsets, plus native slot-member payload on the complete graph: eight at 134. Original
+// body restored; frame, mask spill and entry/root carriers remain.
+// Round 142 (fast; aligned count in brackets, control 134 [109]): retail's decline arm sits above the shared next call and the accept arm
+// below it: the predicate inverted or written positively in an if/else gives that layout, 134 [97] (not kept: the count does not move while
+// the frame and EBX differ); positive with `continue` 134 [97]; `continue` on decline, a decline bool, one goto form, and the for-loop on the
+// original predicate 134 [109] each. On the positive form: unit read directly or a parent local, entry declared first 134 [97] each; same in
+// if/else 245 [104]; bool mask 240 [94]; mask declared first 242 [95]; mask at function scope, char mask 134 [97]; long mask 248 at 873 [81]
+// (frame 0x14, but the whole flags byte takes BL); element index in a two-use local 252 at 845 [90]. EBX goes to the mask where retail gives it
+// to the entry, which leaves the entry on the stack and the mask out of its +0x13 slot.
+// The slot data-block form (selection through slot->unknownc) 134 [109]; a whole data struct 140 [109], with the positive predicate 141 [97]:
+// retail folds +0xc into its reads through the slot here, so that form does not apply.
+// Round 132: stable current-entry pointer/reference/field pointer 134 each; nested actor lookup
+// for the unit 230; existing object-header getter 134; same-root byte/short/long results
+// 134/140/139 (864/863 bytes for the wider two). Original body restored.
+// Round 47 (lane 15, fast, base 134): no mask local, flags temp at F+3 as retail but the flags byte in BL, 244 (868 bytes); with the
+// found index read after the loop 244; 0x40 through a second selection cast 234 (865); 0x40 as a shift 244; both bits as `& 0x60` 245
+// (871); `same` as false default plus if 239 (865). 0xbaf40 is pure, so the flags load stays common across its calls.
+// Round 132: stable current-entry pointer/reference/field pointer 134 each; nested actor lookup
+// for the unit 230; existing object-header getter 134; same-root byte/short/long results
+// 134/140/139 (864/863 bytes for the wider two). Original body restored.
+// Round 130 (m3 lane 8, fast): retail duplicates the loop's next-entry call into the decline path and tests the
+// 0x40 bit with a fall-through decline. The decline test as `(u && !bit40) || (!same && (u || specified))` 234
+// (862 B), its two halves swapped 237, the ternary negated with arms swapped 231 (862 B); a flags byte local
+// read before the slot-bool test for both arms' 0x20 tests 141; the entry declared in the while condition 134
+// (same code).
+// AC506: Concrete-slot/untyped/byte/header callback pointer formals, each paired
+// with indexed native member payload first and original payload: eight at 134.
+// NOT kept: alias contracts do not recover the mask spill or EBX entry; original
+// callback definition/declaration, payload and complete body restored.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {

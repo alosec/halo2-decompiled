@@ -1573,9 +1573,66 @@ struct s_rating_summary
 // complete body restored; formatter/count schedule and team/counter homes remain.
 // M316: On adjusted-value graph: native word team-count snapshots in all six declaration orders, dword counts, and loop-entry word storage; each also with copy-return termination 32/32/32/32/32/32/32/32/35/35/35/35/35/35/35/35.
 // One-use field forms are exact-match-only; formatter/count scheduling and team/counter homes remain. Original executable body restored.
+// P276: Shared value/change/level/lower, summary and identity lexical roles, then
+// joint result roles and all six roles on adjusted-value graph: 31 each. Complete body
+// restored; formatter/count schedule and team/counter homes remain.
 // DH300: Equality-only team/group comparator operand ownership and multiply-used identity output
 // receiver subsets 1/2/4/3/5/6/7, all with early receiver: 33/34/31/36/33/34/36/36.
 // Original comparisons, copy destination and full body restored; formatter/count scheduling and cursor homes remain.
+// Round 376: On adjusted-value team graph, shared player/team first/second/third statistic
+// carriers in seven long-valued subsets 31/31/31/31/31/31/31; complete native word carriers 275.
+// Original statistic scopes, producers and body restored; formatter/count scheduling and team/counter
+// homes remain. Existing reduced unresolved-global caveat persists.
+// Round 378: Actual dynamic team-bound admission at the loop head, bool/byte/short/long,
+// within and past truth, 31 in all eight. Exact-only one-use admission results restored;
+// original per-iteration switch, loops and complete body retained. Formatter/count schedule
+// and team/counter homes remain; existing reduced unresolved-global caveat persists.
+// P278: Native name-source/output/capacity/code-unit, query-key table, player and group lexical
+// roles independently, then all: 31 each. Original body restored; formatter/count setup and
+// team/counter homes remain.
+// Round 345: completed name-conversion/summary-publication/adjusted-rating phases, seven subsets; all
+// phases with immutable query table: 31/52/52/31/31/52/52/52. Original body and contracts restored.
+// Formatter/count schedule and team/counter homes remain.
+// M3 lane 13 r54 (fast, on the one-use identity-string local, control 25; match-only, not kept): team index
+// short 143 (1228 bytes); counters as a const reference 25 (same code); the bound test as `!(i < count)` 25;
+// team skill read at each use 237 (1200 bytes); counters pointer declared at function scope 25. Retail's team
+// loop keeps both cursors stored at the head (teams +0x14, counters +0x18, counters in ECX at the latch).
+// F347: Native session memcpy with byte/XUID identity source, aggregate/library summary initialization
+// and scalar/stored query consumers: 31/31/210/210/31/31/210/210. Native copy and identity forms tie;
+// library clears recover extent but regress. Original body restored; formatter/count setup and
+// team/counter homes remain.
+// Round 554: Native team/counter cursor as primary induction, derived real-array ordinal,
+// indexed/walking secondary record, iteration/pass-owned bound result:
+// 274/362/387/407/274/362/387/407. Original integer induction and full body restored;
+// formatter/count scheduling and team/counter homes remain.
+// Round 44 (m3 lane 2, fast): retail's team-loop head is the tail-merge target of preheader and latch (both
+// cursors arrive in ECX/EDX and are stored there); ours keeps the counters cursor in memory and steps it in ESI
+// at the latch, so the store does not merge (the 4 bytes). A walking team pointer declared before the team loop
+// and stepped at the body's end 116 (collection register changes from +0x45; named team/entry/zteam alike); a
+// walking counters pointer 38 (base at the struct, not +6; homes unchanged), named zcounters 38 (names do not
+// move these homes); the switch without its `default: __assume(0)` 105 (1197 bytes); the formatter's result
+// in a local 25 again (match-only; only the team latch left).
+// Round 206 (m3 lane 3, fast): with the formatter's result in a local (match-only) 25 again (only the team
+// latch left: retail stores both cursors at the head, counters from ECX; ours steps counters in ESI and stores it
+// at the latch, homes swapped); on that, the team loop bounded by the existing accessor 0x193440 under the region
+// 163 (1191 bytes, it stays a call); the stats pointer before the two rating calls 25 (same code); the team skill
+// as `long` 55 (1212 bytes, but only because the skill compare moves; the latch is unchanged). Diagnostics without
+// the inline_depth(0) region: unicode_string_to_ascii for the name and the 0x193440 accessor 412 (1264 bytes), with
+// a strncpy-and-terminate inline copy as well 412: 0x192e60 still inlines at entry. Original body restored.
+// Round 141 (m3 lane 6, fast): a strncpy-and-terminate helper (as font_loading.cpp has) declared __forceinline
+// or inline ahead of the region 214 (1200 bytes: the inline_depth(0) region keeps even a __forceinline helper out
+// of line); the team counters read directly at the call 32; the team identity named (`const XUID *`) for the
+// memcmp and the call 47 at 1212 bytes (the team-loop latch then stores both cursors from ECX/EDX at the head with
+// retail's homes, teams +0x14, counters +0x18, but the team cursor is based at the identity, +0xdd0, where
+// retail's is +0xdc8); a team element pointer 47, with the identity pointer 46; the identity named only for the
+// call 47. Retail's prologue/epilogue is `ret 8` too (the queue's `ret 0` was jump-table data).
+// Round 206 (m3 lane 3, fast): with the formatter's result in a local (match-only) 25 again (only the team
+// latch left: retail stores both cursors at the head, counters from ECX; ours steps counters in ESI and stores it
+// at the latch, homes swapped); on that, the team loop bounded by the existing accessor 0x193440 under the region
+// 163 (1191 bytes, it stays a call); the stats pointer before the two rating calls 25 (same code); the team skill
+// as `long` 55 (1212 bytes, but only because the skill compare moves; the latch is unchanged). Diagnostics without
+// the inline_depth(0) region: unicode_string_to_ascii for the name and the 0x193440 accessor 412 (1264 bytes), with
+// a strncpy-and-terminate inline copy as well 412: 0x192e60 still inlines at entry. Original body restored.
 // @retail 0x741f0
 void __stdcall function_741f0(s_match_player_rating_collection *collection, s_query_batch *batch)
 {
@@ -1933,6 +1990,22 @@ static __forceinline s_player_slot_flags *function_74aa1(s_player_slot_flags *ar
 // property copy, admission helper kept after it: after identity 709/709/709/761;
 // before identity 709/709/709/767. One-use producers require a match; all
 // restored. User cursor base/home, slot conversion and later homes remain.
+// M321: Returned identity/property copy destinations, mutable/immutable receivers, then either overlap-safe transfer
+// 709/709/709/709/709/709/768/756. NOT kept: local output aliases require a match. Original body restored; initial cursor/slot and later homes remain.
+// M332: Native due-timestamp captures at read/write/both submission boundaries, before/inside
+// admission, then both complete due predicates: 710/715/716/710/715/716/716/716. Original global reads,
+// clocks, predicates and body restored; initial cursor/slot and later homes remain.
+// Round 141 (m3 lane 6, fast; aligned diff 515): the `valid` flag dropped for a clear loop in each failing arm 751
+// (2910 bytes, aligned 521); an early `continue` after clearing for an invalid user 783 (aligned 524); the type-5
+// record scan by index 768 (2926, aligned 577); the request identity copied into a local XUID 733 (2910, aligned
+// 489); both 812 (2942, aligned 584). The slot helper's cmovne still needs /arch:SSE, so the positional count
+// cannot reach a match under the file's flags.
+// M339: Complete duplicate-search condition under for/while, ordered/equality endpoint and identity/type
+// filter order: 709/709/698/698/746/746/721/721. NOT kept: type-first 698 grows frame 0xc0 to 0xc8;
+// original body restored.
+// M3 lane 4 r161 (fast): the existing xuid getter 0x647a0 as the users-loop test 757 (2862 B; called, not
+// inlined); a const user reference for the users loop 754; that with online_logon_connected() 775 (2846 B);
+// the identity flag tests before the slot test 711; team declared before valid 709 (same code).
 // @retail 0x74aa0
 void function_074aa0(void)
 {

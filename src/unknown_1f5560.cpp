@@ -213,9 +213,10 @@ real function_1f8050(long actor_index, bool *fast)
 	return result;
 }
 
-/* takes the pending facing (+0x622) unless the actor rides a vehicle */
+/* takes the pending facing (+0x622) unless the actor rides a vehicle; the last
+   argument goes unused (the link drops it, its caller still computes it) */
 // @retail 0x1f5560
-bool function_1f5560(long actor_index, vector3f *facing)
+bool function_1f5560(long actor_index, vector3f *facing, bool unused)
 {
 	s_actor_moving *actor = actor_moving_get(actor_index);
 
@@ -969,6 +970,27 @@ real normalize2d(point2f *v);
 // AC484: Multi-use origin pointer at entry/valid scope, with late/early result declaration,
 // 135 each; each with direct request return 182. Original field addresses, result scope
 // and complete body restored; retained DL success and distinct return transport remain.
+// Round 545: Negative trajectory outcome producers, original/complementary unit-state arms,
+// assigned/terminal request results 182/120/187/141/189/113/193/156.
+// NOT kept: 120 adds a Boolean canonicalization absent in retail; 113 also moves length away.
+// Original request/movement graph and body restored; retained DL result and return transport remain.
+// DH317: Complete successful trajectory output merge at the existing result admission,
+// logical/reversed/bitwise/branch joins in bool/byte retry storage:
+// 195/193/170/144/195/193/185/144. Branch joins reach 935 bytes but regress;
+// original output lifetimes, result flow and full body restored; DL residence remains.
+// AC498: Retry-force logical/reversed/bitwise/conditional producers 253/217/304/135;
+// force true/nonfalse/positive/inverse conditional admission 182/135/135/135.
+// Original complete body restored; initial DL retention and movement/request returns remain.
+// B388: Independent trajectory outcome transferred to outer validity at the final join,
+// bool/byte/short/long 186/186/159/153; direct request-to-sole-exit companions
+// 193/193/153/173. All regress; original two producers, calls and return graph restored.
+// DH321: Immediate successful retry-output publication with bool/byte/word/long two-use
+// retry outcomes and logical/bitwise success joins on the retained facing graph:
+// 219/198/219/203/225/201/223/212. Original output guards, result transport and complete body restored.
+// AC503: First-type/speed/normalized completion guards, seven subsets 135 each; terminal
+// request with all guards 73 (901/935 bytes), recovering DL. NOT kept: length moves away and
+// gain appears only with combined forms. Original full body restored; separate facing/default
+// and invalid return paths remain.
 // @retail 0x1f8160
 bool function_1f8160(long actor_index, signed char const *types, point3f const *target, bool force)
 {

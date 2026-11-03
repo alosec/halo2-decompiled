@@ -717,7 +717,7 @@ struct s_player_iterator_2be
 
 bool player_iterator_next_with_unit(long *iterator);
 extern color3f *g_468714;
-color3f *function_7f720(color3f *color, short team_index);
+color3f function_7f720(short team_index);
 
 static inline s_player_2be *player_get_2be(long index)
 {
@@ -808,7 +808,8 @@ void hill_color(long player_index, s_color_bits *color)
 			color3f team_color;
 			long team = player_get_2be(occupant)->team;
 
-			*color = *(s_color_bits *)function_7f720(&team_color, team);
+			team_color = function_7f720(team);
+			*color = *(s_color_bits *)&team_color;
 		}
 		else
 		{
@@ -1538,6 +1539,11 @@ struct s_territory_tag
 // 43; through tag_index itself with the helper 43; a named globals index with the helper 43; a getter for the
 // tag 24, with the helper 43; a getter for the data 24, with the helper 43; nested getters with the helper 43,
 // forceinline 24. Registers rotate from the chain on: fixing the middle pointer fixes all of the second half.
+// Round 156 (fast): the tag index through an inline out parameter 24; the test in a named bool 24; a named engine
+// index 24; a named masked definition index 24; named data and item locals 24; a two-use data pointer (a second
+// read of its first field multiplied away) 24. All keep the middle pointer in ECX.
+// Round 100: outer data, tag, or both declarations 24/24/24; data or tag references 24/24;
+// outer or branch item addresses 24/24; a condition-scoped peer 24. The middle pointer stays ECX.
 // @retail 0x2c0980
 long territory_create_item(long player_index, long territory)
 {

@@ -1223,11 +1223,37 @@ void c_class_938e0::function_93aa0(long channel_index, long message_type, long m
 // Round 287: Original family positions, query priorities 8-10-9/9-8-10/9-10-8/10-8-9/10-9-8,
 // peer priorities 23-24-22/24-22-23, then reversed query/session/peer interiors: 192/196/194/192/194/196/196/194 fast.
 // Original classifiers restored; delayed ESI save and full-only late-handler expansion remain.
+// Round 45 (m3 lane 15; fast unless marked, control 196, full 153): the one retail-order switch 218 (420 bytes) keeps the
+// address in EAX and the type in ECX because the address never crosses a call; retail homes it in EDI, on the stack.
+// (type, message, address) with the caller, plain 217 (same code). Behind `if (type == 18)` the inlined 0x94420 body makes
+// the address cross a call and gives retail's convention, 196 (444 bytes, 0x94420 inlined where retail calls it); 0x94270
+// behind an `if` 216 (424 bytes, ECX); one `if` on an unused type 216, two 212 (460 bytes, EAX); an empty out-of-line call
+// taking the address after a connection handler 218 (removed before the convention is chosen); a byte pointer local for
+// the message 218 (same code). So retail's first pass saw the address live across a call that its final code does not have.
 // M312: Native-input session interior priorities and remaining peer orders:
 // 196/196/196/196/196/196/196/196. Original body restored.
 // M314: Native-input first-family priorities QDCSP/QDCPS/QDSCP/QDPCS/SDQCP/SDPCQ/SDCQP/SDCPQ:
 // 205/203/195/201/194/194/204/202 against reduced 196. Original classifiers restored;
 // delayed ESI save, late-case layout and full-only handler expansion remain.
+// M332: Repeated typed session/peer/late-message input boundaries, seven subsets, then
+// all with query-message input: 196/196/196/196/196/196/196/196 reduced, tying control 196 (full 153). NOT kept:
+// parameter aliases require a match. Complete classifiers and all handler tuples restored.
+// Round 65 (m3 lane 1, plain): an unsigned `> 24` early return ahead of the two switches 121 (464 bytes; retail's
+// prologue, delayed ESI save and jump table, caller matches; only the inlined case-18 body and late classifier
+// differ), with the late pair as an if/else-if chain 125; NOT kept (the test is implied by the switches). The same
+// return on the one retail-order switch 217 (same code as without it); that switch with the address read once
+// through its address plus a signed `> 24` return 212 (428 bytes); 11/18 admitted as `break` cases with `default:
+// return` and an if/else tail 216 (0x94420 then stays out of line and the convention is lost: retail's convention
+// appears only when 0x94420 is inlined).
+// Round 63 (m3 lane 10, all plain, base 153): retail's 0x7afd0 call sets type EAX, message ECX, this EDX and pushes the
+// address; the one retail-order switch 217 (420 bytes: this moves to the stack, address EAX, type ECX, and case 10 saves
+// EDI around 0x94220, which takes the address in EDI; retail homes the address in EDI for the whole body); that with
+// (type, message, address) declared at the definition, both declarations and the call 217 (same code); with `break` in
+// every case 217; the late pair as a switch nested in the first switch's default 153 (same code); as `if (type == 18)
+// ... else if (type == 11)` 155. Our convention only matches when the address stays live across a call.
+// M335: Rejection-owned connection exits on the native-input graph, subsets
+// 1/2/4/3/5/6/7, then all with case-local results: 196/196/196/196/196/196/196/196 reduced.
+// Original complete body restored; delayed ESI save and late expansion remain.
 // @retail 0x938e0
 void c_class_938e0::function_938e0(const s_type_99af70 *address, long message_type, const void *message)
 {

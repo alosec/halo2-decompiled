@@ -997,6 +997,40 @@ PRIVATE __forceinline void function_1f087b(vector3f const *arg_0, vector3f const
 // low-normal product groups as ten one-use named product locals, 417 plain (3038 bytes; first difference
 // at +0xd, damping in ECX/EDX). NOT kept: one-use temporaries that only steer evaluation order are kept
 // only with a match; body restored at 433.
+// DL249: Complete existing setters for projected-forward/projected-side/general raw-delta,
+// subsets 1-7, then all with history difference: 473/473/431/463/413/411/465/463.
+// NOT kept: joint projection gains two; pairs with raw setter gain only in combination
+// while their parts regress. Exact-match-only steering; original body and helpers restored.
+// F335: native direct clip predicate/direct fallback first/general fallback first, subsets 1/2/4/3/5/6/7
+// 360/432/498/359/482/497/481; all with named normalization return 470. NOT kept: one-use
+// predicate steers allocation; fallback alone gains one. Frame 0x30 agrees, raw/bounded homes still differ.
+// B374: planar bounded producer with native/library raw backup before/after step, alone or
+// with general producer: 393/385/388/398 twice; 3034-3035/3047 bytes, frame 0x30.
+// NOT kept: reversed producer and length farther from retail; original raw-first body restored at 433.
+// DH305: Complete state/settings words and mask predicates on the planar/eight-normalization
+// graph, seven subsets then opposite complete-word declaration order: 526/610/562/495/573/609/559/560.
+// NOT kept: retail reads both words again at history admission; unsupported observation/predicate
+// steering needs a match. Original body restored; damping and raw/bounded homes remain.
+// N334: Plain vector component loops at flying/paired ground projections/low-normal output,
+// subsets 1-7 514/467/514/418/526/533/616; complete unsigned ordinals 616. NOT kept: the
+// low-normal output loop alone 418 plain (frame 0x30, 3037 bytes) is one of seven subsets picked by
+// score, the like rows beside it stay written out. Body restored at 433; damping and vector homes remain.
+// AC492: Twice-used general normalization return, real/double at producer/entry
+// 488/496/488/496; complemented clipping result 433; direct producer with general return 485;
+// direct branch-owned result alone/with complemented general result 345/345 (3050/3047 bytes).
+// NOT kept: one-use call-result carriers require a byte match. Original complete body restored;
+// damping ECX/EDX and raw/bounded homes remain.
+// DL251: Plain general bounded-scale/normal-correction/history-publication component loops,
+// subsets 1/2/4/3/5/6/7, then unsigned ordinals: 433/433/435/499/433/433/500/500.
+// Original complete source restored; no eligible gain.
+// B389: Complete native aggregate producers: direct rotation/raw/working, general working/raw,
+// direct raw+working, general raw+working and all: 433/433/497/551/433/497/551/584.
+// Original raw-first body restored; damping and raw/bounded homes remain.
+// B391: Actual external normal/facing/input identities, subsets 1/2/4/3/5/6/7, then
+// all with up identity: 346/509/533/477/511/587/513/511. NOT kept: the normal-field
+// reference reaches 346 at 3052 bytes by changing existing product scheduling; retail
+// does not show that new field-alias lifetime or its projection load pattern. Exact-only
+// identities and complete body restored; damping and raw/bounded homes remain.
 // @retail 0x1f0870
 void function_1f0870(byte *history, vector3f const *current, s_shape_carrier_contact const *state, byte *out)
 {
@@ -1664,10 +1698,34 @@ bool havok_component_any_rigid_body_active(s_havok_component *component);
 // P263: complete selected-normal/final-vector native/memcpy/memmove pairs
 // 221/221/221/231/355/239/355/231; memcpy ties, memmove changes expansion and regresses.
 // Original transfers, magnitude, call sites and complete body restored.
+// DL247: Flat native material/speed admission with original dot, native movement,
+// contact fields at use and ordinary fallback inline: 221/224/222/221/221/224/222/221.
+// All restored; zero width, reset/selection homes and selective material-call expansion remain.
 // Round 482: Fallback-owned movement truth, block comparison/call comparison/implicit
 // call/block truth, original double root 307/313/313/307; real root 313/306/306/313.
 // Original motion sample precedes every reset in all forms; root/predicate lifetimes
 // and complete body restored. Zero width, reset homes and material expansion remain.
+// AC498: Native sqrtf with direct/shared-square/squared-value/all-product inputs,
+// double/real root carriers: 225/228/225/228/225/228/221/226. Original arithmetic
+// and full body restored; zero width, reset/selection homes and second material expansion remain.
+// N336: Selected ordinal at signed-short/word width, with entry/before-reset/after-reset/
+// before-flight declarations and the original NONE producer: 227/227/227/227, 380/380/380/380.
+// Word forms grow to 1148 bytes and move the frame difference to +2. NOT kept: no exact
+// projected-storage form; original long selection, movement and complete body restored.
+// N342: Existing shared dot input components staged for left/right/both/paired axes,
+// original then real movement result: 280/280/280/280/279/279/279/279. Both other users checked.
+// NOT kept: one-use input carriers do not match and length grows to 1071/1066;
+// original helper, magnitude, observations, field values and complete body restored.
+// DH315: Shared score/predicate/ordinal initialization masks 1/2/4/3/5/6/7,
+// then all with real movement: 227/225/225/229/229/227/221/224. Original
+// independent initializers, magnitude, observations and complete body restored.
+// DH321: Test-produced preservation result in bool/byte/signed-byte/short/word/int/unsigned/
+// dword domains: 304/304/304/319/319/333/333/333. NOT kept: flag-in-test/domain forms lack equality;
+// original predicate, magnitude, reset/selection graph and material calls restored.
+// N344: Coherent state-first material interface, then real movement/sentinel phase/airborne
+// bit-production masks 0/1/2/4/3/5/6/7: 223/226/223/311/226/310/312/311.
+// NOT kept: all grow to 1068/1088 versus 1066; original definition, both calls, magnitude,
+// initializers, predicates and complete body restored.
 // @retail 0x1f19c0
 void function_1f19c0(byte const *request, s_shape_state *history, byte *out)
 {

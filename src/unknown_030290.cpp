@@ -407,6 +407,30 @@ __inline void transform_point(s_camera const *camera, point3f const *p, point3f 
 // Round 527: Eager admission/eager returned comparisons/library zero-output subsets
 // 1/2/4/3/5/6/7 give 238/243/194/269/237/239/265; all with a Boolean result accumulator 285.
 // One-point clearing lead rejected; original comparisons, output stores, includes, helper and full body restored; frame and inverse/displaced-transform homes remain.
+// F342: Displaced-input/inverse-workspace last-use scopes and complete translated point setter, masks
+// 1/2/4/3/5/6/7; all with reversed inverse constants: 195/195/195/195/195/195/195/195. NOT kept: no
+// byte match; original complete body and every helper restored. Inverse homes and displaced-transform
+// spill remain.
+// Round 77 (m3 lane 9, fast): both factors as `fabs(z) < k_real_epsilon ? 0.f : 1.f / z` without the inverse
+// defaults 301 (890 bytes); fa/fb initialised 1.f with no orthographic arm 261 (906); the displaced inverse
+// computed before the origin one 239 (1004); b, ta and tb declared together 195 (same code); the success test as
+// `return dx != 0.f || dy != 0.f;` 195 (same code). Restored.
+// Round 549: Paired native double inverse/factor/delta residence, masks 1..7:
+// 264/262/276/232/238/266/260; all with double reciprocal producers 260.
+// Both inverse/factor pairs recover frame 0x2c at 276; delta forms reach 955 bytes
+// but regress. NOT kept: nonexact precision changes; original body restored.
+// Round 554: Native double transform input/scale/complete-row accumulation, seven
+// families 690/465/690/690/690/690/690; all with direct inverse factors 679.
+// NOT kept: nonexact precision forms outline or change scalar code; original alias-safe
+// helper and full body restored. Frame and inverse/displaced-transform homes remain.
+// Round 158 (m3 lane 4, fast): retail's sum operands (direction, origin, direction first by component) 195; with the inverses declared b, a 195; fa/fb initialised to 1 with no else arm 261 (906 bytes);
+// both inverse tests before the fa/fb copies 197; the inverses declared just above the perspective test 261 (926 bytes).
+// Round 141 (m3 lane 6, fast): transform_point as __forceinline 195 (same code); the displaced point as an
+// aggregate initializer 195; the displaced point in its own block around the second transform 270 (994 bytes),
+// with the initializer 270; the success test returned directly with the zero stores after the block (no else) 195.
+// Round 143 (m3 lane 6, fast): retail's sum operands re-measured 195 (same code); the point default moved after
+// the camera and scale defaults 207; displaced sums written z, x, y 216 (982 B), z, y, x 213 (979 B); the origin
+// transform ahead of the displaced sums 270 (994 B); fa/fb declared before ta/tb 195 (same code).
 // @retail 0x30830
 long function_30830(point3f const *a, s_camera const *camera, vector3f const *d, point2f const *scale, bool perspective, bool negate, point2f *out)
 {

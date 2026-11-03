@@ -320,9 +320,36 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // instead of start 43 (108 bytes, 0xb5f10 6), advanced before the clamp 47 (108 bytes, 0xb5f10 6); the clamp to
 // 0x1ff before `count++` 40 (same code); the length test first, then the sign tests 46 (92 bytes, 0xb5f10 6);
 // the function `static` 40 (same code).
+// Round 45 (m3 lane 15, fast with 0xb5f10/0xb61d0): a const member of the text record, no volatile, 48 (93 bytes; `this`
+// in EBX, ret 4, 0xb5f10 82); the length scan as a `while` or a `do` 40 (same code), as a `for` with the walk in its body 60
+// (0xb61d0 46); 30 random mixes of guard nesting, length local, compare spelling, increment, clamp, source form and result
+// fall in the known classes 28 (start stays in EDX, walk EDI, 0xb5f10 6), 40, 48, 51 and 53. In retail the walk and counter
+// take EDX and ECX first, which leaves start only a saved register; here start is coloured before the walk.
 // Round 528: native int start/count and immutable destination formal, seven subsets
 // 40 each; complete native graph with exhaustive result arms 48. Original signature,
 // shared scanner/copy helper and whole body restored; saved-start/scan allocation remains.
+// Round 140 (m3 lane 6, fast with 0xb5f10/0xb61d0): the sign tests swapped 40 (same code); the length
+// in a local before the tests 46 (92 bytes, 0xb5f10 6); the inverted guard with a `result = false` arm 48
+// (95 bytes, 0xb5f10 41); a `size = count + 1` local clamped and passed 53 (90 bytes, 0xb5f10 104); the
+// result assigned from the whole test 44 (0xb5f10 41).
+// Round 78 (m3 lane 9, fast with 0xb5f10/0xb61d0): the clamp as `if (count >= 0x200) count = 0x200;
+// else count++;` 40, with `> 0x1ff` 40; the guard as `!(start < 0 || count <= 0 || ... > length)` 40;
+// the length test as a second nested if 40 (all same code); start added before the increment 36
+// (0xb5f10 6, as listed).
+// DH313: Native scanner char/signed-char/unsigned-char/byte captures with original
+// postincrement or separate pre-test advance: 40 each; shared find regresses to 15/70 bytes
+// in all eight. NOT kept: no target gain and shared-user loss. Original helper/body restored.
+// Lane 12 r86 (fast with 0xb5f10/0xb61d0): unused-local numbering probes (1-3, diagnostic) 40, so the
+// start/counter registers are not a symbol-order tie; the scan helper as `while (length < 0x1ff &&
+// *string++) length++` 40 (find still matches); indexed `string[length]` 60 (find 46, 0xb5f10 83);
+// the length test as `length - start >= count` 34 (0xb5f10 6); the clamp as a ternary 53 (90 bytes);
+// the copy source as `&string[start]` 28 (retail's shrink-wrapped EBX, but start arrives and stays
+// in EDX; 0xb5f10 6, as the listed `string + start`).
+// Round 124 (m3 lane 7, fast with 0xb5f10/0xb61d0): retail's 0xb5f10 calls set the count (EAX) before the start
+// (ECX), so the declared start-then-count order already fits. The length helper returning `long` 40 (0xb61d0 1);
+// a plain string parameter with one own-parameter volatile read at the `start +=` 40; result set in an else arm
+// 48 (95 bytes, 0xb5f10 41); the helper's counter initialised in the for 40; `count >= 1` 38 (`cmp esi, 1`, no
+// register change; not kept). Retail pushes EDI in the prologue (start lives there) and EBX only around the scan.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -631,6 +658,10 @@ short function_b5000(s_transport_endpoint *endpoint, void const *buffer, short l
 // `while (result && ...)` with the completion guarded after the loop 44. Retail = four-way join (BL for the
 // false exits, CL for success, constant 1 for the restore) with the restore's copy laid out last; VC keeps the
 // function's single return block last whatever the source order.
+// Round 41 (lane 2, fast): the sentinel test inverted with the restore in the else arm: `result = false` in the
+// then arm 74 (226 bytes); gotos in both arms 10; `return result` / `return true` 20 (retail's block order, but the false exit
+// folds to `xor al, al` and BL takes the true result); `return false` then the restore and the goto 25; a `would_block` local
+// assigned to the result 74; the result from the sentinel, tested, then the restore 74.
 // @retail 0xb6000
 bool s_http_connection_ab::send()
 {

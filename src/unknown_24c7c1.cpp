@@ -458,6 +458,12 @@ void __fastcall function_24cdaf(void)
 // Round 77: assignment in the saturation condition 6; nested saturation assignment 6; pointer
 // assignment in the read/store 6/6; direct read with pointer store 6; pointer read with direct
 // store 6; tick update before the countdown 34; constant-first comparison 6.
+// Round 60: the field written directly with an if clamp 6, with a named limit 6, with a ternary 6; a min helper over the
+// field 6; incremented and clamped values named 6; a saturating helper on a short pointer 6; a short reference 6; a
+// by-value saturating add 6; a short current value 6; the clamp as its own statement 6; two stores in if/else arms 38; a
+// guarded `(*ticks)++` 11. Retail's clamp pattern occurs nowhere else in the image, so no shared helper exists. A ticks
+// helper in the loop 6, with the player accessor 6; the player accessor alone 6; the expiry update as a forceinline
+// helper per message 6, or for the whole loop 6; an expiry test helper 145 (the loop falls away).
 // @retail 0x24cdd8
 void function_24cdd8(long player_index)
 {
@@ -577,7 +583,7 @@ void function_24ce9d(word const *text, long left, long top, short_rectangle2d *b
 /* draws a local player's HUD messages: the scripted message at the top,
    the list of messages, then the timed message and the status text at the
    bottom */
-// score 115 (was 115): frame 0x264 agrees; predicate packing, the left word and color/rectangle/scalar homes differ.
+// score 114 (was 114): frame 0x264 agrees; predicate packing, the left word and color/rectangle/scalar homes differ.
 // frame 0x264 agrees; predicate packing, left-word and color/rectangle/scalar homes differ; both text helpers match.
 // frame 0x264 agrees; predicate packing and color/rectangle/scalar homes still differ.
 // frame 0x264 agrees; predicate packing, color/rectangle/scalar homes and the text-buffer call convention still differ.
@@ -700,6 +706,10 @@ void function_24ce9d(word const *text, long left, long top, short_rectangle2d *b
 // 120/121/121/121/121/120/114/114.
 // Frame 0x264 agrees; predicate packing, left word and color/rectangle/scalar homes remain. Fast control
 // 114; plain 115. Original executable body restored.
+// Round 54 (m3 lane 14, fast; control 115): message height declared before the three flags 128; the status
+// line position declared before the game time 122; text height as a short 340 (1895 B); the status duration
+// as `value ? value : 1` 116; timer alpha as a compound `*=` 115 (same code). Retail's tutorial colour is
+// `flag ? a4 : (bit ? a8 : a4)` with the a4 arm first and the bit test jumping back to it.
 // @retail 0x24cf66
 void function_24cf66(long local_player_index)
 {

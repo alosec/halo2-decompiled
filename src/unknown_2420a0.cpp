@@ -181,7 +181,7 @@ void function_15e130(long object_index);
 void __stdcall function_b8540(long a);
 void function_157670();
 void function_15e4d0();
-color3f *function_7f720(color3f *color, short team_index);
+color3f function_7f720(short team_index);
 bool function_bacc0(long object_index, long index, point3f const *point);
 bool function_138860();
 bool function_138880();
@@ -588,6 +588,36 @@ long function_243b10(long key_b, bool team_only, long *second)
 // distance 169 (aligned 83 against 54); `slots` read after the 0x19ec40 call 169, with the accumulated distance 169.
 // Lead: `test; mov ebp, [g]; jne` is the same first instruction of both select arms merged upward, so retail's else arm
 // loads the table twice; every form that reads the global outside `slots` hoists it out of the loop.
+// Round 140 (m3 lane 5, fast with 0x19ec40 and its three callees): one `point3f *bounds` picked by `k == 0 ?
+// &bounds[0][slot] : &bounds[1][slot]` as matched 0x244680 does, with the accumulated distance, 388 (499 B: retail
+// really repeats the k test at each use); the accumulated distance computed inside each k arm 197 (743 B, VC does
+// not merge the two copies upward); the table through the global at each use 200 (688 B; both select arms then load
+// it into their own scratch register and nothing stays in EBP); `short key` 173 (same code); a function-scope pointer
+// to g_4e0350 for the position and the inner loop 178.
+// Round 61 (m3 lane 10, fast with 0x19ec40/0x1e5bb0/0x1e2a90/0x29b00/0x240160): retail reloads the table from
+// g_51ec80 itself after borrowing EBP (`mov ebp, [0x51ec80]` in the clause code) where ours reloads the `slots`
+// local's spill; the global at every use re-measured 200 (688 bytes, as rounds 89/115; both select arms then load
+// it into EAX/ECX and EBP stays free); on it the accumulated distance 200 (as round 115), `if (marker_index == NONE)
+// continue;` 200, `k != 0` with the arms swapped 200, the array selected by k and then indexed 191 (691 bytes, caller
+// 0x240160 46). On the current body: the key as `mode_180 == 9 ? 3 : 1` 173 (same code); dy computed before dx 174;
+// the bound-update arms as `if (k != 0)` with the arms swapped 173.
+// Round 65 (m3 lane 10, fast with 0x19ec40/0x1e5bb0/0x1e2a90/0x29b00/0x240160): the select as `!k ? ...` 173; on the
+// accumulated distance: the clause through ctf_options() 173, a const marker point 173, the other position as a const
+// reference 219 (666 B), the inner loop as `while` with `j++` at the body end 173.
+// Round 79 (m3 lane 9; fast with 0x19ec40/0x1e5bb0/0x1e2a90/0x29b00/0x240160, plain confirmed): kept: no table
+// local (g_51ec80 at each use), the bounds init stores before the query and round 87's accumulated distance 146
+// (711 bytes, retail's length; the else arm's global reload is now retail's; k is spilled and the count held in EBX
+// where retail spills j and count and keeps k in EBX and the table in EBP). With the slots local, the init stores
+// before the query 185 (711 bytes). On 146: the init stores between the query and the point copy (retail's order)
+// 142 (caller 0x240160 46: not kept); the marker select as if/else 184; k declared in its for 146; results at
+// function scope 146; plain sqrt(dx * dx + dy * dy) 150; the key before the init stores 186 (caller lost).
+// NOT kept (review): the 146 combines a re-read of g_51ec80 at each use where retail holds the table in EBP,
+// the init stores placed before the query where retail stores them after it, and a two-statement distance
+// sum: a combination picked by score; body restored at 173.
+// Round 67 (m3 lane 1, plain with 0x240160/0x19ec40; fast differs here: fast 203 for the plain 173): the accumulated
+// distance `d = dx * dx; d += dy * dy;` 173; the `slots` local declared at the top of the k loop 169 (717 bytes, but
+// the slot argument moves to the stack and caller 0x240160 drops to 46: not kept); `sqrt(dy * dy + dx * dx)` 173
+// (same code); `if (marker_index == NONE) continue;` 173; the init stores through the existing real_point3d_set 200.
 // @retail 0x243c00
 void function_243c00(long slot)
 {
@@ -1512,6 +1542,11 @@ long function_2421d0(long team)
 // variable assigned in the flat arms 17; shared peer and block variables in nested arms 74 (212 bytes);
 // force-inline tag helper 17; result initialized at its declaration 17; existing peer accessor 17;
 // const peer receiver 17. Original body restored.
+// Round 31 (lane 18, fast): an inline helper(bool bomb) with its own NONE result, the peer test and a two-use
+// block local (ternary, if/else, or two `mp_globals_block()` calls), the caller branching on the type with
+// true/false, 64/64/64 (211 bytes); that helper called once with `engine_type == 9` 153 (93 bytes); a
+// helper(bool) holding only the block local and the ternary (or if/else) in the existing arms 17/17 (the
+// constant folds before allocation). Original body restored.
 // @retail 0x242210
 long function_242210(point3f const *point)
 {
@@ -1582,6 +1617,10 @@ void function_2422d0(long slot)
 // This round: team-entry field reference 104 (267 bytes); register index/object/both 7 each;
 // accepted field reread 54; rejected field reread 50; both field rereads 104; nested two-use
 // table-entry pointer 7; force-inline object getter 7. Original body restored.
+// Round 31 (lane 18, fast): the object pointer defined from the team entry before the index local 7; the
+// accepted store through the slot local 31; the call on `object->slot` with the table test on the slot
+// local 31; the second loop's element in a named local 7; the rejected count copied to a loop bound 7.
+// Original body restored.
 // @retail 0x2423f0
 bool function_2423f0()
 {
@@ -1986,6 +2025,14 @@ long function_242ef0(s_242ef1 arg_0, long team)
 // getter tail 65; the existing initializer and cause setter as calls 123-129 (190-196 B); local initializer storing the
 // subtype first 64, type last 63, in retail's fill order 63, the last two with the getter tail 67. Lead: flags dependencies keep the
 // IL order, so retail's `neg al` before `cmp ebx, 9` means the subtype chain really precedes the type chain.
+// Round 65 (m3 lane 10, fast): both ternaries inverted together 53; the time test joined into the outer test 53; the
+// index as `(word)player_index` 64; the hold product named 53. Diagnostic, reverted: the asm rounding as a C cast 63
+// (EBP still taken, so the asm block is not what keeps the engine type out of EBX).
+// Round 140 (m3 lane 5, fast; each on the getter tail `function_146650() + rounded` with the getter at the time test
+// too): the cause team stored before the cause player 60 (260 B); the type as `long type = 3; if (engine_type == 9)
+// type = 10;` 57 (first difference moves up to +0xc, and matched 0x241620 then differs by 1), the inverted
+// `type = 10; if (!= 9) type = 3;` 57 (0x241620 1), both type and subtype in that if form 64 (259 B), the type if form
+// with the team first 58.
 // @retail 0x2430a0
 void function_2430a0(long player_index, bool flag)
 {
@@ -2101,9 +2148,8 @@ void function_243a20(long object_index)
 
 	if (object->slot != NONE)
 	{
-		color3f buffer;
 		long team = object->slot;
-		color3f color = *function_7f720(&buffer, (short)team);
+		color3f color = function_7f720((short)team);
 
 		function_bacc0(object_index, 0, (point3f const *)&color);
 	}
@@ -3062,8 +3108,8 @@ void c_game_engine_markers::v14(long arg_0)
 				bool local_24 = !local_22 && !local_23;
 				bool local_25 = false;
 				bool local_26 = false;
-				color3f local_27;
-				s_color_bits local_28 = *(s_color_bits *)function_7f720(&local_27, (short)local_15);
+				color3f local_27 = function_7f720((short)local_15);
+				s_color_bits local_28 = *(s_color_bits *)&local_27;
 				if (local_23 && ctf_player_get(local_16->lc)->team == local_1->team)
 					local_25 = true;
 				if (ctf_options()->engine_type == 9 && g_51ec80->flag_bits[local_15].bit3)
@@ -3129,12 +3175,14 @@ void c_game_engine_markers::v14(long arg_0)
 								long local_36 = slot_object_get(local_35)->slot;
 								if (local_36 != NONE)
 								{
-									color3f local_37;
 									s_color_bits local_38;
 									if (local_36 == 8)
 										local_38 = *(s_color_bits *)g_468714;
 									else
-										local_38 = *(s_color_bits *)function_7f720(&local_37, (short)local_36);
+									{
+										color3f local_37 = function_7f720((short)local_36);
+										local_38 = *(s_color_bits *)&local_37;
+									}
 									function_2440a0(&local_14, local_35, (point3f *)&local_38);
 								}
 							}

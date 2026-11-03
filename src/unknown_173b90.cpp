@@ -644,6 +644,23 @@ typedef void (__stdcall *particle_callback_175610)(s_particle_175610 *, s_partic
 // copies, next index early or late and named values: the rotations never get closer than row i's up/forward
 // pair (score 20 of 65 ops against 22 now); indexed with scale first and the mask at each use has the current
 // rotations but the integer homes turn over (232, round 61).
+// Round 343: Native property-bit views, alpha/color/scale subsets 1..7 with Boolean conversion
+// 124/224/229/42/124/224/229; all bits tested directly 199. Original real flag storage,
+// all six observations, shared rotations and complete body restored; offset/default/reload and row-i schedule remain.
+// M3 lane 4 r157 (fast): the particle pointer declared at the emitter body's top or before the particle loop, the
+// emitter pointer declared before the emitter loop 42/42/42 (identical); indexed definitions with scale first 113
+// (re-measured, 1136 bytes), with the motion rotated before the position 116; the emitter-mask refresh before the
+// frame query 140 (1131 bytes); the particle copies after the particle-mask refresh 340 (1172 bytes).
+// AC495: Actual cache identity field system/location/particle pointer types, seven subsets,
+// then all with immutable emitter-row receiver: eight at 42, 1130 bytes. Original field types,
+// declarations and complete body restored; offset/default/reload and row-i residence remain.
+// M3 lane 4 r159 (fast): scale first with the emitter definition declared first 40; declared first alone 42; offset as a for-loop init with scale first 40;
+// on the indexed form with scale first: scale through a shared inline 113, rotated offset local 196 (1086 bytes), motion rotated first 116, matrix local 112
+// (1134 bytes), `+=` origin 113, particle copies swapped 121.
+// Round 122 (lane 7, fast; base 42 [aligned 38]): position rotated from the particle's own position into
+// the copy (not in place) 189 (1131 bytes); motion rotated from the particle's velocity into the copy 143
+// (1136); origin/result pointers declared before the rotation 42 (same code); scale first with the motion
+// rotated before the position 90; scale first with origin declared first 40 [36] (the 1.0 stores only).
 // @retail 0x175610
 void function_175610(s_particle_value_cache *cache, s_particle_system_datum *system, s_particle_location_datum *location, particle_callback_175610 callback, void *context)
 {
@@ -1146,6 +1163,26 @@ public:
 // M299: Actual forward/up/left output-axis pointer subsets
 // [296, 184, 277, 184, 296, 184, 277], all before particle lookup 275.
 // Original axis addresses, workspace lifetime and complete body restored.
+// Round 137 (aligned count in brackets, baseline 184 [78]): magnitudes xyz (the order retail and 0x11d000 use)
+// 248 [76] at retail's 1355 bytes, xzy 189 [83], yxz 248 [81], yzx 240 [82], zyx 237 [86], with staged cross
+// 248/248/184; retail keeps forward.j in XMM2 from before the normalization branch, which no form reproduced.
+// Parent colour local after the position copy 255 [86] (retail's [esp+0x28] home); plus a named child
+// definition for the tag read 252 [79] at 1364 bytes (tag in ECX as retail, match-only); twelve orders of the
+// scale/position/colour/spawn stores on that 252 [79..82]; tag switch written in place 255 [86]; multiplied
+// and tinted read into locals 273 [130]. Body unchanged.
+// Round 122 (lane 7, fast; base 184 [aligned 78]): default-case negation written per component
+// (diagnostic, an existing helper by hand) 248 (1355 bytes; the velocity still loads after the -1.0
+// constant); valid/fallback arms swapped (`== NONE ||` first) 184 (same code); xyz magnitudes plus the
+// parent colour in a local after the position copy 261 [84] (1363 bytes); arms swapped plus xyz
+// magnitudes 248 [76] (1355 bytes, as xyz alone); magnitudes written in the tests (no locals) 285 [167].
+// M3 lane 9 r83 (fast; 0x175270 stays matched): the spawn record filled location index first (retail stores it
+// before the scale divide) 182 (two points, not kept); on it: location, dt, then scale 184; the spawn declared and its
+// location stored ahead of the matrix scale/position 182; the position copied before the 1.0 scale 182; the spawn
+// declared with the matrix 182; the location stored at the top of the particle block 228. Retail reads the parent
+// colour into EAX between the position copy's dwords and keeps the child tag index in ECX for the group lookup.
+// Round 85 (m3 lane 12, fast): spawn location index stored before the scale 182, the dt store first 183; the position
+// copy before the 1.0 scale store 184; the tag count test as `tag->count() > child->unknown24` 185, with the location
+// index first 183. Body unchanged.
 // @retail 0x174a30
 bool function_174a30(s_particle_system_datum *particle_system, real dt)
 {
@@ -1496,7 +1533,7 @@ void __stdcall function_174420(long system_index, bool view_pass, bool camera_re
 long function_155760(long index);
 bool function_17afd0(long effect_index, long value);
 
-// score 73 (was 73): frame 0x14, NONE/owner and Boolean stack homes agree;
+// score 47 (was 73): frame 0x14, NONE/owner and Boolean stack homes agree;
 // flag width, availability and view carriers remain.
 // Earlier: the availability flag written as `query(view) == 0` 102 (the
 // same code as the negation), the definition's bit 9 as (bool)(((dword)word >> 9) & 1) 128 (491
@@ -1619,6 +1656,39 @@ bool function_17afd0(long effect_index, long value);
 // M299: Attachment effect-first/nullable-conditional/complete/nested results,
 // original and shifted-word flags [72, 132, 134, 134, 113, 116, 87, 86].
 // One-point form rejected; original attachment result and eligibility restored.
+// Round 137 (aligned count in brackets, baseline 73 [58]; retail: availability BL from before the query, view ESI,
+// effect index EDI, owner EBP, same view on the stack): plain owner x availability false-then-set, nested, one
+// expression, two-step x view local, at each use, reread x bit 9 mask, shift: 102..148 [51..74], best aligned one
+// expression with the shift 123 [51]; false-then-set with every local at function scope, eight orders, 138 [61];
+// effect pointer kept x availability false-then-set, expression, two-step x mask, shift x view reread: 73..160
+// [55..88]. Same view keeps BL over availability in every false-then-set form. Body unchanged.
+// M330: Positive valid-view outcome cleared on query failure, bool/byte/short/long,
+// original/shifted-word eligibility: 134/134/142/139/126/126/132/129. Frame grows
+// to 0x18; original availability gate, snapshot and complete body restored.
+// Round 543: Early visibility result/complete eligibility/nested admission/negative rejection,
+// original then shifted-word flag: 73/238/73/73/113/244/113/113. Original two-use effect graph
+// and complete executable body restored; flag width and availability/view carriers remain.
+// Round 549: Same-view tests owner/available/equal, equal/owner/available,
+// equal/available/owner, available/owner/equal, available/equal/owner on the
+// two-use effect graph: 72/73/72/132/132; shifted-word flag with the first/fourth/fifth
+// orders 114/106/106. Last two recover retail length and entry through +0xb2.
+// NOT kept: one-point best or regression; original body restored.
+// F346: On the retained two-use effect graph, last-consumer scopes for owner, availability,
+// both and complete effect/classification, each original/shifted-word eligibility:
+// 73/113/73/113/73/113/73/113. Original complete executable body restored.
+// M3 lane 4 r159: 47 (was 73): the shifted flag, owner as if/else without the effect pointer, availability false at the arm's top, `available = !query`, attached
+// testing the effect index. Left: availability's false store belongs after the view read, retail's query test is test/jne/mov bl, 1, and retail reloads the view
+// after the attached query. Tried, aligned count in brackets: availability set only on success 135 [58]; availability false right before the query 133 (488 bytes)
+// [45]; false at the loop-body top 130 (498 bytes) [14]; owner default at the arm's top 47 (495 bytes) [6], owner after the second lookup 133 (496 bytes) [17], owner at
+// the loop-body top 154 (504 bytes) [42]; view at each use 110 (500 bytes) [5]; same_view false at the arm's top, set on the test, availability set on success 111 (492
+// bytes) [3], the closest shape: same_view's early false store keeps it on the stack and BL for availability, but the store shape differs; if/else same_view 131 (504
+// bytes) [57], with an early false 131 [57], with an inline out parameter 131 [57]; byte same_view 121 [51]; byte/char availability 131/131 [57/57]; two-step same_view
+// 117 [55]; named query result 47 [5].
+// Round 122 (lane 7, fast; base 73): availability false-then-set 144 (507 bytes); attachment gated on
+// effect_index != NONE instead of the effect record 102 (486 bytes: owner/NONE coalescing lost); view global
+// at each use 143 (502); bit 9 as (bool)(((dword)word >> 9) & 1) 113 (500); owner declared before the effect
+// record 73 (same code). Retail: effect index EDI, view ESI, owner EBP, availability BL; ours effect index EBX,
+// record ESI, view EDI.
 // @retail 0x174220
 void __stdcall function_174220(bool view_pass)
 {
@@ -1630,24 +1700,23 @@ void __stdcall function_174220(bool view_pass)
         s_effect_particle_system_definition *definition = system->function_1751d0();
         short cluster = system->location.cluster_index;
         if (cluster != NONE &&
-            ((*(word *)((byte *)definition + 0x16) & (1 << 9)) ||
+            ((bool)((*(word *)((byte *)definition + 0x16) >> 9) & 1) ||
              bit_vector_test(g_547f88.flags, cluster) || function_3eb20(cluster)) &&
             system->unknown4c == NONE && system->location_index != NONE)
         {
             long effect_index = system->effect_index;
+            bool available = false;
             definition = system->function_1751d0();
-            s_effect_datum *effect = NULL;
-            long owner = NONE;
+            long owner;
             if (effect_index != NONE)
-            {
-                effect = DATUM(g_4ea93c, s_effect_datum, effect_index);
-                owner = effect->unknown58;
-            }
+                owner = DATUM(g_4ea93c, s_effect_datum, effect_index)->unknown58;
+            else
+                owner = NONE;
             long view = g_4b9ed8;
-            bool local_287b6e_2 = view != NONE;
-            if (local_287b6e_2) local_287b6e_2 = !function_155760(view);
-            bool same_view = owner != NONE && view == owner && local_287b6e_2;
-            bool attached = local_287b6e_2 && effect != NULL && function_17afd0(effect_index, view);
+            if (view != NONE)
+                available = !function_155760(view);
+            bool same_view = owner != NONE && view == owner && available;
+            bool attached = available && effect_index != NONE && function_17afd0(effect_index, view);
             bool draw = same_view == view_pass;
             bool camera_relative = false;
             if (same_view)

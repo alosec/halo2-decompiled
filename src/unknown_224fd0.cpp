@@ -79,8 +79,8 @@ PRIVATE __forceinline void draw_rotation(vector3f const *axis, real sine, real c
 	out->left.k=axis_sine.i+jk;
 }
 
-// MiniMax S (11-01): no new form, no lower score.
 // score 219 (was 219): Frame 0x6c, length and setup prefix agree; axis-specific rotation/cosine spills, basis registers and the four-byte table placement remain.
+// MiniMax S (11-01): no new form, no lower score.
 // Earlier at 219 (was 380): frame 0x6c and length agree; the rotation case bodies are scheduled differently
 // (retail squares k first and spills it, keeps the sine products in registers and reloads cosine), the
 // case 0 and 1/2 basis crosses colour their registers differently, and the jump tables sit 4 bytes
@@ -190,6 +190,43 @@ PRIVATE __forceinline void draw_rotation(vector3f const *axis, real sine, real c
 // complete squares/before complete squares 440/444/436/351/444; with staged crosses/
 // complete cosine complement/native in-place sine input 440/223/404. Original helper,
 // sine observations and complete body restored; axis-specific spills remain.
+// Round 377: Native diagonal output stages and cosine-product parts 204/204/204; paired
+// output stages/results 219/219; second-pair output stages 204; complete stages 190;
+// diagonal stages with paired results 204. Original helper/body restored.
+// NOT kept: 204 has only two fewer executable rows (198 -> 196); thirteen raw points are table data.
+// NOT kept: 190 combines a tying paired-output form with diagonal stages; allocation steering.
+// F338: Actual forward/left/up output-row receivers in the existing rotation producer,
+// seven subsets then all declared at first output: 217/217/217/491/491/491/220/220.
+// NOT kept: two-point gains and unproven field-receiver shape. Original helper/body restored;
+// axis-specific product/cosine spills, basis homes and four-byte table placement remain.
+// B381: native square/sine/both workspace input copies, square-first/sine-first, then CRT
+// square/sine/both copies: 273/444/466/466/273/408/466/466. NOT kept: value-copy/input-ownership forms require
+// exact matching. Original frame, axis-specific product/cosine spills and basis homes remain.
+// Round 43 (m3 lane 2, fast): the rotation helper in retail's computation order (k square, sine
+// products j/i/k, i square and forward.i, ij rows, j square and left.j, ik rows, up.k, jk rows) 368
+// (1824 B); a named 1-cosine local 452 (1756 B, frame changes); the j/i/k sine products before the k
+// sine and i square 382; forward.i right after the sine products 357; left.j right after the j
+// square 350. Retail's second switch keeps its range check as ours does; the 4-byte table shift follows
+// the case-body schedule. Original helper restored.
+// B385: Existing camera/direction basis providers and composed-return receiver, subsets
+// 1/2/4/3/5/6/7, 222/221/622/495/623/622/628; all with basis output 429.
+// Original complete body/declarations restored; axis-specific spills and table placement remain.
+// Round 205 (m3 lane 3, fast): the rotation's statements in retail's first-case flow (k^2, k*s, i^2, j*s, s*i,
+// forward.i, ij rows, j^2, ik/jk, left.j, ik rows, up.k, jk rows) 352 (1812 bytes); four more random
+// dependency-respecting orders 400/412/426/433 (1824/1884/1780/1784 bytes). The kept order stays the best.
+// Also: the two matrices declared basis first 219, the rotation helper's axis by const reference 219 (same code).
+// Round 64 (lane 10, fast; masked = aligned, registers and stack offsets ignored, 87 here): the rotation's statements in retail's order (forward.i straight after the sines, left.j before ik, up.k before jk) 368 (1812, masked 68);
+// with j and k first in the products 347 (1816, masked 75); with a named complement and k*complement 386 (1804, masked 80); with k*complement alone 368 (1808, masked 79), and j first in ij as well 368 (1808, masked 79);
+// complement alone on the current order 451 (1756, frame 0x68, masked 77); k*complement alone on the current order 220 (1836, masked 82). Retail's two arms multiply in different orders (j, complement, i against complement, i, j) from one helper.
+// Round 68 (m3 lane 10, fast): VC reassociates the complement products here (our case 1 computes ij as
+// (C*i)*j from `(1-c)*j*i`; retail case 1 (j*C)*i, case 2 (C*i)*j, k*C shared by ik/jk in both), so the two
+// retail copies differ by operand rank, not by source. The rotation helper as plain `inline` 219, with the
+// output by reference 219, with sine/cosine read through pointers 219, the diagonal terms through a forceinline
+// helper 219 (all same code); the orientation read once into a local for both switches 495 (1716 bytes). Restored.
+// Round 82 (m3 lane 16, fast): the rotation helper as plain `inline` 219, with the axis by const reference 219, with
+// the output parameter first 219 (all three identical code: its interface does not reach the schedule); sine and cosine
+// in separate declarations 219 (same code); the cross terms as j*(1-c)*i, k*(1-c)*i, j*(k*(1-c)) (retail's operand
+// order) 403 (1788 bytes).
 // @retail 0x224fd0
 void __stdcall function_224fd0(s_draw_mesh_seed const *seed, s_draw_value_cache *values,
 	point3f const *position, vector3f const *direction, real scale, color4f const *color,

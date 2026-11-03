@@ -212,6 +212,30 @@
 // receivers, complete rows/paired phases and separate/nested returned receivers:
 // 772/772/844/766/925/837/909/839. All regress; original perspective expressions, helpers,
 // frame graph and sixth-component conversion restored.
+// Round 540: Returned scaler output consumed by first/second/both wave adds and
+// point-setter/second-return contract 690/581/690/581; complete read-only basis inputs
+// on those graphs 690/581/690/581. Frame stays 0x58; first-wave shared addition grows
+// to 2654 bytes. All producers, basis contracts and complete body restored.
+// Round 545: Native indexed input scaling/copy producers, first-scale/second-pair/copy
+// subsets 1/2/4/3/5/6/7 and complete unsigned-counter graph 581/581/699/581/699/699/699/699.
+// Original scalar producers, helpers, sixth conversion and body restored; frame 0x58/0x60 remains.
+// Round 139 (m3 lane 5, fast; both ret 0x20 now): both shape pointers NULL then if/else 622 (2622 bytes), inv after
+// them 636, shape1 declared first 622; the 575 composite (plain sixth product, entry shapes, global sine arguments,
+// first wave through vector3f_add_scaled; six, under the bar) re-measured 575; on it the four trig factors as named
+// doubles 615 (forward-substituted), cos 7.75y first in the sum 575, the inner product parenthesised 575, wave_shift
+// declared before s1 575, second wave through vector3f_add_scaled too 642 (2600 bytes).
+// Round 548: Complete memmove history/point-publication/fallback-axis boundaries,
+// subsets 1/2/4/3/5/6/7, then all with both input snapshots: 709/688/677/675/725/698/659/694.
+// NOT kept: library/clobber/frame shape misses; every native copy, include and full body restored.
+// Round 160 (fast): both shape pointers NULL then if/else, either order, 622/622 (2622 bytes); plus the global sine
+// arguments 604 (2642), plus the first wave through vector3f_add_scaled 578 (2626), the second wave instead 622; the
+// sine arguments and first wave without the entry shapes 670; the 575 composite re-measured 575, on it amp written
+// into the call 629 (2606), k written into the call 583, both 642 (2595), the cross product between s1 and s0 575;
+// the plain sixth product alone 648. The composite stays out: its sines read the global while the waves use a copy.
+// Round 203 (fast): ret 0x20 agrees (frame 0x58/0x60 and the entry shape homes remain); both shape
+// pointers as entry ternaries with the default case reading shape0 708 (2650 bytes); the wave scales
+// written inside the two scale calls 670; the first cross product at function scope 581 (same code);
+// the inverse declared after shape1 583; the special flag computed first 715 (2657 bytes).
 // @retail 0x497a0
 void function_0497a0(
 	s_view_source *source,
@@ -551,7 +575,8 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Round 16: the argument registers agree (ECX is the source, EDX the result, the camera and the
 // flags on the stack); retail keeps the vertex cursor in EDI and ours leaves it in its argument
 // slot, and retail reaches the endpoint handling by a forward branch from the loop.
-// score 265 (was 265). Lane 4 r155 reached 230 (not kept by the coordinator, see below): frame 0xac agrees (the u/v texture scale as a vector2f: retail's
+// score 265 (was 265): frame 0xa8 versus retail 0xac; first-edge Y, half-width, cursor and color homes differ.
+// Earlier: Lane 4 r155 reached 230 (not kept by the coordinator, see below): frame 0xac agrees (the u/v texture scale as a vector2f: retail's
 // dead home just below v + width is its unused i), case 1/2's side direction is a vector2f normalized by the existing
 // normalize2d_fast, and case 0's second point takes XMM0-2 as retail; the first point's z/x/y and the half width take
 // XMM4/XMM5/XMM6 and XMM3 where retail has XMM3/XMM6/XMM5 and XMM4; the side's home is one slot above retail's (u and the side
@@ -789,6 +814,40 @@ PRIVATE __forceinline dword ribbon_pixel(color4f const *color)
 // Coordinator: not kept. The vector2f local exists to shape the frame (its i is dead, its j becomes v + width; a locals-
 // grouping form), and case 0's order was picked from 36 by score. The two existing normalize helpers alone (normalize2d_fast
 // on a side vector, normalize3d on case 0's normal) give 260 fast: a gain of 5, under the bar. Body restored.
+// F336: Complete opacity clamp lower-else/upper-else/lower-upper/upper-lower,
+// field then actual opacity value storage: 265/269/265/269/276/278/276/278.
+// Original product, its intermediate, signed zero, record publication and complete body restored.
+// Round 540: Twice-used per-channel lower/current input values, initial/next/transition
+// phase subsets 1/2/4/3/5/6/7, 553/550/265/588/553/550/588; all with width owning
+// its transition input 582. Next-phase forms recover frame 0xac but grow the body;
+// NOT kept: no gain or match, and changed load ownership. Original complete body restored.
+// F336: Complete opacity clamp lower-else/upper-else/lower-upper/upper-lower,
+// field then actual opacity value storage: 265/269/265/269/276/278/276/278.
+// Original product, its intermediate, signed zero, record publication and complete body restored.
+// Round 545: Native color/width default producers, aggregate/library color seeds,
+// separate/both defaults and positive state arms 336/577/561/615/336/578/558/616. All original
+// output producers and body restored; frame 0xa8/0xac and spill homes remain.
+// Round 139 (m3 lane 5, fast): with the 4-byte frame shift u_step and the first.y spill already sit in retail's slots;
+// retail's v + width lies at +0xac over a dead dword. v_width read before v 266; `v_width = v + v_width` 265; u_step
+// before u 265; width scale in its own local 265; `width` declared before `color` 265; `previous` before `index` 265.
+// Round 548: Complete double length residence in vertical/planar/camera-pair subsets
+// 1/2/4/3/5/6/7, then all with double reciprocals: 433/544/605/556/635/515/632/633.
+// NOT kept: precision/normalization shape misses; original float roots, reciprocals and full body restored.
+// Round 38 (m3 lane 18, fast): v_width renamed to sort first/last 265/265 (identical code); the colour stored
+// `outer->color = vertex[0].color = ...` 263 (retail's store order; a gain of 2, not kept); on it: source and u
+// renamed 263, transition declared at the top 263, a named pixel stored to vertex 0 then outer 263, a named strip
+// start for the tail 615 (2600 bytes), the next state's colour as a color4f 263. Retail leaves 0xa8/0xb0/0xb8
+// (after the pushes) unused and spills point y at 0xb4: its top homes sit eight bytes apart.
+// Round 552: branch-produced V endpoint; separate signed U producer with original/separate/branch
+// V; branch-produced U with original/separate/branch V; conditional signed U with branch V:
+// 615/265/265/615/286/286/632/632. Original texture values, geometry, helper and full body restored.
+// NOT kept: no score gain or byte match.
+// m3 lane 16 r83 (fast): case 4's side and normal lengths spelled i, j, k give retail's x87 order there (fst k,
+// fmul k, then j, i) but 374 (2588 bytes; as DH278's camera squares): ours is already one instruction short in
+// case 1/2, where retail keeps the x product live and loads point x into its own register (movss xmm6, [ecx];
+// addss xmm6, xmm5), so everything after case 4 shifts. Side only 374, both 374; with case 1/2's first.x before
+// second.x 374 (VC copies the product instead); with normalize2d_fast on a case 1/2 side vector and normalize3d
+// on case 0's normal 368; that with the x pair before the y pair 372. All restored.
 // @retail 0x42cf0
 bool __stdcall function_42cf0(s_ribbon_vertex *vertices, long unknown, s_ribbon_input *input)
 {
@@ -1178,6 +1237,30 @@ void __stdcall function_43720(s_43740_input *input)
 // readonly aggregate/sparse library copy, count from published request 79/105/105/79;
 // count from producer header 81/105/105/81. Extra producer forms require exact
 // equality; all restored. Entry tag/EBP split and signed-slot/shader homes remain.
+// Y547: Fresh submitted identity reassigned to the original tag, with shader-relative
+// normal/two-use signed count/direct position masks 0..7: 62/67/64/66/62/67/64/66.
+// Exact-only field-result forms restored; early tag/EBP and signed-slot/shader homes remain.
+// N334: Bitmap/texture phases share tag admission in bool/byte/short/long storage,
+// nested then combined consumer guards: 73/73/76/75/73/73/76/75. All extend the body; original
+// complete source restored. Early EAX/EBP tag admission and signed-slot/shader homes remain.
+// Round 33 (m3 lane 18, fast; 0x42b20 checked each time): a long slot index declared at entry for
+// both arrays 79 (223 bytes, 0x42b20 60); the record as one aggregate initializer 87 (229 bytes,
+// padding zeroed); the group lookup through `(word)tag` 67 (204 bytes, 0x42b20 4); the record
+// filled before the texture test 74 (218 bytes); the vertex count without the short cast 68
+// (203 bytes). All restored; the early EAX/EBP tag split remains.
+// Round 203 (fast; 0x42b20 checked each time): the tag field read at the test, the call and the lookup
+// (no local) 62 (same code); a short vertex-count local computed first, used by the record and the call
+// 64 (0x42b20 4); the position through a typed ribbon point pointer 62; the record declared at function
+// scope 62; the group lookup folded into the image address 62.
+// Round 35 (m3 lane 18, fast; 0x42b20 checked each time): the vertex count stored first 65; the slot
+// stored after the shader and normal 62; an early `return` when the tag is NONE 62; the record declared
+// at function scope 62; a block-local long point index for both arrays 62; the vertex count
+// pushed from its own expression (no short store) 66 (215 bytes). All restored.
+// Round 160 (fast; 0x42b20 checked each time): the tag test on the field with the tag local inside it 62 (same code);
+// a long slot index for both arrays 62, with the vertex count named first 64 (0x42b20 4), the shader local and
+// shader-relative normal too 65 (213 bytes, 0x42b20 62), the shader field-relative only 65 (213, 0x42b20 62); a named
+// short vertex count without the slot index 64 (0x42b20 4), a long one 65. Retail's definition stays in EBX and its
+// slot word in DX only without those; all restored.
 // @retail 0x43740
 void function_43740(s_ribbon_source *source, s_ribbon_definition *definition, short slot)
 {

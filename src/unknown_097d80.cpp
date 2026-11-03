@@ -274,8 +274,34 @@ struct c_aggregate : c_child
 // Round 521: repeated cleanup block/item/both record references, original/query-only
 // output scopes 31/31/31/31/31/31; block/item references with shared callback output
 // 31/31 (frame 0x8020, lowest loop homes still exchanged). Original complete body restored.
+// Round 75 (m3 lane 9; one-file LTCG harness, control 31): the output parameter as a `long &` 31, a pointer local for the output 31, the output in a local one-field struct 31, a
+// one-element array 31, both arrays in one local struct 31, the query's output in its own block 31 (frame 0x8024 each); a three-element boundary array with a separate end local 98 (frame 0x8020,
+// seven more instructions). The standing lead above is unchanged: this body built without /GL is byte-exact, and no /GL form shares the output's slot with the two loop spills (a flags decision).
 // M312: Native block-count field with shared query output/block reference/error-first gate
 // subsets 0-7: 31/31/31/31/37/38/37/38. Original body restored.
+// Round 200 (m3 lane 3, fast): produced renamed added 31; the query output renamed information 31;
+// pre-increments 31 (same code, frame 0x8024); the cleanup object read from the field at the query and
+// the release 67 (376 bytes); scalars before the arrays with produced at the loop-body top 46. Restored.
+// B384: CRT callback-zero/info-failure/both scalar stores with independent/shared query outputs,
+// then both with entry scalar CRT zeros: 31/31/31/31/31/31/31/31. Original scalar stores, independent
+// outputs and complete body restored; escaped output and the lowest loop homes remain.
+// Lane 17 r39 (fast): the error test ahead of the child test 37; the query result declared before the item
+// object 31; error and total in one declaration 31; `total = total + produced` 31; the cleanup block as
+// `blocks + k` 31. Frame 0x8024 in each; original body restored (the flags lead above stands).
+// AC501: Native callback output/capacity/source integer domains, masks 1/2/4/3/5/6/7,
+// then all with completion output after arrays: 31/31/31/31/31/31/31/42. Original interface,
+// outputs and full body restored; escaped output and the lowest loop homes remain.
+// Lane 18 round 36 (fast; local-name order): the dispatch child renamed `child` 31, the cleanup block renamed
+// `released` 31, the collection child and count renamed `collector`/`block_count` 31, the cleanup item and
+// output renamed `item`/`information` 31 (all identical listings: the swapped slots are compiler temporaries);
+// the dispatch inner loop over an `s_block *` range 129 (389 bytes). Still BLOCKED by the build flag.
+// Round 65 (m3 lane 11, fast): produced at the collection loop's for-init 42; the cleanup block at function scope 31;
+// `register` produced 31; the cleanup output before the object 31; `blocks + total` with `produced + total` 31 (frame
+// 0x8024 in all). Still BLOCKED by the build flag.
+// Round 66 (m3 lane 10, fast): the dispatch gate as `4 != request->type` 31 (same code); the callback status in a
+// local stored to error after the total is added 32; `total = produced + total` 31; the release output initialized
+// to 0 at its declaration 68 (381 bytes); total declared before error and error initialized from it 31. Frame 0x8024
+// in each; still BLOCKED by the build flag (frame 0x8020 needs `produced` to share a slot).
 // @retail 0x97d80
 long c_aggregate_450cf4::function_97d80(dword *source, s_request *request)
 {

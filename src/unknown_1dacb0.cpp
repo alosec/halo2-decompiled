@@ -1245,6 +1245,26 @@ c_type_709360 s_graph_tag::animation_find(long mode, long weapon_class, long wea
 // 1325/807/1341; cached bounds 999/808/999; urgent/both equality bounds 999/999.
 // Inheritance-only 807/808 loses matched 0x1dc8c0 to 565/558; shared-user
 // gate rejects both. Every helper/body restored; initial/output homes and zero remain.
+// N334: Complete per-attempt result defaults before/after lookup, aggregate/member transfer,
+// then the same four without the guaranteed mode default: 989/927/993/1002/988/926/992/995. Frames
+// 0x2c/0x34 and result/output homes regress. Separate candidate, iterator and full body restored.
+// Round 45 (m3 lane 2, fast, base 828): aggregate-initialized iterator 826 (as round 520's native iterator); the
+// search wrapped in `if (weapon_class != NONE)` 1040 (2857 bytes); early `return c_type_709360();` with the result
+// declared in the block 988 (2825 bytes, the early exit gets its own epilogue); the candidate after the lookup 996
+// (as listed); the three outputs set by one chained assignment 828 (same code).
+// Round 63 (m3 lane 10, plain-confirmed): the matched siblings' form (0x1dc790/0x1dc8c0: `if (weapon_class
+// != NONE)` block, iterator stores graph/step/entries then mode/class/type, first iterate before `while (!found
+// && entry)`, `found = true` or re-iterate in the else arm) 755 at 2825 bytes (twin 0x1dbc80 the same); without
+// the flag as `while (result.index == NONE && entry)` with `if (result.index == NONE)` re-iterate 755 (same code).
+// Not kept: a flag set in a test / a guard repeating the loop test, kept only on a match. On it: the loop as
+// `while (entry && result.index == NONE)` 1104; `while (entry) {...; if (found) break; iterate}` 1049; original
+// iterator store order 765; candidate renamed after the iterator outputs 755; existing 0x1ddd00 called (stays out of
+// line) 3494; early return in place of the block 995; `while (entry && !found)` 1132. Left on the 755 form: found_mode's
+// dead home goes to iterator_mode (retail: the candidate), and retail's `xor ebp, ebp` zero for the fifth type request
+// and the inheritance init (matched 0x1dc8c0 has `xor ecx, ecx` there; ours `test`, immediates and a jmp over padding).
+// Round 124 (m3 lane 7, fast): iterator outputs renamed resolved_* 828 (same code); no candidate, result
+// set in an if/else on `named` 977 (2825 bytes); a `graph` local for `this` 828 (same code); a `for` over
+// the iterate call with a found break 998 (2839 bytes); chained NULL entry stores 828. Body restored.
 // @retail 0x1db170
 c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)
@@ -1437,6 +1457,42 @@ c_type_709360 s_graph_tag::animation_get(long mode, long weapon_class, long weap
 // the candidate, no zero carrier in EBP, `this` in EBP and the mode in memory for the second request. On it: names of the result, key or iterator 1040
 // (no move); candidate at function scope 1030 (2856), loop condition on the candidate 1030, break form 1076, a reset candidate 1042; the second mode in a local 1040.
 // 0x1dd560 or 0x1236f0 marked inline on it 1040 each (no move).
+// N325: Resolved-key sentinel chain/iterator null chain/complete optional-publication
+// results, seven subsets and all with class-rejection result: 828 each. Original
+// initialization, conditions, helpers and complete body restored; homes and zero carrier remain.
+// Round 546: Alias-safe named/returned/both identifier transfers 986/977/992;
+// mixed library boundaries 977/986; alias-safe with native returned/named words
+// 1012/988; both with late candidate 1007. All regress; original complete body restored.
+// Lane 14 r55 (fast): the iterator fields in 0x1dc790's store order 828 (same code). The matched siblings' shape
+// (0x1dc790, 0x1dc8c0): `if (weapon_class != NONE)` around the body, the first lookup before
+// `while (!found && entry)` and the next in the else arm 755 at retail's 2825 B (not kept: a flag set inside a test
+// needs a byte match); on it the lookup in an inline helper 755, the candidate renamed 755, three declaration orders of
+// the outputs 755/755/755, a break in place of the flag 1049 (2873 B). Left on that form: retail homes the per-pass
+// candidate id in found_mode's dead parameter slot where ours puts iterator_mode there, so the frame shifts by four.
+// Round 42 (m3 lane 2, fast): the iterator outputs declared class/type/mode and type/class/mode 828/828 (no slot
+// moves); the three in one declaration 828; the result set in both arms of the named test (no candidate) 977 (2825
+// bytes); matched 0x1dc790's found-flag loop (iterate before the loop and in the miss arm) 995 (2825 bytes, first
+// difference +0x1c). Original body restored.
+// Round 63 (m3 lane 10, plain-confirmed): the matched siblings' form (0x1dc790/0x1dc8c0: `if (weapon_class
+// != NONE)` block, iterator stores graph/step/entries then mode/class/type, first iterate before `while (!found
+// && entry)`, `found = true` or re-iterate in the else arm) 755 at 2825 bytes (twin 0x1dbc80 the same); without
+// the flag as `while (result.index == NONE && entry)` with `if (result.index == NONE)` re-iterate 755 (same code).
+// Not kept: a flag set in a test / a guard repeating the loop test, kept only on a match. On it: the loop as
+// `while (entry && result.index == NONE)` 1104; `while (entry) {...; if (found) break; iterate}` 1049; original
+// iterator store order 765; candidate renamed after the iterator outputs 755; existing 0x1ddd00 called (stays out of
+// line) 3494; early return in place of the block 995; `while (entry && !found)` 1132. Left on the 755 form: found_mode's
+// dead home goes to iterator_mode (retail: the candidate), and retail's `xor ebp, ebp` zero for the fifth type request
+// and the inheritance init (matched 0x1dc8c0 has `xor ecx, ecx` there; ours `test`, immediates and a jmp over padding).
+// Round 61 (m3 lane 11, fast; aligned in brackets): round 78's guard re-measured 1040 (2857 bytes) [126]; the guard with the three-long key 1040 [125], plus the
+// iterator stores in 0x1dc8c0's order 1040 [119]; on that the candidate declared ahead of the iterate call 1034 (2857) [124]; the key and that store order without the guard
+// 823 (2807) [983]. Left on the guard form: 32 bytes of extra jumps and padding around the shared loops, no zero carrier in EBP, `this` in EBP (retail EBX), result in found_mode's home.
+// On the 823 form (same code each, 823): the key declared before the iterator; the iterator's entries cleared first; the key set last to first; the entry pointer declared in the loop;
+// the candidate initialised at its declaration.
+// Round 67 (m3 lane 10, fast): diagnostic, the second resource request removed: the result takes found_mode's dead
+// home and the three outputs go contiguous (retail's output layout), so the outputs' later reads decide that home.
+// The lookup in an inline helper on this do-while 828; the candidate at block scope with the loop testing it 926
+// (2825 bytes); the outputs declared bare and set by one chained `= NONE` 828; the iterator as an aggregate
+// initializer 828; no candidate, `if (named) result = named->animation_id;` 1020 (2791 bytes).
 // @retail 0x1dbc80
 c_type_709360 s_graph_tag::overlay_get(long mode, long weapon_class, long weapon_type, long set, long *found_mode,
 	long *found_weapon_class, long *found_weapon_type)

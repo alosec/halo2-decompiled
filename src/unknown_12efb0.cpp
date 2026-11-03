@@ -349,6 +349,38 @@ static __forceinline void function_12efb5(s_12efb6 *arg_0, real const *arg_1, re
 // P271 follow-up: Late two-use intensity with CWRI/CRWI/CWIR, conditional-result
 // CIWR/CWRI/CRWI/CWIR, and late two-use CRIW: 703/703/609/609/703/703/609/703.
 // Original helpers/body restored; isolated seven-point lead remains below the keep gate.
+// Round 541: Standard weighted-array multiplication ranges a/b/c, seven subsets and returned
+// output-iterator chain: 795/789/773/804/780/754/766/774. Frame becomes 0x4824; every
+// form regresses. Original ten stores, includes, helpers and complete body restored.
+// Round 54 (m3 lane 14, fast listed with 0x131030): the three-scalar helper clamping into a named weight
+// instead of reassigning its parameter 617; that helper in colour/intensity/weight/remaining order 723; its
+// scalar products as weight * value 616 (same code: ours copies the weight for the first two scalar products
+// where retail multiplies the loaded scalar in place, the 22-byte length gap); the clamp helper as plain
+// static inline 616 (same code); the merge helper's weight/remaining after its colour block 715.
+// Round 64 (m3 lane 1, fast): char palette slot 705 (3835 bytes: byte compare with -1 as retail, record still
+// in ESI); long slot 713; char slot with the record chosen by one nested ternary 705; that with the source index
+// re-read from the byte 683 (3832; ESI keeps the cluster record, the selected record moves to EDI, not EBX);
+// that with a long slot index at the top of the branch 683.
+// Lane 18 round 34 (fast): the flag declared before the index output and palette call 618; the best-weight locals
+// declared after the clears 779 (3827 bytes, +0xa); the previous-index test inverted with the scenario lookup nested
+// 616; the flag declared after the source stores 616; the short slot read right after the palette call 616.
+// Round 82 (m3 lane 16, fast listed with 0x131030): the three-scalar helper with weight/remaining after the height
+// 723 (3845 bytes), after the blue 616 (same code); the palette record's else arm as one ternary with a NULL default
+// 616 (same code); the 131030 arm's fog range clamped straight from the definition field like the palette arm
+// (`def[0x44] > 0 ? (def[0x44] < 10 ? def[0x44] : 10) : g_547f80`) 619 (3842 bytes: that clamp block then has retail's
+// shape, re-reading the field at each test), with the char palette slot 708 (3838).
+// Round 205 (m3 lane 3, plain; fast carries a 0x131030 CAVEAT): the normalization helper's output as `real (&)[6]` 616
+// (same code); the three six-field publications written in the body like the four-field one 710 (3850 bytes): those
+// three blocks then are retail's exactly (load, multiply, store in field order, intensity through the copied
+// inverse), so retail's publication is not our interleaving helper, but the loop grows; that with a char slot 723;
+// the NULL-record `goto` replaced by a second copy of the default arm 853 (3956, not tail-merged); the body
+// publications with the palette byte read at every use 698 (3842). Loop left: zero in XMM5 (retail XMM7 for the
+// whole arm), slot byte in CL with the 0x130f60 result in EDX, the accumulator store interleaving.
+// Round 82 (m3 lane 16, fast listed with 0x131030): the three-scalar helper with weight/remaining after the height
+// 723 (3845 bytes), after the blue 616 (same code); the palette record's else arm as one ternary with a NULL default
+// 616 (same code); the 131030 arm's fog range clamped straight from the definition field like the palette arm
+// (`def[0x44] > 0 ? (def[0x44] < 10 ? def[0x44] : 10) : g_547f80`) 619 (3842 bytes: that clamp block then has retail's
+// shape, re-reading the field at each test), with the char palette slot 708 (3838).
 // @retail 0x12efb0
 void function_12efb0(long arg_0, point3f const *arg_1, vector3f const *arg_2, s_12efb0 *arg_3)
 {

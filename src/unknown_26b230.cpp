@@ -525,6 +525,13 @@ PRIVATE __forceinline bool next_clump_in_pool(s_clump_pool_iterator *iterator)
 // a pointer to the field 25; a long read through `*&` 31; clump computed before the result test 12, with a long or
 // short team 31/31; before the first call with a short team 31; a long team getter by pointer or by index 3/3;
 // `clump->team + 0` 3; a pool local with a long team 31.
+// Round 41 (lane 2, fast): retail's load keeps the separate add with a widening load, a long local folds the add into the
+// load 31. Long team with a dead second field read after or before the call 31/31; a dead test of the long team 31; a
+// short team reassigned from the side 31; the side local first holding the team, long/short 70 (322 bytes)/31; prop
+// before the side call 26; in the direct argument an enum cast, unary plus, `& -1`, `& 0xffff`, `~~`, `<< 0`, `(&team)[0]`
+// and a dword cast 3 each (all still the 16-bit load).
+// Round 134: bool return 33; direct initial pool expression 31; one-use pool receiver 89; initial early return 132;
+// direct initial guard 121; found early return 144; both early exits 136; declared loop current 3. Opening body restored.
 // @retail 0x26b900
 long function_26b900(long prop_index, long actor_index, long clump_index)
 {
@@ -1998,6 +2005,26 @@ void function_269250(long clump_index, long actor_index);
 // DH296: Joint function-owned group iterator/selected/best storage subsets
 // 1-7 and all with persistent score storage, eight forms 87 each. Every original
 // per-actor initialization and per-candidate assignment retained; full body restored.
+// Round 379: Native team-admission truth at its comparison, bool/byte/short/long eligible then
+// excluded: 87/87/87/87/87/87/87/87 (fast control 87). NOT kept: one-use admission requires an
+// exact match. Original common score graph and body restored; pool/selection and x87/SSE homes
+// remain.
+// Round 127 (lane 8, fast; body 89 fast): the walk as a `for` loop with the call in init and step 343, with the
+// in-arm compare 339 (624/625 B); in-arm with the score at function scope 126; in-arm with the previous clump read
+// once into a local 144 (plain 140); in-arm with the team test's operands swapped 126.
+// Round 63 (m3 lane 1, fast; this body 89 fast): in-arm compare 126 (480, retail's fcompi); with the datum index
+// 128; in-arm with `best < score` 126, score declared per actor 126, team test as `continue` 126.
+// Also round 63 (in-arm form): best/selected declared before the activity snapshot 126; best before selected 126;
+// the actor walk as a for loop 126.
+// F350: Native created-center memcpy/memmove, actual output pointer/reference,
+// original then shared selected/created result: 87/125/87/125/87/125/87/125.
+// memcpy retains 482 bytes; memmove moves away to 464 versus retail 480.
+// Original assignment, receiver and full body restored; pool/selection and
+// x87 score homes remain.
+// Round 82 (m3 lane 9, fast; this body 89 fast, 87 plain): in-arm compare as `if (!(score <= best))` with the
+// selection stored first 128 (480 B); team mismatch `continue` then the compare 126; the common graph with the
+// selection stored first 89 (same code as fast control); the score as a ternary on the team test 128 (484 B);
+// in-arm compare ending in `continue` 126.
 // @retail 0x2689d0
 void function_2689d0(void)
 {
@@ -2262,6 +2289,30 @@ void function_269250(long clump_index, long actor_index)
 // result 137/137/247/249. False Boolean with group/unit and unit/group chained initializers
 // 83/85, also 83/85 with native node datum. Six- and four-point forms rejected;
 // original whole-group result, categories, deletion, node and tracking walks restored.
+// DH304: Whole-group owner/child comparison-result accumulation, independent bool/byte producers then joint domains, 185/207/189/206/175/196/176/181.
+// Original whole-group result and all traversal restored; category homes, deletion completion and pool carriers remain.
+// Round 127 (lane 8, fast): the cleared-prop form re-measured 3 (pool registers only); completion test as
+// `!unit && changed` 89; deletion arm ending in the full completion test 89; deletion arm as `replacement == NONE`
+// before the store 94; `changed` declared outside the clump loop 89; `if (unit) continue; break;` with a char-typed
+// tracking test 89.
+// Round 63 (m3 lane 1, fast): the 3 form re-built 3 (pool roles only); node head through prop_get(props.index)
+// 89 (same code), on the 3 form 3; head from the current prop 208 (709); nodes through prop_ref_get 180 (759).
+// Also round 63: unit initialised once from `((1 << type) & 3) != 0` 211; unit declared before the group flag
+// 87 (only the two clears swap; slots stay), on the 3 form 5.
+// F350: Native final tracking/state receiver with same/other-object cleanup
+// predicates in bool/byte/short/long, eight forms 89 each at 743 bytes.
+// One-use predicates are exact-only and restored; original categories, mutation
+// result, deletion continuation, all shared pools and complete body retained.
+// Round 82 (m3 lane 9, fast): retail's deletion arm reloads both pools and joins the unit test after `test bl, bl`
+// (0x26b093), skipping the node scan. The node scan written in both live arms 295 (837 bytes, not merged); `if (unit)
+// continue; break;` 89 (same code); the deletion arm first as `match && replacement == NONE` with the rest in its else
+// (a repeated test) 196 (741 bytes, registers rotate); the 3 form re-measured 3 (ours: node pool EDI, prop pool EBP);
+// on it the node iterator declared beside/before the prop iterator 3/3.
+// M3 lane 4 r161 (fast): the prop loop split into a matched-object arm (deletion, or replace + node scan) and an
+// else arm (state clear + node scan) so only the bottom test reads the unit flag 295 (837 B: the two node scans
+// are not merged and the pools are no longer hoisted); `changed` set only in the replace arm 92; the group flag
+// assigned from the data test and tested in place of `data` 206; the type as a long 135; the unit flag inverted
+// (`single`, cleared for units) 89 (same code, slots unchanged).
 // @retail 0x26ae30
 void function_26ae30(long object_index)
 {

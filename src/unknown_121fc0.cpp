@@ -217,6 +217,34 @@ static inline char *function_xe9ecc4(char *string, char const *delimiters, char 
 // N318: Twice-used native leading span, if/conditional token selection and nested/early null
 // entry, 182/220/182/220; with natural zero read-count 198/221/198/221. Original tokenizer
 // and loader restored; early EBP preservation and read-size/count/cursor homes remain.
+// Actual insertion cursor, displacement bound with ordinal search and pre/post publication 211/218,
+// pointer search 235/250; endpoint bound with ordinal search 213/221, pointer search 242/256. Outer
+// EBP preservation and read-size/count/cursor homes remain; original body restored.
+// Round 77 (m3 lane 9, fast): the clamp in the subscript as file_read_string writes it (no write-back) 216 (763
+// bytes); the clamp as `if (size > 0x7ff) size = 0x7ff;` 128 (same code); as `size >= sizeof(buffer) ? ...` 128;
+// the size as a long passed through a `(dword *)` cast 128; diagnostic, the clamp and terminator moved ahead of the
+// success test 129 (not semantics-preserving). Retail reads the size from its slot three times around the clamp,
+// which only a volatile size reproduces (not allowed); EBP's late save remains.
+// Round 199 (fast): retail reads the size three separate times around the clamp (compare, select, index) with
+// one store, a pattern only a volatile-qualified size gives (two reads would CSE on a plain memory variable). The
+// token table as `char const *` 128; the delimiters as a named static array 128; diagnostic, the clamp, terminator
+// and first token merged into the success test with a do-while walk 127 (EBP still saved at the walk); the
+// table-full case as `if (count >= 11) { next token; continue; }` 251 (802 bytes); the clamp right after the wait,
+// ahead of the success test 129.
+// Round 56 (m3 lane 13, fast; 0x12000 matched each time): the whole uninitialised-table block as a forceinline
+// helper 128 (EBP still saved at the walk; diagnostic, one-caller helper); the size clamp as an if 128; the next
+// pointer declared at the block's top 128; next and token declared ahead of the token table 128; the unique
+// count post-incremented in the call 128 (all same code). Compile-only: a for walk and a non-zero size test leave
+// the save late; a NULL token compared after the block saves EBP at the top but adds `xor ebp, ebp` and a setcc.
+// Round 158 (m3 lane 4, fast): `register` on the token 128; the tokenizer cursor set to the buffer at the outer block and passed to the first call 128; the
+// token declared NULL at the outer block 128; the clamp as an if 128; clamp and terminator ahead of the success test 129 (aligned 60); the success flag copied to a local for the test 128.
+// Round 48 (m3 lane 2, fast): the done/success/size out-locals declared before the three buffers 128; the
+// token walk as the matched font_table_parse's for loop (token declared before it) 128; the next-token cursor
+// declared at the block top 128; both counters at the `if (!g_4e3b40)` block top 127; the token table cleared by
+// memset 257 (724 B). EBP is still saved at the token walk.
+// N347: One text cursor across path/leaf/read preparation, copy/name/append return producers,
+// then function-scope path/read forms: 128/128/128/126/199/205/128/128. NOT kept: unmatched shared storage/one-use
+// result forms. Original complete body restored; outer EBP preservation and read-size homes remain.
 // @retail 0x121fc0
 void function_121fc0(void)
 {

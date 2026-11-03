@@ -336,6 +336,55 @@ struct s_block_candidate
 // candidate copy: 391/391/397/398/391/392/397/398. Frame 0x1054 recovered, but
 // page/ring roles and policy placement regress; exact-only selection state restored.
 // N319: Shared default-policy clock long/dword, paired/sequential age producers and original/conditional candidate time, all eight 347. Frame 0x1050/0x1054 and page/ring roles remain; original observations and full body restored.
+// N325: Actual candidate cursor/physical-block cursor/ring successor reused across
+// disjoint phases, seven subsets and all with bare entry declarations: 347 each.
+// Original independent workspaces and full body restored; frame and page/ring homes remain.
+// N329: Complete branch-owned failure-result defaults at admission/post-scan/no-selection/terminal paths,
+// signed and unsigned handle bits: 399/389/391/393/399/389/391/393. All grow code; original entry NONE
+// and full body restored.
+// N333: Final linking backing/predecessor/successor direct-read subsets 1..7
+// 353/347/381/359/367/355/391; complete direct reads with allocated native lookup 377.
+// Original reads and full body restored; missing frame dword and page/ring roles remain.
+// NOT kept: direct-read subsets tied or regressed and grew beyond retail.
+// N335: Candidate decision initialized from not-have-best in bool/byte/short/long:
+// 350/350/366/360; true-default with the existing guarded policy: 347/347/355/354. All tie or
+// regress; complete original policy/result graph restored. Missing frame dword and page/ring
+// homes remain.
+// N337: Oldest-block replacement/retention expression results, bool/byte/short/long,
+// all eight 347. Original oldest selection and complete body restored; frame and page/ring homes remain.
+// m3 lane 11 r62 (fast): offset after the result with previous's NONE in the block 380; offset first with
+// previous's NONE in the block 357 (retail stores that NONE in the block, at +0x48); the page shift in a twice-used
+// local 347 (same code); head and tail as `head = tail = 0` 347 (same code); oldest declared first in the
+// block 379. Retail keeps offset's zero in EBX from before the type clamp (it is the clamp's zero) and stores
+// oldest's NONE from the result's register in the block.
+// Round 122 (lane 7, fast; base 347 [aligned 260]; retail keeps offset in EBX, current in EDI spilled
+// around the scan, previous on the stack and no entry stores for offset/previous): offset and previous
+// declared at the top of the admitted block 376 [243] (entry stores gone, prologue then pushes three);
+// offset after the result, previous in the block 380 [257]; previous alone in the block 357 [262];
+// offset after the limit clamp 378 [241]; current declared first in the block 347 (same code).
+// N339: Complete default-policy named products, staged products and sequential/paired
+// weight accumulators, each with original/single clock observation: 347 each (eight forms).
+// Original arithmetic, clock observations and full body restored; missing frame dword,
+// page/ring ownership and policy placement remain.
+// NOT kept: weighted storage/clock forms tie and retain the deficient frame.
+// Y556: One busy-callback pointer observation at occupied/segment/admitted/entry scope,
+// short-circuit/guarded result on original timestamp graph: 347/347/347/347/358/358/358/358.
+// NOT kept: no qualifying gain or missing-frame recovery; original body restored.
+// m3 lane 11 r62 (fast): offset after the result with previous's NONE in the block 380; offset first with
+// previous's NONE in the block 357 (retail stores that NONE in the block, at +0x48); the page shift in a twice-used
+// local 347 (same code); head and tail as `head = tail = 0` 347 (same code); oldest declared first in the
+// block 379. Retail keeps offset's zero in EBX from before the type clamp (it is the clamp's zero) and stores
+// oldest's NONE from the result's register in the block.
+// M3 lane 9 r83 (fast): the type clamp as an if/else chain 347 (same code); the matched block's time read before its
+// pages (retail reads pages first, ours reversed it) 344, with time-first in all three segment arms 344, plus the
+// ring insertion stored previous/offset/time/pages as retail 344 (three-point gain, not kept); on that: offset
+// declared at the top of the admitted block 384; switch cases ordered default/1/0 344 (same code: retail lays case 1
+// and case 0 after the default arm, ours moves both past the scan whatever the order); previous declared in the
+// block after current 357; the ring insertion indexed without the candidate pointer 345.
+// M3 lane 6 r142 (fast): the type clamp as an if/else-if on a copy of type 385; result declared first 395 (1227
+// bytes); oldest_time zero-initialised 392 (1228 bytes); best declared before the candidate ring 347 (same code);
+// the page remainder mask as `~(-1 << shift)` 347 (other code, same count).
+// Retail keeps result's NONE in EAX through the clamp and stores oldest's NONE from it. Original body restored.
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {

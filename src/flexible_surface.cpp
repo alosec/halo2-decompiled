@@ -515,6 +515,38 @@ void function_117c80(vector3f const *input, vector3f *output, real angle)
 // P275: Complete final wind value via native aggregate/existing setter, with uniform
 // direction capture and final scale/result-only scope, subsets 0-7:
 // 156/192/156/192/156/192/156/192. Original body restored; frame and seed/rotation homes remain.
+// J241: Native tail argument producers at first/second/sine/last/first-pair/last-pair/all
+// boundaries 117 each; real sine argument and result 164 at 888 bytes. NOT kept: unmatched
+// precision and one-use argument/result storage. Original entire body and math APIs restored;
+// frame 0x28 versus 0x20 and seed/time/direction/cross homes remain.
+// P277: Actual time/fraction/envelope/angle/projection/wave/strength scalar home names,
+// individually then all seven: 117 each, 880/880 bytes. Original names/body restored;
+// seed/time and direction/cross residence remain, frame 0x28 versus 0x20.
+// Round 345: existing fraction/bounded-draw/projection forceinline declarations, seven subsets; all with
+// nested generator: 117/117/117/117/117/117/117/117. Original body and contracts restored. Frame 0x28
+// versus 0x20 and seed/time/direction/cross homes remain.
+// N332: Native clock-value and initial weighted-fraction producers, seven subsets
+// then all immutable: 117 each. Original entire body restored; frame 0x28/0x20,
+// seed/time scheduling and direction/axis/cross homes remain.
+// N339: Initial sampled-direction table receiver with field/native-copy/array/complete-value
+// transfers, direct then short sampled ordinal: 161/155/188/235/161/155/188/228.
+// Original initial acquisition and complete body restored; frame 0x28/0x20 and
+// seed/time/direction/cross storage remain.
+// NOT kept: transfer/one-use ordinal and value-copy forms regress beyond native length.
+// Round 199 (fast, with 0x118140): the convention already agrees (index EAX, wind EBX, plain ret); the 8 extra frame
+// bytes are the stack copy of `old` (retail reads the global's j/k straight into XMM5/XMM4). `old` declared before
+// the axis draw 121; the projection as `(1 - cosine) * dot3f(..)` 117; sine and cosine declared separately 117; `cross`
+// declared ahead of the trig values 117; the frame-count store as a plain `g_55e710 = g_4ba034;` 207 (886 bytes,
+// 0x118140 0 -> 53: the reload after the call is needed).
+// Round 47 (lane 15, fast): scalar j, k, i rotation on the global, cross j and k in locals as retail spills them, 175 (856 bytes, frame
+// 0x1c); casts on the sine argument and last cosine for retail's three float stores 164 (888); both 165 (864); both with the RNG first
+// 209 (861); the dot on the global with cross3f and both casts 163 (880). Body unchanged at 117.
+// N343: Initial definition record/tag-handle/tag-table receiver families, seven subsets then
+// table-first, 117/117/117/117/117/117/117/117. Original acquisition and full body restored;
+// frame, seed/time and direction/cross homes remain. NOT kept: unmatched one-use receivers.
+// Round 206 (m3 lane 3, fast): sine, axis draw, then cosine 117 (same code); cross3f(&axis, &old) added 134 (881
+// bytes); cross and dot on the global with the `old` copy after them 164 (893); diagnostic: 0x2551f0's unit-axis rotate
+// body on the `old` copy, copied back 201 (918); the fraction draw before the time 193. Retail ret is plain, as ours.
 // @retail 0x117dd0
 void function_117dd0(long index, vector3f *wind)
 {
@@ -710,6 +742,9 @@ static inline byte *surface_pointer(byte *base, long offset) { return *(byte **)
 // call; a gain of 7, under the keep bar), with the side loop 434, with the types read per scan 432 (1470), with the rest
 // pointer first 415, all three 435; each scan's NONE default declared just before it 424, with NULL-first lighting 480,
 // plus per-scan types 496. All restored.
+// M341: Actual typed descriptor on retained binormal/position graph, uniform type/count
+// observations and per-scan defaults, masks 0..7: 422/439/422/439/424/433/423/433. Original
+// descriptor/searches restored; frame, application convention and outer API expansion remain.
 // @retail 0x116b00
 void __stdcall function_116b00(long tag_index, long unused, long group, long variant, long pass, long index, void *context)
 {

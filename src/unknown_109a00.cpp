@@ -252,6 +252,10 @@ static __forceinline bool carried_object_motion_apply(long object_index, vector3
 // reverses retail's choice at each. The x add written change-first with `+=` for y and z 37 (1024 bytes); a second
 // read of the clock field for the change 163; the previous velocity through a local before the output copy 163;
 // products written scale-first 10; the delta's -1 first 10.
+// Round 41 (lane 2, fast): point-velocity adds written result-first 10; as `+=` 10; its stores k, j, i 130 (0x109e00 lost);
+// i, j, k declared before the cross 10; a two-use moved-position pointer 163; `result = true` before the rotate test 120;
+// definition read at its test 73; offset, velocity, then moved declared 10; displacement before the moved point 10;
+// change declared with displacement and built by statements 10.
 // @retail 0x109a00
 bool function_109a00(long object_index, vector3f *delta, bool rotate, vector3f *velocity)
 {
@@ -546,6 +550,47 @@ PRIVATE inline void carrier_body_angular_velocity_get(s_carrier_body const *body
 // N318: Complete current-center memcpy/memmove/standard forward/backward copy
 // 112/125/128/128; with complete previous-transform memcpy 116/128/123/123. Original
 // center/copies and full body restored; input roles, physics spill and projection scheduling remain.
+// Round 123 (lane 8, fast with 0xb7060; "aligned" counts differences after aligning the two listings): retail's head
+// needs two things: the center through carrier_vector_from_havok (object index EAX, entry chain in one register) and the
+// component taking EBP with the entry in EBX. Diagnostics with probe stores to a test global, not kept, on the converter
+// form (149, aligned 119, 0xb7060 11): one value use of the component pointer at the physics block flips them and gives
+// retail's head and 0xb7060 0 (208, 926 bytes, aligned 42); two count reads there 201 (aligned 41, 0xb7060 0), one 229
+// (no flip), four reads 208 (926, 0xb7060 0); two count reads before the model index 242 (aligned 51, 0xb7060 0); no flip
+// from count reads inside the update block 224, default-body reads 230, entry reads 257, definition values 230 or constant
+// stores 256. Without the converter the same probes leave the head (value use 247, count reads 266). Natural forms on the
+// converter, none flips: velocity getters taking the component and index 154 (alone 113); a NULL-initialised component
+// tested after, three shapes 243/242/243 (one alone 263); a separate havok-component local 129 (alone 132); body index
+// NONE with one update if/else 149 (alone 112), with the update returning 149; guard tests with one failure label 224
+// (alone 218, 911 bytes). Failure stores in else arms give retail's pops-before-stores: three arms without the converter
+// give retail's head and 0xb7060 0 but the pushes sink past the tests and three epilogues stay (282, 956 bytes); on the
+// converter three arms or returns 224 (969), two arms 189 (946). On the two-read probe: the `+=` dot 206 (926, aligned 32;
+// on the value-use probe 208, aligned 43; alone 110), `up->i = up->i - scaled_i` 201, dot3f(up, forward) 201, the failure
+// stores swapped 201, the axis pointers together 200 (aligned 45), inline scaled terms 201 (aligned 47). What stays with
+// the head flipped: the definition's load register and early store, the default body's movsx/count order, the search
+// body's offset temporary, the dot and scale products' memory operands, the failure pops.
+// Round 540: Common vector converter through shared scalar builder/returned output pointer/output
+// reference/native value, original center 112/112/112/214; the same producer for center
+// 149/149/149/262. Native value returns grow the body to 965/1007 bytes; all restored.
+// Round 56 (m3 lane 13, fast with 0xb7060): the inner search ending on `&& !found` with no break 256 (908 bytes,
+// 0xb7060 2); the center through carrier_vector_from_havok re-measured 149 (0xb7060 11; entry EBP, component EBX,
+// entry index on the stack); that with the entry after the component index and the no-break search 232; that with a
+// body local for the three body uses 192, with a body-entry pointer 230. All restored.
+// Round 158 (m3 lane 4, fast with 0xb7060): center through the converter re-measured 149 (aligned 119, against 75 unchanged); that with a named current-transform pointer for the matrix call 129 (928);
+// a named selected-body pointer for both velocity getters and the center 192, with the plain center copy 171 (905 bytes); the two closing clears swapped on the converter form 149.
+// Round 77 (m3 lane 9, fast with 0xb7060): the projection written `up->i -= forward->i * dot` without the scaled
+// locals 131; a rigid-body local for the two velocity getters with the center through carrier_vector_from_havok 192
+// (0xb7060 11); body_index declared short 197; the matrix through the existing havok_component_rigid_body_matrix_get
+// 112 (same code); the center read through the existing havok_component_rigid_body_get 112 (same code). Restored.
+// Round 48 (m3 lane 2, fast with 0xb7060): the inner search tested `j < count && !found` without the break 256
+// (908 B); the model index folded into the physics lookup 135; the component pointer computed before the NONE
+// test 270; the center copy before the velocity getters 174; diagnostic, `entry->active = true` moved ahead of
+// the matrix call (not retail's order: retail stores it after the center) 218, but the head then equals retail
+// (object index EAX, entry index ECX, first difference +0x35) and 0xb7060 matches: the register arguments follow
+// where the entry flag store sits, so look for a retail-order form that changes the same first-pass liveness.
+// N347: Existing point/vector setters for current center, previous center and previous velocity pair,
+// seven subsets then the complete family with prior matrix memcpy: 161/207/220/207/222/220/216/216.
+// Previous-center setter recovers the caller but gives 207/911 bytes; NOT kept. Original complete body
+// restored; native input registers, early physics spill and center/projection remain.
 // @retail 0x109660
 void function_109660(long object_index, long entry_index)
 {

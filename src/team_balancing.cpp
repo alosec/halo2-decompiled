@@ -644,6 +644,27 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // P264: whole/header-team best publication via memcpy/memmove, native candidate
 // 67/83/79/95; default-built memmove candidate 185/173/197/186.
 // Native copies, original candidate lifetime, queries and complete body restored.
+// Round 124 (m3 lane 8, fast): both spread tests reference-left re-measured 65 (ours still queries the reference
+// first); the reference pointer `const *const` 67; the first test as `reference spread - candidate spread > 0` 72
+// (516 bytes); the candidate direct-initialised `candidate(current)` 67; `best = candidate;` before
+// `improved = true;` 71 (517 bytes); the loop counters declared before the loops 67 (same code).
+// Round 81 (m3 lane 12, fast): the reference selected before the candidate copy 128 (512 bytes); the
+// improvement as `if (less) ... else if (equal && cost) ...` with the same arm 150 (517); the candidate's
+// spread named once for both tests 80; named candidate team pointers for the swaps 150 (518); the candidate
+// declared at the top of the inner loop and assigned from current 224 (576). Original body restored.
+// Round 144 (m3 lane 6, fast): `improved` read into a `bool const` before the candidate copy and the reference
+// chosen from it 105; the whole test duplicated per `improved` arm against `best`/`current` 273 (609 bytes); the first
+// candidate spread named before the test with the cost written candidate first 67 (same code: the one-use local is
+// forwarded back into the compare); improve() defined above this function 67 (same code); `bool better` from the first
+// test refined by `if (!better && equal) better = candidate cost < reference cost` 82 (524 bytes). Diagnostic,
+// reverted: count_spread made impure (a store to a probe global) with the four queries named in candidate-first
+// statement order 89: the candidate is then queried first and the cost compare is retail's `cmp esi, edi; jge`, but
+// all four calls run before the first compare. So the order follows statements only for an impure count_spread.
+// M3 lane 2 r47 (fast): the spreads passed by value to forceinline (reference, candidate) compare helpers 65 (the
+// reference-left code: argument order does not move the stack candidate's call); the candidate spread named `long const`
+// for both tests 80 (512 bytes), as `long const &` 80; a plain `long const` for the first test only 67 (same code);
+// `long const &` for the first test written reference-left 64 (512 bytes: that pair runs candidate first but folds
+// `cmp eax, [esp + 0x30]` where retail reloads into ECX; the equality pair stays reference first).
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
@@ -840,6 +861,10 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // parties) 35; extra-first sum 35; copy before the maximum update 82; parties read back for
 // the maximum 75; fill as `while (i < total) parties[i++] = next;` 34; clamp as
 // `excess >= 0 ? excess : 0` 34; array and index declared first 34.
+// Round 130 (m3 lane 8, fast): the player-count parameter itself as the fill index 34; the maximum
+// update as a ternary 34; no total local (sums at each use) 74; open_slots computed after the call
+// 87 (170 bytes); 1-7 unused probe locals 34 each
+// (diagnostic: the player-count register does not follow the symbol count).
 // Round 116: open slots from the sum before the total 71; `party_indices[i] + 1 >= next_party` 35;
 // open slots written at their use 87 (170 bytes); next_party declared first 34; capacity as
 // `maximum_team_size * team_count` 34. In the all-stack first pass extra count is always loaded
@@ -1000,6 +1025,23 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // F321: complementary failure result in bool/byte/word/long storage, with
 // conditional-value and branch-owned clamp consumers: 63/63/73/68/90/90/102/96.
 // Original combined scan/fill and success-result graph restored; count ownership remains.
+// Round 75 (m3 lane 9; one-file LTCG harness, control 34, positional counts): new fill values: pointer cast `(long)(char *)next_party` 34, `(long)(__int64)next_party`
+// 34, union member 34, read through its own address 34, 32-bit bitfield 34, one-field struct elements copied whole 34, next_party and the imbalance as a two-element array or two-field
+// struct 43/43 (aligned 37), `next_party > 0 ? next_party : 0` 65, a counted walking pointer 43, a copy declared before the loop 34, a copy per iteration 34; loop shapes: braced body 34, while 34,
+// guarded do-while (two spellings) 64 (no rep stos), walking pointer to an end 54, `slot != end` 59; next_party declared after the index 34. Parameters on the register three, with the
+// entry updated: (extra, list, player) 35, (player, extra, list) 34, (extra, player, list) 35, (list, player, extra) 34, (list, extra, player) 35. The player count stays EDX in all of them.
+// Retail's caller loads EAX, ECX, EDX in that order; the 35s are `lea ebx, [edx + eax]` with no role change.
+// Round 38 (lane 17, fast with 0x91e30): local names as a tie-break for the roles (same-size slots are
+// ordered by name): extra_count renamed `requested_count` (sorting after player_count) 34; next_party
+// `unused_party` 34; parties `party_list` 34; total `combined_count` 34; i `index` 34 (same code each).
+// Round 144 (m3 lane 6, fast with 0x91e30): the fill through `long *extra_parties = &parties[player_count]` over
+// extra_count 67 (191 bytes); the clamp as an if/else of two results (`0 <= maximum` / `excess <= maximum`) 55 (199
+// bytes); `open_slots >= imbalance ? 0 : imbalance - open_slots` 65 (205 bytes); the imbalance lifted to the open
+// slots (`if (imbalance < open_slots) imbalance = open_slots;`) then `imbalance - open_slots <= maximum` 45;
+// re-measured: total and open slots after the copy loop 96 (162 bytes).
+// Round 200 (m3 lane 3, fast): clamp `(excess > 0 ? excess : 0)` 43, `(excess >= 0 ? excess : 0)` 34,
+// `maximum_imbalance >= (...)` 35; `extra_count + player_count` alone 34; per-loop index declarations
+// (`long i` / `long j`) 34. All restored.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

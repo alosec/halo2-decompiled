@@ -115,6 +115,11 @@ bool function_986d0(c_handle_table_450cd0 *self, long index, s_bitstream *stream
 // collection for-loop 18; scoped collection for-loop 18; index declared first 18;
 // handle/table acquisition order swapped 18; count before result in the loop test 136.
 // Original body restored at 18.
+// Round 32 (lane 18, fast): `if (!v0(...)) result = false;` with no true store 124 (375 bytes); `result =
+// v0(...);` in the `if (result)` arm 113 (386 bytes); the entry value named just before the call 18 (the index
+// then takes ECX and the owner/vtable loads follow it as in retail; only the `self->table` load is still
+// hoisted, into EDX), with an owner local after it 18; the `&&` status with `handles[i]` at each use 113
+// (retail's `mov 1; jne; mov 0` status shape, but the index stays in EBX and the frame drops 4).
 // @retail 0x98750
 bool function_98750(c_handle_table_450cd0 *self, s_bitstream *stream, long index, long a3, long reserved_bits)
 {
@@ -325,6 +330,11 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 	return function_991d0(arg_0, local_1, local_0, arg_2);
 }
 // score 80 (was 80): frame 0x1c agrees; native byte validation ordinal reduces the diff; items/data carriers and loop entry remain.
+// Round 40 (lane 17, fast): a long validation counter (retail's dword at esp+0x18) 115: every stack
+// slot is then retail's (flag in the argument slot, counter at 0x18, cursors at 0x14/0x10) and only the
+// loop entry (retail jumps past the items reload) and the 0x991d0 argument registers differ; with the
+// volatile reads dropped 207 (524 bytes); a plain for loop with the long counter 195; the long counter
+// with the two volatile reads swapped 115; with the data cursor's volatile read only 207. Restored.
 // Earlier at 115 (was 115): the case 1/3 loop still differs in registers: retail keeps the items
 // this round: no new form; the case 1/3 loop still keeps its cursors in
 // registers where retail keeps them in memory, and the 0x991d0 argument order still differs.
@@ -494,9 +504,40 @@ PRIVATE __forceinline bool function_98fb1(c_handle_table_450cd0 *arg_0, long con
 // names, lifetimes and complete body restored; validity/cursor homes and loop entry remain.
 // M316: On signed-byte ordinal graph: size/handle producer forwarding with inherited/plain cursor reads, then long producer result 188/194/189/209/209/209/209/80.
 // Validity home, validation carriers and loop-entry reload remain; original helper and inherited cursor reads restored. Original executable body restored.
+// DH302: On the signed-byte ordinal graph, call-first conjunction / compound Boolean
+// intersection / conditional accumulation / call-first intersection 211/209/210/209;
+// validity declared after the ordinal repeats 211/209/210/209. Original complete body restored.
 // AC483: Only items/data cursor observed ordinarily with signed-byte/short/word/int64 ordinals:
 // 209/209/208/193/208/193/205/220. Original helper, both inherited local-slot observations and
 // complete body restored; validity home, cursor carriers and loop-entry reload still differ.
+// Cursor-derived progress: items displacement guarded/pretested 206/201; data displacement 193/210;
+// items live endpoint 210/212; data live endpoint 203/205. Validity/cursor homes and loop-entry reload
+// remain; original body restored.
+// Unguarded live endpoints 207/150/206/201 NOT kept: mutable count can be negative.
+// N327: One actual element ordinal reused by validation and notification; signed-byte/byte/short/long
+// storage before validity 172/172/197/115, after validity 172/172/199/117. All regress; original byte
+// validation ordinal, separate long notification ordinal, helper and both inherited local-slot
+// observations restored. Validity/cursor homes and loop entry remain.
+// F342: Single validation-rejection exit with signed-byte/byte/short/long ordinals, then each with
+// completed-validation last-use scope: 80/80/197/115/80/80/197/115. NOT kept: no byte match; original
+// complete body and every helper restored. Validity/cursor homes and validation-loop entry remain.
+// Round 80 (m3 lane 9, fast; positional/aligned, base 80/56): the count test's rest nested in `if (local_6)` in place
+// of the return 80/56 (same code); that with a long ordinal 115/42 (long alone 115/42, the volatile reads still
+// add `mov edx, eax`; left: table reads in EBX or ECX at case 5, 2 and the chain call, index*5 in case 2/4);
+// a1 used directly with no s_handle_block alias 80/56 (same code); without the volatile reads, long ordinal, no
+// alias 207/60 (524 bytes); plain cursors with a `for` over the ordinal 209/57 (524 bytes).
+// Round 78 (m3 lane 16, fast): the long validation ordinal (M303's long/case form) re-measured 115, new reason:
+// every frame home is then retail's (validity byte in the dead a1 home, ordinal at +0x18, items +0x14,
+// data +0x10, the count-one reads too); left are the preheader registers, the loop entered at its top (retail
+// jumps past the items reload) and the item value loaded into EAX then copied to EDX. On it: no cursor
+// reads 207 (524 bytes), only the data cursor read 207, only the items cursor read 210 (524 bytes each);
+// function_991d0 called directly with the items 137. Plain cursors on the byte ordinal 209 (524 bytes).
+// P288: Both notification phases with actual item cursors, body/at-use advancement
+// and completed validation last-use scope: 93/93/93/93/93/93/93/93. Original full body restored;
+// validity/cursor homes and validation-loop entry remain.
+// DH316: Whole-case terminal-return regions, seven subsets then positive validated
+// admission: eight 80s at 540/540 bytes. NOT kept: no byte match; original complete
+// body restored. Validity/cursor homes and validation-loop entry still differ.
 // @retail 0x98fb0
 void c_handle_table_450cd0::v6(s_request_450cd0 *a1)
 {

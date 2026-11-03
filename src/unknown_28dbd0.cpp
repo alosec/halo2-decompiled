@@ -242,6 +242,43 @@ __forceinline s_object_ai_data *function_28dbd5(s_handler_object_view *arg_0)
 // DH296: Velocity publication before moving/fixed position offsets, native/shared
 // scaler and original/late sine: 227/227/227/227/191/191/191/191. Every frame
 // remains 0x11c; original offsets, velocity, private rotation helper and full body restored.
+// F341: Native projection/sine/cosine last-use scopes, seven subsets then all
+// with complete rotation-role names: 173 each. Only uninitialized declarations
+// move; cosine/dot/cross/sine and scale order stay fixed. All restored; frame
+// 0x11c versus 0x118 and cross/trig homes remain. Three exact controls survive.
+// DH317: Immutable native cosine/projection/sine values, seven subsets and all
+// with immutable angle input, eight at 173. Original helper and complete body
+// restored; frame 0x11c/0x118 and cross/trig homes remain.
+// Shared angle-to-direction heading with staged outer/rotation crosses and late
+// sine, eight at 277/273/277/273/277/273/277/273. NOT kept: extra zero-pitch
+// trig/products and longer body; original heading, includes and helper restored.
+// Round 64 (m3 lane 1, fast): the (vector, axis, sine, cosine) helper of matched 0x2551f0/0x1ecf50 (scalar cross
+// i/j/k, rows `v*cos + projection*axis - cross*sin`, called with sin then cos of the angle) 236 (1190 bytes, frame
+// 0x114: sine first as retail, but heading at +0x10 and cosine at +0x1c, retail cosine +0x10 and heading +0x14; only
+// the row-i result spills where retail spills cross j and k); with dot3f 236; cross terms declared j, k, i 236 (same
+// code); the cross through cross3f into a vector 226 (1209 bytes, frame 0x120), with dot3f 226.
+// Round 80 (m3 lane 12, fast, 0x259d0 listed): retail's rotation multiplies the zero k by the 0.0 constant from
+// memory (`mulss xmm3, [0.0]`) where ours keeps it in a register, and runs fsin, the dot, then fcos. In the
+// rotation helper: sine then cosine first, the dot after them 182 (frame 0x120); sine, a named dot, then cosine
+// 225 (frame 0x120); the cross scaled by the sine first 227; the final sums written cross + projection +
+// vector 173 (same code). The direction's zero k stored before i and j 173 (same code).
+// AC503: Shared moving/fixed offset and velocity producers on the added-cross graph, seven
+// subsets then the complete native point receiver 216/180/173/180/173/180/180/173. Original full file/helper restored;
+// frame 0x11c/0x118 and cross/trig homes remain. NOT kept: unmatched producer/field-pointer forms.
+// Round 68 (m3 lane 10, fast; aligned difflib counts in brackets, base 173 [183]): the rotation helper in the
+// matched 0x177d10's shape (sine, cosine, projection with the dot written out, vector x axis cross j, k, i, rows
+// `v*cos + axis*projection - cross*sin`) 231 [176] (1192 bytes, frame 0x114: sine +0x24, cosine +0x10 and heading
+// as retail, but one cross spill where retail spills X.j and X.k); rows axis term first 231; X.i written in row i
+// 231; dot3f for the dot 228 (1194); the cross through cross3f(vector, axis) into a vector 213 [159] (1209 bytes,
+// frame 0x11c), with axis-first rows or either dot3f order 213/213/213. Original helper restored.
+// Round 206 (m3 lane 3, fast): retail's rotation is the one 0x117dd0 inlines (sine first, X = vector x axis,
+// X.j/X.k spilled with the sine's home between them, X.i formed in row i). Sine, named dot, cosine, scalar X.j/X.k
+// with X.i inline 237 (1221 bytes); sine, dot, cosine, cross3f(vector, axis) subtracted 226 (frame 0x120), with
+// vector-first rows 226; that body as a (vector, axis, sine, cosine) helper 226; sine, cross3f, dot, cosine 233 (1196).
+// Original helper restored.
+// AC503: Shared moving/fixed offset and velocity producers on the added-cross graph, seven
+// subsets then the complete native point receiver 216/180/173/180/173/180/180/173. Original full file/helper restored;
+// frame 0x11c/0x118 and cross/trig homes remain. NOT kept: unmatched producer/field-pointer forms.
 // @retail 0x28dbd0
 long function_28dbd0(long arg_0, long arg_1, long arg_2, s_28dab2 const *arg_3, bool arg_4)
 {

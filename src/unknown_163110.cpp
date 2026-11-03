@@ -379,6 +379,10 @@ PRIVATE inline real plane_error_163db0(s_plane const *plane, point3f const *poin
 // z, y, d * scale, x and schedule the k row's first add before its third product, where the other planes
 // sum y, d * scale, z, x (one helper gives the same order everywhere); and the x-term operand order
 // (n.i or position.x loaded first) in plane 1 and the top/bottom planes (the diagnostic tests now agree).
+// Round 128: on the two-helper 6 diagnostic, generic one-expression distance 34; position array x 6;
+// normal array x 6; both array x forms 6; position pointer with array x 16; normal pointer with array x 14;
+// both pointers 12; plane3f input/output views 6. NOT kept: the separate top/bottom helper without a match;
+// original helpers and body restored.
 // Round 103: the existing matrix normal rotation 28 (same code); on the top/bottom 6 form, normal pointers
 // or a named normal i 14 each, source/matrix/output formal ranking 6, the final x product folded into the
 // store, normal-first or x-first reassignment 6 each, final i through source 6, all distance normals through
@@ -991,6 +995,32 @@ bool function_1648d0(s_frustum_1648d0 const *source, s_view *view,
 // P261: symmetric near/far coefficient captures, all six native component declaration
 // orders 269 each; joint row lifetime and immutable inputs 269/269 (1867 bytes).
 // All exact-only snapshots restored; coefficient preload, zero roles and projection homes remain.
+// P277: Actual margin/clamp/negated-vector/plane-array/denominator/distance/classification
+// scratch identities individually and together: 115 each, 1851/1851 bytes. Original names
+// and body restored; early coefficient preload, zero XMM and projection homes remain.
+// Y547: Complete projected-point memcpy/memmove publication, with native/library
+// intersection and initial bounds transfers: 115/419/115/363/115/419/115/475. All restored;
+// coefficient preload, zero XMM roles and projection staging remain.
+// Lane 17 r36 (fast): bounds copy after the planes 193; `use_plane1 &=` after the planes 209; memset after the
+// near clamp 172; near clamp as `near_distance = near_sum; if (1.52588e-5f > near_sum) ...` 120; `use_plane1 &=`
+// after the bounds copy 151. Original body restored; the vector_e4.i load still follows the normal copy (XMM3/XMM4 swap).
+// Round 33 (m3 lane 18, fast; 0x1648d0 and 0x320b0 matched each time): the clip parameter through
+// the file's existing ray_plane_distance_1648d0 232; no forward pointer, the view's vector read at
+// each use 264 (1867 bytes); the default bounds copied just before the point memcpy 193 (+0x41);
+// use_plane1 masked after the memcpy 209 (+0x6); the pass test as one condition with
+// `&planes[pass]` 258. All restored; the early e4.i load and the zero's XMM role remain.
+// Round 56 (m3 lane 13, fast): the negated forward vector as an aggregate initializer 115 (same code); plane 1's
+// normal negated straight from the forward pointer, no negated vector 465 (1803 bytes); `margin + view->margin`
+// 115 (same code); a plane-0 pointer for the whole plane-0 block 285 (1867 bytes); the near distance as an
+// if-clamp on the sum 266 (1867 bytes); plane 0's d as `near_distance + -d` 423. All restored.
+// AC500: Construction-only scalar scope, per-plane classification array and point-array declaration
+// at input-copy boundary, masks 1-7, then complete projected aggregate initialization: 115 each.
+// All original lifetimes and complete body restored; coefficient preload, zero XMM and projection homes remain.
+// Round 48 (m3 lane 2, fast with 0x1648d0/0x320b0): lane 16 r72's 19 form rebuilt 19 (first +0x28a); on it, the
+// distance j product's operands swapped 19 (same code); the denominator staged i, k, j with delta_i 33; all three
+// deltas named (i, k, j or i, j, k declarations, rows from them) 118/118 (the near/zero swap at +0xb6 returns);
+// delta_j named with the denominator staged i, k, j 30 (retail's denominator roles; the deltas are computed z, x, y
+// where retail computes x, z, y, and the intersection's copied-t row is y where retail's is x). Body restored.
 // @retail 0x1652e0
 bool function_1652e0(s_view *view, real margin, const point3f *points, long point_count, point3f *projected_points, short *projected_count, s_bounds3d *bounds, bool use_plane0, bool use_plane1)
 {

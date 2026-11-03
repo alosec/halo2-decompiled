@@ -1256,6 +1256,47 @@ bool function_a9940(long index, vector3f *up, vector3f *forward);
 // node-count guard 20 (1399, match-only); unified data-member reads 44 (1390, match-only); const pool pointer,
 // shared header accessor, header pointer arithmetic, nonconst data-member pointer and typed current view 20 each
 // (all with the match-only guard). The guarded forms were restored to the 87 form.
+// DH306: actual matrix/orientation/node-record-displacement induction, seven subsets
+// 94/210/96/212/230/212/212; matrix-cursor-owned bound 396. NOT kept: best gains only three.
+// Original loop and no-model lookup restored; count entry and data reload remain.
+// Round 62 (m3 lane 10): node loop under `if (count > 1)` 96 (repeats the loop test, not kept); the loop as
+// `while` 97; the render node count named before the root block 212; the current object through the entry
+// header pointer 371 (1394 bytes); the model tag index read at each use 97. Original body restored.
+// Round 124 (m3 lane 8, fast): the default-orientation arm's two stores swapped 99; render index declared
+// before the model 97; `stored` declared beside the orientation test 389 (1370 bytes); the node mask declared
+// beside `stored` 97; the no-model parent indexed through `(word)parent_index` 100 (1380 bytes).
+// Round 45 (m3 lane 2, fast, base 97): walking matrix/orientation pointers in the node loop 97 (same code); a
+// no-model parent header pointer 97; `current` read through `header->object` 371 (1394 bytes, but the current
+// lookup no longer reloads g_4e0300); the render-node pointer scoped in the mask test (re-measured) 97; the
+// no-model data field read as a dword (re-measured) 97. Retail's `test eax, eax; jle` before the node loop's
+// `mov esi, 1; cmp; jle` is still unexplained.
+// Lane 18 round 36 (fast, re-measured on the 97 base): a `short` node counter 179 (1389 bytes); the stored/empty
+// sample-mask test as nested ifs 97 (same code); the no-model parent matrix through the existing function_b8bd0
+// 100 (1378 bytes, stays a call); the default-orientation test as `== 0` with `++node` and `&nodes[node * 0x60]`
+// 97 (same code); the render-node pointer declared inside the mask test 97 (same code).
+// Round 206 (m3 lane 3, fast, on the 97 base): the node loop as `long node = 0; while (++node < count)` 97 (same
+// code, no count > 0 guard); the node index declared at the top of the render branch (re-measured) 97; the parent
+// index declared once for both branches (re-measured) 341 (1386 bytes); parent and parent_mirrored declared once
+// for both branches 350 (1382); the no-model mirrored flag before the matrix (re-measured) 97 (same code).
+// Round 141 (m3 lane 6, fast): no-model mirrored flag read before the parent matrix 97 (same code); the no-model
+// matrices argument re-read from object +0x116 90 (1388 bytes, positional only: retail passes the spilled
+// matrices pointer from +0x1c); the node loop's parent node index as a short local 244 (1381 bytes); a node matrix
+// pointer local in the loop 95; render-node pointer inside the mask test 97 again (repeat).
+// Round 68 (m3 lane 10, fast, on the count > 0 guard diagnostic, 44 at 1390 bytes): `stored` escaping through a
+// scratch global (diagnostic) 403, and its no-model branch then holds the pool and re-reads only the data field, as
+// retail does: a store to an escaped local on the path kills the data load but not g_4e0300. Escaping stored,
+// orientations, current or model at the end of the no-model branch 314/363/312/318 (diagnostics). A forceinline
+// lookup helper taking the pool 44, a plain inline one 44, one with a pool local inside 44 (all fully CSE'd); a
+// named header-array local for the current and render lookups 45; a plain inline node-matrix helper taking the
+// pool / the index only / the data member's address 20/20/20 (1399 bytes: reloads g_4e0300 too, as round 28); that
+// helper with a mirrored out-parameter 43; pool local plus that helper, with the render lookup through the local or
+// not 20/292, without the helper 44/286; a pool local declared after the current lookup with the helper 358 (the
+// pool moves to EBP for the whole body); 0xb8bd0 marked inline in its file with the no-model branch calling it 394
+// (inlined at both sites). Original body restored.
+// Round 206 (m3 lane 3, fast, on the 97 base): the node loop as `long node = 0; while (++node < count)` 97 (same
+// code, no count > 0 guard); the node index declared at the top of the render branch (re-measured) 97; the parent
+// index declared once for both branches (re-measured) 341 (1386 bytes); parent and parent_mirrored declared once
+// for both branches 350 (1382); the no-model mirrored flag before the matrix (re-measured) 97 (same code).
 // @retail 0xbd090
 void __stdcall function_bd090(long object_index)
 {

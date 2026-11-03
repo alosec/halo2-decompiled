@@ -95,7 +95,7 @@ PRIVATE inline void function_x0ec080(box2f const *bounds,long flip,real *out)
 }
 
 // MiniMax S (11-01): the tint computed after the UV block moves the first difference earlier; no lower score.
-// score 232 (was 232): frame 0x60 and the cache/colour/count registers are now retail's; the tint and the
+// score 223 (was 232): frame 0x60 and the cache/colour/count registers are now retail's; the tint and the
 // second UV set have swapped homes (ours +0x60/+0x50, retail +0x50/+0x60), and retail keeps the blend in XMM5
 // through the aspect block (ours reloads it), so the extents, reciprocals and aspect homes differ.
 // Earlier at 381: Frame 0x50 versus 0x60 (the tint lived in a one-caller helper's scope, so uv_b reused its
@@ -319,6 +319,43 @@ PRIVATE inline void function_x0ec080(box2f const *bounds,long flip,real *out)
 // graphs, two axis-paired graphs and late selector: 241/321/260/296/302/236/295/238. Original
 // interpolation stages, scalar lifetimes, selector and complete body restored; tint/second-UV and blend
 // homes remain.
+// F335: complete lower/upper clamp passes, lower-first then upper-first, both direct ordinal
+// directions in each pass: 267/269/271/271/272/272/272/273. Tint/secondary-UV homes persist;
+// original component-owned clamp, alias-safe UV producer and complete callback restored.
+// Round 376: Optional-bitmap admission truth in bool/byte/short/long,
+// valid-first and invalid-first, 232/232/232/232/232/232/232/232.
+// Exact-only one-use admission forms restored; tint/secondary-UV homes and blend residence remain.
+// Round 378: Shared pivot complement on the retained next-product graph, inner/outer storage,
+// recomputed aspect result and before/after first next-product producer: 232/232/306/306/232/232/306/306.
+// Original separate complement producers, all arithmetic, native buffers and body restored;
+// tint/secondary-UV homes and blend residence remain.
+// P278: Geometry/primary/secondary UV declarations at entry, seven subsets, then all with seed-
+// colour scratch at entry: 232 each. All initializers and observations fixed; original
+// declarations/body restored. Tint/secondary UV and blend homes remain.
+// P287: Four-channel input captured once for both tests, lower/upper conditional stores,
+// scalar result and conditional result: forward 232/252/428/433, reverse 250/253/440/445.
+// Original loop, body and all alias-safe UV captures restored; tint/UV homes and blend remain.
+// B381: complete geometry-source decision, explicit/bitmap bounds in bool/byte/short/long,
+// 293/293/293/232/419/419/419/419. NOT kept: one-use decisions require exact matching. Original tint/secondary-UV
+// homes and blend/reciprocal residence remain.
+// Round 77 (m3 lane 9, fast = plain): the pivot interpolation as one expression per axis,
+// `(1.0f-blend)*first->pivot.x+blend*next->pivot.x`, 223 (kept: retail's first-term-first schedule; with named
+// first-term locals 223); local renames (first_uv/next_uv, color_tint, zuv_b) 232 each; on 223: extents and
+// reciprocals in a/b pairs 223, in retail's schedule order (ax, ay, by, inv_ax, inv_ay, bx, inv_bx, inv_by) 221;
+// the aspect next-product locals inlined 223 (same code), the inverse ones inlined 245; the four tint clamps as
+// explicit statements 223 (same code). Left: tint/uv_b homes swapped (0x60/0x50), blend not held in XMM5
+// after the sequence block (retail cross-jumps the context/blend reload), reciprocal schedule.
+// DH318: Existing shared seed RGB scale, product output in tint/seed scratch, plain seed/input traversals:
+// 244/244/253/253/245/245/245/245. Tint/secondary UV homes and blend residence remain. All restored.
+// Round 79 (m3 lane 9, fast): both aspect defaults as ternaries on `ax>ay` 264; blend as a ternary on the
+// 0x20 flag (0 otherwise) 261; the aspect updates as `remaining*aspect + next` 223 (same code); blend declared
+// after the definition local 223; the tint declared at entry 223 (same code each).
+// Round 51 (m3 lane 15): pivot defaults as two stores 223; UV sets declared uv_b, uv_a 223; width after the two
+// UV encodes 419; quarter-turn added right after the angle 482; size in a named local before the call 233.
+// M3 lane 6 r142 (fast; retail homes tint at 0x50 and uv_b at 0x60, ours the other way round): geometry declared at
+// entry 223 (same code); uv_b's default bounds copied from uv_a 347 (1956 bytes); the tint and its clamps in their own
+// block ending at the pack 249 (1906 bytes); `uv_b,uv_a` declaration order 223 (same code); the flip read before the
+// extents 250 (1949 bytes). Original body restored.
 // @retail 0x224550
 void __stdcall function_224550(s_draw_sprite_seed const *seed,s_particle_value_cache *values,
 	point3f *position,point3f *direction,real scale,color4f const *color,s_draw_sprite_context *context)
@@ -385,10 +422,8 @@ void __stdcall function_224550(s_draw_sprite_seed const *seed,s_particle_value_c
 					s_draw_sprite_frame const *next=&context->sequence->frames[(index+1)%context->sequence->count];
 					if(!(definition->flags&0x20)) blend=frame-(real)index;
 					uv_a.bounds=first->bounds; uv_b.bounds=next->bounds;
-					real pivot_x_next=next->pivot.x*blend;
-					pivot.x=first->pivot.x*(1.0f-blend)+pivot_x_next;
-					real pivot_y_next=next->pivot.y*blend;
-					pivot.y=first->pivot.y*(1.0f-blend)+pivot_y_next;
+					pivot.x=(1.0f-blend)*first->pivot.x+blend*next->pivot.x;
+					pivot.y=(1.0f-blend)*first->pivot.y+blend*next->pivot.y;
 				}
 			}
 		}

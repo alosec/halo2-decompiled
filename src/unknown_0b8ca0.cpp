@@ -239,6 +239,9 @@ __declspec(noinline) void __stdcall function_b9b90(long object_index, bool disab
 // inside the activation arm 4; a data local then a masked index local 4; the masked index local then
 // the data local 4; a scaled offset local 4; a typed elements local plus the masked index 4 (all the
 // same code). Nothing visible here keeps EAX busy across the data load.
+// Round 32 (lane 17, fast): the component index in a local under a nested NONE test 70 (221 bytes); a named
+// `1 << type` mask 11; the physics bit without TEST_FIELD_BIT 48; a byte type 49. Kept: the two `goto update`
+// jumps replaced by a final `if (!disable)` block 4 (same code).
 // @retail 0xb9b90
 void __stdcall function_b9b90(long object_index, bool disable)
 {
@@ -250,21 +253,15 @@ void __stdcall function_b9b90(long object_index, bool disable)
 		object->havok_component_index != NONE)
 	{
 		if (!disable)
-		{
 			havok_component_rigid_bodies_activate(havok_component_get(object->havok_component_index));
-		}
-		else
-			goto update;
 	}
 	else if (disable)
-	{
 		object->physics_disabled = true;
-		goto update;
+	if (!disable)
+	{
+		object->physics_disabled = false;
+		function_b7360(object_index);
 	}
-	object->physics_disabled = false;
-	function_b7360(object_index);
-
-update:
 	if ((1 << type) & 0x1c)
 	{
 		s_object_view *item = OBJECT_GET(object_index);
@@ -752,6 +749,9 @@ static __forceinline long object_query_next_ab(s_record_pool *data, long index)
 // radius operand 246/246/246/247/247/247/247; all with bool result 260. Reduced forms self-align
 // with both callers present, but frame 0xac versus 0xb4 and scalar homes remain. Original body restored.
 // M305: Paired radius/distance/normalization scalar lexical identities, eight direct-radius combinations 246 each.
+// Round 126 (lane 8, fast, both callers matched): unit index local at every use 232; player pool global read at
+// each use 229; that as a for loop 260 (926 bytes); pool at each use with the range zero as the model-NONE else arm
+// 227; centre pointer declared after the radius square 230.
 // @retail 0xbba80
 bool function_bba80(long object_index)
 {
@@ -1892,6 +1892,10 @@ transform4x3f *function_b8bd0(long object_index, short node_index);
 // 284/285/293/288/293; yxz/xzy/zyx with native activity 282/283/294. The shared sibling
 // regresses 62/127/125/50/127/62/127/125; original helper and full body restored.
 // M305: Terminal missing-component negative guard with shared-exit/bit-vector/ordinary-node subsets 285/285/291/291/285/285/291/291.
+// Lane 16 r80 (fast): BLOCKED-BY 0xb8bd0 (inlined by retail, /Ob1 file) as before. At +0x76 retail builds the header
+// from the fresh data load it uses for the parent; the header with the index recomputed 303; header declared before
+// the parent 285 (identical); the parent read through `pool->data` 298 (1240 bytes); header and saved activity ahead of
+// the parent 294 (1240 bytes); `node` read at each use with no node_index local 295 (1249 bytes). Restored.
 // @retail 0xb93b0
 void __stdcall function_b93b0(long parent_index, volatile long index, volatile short node)
 {

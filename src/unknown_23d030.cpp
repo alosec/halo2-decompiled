@@ -367,9 +367,65 @@ extern byte g_51ec11;
 // the target and the matched second user. Original helper restored; zero, normalization and up/roll
 // allocation remain. Scores 291/128/280/304/101/307/295/345.
 // Original executable source restored.
+// DH302: Roll cosine at the unscaled projection / projection-and-cross boundary, then both
+// coefficients at those boundaries: 92/102/89/151; bare entry declarations repeat 92/102/89/151.
+// The 92/102 forms reach 1326 bytes; all tie or regress. Original coefficient phases and body restored.
 // AC483: Existing planar side normalizer with planar/spatial fallback and original/setter/staged/direct
 // up publication: 268/285/282/282/229/261/127/259. The planar length tree is exact-match-only;
 // no match, so original side/normalization/rotation and complete body restored. Zero and up/roll allocation remain.
+// Actual side/roll-coefficient/movement phase endings and their pairs/all 89/89/89/89/89/89/89; all
+// with transformed-displacement phase ending 89. Zero/normalization/up homes remain; original body
+// restored.
+// M326: Native normalization fallback bool/byte/short/long results, then success polarity,
+// 234/234/234/234/234/234/234/234. All lengthen to 1328/1326; one-use admission storage
+// does not match. Original complete body restored; zero/normalization/up homes remain.
+// N327: Complete control-produced roll retained through both trig uses,
+// branch/conditional/default/additive updates with producer/entry result declarations:
+// 322/322/321/319/322/322/321/319. All lengthen the body; original control result, state observations and
+// complete body restored. Zero/side/up allocation remains.
+// Round 380: Final timer-policy truth, bool/byte/short/long suppressed then enabled
+// complement: 232/232/232/232/232/232/232/232. Zero/side/up allocation does not recover; original final
+// guard, publications, decrement and complete body restored.
+// Round 382: Complete entry control admission, bool/byte/short/long active then inactive
+// complement: 236/236/236/236/236/236/236/236. All lengthen and regress; original entry byte test and
+// complete body restored. Zero/side normalization and up/roll allocation remain.
+// DH309: Existing shared normalizer magnitude/zero/separate/complete result ownership,
+// failure/success polarity and failure early return: 91/276/89/89/335/274/274/89.
+// Original shared body restored; zero/side normalization and up/roll allocation remain.
+// Round 77 (m3 lane 9, fast with 0x23d790/0x23d030, both stay matched): the zero fallback as two stores
+// `side.j = 0.f; side.k = 0.f;` 276 (1326 bytes; the up rows then store k, j, i as retail, but the x87 length still
+// squares i before j and every register is renamed), with normalize3d 261 (1326), with side filled i, j, k 276; the
+// fallback chained `side.k = side.j = 0.f` 274 (1326); `side` declared at the function's top 89 (same code); a
+// forward pointer local for the up cross 236 (1330). Retail's length keeps side.j on the x87 stack (fst) and
+// squares it first; zero XMM1 and the up/roll allocation remain.
+// Round 199 (fast, with 0x23d790): side assignment orders k/j/i, j/i/k, j/k/i, i/j/k on the current body 89 each;
+// diagnostic, a scratch normalizer with the length as `i*i + (j*j + k*k)` or `(j*j + k*k) + i*i` gives retail's
+// j-first squares and 1326 bytes but 266 (aligned 52, unchanged), `k*k + j*j + i*i` / `j*j + i*i + k*k` 271
+// (aligned 59): the square order is not what moves the zero/side registers. Fallback stores: separate i/j/k
+// 276 (1326 bytes, aligned 55), k/j/i 276, `side.j = side.k = 0.f; side.i = 1.f;` 86 (aligned 47, a gain of 3:
+// not kept), `side.k = side.j = 0.f; side.i = 1.f;` 274 (aligned 46), j/k/i separate 276 (aligned 55); that
+// 86 form with the scratch normalizer 264 (aligned 47).
+// Lane 17 r39 (fast, with 0x23d790): retail loads the other operand first in two cross products (`v->k * axis->j`,
+// `axis->i * v->k`); both written the other way round 89, each alone 89/89 (same code); fallback
+// `side.i = 1.f; side.k = side.j = 0.f;` 274, `side.i = 1.f; side.k = 0.f; side.j = 0.f;` 276 (both 1326
+// bytes). Original body restored.
+// AC501: Native input roll/horizontal/vertical field domains on the shared-state graph,
+// masks 1/2/4/3/5/6/7, then complete read-only controls: 274/89/89/118/274/89/118/118.
+// Original input layout, observations and full body restored; zero/side/up allocation remains.
+// Round 158 (m3 lane 4, fast): normalize3d with a forward pointer and the up rows staged, declared and stored i,j,k 52 (aligned 28); that with the else arm's own speed local 45 (aligned 23, 1330; plain
+// confirmed). NOT kept (review): the gain needs the staged up_i/up_j/up_k, one-use locals (match only); there the zero
+// and side block agree, and the up rows copy forward.i where retail copies side.j/side.k. Body restored at 89.
+// On the way: helper taking pointers, rows i,j,k stored k,j,i 68, rows k,i,j stored j,k,i 56; in the body without the pointer 259-269; with the pointer rows k,i,j stored j,k,i 63, stored i,j,k 53; shared with the roll axis
+// 232 (1326), 62, 95; forward.i through the command 227 (1326); speed at function scope 194; plain rows through the pointer 263-265; rows through a side pointer 136; forward pointer before the side fill 190, at the function top 44 (aligned 27: frame homes shift, not taken);
+// side filled j,k,i 281; product text flips in the rows and roll 53 (same code); cross rows k,j,i 79, j,i,k 52; one-expression rotated rows 52; cosine first 59; trig inside the roll block 47; v after axis 232; `cosine * v + rotated` 45.
+// M3 lane 9 r83 (fast, 0x23d790/0x23d030 stay matched): movement.k assigned before i/j 237 (1329 bytes); the free
+// position rows as `camera + speed * movement` 89; the command position stored before the camera state's 125 (1330);
+// the pitch clamp as an if/else chain into the local 274 (1326 bytes); the zero distance stored before the offset
+// copy 101. Zero XMM3/XMM1 and the side/up/roll allocation remain.
+// Round 66 (m3 lane 10, fast): side as an aggregate initializer `{ forward.j, -forward.i, 0.f }` 89 (same code); the up
+// rows' products commuted, j row / i row / k row each, 89/89/89 (same code); the projection scale as
+// `projection = (1.f - cosine) * projection` 118 (1326 bytes); the pitch sum written controls first 89 (same code).
+// Zero XMM3 and the side/up homes remain.
 // @retail 0x23d260
 void __stdcall function_23d260(void *state, void *input, void *output)
 {

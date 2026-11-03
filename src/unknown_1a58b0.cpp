@@ -657,6 +657,8 @@ void function_1a6d80(void)
 // Round 85: count output before the call 6; both output pointers after it 6; count output before and valid
 // output after it 6; output references after it 6; valid store scope 6; count store scope 6; const output
 // parameters 6; indexed valid output 6; count value named after the call 6. Opening body restored.
+// Round 79 (fast): a return local set between the two stores 6, before the call 6; output references at the top 6;
+// a named call result with a count output local 6, with both output locals 6; the valid store as an if/else 15 (106 bytes).
 // @retail 0x1a73c0
 s_action_node **function_1a73c0(long owner_index, short id, bool *valid, short *count)
 {
@@ -1341,6 +1343,10 @@ PRIVATE __forceinline void function_1a68a2(vector3f const *arg_0, real arg_1, ve
 // Round 86 (KIMI2): entry/scoped multi-use object handle 2/2; body declaration before support 2;
 // clamp declaration first 2; returned point dereference/re-address 2; support/component role names 2;
 // header/unit role names 2; all four role names 2. Original body restored.
+// M3 lane 4 r157 (fast): the clamped value as the call's body argument 99 (491 bytes); the body index read
+// before the component lookup 14; the last valid index in a local 94 (464 bytes); the clamp as if/else-if 2;
+// the clamp testing the upper bound first 124 (461 bytes); permuter 600 s, 66 tries, none below 2. Still BLOCKED-BY
+// 0x1d0a20 (its file is held).
 // @retail 0x1a68a0
 void function_1a68a0(long object_index, vector3f *velocity)
 {

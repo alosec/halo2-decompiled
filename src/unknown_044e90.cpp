@@ -192,11 +192,46 @@ struct s_visibility_bound_record
 // entry/table and plane/query homes remain.
 // Round 471: Uninitialized containment output at entry/fallback/part-loop/part/record/transform/point-input/query,
 // 433 each. Original false initialization and complete body restored.
+// Round 137 (aligned count in brackets, baseline 406 [357]; retail's scalars sit below the plane and query, ours
+// keep the views pointer and inner counter above them): flags read in each arm with a (bool) bit-12 test 444 [389]
+// at 1744 bytes; query data as if/else arms 446 [361]; both 459 [407] at 1760; loop counters at branch or function
+// scope 406; the plane copy at branch scope, after the query, at or before the top of the function 406 each; planes
+// and query at function top, either order 413 [389]. Body unchanged.
 // Round 525: Complete input-plane memcpy/memmove with native/library normal and center transfers,
 // eight graphs 406/406/444/444/456/458/445/446. All original transfers and full body restored; entry/table and plane/query homes remain.
 // Round 527: Uninitialized reciprocal declaration at function/query/view/frustum scope,
 // each with the original/fallback-entry center-output scope: 406 each. Every original
 // reciprocal producer, center scope and full body restored; entry/table and plane/query homes remain.
+// Round 545: Actual visibility-buffer capture before fallback tag/object/count/nodes
+// setup and function-entry uninitialized pointer with early/latest pre-loop producers:
+// 442/430/430/442/441/441/442/441. Original observation and body restored; entry/table and plane/query homes remain.
+// Round 63 (m3 lane 10, fast): retail stores each plane once after the transform/copy arms (i, j, k from xmm3/xmm5/xmm4,
+// then the negated distance), keeps the views pointer in its slot ([esp+0x2c]) and forms the source pointer in two
+// steps. A named state pointer for the views and active reads 411; the sibling 0x45560's chained count/capacity pairs
+// (no header change) 407; the plane transformed in place into its copy with `planes[j] = p` 440 (1742 bytes, the copy
+// stays in memory); the same with field-by-field stores 457 (1716 bytes, retail's transform block, views kept in ESI
+// with the source folded into one lea); the six-plane do/while as a plain for 2754 (fully unrolled, 3604 bytes).
+// Round 548: Real four-descriptor release table, long/dword/short/word/byte/signed-char
+// counter and pointer </!= walks: 522/522/520/520/520/520/511/511. NOT kept: changed release/frame
+// shape misses; original four releases, field reads, native workspace and full body restored.
+// Round 142 (fast; aligned count in brackets, control 406 [357]): flags read in each arm 442 at 1744 [395], with a (bool) bit test
+// 444 [389]; the (bool) bit test alone 419 [357]; a view count local 453 at 1748 [351]; a frustum count local 443 at 1748 [366]; both 474
+// at 1764 [373]; the loop index before the transform 406 [357].
+// Round 550: Actual fallback visibility-membership result, bool/byte/short/long,
+// nested unseen admission then already-visible continue: 406/406/406/406/406/406/406/406.
+// NOT kept: one-use predicates do not match; original direct bit test, containment
+// initialization and complete body restored. Entry/table and plane/query homes remain.
+// Y553: Independent fallback-center input scalars 448; part-entry storage 448;
+// branch-owned inputs 463; shared scale with update/branch inputs 462/462; existing
+// point setter on update/branch/all producers 448/463/462. All controls survive.
+// NOT kept: all forms regress and shrink away from 1742 bytes; original body restored.
+// B394: Inverse-transform scale reference/pointer, whole transform, translation and all-row references;
+// then transform/scale, translation/scale and complete subobject identities: 406/406/406/406/436/406/406/406.
+// NOT kept: no exact match; original complete executable source restored.
+// Round 82 (m3 lane 9, fast): retail tests bit 12 as `mov ecx, [ebx]; shr ecx, 0xc; test cl, 1` and keeps the table
+// in ESI from entry through the bottom arm (no reload). Flags read at each use 442 (1744 bytes); the bit-12 test through
+// TEST_FIELD_BIT 419; both 444 (retail's shr/test and tag in EAX, but no table preload); with the table read once into a
+// local 447; the table local and TEST_FIELD_BIT with the flags local 442.
 // @retail 0x44e90
 void __stdcall function_44e90(short entry_index, short section_index)
 {

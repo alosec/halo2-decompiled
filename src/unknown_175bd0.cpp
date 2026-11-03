@@ -1846,6 +1846,15 @@ long function_1785c0(s_effect_object_marker const *marker, s_effect_datum *effec
 // Round 116: else-arm array base 40; with node-first 101; both arms' array bases with node-first 101;
 // reversed matrix-arm pointer addition 9, with node-first 101; reversed else-arm pointer addition 9,
 // with node-first 101; comma-sequenced node store and matrix initialization 101. Original body restored.
+// Round 123 (lane 8, fast with 0x178360): node-first merges `movsx edx, dx` upward because its else arm's index
+// takes EDX and its base EAX, where this order (and retail) has index ECX, base EDX. On node-first: the scale in a
+// local read before the marker 101; the node index through a local 101 (alone 9); the marker address by byte offset
+// 101; a reference to the else arm's position 101; a forceinline marker getter in the matrix arm, the else arm or both
+// 101/101/101 (alone 9/9/9); a matrix-arm base local 101 (alone 9). Diagnostic only: `> 0.0f` for the scale test (no
+// lahf) 193, alone 192: the matrix-arm base still avoids EAX, so the flags read does not explain it.
+// Diagnostics: with the else arm's marker reads removed the base folds (`add edx, [eax + 0xc]`, 234 with node first), so
+// the else arm's read of the same field is what makes it a temporary; with no node copy, node-first aligned 7 and the
+// base is still EBX. Retail's base takes EAX as the source dies; none of these forms gets that.
 // @retail 0x1786f0
 void function_1786f0(s_effect_object_marker *out, s_effect_marker_source const *source, short marker_index)
 {
@@ -1980,9 +1989,9 @@ static inline bool effect_location_in_zone_178c80(s_location const *location, po
 	return result;
 }
 
+// score 128 (was 128): Frame 0x40 versus 0x44, early color spill, cursor/query homes and zone-base scheduling remain.
 // MiniMax R (10-31): no kept form, no lower score: colour locals reach the frame 0x44 but spill both colours
 // (195/188); the permuter's 124 promotes the unknown to xmm0 and breaks retail's argument layout.
-// score 128 (was 128): Frame 0x40 versus 0x44, early color spill, cursor/query homes and zone-base scheduling remain.
 // Earlier forms: frame 0x44 agrees; settings/color/query registers, cursor home and zone-base scheduling remain.
 // tried native slot scalar 159 (a one-use copy of the field; not kept without a match); cursor/request/transform names and late settings receiver 166 (fast control 166);
 // shared zone predicate 286; zone cases first 166; float consistency 166; immutable loop selectors 169 (fast).
@@ -2077,6 +2086,37 @@ static inline bool effect_location_in_zone_178c80(s_location const *location, po
 // Round 478: complete native zone-entry/cluster/both/const-both values with
 // cached/live zone selectors: 379/375/375/375 in both sets. Every producer
 // outlines; original complete zone helper, observations and body restored.
+// AC494: Native node value after the unchanged returned-transform producer,
+// short/word/long/dword with direct/named positive argument: 128/131/133/133/135/137/139/139.
+// Named positive arguments recover frame 0x44 but grow to 564/552 bytes. On that
+// new frame, direct query and early A/B/both color combinations: 142/195/195/192/153/153/186/194.
+// NOT kept: no eligible gain; unsupported widths and one-use color snapshots need a match.
+// Original complete body, node observations, query timing and helper calls restored.
+// M328: Post-transform node rejection by OR/conditional/branch/default-result,
+// bool then byte: 147/159/159/151/147/159/159/151. All regress; complete original
+// body restored. Early color/query homes and frame 0x40/0x44 remain.
+// AC498: Isolated query-receiver/tint/multiply/placement/transform-result and
+// effect/system/settings formal names: 128 each. Original complete body restored;
+// frame 0x40/0x44, early color/query/cursor and zone-base homes remain.
+// Round 58 (m3 lane 11, fast): spawn stores as location/scale/unknown 128, as unknown/scale/location 124 (gain
+// 4, not kept); spawn declared first 128; location pointer declared in the while condition 128. On the
+// unknown-first form: cursor and colour locals read before the spawn stores 180 (572 bytes); multiplied() as
+// the call's argument 132; spawn declared first 124; effect cursor read after set_location 132; matrix at
+// function scope 124.
+// Round 123 (m3 lane 7, fast with callers/callees): spawn as an aggregate `= { scale, unknown, location }` after
+// set_location 128 (same code); with colour locals after/before it 184/184 (572 bytes); the type-query block's
+// braces removed 128 (same code); the mode cached in a word local before the loop 179 (564 bytes).
+// DH315: Live mode/placement field references, readonly/mutable single/both,
+// entry and iteration scopes: 128 in all eight forms, 556/552 bytes. Both
+// matched callers and transform producer stay exact; original descriptor reads,
+// query/color timing, cases, spawn fields and complete body restored.
+// Round 67 (m3 lane 1, fast): spawn as an aggregate initialiser `{ scale, unknown, location }` 128; the type-query
+// pointer at function scope 128; multiplied declared before tinted 128; the matrix producer as the spawn call's
+// argument 162 (552 bytes); the location mode in a short/word local before the loop 143/143 (552 bytes).
+// AC506: Initial location-setter presence/absence results in bool/byte/short/long:
+// 194/194/188/188/194/194/188/188 (572/552 bytes), all matched controls preserved.
+// NOT kept: one-use admission results regress and retain frame 0x40 versus 0x44;
+// original initial guard, color/query observations and complete body restored.
 // @retail 0x178c80
 void function_178c80(real scale, s_effect_datum *effect, s_particle_system_datum *particle_system, s_effect_particle_system_definition *definition, real unknown, bool field_b4)
 {
@@ -2452,6 +2492,13 @@ event_done:
 // tested). With the root index: second test as `NONE != ...` 197; a bool helper for the first test 197;
 // `if (effect && effect->object_index != NONE)` 130 (retail's head and reload, but the reloaded index is
 // then cached in ESI for 0x1794a0 and NONE takes EBX); nested head ifs 130; tail reading the field 130.
+// Round 90: split root declaration 63; root at function scope 63; definition declared first 63;
+// both 63; named root at function scope 63; visible in the outer block 63, at function scope 63;
+// tail object index at function scope 63. Original executable body restored.
+// Round 58 (m3 lane 11, fast): validity test nested under `object != NONE` with `return true` on deletion 206
+// (564 bytes), with the deletion in the if arm and the live work in its else 198 (571 bytes); definition
+// lookup moved into the live arm 85; a `deleted` result flag in place of clearing `effect` 202 (589 bytes);
+// early `return false` without an object, then the validity test 198. Still BLOCKED-BY 0xbadc0.
 // @retail 0x1794e0
 bool __stdcall function_1794e0(long effect_index)
 {
@@ -2843,6 +2890,11 @@ void function_177f60(s_effect_datum *effect, dword a_scales, dword b_scales, dwo
 // compound velocity additions 23; the shared vector-add helper 23; a zero-initialized sound record 104
 // (1363 bytes); a sound location snapshot 26; sound velocity and combined snapshots 23 each. Original
 // body restored.
+// Round 58 (m3 lane 11, fast): detached sound record with the compression after location and velocity 28;
+// velocity copied first of all 28; attached sound test as `!detached && object != NONE` 28; 'snd!' case
+// before 'ligh' 23; light test inverted with the detached call first 23. Every other 0x1895f0 caller fills the
+// record as position, compressed forward, velocity, location (retail's order here too); that order needs
+// 0x189060's register order (round 117 lead), BLOCKED-BY 0xbf600's call (contributor).
 // @retail 0x17a8a0
 void function_17a8a0(s_effect_location_datum *location, bool detached, s_effect_datum *effect, vector3f const *up, s_effect_part *part, point3f const *point, vector3f const *forward, real scale)
 {
@@ -3196,6 +3248,33 @@ void __stdcall function_17a380(s_effect_datum *effect)
 // matched caller but still regresses. Separate signed/bitwise tests on fields
 // or one native node word, cached/live: 94/109/105/113/94/109/96/115.
 // Original complete body restored; frame and system/color/definition homes remain.
+// M328: Post-transform inverse node admission, complement/OR in
+// bool/byte/short/long: 111/111/107/108/111/111/107/108. All regress; complete original
+// body restored. Frame, system/successor/color homes and cached mode remain.
+// AC498: Isolated system/effect/successor/first-color/second-color/type/mode/tint
+// local names, original scopes and observations: 93 each. Original full body restored;
+// frame 0x4c/0x54 and system/successor/color/definition homes remain.
+// Round 58 (m3 lane 11, fast with 0x176f60): the type query fed from `definition` instead of a second
+// function_1751d0() call 85 (331 bytes; not kept, retail makes that call); node predicate before the transform
+// call 115 (0x176f60 25); colours declared before the particle-location cursor 93; location pointer at function
+// scope 93; colours as long 93; location pointer declared in the while condition 93.
+// Round 123 (m3 lane 7, fast with callers/callees): spawn cursor re-measured 89; with the effect location index
+// declared inside the definition test 93; spawn + per-call mode 109 (0x176f60 25: the definition takes EBX, the
+// effect is computed in EAX and its index becomes a register argument), with the location index inside the test
+// 109, the node flag written in the call's argument 112 (327 bytes), the matrix declared beside the spawn 109.
+// DH315: Live mode-field reference, readonly/mutable, original/outer cursor
+// declaration and direct/named multiplication: 108/108/108/108/122/122/122/122.
+// All lose matched caller 0x176f60 (25); original cached mode, cursor, query,
+// successor, input contract and complete body restored.
+// Round 81 (m3 lane 9, fast with 0x176f60): the live mode (definition->location_mode in the loop call) 108 with
+// 0x176f60 25: both parameters then become register arguments (effect index in EAX, system in ECX) because the
+// effect pointer is formed in EAX and copied to EBP, where retail and our cached form load the index straight into
+// EBP; on the live form the system looked up before the effect 119 (348 bytes); colours read at the call 122 (320
+// bytes); colours declared before the particle-location index 108; the location pointer declared first 108.
+// AC506: Activity-admission bool/byte/short/long at the original cursor-read boundary
+// 93/93/93/93; before cursor acquisition 112/112/112/113. Earlier reads change the
+// argument convention and lose the matched caller. NOT kept: no gain or exact match;
+// original activity field read, definition/cursor lifetimes and complete body restored.
 // @retail 0x177040
 long __stdcall function_177040(long particle_system_index, long effect_index)
 {
@@ -3473,6 +3552,11 @@ PRIVATE inline real effect_remaining_fraction_179880(s_effect_datum const *effec
 // long/short/byte ordinals and repeated scale observation: 387/402/402/387;
 // with default-before-directions scale 354/374/374/354. Both other shared point
 // users regress in every form; original complete helper and body restored.
+// Round 58 (m3 lane 11, fast with 0x17aec0, 0x179fb0, 0x17a380, 0x176bb0): the transform through the existing
+// 0x1778d0 point helper 294 (1535 bytes); the house scale form re-measured 270; house scale with that helper
+// 252 at retail's 1525 bytes (scale block retail's; still no y copy, and the helper's product order is not
+// retail's); house scale with `scale * effect->scale_b` 270; node index named for the test and the call 74,
+// on the house scale form 270.
 // @retail 0x179880
 void __stdcall function_179880(s_effect_datum *effect, long effect_index)
 {

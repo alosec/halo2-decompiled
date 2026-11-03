@@ -484,6 +484,14 @@ extern "C" void _ReadWriteBarrier(void);
 // through a pool local after the iterator's assignments 163 (481 bytes: two homes as in retail, frame 0x10). The
 // iterator's pool passed as the element's pool stays 122 (kept). Retail hoists the high-water read here; 0x1fb6f0 and
 // 0x1fb760 reload it, which is what the scan's volatile read gives them.
+// Round 77 (m3 lane 16, fast): the barrier after the unit lookup removed 161 (479 bytes); the iterator's index and
+// datum index set before its pool 122 (same code); the finished arm first with the tick arm as its else 149 (474
+// bytes); the step through the global with the release through `iterator.data` 151 (477 bytes); the flag stored
+// before the control call 153 (476 bytes).
+// Round 66 (m3 lane 1, fast): `pool = g_4f5724` feeding the iterator and the element 122 (same code); with the
+// iterator set from the global 163 (481 bytes); without the barrier 161 (479 bytes); release through the pool
+// local 126; `pool = iterator.data` after the iterator's assignments, element only 122. Retail's frame reads as
+// a four-field datum iterator at +4 plus a prologue-set pool copy at +0 read only for the element.
 // @retail 0x1fb510
 void function_1fb510(void)
 {

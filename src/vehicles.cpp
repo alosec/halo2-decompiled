@@ -591,6 +591,23 @@ PRIVATE inline void vehicle_normalize2d(point2f *v, point2f const *fallback)
 // subsets 1/2/4/3/5/6/7, then all with enclosing speed: 278/126/507/278/502/507/502/502.
 // Complete staged graph with existing normalizer forced inline 348; original helper/body restored.
 // Velocity receivers, early 1.0 residence and later SSE/x87 colouring remain.
+// M329: Complete positive angular-admission channel, bool/byte/short/long, direct
+// producer 189/189/188/190; complete if/else 189/189/188/190. Every consumer was
+// complemented consistently. All regress; original reversing channel, helpers and body restored.
+// M336: Existing 2D normalizer success states, bool/byte/short/long, admission-owned
+// or initial-failure-owned: 126/126/126/126/126/126/126/126. Original helper restored;
+// velocity-copy receivers, early 1.0 residence and later SIMD/x87 homes remain.
+// P287: Complete input-product/angular-projection boundaries, subsets 1/2/4/3/5/6/7,
+// then all with steering-time definition observation: 225/126/126/225/225/126/225/297.
+// Original body restored; velocity receivers, early 1.0 and x87/SSE ranks remain.
+// M338: Test-owned angular offset/gear/signed rate outcomes, subsets 1/2/4/3/5/6/7 and final flag arms:
+// 211/195/126/224/211/195/224/234. Original body restored; velocity receivers and early 1.0/SSE/x87 homes
+// remain. NOT kept: no gain; non-retail gear-store/length forms restored.
+// F353: Existing shared 2D speed/helper magnitudes and paired angular dots, subsets 1-7; all with real
+// vector workspaces 225/126/225/126/225/126/225/225.
+// NOT kept: no gain; original full body/helpers restored.
+// F355: Complete perpendicular and heading-blend point initializers, seven subsets, then the complete fallback copy:
+// 126/126/126/126/126/126/126/277. NOT kept: no gain; original body restored.
 // @retail 0xef070
 void function_ef070(long vehicle_index)
 {
@@ -1191,6 +1208,38 @@ long function_10f5f0(long object_index);
 // Native short stopped alone 571; full-width reused final result 570.
 // Extent-only control 565 repeated an earlier form and is excluded; all executable
 // source restored. Frame, native flag-result bytes and sum-loop scheduling remain.
+// AC491: Entry-owned bounds/time/reduction scalar declarations, masks 1/2/4/3/5/6/7, then coherent
+// scalar identities: 565/565/565/565/565/565/565/565. Original complete body and producers restored;
+// native frame and homes remain.
+// AC494: Existing word-bit query at initial/active/physics families, masks 1/2/4/3/5/6/7,
+// then all with six-real output: 620/597/633/656/673/663/696/696. Calls remain outlined
+// where retail expands the tests; original complete body and declarations restored.
+// NOT kept: the shared query adds calls absent from the native flag tests.
+// P283: Direct idle admission with original/six-real output and original/zero-filled
+// name array: 565/565/571/572; completed logical idle value with the same variants:
+// 565/565/571/572. All tie or regress; original body, buffer and array stores restored.
+// Idle-call expansion, frame/state homes, flag-result stores and sum scheduling remain.
+// N338: Complete axial/radial response products, squared-radius and radial-scale
+// accumulator subsets, then running response accumulators: 566/565/565/565/565/566/565/565.
+// Original complete body restored; frame 0x19ac/0x1984, flag-result and reduction homes remain.
+// N340: Branch-owned initial powered/open/maximum production, seven subsets,
+// then complete logical numeric selection: 543/565/565/543/543/565/543/587. All restored;
+// native frame, predicate-result byte stores and reduction homes remain.
+// NOT kept: 543 shares the initial unity load where retail loads it twice.
+// P286: One ordinary Boolean predicate receiver at original snapshot/activity/physics tests,
+// seven nonempty subsets 575/565/565/575/575/565/575; all with six-real buffer 575.
+// NOT kept: embedded predicate assignments require a match; original entire body restored.
+// B394: Boolean result/changed tail accumulation and the two conditional completions;
+// at original/entry call-result lifetime: 573/573/568/567/573/573/568/567.
+// NOT kept: no exact match; original complete executable source restored.
+// J244: Existing squared-length/dot producers with original/shared point difference
+// and original/six-real buffer: 565/565/561/561/565/565/561/561.
+// NOT kept: four-point lead is below threshold; six-real frame 0x1990 still
+// exceeds 0x1984. Original complete body and arithmetic restored; flag stores and reduction remain.
+// P295: Direct Boolean snapshot/activity/physics tests on the ordinary result graph,
+// masks 1/2/4/3/5/6/7, then six-real output: 575/599/565/617/575/599/617/617.
+// Word-load/shift prefix partly recovered; predicate stores and native frame still miss.
+// Original tests, load widths, API buffer and entire body restored.
 // @retail 0xefde0
 bool __stdcall function_efde0(long vehicle_index)
 {
@@ -1619,6 +1668,10 @@ PRIVATE __forceinline real vehicle_speed_fraction(real speed, byte const *defini
 // 361, with both/first/second getters 365/361/365; reversed paired dots with both getters
 // 365. Original body restored; header SIB, join reloads and cross/dot ranks remain.
 // J239: actual table-base capture 521; separate refresh/publication ordinals 17; bounded short ordinal 384; base with separate ordinals 521; base with short ordinal 506; separate short ordinals 384; all three 506; sequential animation-ID output cursor 17; coordinated kind-getter inline declarations 13. Original body and declarations restored.
+// Round 92: raw byte-addressed first/second/both headers 13/13/13; refresh scope 13; const vehicle/graph/state
+// pointers 13; value-initialized cross output 13; three-statement forward sum 11, with reversed final i product 11;
+// k+j initializer plus i 15. NOT kept: the two-point staged gains are below the retention threshold. Original body
+// restored; header SIB, join reloads, shared cross loads and the final forward i load remain.
 // @retail 0xf0760
 void __stdcall function_f0760(long vehicle_index, vehicle_animation_value_callback callback, void *user)
 {
@@ -2399,6 +2452,42 @@ PRIVATE inline void vehicle_wheel_spin(real *spin, real delta, real const *perio
 // DH300: Existing spin helper advance owned before the field store, native/staged, with
 // per-use/once period 42/151/42/151; gate-scoped input 51/157; new advance with joined final
 // output 78/191. Original helper and complete body restored; turn-product and spin-store schedules remain.
+// Round 345: completed throttle/side-result/turn-clamp scalar phases, seven subsets; all phases with
+// loop-owned contact ordinal: 42/42/42/42/42/42/42/42. Original body and contracts restored. Turn-product
+// and spin scratch/store schedules remain.
+// AC491: Native two-side torque arrays, aggregate/assigned/immutable/entry-owned with
+// conditional/indexed selection, 48/95/48/95/48/95/48/95 (frame 0x14; NOT kept: grouped storage needs
+// a match). Paired turn magnitudes at their expression producers, first before the shared turn
+// product and second at its right-side use, 33 plain at 685/682; first difference +0x137 -> +0x1e2.
+// NOT kept: two one-use locals holding the same |turn|, placed to move the schedule (one-use
+// placement form, kept only with a match). Body restored at 42.
+// AC499: Float remainder with direct/joined/advanced/returned output, original then
+// paired magnitude producers: 42/127/127/127/34/127/127/127. NOT kept: 34 uses two one-use
+// magnitude locals without a match. Original two-use spin helper and full body restored.
+// N338: Advancing contact cursor with conditional/right-default/left-default/branch
+// torque results, loop/function declaration scopes, 46/46/49/46/46/46/49/46.
+// NOT kept: no exact cursor/one-use result form. Original body and spin helper restored;
+// turn-product and spin scratch/store schedules remain.
+// P286: Complete conditional spin dividend as fmod argument/positive arms/conditional assignment/
+// joined result, per-use period 84/181/42/145; native gate/correction capture with denominator
+// observed at fmod 116/200/112/186. All restored; turn-product and spin-store schedules remain.
+// P291: Actual paired side-result stages with the shared turn product after the first
+// side producer, four graphs with original/forced-inline spin helper:
+// 94/33/33/94/94/33/33/94 (plain 33, first +0x1e2). NOT kept (review): left/right split
+// into base stores plus -=/+= stages, a statement order picked by score from four equivalent
+// graphs (two give 94); body restored at 42. Native first magnitude precedes the turn product.
+// F353: Plain two-side spin loops, aggregate/const/assigned/assigned-const-pointer tables,
+// original/forced-inline existing helper 213/213/213/213/213/213/213/213.
+// NOT kept: grouped storage, frame 0x18/0x10 and 646/682 bytes; original body/helper restored.
+// M342: Native double fmod result, scoped/const/branch/default outputs and direct/branch/default/
+// guarded native-double returns at the real field store: 61/61/59/64/39/59/64/67. NOT kept: no exact
+// native-result boundary; direct double return 39 reaches 682 bytes but gains only three.
+// Original two-use helper and complete body restored; turn/spin schedules remain.
+// P297: Default-first turn/gear-throttle/engine-throttle clamp results, seven subsets,
+// then all with entry declarations: 43/50/50/51/51/50/51/51. Original body restored; turn-product/spin transport remains.
+// F353: Plain two-side spin loops, aggregate/const/assigned/assigned-const-pointer tables,
+// original/forced-inline existing helper 213/213/213/213/213/213/213/213.
+// NOT kept: grouped storage, frame 0x18/0x10 and 646/682 bytes; original body/helper restored.
 // @retail 0xf1cd0
 void __stdcall function_f1cd0(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -2726,6 +2815,35 @@ PRIVATE __forceinline real vehicle_friction(real speed, real friction, real scal
 // consumed scale return, crossed with distinct relative output and shared force/torque
 // mass scales: 728/728/738/738/728/728/738/738. Frames remain 0xd0/0x104;
 // original full body restored. Retail frame 0xfc and scalar/vector homes remain.
+// Round 544: Complete projected-up/force/torque setters, subsets 1/2/4/3/5/6/7,
+// then all with independent relative output: 689/691/692/690/689/691/690/698.
+// Best gains three; NOT kept under the gain gate. Original whole body restored.
+// M327: Named squared magnitude / accumulated magnitude / completed short-vector fallback / existing normalization scale:
+// 692/740/708/692 on original output, 699/748/710/699 with independent relative output.
+// Original full body restored; frames remain 0xd0/0x104 versus retail 0xfc.
+// M331: Existing projected-speed dot3f boundaries, subsets 1/2/4/3/5/6/7 then all with independent relative
+// output: 717/692/715/717/704/715/720/728. NOT kept: no qualifying gain or byte match. Original complete
+// body restored; retail frame 0xfc and scalar/transform scheduling remain.
+// B385: Plain vector-array normalization/force/torque loops, subsets 1/2/4/3/5/6/7,
+// 690/739/692/692/691/739/687; all with final mass-scaling loops 687.
+// NOT kept: best gain five is below eight; original complete body restored.
+// M333: Actual bound/reciprocal, directional-mass and projected-speed/force lexical
+// homes, seven subsets: 692 each; all with independent relative output 699. Frames
+// remain 0xd0/0x104 versus 0xfc; original full body and all producers restored.
+// Round 555: Existing squared-length/dot/inline-normalizer/called-normalizer
+// producers, original then independent relative output: 692/692/692/739/699/699/699/731.
+// NOT kept: no byte match; changed normalization grouping/precision is exact-only.
+// Original whole body, normalization and output graph restored.
+// F350: Native definition control/linear/angular field domains, seven subsets and complete
+// immutable receiver, 692 each. Existing staged cross products for side/bank/current/desired
+// axes, side-bank/matrix pairs/all/all with independent relative output:
+// 691/692/742/734/691/755/755/763. NOT kept: best gain one; frame remains 0xd0
+// or 0x104 versus retail 0xfc. Original body, record view and all helpers restored.
+// F354: Float CRT bank sine/cosine/both 689/689/692; distinct relative output
+// 699/699/700; both with distinct inverse/current or desired result 702/699.
+// NOT kept: best gain three is below eight; frames 0xd0/0x104 versus 0xfc; original body restored.
+// P297: Complete forward/left/up clamp-result arms, seven subsets, then all with
+// independent relative output: 692/692/692/692/692/692/730/722. Original macro bounds/body restored; frame and homes remain.
 // @retail 0xf2360
 void __stdcall function_f2360(long vehicle_index, s_vehicle_physics_state *state)
 {
@@ -3001,6 +3119,28 @@ PRIVATE inline real vehicle_angle_fraction(real angle)
 // N322: Scalar control/upright-target/upright-error storage, subsets 1/2/4/3/5/6/7:
 // 1095/1076/1076/1061/1053/1069/1061; all plus scalar lateral storage 1077.
 // Control/error storage reaches retail length with frame 0x84 but regresses; original body restored.
+// F344: Completed speed/acceleration-policy/yaw-policy scopes, seven nonempty
+// subsets, and completed airborne target/axis/error scope: 1052 each. Frame stays
+// 0x80 versus 0x74; original complete body restored. Extra scope-only probe 1052
+// excluded from eight-trial credit because it closes no additional local lifetime.
+// DH308: Existing integer sign helper zero-result/positive-result/nested-result/flat-result/early-return/
+// nonzero-result/negative-first correction/negative-first conditional: 1057/1049/1052/1052/1052/1057/1051/1052.
+// NOT kept: best gain is three points; all retain frame 0x80 versus 0x74. Original helper and body restored.
+// DL251: Plain yaw/airborne torque component loops with long/none, none/long, long/long,
+// unsigned/none, none/unsigned, unsigned/unsigned, long/unsigned and unsigned/long ordinals; frame
+// remains 0x80 versus 0x74: 1096/1080/1113/1096/1080/1113/1113/1113.
+// Original complete source restored; no eligible gain.
+// N335: Native inverse-scale/paired damping/final mass loops, subsets 1/2/4/3/5/6/7:
+// 1080/1068/1091/1080/1086/1102/1088; complete unsigned loops 1088. All regress with frame 0x80.
+// Original body restored; velocity and force homes remain.
+// Round 555: Existing setters for acceleration, both lateral axes and boost
+// direction, seven subsets; all plus yaw update: 1052/1060/1053/1060/1053/1060/1060/1060.
+// Original complete body restored; frame/force/velocity ownership still differs.
+// F354: Live default-target receiver/repeated steering direction/fraction numerator,
+// singles and pairs/all/all forced inline: 1077/1047/1053/1089/1060/1053/1105/1105.
+// NOT kept: best gain five is below eight; frame stays 0x80 versus 0x74; original body/helper restored.
+// P297: Existing ground/yaw/boost dot3f producers, seven subsets, then all with the
+// angle producer forced inline: 1051/1071/1068/1071/1068/1071/1071/1071. NOT kept: changed float trees require equality; original body/helpers restored.
 // @retail 0xf3010
 void __stdcall function_f3010(long vehicle_index, s_vehicle_physics_state *state, real steering)
 {
@@ -3558,6 +3698,30 @@ PRIVATE inline void vehicle_cross(vector3f const *a, vector3f const *b, vector3f
 // Round 370: Complete forward parts with cosine-up/sine-axis/outer-trig declaration
 // subsets 1/2/4/3/5/6/7, then all with native fallback copy: 145/156/131/155/145/156/155/159.
 // Five-point best rejected; original body restored. Projection/cross ranks and angle/trig homes remain.
+// F344: Native final-left fields as projection/flip-axis workspaces, direct
+// projection/axis/both 220/207/288; field receivers 215/219/291; mixed receivers
+// 288/287. NOT kept: output-storage graph adds nonretail stores and length.
+// Original complete body, actual helper contracts and real precision restored.
+// DH308: X87 angle with complete forward/cosine-up/sine-axis part subsets 1/2/4/3/5/6/7,
+// then all with native fallback copy: 172/176/175/178/176/176/171/140. All regress at 776..786 bytes versus 806.
+// Exact-only precision forms restored; original real angle, setters, helpers and body retained.
+// P287: Final branch-owned return truth, five producer graphs 222/222/222/214/214;
+// first three with a native normalization-result receiver 231/231/231. All restored;
+// projection input ranks and angle/trig homes remain.
+// Round 546: Existing sequential cross producers at facing/axis/final-left sites,
+// subsets 1/2/4/3/5/6/7: 138/136/165/166/167/165/167; all with X87 angle 171.
+// NOT kept: no gain; precision form requires a match. Original complete body restored.
+// M336: Staged-cross first/second scalar input captures and complete product parts,
+// seven subsets then immutable complete inputs: 178/177/165/225/200/193/234/234.
+// All regress and grow; shared helper restored. Projection ranks and trig homes remain.
+// M338: Entry flip truth in bool/byte/short/long, positive/complementary channels:
+// 136/159/240/237/169/169/244/241. Original body restored; projection/cross ranks and angle/trig homes
+// remain. NOT kept: no gain; unsupported truth widths/polarities restored.
+// F353: Consistent float CRT trig APIs and actual trig-result name/declaration homes
+// 173/173/159/159/173/173/159/159.
+// NOT kept: no gain; original full body/helpers restored.
+// F355: Wide fraction with real/wide angle, original/entry trig declarations and original/late flip predicate:
+// 199/202/199/202/227/235/227/235. NOT kept: no gain; original body restored.
 // @retail 0xf44a0
 bool __stdcall function_f44a0(long vehicle_index, matrix3x3 *facing, s_vehicle_physics_state *state,
 	matrix3x3 *result)
@@ -3820,6 +3984,9 @@ long __stdcall effect_new_from_parameters(s_effect_parameters *parameters);
 // ray producer + collision miss continue 48; native facing producer + native ray producer + collision
 // miss continue 67; native facing producer + native ray producer + collision miss continue + readonly
 // marker 67; total owns first marker result 141. Original body restored.
+// Round 91: long primary count 169; primary-count address reference 48; direct definition macro at
+// the tag store 138; const definition 48; const primary count 48; const total 48; facing copied in
+// j/k/i order 67; four-byte-aligned short primary count 127 (prologue changed). Original body restored.
 // @retail 0xf6060
 void __stdcall function_f6060(long vehicle_index)
 {
@@ -3923,6 +4090,13 @@ extern byte g_5107ee;
 // the middle point 41 (kept); copy after the memset 39 (retail stores two words before it, not kept);
 // dot declared where computed 41; dot3f(normal, facing) / dot3f(facing, normal) 45/45; a pointer to
 // effect_markers[6] 41; the reflection through vector3f_assign 41.
+// Round 90: incoming/normal/bounce pointers 45; incoming+normal 45; bounce alone 41;
+// sequential dot with component midpoint stores 165 (frame 0x8bc), with the whole copy 47;
+// reflection-order pointers 45, also before the vector providers 45; point setter 154
+// (frame 0x8bc); normal pointer 43; incoming pointer 45. Original executable body restored.
+// B392: Plain midpoint/copy/reflection loops: 43/41/43/41/41/41/41/41; native midpoint aggregate with CRT
+// publication/projection-part follow-ups: 41/41/149/149. Original body restored; cone setup and
+// reflection schedule remain.
 // @retail 0xf62f0
 void __stdcall function_f62f0(long vehicle_index)
 {
@@ -4124,6 +4298,34 @@ long function_189060(long object_index, short value, real scale, point3f const *
 // with shared in-place ray scaling: 191/170/185/176/191/170/185/184.
 // Cached default-first reaches 1361 bytes, but the six-point lead is below the keep gate;
 // original full body restored. Found-index/world/clamp/final flag allocation remains.
+// Round 544: Four marker-query/name admission scopes with the live field or
+// one twice-used marker identifier, eight forms 176 each. Original marker
+// admission and complete body restored; found-index/world/final flag gaps remain.
+// M327: Complete active/default scalar orders olr/rol/rlo/lor/lro on shared translation and late reach:
+// 180/179/194/181/194. Three-use post-search admission with complete scalar results in bool/byte/long:
+// 176/176/176. Original full body restored; found-index retest and collision/result homes remain.
+// M331: Independent offset/length/rest/value declaration ranks vorl/orlv/lorv/lrov/rolv/rlov/volr/vrlo,
+// original producers fixed: 176/176/176/176/176/176/176/176. NOT kept: no qualifying gain or byte match.
+// Original complete body restored; frame 0xec agrees; found-index retest and scalar/world/fallback homes
+// remain.
+// P288: Actual sound-clamp result producers with complete collision input/publication phases
+// 176/181/176/176/182/170/182/182. Store-first sound/collision clamps reach 170 at 1360/1361,
+// six points below the baseline: under the keep gate. Original complete body restored;
+// found-index retest, world/fallback and final flag allocation remain.
+// M333: Static-marker/cache-schedule/component-hit predicate results, seven subsets:
+// 176 each; all with default-first cached conversion 170 at 1361 bytes. NOT kept:
+// six-point gain below the gate, and one-use predicates require a match. Full body restored.
+// M340: Complete indexed predicate for/while, identity/validity first, cached/live count: 255/255/255/255/255/255/255/255. NOT kept: no exact search/world/result graph; original body restored.
+// P290: Completed final update-bit writers, set-first/clear-first returns with
+// bool/byte/short/long sound result: 176/176/185/185/289/289/291/291.
+// Original body/result restored; native split writer epilogues, found-index retest,
+// world/zero/fallback allocation and scalar homes remain. No qualifying gain.
+// M342: Selected override ordinal serves both threshold fields; NONE/count defaults,
+// for/while scans and producer/entry declaration scopes: 262/261/262/261/262/261/262/261. NOT kept:
+// no exact selected-result graph. Original search/body restored; found-index/world/fallback homes remain.
+// Y559: Complementary silent then unchanged carriers, each bool/byte/short/long:
+// 188/188/289/293/177/177/283/285. NOT kept: no byte match; native positive flag
+// producers, found-index retest and world/fallback/final-writer homes remain.
 // @retail 0xf6670
 bool __stdcall function_f6670(long vehicle_index, bool update)
 {
@@ -4380,6 +4582,34 @@ bool __stdcall function_f8070(long bit, word const *flags);
 // truth publication: 765/765/749/749/749/749/749/749. Minimal direct Boolean
 // publication alone 749 fast/plain, 2974/2974 bytes; retained with original
 // bypasses and bool state. Initial SIMD/definition allocation remains.
+// AC494: Entry kind/spin/engine definition families on the retained table/direct-active
+// graph, masks 1/2/4/3/5/6/7, then table-first: 1027/1027/1027/1027/1027/1027/1027/1026 (2707/2974 bytes). The compiler
+// merges the later definition reads too; original observations and complete body restored.
+// NOT kept: entry ownership merges later reads that remain separate in the native code.
+// P283: Shared ratio-provider inputs for angular/engine/scalar-limit families,
+// subsets 1/2/4/3/5/6/7, then entry declaration: 749/805/688/849/771/857/914/914.
+// NOT kept: shared one-use inputs and join labels 688. Original direct calls with
+// calculated limits named per case (all/steering/turn): 756/755/789. All restored;
+// frame 0x18 agrees, zero/result SIMD, entry definition and per-site one homes remain.
+// M327: Complete Boolean / guarded boost / admitted magnitude result producers on the retained
+// tag-table and direct-active graph, masks 1/2/4/3/5/6/7: 777/749/749/777/777/749/777;
+// all with direct Boolean-to-real results 751. Original full body restored; zero/result/1.0 and entry definition homes remain.
+// AC499: Float magnitude boundaries for fields/computed scalars/projections, seven subsets
+// then the existing magnitude selector too: 772/760/739/769/751/738/768/768. NOT kept: 738 grows
+// to 3010/2974 bytes and changes rounding boundaries without a match. Original full body/helper restored.
+// N338: Complete blend accumulation, native blend clamp and averaged-ratio
+// accumulator subsets, then both blend contributions named, 749 each at 2974/2974.
+// Original complete body restored; entry definition, zero/result SIMD and unit-constant homes remain.
+// P286: Terminal active truth: forced-first logical/eager normalized 749/749; positive/reject
+// branch returns 765/765; positive/forced complete arms 769/755; forced/positive default
+// publications 784/771. All restored; entry definition and zero/result/one residency remain.
+// F352: Contact-admission truth in bool/byte/short/long 749/749/749/749;
+// ground-admission truth in those domains 749/749/749/749. NOT kept:
+// one-use predicates do not match. Original gates/body restored; frame 0x18 agrees,
+// but entry definition and zero/result/one residency remain.
+// P291: Reverse-case zero/complete-arm/existing-ratio-helper/magnitude-owned results,
+// conditional then branched reverse selection: 753/751/797/751/753/751/797/751.
+// All restored; frame 0x18, entry definition and zero/result/one residence remain.
 // @retail 0xf6d10
 bool __stdcall function_f6d10(long vehicle_index, long name, real *value, bool *active)
 {
@@ -4895,6 +5125,36 @@ PRIVATE inline void vehicle_transpose(matrix3x3 *matrix)
 // the shared driver-tilt weighting, plain 1087 at retail length; frame 0xf8 versus 0xd8 remains.
 // M316: On pre-magnitude axis graph: sequential facing/current, current/state and desired/tensor matrix ownership subsets 1/2/4/3/5/6/7, all with consumed flip output 1119/1095/1170/1119/1165/1170/1170/1169.
 // Reuse reaches frame 0xd4 rather than retail 0xd8; entry index/offset and matrix/vector homes remain. Original executable body restored.
+// AC491: Complete translation/orientation/spin phase scopes, masks 1/2/4/3/5/6/7, then all with
+// coherent matrix identities: 1087/1087/1087/1087/1087/1087/1087/1087. Original complete body and
+// producers restored; native frame and homes remain.
+// AC494: Actual pool root/reused vehicle slot/flip-tick product, masks 1/2/4/3/5/6/7,
+// then all with a named rounded threshold: 1128/1087/1087/1128/1128/1087/1128/1128. Frame 0xf8 persists;
+// root ownership grows to 5104/5094 bytes. Original complete body and observations restored.
+// NOT kept: root snapshot omits the later native reload; the threshold copy is one-use.
+// P283: Existing complete quaternion converter, with desired normalization,
+// torque rotation/scale and sequential current/state ownership subsets:
+// 1203/1316/1203/1295/1203/1316/1203/1295. Converter stays called rather than
+// expanding as retail does; all regress and shorten below retail. Original full body,
+// matrices, axis/angle production and math providers restored; frame/index homes remain.
+// AC499: Existing current-axis/desired-input/paired-target setters, seven subsets then
+// complete force setter: 1211/1154/1109/1225/1157/1094/1220/1225. No native frame recovery; all
+// original producers, matrix/vector ownership, observations and full body restored.
+// B385: Existing current/state transpose and staged-cross boundaries, subsets 1/2/4/3/5/6/7,
+// 1112/1112/1087/1112/1112/1112/1112; both transpose returns consumed 1112.
+// Original complete body restored; frame, handle/offset and vector/matrix homes remain.
+// M333: Actual up-length/inverse, bank-axis and quaternion-axis lexical identities,
+// seven subsets, then independent component/point ordinals: 1087 each. Frame 0xf8
+// remains; original full body restored, with native index and matrix/vector homes unresolved.
+// F352: Existing axis inline/called normalizers and magnitude provider 1054/1143/1087;
+// desired-up inline/called normalizers 1148/1251; paired inline/inline,
+// inline/called, called/inline 1132/1236/1213. NOT kept: 1054 grows to
+// 5120/5094 bytes and changes sum grouping; no provider form matches. Called desired-up
+// alone or with inline axis gives frame 0xf4, others 0xf8, versus 0xd8. All restored.
+// P291: Sequential facing/current, current/state and desired/tensor ownership on the
+// weighted-driver graph, seven subsets then consumed flip output:
+// 1090/1087/1140/1090/1140/1140/1140/1205. Sharing reaches frame 0xd4 rather
+// than native 0xd8; original complete body restored at frame 0xf8 and retail length.
 // @retail 0xf4800
 void __stdcall function_f4800(long vehicle_index, s_vehicle_physics_state *state)
 {

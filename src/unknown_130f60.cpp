@@ -176,6 +176,8 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 #define PIN(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
 
 // score 324 (was 324): Entry ESI save (image composition: it moves to the entry when src/unknown_0350e0.cpp is linked), the 1.0 constant's register (XMM5, retail XMM6) and the third accumulation's scheduling still differ.
+// Round 121 (fast control 336, aligned 103): the helper's clamp as if/else if 336 (103); remaining first 348 (156); weight before
+// height 345 (129); remaining before weight 348 (144); a named inverse weight 337 (108).
 // Round 291: Paired double-square terms, complete direction-square terms, both, ordered accumulator
 // clamp, and clamp combinations 410/414/420/402/410/414/420; all with disjoint clears before common
 // remaining initialization 454 (fast control 402; full 444).
@@ -321,6 +323,31 @@ __forceinline void fog_accumulate(s_fog_accumulator *out, color3f const *color, 
 // expression node/named span/named offset/both: 411/411/411/411/400/400/426/426
 // (fast control 336, full 324). Original observations, helper and body restored;
 // ESI/unit-constant/reciprocal and accumulation schedules remain.
+// DH308: Native accumulation clamp ordered/successive/complete-result/copied-result/zero-owned/
+// upper-first/original-input/nested-result graphs: 336/336/421/421/433/349/421/342 (fast control 336; full 324).
+// Original helper and body restored; ESI/unit-constant/reciprocal and accumulation schedules remain.
+// N337: Direction/null-sample/invalid-range early-continue subsets 1..7 and complete
+// combined sample guard: all eight 336 (fast control 336; full baseline 324).
+// Original admission tests and complete body restored; full-image ESI/unit/scale homes remain.
+// DH317: Existing planar magnitude/normalizer producers with native/shared opposite
+// construction and mutable/readonly source: 336/468/336/467/336/468/336/467
+// (fast control 336, full 324). Magnitude forms tie; normalizer forms grow 45-46
+// bytes. Original helper, three-component scaling, includes and full body restored.
+// B388: Complete opposite/direction squared-norm nodes and rounded magnitude in double,
+// subsets 1/2/4/3/5/6/7, then both sums in double: 337/338/400/338/399/388/388/459
+// (fast control 336; full 324). All regress; original norm expressions and storage restored.
+// N345: Native component-array loops, negation/scale as fields or signed/unsigned
+// bounded traversal (excluding fields/fields): 360/360/357/361/361/357/361/361
+// (fast control 336, full 324). NOT kept: all regress; original component operations
+// and full body restored. Entry ESI, unit/reciprocal and accumulation schedules remain.
+// m3 lane 14 r56 (plain, 324): the third remaining read at both uses (no local) 379 (1874 bytes); `real yaw`
+// 503 (1917 bytes); the magnitude test as `fabs(magnitude) >= 0.0001f` 422 (1901 bytes); the third tail as
+// `count <= 0` weight first 355 (1892 bytes, retail keeps accumulate first); `opposite` declared before
+// `direction` 324 (same code). Retail's j loop head has a `lea esp, [esp]` pad that ours lacks.
+// N345: Native component-array loops, negation/scale as fields or signed/unsigned
+// bounded traversal (excluding fields/fields): 360/360/357/361/361/357/361/361
+// (fast control 336, full 324). NOT kept: all regress; original component operations
+// and full body restored. Entry ESI, unit/reciprocal and accumulation schedules remain.
 // @retail 0x131030
 void function_131030(long tag_index, vector3f const *view_direction, s_fog_accumulator *first, s_fog_accumulator *second, s_fog_accumulator *third)
 {

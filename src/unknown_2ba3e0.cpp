@@ -499,6 +499,10 @@ PRIVATE __forceinline vector3f *normalize_particle_velocity_2b(vector3f *v)
 // use 10; the distance estimate named 10; the attraction scale and add as two statements 10; the separation
 // radius/scale named before the call 303 (1523 bytes); the 0x2b9a00 property named before its call 236
 // (1521 bytes); re-measured: a separate speed-squared value 10.
+// Round 120 (lane 7, fast): the two branches' normalizers swapped 35 (1520 bytes); the header's
+// normalize_inline in the maximum branch 230; the velocity normalizer then the file scale helper there
+// 32 (1521); the velocity normalizer's sum through length_sq3f, in both branches 29 (1521); its sum as
+// i,j,k statements in both 41 (1520); as k + (i + j) in both 75.
 // @retail 0x2b9b10
 void function_2b9b10(s_particle_properties_2ba const *definition, void const *origin, long first, real scale, void *system)
 {
@@ -869,9 +873,42 @@ real g_55e618;
 // complete position setter and paired projection/tangent combinations
 // 102/209/245/224/194/195/188/179. Original union, shared result extent and full body restored;
 // sweep/collision homes and projection spills remain.
+// Round 75 (m3 lane 9, fast): MAIN LEAD, not kept because a value written out at each use needs a match: retail has no `dot` local. Writing the dot expression out in each of the three
+// perpendicular products (it becomes a compiler temp, numbered after the normal's) copies dot and multiplies perp.k in place as retail, so perp.k spills, frame 0x124 and every home agree:
+// with normal locals, the velocity pointer, velocity reads through it and the set: 64 (1537, aligned 12); with the particle's flags word and the reals at +8 and +0x34 as fields 47 (aligned 11);
+// with the collision word stored before the start stores 44 (aligned 10); with named position sums, nested in the call 44 (aligned 7), plain stores 44 (aligned 8). Left at 44: retail loads v.i
+// before n.k/n.i, loads the placement's last argument at the block's top and stores the position just before the call, and computes the x sum first. On that form: normal locals in six orders
+// 44 (aligned 8-15), sums in six orders 44 (8-9), keep after velocity/perpendicular/tangent/sums/impact 44/61/44/200/222; last argument named `long` 118-131 (movsx), `short` at eight positions or
+// widths 59-61 (the load and the position stores land as retail, but in EAX where retail has EDX, and eax/edx rotate in later blocks); normal through its pointer 57 (1538); normal as a direct
+// field 39-44 (aligned 16-20, twelve written term orders); a one-use velocity.i local 162-170; last sum read in the store 44; plain position expressions 237 (1554), typed 238; by-value dot
+// through vector3f_scale 187-198 (frame 0x118); dot3f written three times through the pointer 172 (1540); tangent after the sums 230; tangent reads through the particle 81.
+// With a `dot` local: helper grid (dot text/dot3f, perpendicular text/vector3f_scale, tangent text/point difference, position text/set/add-scaled) 188-194; normal locals 179, typed 188; staged
+// dot 186/185/179; `perp = dot; perp *= n` 187; `dot *= n.k` last 179; all perps set to dot then scaled 179; normal copied by fields 181; normal k,i,j 180; dot declared first 179; interleaved 182.
 // AC475: Canonical repeated mode-two truth bool/byte/short/word, original sentinel
 // 273/273/269/269; sentinel before start stores 271/271/269/269.
 // Original raw mode mask, sentinel order, reflection inputs and complete body restored.
+// Round 158 (m3 lane 4, fast): on round 75's form (dot written at each product, normal locals, velocity pointer, typed flags/+8/+0x34,
+// collision word before the start stores): setter statement 50 (1537, aligned 18), nested 50; named sums with plain stores after the impact
+// index 50 (y/z stores as retail, [ebp+0x20]); the first final row through the particle 44 (aligned 16, flags test hoists as retail). What is left is
+// one block: v.i first, the last argument above the stores, x sum first. Named last argument: `short` 59 (aligned 42), at the impact index 59,
+// through a collision pointer 59, `word` 59, dword view 59, `dword` from `word` 129 (1542), inline helper's by-value parameter 59: all land the load and
+// the stores as retail but in EAX, where the unnamed read gets EDX, and every later block rotates one step. Unused named read 44; const reference 44.
+// Position through vector3f_add_scaled before/after the impact 116 (1548), with the named last argument 155; assignments in a comma argument 236
+// (1554: the stores still precede the load); normal direct fields 60/54, with the named argument 82/76; impact at the block's top 50/65; helper
+// taking the collision point 156 (1547). Next: an unnamed read that sits ahead of the stores.
+// P289: Uniform scaled-response tangent/normal/both products, row-local then staged,
+// staged and row-local complete differences: 103/103/102/103/103/102/102/102. Original complete response
+// restored; sweep/collision homes and cross-placement projection spills remain.
+// Round 141 (m3 lane 6, fast): final rows from tangent and perpendicular each scaled in place through
+// vector3f_scale 101 (not kept, one point); tangent alone scaled in place 102; tangent scaled in place
+// right after it is formed 202 (1555 bytes); displacement/sweep/start and the collision call in their own
+// block with a bool result 102 (homes unmoved); `vector3f velocity = particle->velocity;` 223 (1556
+// bytes), with both in-place scales 223. Original body restored.
+// P292: Actual owning 16-bit flag record with contact/floor/stop bitfield subsets
+// 1/2/4/3/5/6/7, then all with native three-bit countdown: 99 each, 1549/1537 bytes.
+// NOT kept: only three points gained; all ten other same-file users unchanged.
+// Original full type layout, raw flag observations, projection and complete body restored;
+// sweep/collision homes and cross-placement tangent/perpendicular spills remain.
 // @retail 0x2b9060
 void __stdcall function_2b9060(s_particle_properties_2ba const *definition, void *system,
     long first, real scale, long mode)
