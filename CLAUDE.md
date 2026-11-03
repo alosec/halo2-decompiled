@@ -481,7 +481,9 @@ unit riding the Scarab (and the nearest eight once a pilot steps off),
 placing the player beside a unit it can't reach. 08b finishes on a rerun (frame 54540, then the main menu): every
 level from Cairo Station to The Great Journey finishes on the merged build. 05b finished on a rerun (2026-11-03): the sweep's stall
 at the upper elevator (`elev_up` held at 0.00) did not repeat; probed, the
-script's motion (0x108600, flag 8) runs and lands on 0.103. The bot now skips dormant threads (sleep -2), which
+script's motion (0x108600, flag 8) runs and lands on 0.103, and five
+probed runs in a row moved it with its animation channel set (0x107cc0
+advances only with one). Cause of the one stall unknown. The bot now skips dormant threads (sleep -2), which
 had kept it in 03a's bsp 1. 03b's bridge Banshees can be started with the
 `wake` hook (`e16_main`, `e16_cov_banshees0_main`); one Scorpion shell's
 impact and explosion kills each.
