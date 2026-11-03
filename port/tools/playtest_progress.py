@@ -372,13 +372,25 @@ def main():
                                         key=lambda m: (m.group(7).lower() == "ffffffff",
                                                        sum((float(m.group(4 + i)) - here[i]) ** 2 for i in range(3))))
                         reply = "no units"
-                        if others:
-                            target = others[count % len(others)]
+                        # every attached unit each try (they ride with the
+                        # actor, and a pilot's wait polls every 10 ticks: one
+                        # unit a try reached him too seldom), else the others
+                        # in turn, the nearest eight a try (a pilot off the
+                        # Scarab is no longer attached)
+                        attached = [m for m in others if m.group(7).lower() != "ffffffff"]
+                        for target in attached or others[:8]:
                             replies = len(g.test_replies)
                             g.guest("goto_unit " + target.group(1))
-                            g.wait(30)
-                            reply = next((r for r in g.test_replies[replies:] if r.startswith("goto_unit")), "no reply")
-                            reply += " " + target.group(1)
+                            g.wait(20)
+                            went = next((r for r in g.test_replies[replies:] if r.startswith("goto_unit")), "no reply")
+                            if went.endswith("failed"):
+                                # no free spot at his centre (the pilots on the
+                                # Scarab's deck): beside him, without the floor check
+                                x, y, z = (float(target.group(4 + i)) for i in range(3))
+                                g.guest("place %.2f %.2f %.2f" % (x + 1.5, y, z + 0.3))
+                                g.wait(20)
+                                went = "placed"
+                            reply = ("" if reply == "no units" else reply + ", ") + went.split()[-1] + " " + target.group(1)
                         print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                         acted[key] = count + 1
                     elif OBJECT_NEAR_WAIT.search(text) and count < 6:

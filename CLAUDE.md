@@ -476,10 +476,12 @@ See `port/README.md` "Play" for the full commands.
 ## After the 2026-11-02 merge (4577 commits)
 
 The progress bot finishes 01b, 03a, 04a, 04b, 05a, 06a, 06b, 07a, 07b and
-08a on the merged build (2026-11-03). 03b, 05b and 08b stall in the bot,
-not the game: 03b's Scarab pilots (`cs_e23_cov_inf1_pilot*` not served),
-05b and 08b go quiet with nothing the bot can serve (08b needed a 160,000
-frame budget before). The bot now skips dormant threads (sleep -2), which
+08a on the merged build (2026-11-03). 03b finishes too since the bot visits every
+unit riding the Scarab (and the nearest eight once a pilot steps off),
+placing the player beside a unit it can't reach. 05b and 08b go quiet with nothing the bot can serve (08b needed a 160,000
+frame budget before). 05b stops at the upper elevator: `elev_up_monitor`
+animates `elev_up` to 0.1 and it stays at 0.00 (the lower one moves; not
+the bot's presses, which press nothing). The bot now skips dormant threads (sleep -2), which
 had kept it in 03a's bsp 1. 03b's bridge Banshees can be started with the
 `wake` hook (`e16_main`, `e16_cov_banshees0_main`); one Scorpion shell's
 impact and explosion kills each.
