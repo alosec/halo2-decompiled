@@ -295,9 +295,9 @@ void function_593e0(void);
 
 #if H2_WHOLE_IMAGE
 /* the port's level select: the host's H2_START_MAP names a map that the first
-   game start loads in place of its own: a solo map for a campaign start (in
-   place of the introduction), a multiplayer map for a game started from a
-   lobby */
+   game start loads in place of its own: a solo map for a campaign start (a new
+   campaign's introduction or a resumed level), a multiplayer map for a game
+   started from a lobby */
 extern "C" unsigned int host_h2_start_map(char *buffer, unsigned int size);
 
 void port_start_map(s_game_options *options)
@@ -306,7 +306,7 @@ void port_start_map(s_game_options *options)
 	char const *folder;
 	char name[0x40];
 
-	if (!strcmp(options->field_1c_2, "scenarios\\solo\\00a_introduction\\00a_introduction"))
+	if (!strncmp(options->field_1c_2, "scenarios\\solo\\", 15))
 		folder = "scenarios\\solo\\";
 	else if (!strncmp(options->field_1c_2, "scenarios\\multi\\", 16))
 		folder = "scenarios\\multi\\";
