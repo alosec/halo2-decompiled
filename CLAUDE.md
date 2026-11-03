@@ -242,7 +242,13 @@ See `port/README.md` "Play" for the full commands.
 - **After each upstream merge:** check `frontend: N compiled, 0 skipped`
   and diff the `stubbed` list. Upstream signature changes leave
   fork-only callers on unbound mangled names (0xc5460's bool, 0x144f0's
-  argument order), which are silently stubbed.
+  argument order), which are silently stubbed. A reorder whose old call
+  still converts implicitly is not even stubbed: 0xc8200 became (unit,
+  vehicle, seat) and the test hooks' (vehicle, seat, unit) call compiled,
+  so `enter_vehicle` found no free seat. Recompile the fork's own files
+  (`port/runtime/guest_*.cpp`, `src/*_native.cpp`) with
+  `-Wimplicit-int-conversion` in place of `-w` and look at calls into
+  `function_*`.
 - **Xbox DSound semantics.** A submix (MIXIN) buffer passes its input even
   if the game never plays it; dialogue goes through one (fixed 625675f1).
   The Armory tutorial's "look at the light" steps need those lines.

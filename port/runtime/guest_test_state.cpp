@@ -695,7 +695,7 @@ static void run_test_commands(void)
 				for (long seat = 0; seat < seat_count; ++seat)
 					if ((!label || seats[seat].label == label) &&
 						function_c8f60(vehicle_index, (short)seat) == NONE &&
-						function_c8200(vehicle_index, (short)seat, player->unit_index))
+						function_c8200(player->unit_index, vehicle_index, (short)seat))
 					{
 						best = distance, best_index = vehicle_index, best_seat = seat;
 						break;
