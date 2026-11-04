@@ -35,6 +35,7 @@ ACTOR_NEAR_WAIT = re.compile(r"\(< \(objects_distance_to_object \(players\) \(ai
 UNIT_LINE = re.compile(r"unit (\w+) type \d+ team (-?\d+) body (\S+) at (\S+) (\S+) (\S+) parent (\w+)")
 HEALTH_WAIT = re.compile(r"\(<= \(object_get_health (\w+)\) 0\)")
 DEVICE_WAIT = re.compile(r"\(device_(?:get_position|group_get) (\w+)\)")
+RIDE_VOLUME = re.compile(r"\(volume_test_objects_all (\w+) \(players\)\)")
 VOLUME_TEST = re.compile(r"\((volume_test_objects(?:_all)?|volume_test_object) (\S+) \((players|player0|player1)\)\)")
 
 
@@ -412,6 +413,31 @@ def main():
                             print("frame", g.frame, thread["script"], node, "->", reply, flush=True)
                             acted[key] = count + 1
                     elif DEVICE_WAIT.search(text) and count < 6:
+                        # a ride the script starts only with every player
+                        # aboard (05b's elev_up: volume_test_objects_all
+                        # vol_inside_elev_up, then device_animate_position):
+                        # ride it. Pressing its control from beside it, or a
+                        # place elsewhere, leaves the elevator far from the
+                        # player, where it stops mid-ride (held at 0.01)
+                        aboard = None
+                        for other in thread["nodes"] if "(device_get_position" in text else ():
+                            try:
+                                found = RIDE_VOLUME.search(scripts.expression(int(other, 16)))
+                            except (IndexError, ValueError):
+                                continue
+                            if found and found.group(1) in volumes:
+                                aboard = found.group(1)
+                                break
+                        if aboard and g.state and not inside(volumes[aboard], g.state["pos"]):
+                            point = volume_point(volumes[aboard], 0.5, 0.5)
+                            g.guest("place %.3f %.3f %.3f" % point)
+                            g.wait(5)
+                            boarded = g.state and inside(volumes[aboard], g.state["pos"])
+                            g.wait(325)   # aboard for the ride (device_animate_position over 10 s)
+                            print("frame", g.frame, thread["script"], node, "-> ride", aboard,
+                                  "boarded" if boarded else "not boarded", flush=True)
+                            acted[key] = count + 1
+                            break
                         # a machine moved by a control (04b's elevator up to
                         # the cable room): press it from beside it
                         replies = len(g.test_replies)
