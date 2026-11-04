@@ -658,12 +658,17 @@ static void run_test_commands(void)
 		else if (command_is(command, "units", &rest))
 		{
 			float radius = parse_real(&rest);
+			/* "units R all": every object type, not just bipeds and vehicles
+			   (03b's fly-by ships are scenery and machines) */
+			while (*rest == ' ')
+				++rest;
+			bool const every_type = rest[0] == 'a' && rest[1] == 'l' && rest[2] == 'l';
 			real const *at = (real const *)(unit + 0x64);
 			for (long index = 0; index < g_4e0300->maximum_count; ++index)
 			{
 				byte const *header = (byte const *)g_4e0300->data + index * 0xc;
 				byte *object = *(byte **)(header + 8);
-				if (!*(short const *)header || !object || header[3] > 1)
+				if (!*(short const *)header || !object || (header[3] > 1 && !every_type))
 					continue;   /* bipeds and vehicles */
 				/* the bounding centre (+0x30) is in world space; the origin
 				   (+0x64) of an attached unit is in its parent's (03b's Scarab
@@ -672,10 +677,14 @@ static void run_test_commands(void)
 				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
 				if (dx * dx + dy * dy + dz * dz > radius * radius)
 					continue;
-				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx tag %08lx shield %.2f",
+				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx tag %08lx shield %.2f up %.2f %.2f %.2f",
 					(long)(((dword)*(short const *)header << 16) | (dword)index), header[3],
 					*(short const *)(object + 0x138), *(real const *)(object + 0xec), p[0], p[1], p[2],
-					*(long const *)(object + 0x14), *(long const *)object, *(real const *)(object + 0xf0));
+					*(long const *)(object + 0x14), *(long const *)object, *(real const *)(object + 0xf0),
+					/* the up vector (+0x7c, beside forward at +0x70), in the
+					   parent's frame for an attached object */
+					((real const *)(object + 0x7c))[0], ((real const *)(object + 0x7c))[1],
+					((real const *)(object + 0x7c))[2]);
 				host_h2_log(line);
 			}
 			host_h2_log("h2-test units end");
