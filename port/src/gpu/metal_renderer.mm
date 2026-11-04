@@ -733,6 +733,13 @@ public:
             for (int i = 0; i < 16; ++i)
                 if (packet.vertex_arrays[i].address)
                     std::fprintf(stderr, " r%d %08x/%u", i, packet.vertex_arrays[i].address, packet.vertex_arrays[i].stride);
+            /* and the constant values of the registers no array feeds
+               (SetVertexData*: the colours some shader templates take) */
+            for (int i = 1; i < 16; ++i) {
+                const float* d = packet.vertex_defaults[i];
+                if (!packet.vertex_arrays[i].address && (d[0] || d[1] || d[2] || d[3]))
+                    std::fprintf(stderr, " d%d (%g %g %g %g)", i, d[0], d[1], d[2], d[3]);
+            }
             std::fprintf(stderr, "\n");
         }
         if (tracing_frame() && packet.vertex_source == H2_GPU_VERTICES_INLINE) {

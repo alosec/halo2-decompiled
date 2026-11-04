@@ -11,6 +11,7 @@
 #include "hs_scheduler.h"
 #include "unit_requests.h"
 #include "units.h"
+#include "effects.h"
 extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *format, ...);
 
 extern "C" unsigned int host_h2_trace_flags(void);
@@ -30,6 +31,9 @@ bool function_11c380(long trigger_volume_index, transform4x3f *matrix);
 void __stdcall function_d6bc0(long object_index);
 long function_c8f60(long unit_index, short seat_index);
 void function_b9a90(long object_index);
+void function_b7930(void *data, long tag_index, long object_index, s_effect_owner const *owner);
+long __stdcall function_b7b40(void *data);
+bool __stdcall function_cd0c0(long unit_index, long weapon_index, short mode);
 
 /* whether a unit of another team sits in one of the vehicle's seats */
 static bool vehicle_has_other_team(long vehicle_index, short team)
@@ -539,6 +543,61 @@ static void run_test_commands(void)
 			if (alive)
 				function_d6bc0((long)datum);
 			_snprintf(line, sizeof(line), "h2-test kill_unit %08lx %s", (long)datum, alive ? "killed" : "not found");
+			host_h2_log(line);
+		}
+		else if (command_is(command, "give", &rest))
+		{
+			/* "give TAG": a new weapon from that weap datum (hex) into the
+			   player's hands, as a Marine's trade gives one (0xcd0c0 mode 4);
+			   the creation is 0xccd60's (0xb7930, 0xb7b40) */
+			char const *p = rest;
+			while (*p == ' ')
+				++p;
+			dword tag = 0;
+			for (; (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f'); ++p)
+				tag = tag * 16 + (dword)(*p <= '9' ? *p - '0' : *p - 'a' + 10);
+			byte data[0xc4];
+			function_b7930(data, (long)tag, player->unit_index, 0);
+			long weapon_index = function_b7b40(data);
+			bool given = weapon_index != NONE && function_cd0c0(player->unit_index, weapon_index, 4);
+			_snprintf(line, sizeof(line), "h2-test give %08lx weapon %08lx given %d", (unsigned long)tag,
+				(unsigned long)weapon_index, given ? 1 : 0);
+			host_h2_log(line);
+		}
+		else if (command_is(command, "effects", &rest))
+		{
+			/* "effects": the live effects (tag, object) and particle systems
+			   (tag), and how many particles and emitters are alive */
+			for (long index = 0; index < g_4ea93c->maximum_count; ++index)
+			{
+				s_effect_datum const *effect = (s_effect_datum const *)(g_4ea93c->data + index * g_4ea93c->size);
+				if (!effect->salt)
+					continue;
+				_snprintf(line, sizeof(line), "h2-test effect %ld tag %08lx object %08lx flags %04x", index,
+					(unsigned long)effect->tag_index, (unsigned long)effect->object_index, effect->flags);
+				host_h2_log(line);
+			}
+			for (long index = 0; index < g_510c74->maximum_count; ++index)
+			{
+				s_particle_system_datum const *system =
+					(s_particle_system_datum const *)(g_510c74->data + index * g_510c74->size);
+				if (!system->salt)
+					continue;
+				_snprintf(line, sizeof(line), "h2-test particle_system %ld tag %08lx definition %u", index,
+					(unsigned long)system->tag_index, (unsigned)system->definition_index);
+				host_h2_log(line);
+			}
+			_snprintf(line, sizeof(line), "h2-test effects end particles %ld emitters %ld",
+				g_51ec84->actual_count, g_51ec88->actual_count);
+			host_h2_log(line);
+		}
+		else if (command_is(command, "shield", &rest))
+		{
+			/* "shield V": the player's shield vitality (+0xf0, a fraction),
+			   to see the HUD meter at a given level before it recharges */
+			real value = parse_real(&rest);
+			*(real *)(unit + 0xf0) = value;
+			_snprintf(line, sizeof(line), "h2-test shield %.2f", value);
 			host_h2_log(line);
 		}
 		else if (command_is(command, "explode", &rest))
