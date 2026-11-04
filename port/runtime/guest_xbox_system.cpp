@@ -6,6 +6,8 @@
 #include <xtl.h>
 #include <string.h>
 
+extern "C" int _snprintf(char *destination, __SIZE_TYPE__ capacity, const char *format, ...);
+
 namespace {
 
 HANDLE token_handle(unsigned int token)
@@ -323,8 +325,29 @@ extern "C" DWORD WINAPI XGetLaunchInfo(DWORD *type, LAUNCH_DATA *data)
    the caller would otherwise spin waiting for the reboot */
 extern "C" DWORD WINAPI XLaunchNewImage(LPCSTR image_path, PLAUNCH_DATA data)
 {
-    (void)data;
     host_h2_log(image_path ? "XLaunchNewImage: another title" : "XLaunchNewImage: the dashboard");
+    {
+        /* who asked, and why: the launch data starts with the dashboard
+           reason, context and parameters; then the caller chain (frame
+           pointers), for port/tools/guest_symbolize.py */
+        char line[160];
+        const DWORD *words = reinterpret_cast<const DWORD *>(data);
+        _snprintf(line, sizeof(line), "XLaunchNewImage: data %08lx %08lx %08lx %08lx",
+            words ? (unsigned long)words[0] : 0ul, words ? (unsigned long)words[1] : 0ul,
+            words ? (unsigned long)words[2] : 0ul, words ? (unsigned long)words[3] : 0ul);
+        host_h2_log(line);
+        void **frame = static_cast<void **>(__builtin_frame_address(0));
+        for (int depth = 0; frame && depth < 8; ++depth)
+        {
+            _snprintf(line, sizeof(line), "XLaunchNewImage: caller %d 0x%08lx", depth,
+                (unsigned long)reinterpret_cast<unsigned long>(frame[1]));
+            host_h2_log(line);
+            void **next = static_cast<void **>(frame[0]);
+            if (next <= frame)
+                break;
+            frame = next;
+        }
+    }
     host_h2_exit(3);
     return 0x80004005u;
 }

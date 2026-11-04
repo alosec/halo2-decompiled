@@ -24,6 +24,9 @@ void function_11c840(void);
 void function_18ec60(bool arg_0, char const *arg_1);
 void function_18ed00(bool arg_0);
 void function_593e0(void);
+#if H2_WHOLE_IMAGE
+extern "C" void h2_probe(char const *, unsigned, unsigned, unsigned);
+#endif
 
 #pragma inline_depth(0)
 // @retail 0x18eaa0
@@ -60,6 +63,10 @@ bool function_18eaa0(s_18eaa0 const *arg_0)
 		break;
 	case 4:
 	local_3:
+#if H2_WHOLE_IMAGE
+		/* port: name the fatal "problem with the disc" screen's cause */
+		h2_probe("h2-fatal map load failed (0x18eaa0), location %u", (unsigned)map_location_get(local_1), 0, 0);
+#endif
 		g_51ea00 = true;
 		g_547f29 = true;
 		g_4ed39e = true;

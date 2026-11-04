@@ -9,6 +9,9 @@
 
 extern bool g_4e3b40;
 extern bool g_51ea00;
+#if H2_WHOLE_IMAGE
+extern "C" void h2_probe(char const *, unsigned, unsigned, unsigned);
+#endif
 extern bool g_4ed39e;
 extern bool g_4ed39d;
 extern dword g_4ed3a0;
@@ -255,6 +258,10 @@ void function_121fc0(void)
 		memset(g_4e2920, 0, k_maximum_font_count * sizeof(s_font_cache_entry));
 		if (!function_121b00())
 		{
+#if H2_WHOLE_IMAGE
+			/* port: name the fatal "problem with the disc" screen's cause */
+			h2_probe("h2-fatal font load failed (0x121fc0)", 0, 0, 0);
+#endif
 			g_51ea00 = true;
 			main_globals.unknown29 = true;
 			g_4ed39e = true;
