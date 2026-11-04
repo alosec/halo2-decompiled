@@ -44,3 +44,9 @@ src/light_record_native.cpp
 # The curated menu build's structure bsp callback table: nothing in the
 # whole image reads it, and its arena entry has no definition.
 port/runtime/guest_structure_bsp_callbacks.cpp
+
+# A placeholder from before the port had audio (2026-10-09): it emptied
+# 0x18bb80, the per-tick sound environment and cluster ambience update, and
+# outranked src/sound_looping_paths.cpp's recovery, so levels never picked
+# their background sounds or reverb environments.
+src/sound_looping_paths_native.cpp
