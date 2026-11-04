@@ -275,9 +275,15 @@ def frontend_mode(unit, args, header_stamp, native):
                # reports itself (port/runtime/guest_test_state.cpp) instead of
                # corrupting its caller's registers
                ("-fstack-protector-all" if os.environ.get("H2_STACK_PROTECT") else "-fno-stack-protector"),
+               # -fms-volatile: retail's compiler gives volatile accesses
+               # acquire/release order (MSVC /volatile:ms, on top of x86's
+               # strong ordering). The game's threads hand results over with a
+               # store then a volatile flag (the async queue's `done`); on
+               # ARM64 plain volatile lets the waiter see the flag before
+               # the result
                "-fno-math-errno", *(["-DH2_NATIVE_PORT=1"] if native else []),
                "-DH2_PORT_SHIMS=1", "-DH2_WHOLE_IMAGE=1",
-               "-fms-extensions", "-Wno-ignored-attributes", "-Wno-c++11-narrowing",
+               "-fms-extensions", "-fms-volatile", "-Wno-ignored-attributes", "-Wno-c++11-narrowing",
                "-DH2_MS_ABI_FRONTEND=1", "-Xclang", "-fno-wchar", "-w"]
     if not is_c:
         # Retail relies on LTCG to inline 'inline' definitions across files;
@@ -575,7 +581,7 @@ def storage_bindings(root, args, work):
     source.write_text("\n".join(lines) + "\n")
     command = [args.llvm / "clang++", "--target=thumbv7-pc-windows-msvc", "-O0", "-ffreestanding",
                "-DH2_NATIVE_PORT=1", "-DH2_PORT_SHIMS=1", "-DH2_WHOLE_IMAGE=1", "-DH2_MS_ABI_FRONTEND=1", "-Xclang",
-               "-fno-wchar", "-fms-extensions", "-fno-exceptions", "-fno-rtti", "-w",
+               "-fno-wchar", "-fms-extensions", "-fms-volatile", "-fno-exceptions", "-fno-rtti", "-w",
                "-Wno-c++11-narrowing", "-include", "xmmintrin.h", "-include", "string.h",
                *[f"-I{i}" for i in args.include], "-S", "-emit-llvm", source, "-o", "-"]
     result = subprocess.run([str(c) for c in command], capture_output=True, text=True)
