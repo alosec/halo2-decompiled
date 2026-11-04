@@ -497,7 +497,7 @@ level from Cairo Station to The Great Journey finishes on the merged build. 05b 
 at the upper elevator (`elev_up` held at 0.00) did not repeat; probed, the
 script's motion (0x108600, flag 8) runs and lands on 0.103, and five
 probed runs in a row moved it with its animation channel set (0x107cc0
-advances only with one). Cause of the one stall unknown. The bot now skips dormant threads (sleep -2), which
+advances only with one). Seen again 2026-11-04 (held at 0.01): the bot pressed the control from beside it and went elsewhere, leaving the elevator far from the player mid-ride; the bot now rides it (places the player in the volume the script tests with volume_test_objects_all and holds for the ride, 216573288). The bot now skips dormant threads (sleep -2), which
 had kept it in 03a's bsp 1. 03b's bridge Banshees can be started with the
 `wake` hook (`e16_main`, `e16_cov_banshees0_main`); one Scorpion shell's
 impact and explosion kills each.
