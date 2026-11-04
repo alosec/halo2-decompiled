@@ -296,6 +296,14 @@ See `port/README.md` "Play" for the full commands.
   0x18eaa0, 0x12bf00) draws through the Xbox's `0xf0000000`
   write-combined view, which the port doesn't map. When the game stops
   on black with no draws, check for that state before anything else.
+- **Memory ordering between the game's threads.** Retail relies on
+  MSVC's volatile (acquire/release) and x86's strong ordering: a worker
+  stores a result, then a volatile `done`; the waiter spins on `done` and
+  reads the result. Clang's default volatile has no ordering and ARM64
+  reorders, so the image builds with `-fms-volatile` (2026-11-04). Every
+  spin flag in src is volatile; keep it so in new recoveries. Suspected
+  in the occasional boot onto the fatal disc screen (a font copy that
+  "failed"); `h2-fatal` lines name the setter if it recurs.
 - **Depth surfaces.** The game binds depth separately from the colour
   target, and several targets share one depth buffer (fixed: shared
   depth keyed by `depth_stencil`).
