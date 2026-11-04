@@ -300,7 +300,13 @@ See `port/README.md` "Play" for the full commands.
   MSVC's volatile (acquire/release) and x86's strong ordering: a worker
   stores a result, then a volatile `done`; the waiter spins on `done` and
   reads the result. Clang's default volatile has no ordering and ARM64
-  reorders, so the image builds with `-fms-volatile` (2026-11-04). Every
+  reorders, so the image builds with `-fms-volatile` (2026-11-04), and
+  `retarget()` turns its acquire/release accesses into plain volatile
+  accesses plus fences: `ldar`/`stlr` fault on misaligned addresses, and
+  matched code reads retail data through volatile casts at any alignment
+  (05b crashed in `s_animation_state::sample`). Codegen-wide changes need
+  a gameplay soak (a progress-bot level), not just boots and the menu
+  regression. Every
   spin flag in src is volatile; keep it so in new recoveries. Suspected
   in the occasional boot onto the fatal disc screen (a font copy that
   "failed"); `h2-fatal` lines name the setter if it recurs.
