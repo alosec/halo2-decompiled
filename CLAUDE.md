@@ -296,6 +296,16 @@ See `port/README.md` "Play" for the full commands.
   function) showed its light and flare but never its particles
   (fixed 2026-11-04). Repro: `give TAG` hands the player a weapon,
   `effects` lists live effects and particle systems.
+- **Native rewrites that break in-place use.** `src/unknown_141590_native.cpp`
+  (the transform inverse) swapped the off-diagonals reading `in` after
+  writing `out`; five callers invert in place, among them `0xf2360`, the
+  flight model of Phantoms and Pelicans (vehicle type 3): the "inverse"
+  came out symmetric, right only near the identity, so a ship heading
+  away from +x got its levelling torque about the wrong axis and rolled
+  over (03b's e14 Pelican lay on its side near p6 every run; the user's
+  "ships flying upside down", fixed 2026-11-04). Copy the inputs first, as
+  `unknown_142a60_native.cpp` does. Found with a sidecar on a bot run:
+  append `guest units 5000 all` to the work dir's `control` file.
 - **Host shims that differ from Win32 in edge cases.** The fatal
   "problem with the disc" screen at boot, about one boot in fifteen:
   file times jittered (a two-clock conversion), so the font table's

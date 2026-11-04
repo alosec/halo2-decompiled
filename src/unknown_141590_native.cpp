@@ -4,8 +4,16 @@
 
 #ifdef H2_NATIVE_PORT
 // Portable scalar form of the recovered inverse transform at retail 0x141590.
-void function_141590(transform4x3f const *in, transform4x3f *out)
+void function_141590(transform4x3f const *source, transform4x3f *out)
 {
+    /* callers invert in place (0xf2360's flying vehicles pass the same
+       transform twice): transposing out of a copy, as retail's registers do,
+       keeps the off-diagonal swaps from reading what they just wrote, which
+       left a symmetric matrix: Phantoms and Pelicans turning away from +x
+       got torques about the wrong axes and rolled over */
+    transform4x3f const copy = *source;
+    transform4x3f const *in = &copy;
+
     if (in->scale == 0.0f)
     {
         memset(out, 0, sizeof(*out));
