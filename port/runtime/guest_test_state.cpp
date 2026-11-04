@@ -736,14 +736,18 @@ static void run_test_commands(void)
 				real dx = p[0] - at[0], dy = p[1] - at[1], dz = p[2] - at[2];
 				if (dx * dx + dy * dy + dz * dz > radius * radius)
 					continue;
-				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx tag %08lx shield %.2f up %.2f %.2f %.2f",
+				_snprintf(line, sizeof(line), "h2-test unit %08lx type %d team %d body %.2f at %.2f %.2f %.2f parent %08lx tag %08lx shield %.2f up %.2f %.2f %.2f node_up %.2f",
 					(long)(((dword)*(short const *)header << 16) | (dword)index), header[3],
 					*(short const *)(object + 0x138), *(real const *)(object + 0xec), p[0], p[1], p[2],
 					*(long const *)(object + 0x14), *(long const *)object, *(real const *)(object + 0xf0),
 					/* the up vector (+0x7c, beside forward at +0x70), in the
 					   parent's frame for an attached object */
 					((real const *)(object + 0x7c))[0], ((real const *)(object + 0x7c))[1],
-					((real const *)(object + 0x7c))[2]);
+					((real const *)(object + 0x7c))[2],
+					/* the root node's up (z), what the model is drawn with:
+					   node matrices start at the offset in +0x116, and each
+					   is scale, forward, left, up, position */
+					((real const *)(object + *(short const *)(object + 0x116)))[9]);
 				host_h2_log(line);
 			}
 			host_h2_log("h2-test units end");
