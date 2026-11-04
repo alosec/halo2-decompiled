@@ -287,6 +287,15 @@ See `port/README.md` "Play" for the full commands.
   code hid it (0 crashes in 6 probe runs, 3 in 3 without);
   `H2_FAULT_REGDUMP=x21:0x190` dumps memory at the fault without
   touching the guest image.
+  Likewise `0x1794e0` (an effect's per-tick update) called `0x1794a0`
+  with the effect's object twice, where retail's `eax` still holds
+  `0xbaf80`'s result, the root object: the first argument's header must
+  be connected (bit 0, set by `0xb7290` only for parentless objects), so
+  effects on a held weapon never woke from dormant. The plasma pistol's
+  charge (`charging_bolt`, gated by the weapon's `primary_charged`
+  function) showed its light and flare but never its particles
+  (fixed 2026-11-04). Repro: `give TAG` hands the player a weapon,
+  `effects` lists live effects and particle systems.
 - **Host shims that differ from Win32 in edge cases.** The fatal
   "problem with the disc" screen at boot, about one boot in fifteen:
   file times jittered (a two-clock conversion), so the font table's
