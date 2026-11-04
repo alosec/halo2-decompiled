@@ -90,6 +90,15 @@ def retarget(text):
     text = re.sub(r'\s+comdat(?:\(\$[^\)]+\))?', '', text)
     text = re.sub(r' "target-cpu"="[^"]*"', '', text)
     text = re.sub(r' "target-features"="[^"]*"', '', text)
+    # -fms-volatile's acquire loads and release stores as a plain volatile
+    # access and a fence: ARM64's ldar/stlr fault on a misaligned address,
+    # and matched code reads retail fields through volatile casts at
+    # whatever alignment the data has (an animation state 2 bytes off its
+    # declared alignment crashed 05b in s_animation_state::sample)
+    text = re.sub(r'^(\s*)(%\S+ = )load atomic volatile (.*?) acquire, align (\d+)(.*)$',
+                  r'\1\2load volatile \3, align \4\5\n\1fence acquire', text, flags=re.M)
+    text = re.sub(r'^(\s*)store atomic volatile (.*?) release, align (\d+)(.*)$',
+                  r'\1fence release\n\1store volatile \2, align \3\4', text, flags=re.M)
     return text
 
 
