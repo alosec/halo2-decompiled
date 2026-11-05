@@ -511,6 +511,7 @@ void __stdcall function_26c2d0(long prop_index);
 bool function_1fef40(s_type_c3b527 const *target, long actor_index);
 extern vector3f *g_4687b0;
 void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real cosine); /* forced inline in src/unknown_1eb8a0.cpp */
+// MiniMax G (11-04): no new form, no lower score: the zero's lifetime and the rotation's register homes are the whole difference.
 // score 77 (was 77): frame 0x20 agrees. Retail tests the planar length after the scale products
 // Round 28: the existing rotate_vector_170d70 (src/unknown_170d70.cpp) for rotate_direction 130 at retail's 850
 // bytes (aligned 106 -> 88; lead), with the output through vector3f_scale 147 (830); vector3f_scale for the output
@@ -650,6 +651,9 @@ void rotate_direction(vector3f *vector, vector3f const *axis, real sine, real co
 // read into a pointer before the turned copy 94; the side test inside the sine expression 130 (835 B). A
 // compile-only probe puts the zero in XMM0 after the scale products (retail's) when the rotation is a call, and
 // in XMM6 above the divide (ours) once its body is inlined, so the hoist follows the rotation's register pressure.
+// Round 138: split turn/direction declarations 77 each; sine after direction/at entry 77 each; outer side
+// predicate with entry sine 77; speed declared at entry/after direction with its read at the original point
+// 77 each; named second-normalization result 85 (842 bytes). Original body restored; zero lifetime remains.
 // @retail 0x1ff360
 long function_1ff360(long actor_index, point3f const *target, vector3f *velocity)
 {

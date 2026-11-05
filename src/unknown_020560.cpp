@@ -85,6 +85,9 @@ PRIVATE __forceinline long texture_floor(real value)
 // named truncated level 4; ordinary inline floor helper 166. Opening body and helper declaration restored.
 // Round 138: the bit-scan asm through EAX or EDX 6/6 (clear still EDX); index declared before the loop 4;
 // `while (remaining != 0)` 4; remaining declared, then assigned 4.
+// Round 67: bitmap declared at loop-body scope ahead of the NONE test 14, with the bias too 18, both at the top
+// of the body 21; a loop-scope copy of a pending mask 38; a for loop clearing the bit in its increment with
+// the NONE test as `continue` 4. Diagnostic: one to eight unused locals at entry leave EDX (symbol count not it).
 // @retail 0x1b0a0
 void __stdcall function_1b0a0(byte *state)
 {
@@ -1005,6 +1008,53 @@ PRIVATE __forceinline void copy_light_sample(s_light_sample const *sample, byte 
 // P310: Existing coefficient copier returns native direction pointer/reference or sample
 // pointer/reference: forced 547/547/547/547; ordinary 621/621/620/620. NOT kept: ties or
 // outlining regressions; original full copier, direction consumer and complete body restored.
+// Y572: Complete scalar query inputs at nearest/anchor/opposite boundaries, seven
+// subsets then immutable full inputs: 605/547/615/605/585/615/585/585. NOT kept:
+// no byte match; native query reloads and 0x2c frame remain. Original full body restored.
+// Y574: Existing component-array unit-scale difference at nearest/anchor/opposite, seven subsets
+// then early uninitialized native vector declarations: 922/547/1247/922/1634/1247/1634/1634. NOT
+// kept: anchor ties; search forms suppress native four-wide expansion and regress or shrink;
+// native 0x2c frame/query/ordinal/fraction homes remain. Original complete body and helpers
+// restored.
+// J250: Sole-caller fraction formal orders a/b/c, c/a/b, c/b/a, b/a/c, b/c/a
+// 587/547/547/587/587; original-order stdcall/cdecl/inline 547/547/547. NOT kept:
+// the 587 forms lose the matched fraction provider and move away from native extent.
+// Query/frame/fraction homes remain; pointer-to-ordinal quotient also consumes EDX.
+// Original provider contract and target body restored; prior ordinal-loop forms not repeated.
+// M3 lane 4 r165 (fast, 0x24550's source in the image; count/aligned/bytes): index scans through distance_sq3f with (position, sample)
+// 503/a306/2084, (sample, position) in scan 1 473/a276/2084, in both 457/a225/2070 (round 130's form, a reload mix), in scan 2 only
+// 487/a255/2070; entries read at each use everywhere 577/a207/2094: delta orders kij and kji 609/a212/2062, jik and jki 608/a206/2062, ikj
+// 578/a210/2094; nearest declared first 576/a207; length_sq3f 654/a287/2033, with dot3f written out 652/a277, with dot3f swapped 654/a287;
+// vector3d_from_points3d with a written-out length 652/a277; offset written out with length_sq3f or written out 583/a350/2085, with
+// distance_sq3f 761/a375/2289; scalars 583/a350/2085, with distance_sq3f 760/a339/2286. Const references bound to temporaries (the form
+// that matched 0x45560): samples 577/a207 (same code as at each use), first 476/a254/2052, both 610/a221/2062, samples with jik/kij
+// 608/a206, 609/a212, at-each-use first 610/a221, with jik 579/a221/2094. Nearest indexed at each use with no first pointer 610/a379/2156,
+// kij 610/a382, jik 610/a379, delta through vector3d_from_points3d 657/a302/2018, first kept beside it 598/a395/2162, kij 599/a395. Scan 2
+// reading offset as above with 1 to 7 dead locals at the top 577/a207 each (no numbering effect). Retail's two vector homes come from two
+// spills (offset.x +0x24, stored each pass, about 28 B of the length gap; delta.k +0x38); ours spills delta.j and k, or nothing with
+// length_sq3f (delta in xmm3-5 where retail colours xmm5-7). Its `lea ebp, [eax + ecx]` keeps the scaled index in a scratch register.
+// J255: Coordinate-range subtraction at nearest/anchor/opposite producers, seven
+// standard transform subsets 876/598/1237/912/1533/1362/1554; direct loops throughout 1471.
+// NOT kept: all regress and shorten away from 2122 bytes. Original scalar/vector
+// producers, reduction trees, includes and full body restored; frame/query/ordinal/fraction homes remain.
+// F390: Existing three-use coefficient copier standard forward range copies at red/green/blue,
+// seven subsets, then complete backward copies: 615/676/569/580/672/572/579/622. NOT kept: all
+// regress; partial forms retain frame 0x18, complete forms shrink it to 0x14 versus native 0x2c.
+// Original CRT copies, direction, helper and complete body restored; native
+// P335: Standard component-array inner products at nearest/projection/opposite distance,
+// seven subsets then complete graph with anchor transform: 845/1136/1138/1444/1417/1088/1402/1438. NOT kept:
+// all regress and suppress native scan expansion. Original reductions, includes and complete body restored.
+// P342: Standard binary component transforms at nearest/anchor/opposite producers, seven subsets then
+// scan-phase output declarations: 876/598/1237/912/1533/1362/1554/1554. NOT kept: no native frame/scan
+// recovery or byte match; original producers, includes and whole body restored. Frame 0x18 versus 0x2c,
+// query/vector/ordinal/fraction homes remain.
+// M380: Actual offset/delta aggregate initializers at nearest/anchor/opposite,
+// seven subsets then immutable full vectors: 547 each at 2122 bytes. NOT kept: native
+// frame/query/search homes remain; original scalar producers and complete body restored.
+// T60: Actual source/query/direction object-reference contracts, seven subsets and
+// all with the existing copier sample reference: eight at 547/2122. NOT kept:
+// native query register, vector/ordinal homes and frame 0x2c are not recovered.
+// Original interfaces, both caller sites, copier and complete body restored.
 // @retail 0x22cf0
 void __stdcall function_22cf0(s_light_sample_source const *source, real *red, real *green, real *blue, byte order,
     vector3f *direction, point3f const *position)

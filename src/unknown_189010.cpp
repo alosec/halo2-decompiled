@@ -149,6 +149,21 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 	return ticks;
 }
 
+// MiniMax D (11-04): no lower score. With the source in a local declared before the sound lookup our
+// load order is retail's (the tag table's base, the source, then the lookup) and the priority comes from
+// the request byte, but the link still gives EAX to the source and EDX to the tag table's base where retail
+// gives EAX to the base and EDX to the source, so the flag word is built in EDX; that form scores 135 at
+// 486 bytes, and 149 at 499 bytes with retail's set-or-clear object and platform bits. With the sound
+// lookup written first the base keeps EAX, but then the source's load lands after the lookup. The priority
+// read from the request alone is 109 at 472 bytes, and the permuter's best form (the 0x400 bit set after
+// the variant stores) is 109 as well; both gains are too small to keep. Body restored to the original.
+// MiniMax G (11-04): the priority read from the request and stored before the location copy 106 (a gain of
+// four, dropped by the review rule); the end test split into the 0x100 and the 0x800 masks, or written as a
+// shift, 106; the class test as nested ifs 106; the class lookup nested under the sound-flag test 160 (446
+// bytes: both lookups stay out of line, but the tag parameter is then copied into the frame); an always-true
+// test around the first class lookup 157. Body restored to the original.
+// MiniMax A (11-03): no new form, no lower score: the priority and the flags are still formed after the
+// location copy, and our link still expands the first 0x221810 call.
 // MiniMax S (11-01): no new form, no lower score; the priority and the flags are still formed after the location copy, and our link still expands the first 0x221810 call, so the state flags are forwarded across it where retail reloads them.
 // score 110 (was 110): BLOCKED-BY 0x221810 and 0x21d110 (callee side): LTCG inlines the first
 // 0x221810 call (retail calls both; its file is not this function's) and 0x21d110 (unmatched) takes the
@@ -287,6 +302,9 @@ static __forceinline long game_seconds_to_ticks_round(real seconds)
 // out of line and the body takes retail's shape, but the request then arrives on the stack and is homed in EBP;
 // that with the word bitfields 135 (471 bytes), whose class test becomes retail's `shr al, 7; test al, 1` (the
 // byte bitfield gives `test cl, cl; jns`), so retail's +0xa bits are word bitfields like flag1/flag2.
+// Round 106 (plain): nested class condition, bool/long end-update results, previous value20/value24/both and
+// disjoint source mask 110 each; word +0xa 132 (478), marker-size local 131 (470), location-flags local 111 (474).
+// Original body restored.
 // @retail 0x189fe0
 long function_189fe0(s_sound_request const *request, long tag_index)
 {
@@ -735,6 +753,14 @@ long function_1895f0(s_sound_position const *position, real scale, long tag_inde
 // Round 75 (plain; --fast matches with a CAVEAT): the 0x1895f0 call cast to void 2; the perpendicular
 // distance computed before the along test 140 (660 bytes); the distance before the forward copy 2; the
 // position sums camera-first 2; the velocity before the forward normalize 41.
+// Round 210 (fast with 0x188180, whose 533-source image reproduces the plain 2): the sound call's result tested and
+// ignored (`!= 0 || true`) 2; `return result ? true : false` 170 (657 bytes); `return result` right after setting it
+// 175 (659 bytes); `goto` after setting it with a `result = false` fall-through 2; the camera lookup before the result
+// declaration 5. Retail scan: with an own epilogue and an esp frame `pop; mov al, 1; pop` is the rule (172 sites); `mov al,
+// 1` before two or more pops appears only where other paths jump into those pops, or in ebp frames. Images today: with
+// 0xfcdd0, 0x184440 (67 sources), 0x1201a0, 0xfd410 or 0x17bbd0 (57) it matches; with any member of the large call cycle
+// (0xfc330, 0x10c880, 0x17a8a0, 0x188180, 0xfcea0, 0x1765e0, 0x247470 ...; 533+ sources) the swap appears, so 0xfcdd0 and
+// 0x184440 no longer bring it. Direct calls of 0x1895f0: retail 10, ours the same 10 plus the stand-in.
 // @retail 0x1897c0
 bool function_1897c0(long local_player_index, long unit_index, long tag_index, s_location const *location, point3f const *origin, vector3f const *direction)
 {

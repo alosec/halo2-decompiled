@@ -588,6 +588,26 @@ void c_turret_entity_definition::v21(s_entity *entity)
 // bytes); the positive test with the NONE arm first on the long result 52; a header pointer named for the test with
 // the object read through the macro 49. Lead: retail's reloaded table data and recomputed index look like an
 // out-of-line getter that LTCG inlines; no existing one was found in src/.
+// B415: Full validation byte in byte/word/long/dword storage, at the test then bare entry declaration:
+// B415: 49/49/49/49/49/49/49/49. NOT kept: one-use field storage does not match. Original validity result,
+// B415: virtual calls and complete body restored; false BL and independent header lookups remain.
+// M363: Actual input-info and both repeated virtual-argument formal lexical roles,
+// seven subsets, then all with complete incoming roles:
+// 49/49/49/49/49/49/49/49. NOT kept: no eligible byte match or native-supported closer.
+// Original complete body restored; false BL, temporary EBP and independent header/object lookup remain.
+// M367: Complete output/index/result declarations split from original assignments,
+// six ranks then coherent names at both endpoint ranks: 49 each at 176/176 bytes.
+// NOT kept: no byte match; original initialized declarations and complete body restored.
+// False BL, temporary EBP and independent header/object computations remain.
+// Round 55 (m3 lane 15, fast): on the bool result (false first, true after the attach): both lookups as `[index & 0xFFFF].flags` and
+// `.object` with no `&` 77, on the long result 49 (same code); `object_index == NONE || !flag` with the attach block under an inner
+// `entity->object_index != NONE` or `object_index != NONE` and the store in the else 75/75 (threaded, the lookup is shared);
+// the header flag through the stored index 77; the object store through it 77, with the attach too 82. Retail loads the pool after
+// the NONE test, so no NONE path reaches the second lookup there (unlike 0x10fa80, which loads the pool above its test). BL also
+// keeps `f` out of EBP only in retail: every bool form here caches `f` in EBP.
+// M380: Native index/attached-identity/both publications through memcpy 49/49/49,
+// memmove 109/76/122; both with early Boolean completion 77/94. NOT kept: no byte match;
+// original scalar stores, validity result, virtual tuples and complete body restored.
 // @retail 0xa5a60
 bool c_object_type_definition::v22(s_entity *entity, long b, s_entity_info *info, long d, long e, long f)
 {
@@ -926,6 +946,10 @@ bool c_projectile_type::v8(long a, long b)
 // read 12; a direct test with a reference index 12; a const object pointer 12; an un-named group
 // entry 15; const flags 12; a mutable handle reference 12; the entry predeclared in the flag scope
 // or the function scope 12/12. Original narrow-read body restored.
+// Round 88 (one-link LTCG screen, exact at 5), all with the full-width mask: `do {} while (false);` at each of 20 statement
+// boundaries 12 (47, 188 bytes, at the two after the 0x800 store); the power copied as long, both stores or the first only,
+// 12/12; the index by value 12; the power through a const pointer 12; a group index local before the entry 12; the NONE
+// test as `index + 1 != 0` 12; `b` throughout with no flags local 12.
 // @retail 0xa3df0
 long c_device_type::v27(long a, long b, long c, long d)
 {

@@ -313,12 +313,18 @@ PRIVATE __forceinline void function_21dcf1(long effect_index)
 struct s_looping_detail_request;
 long function_125f70(long definition_index, s_looping_detail_request *request, long *reason);
 
+// MiniMax b (11-04): no new form, no lower score; retail still takes the state pointer in EAX and the tag on the stack where ours takes the tag in EAX and the state on the stack, and the only form that fixes that changes src/unknown_189010.cpp: still BLOCKED-BY 0x189fe0.
+// MiniMax E (11-04): no new form, no lower score; the tag's copy stays at the entry and the class lookup still reloads the state from the stack, so the stream is one instruction short of retail's.
 // MiniMax R (11-01): no new form, no lower score; retail still takes the state pointer in EAX and
 // the tag on the stack where ours takes the tag in EAX and the state on the stack, and the only
 // form that fixes that moves 0x189fe0's request into EDX and loses its eight matched callers in
 // src/unknown_189010.cpp: still BLOCKED-BY 0x189fe0. Codex F (11-01): no new in-file form either.
 // score 181 (was 204): BLOCKED-BY 0x189fe0. Frame eight versus four, the state/tag registers and the
 // opposite start/delete expansion remain (ours takes the tag in EAX and the state on the stack).
+// Round 112: definition/effect declarations swapped, branch-defined effect index, sound result
+// before attachment and at function scope, private output declarations reversed, result after
+// outputs, initialized outputs, and negated rate admission without the redundant NONE assignment
+// all 181; all eight sensitive callers remain matched. Original executable source restored.
 // Earlier (204): no new in-file form moves it; the request has to reach 0x189fe0 in EAX or eight
 // matched callers lose their match, and that body is in src/unknown_189010.cpp: BLOCKED-BY 0x189fe0.
 // Round 102: the Round 72 form again 52 (429 B), 0x189fe0 110 -> 135 and its eight callers lost
@@ -447,6 +453,11 @@ long function_125f70(long definition_index, s_looping_detail_request *request, l
 // first 191/190; with a twice-used allocation-success value 183/185; entry result plus
 // settings/created_sound_index local names 191/190/183/185. The allocation value moves state to
 // ECX, but frame eight/four and state/tag homes remain. Original body restored.
+// T61: Actual private starter-state/allocator-definition reference interfaces and forced
+// allocator expansion, seven subsets 181 each; all with unsigned allocator result 161,
+// unsigned allocator result alone 161 (445 bytes, frame four). NOT kept: both 161 forms
+// lose all eight sensitive callers and raise 0x189fe0 110->135; unsigned domain lacks equality.
+// Original helper interfaces, result domain, expansion and complete body restored.
 // @retail 0x21d110
 long function_21d110(s_sound_play_state *state, long tag_index)
 {
@@ -970,6 +981,18 @@ PRIVATE long const g_44a20c[] = { 0, 1, 2, 2 };
 // function scope, loop index at function scope, call outputs at function scope, outputs reversed,
 // location declared first, and controller value declared first: 147 reduced each against 153,
 // with no slot movement. Original body restored.
+// Round 43 (lane 17, plain; --fast builds this differently, 153 for the plain 30): the definition declared at the
+// top and assigned in place 30; the controller chosen by if/else 40; the tag pointer looked up just before its
+// first use 175; the bool declared first with the state captured first 191; `(looping->flags & 0x10) != 0` 30.
+// Compile-only frame probe (our frame): none of these moves the bool out of the bottom byte unit; a short or long
+// flag lands just above repeat_state (retail's place) but reorders tag_index and widens the code.
+// Round 73 (m3 lane 1, plain): the flag returned by an inline getter over the looping record 30; inline getters for
+// both values 30; the 'lsnd' arm in a forced-inline helper taking the pair by value 30, with a long flag parameter 162
+// (836 bytes); a long flag with its bool conversion at the use 166 (832 bytes). One-file frame screen: an arm helper
+// left out of line pushes the flag and the bool then gets a dword slot (frame 0x10c; retail has no such push). A scan
+// of the matched functions' esp frames finds a lone byte in a dword-aligned home among dwords only as a dead parameter
+// slot, a struct member or a pushed bool. The record also lands where its two members' weights add up (below the
+// listener), where two separate locals land elsewhere, so retail's pair looks like one symbol.
 // @retail 0x21d630
 void __stdcall function_21d630(long effect_index, long mode)
 {

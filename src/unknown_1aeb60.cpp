@@ -317,8 +317,15 @@ bool function_1af530(long actor_index, long *b, long *a)
 }
 
 static __forceinline long real_to_long(real value);
-short *function_e70b0(long unit_index, short *value);
+short *function_e70b0(short *value, long unit_index);
 
+// MiniMax E (11-04): no new form, no lower score; an index local, a masked index, the state
+// before the actor and a masked second lookup score 49, a short index 112; the call to 0x1f4f40
+// already sets retail's arguments up (EAX, ECX and three stack arguments), so the swap is in
+// the body, not in the convention.
+// MiniMax G (11-04): no new form, no lower score; the actor index still takes ECX and the actor
+// data EDX, where retail keeps the index in EDX and the actor data in ECX, and the exchange
+// still runs through the timer, prop, random and final argument setup.
 // score 49 (was 49): frame agrees; ECX and EDX are swapped through the whole body (retail: index EDX,
 // actor ECX), down to the final call's argument setup. Existing state query
 // ordinary/inline/forced 138 each; query with long timer 143; timer/mode 143; mode 137; readonly actor
@@ -472,7 +479,7 @@ void __stdcall function_1afb30(long actor_index, s_slot *slot)
 	if (state->unknown16 && !state->unknown17 && state->unknown34 && actor_get(actor_index)->unknown504 == 2)
 	{
 		short action;
-		if (*function_e70b0(actor->unknown018, &action) != 7)
+		if (*function_e70b0(&action, actor->unknown018) != 7)
 		{
 			function_1f4f40(actor_index, &state->facing, state->unknown34, &state->point, true);
 			state->unknown17 = true;
@@ -654,6 +661,10 @@ struct s_1af5c6
 // (compile-only with the magnitude inlined reproduces it); the helper taking the vector as an out pointer on the original frame
 // 24, with the fraction local 24, with the distance vector scoped 24. A separate NONE long plus 12-byte point sorts as retail
 // compile-only, but the long folds away, also through a pointer local 159 (565 bytes); retail keeps it in memory.
+// Round 86 (plain): k identity locals on the input point, k = 1..8, 20 each (the remaining sites do not follow symbol numbering); the second
+// header read written in the test 20; the header flag in a byte local 20; the resolved index as if/else 20; a named hit product with the distance
+// first 20; the ray vector in the call's argument list 20; the hit fraction in a local after the test, or declared at the top, 19; with one category
+// result as well 106 (601 bytes); the distance compared as `local_14 < 1.0f`, as in 0x1c8df0, 20; the distance declared before the second vector 20.
 // @retail 0x1af5c0
 long function_1af5c0(long arg_0, long arg_1, point3f const *arg_2, long arg_3)
 {

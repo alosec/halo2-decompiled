@@ -385,6 +385,11 @@ struct s_block_candidate
 // bytes); oldest_time zero-initialised 392 (1228 bytes); best declared before the candidate ring 347 (same code);
 // the page remainder mask as `~(-1 << shift)` 347 (other code, same count).
 // Retail keeps result's NONE in EAX through the clamp and stores oldest's NONE from it. Original body restored.
+// Round 69 (m3 lane 10, fast; aligned and register-masked counts in brackets, base 260/139): the 4 missing frame bytes are the next index's home: retail
+// keeps offset in EBX, the forwarded candidate pages in EDI and spills next, tail and head, ours gives EDI to tail and EBX to next and keeps offset in memory. Pages, result, offset,
+// clamp, with previous's NONE in the block 380 (257/139); the policy switch as an inline helper with a return per case 343 (260/145), on that head 375 (258/152). 240
+// random declaration orders of the head, block and segment locals, compile-only: 289-295 against 295, frame never 0x1054. Diagnostics: unused
+// pointers to tail or head 347/380 (same code); tail in a scratch global 376 (1228 bytes, 262/120) still leaves offset in memory.
 // P305: Final predecessor/successor/both/all linked-record references, each with
 // mutable/fixed backing receiver: eight at 347. Original complete body and native
 // record accesses restored; missing frame dword and page/ring/policy allocation remain.
@@ -406,6 +411,33 @@ struct s_block_candidate
 // N352: Post-callback allocator-clock long/dword, occupied/segment/admitted/entry
 // declarations: 347 each. NOT kept: one-use clock forms remain unmatched and retain
 // frame 0x1050/0x1054 and page/ring homes; complete original body restored.
+// N367: Joined callback/expiry busy result, expression bool/byte/short/long 360/360/365/365; branch
+// producers before oldest admission 347/347/365/367. NOT kept: ties or regressions, wider forms grow beyond
+// retail. Original busy/oldest graph restored; missing frame dword and page/ring homes remain.
+// N371: Saved ring successor in the ordinary inner for increment, bare scan/segment/
+// admitted/entry lifetimes, original then semantic cursor names: 347/347/347/347/347/347/347/347.
+// NOT kept: unmatched successor-slot forms; full body restored; missing frame dword and page/ring homes remain.
+// N374: Full-width unsigned insertion successor/scan ordinal/saved successor,
+// masks 1..7 and immutable complete graph: 347/350/350/347/347/350/350/350.
+// Original signed cursors, modulo and full body restored; NOT kept:
+// no native signed-remainder/frame recovery or byte match.
+// N376: Complete best-record memmove/range-copy/backward-copy contracts, with native
+// zeroed/aggregate ring insertion, eight forms 370/369/369/372/391/392/392/404. NOT kept: no exact
+// record/frame recovery; original transfers, signed ring and complete body restored.
+// m3 lane 1 r71 (one-link harness, exact on control 347; al = register-inclusive aligned count, control 366): LEAD, retail's EDI in the scan is the candidate's running
+// total: `long total = candidate->pages + segment_pages;` used by the store, the test and the policies 349/1212 (al 304), with one read of the clock in the default policy
+// 348 (al 312). On total: offset first with previous in the block 371/1200 (302), offset after the result 393/1200 (299), with previous in the block 393/1200 (298), offset
+// in the block 387/1211 (292), with previous there too 379/1211 (292). About 280 annealed forms of block declaration order, offset/previous position, candidate store order, case
+// order, time/zero order and segment/next scope: best aligned 381/1211 (al 292), best positional 349/1212, none under 347. Register roles remain: retail gives offset EBX and current EDI and keeps tail in memory.
+// Round 150 (m3 lane 5, fast; m = masked aligned, x = register-inclusive aligned, control 347 m97 x213): LEAD, the ring successor written twice (`i = (i + 1) % 256` in the for,
+// `candidates[(i + 1) % 256]` at the prefetch, no next local) 385 m96 x196 gives retail's spilled successor store ahead of the jbe; plus total 385 m98 x185, offset after the result 382
+// m97 x181, previous in the block 381 m96 x181; successor, offset, previous, no total 380 m94 x192. Early `return result` in the success path, alone 384 m99 x203, with all above 382 m97
+// x187. LEAD, measured only since it repeats the loop test: `if (offset < count) do ... while` with the early return 392 (1196) m79 x193 gives retail's layout exactly (zero-trip `jg`,
+// failure tail, first epilogue, loop). On it: candidate offset stored before time 390 m78, tail declared first 390 m78, no total 390 m76 x194; policy as a forced-inline helper with a
+// return per case 390 m76, static inline 507 (1086), the helper with no guard 381 m95; empty do-while(false) at the policy join, in the block, both, in case 0 390 m76 each; true default
+// 390 m76, `!have_best` default 396 (1200) m86, case 0 as an if 390, both 390; `continue` for the page test 390 m76, true default with the test reversed 390 m78, a prefetch pointer 390
+// m76; no-selection arm first with its own return 393 (1229) m109. Left under the guard: case 0 and 1 bodies past the end of the function (retail in place, not threaded), the 4 missing
+// frame bytes, and head not cached in EDX at the loop entry. Body unchanged at 347.
 // @retail 0x13d370
 long __stdcall function_13d370(s_physical_object *physical, long size, long type)
 {

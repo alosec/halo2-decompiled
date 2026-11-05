@@ -673,6 +673,27 @@ struct s_collision_result_buffer_1697c0
 // admission bool/const-bool: 303/303/350/350/303/303/307/307. Original private normalizer and sampler restored;
 // NOT kept: unmatched intermediate/predicate ownership. The rejection Boolean recovers root/axis homes,
 // but grows to 1460/1423; later random/sine scratch and rotation lifetime remain.
+// Round 60 (m3 lane 13, fast; 0x297d30 tracked): `sinf`/`cosf` in the rotate helper 304 (0x297d30 145); the
+// rotation rows with the projection term first 303 (same code); that with the single-exit normalizer 307 (1460 B:
+// frame-bottom temp and every home through both random draws retail's; first difference +0x31, where retail loads
+// the axis j into its own register and multiplies by the scale, ours multiplies a scale copy by memory); on it the
+// normalizer products all `vector->x * scale` or compound `*=` 307/307 (same code).
+// AC530: Plain native-array normalization publication, short/long/word/dword indices, explicit/compound
+// scaling: 650/305/650/305/650/305/650/305 (fast control 303). Short/word forms outline; full-width forms
+// retain 1435 bytes but regress. Original helper and body restored; scratch/axis/result homes remain.
+// Y597: Actual normalized-output vector/readonly-vector/opaque/readonly-opaque pointer
+// results, direct/shared exits: 357/357/357/357/357/357/357/357. NOT kept: no exact output
+// contract or gain; original magnitude return, all consumers and complete sampler restored.
+// M389: Root/absolute-value float-library boundaries, singly/together, 307/298/303;
+// widened rounded-root/root-producer/reciprocal receivers 546/546/651;
+// float root/absolute with double reciprocal 651/651. NOT kept: five-point best
+// is below eight and length grows; double forms outline. Original helper/body restored.
+// DL265: Complete rotation value/const-value/receiver pointer/const-pointer/reference/const-reference/
+// output-pointer/output-reference protocols: 431/431/303/303/303/303/303/303. NOT kept: no exact native
+// transport; original shared producer and body restored; root/axis/result scratch homes remain.
+// Y597: Actual normalized-output vector/readonly-vector/opaque/readonly-opaque pointer
+// results, direct/shared exits: 357/357/357/357/357/357/357/357. NOT kept: no exact output
+// contract or gain; original magnitude return, all consumers and complete sampler restored.
 // @retail 0x296e60
 PRIVATE bool function_296e60(point3f const *origin, vector3f const *forward, bool test_collision,
 	real yaw_lower, real yaw_upper, real pitch_lower, real pitch_upper, vector3f *direction)
@@ -944,6 +965,30 @@ bool __stdcall function_1ffe00(long actor_index, long object_index);
 // Round 85 (m3 lane 12, plain): the weapon fallback as `vector3d_from_points3d(...); goto normalize_direction;` 283
 // (1420 B); the output stores swapped 257; point_valid folded into the output test 257 (same code); point_valid set
 // before the state lookup in cases 1 and 2 261; before the point copies in cases 3 and 5 257. Body unchanged.
+// Round 60 (m3 lane 13, plain): the object index read from the reference at each use in both cases' object arms
+// 257, case 2's player test as nested ifs with the `cafc0` call's own `goto direction_from_actor` 257, the
+// remembered branches' `if (aiming)` jumping to `aim_at_point` with the weapon label dropped 257, case 2's aiming
+// arm jumping straight to the weapon label 257 (all four byte-identical); the flags cleared in two statements 259.
+// AC530: Reference lower-bound admission after the state query, byte/char/short/long
+// 253/253/265/267; before the read-only query 279/279/296/296 (calibrated fast control 258).
+// NOT kept: best gain five is below eight; predicate/observation forms need equality. Original
+// reference observations and complete body restored; Boolean homes and shared-tail predecessor remain.
+// P345: Movement/attention/object admission-produced return results, subsets
+// 1/2/4/3/5/6/7 then separate false defaults: 378/335/335/369/369/323/358/356
+// (reduced control 341; full 257). NOT kept: extra SETG/SETNE result stores absent from
+// retail; original body restored; byte homes and direction-tail predecessor remain.
+// M389: Both native normalization-return scalar receivers, local real/const-real/double/const-double
+// 258/258/327/327; shared/test-owned real/const-real/double/const-double 258/258/327/327.
+// NOT kept: one-use scalar/result residence did not match; double forms grow to 1480/1444.
+// Original comparison producers, calls and complete body restored (fast control 258; full 257).
+// DH374: Structured switch-failure breaks at case 0/2/1/5/6/default, both reference cases, then all failures:
+// 258/258/258/258/258/258/258/258 (fast control 258; full 257).
+// NOT kept: no byte match or eligible gain. Original single-exit decoder, case transfers,
+// point/result/presence producers and full body restored; byte homes and remembered-tail predecessor remain.
+// P345: Movement/attention/object admission-produced return results, subsets
+// 1/2/4/3/5/6/7 then separate false defaults: 378/335/335/369/369/323/358/356
+// (reduced control 341; full 257). NOT kept: extra SETG/SETNE result stores absent from
+// retail; original body restored; byte homes and direction-tail predecessor remain.
 // @retail 0x2967b0
 PRIVATE bool function_2967b0(long actor_index, s_type_952051 *specification,
 	bool aiming, vector3f *direction, bool *has_target_point, point3f *arg_0e6828)
@@ -1403,6 +1448,13 @@ struct s_actor_looking_structure_view
 // and output 478 (660 bytes); score `dot3f(&directions[i], &forward)` 33; named angle with sine and cosine passed to the in-place
 // helper 146 (927 bytes); axis local in the loop body with the fraction before the copy 174 (910 bytes); `dot3f(axis, vector)` in
 // the helper plus the dot3f score 142 (926 bytes).
+// Round 86 (fast): k identity locals, k = 1..8, on the forward vector 33 at k = 1 and 23 otherwise; of the actor 141 (927 bytes); of the
+// axis in the helper 61/61/61/173/173/173/83/61; of the helper's vector 23 each; on the call's axis argument 173/173/61/61/61/61/83/61; on its
+// vector argument 23 each. Compile-only (register-mapped rotation region, control 15): real chains on cosine, sine and projection and
+// axis chains for the dot or the cross only, none below 15; axis components in named reals, six orders, 46-81. Retail's axis j reads lead two
+// products, an order the plain field reads have not given.
+// Source forms (fast): fraction declared before the copy and set after the rotate 136 (927 bytes); `best_score < score` 23; the clamp as
+// `score < 0.6f` 23; the angle named before the copy 33; the selected test as `dot < 0.7f` 23.
 // @retail 0x297d30
 PRIVATE bool function_297d30(long actor_index, s_type_952051 *specification)
 {
@@ -1530,6 +1582,7 @@ struct s_actor_looking_turn_request
 	vector3f forward;
 };
 
+// MiniMax H (11-04): no new form, no lower score; retail calls 0x1fdd90 at +0x198 where our build expands it inline, and marking it noinline gives 590 and is not a permitted form; the frame stays 0xcc against retail's 0xc8 and the actor table is held in a register.
 // score 442 (was 442): frame 0xcc versus retail 0xc8, early getter scheduling, vector homes and branch layout differ.
 // Tried the out-of-line predicate declaration 546 fast; horizontal aggregate copies 562 fast; initial native setters 546 fast;
 // explicit looking success/fallback stores 532 fast, 527 plain (three-point gain, restored); target point or selected vector

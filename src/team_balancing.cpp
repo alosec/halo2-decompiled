@@ -665,6 +665,14 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // for both tests 80 (512 bytes), as `long const &` 80; a plain `long const` for the first test only 67 (same code);
 // `long const &` for the first test written reference-left 64 (512 bytes: that pair runs candidate first but folds
 // `cmp eax, [esp + 0x30]` where retail reloads into ECX; the equality pair stays reference first).
+// Lane 17 r42 (fast with 0x91dd0, which stays matched; a compile-only /FAs screen without /GL reproduces the order):
+// the spreads in a `long spreads[2] = { candidate, reference }` initializer (the only plain spelling the screen queries
+// candidate first) 81, both pairs that way 82 (frame homes move); a named candidate spread with _ReadWriteBarrier()
+// (intrinsic) before the reference's query 67 (the pure query still moves); round 121's `long const &` lead with the
+// value copied to a plain local, first pair only, 64; both pairs that way as `if (a < b) goto improve;` then
+// `if (!(equal && cost)) continue;` 65 (aligned 6), with the cost written `candidate.cost() < reference->cost()` 65
+// (aligned 4: one real difference, the first pair compares `[esp+0x30]` from memory where retail reloads it into ECX);
+// the copy dropped or the reference's spread named too 65/65. Not kept: const-reference temporaries and the goto.
 // F362: Existing signed-dword query results as int, count/total/rank subsets
 // 1..7 and cost alone: 67 each at 514/512 bytes. NOT kept: reference-first
 // query ownership and extra receiver move remain; all result contracts restored.
@@ -678,6 +686,34 @@ bool balance_teams_greedy(s_balance_problem *problem, long team_count, s_balance
 // M358: Original less-first acceptance byte/short/word/long and complementary rejection
 // bool/byte/short/long: 67 each. NOT kept: one-use decision carriers do not match;
 // original query graph restored; reference-first spread calls and two extra bytes remain.
+// M362: Native signed int delta/parallel populations/final difference, seven
+// subsets then immutable complete inputs: 67 each at 514/512 bytes.
+// NOT kept: no exact candidate-first query repair; all file controls unchanged.
+// Original long intermediates, queries and complete body restored.
+// M364: Whole candidate copy lifetimes at entry, team roots, population difference and loop
+// admissions; reused copy-initialized records outside the inner loop:
+// 180/180/178/157/152/152/174/174. NOT kept: no exact candidate-first query graph; early copy
+// lifetimes also lose the matched caller; original lifetime, queries and body restored.
+// M366: Complete three-way spread result from original less/equal tests, signed char/short/long/int64:
+// branch production 67/67/67/67; conditional production 96/103/102/122. NOT kept: no exact
+// candidate-first query repair; original complete body restored; reference-first calls and two extra bytes remain.
+// M370: Reference selection inside the four candidate mutations, after first removal,
+// second removal or first addition, conditional/current-default/best-default forms:
+// 147/117/121/116/122/115/77/103. NOT kept: all regress; one conditional form also
+// loses the caller. Original selection restored; reference-first queries and two extra bytes remain.
+// M372: Outer/inner while induction and positive flag admission, seven subsets
+// then all with entry selector declaration: 67/132/67/132/67/132/132/132. NOT kept:
+// inner advance regresses to 523/512 bytes and first +0x3e; original body restored;
+// reference-first spread queries and two extra bytes remain.
+// M377: Actual memcpy/memmove destination as candidate query/all-use receiver,
+// ordinary/immutable bindings: 174/174/218/218/216/216/210/210. NOT kept: aliases do not match,
+// construction/receiver changes regress and lose the matched caller. Original
+// native copy, four spread queries, party edits and complete body restored.
+// Lane 13 r62 (fast with 0x91dd0): the first pair named with `do {} while (false);` between the queries 67 (the reference's query
+// still runs first); both pairs that way under a bool result 75 (519 bytes); under if/else with the improvement in both arms 150 (517
+// bytes, 0x91dd0 8); the spread query declared `__stdcall` or `__cdecl` so its `this` is pushed 67/67 (same code; 0x91860 still matches).
+// M391: Shared spread-query pair in plain two-pass long/short/word/byte loops, positive then complementary decision: 172/172/172/175/158/158/158/169.
+// NOT kept: No exact candidate-first query repair; frame grows from 0x2694 to 0x269c and extent moves away from native. Decision flags require equality. Original complete body restored.
 // @retail 0x91bd0
 void s_balance_optimizer::try_swap(long team_a, long team_b)
 {
@@ -1064,6 +1100,17 @@ bool balance_teams_by_count(long player_count, long const *party_indices, long t
 // M358: Inclusive maximum-update admission, positive/complementary bool/byte/short/long:
 // 34 each. NOT kept: one-use predicates do not match. Original combined scan/fill restored;
 // player-count EAX/EDX, late fill-value load and clamp homes remain.
+// M364: Combined copy/maximum selection by input/output element pointer or slot ordinal,
+// branch/conditional producers: 116/116/96/96/120/120/98/98. NOT kept: no exact native
+// fill/count ownership; original scalar maximum, loops and complete body restored.
+// Y581: Standard trivial construction fill, difference/extra count and total/extra
+// endpoints, original excess 67/66/66/66; expression excess 70/69/69/69.
+// NOT kept: all regress and grow to 196/198 versus native 190 bytes; original
+// combined scan, assignment fill, clamp, includes and full body restored.
+// B447: Complete copy/maximum/fill boundary, pointer/actual-array reference,
+// forced inline consuming total 34/34, returning computed total 71/71; ordinary
+// inline 144/144/143/143. NOT kept: no exact match; ordinary providers stay called.
+// Original complete body restored; frame/count/fill-value and clamp roles remain.
 // @retail 0x91f00
 bool balance_teams_can_add(long player_count, long const *party_indices, long extra_count, long team_count,
 	long maximum_team_size, bool flag_parties, long flag_minimum, long flag_maximum, bool use_parties,

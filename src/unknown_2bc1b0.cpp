@@ -170,6 +170,17 @@ struct s_placement_2bc1
 // Round 138: marker test with the not-found arm first 5; first-element address at creation 5, at both calls 5;
 // object local declared before the placement 5; marker test `!= false` 5. Probe (not kept): a load and a global store
 // before the creation call give retail's registers in the copy and the whole tail, so one rotation step is the cause.
+// Round 53 (m3 lane 15, fast): tag read without the definition local 5 and the existing game_engine_get() for the
+// engine test 5 (both re-measured, copy still ECX); placement declared at the top of the engine block 5; tag index
+// declared at function scope 5; early return when the marker is not found 5; the final call inside the event's
+// block 5; the engine pointer named before its test 5. Diagnostics (not kept): one global load anywhere before the
+// creation call moves the copy to EDX and gives retail's tail; two such loads (or a two-load sum) give retail's
+// EAX copy and tail; loads after the copy fix only the tail; stores that need no register change nothing;
+// 0x2bc1b0 returning char changes nothing. So retail allocates one scratch value fewer (or two more) before the
+// copy, with the same code.
+// K148: tag-header owner 5; tag-instance owner 5; both owners 5; tag-present Boolean 5;
+// object-created Boolean 5; engine-enabled Boolean 5; unsigned object index 5; unsigned tag index 5.
+// NOT kept: no equality or allocation change; original body restored.
 // @retail 0x2bc1f0
 void function_2bc1f0(long team)
 {
@@ -262,6 +273,11 @@ struct s_item_object_2bc1
 /* updates a team's item each tick: how long it has been away from home, its
    return home once it has waited too long, and the points of the player
    holding it */
+// MiniMax B (11-04, not kept, m3 review): 34 with `unsigned char timer` (the field is a signed char) tested
+// `!= 0xff` and the countdown computed before the test; the unsigned local is the same steering as MiniMax G's
+// `(unsigned char)` cast (a type picked by score), and without it the form is 55, under the keep bar. Left at 34:
+// the ceiling is built in esi instead of ecx after the item pointer is spilled, and the countdown is decremented
+// in al where retail copies the timer into cl, decrements it there and tests one copy in al with a single branch.
 // MiniMax G run (not kept, m3 review): 33 with the countdown computed before the timer's test, the tally
 // counted before the timer reset, and the test written `(unsigned char)timer != 0xff` (a byte compare, as
 // retail's cmp al,0xff); the cast is the steering part: without it the same form is 55, under the keep bar.

@@ -18,6 +18,18 @@ extern byte g_485a47;
 extern real g_485a0c[8];
 extern real g_4c9798[36];
 
+// MiniMax B (11-04): no lower score; the new forms tried and dropped are the flags and mode
+// placements, the width and height limit types and the mode's own block, all worse or identical.
+// score 174 (was 178): the far plane's near distance goes into a named local so the three
+// point components share one load; the mode bit still loads the flags into edx where retail
+// uses eax, and the size stays in a register across the rounding calls where retail reloads it.
+// Round 112: direct far-plane output 343; scaled-add far point 174, near point 169 (five-point
+// form not kept), both 222; long height limit 250; sequential border multiply/divide 180 (the
+// border order is fixed but the body regresses); early size declaration and dimension rename
+// 174 each. Original executable body restored; mode/size homes and rounding reloads remain.
+// score 178 (was 197): the width is rounded before the height, the overflow fix-up compares
+// the width against the height the other way round and the near-plane distance is read from
+// the tag; the mode bit still loads the flags into edx where retail uses eax.
 // score 197 (was 197): the mode bit loads the flags into edx where retail uses eax, so
 // MiniMax lane E (11-01): no new form, no lower score.
 // Earlier: the mode bit loads the flags into edx where retail uses eax, so
@@ -180,6 +192,12 @@ extern real g_4c9798[36];
 // branch/conditional clamp, height/width-first rounding and native/full height-limit
 // combinations. Mode/size homes and rounding reloads remain.
 // Scores 197/197/196/196/245/245/245/245; original executable body restored.
+// Round 72 (m3 lane 1; harness exact against the listing, masked aligned in brackets, base [58]): BLOCKED-BY 0x48e70: retail reloads size and aspect around the rounding calls because it does not see that callee's XMM use, which takes `inline` on
+// its definition (machine 1's file, scratch copy only; the same reload pattern is in 0x184440). On that scratch copy [51]: long height limit, the border product in parentheses, `real raw = size;` with one ternary clamp [43]; plus the near plane's
+// normal copied directly into the plane and the dot on the plane [11]; plus `__assume(near_distance >= 0.0f)` after the named near distance **[0], 9 differing instructions at retail's length**: distance and extent slots swapped, and the mode flags in EDX. Other near-point forms on it: read at
+// each use [9], reference or tag struct [9], y, z, x statement order [6], origin first, swapped products, casts, const, earlier declaration [11], shared forced-inline point helper [36]. For the last 9: `__assume` on extent, distance, aspect, offset, inverse, the global, the half cone [0] (no change);
+// six renamings of distance and extent [0] (no change); square helper, `extent = extent + ...`, `... + extent`, other product orders [0] (no change); named half cone or area, mode test without `~`, `== 1` or a switch for the tag test, swapped or moved declarations all [2]-[19], higher.
+// Real `--fast` without the scratch `inline`, all 32 subsets of long height, border, raw clamp, direct normal, near at each use: base 174, raw clamp alone 174 (same code), near 178 (1489 bytes), border 180 (1491), long height 250, height with border 243, direct normal 255-337 (under 1465); none under 174, so nothing is kept. The known 0x1ddd0 match form leaves this at 174.
 // @retail 0x48ee0
 void function_48ee0(byte const *matrix, byte const *state, byte const *tag)
 {
@@ -215,12 +233,12 @@ void function_48ee0(byte const *matrix, byte const *state, byte const *tag)
         (maximum - 128.0f) * g_485a34 + 128.0f;
     if (size < 128.0f) size = 128.0f;
     else if (size > maximum) size = maximum;
-    long height = (function_48e70(size * aspect) + 63) & ~63;
     long width = (function_48e70(size / aspect) + 63) & ~63;
+    long height = (function_48e70(size * aspect) + 63) & ~63;
     if (width * height > max_width * max_height)
     {
-        if (height > width) height = (max_width * max_height / width) & ~63;
-        else width = (max_width * max_height / height) & ~63;
+        if (width > height) width = (max_width * max_height / height) & ~63;
+        else height = (max_width * max_height / width) & ~63;
     }
     g_485a47 = (byte)mode;
     g_51f3c8[1][0] = 0;
@@ -269,13 +287,14 @@ void function_48ee0(byte const *matrix, byte const *state, byte const *tag)
     plane->j *= 100.0f;
     plane->k *= 100.0f;
     plane->d *= -100.0f;
-    real lower = *(real const *)(tag + 0x2c);
-    real upper = *(real const *)(tag + 0x30);
-    real scale = upper > lower ? 1.0f / (upper - lower) : 1000.0f;
+    real scale = *(real const *)(tag + 0x30) > *(real const *)(tag + 0x2c)
+        ? 1.0f / (*(real const *)(tag + 0x30) - *(real const *)(tag + 0x2c))
+        : 1000.0f;
     plane = (plane3f *)&g_4c9798[20];
-    point.x = direction.i * lower + origin.x;
-    point.y = direction.j * lower + origin.y;
-    point.z = direction.k * lower + origin.z;
+    real near_distance = *(real const *)(tag + 0x2c);
+    point.x = direction.i * near_distance + origin.x;
+    point.y = direction.j * near_distance + origin.y;
+    point.z = direction.k * near_distance + origin.z;
     normal = direction;
     plane->n = normal;
     plane->d = dot3f(&normal, (vector3f const *)&point);

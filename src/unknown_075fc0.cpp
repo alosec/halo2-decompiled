@@ -70,7 +70,8 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
     return local_0;
 }
 
-// score 408 (was 408): frame 0x3c versus 0x34; observer/channel/result and counter homes remain.
+// score 393 (was 408): frame 0x38 versus 0x34 (local_18 still has a stack home, retail EBP); observer/channel/result
+// and counter homes remain.
 // MiniMax I (11-01): 374 with the has-host and packet flags as words (score-picked, see below), the record as
 // observer + index*0x528 with the 0xa8 folded into the field offsets, the search through the channel array and
 // the counter snapshot through the existing union; with the two flags back to bool 430, also without the union
@@ -145,12 +146,29 @@ static __forceinline long function_75fc3(s_network_observer *arg_0, long arg_1)
 // DH298: Final success lifetime/direct forcing-state output/capacity-output arm,
 // seven subsets 420/453/451/433/435/439/444; final capacity-produced result with direct
 // forcing-state output 447. All restored; frame, observer and counter homes remain.
+// Lane 17 r42 (fast, plain where marked): kept, declarations in retail's initialization order (local_26 and local_6
+// set to NONE together after the search, local_18 beside local_13, local_5 after the -1.0 default) 393 plain; the
+// first two alone 401 (aligned 427 -> 274). `this` for the `arg_0` alias 408 (same code). On 401: union snapshot 421;
+// result stored only where retail stores it (no store in the two threshold tests, `false` in each failing arm of the
+// reliable-bytes test) 404, that test nested with `!(a >= b)` for the first 419. On 393: first test without the
+// store 417, second 417, union snapshot 436, nested reliable-bytes test 408, the -1.0 default before local_16 393.
 // F363: Native record input-flag byte domains, subsets 1/2/4/3/5/6/7,
 // then all signed bytes: 408/408/408/408/408/408/408/408. Original flag domains and body restored;
 // frame 0x3c/0x34 and observer/result/counter homes remain.
 // M352: Reliable payload producer/native failure arms/positive arms/test-produced result/
 // failure predicate/quotient producer/nested capacity gate/payload with failure arms 408/418/426/416/408/408/408/418.
 // All restored; frame 0x3c versus 0x34 and observer/channel/result/counter homes remain.
+// Round 72 (m3 lane 10, fast; each form with a register-masked aligned count after the slash, baseline 393/179). Not kept, because it needs a flag set in a test (match-only): 312/82 at retail's 413
+// lines, plain, all callees matched: the channel's fields declared in the header and read as channels[local_0].field (s_75fc0 gone), the has-host result as `local_8 = false; if (has_host(...)) { ...; local_8
+// = true; }`, the two NONE locals ahead of the search, the capacity test as if / else if / else, the window factor `= 0; if`, the callback scale as if/else, the first threshold through local_2 as now, the tail as
+// `if (local_34 >= 0) { ...; return local_2; } return false; done: return local_2;`. Its has-host result as a plain initialiser, with every on/off grid of window factor, threshold test, NONE locals and tail: 418 to 453.
+// On the way: all exits as `return local_2` 438/124; single exit 410/94; every field through a channel pointer local 425/126; that pointer unused, or a dead read of the state 410/94; a byte-pointer base at
+// observer + index * size 415/105. A second flag set in the arms for the first threshold, flat `if (!ok) goto done` 422/88 (`setge; test; je` as retail), plus the capacity test 417/80, plus the NONE locals first
+// 397/81, plus the window factor as its ternary 367/69 (retail's whole block layout, the zero test out of line before the exit). That threshold with `bool ok = a >= b` in the arm or a direct compare 399/85, through local_2
+// 391/89. Nested or && capacity test 422/88; the two budget picks as ifs, or with `do {} while (false);` between them 422/88 (ours merges their tests, retail tests twice). Search loop `i < n && found == NONE` 546 (unrolled),
+// `found == NONE && i < n` 395/88. NONE locals after the search or split round it 414/80; a dead init of the index or another local 417/80 (no entry register). On 312: second threshold through local_2 390/89; the tail's false arm
+// into local_2 416/81; the label inside the tail block 347/75; local_14 set in an arm 311/86. Lead: retail computes the channel base right after the connection (lea esi, [eax + edi]), so the index stays live in EBP, NONE shares ESI and
+// `this` takes EDI; ours computes it at the first field read and coalesces it with the index. One field through a pointer local with the rest direct gives that early base (419/86, one-use pointer: match-only); the byte-pointer base on the 367 form 379/88.
 // @retail 0x75fc0
 bool s_network_observer::connection_v05(long arg_1,
 	bool arg_2, bool arg_3, bool arg_4, bool *arg_5, bool *arg_6,
@@ -163,7 +181,7 @@ bool s_network_observer::connection_v05(long arg_1,
 		goto done;
 	s_link_connection *local_3 = link_connection_get(arg_1);
 	s_75fc0 *local_4 = (s_75fc0 *)&arg_0->channels[local_0];
-	long local_5 = NONE;
+	long local_26 = NONE;
 	long local_6 = NONE;
 	bool local_7 = false;
 	bool local_8 = network_observer_channel_has_host(arg_0, local_0);
@@ -176,12 +194,13 @@ bool s_network_observer::connection_v05(long arg_1,
 	bool local_10 = function_76520(local_0, false, &local_9);
 	long local_11 = g_510548 ? g_51054c : GetTickCount();
 	__int64 counter_snapshot = (__int64)(((unsigned __int64)g_4e6398.high << 32) | (dword)g_4e6398.low);
+	long local_18 = NONE;
 	long local_13 = NONE;
 	bool local_14 = (local_3->callback || local_10) && !local_8;
 	bool local_15 = local_4->field_48c;
 	bool local_16 = false;
 	real local_17 = -1.0f;
-	long local_18 = NONE;
+	long local_5 = NONE;
 	if (local_15 && !local_8)
 	{
 		if (local_4->field_48d && local_4->field_4dc == 2)
@@ -246,7 +265,6 @@ bool s_network_observer::connection_v05(long arg_1,
 	}
 	else if (local_17 == 0.0f)
 		goto done;
-	long local_26 = NONE;
 	if (local_18 >= 0)
 	{
 		local_26 = (local_23 * local_18 / local_24) / 8;

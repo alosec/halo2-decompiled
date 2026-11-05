@@ -368,55 +368,32 @@ PRIVATE __forceinline void function_1b9201(long arg_0, vector3f *arg_1)
 		matrix_transform_vector(object_node_matrix(object_get(local_0->parent_index), local_0->parent_node), &local_0->forward, arg_1);
 }
 
-// score 11 (was 11), coordinator review 11-01: MiniMax R put the seat count minus one in a local declared
-// after the seat pointer again (8: the seat count in ESI and the short index in EBP as retail; left
-// are the guard's shape and the home of the loop's zero); a one-use local is kept only with a match,
-// so the loop is back to its earlier form
-// score 11 (was 8), coordinator review: the one-use `seat_count - 1` local is kept only with a match; the loop is
-// back to its earlier form
-// score 8 (was 8): the seat loop's preamble still differs in the guard's shape (a sign test on the
-// decremented count where retail compares the count against the index register) and in the home of
-// the loop's zero (a constant in EAX where retail stores the index register's own zero); this
-// round's further forms (the index declared before the loop, the comparison written the other way
-// round, the seat pointer after the count, an explicit positive-count guard around the scan) score
-// 8, 9, 108 and 135, so the body is unchanged
-// score 11 (was 8), coordinator review: the one-use `seat_count - 1` local is kept only with a match; the loop is
-// back to its earlier form
-// score 8 (was 11): the seat count minus one goes into a local, which puts the count in ESI and
-// the index in EBP as retail does; what is left is the guard's shape (a sign test on the
-// decremented count where retail compares the count against the index) and the loop's zero
-// score 11 (was 6), coordinator review: the `tag->seat_count > 0` guard repeats the loop's own first test, so it is
-// kept only with a match (6 with it); the loop is back to its earlier form
-// score 6 (was 11): the seat scan is now guarded by an explicit
-// `tag->seat_count > 0` test, which puts the seat count in ESI and the short index in
-// EBP as retail does; what is left is the guard's folded compare, which still uses a
-// separate constant zero in EAX (also used for the seat = NULL store) where retail
-// compares the count against the index register and stores that register's zero, so
-// one extra xor and two register choices remain
-// score 11 (was 11): the seat loop's first test still compares the count against a
-// constant zero in EAX (the same zero that stores seat = NULL) while retail compares
-// the count against the index register, whose zero doubles as the NULL store; the
-// index here is zeroed separately, so the loop preamble is laid out differently. This
-// round's four trials in this file (the index initialised in the enclosing block, a
-// count local, a function-scope seat pointer and a plain recompile) gave 14, 14, 67
-// and a byte-identical body, so the body is unchanged
-// score 11 (was 11): the seat loop still keeps the seat count in EBP and the index in
-// ESI here while retail keeps the count in ESI and the index in EBP, so the loop's
-// preamble (the two pushes, the zero the guard compares against and the first store)
-// is laid out differently; the body after the preamble matches; this round's index
-// declared before the loop keeps the same split and scores 11 as well, and the
-// permuter was stopped by the harness's time limit three times without a result
-// score 11 (was 11): the seat loop still keeps the seat count in EBP and the index
-// in ESI here while retail keeps the count in ESI and the index in EBP, so the loop
-// preamble is laid out differently; this round's count-in-a-local trial compiles
-// byte-identically and the rest of the function matches
-// score 11 (was 11): the seat loop keeps the seat count in EBP and the index
-// in ESI here, retail keeps the count in ESI and the index in EBP, so the loop
-// preamble is laid out differently. The rest of the function matches.
-// The shared forward helper 302; state after or between the vector declarations
-// 11; split or function-scope state 11; const seat or state 11; result between
-// the lookups 11; split seat initialization 11; index-first with state after the
-// vectors 11; a positive-count guard 135.
+// score 8 (was 11): native 0x2c frame and 541-byte length; first +0x79.
+// Count and index now occupy ESI/EBP as retail; the inclusive last-index bound
+// decrements the count and uses js/jle instead of native cmp/jle and cmp/jl.
+// The selected pointer's NULL store still uses a separate EAX zero.
+// Earlier forms: a seat-count-minus-one local 8, not kept (one-use local);
+// explicit positive-count guard 6, not kept (redundant test), and 135;
+// index declared before the loop 8/11; reversed comparison 9; seat pointer
+// after the count 108; enclosing-block index initialization 14; count local
+// 11/14; function-scope seat pointer 67; unchanged recompile 11.
+// A 179-trial permuter run stayed at 8; three other runs hit their time limit.
+// Shared forward helper 302; state after/between vector declarations 11;
+// split/function-scope state 11; const seat/state 11; result between lookups 11;
+// split seat initialization 11; index-first plus state after vectors 11.
+// P323: direct exclusive bound 11; inclusive conditional seat publication 8;
+// exclusive conditional/failure-first publication 11/11; exclusive bound with
+// seat_index/selected_seat/target_state names 11/11/11; complete direct tag
+// reads at every use 27. All at 541 bytes; original complete body restored.
+// MiniMax E (11-04, not kept, m3 review: the 8 -> 6 rests on a seat-count test
+// that repeats the loop's own bound, a redundant compare kept only with a byte
+// match; main's loop restored): with that test the count and the index occupy
+// ESI/EBP as retail and the loop test is cmp/jl; retail keeps the index's zero in
+// EBP for that test and for the selected pointer's NULL store, ours materialises
+// a second zero in EAX for both. The index declared before the test 6; the same
+// with the count in a local 11, the test as count != 0 6, a
+// while loop 6, a seats local 25, a pointer loop 139, the index inside the
+// loop 135, the test as i < count 11.
 // @retail 0x1b9200
 bool function_1b9200(long object_index, long prop_index)
 {
@@ -431,7 +408,7 @@ bool function_1b9200(long object_index, long prop_index)
 		{
 			s_vehicle_seat_definition *seat = NULL;
 
-			for (short i = 0; i < tag->seat_count; i++)
+			for (short i = 0; i <= tag->seat_count - 1; i++)
 			{
 				if (TEST_FIELD_BIT(tag->seats[i].flags.bit3))
 					seat = &tag->seats[i];
@@ -1144,7 +1121,7 @@ short __stdcall function_1ba4e0(long actor_index, s_slot *slot, bool active)
 	return result;
 }
 
-long __stdcall function_c7160(long unit_index, short seat_index, long marker_position, long vehicle_index, long position);
+long __stdcall function_c7160(long unit_index, short seat_index, long vehicle_index, long marker_position, long position);
 bool function_cc750(long unit_index, short seat_index);
 bool function_cc7b0(long unit_index, short seat_index);
 real normalize2d(point2f *vector);
@@ -1180,7 +1157,7 @@ bool function_1baae0(long actor_index, long object_index, short seat_index, bool
 	{
 		point3f marker;
 		point3f position;
-		if (function_c7160(actor->unknown018, seat_index, (long)&marker, object_index, (long)&position) != NONE)
+		if (function_c7160(actor->unknown018, seat_index, object_index, (long)&marker, (long)&position) != NONE)
 		{
 			real bonus = 0.0f;
 			vector3f direction;
@@ -1557,6 +1534,48 @@ void function_1f86a0(long actor_index);
 // current-entry receivers, native/original slot-member payload first in each pair:
 // eight at 134. NOT kept: frame 0x10, raw-mask spill and EBX entry remain; original
 // scopes, receivers, payload and complete body restored.
+// AC513: Actual nested selection member, native payload/full slot 134/134;
+// direct nested-member observations full/payload 189/238; native member with positive
+// admission 134, early declaration 137, late full/payload receiver 233/233.
+// NOT kept: no exact match or qualifying gain; original types, payload and body restored.
+// AC516: Complete raw matching identity mask across root calls, byte/word/dword/long,
+// native slot-member payload first in each pair: 139/139/251/251/248/248/248/248.
+// NOT kept: assigned mask does not match; original Boolean, payload and complete body restored.
+// AC518: Actual join-call result bool/byte/short/long, each with native member
+// payload first and whole-slot payload second: 158/134/158/134/158/134/158/134.
+// NOT kept: one-use admission result unmatched; original body and types restored.
+// AC523: Progressive same-root result initialized from canonical specified,
+// then replaced by the gated equality, bool/byte/short/long with member/full
+// payload pairs: 225/225/225/225/296/296/295/295. NOT kept: result residence
+// unmatched; original mask, equality, payload types and complete body restored.
+// AC525: Post-validation transport-admission bool/byte/short/long results,
+// native slot-member/full-slot pairs, eight at 134. NOT kept: result residence
+// unmatched; original payload, masks, roots and full body restored; mask/entry homes remain.
+// AC527: Post-search reservation observation as bool/byte/short/long, native member/full-slot
+// payload pairs, eight at 134. NOT kept: one-use result residence unmatched; original types,
+// observation, raw mask, root short circuit and complete body restored; mask/entry homes remain.
+// AC547: Existing root/iterator/accept-decline/all ordinary-inline declaration
+// policies, native member payload first in each pair: eight at 134. NOT kept:
+// no frame/mask/entry recovery; original declarations, payload and body restored.
+// AC549: Selected handle absent throughout search, conditional/exhaustive/default
+// post-search producers, then conditional with direct fallback; native member/full-slot pairs:
+// 134/134/134/134/235/235/233/233. NOT kept: no frame/mask/entry recovery;
+// original handle lifetime, fallback, payload and complete body restored.
+// M3 lane 4 r164 (fast; aligned count in brackets, control 134 [84]): EBX holds the joint index after the loop in both builds, and in
+// the loop the byte mask (only BL can hold it across the calls) takes it where retail gives it to the entry. Positive predicate 134
+// [83]; the element looked up again through the entry in the predicate 254 (874 B), in the root compare 243 (862 B), in both 254; the
+// predicate re-lookup with the positive predicate 250 (874 B), with both 250. Volatile mask (diagnostic, reverted) 254 (879 B): frame
+// 0x14 and the mask at +0x13, but the flags read is then shared and BL holds it, so retail's spilled mask is not a volatile's shape.
+// Round 150 (m3 lane 5, fast; m = masked aligned, control m29): mask as byte, bool, long const ref 134, 241 (863), 248 (873); positive predicate 134 m24; on it same as const ref 134,
+// element or index const ref 134, same inside a do-while(false) 246 (872) m20 (frame 0x14, same at +0x13), nested if or named roots 245 m29, roots through a ternary 250 m37, for-form
+// iterator 134 m24; flags local ahead of the slot test 141, with positive 142 m25. No mask local, positive: 240 (864) m18 (masked byte at +0x13 as retail, but the flags byte takes BL
+// for `test bl, 0x40`); the 0x40 test through a word, dword, short read 138, 135, 138, a slot-offset byte 230 m21 (the masked value takes BL), a shift or bool conversion 240.
+// Diagnostics, reverted: one more read of the entry or the mask 263, 254 (mask keeps BL); a compiler barrier after the two root calls on the mask form 134, no mask 230 m26, volatile
+// mask 247 m17: that last gives retail's EBX entry with `mov ebx, eax` for the first root, so the difference is which byte value holds BL. 0xbaf40's memory summary as a cause is
+// untested, its file was held this round.
+// T58: Actual iterator aggregate/reference-tuple/value/library construction, native member/full-slot payload pairs:
+// 134/134/259/259/256/256/256/256. NOT kept: no eligible match or gain; complete original source restored.
+// Mask spill, EBX entry and actor/root homes remain.
 // @retail 0x1ba090
 long __stdcall function_1ba090(long actor_index, s_slot *slot)
 {

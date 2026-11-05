@@ -786,6 +786,9 @@ struct s_tag_instance_view
 long function_baf40(long object_index);
 bool function_e4050(long object_index);
 
+// MiniMax H (11-04, run 33): no new form, no lower score; the walk is still the out-of-line
+// 0xbaf80 pinned by another file, so the entry test and the root stay in the callee.
+// MiniMax H (11-04): no new form, no lower score; the player/unit carriers and the root-walk entry stay.
 // score 43 (was 43): frame 0x10 agrees; player/unit carrier roles and the root-walk entry differ.
 // Earlier: the datum address is still computed in EBX where retail computes it in EDI, and the
 // walk is still 0xbaf80 called out of line because another lane's file pins it noinline: BLOCKED-BY 0xbaf80.
@@ -854,6 +857,9 @@ bool function_e4050(long object_index);
 // local read after it 44 (same code); the parent test inverted with the vehicle arm first 114 (408 bytes); the vehicle
 // test as nested ifs 44 (same code); the no-parent exits through one found value 106 (409). Retail's datum/unit
 // EDI/EBX colouring follows its inlined 0xbaf80 walk (BLOCKED-BY 0xbaf80, still pinned in src/unknown_0bad50.cpp).
+// Round 105: on the unsigned unit-start/NONE-root walk, current before root / existing typed getter in the walk /
+// root before the unit object / const unit object / const player / const unit / typed getter for all three lookups
+// 171 each (405); a retained root object 182 (390). Original body and declarations restored.
 // @retail 0x14df40
 bool __stdcall function_14df40(long *unit_index)
 {
@@ -1323,6 +1329,7 @@ static inline s_players_globals *players_globals_14f2e0()
 
 /* gives a player its unit (the unit kept for it, the unit waiting to be
    reused, or a new unit at a starting location) and resets its spawn state */
+// MiniMax C (11-04): no new form, no lower score; 0xffffffff literals, int outputs, a chained second output and reordered or chained tail clears all stay at 46 (the outputs declared outside the branch give 268).
 // score 46 (was 46): the NONE outputs are materialised with `mov eax, 0xffffffff` where retail
 // uses `or eax, 0xffffffff` (two bytes shorter, so every later stack address differs), and the
 // zero/flag store schedule differs; the success BL agrees. Round 29 (lane G): with the two
@@ -1398,6 +1405,32 @@ static inline s_players_globals *players_globals_14f2e0()
 // unit initialised NONE 46; kept-unit success as a goto to the tail with no result test 182 (1035 bytes); `if (result)
 // {} else if (mode != 4)` 46. Retail scan: matched `mov reg, -1` after a folded byte test takes the register of the
 // byte temp (0x240300 ECX, 0xc5eb0 EAX, 0x2413c0 ECX), so retail's temp here avoids AL though its pointer is EDX.
+// Y571: Separate native word library clears, alias-safe up copy and color transfer, seven
+// subsets 46/94/149/94/149/169/169; complete graph with field_198 library clear 169.
+// Original copies, clears and full body restored; NONE materialization and final zero/flag order remain.
+// F369: Complete kept-unit failure ownership at all edges/state phase/admitted unit/full state
+// admission: 69/46/46/46; each with complete timer clear 66/43/43/43. NOT kept: no
+// byte match; the three-point clear is below the bar. Original body and observations restored.
+// B413: Kept-unit existence/admission result predicates, then the native two-short timer
+// model in all combinations, and the complete timer memset: 278/258/280/91/287/267/287/280.
+// Exact-only result-then-test forms and the timer model restored; NONE and tail scheduling remain.
+// P316: Final-success byte/signed-byte/short/unsigned-short domains on the retained
+// success graph: 108 each; with complete timer clear 105 each, frame 0x11c versus 0x118.
+// NOT kept: all regress and enlarge the frame. Original Boolean full body restored;
+// NONE materialization and timer/flag scheduling remain.
+// N355: Actual reuse admission result producers, original/complete timer clear:
+// 86/231/231/227/83/232/232/228. NOT kept: no exact match from the tested structural forms.
+// Complete original executable source restored; NONE materialization and timer/flag scheduling remain.
+// F375: Loaded byte/signed-byte/short/long, then fallback-needed bool/byte/short/long:
+// 46/46/105/103/110/110/108/109. NOT kept: no match; original body restored.
+// NONE materialization and native timer/flag scheduling still differ.
+// N364: All three user-notification indices held through their own guards/calls,
+// short/long/const-short/const-long, without/with complete timers: 46/87/46/87/86/98/86/98.
+// NOT kept: no equality; original observations, timer stores and complete body restored.
+// NONE materialization and tail zero/flag scheduling remain.
+// AC548: Separate retained/spawned handles, mutable/immutable and entry/phase declaration, then complete timer clear
+// 46/46/46/46/43/43/43/43. NOT kept: no qualifying supported gain or byte match.
+// Native NONE producer and timer/flag schedule remain. Original complete body restored.
 // @retail 0x14f2e0
 bool __stdcall function_14f2e0(long player_index)
 {
@@ -2301,6 +2334,7 @@ static __forceinline long player_round_ticks(real value)
     __asm { fistp result }
     return result;
 }
+// MiniMax h (11-04): no new form, no lower score; the frame stays 0x4c against retail's 0x74 (two request workspaces reach 0x6c).
 // score 701 (was 701): frame 0x4c versus retail 0x74 and selective call expansion remain.
 // Round 439: parent/tag/seat one-use intermediary elision in all seven subsets 701 each;
 // complete graph with all three target field-reference lifetimes at receiver acquisition 701.
@@ -2783,6 +2817,10 @@ static inline bool player_datum_iterator_next(s_data_datum_iterator *iterator)
     return datum != 0;
 }
 
+// MiniMax H (11-04, run 33): the two stores through the named `globals` local again lower the
+// reduced image (193 -> 180), but the full build measured that form at 180 against the 103
+// baseline, so it is reverted; no lower score.
+// MiniMax H (11-04): no new form, no lower score; the globals pointer and the iterator's index array still swap registers.
 // score 103 (was 103): reading g_4e8c20 directly at every use instead of through the named
 // `globals` local builds to the same bytes in the full build (611 = 611, first difference
 // +0x8) and scores 175 against 193 in the reduced image, so the local is not what holds the

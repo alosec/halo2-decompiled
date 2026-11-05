@@ -1715,6 +1715,43 @@ PRIVATE inline void camera_prism_point_16a8e0(s_prism const *prism, point2f cons
 // AC504: Radial/side/nearest loop continuations, masks 1/2/4/3/5/6/7:
 // 552 each; complete continuation graph with native long accepted counts 572.
 // Original full body restored; sum homes, query zero and prism anchor remain.
+// AC512: Aggregate-declaration sum initialization with word/long accepted counts,
+// counts after/before construction 553/553/573/573; independent point declaration
+// initialization 594/594/578/578. All restored; native sum homes/query zero/prism
+// anchor remain. Coordinate-table owner stays matched in every trial.
+// AC515: Direction-length-owned normal-path decision bool/byte/short/long, with length at
+// direction phase or uninitialized radius scope: 613/613/613/613/613/613/613/613.
+// NOT kept: unmatched decision/storage graph; original flags, normalization and complete geometry restored.
+// AC519: Standard forward/backward edge/face/both initial-sum transfers, then
+// both with overlap-safe fallback copies: 655/650/591/655/650/591/623/623.
+// NOT kept: all regress and lengthen; original sum inputs and complete body restored.
+// AC524: Standalone count-produced success bool/byte/short/long before averaging,
+// then after output: 654/657/653/654/630/654/660/657. NOT kept: all regress and
+// move extent away from retail; original result, word counts, geometry and body restored.
+// AC526: Entry-radius admission bool/byte/short/long, then complementary exclusion:
+// 620/620/620/620/619/619/619/619. NOT kept: all regress, frame shrinks to 0xb958 versus
+// 0xb964; original body/helper restored; sum homes, query zero and prism anchor remain.
+// M3 lane 12 r90 (fast, base 552, masked 446): the cursor anchor follows which fields are read, not their order: no point-count read in the cap 613 (anchor prism+0x20),
+// no read in the modulo 620 (still point_count), neither 618 (anchor plane.k), a local points pointer 598 (axis), the named index with no cap read 621, retail's anchor plane.j not reached; distance with the j term first and
+// `shapes.prisms + index` 552 (same code). The cap reading the count once 554, as `if (count > 8)` 605; (edge_index + 1) % point_count named before both reconstructions, retail's early idiv, 602
+// (2909, masked 400), with the single read 602; short index locals in the reconstruction 621; combinations 622/662/661/657; a long axis 593 at retail's 2882 bytes. Retail's sum homes are not contiguous
+// (+0x5c/+0x64/+0x68, +0x50/+0x54/+0x60), but plain scalar sums 630 (2897), face first 630, with the named index 619/630, two point3f locals 594.
+// AC537: Complete near-plane/interior direction-admission truth, positive and
+// complementary bool/byte/short/long: 553/553/553/553/553/553/553/553. NOT kept: no match; original
+// normal selection, sums, word counters, geometry and whole body restored.
+// AC539: Nearest-edge improvement result, positive bool/byte/short/long 553 each,
+// complementary forms 554 each (control 552). NOT kept: unmatched decision storage;
+// original nearest commits, sums, word counts, geometry and full body restored.
+// AC542: Existing paired normalization/contact and edge/separation squared-length producers,
+// paired side/projection dot producers, seven subsets and full-width accepted counts: 554/552/554/554/554/554/554/573.
+// NOT kept: no byte equality for changed reduction associations; original full body restored.
+// AC544: Exact-association plane-dot offset, paired root operands and perpendicular-dot
+// negation boundaries, seven subsets then immutable parts: 554/554/554/553/554/554/554/554.
+// NOT kept: all regress; original reductions, counters, observations and whole body restored.
+// M3 lane 9 r88 (fast; masked+stack = aligned count with registers and stack homes masked, base 310): retail has no count guard (`cmp word ptr [esp+0x16c], si`, then the index store, then `jle`) and computes
+// radius * radius inside the loop (hoisted to the preheader): plain `for` with the product inside 554 (2901, entry shape as retail), the product inside alone 555. The next index named before the first point with
+// 0x120790 for both points 686 (2955, masked+stack 280: retail's axis re-reads, table reads and early idiv appear), with the file's helper 602 (293), plain for + next + 0x120790 669 (2942, 282), + the file's helper
+// 606 (294), plain for + 0x120790 without next 654 (342); 0x120790 alone 651 (339). Lead: those three together fix most of the inner edge loop; what remains first is the zero in ESI (retail) against EBX and the cursor at plane.j.
 // @retail 0x16a8e0
 bool __stdcall function_16a8e0(long flags, point3f const *point, real radius,
 	long ignore_object, long ignore_parent, point3f *out, real *out_radius)

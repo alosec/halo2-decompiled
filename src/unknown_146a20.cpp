@@ -58,6 +58,7 @@ long g_4798b4;
 bool g_47f05a;
 bool g_47f05b;
 
+// MiniMax b (11-04): no new form, no lower score; the abstract allocator's base vtable store is still dropped (it comes from the header's inline constructor) and the pool placement still reloads g_479888 at the join.
 #ifndef H2_NATIVE_PORT
 // score 34 (was 34): unchanged this round: retail still stores the abstract allocator's vtable at
 // the object before the two following stores (our build drops that store, which comes from the
@@ -292,6 +293,23 @@ bool g_47f05b;
 // count/fixed-base/fixed-derived constructor expansion: 34/1058/34/34/34/1058/1058/1058. Ordinary
 // policies retain the omitted intermediate vtable store; forced policies expand the native call.
 // Original declarations and complete body restored; the store and successful-arm reload remain.
+// Round 42 (m3 lane 18, fast with 0x146b80/0x146e30/0x22c3e0/0x1c2690): testing the global while placing through
+// `block`, `g_479894 = g_479888 ? new (block) ... : NULL;`, gives retail's arm reload and the 1 in EDX together, so
+// only the vtable store differs: 35 (140 bytes, positional); as `if (g_479888) ... else g_479894 = NULL;` 35; on it the
+// method6/method7 overrides declared in the fixed base 35, `block` typed as the fixed allocator with `block + 1` 35,
+// the test inverted 36. Compile-only: a local placement always gives the 1 in a register and the join reload, a
+// g_479888 placement the arm reload and immediate 1s (13 spellings); the store is dropped in every form.
+// F377: Direct exhaustive constructor stores, terminal/zero-first arms and long/int/short/
+// signed-char ordinals: 34/34/34/34/43/54/43/54. NOT kept: narrow forms worsen other
+// constructor users; shared header and full body restored; base-vtable/arm reload remain.
+// N384: Actual fixed/pool placement admission in bool/byte/short/long: eight 34.
+// NOT kept: unmatched admission carriers; original complete body restored. Shared
+// constructors untouched; intermediate vtable store and successful-arm reload remain.
+// Lane 4 r166 (held, coordinator): MATCH only with a second c_havok_fixed_memory_base constructor taking the size alone
+// (buffer = this + 1, the same stores as the (buffer, size) one) that ends in _ReadWriteBarrier(), plus __declspec(novtable)
+// on the base: a same-behaviour constructor twin for this one caller carrying a barrier steer, not kept (twin ruling, as
+// 0x45560 in lane 4 r165). Retail keeps the base's abstract vtable store only in this construction (not 0x146b80 or 0x146e30).
+// build/held/lane4-r166-146a20-ctor-twin.patch is the whole change, a lead toward the match.
 // @retail 0x146a20
 void function_146a20(void)
 {
@@ -488,6 +506,7 @@ void function_146de0(void)
 	}
 }
 
+// MiniMax b (11-04): no new form, no lower score; retail inlines the texture cache update (0x12c600) at this call site only, so the body stays 22 bytes short and keeps our size spill and counter registers.
 // score 120 (was 120): the function still misses retail's inline of the texture cache
 // update (0x12c600) at this one call site and stays 22 bytes short; unchanged this
 // round

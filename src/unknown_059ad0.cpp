@@ -66,17 +66,6 @@ bool transport_security_create_key(long local, long index, bool online);
 bool transport_security_register_key(long index, long local, bool host, const XNKID *kid, const XNKEY *key);
 bool function_07ab60(const s_type_99af70 *address, long local, long *index_out, XNKID *kid_out, XNKEY *key_out, XNADDR *xnaddr_out);
 
-/* the session states (0x7420, 0x1f8 bytes) */
-#define SESSION_STATE_DATA_SIZE 0x1f8
-
-/* enters a session state: clears the state block and copies in the new state's data */
-static inline void network_session_enter_state_with_data(c_class_58d20 *session, long state, void const *data, long size)
-{
-	memset(&session->value7420, 0, SESSION_STATE_DATA_SIZE);
-	memcpy(&session->value7420, data, size);
-	session->state = state;
-}
-
 void network_observer_request_channel(s_network_observer *observer, long index);
 
 // @retail 0x62240
@@ -1041,26 +1030,6 @@ bool __stdcall network_session_boot_machine(c_class_58d20 *session, const s_sess
 	return result;
 }
 
-// score 23 (was 23): retail keeps the inlined disconnect's reason in a pushed ebx set after
-// the memset; ours stores an immediate. BLOCKED-BY 0x616b0: with its body written through
-// network_session_enter_state_with_data (the reason copied from its address), this matches and
-// 0x616b0/0x5ef20 stay matched (its file was held in round 15).
-// Tried: the sibling's long/bool union 33; the result
-// assigned in the call's argument 6 (bool in bl, reason still folded); a long result passed as
-// the reason 62; a reason parameter the caller passes as 1 41 (it stays on the stack); the
-// result set first and passed by name 35; the callee's volatile reason read 27 (a stack temp);
-// `inline` on the callee 23; the reason as `true` 23.
-// Fully assigned success arms 36; conditional action result 35; external
-// session reference 23; current-member snapshot with original result 23;
-// rejection result 59; wrapper inline/noinline declarations 23/23;
-// external reference with assigned success arms 36. Reason still folds.
-// Round 15: boot arm first 23; the result taken from the host test 35; early false return 36;
-// result set before the arms 35; `result` with the member index first in the comparison 24.
-// Round 35 (m3 lane 18, fast with 0x162d00): the two calls as one ternary statement 23; the boot arm
-// first with the reason as the member comparison 24; the disconnect's declaration `__forceinline` 23
-// (0x5e1a0 stays 10); a long result returned as `!= 0` 58 (122 bytes, 0x162d00 15); diagnostic only,
-// not kept (it writes the disconnect out by hand): the reason in a local passed by address to the
-// file's state-entry helper with state 10 matches, so the cause is 0x616b0's own body (held file).
 // @retail 0x5ade0
 bool network_session_host_boot_member(c_class_58d20 *session, long member_index)
 {
@@ -2418,51 +2387,22 @@ bool network_session_handle_session_disband(c_class_58d20 *session, const s_type
 	return result;
 }
 
-// score 10 (was 10): byte zero/result exits still differ (the union shares the reason and the
-// result). Retail is the sibling 0x5e150's plain shape (`bool result = false; ... result = true;`)
-// apart from the inlined disconnect's reason: retail keeps it in ebx (as 0x5ade0 does), ours
-// folds it into an immediate store; that plain shape alone is 14. Tried: full-state
-// nonzero/equality 39/40; joined state 39/40; scalar-state boundary 39/40; accepted-state
-// equality 55/36; result initialization width and success tails; peer result with
-// literal/result reason 24/23; peer-fed value/bool view 37/43; host-fed reason with bool/union
-// result 14/10; both test results 24; peer-fed common success 15; plain shape 14, with the
-// disconnect callee beside its retail neighbours 14, the callee copying its reason with memcpy
-// 14, building a one-field state record 14, reading its reason through its address 14.
-// the result carrier is a dword here (xor ebx,ebx, mov eax,1, mov al,bl)
-// where retail keeps a byte (xor bl,bl, mov al,1), so the disconnect path also falls into the
-// false-exit copy instead of retail's shared mov al,1 exit; the disconnect reason agrees.
-// result initialization width and success tails differ;
-// peer result with literal/result reason 24/23; peer-fed value/bool view 37/43;
-// host-fed reason with bool/union result 14/10; both test results 24;
-// peer-fed common success 15;
-// a plain bool result set before the disconnect and passed as the reason 14 (the reason folds
-// to an immediate store); the reason in a union with the result a separate bool 14.
-// Round 15 (diagnostic): BLOCKED-BY 0x616b0: the plain shape matches once 0x616b0's body is
-// written through network_session_enter_state_with_data; this union form is then 22.
-// Round 131: byte initialization and shared success with the reason assigned in the call 14;
-// full value at the join 66; separate reason assignment with shared success 14; reversed union
-// members 10; unsigned value 10; bool-first aggregate 82; inline disconnect declaration with
-// shared success 14 (0x616b0 and 0x5ef20 stay matched); separate Boolean return local 10.
 // @retail 0x5e1a0
 bool network_session_handle_session_boot(c_class_58d20 *session, const s_type_99af70 *address)
 {
-	union { long value; bool result; } local_0;
-	local_0.value = 0;
+	bool result = false;
 	if (network_session_address_is_peer(session, address))
 	{
 		if (network_session_channel_is_host_address(session, address))
 		{
 			if (network_session_channel_is_host_address(session, address))
 				network_session_close(session);
-			local_0.value = 1;
 		}
 		else
-		{
-			local_0.value = 1;
-			network_session_disconnect(session, local_0.value);
-		}
+			network_session_disconnect(session, 1);
+		result = true;
 	}
-	return local_0.result;
+	return result;
 }
 
 // @retail 0x5e5b0
@@ -3606,6 +3546,10 @@ bool network_observer_channel_timed_out(s_network_observer *observer, long chann
 
 /* retail calls 0x5f6a0 and 0x58d20 here instead of inlining them */
 #pragma inline_depth(0)
+// MiniMax G (11-04): no new form, no lower score; retail reads the member state through its own
+// address (lea plus a load at +4) where ours folds the +4 into the load, keeps a dead spill of
+// session+0x10 into the reply id's stack slot before the timeout call, and returns through two
+// epilogues (1 and 0) where ours keeps the peer result in EBX.
 // score 101 (was 101): Frame 0x3c agrees; held timeout owner spill and identifier/reply allocation remain.
 // Earlier: frame 0x3c agrees; held timeout owner spill and message/reply allocation still differ.
 // Earlier: frame 0x3c agrees; retail loads session+0x10 and spills it, and splits the
@@ -3694,12 +3638,22 @@ bool network_observer_channel_timed_out(s_network_observer *observer, long chann
 // original/negated-disjunction exclusion and both reply orders. Held timeout owner spill and
 // message/reply allocation remain.
 // Scores 104/104/104/104/97/97/97/97; original executable body restored.
+// MiniMax H (11-04): no new form kept, no lower score: the reply member-state pointer before the id 94 (seven
+// under the bar, restored), the identity address named before the memset 94, the two-epilogue return 115, an
+// owner local read at the top and used in the reply 132, the timed-out call's member state taken through a
+// pointer 101; the thirteen bytes retail has more are exactly the timed-out call's value10 spill, its split
+// member-state lea and the extra load, and the owner spill is a dead store in retail too, so it is not
+// reachable from a live local here.
 // Round 139 (m3 lane 5, fast): reply member-state pointer before the id 94 (seven, under the bar); with the identity
 // address named before the memset 94; with an early not-peer `return false` and `return true` 116 (428 bytes); with the
 // announcement id field by field 94; with the identity as a structure assignment 94; with `leave` declared first 96.
 // Round 49 (m3 lane 15, fast): state range as `state >= 3` 102; the leave test with the flag byte first 101; the
 // value44 reset before the member index store 100 (one point, not kept); announcement flags stored 2, 1, 0 101; the
 // host index read from the session at each use (no assignment inside the condition) 104 (421 bytes).
+// Round 141 (KIMI1, fast): leave assigned from the host result under its guard 131 (413 bytes); shared defaults
+// original/reversed 101/103; chained defaults original/reversed 101/103; neutral defaults with the reply member
+// state before the id 94 (reply exact, seven under the bar), with a const member pointer 94 and a member reference
+// 94. Original executable body restored; held timeout owner spill and announcement/return layout remain.
 // @retail 0x5e3f0
 bool __stdcall function_05e3f0(c_class_58d20 *session, const s_type_99af70 *address)
 {
@@ -3759,6 +3713,11 @@ struct s_network_session_list;
 c_class_58d20 *network_session_manager_find_session(s_network_session_list *manager, const s_session_id *id);
 bool function_07ab10(long key_index, s_type_99af70 *address, long local, word port, const XNADDR *xnaddr);
 
+// MiniMax H (11-04): no new form, no lower score: at the 0x7ab10 call retail copies the host through ESI
+// into EBX and reloads the session into EAX, ours loads the host straight into EBX and reaches the session
+// through ESI; with the callee matched, that staging follows from the argument order and not from here.
+// MiniMax G (11-04): no new form, no lower score; the host/session staging at the 0x7ab10 call
+// (retail reloads the session and keeps the host in ESI) and the cleanup placement still differ.
 // score 136 (was 136): host/session staging, clock boundary and cleanup placement differ;
 // size preference 233; gated identity 142; long result 160; failure-path result 192; address name 136.
 // host/session homes, cleanup placement and clock expansion differ;
@@ -3829,6 +3788,10 @@ bool function_07ab10(long key_index, s_type_99af70 *address, long local, word po
 // with channel failure first 152 [19] (554 bytes), with the transport local too 163 [19]; a local copy of session for the part after the loopback test 136 [34]
 // (coalesced, no second register), on the flag/channel form with a host copy too 152 [19]; that part as a forceinline bool helper taking session and host 145 [25]
 // (581 bytes, session still in ESI). No retail call path leads from 0x5fb00, 0x5fb60 or 0x7ab10 back here. BLOCKED-BY the same host/session staging.
+// Round 142: on the loopback-helper/forceinline-clock/channel-failure-first composite (138): host read through
+// its parameter home 138; long resolver result 138; session read through its parameter home 138; inline resolver
+// wrappers with host before local/host first 168/168 (559 bytes); entry remote 138; loopback helper by reference/
+// scalar fields 138/138. Original body restored; host/session staging remains.
 // @retail 0x59e50
 bool __stdcall function_59e50(c_class_58d20 *session, long mode, long local,
  const XNKID *kid, const XNKEY *key, const s_session_member_identity *host,
@@ -4438,6 +4401,7 @@ bool session_peer_map_set_connected(s_session_peer_map *map, const s_session_mem
 /* retail calls 0x5f6a0, 0x58d20, 0x58d90 and 0x75870 here instead of
    inlining them; only the time read for the peer's reply time is inline */
 #pragma inline_depth(0)
+// MiniMax h (11-04): no new form, no lower score; the result byte stays at +0xa where retail keeps it at +0xb.
 // score 305 (was 305): frame 0xd8 and length agree; the byte homes differ (retail: better +9,
 // frame 0xd8 and length agree; result/identity/selection byte homes and
 // acknowledgement placement differ.
@@ -5031,6 +4995,16 @@ struct s_membership_update_snapshot
 // +0x6c; five points, below the keep floor); on that: 0x5f900 storing unknown00, flag1, unknown04 564 plain (0x5f900 kept),
 // the state pointer 519, per-case `long player_index` reads 525, memset for both player_indices fills 669, a long loop-1
 // index 693.
+// Round 149 (m3 lane 5, fast, base 523; 2591 bytes): named update count with a long/short first-loop index 697/664; named new index in the
+// first loop 548; masks on one line, chained, typed long 523 each. All 11 calls' setups compared with retail: only register rotation (0x600f0's
+// convention agrees), so no parameter order to change. An aligned diff (registers and slots ignored) puts the rest in the unrotated first loops:
+// lane 15's result chain remains the lead, it needs a match for its implied `result &&` heads.
+// M3 lane 9 r88 (fast; aligned+stack = aligned count with registers and stack homes masked): lane 15's result chain with 0x5f900 storing unknown00, flag1, unknown04 is 457 at 2589 bytes but aligned+stack 10: only stack homes
+// and case 1 differ. Retail's homes +0x14 i and the player cursor, +0x18 change cursor, +0x1c moved and the player index, +0x20 count, +0x24 base copy, +0x28 added, +0x2c removed; ours +0x14 removed and the player cursor,
+// +0x1c added, +0x20 moved, +0x24 count, +0x28 i, +0x2c base. Case 1: retail holds the cursor in ESI, then member in EDI and slot in ESI, and rebuilds the id pointer from the stack twice; ours holds the cursor in EDX, spills
+// member, slot EDI, and keeps the id pointer in ESI across the find call. Tried on it: named short member/slot 671 (2614, session leaves EBX); nested tests with long locals, the id through the index, embedded assignments 457 each
+// (same code); block scopes around the member phase (masks, all, masks + i) 457 each; ten renames of removed/added/moved/i 457 each (names do not move these slots); change fields through the index, no change pointer, loop 1 726,
+// both 728 (slots move, structure regresses). Not kept: the loop heads' `result &&` is implied by the breaks, so that form needs a match.
 // @retail 0x5cb80
 bool __stdcall function_05cb80(c_class_58d20 *session, const void *message)
 {

@@ -308,6 +308,7 @@ static inline bool teams_enabled_19e1c0()
 }
 
 /* writes the text of one token for the event, returning its length */
+// MiniMax h (11-04): no new form, no lower score; the volatile result keeps our case tails apart and our frame is 0x208 against retail's 0x204.
 // score 390 (was 390): retail clamps the copy length with `cmp remaining, length` and a conditional
 // move, so the comparison written as `remaining <= result` was tried: with the volatile result 466,
 // with a plain result 652 (against 390 and 691). The plain result does match retail's frame 0x204
@@ -505,6 +506,10 @@ static inline bool teams_enabled_19e1c0()
 // Round 143 (m3 lane 5, fast): every clamp as `if (remaining <= result)` 390 (same code); text
 // declared before the result 390 (same code); `best_score <= function_1587f0(team)` with the short
 // team 388; local-team value long 393 (1436 bytes); engine text returned early 390 (same code).
+// AC512: Name-length/formatter/replacement results acquired in their consuming
+// tests, seven family subsets 390 each; complete ordinary result 691. All restored.
+// NOT kept: embedded assignments remain unmatched; native frame/capacity/result
+// homes and separate name-copy tails remain.
 // M3 lane 14 r59 (fast): on the plain result with the event teams read at each use and `remaining <=` clamps (661
 // re-measured: event EBX and result ESI as retail, token EDI and token_length EBP where retail has token_length EDI
 // and remaining EBP): every format failure as `return remaining;` 665 (1199 bytes); each case its own `if` closing on
@@ -513,6 +518,18 @@ static inline bool teams_enabled_19e1c0()
 // volatile result with the per-case returns and the teams at each use 429 (1427 bytes). Diagnostic (reverted): one
 // `remaining &&` added to the second compare on the plain result 655 in the real build (homes unchanged), although
 // a compile-only build (no LTCG) of the same source flips to retail's homes; that harness misleads here.
+// AC526: Complete signed formatter-failure truths bool/byte/short/long, inherited
+// result then native result: 418/418/427/424/691/691/691/691. NOT kept: native frame alone still
+// merges name-copy tails; original full result, clamps, cases and body restored.
+// F372: Entry declaration lifetimes for the opponent iterator, mode and local-team
+// value, seven subsets then all with the actual local-player receiver: eight at 390.
+// Original branch declarations, result storage and complete body restored.
+// AC537: Complete absent-team eligibility at both name branches, bool/byte/short/long
+// with inherited/native result: 390/390/390/390/691/691/691/691. NOT kept: no match; original admission,
+// result qualifier, all name-copy/format paths and complete body restored.
+// AC548: Shared event-presence lifetime, bool/byte/short/long with inherited/ordinary result
+// 454/454/446/441/671/671/630/626. NOT kept: no qualifying supported gain or byte match.
+// Native frame/result/capacity/token homes and independent copy tails remain. Original complete body restored.
 // @retail 0x19e1c0
 long function_19e1c0(s_event *event, long token_length, word const *token, word *destination, long remaining)
 {

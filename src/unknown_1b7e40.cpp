@@ -69,6 +69,7 @@ bool actor_has_joint_invitation(long actor_index, short type);
 long function_25d810(long object_index, long actor_index, bool create);
 bool function_25d9b0(long prop_index);
 
+// MiniMax B (11-04): no new form, no lower score.
 // score 49 (was 49): frame and actor/node homes agree; busy selection and zero/success epilogues differ.
 // MiniMax R (11-01): the file's retail setting includes /Ob1 (`// @flags /O2 /Ob1 /arch:SSE /Gr`): 145 -> 49
 // (557 bytes against retail's 551); the file's other seven functions stay matched and nothing is demoted.
@@ -247,6 +248,12 @@ bool function_25d9b0(long prop_index);
 // (`test ebp, ebp`), a form picked by score against retail's test; the && chain alone is 65. Body restored at 49.
 // Round 402: Single complete outcome including iterator exhaustion, short/long/word/dword, default-zero or complete busy branches.
 // Scores 132/135/132/135/136/170/136/170. NOT kept: unmatched outcome forms; original complete body restored.
+// Round 138: busy result in byte/short/long storage, Boolean at entry/evaluation scope 49 each;
+// evaluation-scope Boolean with priority cleared 82; unsigned-short result initialized from priority 49
+// (558 bytes), branch-complete unsigned-short result 49. Original tail restored; busy select and exits remain.
+// AC545: Native ordered admission in nested predicate groups, eight boundary
+// partitions, 49 each. Original busy call, zero/priority exits, iterator
+// exhaustion and fallback node test restored; the select and epilogues remain.
 // @retail 0x1b7e40
 short __stdcall function_1b7e40(long actor_index)
 {
@@ -311,6 +318,7 @@ evaluate:
 	return 0;
 }
 
+// MiniMax B (11-04): no new form, no lower score.
 // MiniMax R (11-01): no lower score; reading the slot's expected index into a local before the actor lookup
 // and the file's /Ob1 setting both leave it at 73 (0x25d740 is still inlined here); calling the view getter
 // twice (76) does not hold it out of line either.
@@ -467,6 +475,11 @@ evaluate:
 // guard returns (`unknown20 <= 0`, `prop_index != unknown1c`) 74; with `if (!view) return result;` 74; with the
 // existing magnitude3d 74; with the far result assigned (`result = g_46fbe8;`) 72; the near/far arms as an if/else
 // assigning result with one return 88 (278 bytes).
+// Round 69 (lane 11, fast; 0x25d740 inlined in every kept-shape form): a named near flag with two ifs, single exit 88 (278 bytes); the same
+// with the near arm returning 112 (230 bytes, the flag test folds, the call goes out of line, exits merge); the two outer tests as a named
+// flag retested 84; guard returns with the slot field read first 74; nested with it 73; an actor local with it 73. Diagnostic (reverted): 0x25d740
+// pinned out of line 102 (231 bytes): ESI/EDI are still pushed at entry and the exits merge, where retail pushes ESI after the first test, EDI
+// at the call, and has five separate exits, so the inlining is not the only cause.
 // @retail 0x1b81c0
 short __stdcall function_1b81c0(long actor_index, s_slot *slot, bool active)
 {

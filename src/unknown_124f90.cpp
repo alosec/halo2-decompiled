@@ -638,6 +638,10 @@ static __forceinline void sound_environment_reset_1253d0(s_sound_environment *en
 // Round 203 (fast, under a 0x219b40 CAVEAT; the fast baseline agreed with plain): the voice pointer declared at block scope 3; the type counter declared ahead of
 // the voice index 3; a walking per-type count pointer advanced with the type 5; a long inner
 // counter 40 (551 bytes); the two zero bytes as one chained store 5.
+// Round 70 (lane 10, fast; a one-file LTCG harness reproduces the loop): the voice stores in a forceinline reset
+// helper taking the voice pointer 3, taking the voice index 3, or with the index advanced in its own statement 3; a
+// const pointer to the per-type counts for the sum and the bound 3; the counts table without const 3. Harness: probe
+// locals (1-15 at the top, 1-8 in the loop) and the counts read through a pointer local move nothing.
 // @retail 0x1253d0
 void function_1253d0(void)
 {
@@ -1236,7 +1240,7 @@ long function_2197f0(real gain);
 
 /* a sound class's gain in decibels: its fade, ducked by the current and the
    previous ambience */
-// score 125 (was 137): Frame 0xc and the entry agree. Left: the first arm's sum (retail loads the gain into a
+// score 94 (was 177): Frame 0xc and the entry agree. Left: the first arm's sum (retail loads the gain into a
 // register, adds the interpolation into it and keeps the tails apart), its register rotation (inverse, elapsed,
 // 1.0, fade-out), and the gain value carried into the last arm.
 // Round 160: the gain and ducking gains as s_decibels, the interpolation by value and the hold sum through the
@@ -1366,6 +1370,29 @@ long function_2197f0(real gain);
 // M337: Release-end predicate sum, twice-used remaining attack time and distinct-release
 // hold quotient at their producers, seven subsets [137, 193, 137, 193, 137, 193, 193], all with table-first
 // entry 183. All restored; table/index entry, interpolation and hold-copy homes remain.
+// Round 69 (m3 lane 10; baseline 177 at 642 bytes, the ternary clamps' tails cross-jump): `t = 1.0f; if (1.0f > time) t = time;` in arms 2 and 4
+// 125 (678, aligned 55, masked 20; kept). First arm on that: an inverse local with `(elapsed - hold) * inverse * fade_out` and `t = 1.0f; if (1.0f >
+// time * inverse) t = time / fade_in;` 94 (683, aligned 52, masked 17; kept); as a ternary 163 (648); `t = time * inverse` 127 (672); a fraction local 179
+// (640); plus a fade_out local 98 (masked 15). No inverse: a fade_out local 128 (678, aligned 76, masked 14: retail's order, reciprocal first, with XMM
+// colours cycled: elapsed 2 for 3, inverse 1 for 2, fade_out 4 for 1, 1.0 3 for 4); on it `gain = X + gain` 153 (682, masked 10, frame 0x10 from the by-value
+// copy), `gain.value` sum spellings and a sum local 128, staged time, a named product or a named first term 128; an if-form clamp in arm 1 145 (681).
+// AC529: Composite-fade clamp partial/completed predicates in bool/byte/short/long: 168/168/170/169/168/168/170/169.
+// NOT kept: predicate residence grows the body without equality; native reciprocal/elapsed and gain-load schedules remain.
+// B429: Complete native compound/scalar compound/scalar assignment/constructor
+// addition boundaries 105/105/105/105 at 678 bytes; each with disabled early
+// return 188 at 652. NOT kept: sums/tails regress; original body restored.
+// DL264: Existing aggregate gain addition with receiver-first expression,
+// result/copy storage, value/reference right input and immutable returns: 185/185/105/105/158/154/185/105.
+// NOT kept: no eligible native repair with preserved shared users; original executable source restored.
+// M385: Existing aggregate interpolation endpoint/result compound accumulation, native-copy,
+// constructed difference/product, scalar product, twice-used start and uninitialized result:
+// 94/94/102/94/94/94/94/94. NOT kept: no native reciprocal, gain-load or tail repair; full producer restored.
+// M387: Composite fraction eager division/select/positive and complementary complete results,
+// original then eager simple upper caps: 160/160/163/159/140/140/143/101. NOT kept: no gain;
+// original body restored, native reciprocal/elapsed roles and first gain-load schedule remain.
+// B449: Entry gain real construction/default-member/default-assignment/explicit-copy acquisition,
+// each with encoded/real zero endpoints: 232/232/94/94/228/228/187/187.
+// NOT kept: no exact construction repair; original entry gain, endpoint domain and complete body restored.
 // @retail 0x127010
 long function_127010(short class_index)
 {
@@ -1390,15 +1417,20 @@ long function_127010(short class_index)
 				{
 					if (ducking->fade_out_time >= 0.001f && ducking->fade_out_time + ducking->hold_time > elapsed)
 					{
-						real time = sound_system->ambience_fade - elapsed + (elapsed - ducking->hold_time) / ducking->fade_in_time * ducking->fade_out_time;
-						real t = 1.0f > time / ducking->fade_in_time ? time / ducking->fade_in_time : 1.0f;
+						real inverse = 1.0f / ducking->fade_in_time;
+						real time = sound_system->ambience_fade - elapsed + (elapsed - ducking->hold_time) * inverse * ducking->fade_out_time;
+						real t = 1.0f;
+						if (1.0f > time * inverse)
+							t = time / ducking->fade_in_time;
 
 						gain = gain + decibels_interpolate(s_decibels(0ul), ducking->gain, t);
 					}
 					else
 					{
 						real time = (sound_system->ambience_fade - elapsed) / ducking->fade_in_time;
-						real t = 1.0f > time ? time : 1.0f;
+						real t = 1.0f;
+						if (1.0f > time)
+							t = time;
 
 						gain = gain + decibels_interpolate(s_decibels(0ul), ducking->gain, t);
 					}
@@ -1430,7 +1462,9 @@ long function_127010(short class_index)
 				if (ducking->fade_in_time >= 0.001f)
 				{
 					real time = sound_system->ambience_fade / ducking->fade_in_time;
-					real t = 1.0f > time ? time : 1.0f;
+					real t = 1.0f;
+					if (1.0f > time)
+						t = time;
 
 					gain = gain + decibels_interpolate(s_decibels(0ul), ducking->gain, t);
 				}
@@ -2360,35 +2394,6 @@ real g_547f14;
 /* whether a sound would be heard: its definition can play, the random skip
    fraction lets it, a listener is in range and it is loud enough; the
    listener goes to *listener_index and why it would not play to *reason */
-// score 7 (was 7): only the last add differs: retail adds the class gain base (loaded into xmm1)
-// and the inner sum before the two forced-flag tests; ours adds them after the tests, in the
-// comparison's block. Every form that computes the sum before the tests folds the base load
-// into it (`addss xmm0, [base]`) or reassociates it; VC sinks the unfolded sum otherwise (the
-// same unfolded `a + computed` add is in retail 0x1251e0 and 0x127010). Round 30 (plain): a
-// loudness local before the forced test 35; a loudness bool 44; loudness started from the base
-// with the inner sum added in place 39; the inner sum added in place on the gain local 8; one
-// combined `||` condition with a loudness local 42. Screened (compile-only, which reproduces our
-// tail exactly): the gain or the base summed in place, decibels_add into the gain, a flags word
-// local.
-// Round 121 (plain): loudness through the existing decibels_sum/decibels_add on the class gain base 63
-// (428 bytes) / decibels_add for both sums 54; the inner sum as a decibels_add long, loudness a real sum 63
-// (428 bytes); a by-value real sum helper 35; a pointer to the class gain base 35. Compile-only: every form
-// that sums before the flag tests folds the base load; only a float-consistency pragma (diagnostic, not kept;
-// it worsens 0x1251e0's x87 interpolation in the LTCG probe) gives retail's unfolded add before the tests.
-// Round 72 (plain): direct class-field loudness after forced 16; loudness from the pre-flag class base 7;
-// inner-seeded class sum / in-place class sum 7 each; an audible bool after forced 67 (468 bytes); a two-view
-// decibel-return union 7; a real const-reference sum helper 35; a forceinline class-lookup sum helper 35.
-// Round 73 (plain): a word flags local used by both flag tests 7; that local first with the sum inside
-// the `||` condition 42; the forced bool computed before the sums 42; the inner sum as a decibels_add
-// long with a loudness local before the forced bool 39; the class gain base first with a loudness local
-// before the forced bool 35. Compile-only diagnostic (not a keepable form): when the inner sum stays live
-// after the add, VC gives retail's exact pre-test `movss xmm1, base ... addss xmm1, xmm0`, so in retail the
-// inner sum is a register value VC does not reuse for the result.
-// Round 203 (plain): `-64.0f < gain_base + inner` 7; inner as `gain + distance_decibels` 13; the
-// class gain base read before the inner sum 8; both flag tests and the sum in one `||` condition, no
-// bool 42; the class gain base kept as a long, summed through its address 47. A float-consistency
-// pragma on this function alone (diagnostic) 127 (469 bytes, --fast). The same unfolded pre-test
-// `movss xmm1, a ... addss xmm1, xmm0` is open in 0x1251e0, so the cause is shared.
 // @retail 0x126c30
 bool function_126c30(s_sound_play_state *state, long tag_index, long *listener_index, long *reason)
 {
@@ -2421,12 +2426,12 @@ bool function_126c30(s_sound_play_state *state, long tag_index, long *listener_i
 						real distance_gain = sound_get_distance_gain(tag_index, (s_sound const *)location, distance);
 						long gain = function_1251e0(definition, location->unknown08, location->scale);
 						long distance_decibels = function_2197f0(distance_gain);
-						real inner = *(real *)&distance_decibels + *(real *)&gain;
-						real gain_base = *(real *)&function_xaa8231(definition->class_index)->gain_base;
-
+						s_decibels inner(*(real *)&distance_decibels + *(real *)&gain);
+						s_decibels gain_base(*(real *)&function_xaa8231(definition->class_index)->gain_base);
+						s_decibels loudness = gain_base + inner;
 						bool forced = SOUND_FLAG(location->flags, 11) || SOUND_FLAG(location->flags, 8);
 
-						if (forced || gain_base + inner > -64.0f)
+						if (forced || loudness > s_decibels(-64.0f))
 						{
 							failure = 0;
 							result = true;
@@ -2466,6 +2471,9 @@ bool function_126c30(s_sound_play_state *state, long tag_index, long *listener_i
 // a short chunk index 17; literal zero chunk index and fade times 17, as one chained store 19.
 // Round 73 (plain): flag0 set before the start-time store 18; `delay + SOUND_SYSTEM->time` 17;
 // `sound->flags |= 1` for flag0 17, before the start-time store 18; `delay + time` with flag0 first 18.
+// P346: Existing word/byte delayed-start writers with selected-permutation and delay results:
+// reduced 198/204/198/204/198/204/198/204 against control 197 (868 bytes; full 17/865).
+// NOT kept: reduced scores and byte-writer length regress; all one-use results, include and body restored.
 // @retail 0x126000
 long function_126000(long tag_index, long listener_index, s_sound_play_state *state, long rate_limit_stage)
 {
@@ -2912,6 +2920,25 @@ static inline short sound_voice_find_available_channel(char type)
 // returning for-search or while-search on it 122/122, with complemented status 121, chained defaults 122/121; the
 // failure calls written in two arms, inverted or not 168/145/168/145 (455/438 bytes), byte result 151, complemented
 // status 178/155.
+// N367: Tentative channel result before bitmap validation, short/int/long/dword in for scan 96/166/166/166;
+// while scan 96/166/166/166. NOT kept: no gain or equality; original private finder and full body restored.
+// Frame twelve/eight, normalized byte and early failure tail remain.
+// B440: Native full-width first/last/both/entry-const range captures on the
+// original inclusive scan: byte result 96/96/96/96, Boolean result 113/113/113/113.
+// NOT kept: ties or regressions; frame twelve/eight and saved-byte/failure tail remain.
+// Original private finder, result byte, independent defaults and full body restored.
+// N379: Existing finder produces admission plus the narrowed channel; selected-local, direct-output,
+// found-return and exhaustion-result forms with byte/bool body results: 96/96/130/134/113/113/129/104.
+// NOT kept: ties or regressions; private finder signature, saved byte result and complete body restored.
+// N381: Existing finder receives native voice/member pointer or reference, byte/Boolean body result:
+// 125/125/128/128/105/105/128/128. NOT kept: no byte match; original private input,
+// signed scan, byte result, status/error calls and complete body restored. Frame/result/failure joins remain.
+// N383: Actual channel/buffer predicates own the return decision, byte/bool, success/failure
+// polarity and constant/actual entry admission: 160/175/166/208/134/141/166/208.
+// NOT kept: all regress; original result, private finder, observations, commits and body restored.
+// N385: Independent finder completion state, found/searching polarity in bool/byte/long/dword:
+// 125/125/125/125/125/125/125/125. NOT kept: no equality; completion flags and whole finder/body restored.
+// Frame twelve/eight, saved byte normalization and early failure tail remain.
 // @retail 0x1295e0
 bool __stdcall function_1295e0(short voice_index)
 {
@@ -3826,6 +3853,30 @@ struct s_128ca0
 // on 0x1251e0's tail the same helper 23 (was 15). Chunk index read into a local before the next-chunk test
 // 222 (the load moves above the permutation test as retail, zero-extended into ECX); the stream bit through
 // a stream pointer 221 (retail splits that store into load/or/store). All restored.
+// N367: Complete initial-pitch/packet-pitch/parallel branch-gain adjacent producers, seven subsets
+// 222/254/254/222/222/254/254; all with sequential promotion adjustment 254. NOT kept: ties or regressions;
+// original complete arithmetic, packet stores and helpers restored. Frame 0x49c/0x494, gain-input homes and
+// pin joins remain.
+// B440: Existing gain operators at raw nested/argument/inner/update producers
+// 262/262/262/269; parallel branches only 316, with raw nested/inner/update 332/332/321.
+// Raw/complete operators with native reused scale 167/252; adjacent pitch bounds too
+// 164/249. Four pitch/gain/raw-result role-name forms on that graph each 164. Native
+// 0x494 frame and early location load recover, but pitch/gain homes and pin joins differ.
+// NOT kept: one-use value record and bit copy, combined ownership forms without equality.
+// Original complete body, primitive helpers, observations, clears and interfaces restored.
+// N379: Incoming parameter owns raw and processed gain through both submissions; nested, sequential,
+// native-real and mixed sums 223/223/312/269; with coherent twice-used scale 273/273/299/246.
+// NOT kept: all regress; original parameter lifetime, gain homes, packet, helpers and body restored.
+// N381: Existing incoming gain-value contract with scalar/member/operator/parameter-owned raw sums,
+// without/with coherent scale: 222/306/275/275/277/295/287/287. NOT kept: no byte match;
+// original incoming type, caller, gain homes, helpers and entire body restored. Frame and pin joins remain.
+// N383: Both parallel branch gains through the existing compound operation, scalar/nested/compound/
+// staged raw producers 241/245/247/245; coherent twice-used scale 302/188/242/188.
+// NOT kept: unmatched record/copy operations; 188 grows to 1075/1057 bytes. Original body restored.
+// N385: Existing pin argument-owned/early-lower mutation, unsigned value argument/completed result,
+// signed readonly-reference early/completed and unsigned readonly-reference early/completed:
+// 237/231/237/237/222/237/237/237. NOT kept: no byte match; original pin and full body restored.
+// Frame 0x49c/0x494, initial gain homes and integer pin joins remain.
 // @retail 0x128ca0
 void function_128ca0(short arg_0, long arg_1, s_looping_channel_spatialization const *arg_2)
 {

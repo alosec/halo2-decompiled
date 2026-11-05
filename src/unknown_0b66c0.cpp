@@ -353,6 +353,29 @@ static __forceinline char *upload_copy_ab(char *destination, char const *source,
 // P311: Shared bounded scanner !=511 / <=510 exhaustion, unsigned-long/long/word/short counters:
 // P311: eight forms 40 at exact 100 bytes; shared find loses its match in every form.
 // P311: NOT kept: no target gain and shared-user regressions. Original helper/body restored; saved-start and scan register split remain.
+// M362: Existing copy helper terminator through direct CRT result/destination
+// formal, long/unsigned-long/int/unsigned-int sizes: eight 53s at 90/100 bytes.
+// NOT kept: target regresses and shared users rise (caller 13, constructor 29,
+// formatter 1, connector 90); original copier, scanner and full body restored.
+// M366: Canonical success signed-byte/short/word/int64 storage, false default then true-default rejection:
+// 41/47/47/48/62/64/64/48. NOT kept: all regress; false defaults and true int64 also lose
+// the matched caller. Original Boolean body restored; saved-start/scan register split remains.
+// Round 55 (m3 lane 15, fast with 0xb5f10/0xb61d0; one-file LTCG harness exact at 40 / 0xb5f10 0): count tested first with a text
+// local and `start += (long)text` 39 (start arrives unsaved in EDI, 0xb5f10 35); `long source = start; source += (long)string;` 28
+// (0xb5f10 6); `start = (long)&text[start]` from a text local 27 (0xb5f10 6); (start, count, string, destination) in every
+// declaration and call with the text local 27 (237 bytes for 0xb5f10, 38); that order with a plain string 48 (93 bytes, 0xb5f10 82).
+// Harness: plain string x orders (string/start/count/destination, string/start/destination/count, string/destination/start/count,
+// start/string/count/destination, start/string/destination/count, start/count/string/destination) x `start += (long)string`,
+// `string + start`, `start + (long)string` 41 or 48; on the string-first and start-first orders flat, nested, three-level with a
+// length local, early returns, result set in an else arm, result from the whole test x the same sums and a text local 41-54, never
+// string on the stack (it arrives in ECX or EBX and the scan's byte then takes AL); volatile string x the four orders x start or count
+// tested first x sums 28-40. Compile-only: the declared order alone picks the sum's register (string first `add ebp, edi`, start
+// first `add edi, ebp`, retail's direction). Probes (harness only, not kept): extra uses of the walk or of destination move
+// the walk or start between scratch registers and start then arrives there, never in ECX with an EDI home, so re-weighting the scan
+// does not reach retail's convention.
+// M380: Shared copier short/word/int64/uint64 size contracts with native/void return:
+// 39/39/56/56/39/39/56/56. NOT kept: narrow forms gain one and grow to 103 bytes;
+// wide forms regress at 112 bytes. Original helper, scanner and complete body restored.
 // @retail 0xb6220
 bool function_b6220(char const *volatile string, long start, long count, char *destination)
 {
@@ -665,6 +688,13 @@ short function_b5000(s_transport_endpoint *endpoint, void const *buffer, short l
 // then arm 74 (226 bytes); gotos in both arms 10; `return result` / `return true` 20 (retail's block order, but the false exit
 // folds to `xor al, al` and BL takes the true result); `return false` then the restore and the goto 25; a `would_block` local
 // assigned to the result 74; the result from the sentinel, tested, then the restore 74.
+// Round 127 (lane 7, fast): `sent = -1` threaded from the failed call 10, with the `!= -2` test and two gotos 10; long
+// sent 33; `sent == -2` ahead of `sent < 0` 38; a named bool for the prepare call 10; `sent = 0` then `if (written)` 47.
+// Compile-only: direct returns fold with the result written through an inlined reference or pointer, a reference local,
+// an address-taken local, or as char/byte/long; the single-join form puts the false exit's compensation block after the restore.
+// Round 102: const position 10; the send count declared at the iteration top 10; position/written declarations
+// swapped 10; a direct completion return 67; direct builder and ordinary-failure returns 64; direct builder and
+// would-block returns 28; all three failure paths direct 64; an inline method declaration 10. Original body restored.
 // @retail 0xb6000
 bool s_http_connection_ab::send()
 {

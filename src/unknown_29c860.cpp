@@ -178,6 +178,12 @@ __forceinline void function_29c9ee(vector3f const *arg_0, vector3f const *arg_1,
 // Round 99: one-use tag value, split settings/actor/angle declarations, separate angle result,
 // angle declared before the lookup, combined tag/angle lifetimes and a const object-field read: eight 2s.
 // NOT kept: no exact match or eligible gain; original lookup, angle result and declarations restored.
+// Round 127 (lane 7, fast): `inline` on 0x1e5450's definition 2; a named byte settings pointer 2; named from/to
+// pointers for the angle call 46; a pointer to the 0x654 field at the top 42 (692 bytes), after the lookup 42, after the
+// angle 40, before its use 40; a pointer to the 0x65c field at the top 42, after the lookup 42, after the angle 40; both
+// after the lookup 123; 0x654 at the top with 0x65c after the angle 121; 0x65c at the top with 0x654 late 42. Diagnostics:
+// the tag `& 0xfffff` 155, `+ arg_0` 154 give retail's pair. It follows the function's integer tuples, not point
+// lifetime (a float tuple does nothing), but a tuple ahead of the call flips the dot and the rotation too.
 // @retail 0x29c860
 void function_29c860(long arg_0, long arg_1, point2f const *arg_2,
 	point2f const *arg_3, real arg_4, vector3f *arg_5)
@@ -268,6 +274,14 @@ __forceinline real function_29cc7e(vector3f *arg_0)
 	return normalize3d(arg_0);
 }
 
+// score 277 (was 277): the 0.9 steering block is one instruction short (145 of the count); the left and avoidance vectors swap their
+// 12-byte slots; the second normalize's j product, the 0x5d0 flag store, the early 0x44 load and the local_16 dot's x87 order differ.
+// MiniMax B (11-04): no lower score; the new forms tried and dropped are the avoidance vector's
+// declaration placed before the left vector (277, identical code) and the flag store's order.
+// Earlier note, 277 from 300: the 11cd20 result is held in a local and written into the struct after the
+// side test, so the store lands in the 299460 setup where retail puts it; left: the left vector and
+// the avoidance vector still swap their 12-byte slots, the 0.9f steering block's left_i load, the
+// second normalize's j product, the 0x5d0 flag store and the local_16 dot's x87 order differ.
 // MiniMax I (11-01), not kept in review: the 0x44 setting read into a one-use local before the local_16
 // test (retail keeps it in xmm1 across the branch) 291 from 300, and with the left vector declared before
 // the other two vectors 288. The early read is a one-use local, kept only with a match; the declaration
@@ -276,22 +290,22 @@ __forceinline real function_29cc7e(vector3f *arg_0)
 // component (339), the other two vectors swapped (306). Left: the second normalize's j product, the left
 // vector's stores and 12-byte slot, the 0x5d0 flag store, the side test's dot order and the local_16 dot's
 // x87 order.
-// score 645 (was 645), coordinator review: the body is back to its earlier form. The lane's 628 needed two one-use
+// Earlier note, 645 from 645, coordinator review: the body is back to its earlier form. The lane's 628 needed two one-use
 // locals (the 0x44 setting read early, the 0x11cd20 result held until after the side test), kept only with a match;
 // without them the sum splits and store reorders below score 643 (fast), under the 8-point bar. Its tried forms:
-// score 268 (was 271): the left vector is built before the forward copy, so the three stores
+// Earlier note, 268 from 271: the left vector is built before the forward copy, so the three stores
 // land where retail puts them; left: the second normalize's j product keeps the other operand
 // order, the avoidance vector and the left vector still swap their 12-byte slots, the 0x5d0
 // flag store, the steering block's sums and the local_16 dot's x87 order differ.
-// score 271 (was 291): the distance from the side test is held in a local and written into the
+// Earlier note, 271 from 291: the distance from the side test is held in a local and written into the
 // struct after the test, so its value stays in a register across the test; left: the left vector
 // and the avoidance vector still swap their 12-byte slots, the steering block's sums, the local_16
 // dot's x87 order, the 0x5d0 flag store and the second normalize's j product differ.
-// score 291 (was 300): the settings word at local_2+0x44 is read before the local_16 branch, as
+// Earlier note, 291 from 300: the settings word at local_2+0x44 is read before the local_16 branch, as
 // retail does (it keeps it in xmm1 across the branch); left: the left vector and the avoidance
 // vector still swap their 12-byte slots, the steering block's sums, the local_16 dot's x87 order,
 // the 0x5d0 flag store and the second normalize's j product differ.
-// score 300 (was 300): the actor flag updates are the existing setters 0x1e4290 (clear 0x800)
+// Earlier note, 300 from 300: the actor flag updates are the existing setters 0x1e4290 (clear 0x800)
 // and 0x1e4260 (set 2), which retail inlines here (they are `inline` at their definitions), and the
 // side test reads the left vector, which is initialised from local_8 as sibling 0x29a190 writes it
 // (retail reads the left vector's home there and the scalar's home in the two direction sums).
@@ -323,6 +337,13 @@ __forceinline real function_29cc7e(vector3f *arg_0)
 // Diagnostic (not kept): one extra avoidance store moves the slots but changes the code 319 (2827).
 // Much of the count is a one-instruction shift after the steering-direction block, where retail
 // loads local_9.i, left_i and local_9.j first and interleaves the two sums.
+// Round 213 (m3 lane 3, fast): 145 of the 277 lines are one missing instruction in the 0.9 steering block: retail keeps the component in xmm2, loads left_i
+// (`mulss xmm0, xmm2`), then `movaps xmm3, xmm2; mulss xmm3, [local_8.i]`; ours multiplies the component in place by left_i's home. In retail every product's
+// destination is its first source operand (j*8j, i*8i, left*i, j*8i) in both steering blocks. Tried: left_i first in the product 277 (same code); direction.j first 278;
+// through two named sums either order 277; the component in a named local 277; one-expression sums 277, 278; first block's sums reordered 277, one expression 279; left_i
+// declared ahead of local_9, local_8, local_7, at the top, beside local_10, or with local_8 and local_9 declared together 277 each (same code); left_i written out at each use
+// 583 (three spellings); left_i from the left vector 543 (2814 bytes); the left vector built from left_i 343 (2829), built first 277; a separate early velocity vector with
+// direction declared in five places 422 (2815); dead pointer locals and identity pointer chains of 1-8 (diagnostic) 277 each (no period here).
 // @retail 0x29cbb0
 void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *arg_3,
 	short *arg_4, vector3f *arg_5, bool *arg_6, bool *arg_7, short arg_8)
@@ -430,8 +451,10 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 				local_11 = *(vector3f *)(local_0 + 0x290);
 			if (function_30bf0(&direction) == 0.0f)
 				direction = local_11;
-			real local_19 = direction.j * local_8.j + direction.i * local_8.i;
-			real local_20 = left_i * direction.i + direction.j * local_8.i;
+			real local_20 = left_i * direction.i;
+			local_20 += direction.j * local_8.i;
+			real local_19 = direction.j * local_8.j;
+			local_19 += direction.i * local_8.i;
 			direction.i = local_19;
 			direction.j = local_20;
 			direction.k = 0.0f;
@@ -462,9 +485,10 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 			function_26c180(arg_0);
 			if (*(bool *)(local_0 + 0x278) && *(long *)(local_0 + 0x28c) != NONE)
 			{
-				local_24.field_4 = function_11cd20((vector2f *)&local_8, (vector2f *)&local_9);
+				real local_angle = function_11cd20((vector2f *)&local_8, (vector2f *)&local_9);
 				real local_25 = local_9.j * local_8.i;
 				local_24.field_0 = local_9.i * local_13.i + local_25 > 0.0f;
+				local_24.field_4 = local_angle;
 				local_24.field_1 = false;
 				local_24.field_8 = 1.0f;
 				local_24.field_1a[10] = true;
@@ -472,8 +496,10 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 					*(real *)(local_2 + 0x20), (s_29946c const *)local_22);
 				if (0.9f > local_24.field_8)
 				{
-					direction.j = left_i * local_9.i + local_25;
-					direction.i = local_9.j * local_8.j + local_9.i * local_8.i;
+					direction.i = local_9.j * local_8.j;
+					direction.i += local_9.i * local_8.i;
+					direction.j = local_9.i * left_i;
+					direction.j += local_25;
 					direction.k = 0.0f;
 					local_17 = 0;
 					function_30bf0(&direction);
@@ -494,7 +520,9 @@ void function_29cbb0(long arg_0, long arg_1, vector3f const *arg_2, vector3f *ar
 		{
 			real local_28 = function_1f9e70(arg_0, arg_1, (point2f *)&local_7, (vector2f *)&local_9,
 				(vector2f *)&local_11, (vector2f *)&local_8, local_4 ? (vector2f *)&local_14 : NULL, local_10, local_17 != 1);
-			real local_29 = *(real *)((byte *)local_1 + 0x90) * local_11.k + *(real *)((byte *)local_1 + 0x8c) * local_11.j + *(real *)((byte *)local_1 + 0x88) * local_11.i;
+			real local_29 = *(real *)((byte *)local_1 + 0x90) * local_11.k;
+			local_29 += *(real *)((byte *)local_1 + 0x8c) * local_11.j;
+			local_29 += *(real *)((byte *)local_1 + 0x88) * local_11.i;
 			real local_30 = *(real *)(local_2 + 0x68);
 			real local_31;
 			if (local_30 > 0.0f)

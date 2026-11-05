@@ -73,7 +73,16 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 	return (c_channel_effects_view *)SOUND_DRIVER_GLOBALS->effects;
 }
 
-// score 545 (was 545): frame 0x22c versus 0x224; stream/gain homes and mixed math remain.
+// score 545 (was 545): frame 0x22c versus 0x224; stream/gain homes and mixed math remain (masked aligned 233 of 565 lines, the most of this queue).
+// Round 64 (fast control 532, full 545; masked aligned in brackets, control [240]): send bits through a helper with a named bool result 532 [243] (no dead byte: the store
+// needs the flags in memory); mode sends as a fall-through two-case switch 545 at 1901 bytes [244], with the helper [247], with the gain difference named [240]; gain
+// difference named alone 537 [244], cast to real 532 (same code); direct as a bool cast 532 (same code); `changed` default-true 544 [246], default-false 543 [244], default-true with the
+// switch 550 [236]; gain pointer chosen by an if 532 (same code); stream through pointer arithmetic 532 (same code). Retail keeps one stack byte for every send bit and reloads
+// the flags after each store; only a volatile bool reproduces that shape, and it stays out. Flag lead unchanged: the /Op math is the file's largest difference and flags are not ours to change.
+// Earlier: this round found no gain - the frame is 0x22c against retail's 0x224 and the
+// stream and gain homes still differ; the permuter needs a full build per trial and ran past the
+// per-function time budget, so it was stopped without a result.
+// Earlier first line: frame 0x22c versus 0x224; stream/gain homes and mixed math remain.
 // the level-energy block summed in double (the gain converter returning double) 528, but the
 // shared converter costs the matched 0x21f8a0 (0 -> 67): restored (MiniMax E run 12).
 // frame 0x22c versus 0x224; stream/gain homes and math expansion differ.
@@ -245,12 +254,33 @@ PRIVATE inline c_channel_effects_view *channel_effects()
 // gain loaded with movss); that with a plain real gain value 545 (same code); the stream's 0x20 bit updated before
 // the send flags 576 (1863 bytes); the pitch delta compared without the `(real)` cast 545; the send flag set
 // before the two cached level stores 545.
+// M360: Extended scaled-value/linear-result producer with sample/energy/root
+// consumer widths, masks 0..7: 558/558/555/555/578/578/568/568 fast (control 532). NOT kept:
+// no exact match; original precision, helper, body and frame/gain homes restored.
 // Round 84 (m3 lane 9, fast control 532, full 545): `#pragma intrinsic(sqrt, exp, log10)` (the one diagnostic) 545
 // plain, same code: under /Op the three math calls stay library calls where retail expands them inline (fyl2x,
 // f2xm1, fsqrt). Retail also materializes each send bit as a bool in one dead stack byte (+0xe) and reloads the send
 // flags from memory after every store, the volatile-bool shape. Forms: stream declared before input 532 (same code);
 // gain bits read before `changed` 577 (1921 bytes); the first send bit cast to bool like the other three 550; the
 // three send-bit updates as ternary assignments 532 (same code); `direct` as a bool cast 532 (same code). Restored.
+// B426: Existing SDK C entry points at first/later query, volume, status, playback,
+// mixbin, pitch and complete call phases: 532/532/532/532/532/532/532/532. Original SDK receivers,
+// workspaces and complete body restored; frame/stream/gain and mixed math remain.
+// Round 212 (m3 lane 3, fast control 532, plain 545; aligned 344): the sends as a fall-through two-case switch 545 fast (1901, aligned 331);
+// on it direct declared uninitialised beside changed 545, ahead of changed 545, the send state at the function's top 545, status at the
+// function's top 545; direct beside changed on the loop form 532. Frame stays 0x22c: retail's byte flags sit together at +0xe/+0xf, ours at
+// +0x13/+0x1b, and the declarations do not move them.
+// AC545: Existing real-pin input-first/complete-arm/lower-default/early-return
+// producers 545/532/543/532, then forced expansion 545/532/543/532
+// (fast control 532; full 545). NOT kept: ties or regressions; native frame,
+// stream/gain homes and mixed-math expansion remain. Original helper restored.
+// DL263: Actual stream/voice/effects object reference boundaries, seven subsets then complete
+// input reference: 545/545/545/545/545/545/545/545. NOT kept: unmatched alias contracts; original
+// receiver forms, existing helper and complete body restored. Frame 0x22c versus 0x224,
+// stream/gain carriers and mixed math remain.
+// M381: Actual voice/buffer/submix API-output zero initialization, seven subsets, then
+// all with initialized status: 566/615/591/615/591/621/607/608 (fast control 532, full 545).
+// NOT kept: unsupported extra stores and regressions; original outputs, helpers and full body restored.
 // @retail 0x21fa80
 void function_21fa80(long channel_index, s_looping_channel_properties const *properties,
 	s_looping_effect_playback const *effects, bool force)

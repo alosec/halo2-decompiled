@@ -344,6 +344,11 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // N347: Read-only virtual count/element/both/both-interface, metadata/metadata-count/metadata-element/
 // complete contracts: 55/55/55/55/55/55/55/55. NOT kept: unmatched alias/contract combinations. Original
 // complete body and declarations restored; split post-sample comparison and child scratch homes remain.
+// Lane 14 r60 (fast; on the field_50 read-back form, 133, aligned 21): the six orders of 0x175070's parameters, every
+// call changed: (first,child,last) and (first,last,child) 133 aligned 21; the three with last or child in other places
+// 141 aligned 69 and 0x178eb0 2. Named first/last list pointers around the child pointer 133 aligned 21 (copy
+// propagated; the parent stays one load). Compile-only: the split also holds with the store nested under three ifs,
+// inside a loop, right after a call, and with most registers carrying values across the compare.
 // B398: Cache formal in positions 1..5 with the sole call updated, then explicit
 // stdcall in positions 6/1/4: 55 each at 870 bytes. NOT kept: no exact entry-contract
 // form or gain. Original signature/caller/body restored; post-sample split cache
@@ -363,6 +368,34 @@ PRIVATE __forceinline void function_248076(dword *arg_0, real &arg_1)
 // DH329: Six native own-input first-consumer reads 55 each; entry cache/parent input-slot
 // pointers 168/55. NOT kept: own-input forms lack equality; cache input also loses caller
 // (24). Original inputs, cache comparison and complete body restored.
+// Y584: Persistent validity/cached-record/value-array field references, seven subsets
+// and complete metadata-scope binding: 128/128/128/55/128/128/128/128. NOT kept:
+// post-sample compare stays split; other forms shorten to 863 bytes. Full original body restored.
+// AC528: Native parent-list slot identities on the current reconciliation graph
+// 55/55/55/55/55/55/136/136. NOT kept: no exact match or eligible gain; original complete body restored.
+// Split post-sample comparison and evaluator/child scratch homes remain. One-use field bindings require equality; no retained candidate.
+// B431: Actual cache/header/parent/point/direction reference formals, header-parent and
+// point-direction pairs, then all five: 55 each. NOT kept: no exact boundary-contract
+// form or gain. Original signature, sole caller and full body restored; split post-sample
+// cache comparison and evaluator/child scratch homes remain.
+// B434: Post-link positive/complementary duration-admission results in bool/byte/short/long:
+// eight 55. NOT kept: no exact result form or gain; original live field reads, reciprocals
+// and full body restored. Split post-sample compare and child scratch homes remain.
+// B436: Full-width signed int allocation/ordinal/child carriers, seven subsets, then
+// all with a native while pretest: eight 55 at 870/870. NOT kept: no exact type/control
+// form or gain; original complete body restored. Split cache compare and child homes remain.
+// B438: Allocator success/failure outcomes in bool/byte/short/long: eight 55 at 870/870.
+// NOT kept: no exact outcome-lifetime form or gain; original full body restored.
+// Post-sample split cache comparison and evaluator/child scratch homes remain.
+// M3 lane 10 r71 (fast; aligned in brackets, base 55 [54]): the child loop as a plain while 55 [54]; the cache block's cleared mask named and stored
+// after the record 55 [54]; the child pool in a named pointer 55 [54]; a parent local for both link arguments and the parent store 55 [54]; the
+// owner's flags read once for mask and update, on the current graph, 60 [50]. Re-measured: 0x173ba0's record read back from field_50 133 (876)
+// [19], which is the real closest form: only the split compare, its loop pad and the child loop's rotation are left. Harness (one file, entry in the
+// source; nothing folds): the compare or the store under an implied test, the store through a one-pass for/do, switches on the store or compare, a
+// bool result. A retail-wide scan of `fstp m` followed by an ALU operand finds 5 folds and no split of this shape: two folds are jump targets, and all
+// three non-target folds (0x39e24, 0x18700b, 0x2481bf) sit in unmatched functions, so no matched function shows this fold under the build's tuning.
+// Diagnostic only: in the one-file link /G7 on the entry object alone folds it (file-level /G7 does not), so tuning is link-wide, but it also turns
+// `inc` into `add r, 1`, which retail does not do; /G6 and /Ot on every object still split, /Os folds at 175 instructions. No flag change proposed.
 // @retail 0x247fd0
 void function_247fd0(s_247fd3 *arg_1, s_particle_system_datum *arg_2,
 	point3f const *arg_3, vector3f const *arg_4, dword arg_5, s_247fd0 *arg_0)
@@ -502,7 +535,7 @@ struct s_particle_impact;
 void function_249170(real const *arg_0, s_particle_spawn_state *arg_1, s_particle_spawn_definition const *arg_2, s_particle_system_datum const *arg_3);
 vector3f *function_143070(matrix3x3 const *arg_1, vector3f const *arg_0, vector3f *arg_2);
 void placement_set(s_placement *arg_0, vector3f const *arg_1, point3f const *arg_2, vector3f const *arg_3, short arg_4);
-void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_object_246eb0 const *arg_3, long arg_4);
+void function_246e60(s_particle_impact const *arg_2, s_object_246eb0 const *arg_3, long arg_4, dword arg_1, long arg_0);
 
 // score 356 (was 356): frame 0xb0, 1643 bytes against 1652. Left: retail saves EBP at entry and
 // shares one epilogue (ours saves it after the early exits); retail keeps the blend in XMM2-4
@@ -742,6 +775,15 @@ void function_246e60(long arg_0, dword arg_1, s_particle_impact const *arg_2, s_
 // DH334: Standard native-array scaling/translated-position/probe-copy algorithms, seven subsets
 // then all with contact-normal array copy: 405/384/389/405/403/405/420/421.
 // NOT kept: no exact match; original complete body restored; late EBP save, escaped blend and random/getter homes remain.
+// F377: Complete contact-position/normal/inherited-velocity setters, single/pair/all graphs,
+// then all with the probe-direction setter: 356/366/363/366/366/367/367/367. NOT kept: no gain;
+// original complete body restored; late EBP save and sample/blend/getter homes remain.
+// B436: Native constant-index blend/contact/velocity observations, seven subsets,
+// then complete initial-scale coordinates: 356/356/356/356/356/356/356/356. NOT kept: no exact form or eligible gain;
+// original complete body and helpers restored. Native frame/register differences remain.
+// Round 72 (m3 lane 1, harness with the callees' 8 files: control 386 [112] at 1636 bytes against the plain 356 at 1643, so ranked only; masked aligned in brackets): EBP's entry save on the early exit: empty else 386 [112], `do { } while (false)` in that
+// else or after the block 386 [112], in the exit arm 386 [112] (same code each); `__assume(local_0 >= NONE)` after the block 418 [131] (1652 bytes, EBP still late); flag byte not volatile 440 [129]. Effect flag read: named datum pointer 402 [114], shifted byte local 425 [116],
+// pointer and one-bit bool 414 [127]. Retail's flag byte store at [esp+0x1b] is never read back; no form tried here gives it without the volatile. Not kept; body unchanged.
 // @retail 0x247950
 void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition const *arg_3,
 	dword arg_4, real arg_5, real arg_6, real arg_7, s_247950 *arg_1, s_247fd0 *arg_0)
@@ -868,7 +910,7 @@ void function_247950(s_particle_system_datum *arg_2, s_particle_spawn_definition
 			long local_19 = local_3->tag_index;
 			long local_20 = local_12->function_247957();
 			dword local_21 = local_12->function_247956();
-			function_246e60(local_20, local_21, (s_particle_impact const *)&local_23.field_70, (s_object_246eb0 const *)local_2, local_19);
+			function_246e60((s_particle_impact const *)&local_23.field_70, (s_object_246eb0 const *)local_2, local_19, local_21, local_20);
 		}
 	}
 }

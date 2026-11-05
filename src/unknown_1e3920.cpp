@@ -539,11 +539,10 @@ real normalize2d(point2f *vector);
 real function_267370(long object_index);
 
 
-// score 98 (was 98): the water-plane test is 0x11c120's body (location_point_in_zone_inline) and the marker
-// read existing 0xcaf90; left: the NONE resets keep -1 in EDI, which the inlined plane compares
-// then share (retail compares with immediates, gives EDI to the cluster table and forms -1 in ECX
-// at the resets for them and the carrier compare), the carrier ternary lands in EDI instead of EAX,
-// and both crosses' multiply operand orders.
+// score 20 (was 98): First +0x140: plane x-product operands, parent-selection carriers
+// and cross-product registers remain; frame 0x90 and length 1724 agree. Signed zone
+// byte and NONE sentinel recover immediate zone compares, EDI table and later ECX resets
+// (plain 20). Existing marker and every call/value unchanged.
 // Round 106: the plane test through the out-of-line 0x11c120 with its noinline declaration dropped
 // (locate-only) keeps the same -1 sharing, so LTCG inlining is not the cause; without the
 // `(void)&actor_index` line 98 (same code); the second parent fetch in its own local 104; the
@@ -717,6 +716,17 @@ real function_267370(long object_index);
 // through a header pointer local 100; the carrier test inverted with an empty arm 98; both NONE resets ahead of the byte
 // flags 103; the zone result in a named bool 100; the class read after the sample call 98. Diagnostic: the zone statement,
 // the resets or both inside `if (1)` 98 each, so call-site nesting does not move the -1 sharing here.
+// DL260: Existing zone predicate with one completion-time optional-index publication, short/int/long/dword carriers in bool/byte result graphs: 96/96/96/96/375/375/375/375.
+// NOT kept: no exact native form; original complete executable source and every temporary contract restored.
+// DL262: Signed zone byte 20 plain; const cluster/plane receivers isolated, then signed
+// combinations and const BSP receiver: 20/98/98/20/20/98/20/20.
+// Keep only the native byte/sentinel declaration; all optional const receivers restored.
+// DL264: Existing staged cross scalar inputs/setter/returned receiver,
+// combinations then immutable inputs: 83/24/20/87/83/24/87/87.
+// NOT kept: no eligible native repair with preserved shared users; original executable source restored.
+// B449: Existing cross producer with whole-vector field/aggregate/setter/const construction,
+// each with aggregate/library publication: 135/135/135/135/135/135/135/135.
+// NOT kept: aggregate staging has no byte match; every shared helper and target body restored.
 // @retail 0x1e3b60
 void function_1e3b60(long actor_index)
 {
@@ -1214,6 +1224,46 @@ void function_1e04a0(long primary_tag, long character_index, long unit_index, lo
 // result, ours keeps a separate slot. The substitution loop in a forceinline helper taking the squad pointer 389
 // (1307 bytes); the squad pointer `byte const *` 253 (same code); `bool flag = squad && (bit 10)` 252; the squad
 // lookup ahead of the 0x1e4990 call 264; the loop's probability declared before its bools 253 (same code).
+// AC522: Six remaining substitute/squad/squad-index admission partitions,
+// then complete/default optional-squad pointer arms on the goto-free graph:
+// 392/436/408/452/420/392/353/341. NOT kept: entry/layout regressions; original body restored.
+// B421: Post-creation success bool/byte/short/long and complementary failure
+// results 253/253/253/253/253/253/253/253. NOT kept: no byte match; condition
+// residence does not recover sentinel ESI or squad/query homes. Original body restored.
+// N370: Two-use optional squad-index availability/absence results, bool/byte/short/long:
+// 356/356/352/354/356/356/352/354. NOT kept: no equality; original complete body restored.
+// Sentinel EDI/ESI, squad/query/result homes and rotated substitution head remain.
+// F374: Post-substitution settings presence/absence results in bool/byte/short/long:
+// 253/253/253/253/253/253/253/253. NOT kept: condition residence does not recover
+// native sentinel/squad/query homes; original admission and complete body restored.
+// DH350: Query-output last-consumer scopes, complete decision/output-only phases,
+// bool/byte/short/long replacement storage: 253/253/353/350 twice. NOT kept:
+// no match or gain; original workspace, result domain and complete body restored.
+// DH354: Settings query in the natural for step, four consumption forms with
+// inner/outer outputs: 504/515/515/515/504/515/515/515. NOT kept: frame 0x12c versus 0x118,
+// lookup expansion and extent regress; original guards/defaults/loop/body restored.
+// DH356: Common Boolean query-default chains in both directions, probability zero
+// before/after, inner/outer query storage: eight at 253. Original body restored;
+// sentinel EDI/ESI, squad/query homes and rotated substitution head remain.
+// DL264: Matched alternate/ordinary creation and cleanup inline
+// contracts, seven subsets then all with the target inline: 253/253/253/253/253/253/253/253.
+// NOT kept: no eligible native repair with preserved shared users; original executable source restored.
+// Y589: Actual creation-payload/equipment-selection/actor-object last-use scopes,
+// seven subsets then all with immutable settings view: eight at 253. NOT kept:
+// sentinel/squad/query homes unchanged; original complete body restored.
+// F383: Metadata refresh in the normal for step 504 (frame 0x12c, 1403 bytes);
+// immutable squad/placement/actor bindings, seven subsets, all 253. Original loop,
+// receivers and complete body restored; sentinel ESI and squad/query homes remain.
+// B433: Common continuation/cleanup outside flags admission, producer-pointer scope
+// ending before continuation, direct success return and flat cleanup combinations:
+// 406/406/374/406/374/406/374/374. NOT kept: native extent regresses;
+// original guards, producer scope, sentinel defaults and entire body restored.
+// P333: Complete initial substitution admission, allowed/blocked in bool/byte/short/long:
+// eight 389s at 1307/1272. NOT kept: entry/query homes and extent regress; full body restored.
+// DH374: Successor-NONE result owned by while condition, bool/byte/signed-char/short/word/int/long/dword:
+// 253/253/253/253/253/253/253/253 (fast control 253; full 253).
+// NOT kept: no byte match or eligible gain. Original dynamic successor test, replacement result, query
+// defaults, refreshes, cleanup and full body restored; sentinel ESI and squad/query homes remain.
 // @retail 0x1e0850
 long __stdcall function_1e0850(long character_index, long squad_index, s_203780 const *placement, bool substitute)
 {
@@ -1938,6 +1988,27 @@ PRIVATE inline long equipment_secondary_weapon_r21(long unit_index)
 // on both queries 251 (same code); the fraction bounds as named locals 262; the grenade reset test split into an
 // outer `state != 1 || !flag` if 251 (same code); the grenade type through a fresh lookup and `unit` fetched
 // after the queries 251 (same code). All restored.
+// P321: Actual actor-readiness result in bool/byte/short/long, producer/entry
+// declarations with original post-query observation: 251/251/251/251/251/251/251/251.
+// NOT kept: no native actor/options/pool residence recovered; full body restored.
+// B421: Shared three-consumer options admission bool/byte/short/long, positive/
+// complementary results 310/310/321/308/310/310/321/308. NOT kept: all regress
+// and exceed retail length; original pointer tests, queries and complete body restored.
+// Y577: Shared ammunition output at phase/query scope with end-bound do, bounded for,
+// short-ordinal cursor and fixed-count cursor: 278/278/251/251/278/278/251/251. NOT kept: ties
+// or regression; original full body restored. Native actor/options/pool and scalar homes remain.
+// Y584: Existing slot-query real-field reference/direct-read ownership, independent
+// current/secondary pairs and readonly pair: 251/258/251/251/258/251/251/251.
+// Original signed-word snapshots, both queries and full body restored; pool/actor/options homes remain.
+// P329: Equipment/grenade/unit receiver identities, seven subsets then actor identity:
+// 251/251/251/251/251/251/251/251. NOT kept: no byte match; original complete body restored.
+// Actor/options and retained-pool homes remain.
+// P335: Standard min/max probability/increased/delay producers, seven subsets and
+// complete graph with final maximum consumer: 322/325/275/354/323/323/346/395. NOT kept: all regress;
+// original clamps, field observations, includes and complete body restored. Actor/options/pool homes remain.
+// B449: Repeated unit-handle/fraction-bound/round-bound field addresses, seven subsets
+// then complete readonly actor receiver: 361/251/361/251/361/251/361/361.
+// NOT kept: no exact field-receiver repair; all original per-use observations, queries and body restored.
 // @retail 0x1e2a90
 void function_1e2a90(long actor_index)
 {
