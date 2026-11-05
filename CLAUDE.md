@@ -328,9 +328,9 @@ See `port/README.md` "Play" for the full commands.
   regression. Every
   spin flag in src is volatile; keep it so in new recoveries. Suspected
   in the occasional boot onto the fatal disc screen (a font copy that
-  "failed"): 63 fresh-profile boots clean since (about 1 in 15 failed
-  before; 63 clean in a row would be ~1% at that rate); `h2-fatal`
-  lines name the setter if it recurs.
+  "failed"): 133 fresh-profile boots clean since (about 1 in 15 failed
+  before; 133 clean in a row would be ~1e-4 at that rate), so treated
+  as fixed; `h2-fatal` lines name the setter if it recurs.
 - **Depth surfaces.** The game binds depth separately from the colour
   target, and several targets share one depth buffer (fixed: shared
   depth keyed by `depth_stencil`).
