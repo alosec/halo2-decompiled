@@ -169,7 +169,7 @@ struct c_1ea9a0 : c_shape_list_members
 	virtual void v9() {}
 	/* slot 10, retail 0x2fc1a0: 0x1ea9c0 calls it on the list it has just
 	   built to bound the loop that resolves the children's keys */
-	virtual long child_count() { return count; }
+	virtual long child_count() { return children.count; }
 };
 
 // @retail 0x1ea9a0
