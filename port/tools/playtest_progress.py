@@ -594,6 +594,21 @@ def main():
                         # the rest of the way in, as a player would
                         g.go_to(point, tolerance=0.3, max_steps=25)
                         landed = inside(volume, g.state["pos"])
+                    if not landed and reply == "teleport done" and g.state["pos"][2] < volume[0][2]:
+                        # fell out under it: the spot was inside a floor
+                        # higher up in the volume, and the floor found below
+                        # was a pit's (08b's boss platform, floor ~6 units
+                        # above tv_boss_platform's base, over a pit 11 below):
+                        # from higher up the volume, onto the first floor
+                        a, b = SAMPLES[count % len(SAMPLES)]
+                        for c in (0.2, 0.35, 0.5):
+                            high = volume_point(volume, a, b, c)
+                            g.guest("place %.3f %.3f %.3f" % high)
+                            g.wait(45)
+                            landed = inside(volume, g.state["pos"])
+                            if landed:
+                                point = high
+                                break
                     if not landed and reply == "teleport done":
                         # still out: nothing to stand on there (08b's boss
                         # platform turns on a machine the floor ray does not
