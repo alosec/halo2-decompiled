@@ -1587,6 +1587,14 @@ extern "C" void host_h2_mouse_take(void* look) {
     session.mouse_y = 0;
 }
 
+extern "C" int host_h2_start_difficulty(void) {
+    const char* value = std::getenv("H2_DIFFICULTY");
+    if (!value || *value < '0' || *value > '3' || value[1])
+        return -1;
+    std::cerr << "h2-port: the first game starts on difficulty " << value << '\n';
+    return *value - '0';
+}
+
 extern "C" unsigned int host_h2_start_map(char* buffer, unsigned int size) {
     const char* name = std::getenv("H2_START_MAP");
     if (!name || !*name || !buffer || !size)
@@ -1706,6 +1714,7 @@ int main(int argc, char** argv) {
                 {"host_h2_audio_command", reinterpret_cast<std::uintptr_t>(&host_h2_audio_command)},
                 {"host_h2_audio_status", reinterpret_cast<std::uintptr_t>(&host_h2_audio_status)},
                 {"host_h2_start_map", reinterpret_cast<std::uintptr_t>(&host_h2_start_map)},
+                {"host_h2_start_difficulty", reinterpret_cast<std::uintptr_t>(&host_h2_start_difficulty)},
                 {"host_h2_guest_command", reinterpret_cast<std::uintptr_t>(&host_h2_guest_command)},
                 {"host_h2_wma_open", reinterpret_cast<std::uintptr_t>(&host_h2_wma_open)},
                 {"host_h2_wma_decode", reinterpret_cast<std::uintptr_t>(&host_h2_wma_decode)},

@@ -212,7 +212,8 @@ def main():
                         help="serve the mission script's places only once no encounter script has one left "
                              "(07b's and 08a's missions wait only for the end volume, so the default jumps to it)")
     parser.add_argument("--difficulty", type=int, default=None,
-                        help="0 easy, 1 normal (the menu's default), 2 heroic, 3 legendary (the 'difficulty' hook)")
+                        help="0 easy, 1 normal (the menu's default), 2 heroic, 3 legendary (H2_DIFFICULTY, "
+                             "set before the map loads: changed mid-level, every revert is refused and resets the map)")
     args = parser.parse_args()
     scripts = Scripts(str(ROOT / "orig/game/maps" / (args.map + ".map")))
     volumes, attached = trigger_volumes(scripts)
@@ -226,11 +227,11 @@ def main():
     elsewhere = {}   # (script, node) -> (the bsp its place is not in, volume name)
     tried = {}       # (script, node) -> every bsp its place was found not to be in
     done = False
-    with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work) as g:
+    extra_env = {"H2_DIFFICULTY": str(args.difficulty)} if args.difficulty is not None else None
+    with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work,
+              extra_env=extra_env) as g:
         g.wait_frame(9500)
         g.guest("deathless 1")
-        if args.difficulty is not None:
-            g.guest("difficulty %d" % args.difficulty)
         last_report = 0
         idle = 0   # polls with nothing to do
         polls = 0
@@ -246,8 +247,6 @@ def main():
                 deathless = any(r == "deathless on" for r in g.test_replies)
                 if not deathless:
                     g.guest("deathless 1")
-                    if args.difficulty is not None:
-                        g.guest("difficulty %d" % args.difficulty)
             # deathless, a fall into a pit never ends (07b's chasms): back to
             # the last place the player stood
             st = g.state

@@ -450,8 +450,10 @@ static void run_test_commands(void)
 		else if (command_is(command, "difficulty", &rest))
 		{
 			/* the campaign difficulty (0 easy .. 3 legendary) in the game
-			   options, as the menu sets it: a level started with
-			   H2_START_MAP plays the menu's default (normal) */
+			   options, mid-level. The game state header keeps the options
+			   the level started with, and 0x123f60 refuses a revert while
+			   they differ (the map resets instead, as a cinematic's end
+			   reverts): start a level on a difficulty with H2_DIFFICULTY */
 			short level = (short)parse_real(&rest);
 			if (level >= 0 && level <= 3)
 				g_4e6948->difficulty = level;

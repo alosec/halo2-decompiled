@@ -297,8 +297,13 @@ void function_593e0(void);
 /* the port's level select: the host's H2_START_MAP names a map that the first
    game start loads in place of its own: a solo map for a campaign start (a new
    campaign's introduction or a resumed level), a multiplayer map for a game
-   started from a lobby */
+   started from a lobby; the host's H2_DIFFICULTY sets that game's difficulty
+   (the short at +0x12a, the game options' +0x132 once the game starts), as
+   the menu would before the map loads: the game state header keeps the
+   options it starts with, and a revert to a save whose options differ is
+   refused (0x123f60 resets the map instead) */
 extern "C" unsigned int host_h2_start_map(char *buffer, unsigned int size);
+extern "C" int host_h2_start_difficulty(void);
 
 void port_start_map(s_game_options *options)
 {
@@ -321,6 +326,12 @@ void port_start_map(s_game_options *options)
 	strcat(options->field_1c_2, name);
 	strcat(options->field_1c_2, "\\");
 	strcat(options->field_1c_2, name);
+	if (folder[10] == 's')   /* scenarios\solo\ */
+	{
+		int difficulty = host_h2_start_difficulty();
+		if (difficulty >= 0)
+			*(short *)((byte *)options + 0x12a) = (short)difficulty;
+	}
 }
 #endif
 

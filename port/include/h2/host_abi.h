@@ -127,6 +127,9 @@ int host_h2_audio_status(unsigned int voice, void* status);
 /* the port's level select (port/src/main.cpp): H2_START_MAP's solo map name
  * (e.g. 01b_spacestation) into buffer; 0 when unset */
 unsigned int host_h2_start_map(char* buffer, unsigned int size);
+/* H2_DIFFICULTY (0 easy .. 3 legendary) for the game H2_START_MAP starts; -1
+ * when unset (the menu's choice stands) */
+int host_h2_start_difficulty(void);
 /* the next "guest ..." line of the H2_CONTROL file (test hooks), or 0 */
 unsigned int host_h2_guest_command(char* buffer, unsigned int size);
 unsigned int host_h2_wma_open(const void* data, unsigned int size);
