@@ -211,6 +211,8 @@ def main():
     parser.add_argument("--thorough", action="store_true",
                         help="serve the mission script's places only once no encounter script has one left "
                              "(07b's and 08a's missions wait only for the end volume, so the default jumps to it)")
+    parser.add_argument("--difficulty", type=int, default=None,
+                        help="0 easy, 1 normal (the menu's default), 2 heroic, 3 legendary (the 'difficulty' hook)")
     args = parser.parse_args()
     scripts = Scripts(str(ROOT / "orig/game/maps" / (args.map + ".map")))
     volumes, attached = trigger_volumes(scripts)
@@ -227,6 +229,8 @@ def main():
     with Game(start_map=args.map, menu_script=MENU_TO_CAMPAIGN + "," + skip, work=args.work) as g:
         g.wait_frame(9500)
         g.guest("deathless 1")
+        if args.difficulty is not None:
+            g.guest("difficulty %d" % args.difficulty)
         last_report = 0
         idle = 0   # polls with nothing to do
         polls = 0
@@ -242,6 +246,8 @@ def main():
                 deathless = any(r == "deathless on" for r in g.test_replies)
                 if not deathless:
                     g.guest("deathless 1")
+                    if args.difficulty is not None:
+                        g.guest("difficulty %d" % args.difficulty)
             # deathless, a fall into a pit never ends (07b's chasms): back to
             # the last place the player stood
             st = g.state
