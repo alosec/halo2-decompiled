@@ -129,6 +129,14 @@ def volume_point(volume, a, b, c=None):
                  for k in range(3))
 
 
+def under(volume, point):
+    """within the volume's footprint but below its base: fallen out of it"""
+    corner, fwd, left, up, ext = volume
+    d = [point[k] - corner[k] for k in range(3)]
+    coords = [sum(d[k] * axis[k] for k in range(3)) for axis in (fwd, left, up)]
+    return all(-0.5 <= c <= e + 0.5 for c, e in zip(coords[:2], ext[:2])) and coords[2] < -1.0
+
+
 def inside(volume, point):
     corner, fwd, left, up, ext = volume
     d = [point[k] - corner[k] for k in range(3)]
@@ -223,6 +231,7 @@ def main():
         idle = 0   # polls with nothing to do
         polls = 0
         footing = None   # the last place the player stood
+        perch = None     # [volume, point, put backs]: the last volume the player landed in
         deathless = False
         while g.frame < args.frames:
             g.wait(150)
@@ -242,6 +251,15 @@ def main():
                 g.guest("place %.3f %.3f %.3f" % (footing[0], footing[1], footing[2] + 0.5))
                 g.wait(20)
                 print("frame", g.frame, "fell: back to", [round(x, 2) for x in footing], flush=True)
+            # landed in a volume, then fell out under it (08b's boss platform,
+            # left over its pit as the machine turns): the fall is too short
+            # for the recovery above, and the pit floor becomes the footing
+            if st and perch and perch[2] < 10 and under(perch[0], st["pos"]):
+                perch[2] += 1
+                g.guest("place %.3f %.3f %.3f" % perch[1])
+                g.wait(20)
+                print("frame", g.frame, "fell out under the volume: back to",
+                      [round(x, 2) for x in perch[1]], flush=True)
             threads = dict(g.scripts)
             ours = sum(t["script"] in names for t in threads.values())
             foreign = sum(t["script"] not in names for t in threads.values())
@@ -617,6 +635,8 @@ def main():
                             g.guest("place %.3f %.3f %.3f" % point)
                             g.wait(3)
                         landed = inside(volume, g.state["pos"])
+                    if landed:
+                        perch = [volume, point, 0]
                     print("frame", g.frame, script, node, "-> teleport", name, [round(x, 2) for x in point],
                           "inside" if landed else "outside (%s)" % reply, flush=True)
                     if reply == "teleport outside the bsp":
