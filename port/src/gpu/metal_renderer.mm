@@ -709,6 +709,10 @@ public:
                          packet.color_write_mask, packet.viewport_x, packet.viewport_y, packet.viewport_width,
                          packet.viewport_height, packet.textures[0].data, packet.back_buffer_data,
                          packet.front_buffer_data);
+        if (tracing_frame() && packet.stencil_enable)
+            std::fprintf(stderr, "h2-frame: stencil func %u ref %u mask %x write %x ops %u/%u/%u ds %08x\n",
+                         packet.stencil_func, packet.stencil_ref, packet.stencil_mask, packet.stencil_write_mask,
+                         packet.stencil_fail, packet.stencil_depth_fail, packet.stencil_pass, packet.depth_stencil);
         /* the frame trace also saves each draw's vertex constants (192 float4s) */
         if (tracing_frame() && packet.vertex_constants) {
             if (const char* dump_dir = std::getenv("H2_TRACE_DUMP")) {
