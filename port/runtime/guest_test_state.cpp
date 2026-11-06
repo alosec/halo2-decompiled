@@ -447,6 +447,17 @@ static void run_test_commands(void)
 				_snprintf(line, sizeof(line), "h2-test volume %ld none", index);
 			host_h2_log(line);
 		}
+		else if (command_is(command, "difficulty", &rest))
+		{
+			/* the campaign difficulty (0 easy .. 3 legendary) in the game
+			   options, as the menu sets it: a level started with
+			   H2_START_MAP plays the menu's default (normal) */
+			short level = (short)parse_real(&rest);
+			if (level >= 0 && level <= 3)
+				g_4e6948->difficulty = level;
+			_snprintf(line, sizeof(line), "h2-test difficulty %d", (int)g_4e6948->difficulty);
+			host_h2_log(line);
+		}
 		else if (command_is(command, "deathless", &rest))
 		{
 			g_deathless = parse_real(&rest) != 0.0f;
