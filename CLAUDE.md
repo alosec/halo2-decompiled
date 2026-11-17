@@ -239,6 +239,15 @@ See `port/README.md` "Play" for the full commands.
   stand-ins took the tags of `c_game_engine_a`'s same-named members
   through the builder's bare-name fallback, now limited to definitions
   written inside a class body.
+- **Definitions behind `H2_NATIVE_PORT` in retail-mode units.** The image
+  compiles each `src/` unit as retail code first (no `H2_NATIVE_PORT`) but
+  its headers with their native branches forced on. A header that declares
+  a method out of line only under `H2_NATIVE_PORT`, defined in a `.cpp`
+  under the same guard, leaves it undefined: `c_class_1a2c81::v7`
+  (0x22eb8c, a dialog's "focus this child and its first widget") was a
+  trap stub in every widget's table. Guard such definitions with
+  `H2_NATIVE_PORT || H2_WHOLE_IMAGE`; `report['modes']` says which mode
+  each unit built in.
 - **After each upstream merge:** check `frontend: N compiled, 0 skipped`
   and diff the `stubbed` list. Upstream signature changes leave
   fork-only callers on unbound mangled names (0xc5460's bool, 0x144f0's

@@ -819,7 +819,9 @@ void c_class_1a2c81::function_22ecb4_2(bool focus)
 	}
 }
 
-#if defined(H2_NATIVE_PORT)
+/* the whole image compiles this unit as retail code but its headers with
+   their native branches (include/screen_widgets.h declares v7 out of line) */
+#if defined(H2_NATIVE_PORT) || H2_WHOLE_IMAGE
 /* Focuses this child, then descends through its first widget child. */
 // @retail 0x22eb8c
 void c_class_1a2c81::v7(c_class_1a2c81 *widget)
