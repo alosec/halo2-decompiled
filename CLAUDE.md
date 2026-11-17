@@ -565,14 +565,16 @@ How we work:
 - **Coordination:** the maintainers coordinate on #104; machine 3 clears
   files.
 
-Open drafts:
-- **#793:** `g_547844`;
-- **#794:** `g_4672e0`;
-- **#795:** `g_4456fc`.
+Merged so far: #793-#795, #858, #866, #881, #883, #961, #1008-#1010.
 
-All three are reviewed clean and cleared by machine 3, waiting for the user
-to tick provenance and mark them ready. Queued next: the Havok by-value
-return fixes (`hkBool` is allowed), the inline-vtable fixes, and the
-float/int callback parameter fixes (first-person and weapon sound events,
-`hs_real_format`), `function_cba50` (look frame) and `function_11e800`
-(barycentric edge order).
+Open drafts (2026-11-16, provenance boxes left for the user to tick):
+- **#1247:** `0x1794e0` passes the root to `0x1794a0` (held-weapon effects);
+- **#1248:** `0x316460`'s motion slot takes two floats (time search);
+- **#1249:** `0xe24f0` stores the requested animation's moving class;
+- **#1250:** `0x4a1e0`/`0x404b0` light frame and shape roles;
+- **#1251:** `hs_real_format` takes a long (`0x208d10`);
+- **#1252:** sound-event callbacks take a real frame.
+
+To find fork fixes main still lacks: `git log upstream/main..HEAD -- src`,
+then `git show C -- src | git apply --check` in a worktree at
+`upstream/main` (applies = still missing; `-R` applies = already there).
