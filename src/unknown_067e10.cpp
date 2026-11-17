@@ -1491,11 +1491,18 @@ void function_87d00(s_bitstream *stream, void *message);
 bool function_87e90(s_bitstream *stream, void *message);
 void function_847d0(s_simulation_controller *controller, s_player_action *input);
 
+// An otherwise unused large local gives retail's registers: with it, destination arrives in edx
+// (`push edi; mov edi, edx; mov edx, ecx`) instead of eax, and the caller 0x869a0 matches. The array
+// is optimized away and the frame stays 0x34. 0xfc0 bytes gives the old listing (3); 0xfc4 and up
+// match, consistent with the __chkstk page threshold once the other locals are counted (in retail,
+// none of 106 functions with a __chkstk prologue takes an argument in eax). The local's real type
+// and size are unknown; 0x4048 is the size of the block the decoder 0x68670 clears. See PR #1164.
 // @retail 0x685f0
-bool function_685f0(void *block, long *size, byte *destination, long capacity)
+bool function_685f0(long capacity, byte *destination, void *block, long *size)
 {
  bool result = true;
  s_bitstream stream;
+ byte scratch[0x4048];
  stream.data = destination;
  stream.size_in_bytes = capacity;
  memset(destination, 0, capacity);
@@ -1512,7 +1519,7 @@ bool function_685f0(void *block, long *size, byte *destination, long capacity)
 }
 
 // @retail 0x68670
-bool function_68670(byte *source, long size, void *block)
+bool function_68670(void *block, byte *source, long size)
 {
  s_bitstream stream;
  stream.data = source;
@@ -1574,6 +1581,16 @@ static __forceinline bool view_needs_join_buffer(short type)
  return result;
 }
 
+// score 183 (was 183): frame 0x18 agrees; transition scratch, table addressing and cold branches differ.
+// P568: Existing type classifier case returns/order/both 183/183/183; false/true
+// default results 199/214; mixed direct exits 199/214; ordinary inline metadata 183.
+// NOT kept: no transition-argument, embedded-table address or cold-branch repair; original helper restored.
+// P570: Complete timer admission at its producer, positive readiness then waiting complement,
+// bool/byte/short/long: 183/183/183/183/183/183/183/183. NOT kept: no transition-scratch,
+// cold-branch or table-address recovery; original complete body restored.
+// P573: Final player-coverage admission at its producer, positive bool/byte/short/long
+// 188/188/192/193; missing-player complements 188/188/194/193. NOT kept: added
+// result materialization grows code; transition scratch/table base/cold tails remain. Original body restored.
 // @retail 0x6a040
 long function_6a040(c_class_6a600 *world, c_simulation_view *view)
 {
@@ -1755,9 +1772,11 @@ void function_68f30(c_class_6a600 *world)
 }
 
 
-void function_69a00(const byte *input, c_class_6a600 *world, dword mask);
+void function_69a00(c_class_6a600 *world, dword mask, const byte *input);
 void function_69b50(c_class_6a600 *world, dword mask, const byte *input);
 
+/* applies an update block to the world: the whole block in state 2, its two
+   masked payloads in state 4; then stores the block's first dword plus one */
 // @retail 0x684e0
 void function_684e0(byte *block)
 {
@@ -1765,10 +1784,10 @@ void function_684e0(byte *block)
  if (state != 3 && state != 5)
  {
   c_class_6a600 *world = SIMULATION_WORLD;
-  if (state == 2) function_69880(world, block);
+  if (state == 2) function_69880(SIMULATION_WORLD, block);
   else if (state == 4)
   {
-   function_69a00(block + 0xc, SIMULATION_WORLD, *(dword *)(block + 8));
+   function_69a00(SIMULATION_WORLD, *(dword *)(block + 8), block + 0xc);
    function_69b50(world, *(dword *)(block + 0x5cc), block + 0x610);
   }
  }
@@ -1844,7 +1863,7 @@ void function_195e90(void);
 void function_68c00(s_simulation_world_owner *owner, void *definitions,
  s_simulation_distribution *distribution, c_class_6a600 *world);
 
-// score 35: retail computes the mode as `xor ebx, ebx; cmp eax, 2; setne bl;
+// score 34 (was 35): retail computes the mode as `xor ebx, ebx; cmp eax, 2; setne bl;
 // lea ebx, [ebx + ebx + 2]` after a dead `mov ecx, eax; sub ecx, 2` (5 bytes, perhaps
 // left by a lowered switch; no switch tried here gives it), and loads its fields in the
 // order state, owner, +0x14, distribution. Ours computes 4 - 2 * (state == 2) as sete/sub/shl; the rest is the
@@ -1853,6 +1872,15 @@ void function_68c00(s_simulation_world_owner *owner, void *definitions,
 // for the other states (62, 172 bytes: the setne/lea form without the dead sub); switch
 // with case 2 and default, mode = 4 then switch or if, an inline helper with a switch
 // (58-63, 180 bytes, branches); (state - 2) ? 4 : 2 (60, sub/neg/sbb); 2 << (state != 2) (50).
+// P568: In-place state classification by conditional store/value 56/56; standard equality
+// arithmetic 67, inequality arithmetic 64, equality/inequality conditional 64/64,
+// bound equality arithmetic 91, bound inequality conditional 96. NOT kept: no native state/mode or spill recovery.
+// P570: Standard saved-address acquisition, object forward/backward and byte forward/backward,
+// 59/59/59/59; restoration counterparts 51/61/51/61. NOT kept: native mode/state
+// schedule and overwritten subtraction remain; original six-byte transfers and complete body restored.
+// P573: Immutable saved mode/owner/distribution/local/address/preservation captures:
+// 34/34/34/34/34/34; signed-byte/word preservation 34/51. NOT kept: native state-first,
+// overwritten subtraction and SETNE/LEA remain; word grows. Original complete body restored.
 // @retail 0x6ae20
 bool function_6ae20(c_class_6a600 *world)
 {
@@ -2011,6 +2039,35 @@ void function_83000(s_simulation_world_owner *watcher);
 void function_195a40(void);
 
 #pragma intrinsic(_ReadWriteBarrier)
+// score 3 (was 3): only the place of the mode read against the flag stores is left.
+// MiniMax C (11-16): score 3 (was 7): naming the game-options pointer splits
+// retail's prologue exactly, but it also moves the world pointer into EAX for
+// the function_68c00 call, so the call stops matching; with the mode read
+// through the global the whole call matches retail instruction for instruction
+// and only the pointer load's place before the two flag stores is left.
+// MiniMax C (11-16): score 7 (was 3): naming the game-options pointer and
+// holding the barrier between the two flag stores and the mode read gives
+// retail's whole prologue and its function_68c00 call setup; what is left is
+// the place of the world load, which comes before the mode comparison here
+// and after it in retail.
+// score 3: only the place of the mode read against the flag stores is left.
+// The two flags are adjacent bytes; this body's bool stores come out as two
+// byte writes. A `*(volatile bool *)&g_4cf771` cast on each forces retail's
+// stores and reaches a byte match, but docs/DECOMPILING.md forbids volatile on
+// a global (and the cast changes the type). Without the cast, naming the
+// pointer (`s_game_options_view *options`) and reading mode before the stores
+// matches the prologue but reorders the function_68c00 argument registers (10);
+// reading mode after the stores, as here, keeps the call and scores 3. Neither
+// an `int mode` nor a single-use `options` local changed that.
+// P568: Actual mode-field reference before/between clears, then without the boundary,
+// field pointer with/without it and direct reads: 23/23/23/23/23/23; distribution
+// initialized from the range 33; named range predicate 45. NOT kept: no exact pointer-load recovery.
+// P570: Entry disable observation supplies both flag clears, bool/byte/short/long,
+// separate then chained: 3/3/20/19/3/3/20/19. NOT kept: no exact pre-clear pointer-load recovery;
+// wider guard homes lengthen. Original complete body and inherited boundary restored.
+// P573: Mode carriers signed byte/short, unsigned byte/short/long: 23/23/24/24/5;
+// explicit distribution arms, nested range, complementary range arms: 33/3/33.
+// NOT kept: width forms alter comparisons/call allocation; result arms grow; native pre-clear pointer load remains.
 // @retail 0x67ee0
 void function_67ee0(void)
 {

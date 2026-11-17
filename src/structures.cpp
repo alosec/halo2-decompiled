@@ -171,6 +171,9 @@ static __forceinline bool structure_bsp_collision_available()
         *(long const *)((byte const *)g_4e0344->bsp + 4) == *(long const *)((byte const *)g_4e0348 + 8);
 }
 
+// MiniMax I (11-06): 45, not kept: the model query's result stored in `result` with a new `goto done` to the
+// shared exit in place of the early return (retail's 286 bytes, same code otherwise); a goto main's body does
+// not have is kept only with a byte match.
 // score 53 (was 53): frame 0x60/prefix agree; exclusion BL and source-slot rewrite/reload remain absent; the byte result
 // is still normalized with setne at both exits.
 // Earlier at 53 (was 61): the 0xbf9a0 probe is inverted, so the 0x14a8e0 return is laid out after the requery as
@@ -409,6 +412,11 @@ static __forceinline bool structure_bsp_collision_available()
 // requery after its block 56; before it, a byte flag `excluded |= 1` with the model query as its else-if 62 (threaded).
 // Round 149 (m3 lane 5, fast with 0xd2bb0): 0x14af40's matching shape here (named `found`, requery in its then-arm, `!(excluded | found)`), the found arm
 // storing the result 81 (291 bytes), `& 1` test 81, returning it 80 (286), store and return 79 (287): retail pushes EBX and EBP late here.
+// Round 70 (m3 lane 14, fast with 0x14a8e0/0x14af40/0xd2bb0/0x14ac60/0x10a0b0/0xbf9a0): retail keeps source.collision in
+// its stack slot (the requery's dead store to it stays, and only the model-query arm reloads it, before the un-threaded
+// test), so forms that keep the parameter in memory: `(void)&source;` 53 (same code); the flag set in if/else arms with
+// the collision re-read in the else arm and `if (excluded) return result;` 62, with `(void)&source;` 62, with the re-read
+// at the join 62, the join re-read through `&source.collision` 62 (all threaded, 286 bytes).
 // @retail 0x14b120
 bool function_14b120(s_surface_query_source source, void *surface)
 {
@@ -479,7 +487,20 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 	}
 	return false;
 }
+// MiniMax H (11-13): no new form, no lower score (172): retail still saves ebx first and keeps the BSP global in ebx while this build keeps it in ebp and defers the ebp and esi saves, so the prologue's order and the frame's slot heights differ; the promoted 0x11e800 clone still hands its four pointers over in another register order (retail ecx, edx, eax, esi), and that callee lives in another file.
+// MiniMax I (11-11): no new form, no lower score (172): retail pushes ebx first and keeps the BSP pointer in ebx, we keep it in ebp and defer the ebp and esi pushes, and our frame's store slots sit one word lower than retail's; the callee's four argument registers (0x11e800) are outside this file.
 
+// MiniMax R (11-16): no new form, no lower score (172): retail pushes EBX first and keeps the BSP root in EBX with the section in its own home, where this build keeps the BSP in EBP and the section in EBX, and the frame's slot order follows that allocation; the permuter's six tries reach no variant under 172.
+// MiniMax D (11-14): no new form, no lower score (172): the frame 0x58 agrees, but the BSP global still sits in ebp where retail keeps it in ebx, and the prologue still pushes two registers where retail pushes three.
+// MiniMax G (11-13): no new form, no lower score (172): the BSP global sits in ebp where retail
+// keeps it in ebx, the prologue's push order and the frame's slot heights differ, and the 0x11e800
+// clone hands its four pointers over in another register order: BLOCKED-BY 0x11e800.
+// MiniMax H (11-12): no new form, no lower score (172): our prologue still keeps the BSP global in ebp and defers the ebp and esi pushes where retail pushes ebx first, and our zero constant still takes ebx where retail gives it to edi.
+// MiniMax H (11-11): no new form, no lower score (172); the BSP pointer still lands in EBP where retail keeps it in EBX, the frame's slots sit one word apart from retail's, and the four pointers of the 0x11e800 call are handed over in another register order, that callee being in another file.
+// MiniMax E (11-10, run 73): no new form, no lower score (172); retail pushes ebx first and keeps the BSP global in ebx where we keep it in ebp, and the promoted clone of 0x11e800 hands its four pointers over in another register order (retail ecx, edx, eax, esi; ours ecx, edx, esi, eax); that callee lives in another file.
+// MiniMax D (11-11): no new form, no lower score (172): the BSP pointer still lands in EBP where retail keeps it in EBX, and the body is still seven bytes longer than retail's 726.
+// MiniMax G (11-11): no new form, no lower score (172): the first difference is at +0x16, in the prologue - ours stores the lightmap index into [esp+0x30] and loads the BSP base into ebp, retail pushes ebx first and keeps the BSP base in ebx; the frame's slots agree (0x58) and the 0x11e800 callee's registers are in another file, so this stays BLOCKED-BY 0x11e800.
+// MiniMax D (11-06, run 49): no new form, no lower score (172); the promoted clone of function_11e800 still hands the four pointers to different registers (retail ecx, edx, eax, esi; ours ecx, edx, esi, eax); that callee lives in src/unknown_11cb00.cpp, not this lane's file.
 // MiniMax A (11-04): no new form, no lower score (172). What still differs: the promoted clone of
 // function_11e800 hands the four pointers to different registers. Retail calls it with
 // ECX=arg1, EDX=arg2, EAX=arg3, ESI=arg4; our build calls it with ECX=arg1, EDX=arg2, ESI=arg3,
@@ -487,9 +508,24 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 // callee's own body in src/unknown_11cb00.cpp (126 off retail), which is not this machine's file,
 // so the call site cannot be fixed from here: BLOCKED-BY 0x11e800.
 // Also still different: the BSP/section carriers and the plane/instance stack homes.
+// MiniMax E (11-07): no new form, no lower score; the BSP and section carriers and the range and
+// plane homes are unchanged, and the vertex block still waits on 0x11e800's registers.
 // MiniMax E (11-01): no new form, no lower score; the byte result set before the type branch gives
 // 197 and the range declared before the section 172 with identical code. Left: the BSP in EBX with the
 // section in its stack home, the rotated range/plane/instance homes and the 0x16e1b0 output homes.
+// MiniMax D (11-06): no new form, no lower score (172); the prologue still keeps the BSP in EBP and
+// the section in EBX where retail keeps the BSP in EBX and the section in its stack home, the range,
+// plane and instance homes are rotated and the 0x16e1b0 output homes and the vertex joins still
+// differ; BLOCKED-BY 0x11e800 (its v0/v1/v2 registers) and by 0x16e1b0, both in other files.
+// MiniMax C (11-14): no new form, no lower score (172): retail holds the BSP global in EBX and keeps the section in its stack
+// home, this build keeps the BSP in EBP, and retail's third point component is stored at [esp+0x34]; the permuter's 315 seconds
+// (six tries) found nothing below 166: BLOCKED-BY 0x11e800.
+// MiniMax C (11-15): no new form, no lower score (172): retail zeroes its result byte next to the section's dword home
+// ([esp+0x13] against [esp+0x14]) before the type branch, this build keeps the result in a register, and declaring the result
+// above the branch so the zeroing lands in the prologue measures 197, so the body stands. The BSP global still takes EBX in retail
+// and EBP here, and the section pointer still takes retail's stack home against this build's EDX.
+// MiniMax I (11-15): no new form, no lower score (172): the frame is retail's 0x58, retail keeps the BSP global in EBX with the section in a stack home while this build keeps the section in EBX and the BSP in EBP, and the range, the plane and the vertex-join homes still differ.
+// MiniMax S (11-15): no new form, no lower score (172): retail holds the BSP global in EBX and keeps the section in its stack home while this build keeps the BSP in EBP and the section in EDX, and the 0x11e800 call still takes its four pointers in another register order (the callee's own body is in src/unknown_11cb00.cpp): BLOCKED-BY 0x11e800.
 // score 172 (was 172): Frame 0x58 agrees; BSP/section carriers (ours keeps the section in EBX and
 // the BSP in EBP, retail the BSP in EBX with the section in its stack home), range/plane homes and
 // vertex joins remain. Retail never initialises its vertex flag (set only when a vertex exists,
@@ -634,6 +670,51 @@ static inline bool structure_section_get_vertex(s_structure_section const *secti
 // (no branch NULL stores) 197 (713 bytes); the section declared first, before the point copy 172 (same code); the byte
 // result cleared before the type branches 197 (742 bytes); the surface test written as one plane comparison (no
 // surface local) 201; the 0x16e1b0 call moved after the vertex fetches 282 (774 bytes). Body restored.
+// MiniMax E (11-08): no new form, no lower score: our frame's store slots are shifted (we store to esp+0x30 where retail stores to esp+0x34) and we do not push ebx first.
+// MiniMax E (11-09): no new form, no lower score: our frame's store slots are shifted (we store to esp+0x30 where retail stores to esp+0x34) and we do not push ebx first.
+// Round 82 (m3 lane 10, fast, control 172, aligned 99): the type tests as a switch with the instance case
+// second and the NULL definition in a default 217 (728 bytes); the unknown18 clear before the byte result's
+// declaration 172 (same code); the published instance index from the instance-index local 232 (720 bytes,
+// and callers 0xd47d0/0x14af40 lose their match: the convention moves); both reference/surface selections
+// tested on `definition == NULL` 228 (719 bytes); the strip indices indexed from the section at each fetch
+// (no pointer local) 221 (747 bytes).
+// MiniMax B (11-11): no new form, no lower score (172): our body is seven bytes longer than retail's 726;
+// retail pushes ebx first and keeps the BSP base in EBX with the section in its stack home, we keep the BSP
+// base in EBP and the section in EBX; retail's range, plane and instance homes sit one word higher than
+// ours, its three vertex fetches are unrolled where ours are a loop, its two 0x16e1b0 output homes are
+// swapped against ours, and the promoted clone of 0x11e800 takes its four pointers in another register order
+// (retail ecx, edx, eax, esi; ours ecx, edx, esi, eax), that callee living in another file.
+// MiniMax I (11-11): no new form, no lower score (172): the three 0x16e1b0 output homes follow the
+// call's argument positions (arg3 to esp+0x34, arg4 to esp+0x38, arg5 to esp+0x3c) and not the
+// declaration order (swapping the two output declarations is byte-identical); retail keeps the
+// always-zero output at esp+0x38 and the range index at esp+0x34, so its two homes are swapped
+// against ours, and its tail stores esp+0x34 into part_index and esp+0x38 into unknown18 where we
+// store them the other way round. Swapping the two arguments (with or without the two field
+// assignments) reproduces one side of the swap only, and the whole frame's other slots and the
+// ebx/ebp split differ as well.
+// MiniMax D (11-10): no new form, no lower score (172): the BSP pointer still lands in EBP where retail
+// keeps it in EBX, so the cluster pointer takes EDX here and EBP there, and the section, BSP and instance
+// slots sit one word apart; a const BSP pointer compiles the same code.
+// MiniMax D (11-09): no new form, no lower score: the body is unchanged at 172 (726 bytes against retail's 726); the difference is the frame's shape (our slots sit one word lower than retail's and we do not push ebx first) and the 0x11e800 callee's registers, which are outside this file.
+// MiniMax S (11-10): no new form, no lower score (172): retail pushes ebx first and keeps the BSP global in ebx, we keep it in ebp and defer the ebp and esi pushes, so the prologue order differs although the frame slots agree; our zero constant takes ebx where retail gives it to edi.
+// MiniMax R (11-10): no new form, no lower score (172): the result as a bool (182), the result declared first (212/197) and four orders of the prologue reads (172/172/223/172) all leave retail's push-ebx-first prologue and its BSP in EBX unreproduced.
+// MiniMax A (11-12): no new form, no lower score (172); retail pushes ebx first and keeps the BSP global in ebx while
+// this build keeps it in ebp and defers the ebp and esi pushes, so the prologue order differs although the frame's
+// slots agree, and 0x11e800's argument registers are decided by that callee's body in another file; the permuter
+// (300 s, annealed) was stopped by the run's time limit without a result.
+// MiniMax B (11-13): no new form, no lower score (172): retail pushes ebx first and keeps the BSP global in ebx with the section in a stack home, ours keeps the BSP in ebp and the section in a register; the promoted clone of 0x11e800 takes its four pointers in another register order (retail ecx, edx, eax, esi), that callee being in another file.
+// MiniMax A (11-14): no new form, no lower score (172): retail still keeps the BSP global in ebx
+// and pushes ebx first while this build keeps it in ebp and defers the ebp and esi pushes, and the
+// zero flag's frame slot is exchanged with the global's; the only spelling left is a declaration
+// order change (the bsp assignment before the point copy), which the rules ask to be reported
+// rather than made.
+// m3 lane 6 r181 (fast, control 172 = plain; aligned/register-masked 99/54): the vertex loop as `valid && vertex < 3` with
+// a plain assignment 273 (675 B: the loop is no longer unrolled); same code as the control: the vertex flag declared at
+// function scope beside the result and reset per triangle, the reference and surface selections as if/else statements.
+// Re-measured: the byte result declared first with `definition = NULL` at its declaration 185 (726 B, aligned 97/54; now
+// `push ebx` first, but section stays in EBX and the BSP in EBP where retail keeps the BSP in EBX and section in its home).
+// MiniMax S (11-16): no new form, no lower score (172): retail holds the BSP global in ebx and keeps the section in its stack home where this build keeps the BSP in ebp and the section in edx, and the 0x11e800 call still takes its four pointers in another register order (the callee's own body is in another file): BLOCKED-BY 0x11e800.
+// MiniMax C (11-16): no new form, no lower score (172): retail still holds the BSP global in ebx and keeps the section in its stack home where this build keeps the BSP in ebp and the section in edx, and the 0x11e800 call still takes its four pointers in another register order (the callee's own body is in another file): BLOCKED-BY 0x11e800.
 // @retail 0x14ac60
 bool structure_get_lightmap_triangle(s_structure_collision_result const *collision, s_structure_lightmap_triangle *triangle)
 {
@@ -876,6 +957,25 @@ void function_23ac30(s_vertex_source_23ac30 const *source, long index,
 // Round 210 (fast, diagnostic, reverted): 0x11e800 declared (p, a, b, c, u, v) still gives 0 (0x11e800 126, 0x14ac60
 // 172); all four differences are its argument registers. BLOCKED-BY 0x11e800 (contributor).
 // Round 216 (m3 lane 3): baseline listing still differs only in 0x11e800's four argument registers; BLOCKED-BY 0x11e800.
+// Round 96 (m3 lane 9): baseline listing still differs only in 0x11e800's four argument registers; BLOCKED-BY 0x11e800 (contributor).
+// Round 162 (m3 lane 6): HELD (needs the owner's OK): 0x11e800 declared (p, a, b, c, u, v), as retail's argument setup at both
+// calls implies (ecx, edx, eax, esi set in that order for c, b, a, p), with its definition, this declaration and both calls changed
+// together: plain check MATCH here, 0x11e800 129 -> 126, 0x14ac60 172 -> 172. The definition is a contributor's, so the code is back
+// to main and the full diff is in build/r162/held-14a8e0.patch.
+// Round 109 (m3 lane 16): listing re-read, still only 0x11e800's four argument registers; the held r162 reorder re-measured on the
+// current base (fast, restored at once): MATCH here, 0x11e800 129 -> 126, 0x14ac60 172 -> 172. Still HELD, BLOCKED-BY 0x11e800.
+// Round 173 (m3 lane 6): listing re-read (fast 4), still only 0x11e800's four argument registers; BLOCKED-BY 0x11e800.
+// Round 88 (m3 lane 13): baseline listing still differs only in 0x11e800's four argument registers (ours point/third/second/first
+// in ecx/edx/esi/eax, retail third/second/first/point in ecx/edx/eax/esi). HELD (needs the owner's OK): the r162 reorder, 0x11e800
+// declared (p, a, b, c, u, v) at its definition, this file's declaration and both calls, re-measured on the current base (fast,
+// restored at once): MATCH here, 0x11e800 129 -> 126, 0x14ac60 172 -> 172; the diff is in build/r88/held-14a8e0.patch.
+// BLOCKED-BY 0x11e800 (contributor).
+// Round 103 (m3 lane 10): listing re-read (fast 4), still only 0x11e800's four argument registers; BLOCKED-BY 0x11e800.
+// m3 lane 14 r99: listing re-read (fast 4), still only 0x11e800's four argument registers; BLOCKED-BY 0x11e800 (contributor).
+// m3 lane 16 r124: listing re-read (fast 4), still only 0x11e800's four argument registers. HELD (needs the owner's OK): the
+// (p, a, b, c, u, v) reorder re-measured (fast, restored at once): MATCH here, 0x11e800 129 -> 126, 0x14ac60 172 -> 172; the
+// diff is in build/r124/held-14a8e0.patch. BLOCKED-BY 0x11e800 (contributor).
+// Round 169 (m3 lane 7): listing re-read (fast 4), still only 0x11e800's four argument registers; BLOCKED-BY 0x11e800 (contributor).
 // @retail 0x14a8e0
 bool __stdcall function_14a8e0(s_structure_collision_result const *collision,
 	long model_index, s_structure_lightmap_triangle *triangle)

@@ -185,3 +185,28 @@ void c_a::v2(char const *name)
 		flags &= 0x7fff;
 	}
 }
+
+// ---------------------------------------------------------------------------
+// main's spelling of the same two functions (include/reference_name_registry.h,
+// src/unknown_2d7120.cpp, which the image leaves out with the rest of main's
+// base system): the constraint code calls them through g_48011c
+
+struct c_a;
+
+class c_reference_name_registry
+{
+public:
+	unsigned int copy_name(c_a const *object, char *buffer, unsigned int size);
+	void set_name(c_a const *object, char const *name);
+};
+
+unsigned int c_reference_name_registry::copy_name(c_a const *object, char *buffer, unsigned int size)
+{
+	return (unsigned int)((c_physics_registration_manager *)this)->function_2d7120(
+		(c_physics_runtime_base *)object, (long)buffer, (long)size);
+}
+
+void c_reference_name_registry::set_name(c_a const *object, char const *name)
+{
+	((c_physics_registration_manager *)this)->set_name((c_physics_runtime_base *)object, name);
+}

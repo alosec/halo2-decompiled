@@ -156,11 +156,27 @@ public:
 	virtual long seek(long arg_0, long arg_1);
 };
 
-// a path's file name without its folders (unknown_2d7f70.cpp)
+// a path's file name without its folders (0x2d7f70: main has it as
+// error_handler_2d8030::file_name in src/unknown_2d7f70.cpp, a class the
+// image does not use): the text after the last '/', then after the last '\\'
 class path_2d7f70
 {
 public:
-	char const *function_2d7f70(char const *path) const;
+	char const *function_2d7f70(char const *path) const
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			char const *separator = 0;
+			for (char const *c = path; *c; c++)
+			{
+				if (*c == "/\\"[i])
+					separator = c;
+			}
+			if (separator)
+				path = separator + 1;
+		}
+		return path;
+	}
 };
 
 // the pointer table's constructor (unknown_2d9470.cpp); its walk and

@@ -20,6 +20,7 @@
 #include "reset_storage.h"
 #include "object_queries.h"
 #include "sound_sources.h"
+#include "impacts.h"
 #include <xtl.h>
 
 struct s_tag_data;
@@ -89,7 +90,7 @@ long function_c4250(long index);
 void __stdcall function_507e0(s_random_draw *draw, const s_random_draw_definition *definition, real elapsed);
 bool __stdcall function_1697c0(long flags, point3f const *point, vector3f const *vector,
 	long ignore_object_index, long ignore_unit_index, s_collision_result_1697c0 *result);
-void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long entry_element_index,
+void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, c_type_47f957 element_index, c_type_47f957 entry_element_index,
 	long index, long variant, long *first_value04, long *second_value04, long *first_value, long *second_value,
 	long *first_value0c, long *second_value0c);
 long function_1765e0(point3f const *point, vector3f const *direction, vector3f const *normal, long tag_index, long mode,
@@ -304,7 +305,7 @@ void __stdcall function_508d0(void *payload_pointer)
 					{
 						long sounds[3];
 						long effects[3];
-						function_1883e0(impact, false, &collision.point, g_47d8e0, collision.material_type, 0xf, 0,
+						function_1883e0(impact, false, &collision.point, c_type_47f957(g_47d8e0), c_type_47f957((short)collision.material_type), 0xf, 0,
 							&sounds[0], &effects[0], &sounds[1], &effects[1], &sounds[2], &effects[2]);
 						for (long i = 0; i < 3; ++i)
 						{

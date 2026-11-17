@@ -209,7 +209,8 @@ void function_244de0(point3f const *arg_0, vector3f const *arg_1, real arg_2,
 
 struct s_material_245400
 {
-	long field_00;
+	short field_00;
+	short field_02;
 	byte field_04;
 	byte field_05;
 	short field_06;
@@ -217,9 +218,11 @@ struct s_material_245400
 
 struct s_surface_245400
 {
-	byte field_00[8];
+	word field_00;
+	word field_02;
+	byte field_04[4];
 	short field_08;
-	byte field_0a[2];
+	short field_0a;
 };
 
 struct s_vertex_245400
@@ -231,7 +234,9 @@ struct s_vertex_245400
 
 struct s_source_245400
 {
-	byte field_00[0x2c];
+	byte field_00[0xc];
+	plane3f *field_0c;
+	byte field_10[0x1c];
 	s_material_245400 *field_2c;
 	long field_30;
 	s_surface_245400 *field_34;
@@ -275,12 +280,21 @@ void function_245400(s_source_245400 const *source, long index,
 	function_244ca0(height, radius, list, field_00, field_04, surface->field_08,
 		material->field_04, material->field_05, point, material->field_06);
 }
+// MiniMax I (11-16): score 206 (was 214): the second material code is read before the first, the
+// matrix is taken in a named local inside the transform block, and the side bits are extracted with
+// an unsigned shift so retail's shr/and survives instead of our sar/xor fold; still differs: the
+// frame is 0x24 against retail's 0x2c, retail keeps the source in ESI and reloads the matrix into
+// EDX at the use point. The permuter (300s) only found 205, by swapping the third and fifth
+// arguments of the call to 0x244de0 (retail's push order differs because retail's declaration of
+// 0x245540 has its matrix and source the other way round); a one point gain, dropped. Declaring the
+// plane table after the point difference scores 207 again and a mask-test side bit scores 208.
+// score 214 (was 214; earlier noted 209 (was 209), 214 since B6G's j-row fix): the frame is 0x24 against retail's 0x2c; the source now arrives in ECX as in
 // MiniMax G (11-05): no new form, no lower score; declaring the plane table after the point
 // difference scores 203 in the reduced and in the full build (a gain of six, below the keep
 // threshold, so the body is restored); the source receiver, the frame and the stack homes still
 // differ: BLOCKED-BY the caller 0x245aa0 (src/unknown_245850.cpp).
 // MiniMax B (11-04b): no new form, no lower score; retail still copies the source into esi at the entry and frames 0x2c against our 0x24, and its declaration and call live in src/unknown_245850.cpp, which this lane may not edit.
-// score 209 (was 209): the frame is 0x24 against retail's 0x2c; the source now arrives in ECX as in
+// MiniMax S (11-06): no new form, no lower score: reading the second material index before the first only gained one instruction (209 to 208, below the keep threshold) and was restored; retail still reads the two element material indices in the other order, keeps the source in ESI and frames 0x2c against our 0x24.
 // retail (the plane table read at the top of the material-test block, the parameters in 0x245400's
 // source-first order), which matches the caller 0x245aa0, but the register homes, the plane table's
 // home and the side bytes still differ.
@@ -660,6 +674,29 @@ void function_245400(s_source_245400 const *source, long index,
 // seven subsets then complete encoded/decoded residence: 208/281/270/278/279/263/294/298.
 // NOT kept: native narrow domains, no qualifying gain and longer decoded forms; original body restored.
 // Frame 0x24/0x2c, independent side homes and delayed matrix acquisition remain.
+// B6G (11-06, walk of the whole body against retail 0x245540-0x24584c, scores from the fast build): behaviour difference found and fixed.
+// The edge is rotated by matrix_transform_vector, which sums every row forward + left + up; retail sums the j row (up + forward) + left
+// (0x2456ee movss up.j, 0x2456f3 mulss z, 0x2456fa mulss forward.j, 0x2456ff addss, 0x245703/0x245708/0x24570c left.j*y added last) and the i/k rows
+// forward + left + up (0x2456c5-0x2456e8, 0x245716-0x24574d), so ours rounded the j component differently. The j row is now written out
+// in retail's grouping (rows i and k written out beside it, since no shared helper has the j order): 214 (helper 209, same bytes, 783).
+// Expression-level spellings of the j row (`up*z + forward*x + left*y` in one statement, 209) are regrouped by the compiler; only a split
+// sum keeps the grouping. Everything else matches retail: the side tests (0x245661/0x24566a ja, 0x245680 jbe) and the +-0.0001 constants
+// (0x45ddfc, 0x45dbdc), cross(first, second) with k + j + i dot (0x245649-0x245661), scale != 1 test (0x24569e, 0x245751), point rotation
+// order (forward*x + up*z) + left*y + position, the call arguments (0x24580c-0x245841). Struct fields are now typed as retail reads them
+// (word material codes at 0x245558/0x245568, short surface indices at 0x24554d/0x24555d, plane table at source+0xc): the casts go, same bytes.
+// No new include, helper or double; callers 0x245aa0 and callees 0x245400, 0x244de0 stay MATCH.
+// M3 lane 7 r167 (fast; caller 0x245aa0 MATCH each time): dead-local phase scan 1-7 at the top 214 each; the material
+// test written second-first 214; the facing tests constant-first 214; the scale test as `1.f != arg_2->scale` 213;
+// the side and plane-index compares swapped 214.
+// MiniMax I (11-16), NOT kept: 206 (main 214) came from four changes: the arrays' sign bits as (bool)((unsigned
+// long)local_2 >> 15) (same values: local_2 is the sign-extended short) 210 alone, plus the first material's loads
+// moved after the second's, the sign-bit compare's operands swapped and arg_2 renamed through a matrix alias
+// local, which are kept only with a match. The cast alone is a 4-point gain, under the 8-point bar above 30. Body
+// back to main.
+// P571: Actual edge-scale nonunit/unit decision at its transform consumer, bool/byte/short/long:
+// 228/228/228/228/228/228/228/228. NOT kept: all regress and shorten to 763/783 bytes without native
+// frame/table/side-home recovery. Original scale comparison, row arithmetic, point transform and complete
+// body restored.
 // @retail 0x245540
 void function_245540(s_source_245400 const *arg_1, long arg_0,
 	transform4x3f const *arg_2, real arg_3, real arg_4,
@@ -668,13 +705,13 @@ void function_245540(s_source_245400 const *arg_1, long arg_0,
 	s_surface_245400 const *local_0 = &arg_1->field_34[arg_0];
 	long local_1 = local_0->field_08;
 	s_material_245400 const *materials = arg_1->field_2c;
-	short first_material = (short)materials[local_1].field_00;
-	short second_material = (short)materials[*(short *)local_0->field_0a].field_00;
+	short first_material = materials[local_1].field_00;
+	short second_material = materials[local_0->field_0a].field_00;
 	if (first_material != second_material)
 	{
-		plane3f const *local_7 = *(plane3f const *const *)((byte const *)arg_1 + 0xc);
-		point3f const *local_4 = &arg_1->field_3c[((word const *)local_0)[0]].field_00;
-		point3f const *local_5 = &arg_1->field_3c[((word const *)local_0)[1]].field_00;
+		plane3f const *local_7 = arg_1->field_0c;
+		point3f const *local_4 = &arg_1->field_3c[local_0->field_00].field_00;
+		point3f const *local_5 = &arg_1->field_3c[local_0->field_02].field_00;
 		vector3f local_6;
 		vector3d_from_points3d(local_4, local_5, &local_6);
 		long local_2 = first_material;
@@ -701,7 +738,14 @@ void function_245540(s_source_245400 const *arg_1, long arg_0,
 		{
 			if (arg_2->scale != 1.f)
 				vector3f_scale(&local_6, arg_2->scale, &local_6);
-			matrix_transform_vector(arg_2, &local_6, &local_6);
+			/* retail sums the j row as (up + forward) + left, which matrix_transform_vector (forward + left) + up does not */
+			real edge_i = local_6.i;
+			real edge_j = local_6.j;
+			real edge_k = local_6.k;
+			local_6.i = arg_2->forward.i * edge_i + arg_2->left.i * edge_j + arg_2->up.i * edge_k;
+			local_6.j = arg_2->up.j * edge_k + arg_2->forward.j * edge_i;
+			local_6.j += arg_2->left.j * edge_j;
+			local_6.k = arg_2->forward.k * edge_i + arg_2->left.k * edge_j + arg_2->up.k * edge_k;
 			local_4 = function_245400_transform(arg_2, local_4, &local_14);
 		}
 		function_244de0(local_4, &local_6, arg_3, arg_4, arg_5, arg_6, local_1,

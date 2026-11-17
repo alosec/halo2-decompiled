@@ -14,7 +14,7 @@
 
 // sorts the entries from low to high (both included) by key
 // (src/unknown_2dfec0.cpp)
-void __cdecl function_2dff20(entry_2dfec0 *entries, int low, int high, long context);
+void __cdecl function_2dff20(entry_2dfec0 *entries, int low, int high, sorted_2dfec0 order);
 
 // the corners come back from the endpoints' values, each divided by the
 // axis's scale (1.0f / scale, the 1.0f at 0x45dbc0) and moved back by the
@@ -121,7 +121,7 @@ void sweep_batches_2e50d0::function_2e2f70(endpoint_2e0f80 *endpoints, long coun
 {
 	if (count > 1)
 	{
-		function_2dff20((entry_2dfec0 *)endpoints, 0, count - 1, 0);
+		function_2dff20((entry_2dfec0 *)endpoints, 0, count - 1, sorted_2dfec0());
 	}
 	// the open boxes' endpoints, each packed as a dword (value in the low
 	// word, the box's index in the high one)

@@ -607,6 +607,11 @@ extern "C" {
 BOOL  __stdcall D3DResource_IsBusy(struct D3DResource *resource);
 void  __stdcall D3DResource_BlockUntilNotBusy(struct D3DResource *resource);
 void  __stdcall D3DResource_Register(struct D3DResource *resource, void *base);
+/* the XDK's typed wrapper of the same call */
+static __inline void D3DTexture_Register(struct D3DTexture *texture, void *base)
+{
+	D3DResource_Register((struct D3DResource *)texture, base);
+}
 
 void  __stdcall D3DSurface_GetDesc(struct D3DSurface *surface, D3DSURFACE_DESC *desc);
 void  __stdcall D3DSurface_LockRect(struct D3DSurface *surface, D3DLOCKED_RECT *locked,

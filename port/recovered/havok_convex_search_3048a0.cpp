@@ -661,7 +661,7 @@ measure:
 		{
 			if (!search->overlap_only)
 			{
-				status = function_303dd0(this, first_shape, second_shape, transform, pair_state);
+				status = ::function_303dd0(this, first_shape, second_shape, transform, pair_state);
 			}
 			else
 			{

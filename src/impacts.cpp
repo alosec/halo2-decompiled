@@ -208,7 +208,7 @@ struct s_sound_label_play
 
 dword vector3d_compress(vector3f const *vector);
 long function_189650(s_sound_position const *position, s_sound_label_play const *play);
-void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, short element_index, long unused, long index, long variant,
+void function_1883e0(long tag_index, bool ignore_distance, point3f const *point, c_type_47f957 element_index, c_type_47f957 entry_element_index, long index, long variant,
 	long *first_value04, long *second_value04, long *first_value, long *second_value, long *first_value0c, long *second_value0c);
 void function_11bed0(s_location *location, point3f const *point);
 bool function_11c120(s_location const *location, point3f const *point, short *material);
@@ -667,6 +667,13 @@ PRIVATE __forceinline void function_227814(vector3f const *arg_0, vector3f const
 	arg_2->k = local_0;
 }
 
+// score 5 (371 bytes against retail's 370): the only real difference is in
+// the inlined 0x227812, where `local_1.i = local_0; local_1.i *= arg_0->i;`
+// compiles to `movss xmm1, [edi]; mulss xmm1, xmm0` and retail has
+// `movaps xmm1, xmm0; mulss xmm1, [edi]` (one byte shorter; the other reported
+// differences are the CALL alignment that follows the extra byte). One-line
+// multiplication, a named factor and the commutative order kept or worsened
+// the form. Permuter: 174 tries in 300 s (seed 999), no lower form.
 // @retail 0x227810
 void impact_build_matrix(
 	long component_index,
@@ -1436,7 +1443,7 @@ void impact_material_effects_get_for_component(
 		index = 13;
 		break;
 	}
-	function_1883e0(tag_index, false, position, material_a.m_index, material_b.m_index, index, unknownb,
+	function_1883e0(tag_index, false, position, material_a, material_b, index, unknownb,
 		first_value04, second_value04, first_value, second_value, first_value0c, second_value0c);
 }
 

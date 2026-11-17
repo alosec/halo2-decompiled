@@ -63,7 +63,11 @@ struct entry_2e0250
 
 // sorts the entries from low to high (both included) by key
 // (src/unknown_2e0120.cpp)
-void __cdecl function_2e02d0(entry_2e0250 *entries, int low, int high, long context);
+/* the sort order (empty; include/sweep_search_2e1090.h, which this file cannot include) */
+struct order_2e0250
+{
+};
+void __cdecl function_2e02d0(entry_2e0250 *entries, int low, int high, order_2e0250 context);
 
 // ---------------------------------------------------------------------------
 // 0x2e3b00
@@ -101,7 +105,7 @@ void sweep_2e3b00::sort_boxes_by_x()
 	long last = order.size - 1;
 	if (last > 1)
 	{
-		function_2e02d0(entries + 1, 0, last - 1, 0);
+		function_2e02d0(entries + 1, 0, last - 1, order_2e0250());
 	}
 
 	for (long i = 0; i < elements.size; i++)
@@ -195,5 +199,5 @@ public:
 void placed_shape_312760::calculate_bounds(bounds_312800 *out) const
 {
 	world_312590 const *world = (world_312590 const *)field_8;
-	((shape_312800 const *)object)->get_bounds(transform, world->tolerance->value, out);
+	((shape_312800 const *)body.shape)->get_bounds(transform, world->tolerance->value, out);
 }

@@ -20,13 +20,26 @@ double timing_ticks_to_seconds(__int64 ticks);
 // share its slot); no match lost in the 183 functions of the 9 includers. Not kept: the dead asm only steers the compiler.
 // A live `__asm mov eax, dword ptr local_0` before the rdtsc keeps retail's frames at 0x199740/0x18f260/0x862e0 but emits a
 // mov retail lacks; plain/array/struct/LARGE_INTEGER/memset forms lose the stores. Wanted: a live form that takes the address.
+// Round 87 (m3 lane 14): solved without the volatile or any dead asm. The result starts at zero and is then assigned from
+// the raw reader below: the zero stores survive because the inlined asm block follows them, and the result (at the
+// allocation helper, start's spilled high half) keeps the zeroed slot. 0x6a8a0, 0x80e10, 0x12d400, 0x18f260, 0x199740 and
+// 0x862e0 match with it; 0x146e30 is unchanged at 120.
+#if !H2_NATIVE_PORT
+/* the counter's raw value, left in EDX:EAX */
+static __forceinline __int64 time_stamp_counter_read(void)
+{
+	__asm rdtsc
+}
+#endif
+
 static __forceinline __int64 function_80e13(void)
 {
 #if H2_NATIVE_PORT
 	return h2_native_time_stamp();
 #else
-	volatile __int64 local_0 = 0;
-	__asm rdtsc
+	__int64 local_0 = 0;
+	local_0 = time_stamp_counter_read();
+	return local_0;
 #endif
 }
 
